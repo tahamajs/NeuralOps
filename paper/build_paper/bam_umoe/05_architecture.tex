@@ -22,26 +22,26 @@ T5 & Enc-Dec & No & No & No & \textbf{Yes} \\
 
 \subsubsection{DistilBERT}
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight  # For reference, not applied
-is_nested_encoder = True
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight  # For reference, not applied
+is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Fused Conv1D)}
 \begin{lstlisting}
-fused = src.c_attn.weight.T
-q_w, k_w, v_w = fused.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
+fused = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = fused.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -56,9 +56,9 @@ For RoBERTa, BAM-UMoE's \texttt{out\_lin} is not applied; the outer
 
 For Qwen3.5 with \texttt{head\_dim=256} and \texttt{rotary\_dim=64}:
 \begin{lstlisting}
-q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-q_rot = (q_rot * cos) + (rotate_half(q_rot) * sin)
-q = torch.cat([q_rot, q_pass], dim=-1)
+q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+q\_rot = (q\_rot * cos) + (rotate\_half(q\_rot) * sin)
+q = torch.cat([q\_rot, q\_pass], dim=-1)
 \end{lstlisting}
 
 \subsection{Cross-Attention}
@@ -69,15 +69,15 @@ states, and pretrained cross-attention weights are highly calibrated.
 Injecting unaligned MoE there would disrupt alignment.
 
 \begin{lstlisting}
-if not is_cross_attention:
-    moe_delta_v = self.qkv_moe(hidden_states).view(B, L, H, d_h)
-    v = v + 0.1 * moe_delta_v
+if not is\_cross\_attention:
+    moe\_delta\_v = self.qkv\_moe(hidden\_states).view(B, L, H, d\_h)
+    v = v + 0.1 * moe\_delta\_v
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("bam_umoe")
+@ATTENTION\_REGISTRY.register("bam\_umoe")
 class BAMUMoEBlock(BaseAttention):
     ...
 \end{lstlisting}
@@ -110,6 +110,6 @@ Cross-attention MoE & Skip MoE branch & Preserve alignment \\
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of bam\_umoe.}
-\label{fig:arch_bam-umoe}
+\label{fig:arch\_bam-umoe}
 \end{figure}
 

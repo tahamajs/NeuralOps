@@ -22,10 +22,10 @@ Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 All four are \texttt{nn.Linear}. Direct factorization.
@@ -50,11 +50,11 @@ roberta.encoder.layer.0.attention
 \textbf{Detection.} In \texttt{copy\_weights}:
 
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    src = old_attn.self
-    if hasattr(old_attn.output, "dense"):
-        w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
-    # Note: even though we extract W_O, we set is_nested_encoder=True
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    src = old\_attn.self
+    if hasattr(old\_attn.output, "dense"):
+        w\_o, b\_o = \_unpack\_weight\_bias(old\_attn.output.dense)
+    # Note: even though we extract W\_O, we set is\_nested\_encoder=True
     # so it will NOT be used in forward.
 \end{lstlisting}
 
@@ -68,24 +68,24 @@ weight availability; the actual out projection is applied by the outer
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)   # fused Q, K, V
-+-- c_proj  (Conv1D 768 $\to$ 768)
++-- c\_attn  (Conv1D 768 $\to$ 2304)   # fused Q, K, V
++-- c\_proj  (Conv1D 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Split c\_attn:}
 
 \begin{lstlisting}
-c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
-split_size = c_attn_w.size(0) // 3
-w_q = c_attn_w[:split_size, :]
-w_k = c_attn_w[split_size : 2 * split_size, :]
-w_v = c_attn_w[2 * split_size :, :]
+c\_attn\_w, c\_attn\_b = \_unpack\_weight\_bias(src.c\_attn)
+split\_size = c\_attn\_w.size(0) // 3
+w\_q = c\_attn\_w[:split\_size, :]
+w\_k = c\_attn\_w[split\_size : 2 * split\_size, :]
+w\_v = c\_attn\_w[2 * split\_size :, :]
 \end{lstlisting}
 
 \textbf{Conv1D transposition:} \texttt{\_unpack\_weight\_bias} handles this automatically:
 
 \begin{lstlisting}
-if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
+if "Conv1D" in type(module).\_\_name\_\_ or hasattr(module, "nf"):
     w = w.t()
 \end{lstlisting}
 
@@ -94,21 +94,21 @@ if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)   # H * d_h
-+-- k_proj  (Linear 1024 $\to$ 512)    # H_kv * d_h
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)   # H * d\_h
++-- k\_proj  (Linear 1024 $\to$ 512)    # H\_kv * d\_h
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA pooling.} When source \texttt{W\_K} has more rows than \texttt{self.kv\_head\_size}:
 
 \begin{lstlisting}
-rep = w_k.shape[0] // self.kv_head_size
-w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+rep = w\_k.shape[0] // self.kv\_head\_size
+w\_k\_pooled = (
+    w\_k.view(self.num\_kv\_heads, rep, self.head\_dim, -1)
     .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    .view(self.kv\_head\_size, -1)
 )
 \end{lstlisting}
 
@@ -124,10 +124,10 @@ When \texttt{is\_nested\_encoder = True}:
 \begin{lstlisting}
 context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(...)
 
-if self.is_nested_encoder:
-    out = context       # $\leftarrow$ No out_proj
+if self.is\_nested\_encoder:
+    out = context       # $\leftarrow$ No out\_proj
 else:
-    out = self._project(context, ...)   # $\leftarrow$ out_proj applied
+    out = self.\_project(context, ...)   # $\leftarrow$ out\_proj applied
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} then applies the projection.
@@ -139,9 +139,9 @@ SVD-LLM V2's injection hook has three safety layers:
 \subsubsection{Pre-Test}
 
 \begin{lstlisting}
-test_src = layer_list[0].attention
+test\_src = layer\_list[0].attention
 try:
-    test_module = SVDLLMV2Attention(cfg, old_attn=test_src, ...)
+    test\_module = SVDLLMV2Attention(cfg, old\_attn=test\_src, ...)
 except Exception as e:
     logger.warning(f"Pre-test failed: {e}")
     return None
@@ -150,15 +150,15 @@ except Exception as e:
 \subsubsection{Double-Injection Guard}
 
 \begin{lstlisting}
-if isinstance(src, SVDLLMV2Attention) or "SVDLLMV2" in src.__class__.__name__:
+if isinstance(src, SVDLLMV2Attention) or "SVDLLMV2" in src.\_\_class\_\_.\_\_name\_\_:
     return None
 \end{lstlisting}
 
 \subsubsection{Frobenius Validation}
 
 \begin{lstlisting}
-for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
-    if torch.norm(w.float(), p="fro").item() < 1e-4:
+for name, w in [("w\_q", w\_q), ("w\_k", w\_k), ("w\_v", w\_v)]:
+    if torch.norm(w.float(), p="fro").item() \textless{} 1e-4:
         raise RuntimeError(f"Near-zero norm on {name}")
 \end{lstlisting}
 
@@ -172,7 +172,7 @@ for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & Pre-test or \texttt{copy\_weights} raises & Abort injection \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
 Shape mismatch & Padding in \texttt{\_decompose\_and\_set} & Warn \\
 Double injection & Class name guard & Skip \\
 Cross-attention & Not supported & Not implemented \\
@@ -183,14 +183,14 @@ Cross-attention & Not supported & Not implemented \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("svd_llm_v2")
-@ATTENTION_REGISTRY.register("svd_llm_v2_attention")
+@ATTENTION\_REGISTRY.register("svd\_llm\_v2")
+@ATTENTION\_REGISTRY.register("svd\_llm\_v2\_attention")
 class SVDLLMV2Attention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("svd_llm_v2_inject")
-@ATTENTION_REGISTRY.register("inject_svd_llm_v2")
-def inject_svd_llm_v2(...):
+@ATTENTION\_REGISTRY.register("svd\_llm\_v2\_inject")
+@ATTENTION\_REGISTRY.register("inject\_svd\_llm\_v2")
+def inject\_svd\_llm\_v2(...):
     ...
 \end{lstlisting}
 
@@ -219,6 +219,6 @@ parameters by naming convention.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of svd\_llm\_v2\_attention.}
-\label{fig:arch_svd-llm-v2-attention}
+\label{fig:arch\_svd-llm-v2-attention}
 \end{figure}
 

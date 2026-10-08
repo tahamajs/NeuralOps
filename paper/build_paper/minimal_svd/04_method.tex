@@ -19,21 +19,21 @@ adaptively per layer based on spectral energy.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
+   |  Input weight W $\in$ R^{d\_out $\times$ d\_in}           |
    +--------------------+-------------------------+
                         |
                          
    +----------------------------------------------+
    |  SVD: W = U $\Sigma$ V^T                             |
    |  Compute cumulative energy E(r)              |
-   |  r_eff = min(r_max, argmin E(r) $\ge$  )         |
+   |  r\_eff = min(r\_max, argmin E(r) $\ge$  )         |
    +--------------------+-------------------------+
                         |
                          
    +----------------------------------------------+
    |  Truncate and symmetrize                      |
-   |  U_r = U[:, :r]   $\sqrt{}$$\Sigma$[:r]                     |
-   |  V_r = $\sqrt{}$$\Sigma$[:r]   V[:r, :]^T                   |
+   |  U\_r = U[:, :r]   $\sqrt{}$$\Sigma$[:r]                     |
+   |  V\_r = $\sqrt{}$$\Sigma$[:r]   V[:r, :]^T                   |
    +--------------------+-------------------------+
                         |
                          
@@ -160,8 +160,8 @@ weights are available.
 We distribute $\Sigma^{1/2}$ between the two factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \qquad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{4.6}
 \]
 
@@ -173,8 +173,8 @@ stability.
 The framework stores $V_r$ in \texttt{down.weight} and $U_r$ in \texttt{up.weight}:
 
 \begin{lstlisting}
-self.down.weight.data[:r, :] = V_r    # (r, d_in)
-self.up.weight.data[:, :r] = U_r      # (d_out, r)
+self.down.weight.data[:r, :] = V\_r    # (r, d\_in)
+self.up.weight.data[:, :r] = U\_r      # (d\_out, r)
 \end{lstlisting}
 
 For $r < \text{target rank}$, remaining rows/columns are zero.
@@ -206,17 +206,17 @@ Qwen3.5 & \texttt{q\_proj} & \texttt{k\_proj} & \texttt{v\_proj} & \texttt{o\_pr
 GPT-2 fuses $Q, K, V$ into one \texttt{c\_attn}:
 
 \[
-W_{c\_attn} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
+W\_{c\_attn} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
 \tag{4.7}
 \]
 
 (Conv1D stores this transposed.) MinimalSVD splits:
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.clone()
-if is_conv1d:
+w = src.c\_attn.weight.data.clone()
+if is\_conv1d:
     w = w.t()   # (3d, d)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
@@ -242,7 +242,7 @@ for proj in ["q", "k", "v"]:
     w = extracted[proj][0]
     if w is not None:
         norm = torch.linalg.norm(w.float())
-        if norm < 1e-4:
+        if norm \textless{} 1e-4:
             raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 
@@ -252,7 +252,7 @@ This catches catastrophic extraction failures.
 
 \begin{lstlisting}
 missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
-if not self.is_nested_encoder and extracted["o"][0] is None:
+if not self.is\_nested\_encoder and extracted["o"][0] is None:
     missing.append("o")
 if missing:
     raise RuntimeError(f"Missing required weights: {missing}")
@@ -263,20 +263,20 @@ if missing:
 After factorization, base weights are frozen:
 
 \begin{lstlisting}
-def freeze_base_weights(self):
-    self.down.weight.requires_grad = False
-    self.up.weight.requires_grad = False
+def freeze\_base\_weights(self):
+    self.down.weight.requires\_grad = False
+    self.up.weight.requires\_grad = False
     if self.up.bias is not None:
-        self.up.bias.requires_grad = False
-    if self.lora_rank > 0:
-        self.lora_A.requires_grad = True
-        self.lora_B.requires_grad = True
+        self.up.bias.requires\_grad = False
+    if self.lora\_rank \textgreater{} 0:
+        self.lora\_A.requires\_grad = True
+        self.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 Only \texttt{lora\_A} and \texttt{lora\_B} are trained. LoRA $B$ starts at zero, so:
 
 \[
-y_{\text{init}} = (x V^\top) U^\top + b
+y\_{\text{init}} = (x V^\top) U^\top + b
 \tag{4.8}
 \]
 
@@ -286,37 +286,37 @@ which equals the SVD approximation.
 
 \textbf{Algorithm 1:} MinimalSVD injection (single-layer)
 \begin{lstlisting}
-Input:  layer  , config c, energy  , rank cap r_max
+Input:  layer  , config c, energy  , rank cap r\_max
 Output: layer with factorized attention
 
-1:  src $\leftarrow$ get_attention(layer)
+1:  src $\leftarrow$ get\_attention(layer)
 2:  if src is already MinimalSVD: return None
 3:
-4:  new_attn $\leftarrow$ MinimalSVDAttention(c)
+4:  new\_attn $\leftarrow$ MinimalSVDAttention(c)
 5:  try:
-6:      new_attn.copy_weights(src)
+6:      new\_attn.copy\_weights(src)
 7:  except Exception:
 8:      return None
 9:
 10: # Set nested flag
 11: if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-12:     new_attn.is_nested_encoder = True
-13:     layer.attention.self = new_attn
+12:     new\_attn.is\_nested\_encoder = True
+13:     layer.attention.self = new\_attn
 14: else:
-15:     new_attn.is_nested_encoder = False
+15:     new\_attn.is\_nested\_encoder = False
 16:     if hasattr(layer, "attention"):
-17:         layer.attention = new_attn
+17:         layer.attention = new\_attn
 18:     elif hasattr(layer, "self"):
-19:         new_attn.is_nested_encoder = True
-20:         layer.self = new_attn
-21: return new_attn
+19:         new\_attn.is\_nested\_encoder = True
+20:         layer.self = new\_attn
+21: return new\_attn
 \end{lstlisting}
 
 \textbf{Whole-model traversal} is delegated to the caller:
 
 \begin{lstlisting}
 for layer in model.transformer.layer:
-    inject_minimal_svd(layer, model.config, energy=0.95)
+    inject\_minimal\_svd(layer, model.config, energy=0.95)
 \end{lstlisting}
 
 \subsection{Complexity Analysis}
@@ -351,7 +351,7 @@ Eckart--Young.
 $E(r_\text{eff}) \geq \eta$, then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{4.9}
 \]
 

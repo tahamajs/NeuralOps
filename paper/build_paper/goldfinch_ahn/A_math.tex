@@ -6,7 +6,7 @@
 For position $i$ and key position $j$:
 
 \[
-M_{ij} = \mathbf{1}\left[|i - j| \leq W\right] \cdot \mathbf{1}\left[\text{valid}_j\right]
+M\_{ij} = \mathbf{1}\left[|i - j| \leq W\right] \cdot \mathbf{1}\left[\text{valid}\_j\right]
 \tag{A.1}
 \]
 
@@ -15,7 +15,7 @@ where $\text{valid}_j \in \{0, 1\}$ is the padding mask.
 \subsection{A.2 Fusion Formula}
 
 \[
-\text{fused}_t = g_t \cdot \text{short}_t + (1 - g_t) \cdot \text{long}_t
+\text{fused}\_t = g\_t \cdot \text{short}\_t + (1 - g\_t) \cdot \text{long}\_t
 \tag{A.2}
 \]
 
@@ -50,7 +50,7 @@ which is fully identity at init.
 The "GatedDeltaNetLayer" computes:
 
 \[
-\text{long}_t = W_m x_t + b_m
+\text{long}\_t = W\_m x\_t + b\_m
 \tag{A.4}
 \]
 

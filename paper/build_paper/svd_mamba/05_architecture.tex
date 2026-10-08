@@ -23,10 +23,10 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight
-extracted["k"] = src.k_lin.weight
-extracted["v"] = src.v_lin.weight
-extracted["o"] = src.out_lin.weight
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (nested)}
@@ -42,12 +42,12 @@ extracted["o"] = src.output.dense.weight
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = q_w
-extracted["k"] = k_w
-extracted["v"] = v_w
-extracted["o"] = src.c_proj.weight.t()
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{Qwen}
@@ -72,15 +72,15 @@ with random weights, but its contribution is silenced by the gate.
 \subsection{The Gating Module}
 
 \begin{lstlisting}
-self.gating = nn.Linear(self.d_model, self.d_model)
-nn.init.zeros_(self.gating.weight)
-nn.init.constant_(self.gating.bias, -7.0)
+self.gating = nn.Linear(self.d\_model, self.d\_model)
+nn.init.zeros\_(self.gating.weight)
+nn.init.constant\_(self.gating.bias, -7.0)
 \end{lstlisting}
 
 \textbf{Why bias $-7$?} The gating controls the SSM path:
 
 \begin{itemize}
-\item $\sigma(-7) \approx 0.0009$ $\to$ SSM contributes <0.1\% at start.
+\item $\sigma(-7) \approx 0.0009$ $\to$ SSM contributes \textless{}0.1\% at start.
 \item The model starts as pure attention.
 \item During recovery, the gate can shift toward SSM.
 
@@ -108,20 +108,20 @@ The injection hook handles:
 
 \end{itemize}
 \begin{lstlisting}
-def inject_svd_mamba(layer=None, model=None, ...):
+def inject\_svd\_mamba(layer=None, model=None, ...):
     target = layer or model
     
     # Whole model
-    if isinstance(target, nn.Module) and has_transformer_layers(target):
+    if isinstance(target, nn.Module) and has\_transformer\_layers(target):
         for lyr in layers:
-            inject_svd_mamba(layer=lyr, ...)
+            inject\_svd\_mamba(layer=lyr, ...)
         return target
     
     # Single layer
-    src = find_attention(target)
-    new_module = SVDMamba(d_model=..., pretrained_attn=src)
-    replace_attention(target, new_module)
-    return new_module
+    src = find\_attention(target)
+    new\_module = SVDMamba(d\_model=..., pretrained\_attn=src)
+    replace\_attention(target, new\_module)
+    return new\_module
 \end{lstlisting}
 
 \subsection{The Chunked SSM Scan}
@@ -129,30 +129,30 @@ def inject_svd_mamba(layer=None, model=None, ...):
 The forward uses a Python loop over chunks:
 
 \begin{lstlisting}
-chunk_size = 64
-num_chunks = (seqlen + chunk_size - 1) // chunk_size
-h_running = zeros(...)
-h_den_running = zeros(...)
-y_chunks = []
+chunk\_size = 64
+num\_chunks = (seqlen + chunk\_size - 1) // chunk\_size
+h\_running = zeros(...)
+h\_den\_running = zeros(...)
+y\_chunks = []
 
-for c in range(num_chunks):
-    s_idx = c * chunk_size
-    e_idx = min(seqlen, s_idx + chunk_size)
+for c in range(num\_chunks):
+    s\_idx = c * chunk\_size
+    e\_idx = min(seqlen, s\_idx + chunk\_size)
     
-    u_c = u[:, s_idx:e_idx]
-    log_a_c = log_alpha[:, s_idx:e_idx]
-    lambda_c = cumsum(log_a_c, dim=1).clamp(min=-25, max=0)
+    u\_c = u[:, s\_idx:e\_idx]
+    log\_a\_c = log\_alpha[:, s\_idx:e\_idx]
+    lambda\_c = cumsum(log\_a\_c, dim=1).clamp(min=-25, max=0)
     
-    decay_c = exp(lambda_c)
-    decay_inv_c = exp(-lambda_c).clamp(max=1e10)
+    decay\_c = exp(lambda\_c)
+    decay\_inv\_c = exp(-lambda\_c).clamp(max=1e10)
     
-    h_intra = decay_c * cumsum(decay_inv_c * u_c, dim=1)
-    h_inter = decay_c * h_running.unsqueeze(1)
-    h_chunk = (h_intra + h_inter).clamp(min=-1e4, max=1e4)
+    h\_intra = decay\_c * cumsum(decay\_inv\_c * u\_c, dim=1)
+    h\_inter = decay\_c * h\_running.unsqueeze(1)
+    h\_chunk = (h\_intra + h\_inter).clamp(min=-1e4, max=1e4)
     
     # ... denominator ...
-    y_chunks.append(...)
-    h_running = h_chunk[:, -1]
+    y\_chunks.append(...)
+    h\_running = h\_chunk[:, -1]
 \end{lstlisting}
 
 \textbf{Python loop overhead} is significant: for $L = 128$, 2 iterations; for 
@@ -182,10 +182,10 @@ Several clamps prevent overflow:
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("svd_mamba")
-@ATTENTION_REGISTRY.register("SVD-Mamba")
-@ATTENTION_REGISTRY.register("svd-mamba")
-@ATTENTION_REGISTRY.register("SVD_Mamba")
+@ATTENTION\_REGISTRY.register("svd\_mamba")
+@ATTENTION\_REGISTRY.register("SVD-Mamba")
+@ATTENTION\_REGISTRY.register("svd-mamba")
+@ATTENTION\_REGISTRY.register("SVD\_Mamba")
 class SVDMamba(BaseAttention):
     ...
 \end{lstlisting}
@@ -222,6 +222,6 @@ effectively unsupported.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of svd\_mamba.}
-\label{fig:arch_svd-mamba}
+\label{fig:arch\_svd-mamba}
 \end{figure}
 

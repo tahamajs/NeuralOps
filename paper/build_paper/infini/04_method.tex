@@ -35,12 +35,12 @@ Infini-Attention replaces MHSA with a two-branch block:
            +----------+----------+
                        
               +---------------+
-              | out_local +   |
-              | $\sigma$($\beta$) out_mem  |
+              | out\_local +   |
+              | $\sigma$($\beta$) out\_mem  |
               +-------+-------+
                        
               +---------------+
-              | out_proj      |
+              | out\_proj      |
               +---------------+
 \end{lstlisting}
 
@@ -51,21 +51,21 @@ Infini-Attention replaces MHSA with a two-branch block:
 For causal models, the local mask is:
 
 \[
-M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+M\_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.1}
 \]
 
 For bidirectional models (encoders), the mask is symmetric:
 
 \[
-M_{ij}^\text{local} = \begin{cases} 0 & |i - j| < W \\ -\infty & \text{otherwise} \end{cases}
+M\_{ij}^\text{local} = \begin{cases} 0 & |i - j| \textless{} W \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.2}
 \]
 
 \subsubsection{Local Attention}
 
 \[
-\text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
+\text{LocalAttn}\_i = \text{softmax}\!\left(\frac{Q\_i K^\top}{\sqrt{d\_h}} + M^\text{local}\right) V
 \tag{4.3}
 \]
 
@@ -85,7 +85,7 @@ of its compute on long-range connections that are often rare.
 Each head has a learned memory:
 
 \[
-M_h \in \mathbb{R}^{d_c \times d_h}
+M\_h \in \mathbb{R}^{d\_c \times d\_h}
 \tag{4.4}
 \]
 
@@ -99,7 +99,7 @@ that is shared across the sequence.
 \subsubsection{Memory Attention}
 
 \[
-\text{MemAttn}_i = \text{softmax}\!\left(\frac{Q_i M^\top}{\sqrt{d_h}}\right) M
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
 \tag{4.5}
 \]
 
@@ -111,7 +111,7 @@ $\mathcal{O}(L \cdot d_c \cdot d_h)$.
 We initialize the memory with small random values:
 
 \[
-M \sim \mathcal{N}\!\left(0, \frac{1}{\sqrt{d_c}}\right) \cdot 0.001
+M \sim \mathcal{N}\!\left(0, \frac{1}{\sqrt{d\_c}}\right) \cdot 0.001
 \tag{4.6}
 \]
 
@@ -161,32 +161,32 @@ $-\infty$ would freeze the memory. $-5$ is a good compromise.
 
 \textbf{Algorithm 1:} Infini-Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, window W
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, window W
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)                  Frozen W + LoRA
-2:  K $\leftarrow$ W_K X + LoRA_K(X)
-3:  V $\leftarrow$ W_V X + LoRA_V(X)
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)                  Frozen W + LoRA
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
 4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
 6:
 7:  # Local branch
-8:  S_local $\leftarrow$ Q K^T / $\sqrt{}$d_h
-9:  S_local $\leftarrow$ S_local + causal_mask + window_mask
-10: P_local $\leftarrow$ softmax(S_local)
-11: out_local $\leftarrow$ P_local V
+8:  S\_local $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+9:  S\_local $\leftarrow$ S\_local + causal\_mask + window\_mask
+10: P\_local $\leftarrow$ softmax(S\_local)
+11: out\_local $\leftarrow$ P\_local V
 12:
 13: # Memory branch
-14: S_mem $\leftarrow$ Q M^T / $\sqrt{}$d_h
-15: P_mem $\leftarrow$ softmax(S_mem)
-16: out_mem $\leftarrow$ P_mem M
+14: S\_mem $\leftarrow$ Q M^T / $\sqrt{}$d\_h
+15: P\_mem $\leftarrow$ softmax(S\_mem)
+16: out\_mem $\leftarrow$ P\_mem M
 17:
 18: # Gated fusion
 19: gate $\leftarrow$ sigmoid($\beta$)
-20: combined $\leftarrow$ out_local + gate   out_mem
+20: combined $\leftarrow$ out\_local + gate   out\_mem
 21:
-22: combined $\leftarrow$ concat_heads(combined)
-23: Y $\leftarrow$ W_O combined + LoRA_O(combined)
+22: combined $\leftarrow$ concat\_heads(combined)
+23: Y $\leftarrow$ W\_O combined + LoRA\_O(combined)
 24: return Y
 \end{lstlisting}
 

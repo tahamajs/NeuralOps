@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -14,20 +14,20 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_fasa.py \
+python run\_all\_4\_fasa.py \
     --models distilbert,roberta,gpt2 \
-    --fasa_keep_ratio 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --fasa\_keep\_ratio 0.5 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -37,37 +37,37 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --models distilbert,roberta,gpt2
+python run\_all\_4\_fasa.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Keep Ratio Ablation}
 
 \begin{lstlisting}
 for r in 0.25 0.5 0.75 1.0; do
-    python run_all_4_fasa.py --fasa_keep_ratio $r --output_suffix k$r
+    python run\_all\_4\_fasa.py --fasa\_keep\_ratio $r --output_suffix k$r
 done
 \end{lstlisting}
 
 \subsubsection{Importance Method Ablation}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --importance_method var --output_suffix var
-python run_all_4_fasa.py --importance_method l2 --output_suffix l2
+python run\_all\_4\_fasa.py --importance\_method var --output\_suffix var
+python run\_all\_4\_fasa.py --importance\_method l2 --output\_suffix l2
 \end{lstlisting}
 
 \subsubsection{CLS Protection Ablation}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --protect_first_token true --output_suffix protect
-python run_all_4_fasa.py --protect_first_token false --output_suffix noprotect
+python run\_all\_4\_fasa.py --protect\_first\_token true --output\_suffix protect
+python run\_all\_4\_fasa.py --protect\_first\_token false --output\_suffix noprotect
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -92,7 +92,7 @@ GPT-2 & 87.27\% $\pm$ 1\% & No-prune \\
 
 \begin{lstlisting}
 # Count actual kept tokens
-kept = int(L * fasa_keep_ratio)
+kept = int(L * fasa\_keep\_ratio)
 print(f"Expected kept tokens: {max(8, min(L, kept))}")
 \end{lstlisting}
 
@@ -102,15 +102,15 @@ print(f"Expected kept tokens: {max(8, min(L, kept))}")
 # Index 0 should always be in the top-k
 imp = k.float().var(dim=-1).mean(dim=1)
 imp[:, 0] = 1e9
-_, idx = torch.topk(imp, keep, dim=-1)
+\_, idx = torch.topk(imp, keep, dim=-1)
 assert 0 in idx[0].tolist()
 \end{lstlisting}
 
 \subsubsection{Verify Decoder Skips Pruning}
 
 \begin{lstlisting}
-# For GPT-2, is_causal should be True
-assert model.is_decoder == True
+# For GPT-2, is\_causal should be True
+assert model.is\_decoder == True
 \end{lstlisting}
 
 \subsection{Known Issues}

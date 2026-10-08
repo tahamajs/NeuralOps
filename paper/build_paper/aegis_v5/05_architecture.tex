@@ -24,39 +24,39 @@ AEGIS-V5 copies base weights via \texttt{copy\_weights}, handling four patterns:
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-weight = old_attn.c_attn.weight.data
-if weight.shape[1] == 3 * self.hidden_size:
+weight = old\_attn.c\_attn.weight.data
+if weight.shape[1] == 3 * self.hidden\_size:
     weight = weight.t()
-q_w, k_w, v_w = weight.chunk(3, dim=0)
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
-    q_w = old_attn.self.query.weight
-    k_w = old_attn.self.key.weight
-    v_w = old_attn.self.value.weight
-    o_w = old_attn.output.dense.weight
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    q\_w = old\_attn.self.query.weight
+    k\_w = old\_attn.self.key.weight
+    v\_w = old\_attn.self.value.weight
+    o\_w = old\_attn.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Qwen GQA}
 
 \begin{lstlisting}
-q_w = old_attn.q_proj.weight
-k_w = old_attn.k_proj.weight  # (H_kv   d_h, d)
-v_w = old_attn.v_proj.weight
-o_w = old_attn.o_proj.weight
+q\_w = old\_attn.q\_proj.weight
+k\_w = old\_attn.k\_proj.weight  # (H\_kv   d\_h, d)
+v\_w = old\_attn.v\_proj.weight
+o\_w = old\_attn.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-q_w = old_attn.q_lin.weight
-k_w = old_attn.k_lin.weight
-v_w = old_attn.v_lin.weight
-o_w = old_attn.out_lin.weight
+q\_w = old\_attn.q\_lin.weight
+k\_w = old\_attn.k\_lin.weight
+v\_w = old\_attn.v\_lin.weight
+o\_w = old\_attn.out\_lin.weight
 \end{lstlisting}
 
 \subsection{Robustness Improvements}
@@ -70,7 +70,7 @@ V5 logs a warning and continues to fallback paths:
 
 \begin{lstlisting}
 try:
-    w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+    w, b = UniversalAdapter.get\_weight\_bias(old\_attn, proj)
 except Exception as e:
     logger.debug(f"UniversalAdapter failed for {proj}: {e}")
     continue
@@ -81,17 +81,17 @@ except Exception as e:
 Near-zero norms trigger a warning, not an abort:
 
 \begin{lstlisting}
-if norm < 1e-4:
-    logger.warning(f"Weight for {proj_key} has near-zero norm; continuing")
+if norm \textless{} 1e-4:
+    logger.warning(f"Weight for {proj\_key} has near-zero norm; continuing")
 \end{lstlisting}
 
 \subsubsection{inject\_aegis\_v5 Returns None on Failure}
 
 \begin{lstlisting}
 try:
-    new_attn.copy_weights(src_attn)
+    new\_attn.copy\_weights(src\_attn)
 except Exception as e:
-    logger.error(f"inject_aegis_v5: copy_weights failed: {e}")
+    logger.error(f"inject\_aegis\_v5: copy\_weights failed: {e}")
     return None
 \end{lstlisting}
 
@@ -100,9 +100,9 @@ except Exception as e:
 For RoBERTa, \texttt{is\_nested\_encoder = True}:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     return out, None
-return self.out_proj(out), None
+return self.out\_proj(out), None
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} applies the output projection.
@@ -112,10 +112,10 @@ The outer \texttt{BertSelfOutput.dense} applies the output projection.
 For decoder models, we use standard causal attention (no split-head):
 
 \begin{lstlisting}
-if N < self.cfg.local_window or self.is_decoder:
+if N \textless{} self.cfg.local\_window or self.is\_decoder:
     # Standard causal softmax
-    scores = Q @ K^T / $\sqrt{}$d_h
-    scores = mask_causal(scores)
+    scores = Q @ K^T / $\sqrt{}$d\_h
+    scores = mask\_causal(scores)
     attn = softpick(scores)
     out = attn @ V
     return out, None
@@ -131,10 +131,10 @@ collapse. V5 replaces it with a stable softmax:
 
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
-    x_f = x.float()
-    if temperature <= 0 or temperature == 1.0:
-        return F.softmax(x_f, dim=dim).to(x.dtype)
-    return F.softmax(x_f / temperature, dim=dim).to(x.dtype)
+    x\_f = x.float()
+    if temperature \textless{}= 0 or temperature == 1.0:
+        return F.softmax(x\_f, dim=dim).to(x.dtype)
+    return F.softmax(x\_f / temperature, dim=dim).to(x.dtype)
 \end{lstlisting}
 
 This fix alone likely prevented several collapse cases.
@@ -146,12 +146,12 @@ This fix alone likely prevented several collapse cases.
 Input:  model M, config
 Output: M with attention replaced or unchanged on failure
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
 3:     cfg $\leftarrow$ AegisConfigV5(...)
-4:     new $\leftarrow$ AegisAttention(model_config, aegis_cfg=cfg)
+4:     new $\leftarrow$ AegisAttention(model\_config, aegis\_cfg=cfg)
 5:     try:
-6:         new.copy_weights(src)
+6:         new.copy\_weights(src)
 7:     except:
 8:         logger.error(...)
 9:         continue  # Skip this layer, do not crash
@@ -181,9 +181,9 @@ NaN in scores & \texttt{nan\_to\_num} \& Set to 0 \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("aegis_v5_module")
-@ATTENTION_REGISTRY.register("AegisAttention")
-@ATTENTION_REGISTRY.register("aegis_v5")
+@ATTENTION\_REGISTRY.register("aegis\_v5\_module")
+@ATTENTION\_REGISTRY.register("AegisAttention")
+@ATTENTION\_REGISTRY.register("aegis\_v5")
 class AegisAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -207,6 +207,6 @@ For $d = 768$, $H = 12$, $F = 128$:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of aegis\_v5.}
-\label{fig:arch_aegis-v5}
+\label{fig:arch\_aegis-v5}
 \end{figure}
 

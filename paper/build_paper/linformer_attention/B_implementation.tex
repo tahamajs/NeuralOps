@@ -3,64 +3,64 @@
 \subsection{B.1 Core Forward}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, N, D = hidden_states.shape
-    H, d = self.num_heads, self.head_dim
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, N, D = hidden\_states.shape
+    H, d = self.num\_heads, self.head\_dim
     
     # 1. Project
-    q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, N, H, d).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, N, self.num\_kv\_heads, d).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, N, self.num\_kv\_heads, d).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Adaptive E, F slicing
     L = N
-    k_eff = min(self.k_proj_dim, L)
+    k\_eff = min(self.k\_proj\_dim, L)
     
-    if L <= self.k_proj_dim:
-        E_act = self.E[:L, :L]
-        F_act = self.F[:L, :L]
-    elif L <= self.max_seq_len:
-        E_act = self.E[:k_eff, :L]
-        F_act = self.F[:k_eff, :L]
+    if L \textless{}= self.k\_proj\_dim:
+        E\_act = self.E[:L, :L]
+        F\_act = self.F[:L, :L]
+    elif L \textless{}= self.max\_seq\_len:
+        E\_act = self.E[:k\_eff, :L]
+        F\_act = self.F[:k\_eff, :L]
     else:
-        E_act = F.interpolate(self.E[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
-        F_act = F.interpolate(self.F[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+        E\_act = F.interpolate(self.E[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+        F\_act = F.interpolate(self.F[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
     
-    K_proj = torch.matmul(E_act, k)
-    V_proj = torch.matmul(F_act, v)
+    K\_proj = torch.matmul(E\_act, k)
+    V\_proj = torch.matmul(F\_act, v)
     
     # 5. Attention
-    scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).float()) * scale
+    scores = torch.matmul(q.float(), K\_proj.transpose(-2, -1).float()) * scale
     
     # 6. Causal fallback
-    if self.is_decoder and L > self.k_proj_dim:
-        causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
-        causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-        scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
-        V_proj = v
+    if self.is\_decoder and L \textgreater{} self.k\_proj\_dim:
+        causal\_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+        causal\_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+        scores = causal\_scores.masked\_fill(~causal\_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        V\_proj = v
     
     # 7. Masking
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 8. Softmax + output
     attn = F.softmax(scores, dim=-1)
-    context = torch.matmul(attn, V_proj)
-    context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    context = torch.matmul(attn, V\_proj)
+    context = context.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
-    if self.is_nested_encoder:
-        out = context * self.output_scale
+    if self.is\_nested\_encoder:
+        out = context * self.output\_scale
     else:
-        out = self.out_proj(context * self.output_scale)
+        out = self.out\_proj(context * self.output\_scale)
     
     return out, None
 \end{lstlisting}
@@ -68,29 +68,29 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 \subsection{B.2 E, F Initialization}
 
 \begin{lstlisting}
-self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
-self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
+self.E = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
+self.F = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
 
-with torch.no_grad():
-    nn.init.normal_(self.E, std=0.02)
-    nn.init.normal_(self.F, std=0.02)
-    min_dim = min(self.k_proj_dim, self.max_seq_len)
-    self.E.data[:min_dim, :min_dim].fill_diagonal_(1.0)
-    self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+with torch.no\_grad():
+    nn.init.normal\_(self.E, std=0.02)
+    nn.init.normal\_(self.F, std=0.02)
+    min\_dim = min(self.k\_proj\_dim, self.max\_seq\_len)
+    self.E.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
+    self.F.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
 \end{lstlisting}
 
 \subsection{B.3 Adaptive Slicing}
 
 \begin{lstlisting}
-if L <= self.k_proj_dim:
+if L \textless{}= self.k\_proj\_dim:
     # Short: identity-like
-    E_act = self.E[:L, :L]
-elif L <= self.max_seq_len:
+    E\_act = self.E[:L, :L]
+elif L \textless{}= self.max\_seq\_len:
     # Standard Linformer
-    E_act = self.E[:k_eff, :L]
+    E\_act = self.E[:k\_eff, :L]
 else:
     # Extrapolation
-    E_act = F.interpolate(self.E[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+    E\_act = F.interpolate(self.E[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}
@@ -103,7 +103,7 @@ position information is compressed and RoPE is meaningless.
 \subsubsection{B.4.2 Breaking Causality}
 
 Without the fallback, GPT-2 would see future tokens. Always check 
-\texttt{is\_decoder and L > k}.
+\texttt{is\_decoder and L \textgreater{} k}.
 
 \subsubsection{B.4.3 Naive E, F Init}
 

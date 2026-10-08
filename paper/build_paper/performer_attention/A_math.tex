@@ -4,7 +4,7 @@
 \subsection{A.1 Kernel Approximation}
 
 \[
-\text{softmax}(q^\top k / \sqrt{d}) \approx \frac{\phi(q)^\top \phi(k)}{\sum_j \phi(q)^\top \phi(k_j)}
+\text{softmax}(q^\top k / \sqrt{d}) \approx \frac{\phi(q)^\top \phi(k)}{\sum\_j \phi(q)^\top \phi(k\_j)}
 \tag{A.1}
 \]
 
@@ -20,7 +20,7 @@
 \textbf{Proof of unbiasedness:} For $\omega \sim \mathcal{N}(0, I)$:
 
 \[
-\mathbb{E}_\omega[\phi(q)^\top \phi(k)] = \exp(q^\top k)
+\mathbb{E}\_\omega[\phi(q)^\top \phi(k)] = \exp(q^\top k)
 \tag{A.3}
 \]
 
@@ -33,7 +33,7 @@ $B_i^\top B_i = I$.
 \textbf{Why orthogonal?} Reduces variance of the estimator:
 
 \[
-\text{Var}[\phi(q)^\top \phi(k)]_{\text{orthogonal}} < \text{Var}[\phi(q)^\top \phi(k)]_{\text{i.i.d.}}
+\text{Var}[\phi(q)^\top \phi(k)]\_{\text{orthogonal}} \textless{} \text{Var}[\phi(q)^\top \phi(k)]\_{\text{i.i.d.}}
 \tag{A.4}
 \]
 
@@ -57,12 +57,12 @@ the FP16 range.
 For chunk $c$, start position $s_c$:
 
 \[
-\text{intra}_i = \sum_{j \in \text{chunk}_c, j \leq i} \phi(q_i)^\top \phi(k_j) v_j
+\text{intra}\_i = \sum\_{j \in \text{chunk}\_c, j \leq i} \phi(q\_i)^\top \phi(k\_j) v\_j
 \tag{A.6}
 \]
 
 \[
-\text{inter}_i = \phi(q_i)^\top S_{c-1}
+\text{inter}\_i = \phi(q\_i)^\top S\_{c-1}
 \tag{A.7}
 \]
 
@@ -95,7 +95,7 @@ Linear in $L$.
 Choromanski et al. (2021) bound:
 
 \[
-\left|\text{Attn}_{\text{FAVOR+}} - \text{Attn}_{\text{softmax}}\right| \leq C \cdot \frac{\|V\|_\infty \cdot e^{\|\omega\|}}{\sqrt{F}}
+\left|\text{Attn}\_{\text{FAVOR+}} - \text{Attn}\_{\text{softmax}}\right| \leq C \cdot \frac{\|V\|\_\infty \cdot e^{\|\omega\|}}{\sqrt{F}}
 \tag{A.8}
 \]
 

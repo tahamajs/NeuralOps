@@ -49,7 +49,7 @@ are useful even when parameter count is roughly preserved.
 HGRN-2 (Qin et al., 2024) is an element-wise recurrence:
 
 \[
-s_t = \alpha_t \odot s_{t-1} + (1 - \alpha_t) \odot u_t
+s\_t = \alpha\_t \odot s\_{t-1} + (1 - \alpha\_t) \odot u\_t
 \tag{1.1}
 \]
 
@@ -62,7 +62,7 @@ candidate update. HGRN-2 is efficient and stable, but its state is
 Gated DeltaNet maintains a \textbf{matrix state} $S_t \in \mathbb{R}^{d \times d}$:
 
 \[
-S_t = S_{t-1} + \beta_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = S\_{t-1} + \beta\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{1.2}
 \]
 
@@ -75,8 +75,8 @@ compute per step.
 The two branches are combined via a \textbf{token-level gate}:
 
 \[
-Y = \gamma \odot Y_\text{HGRN} + (1 - \gamma) \odot Y_\text{DeltaNet}, \quad
-\gamma = \sigma(W_g X)
+Y = \gamma \odot Y\_\text{HGRN} + (1 - \gamma) \odot Y\_\text{DeltaNet}, \quad
+\gamma = \sigma(W\_g X)
 \tag{1.3}
 \]
 

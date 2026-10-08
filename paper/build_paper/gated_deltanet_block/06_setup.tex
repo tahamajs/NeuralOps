@@ -97,7 +97,7 @@ It is trained directly (all parameters have \texttt{requires\_grad=True}).
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,14 +123,14 @@ PyTorch & 2.1.2 \\
 
 \begin{lstlisting}
 # Path A (full attention)
-python run_all_4_gated_deltanet_block.py \
+python run\_all\_4\_gated\_deltanet\_block.py \
     --models distilbert,roberta,gpt2 \
-    --use_full_attention true
+    --use\_full\_attention true
 
 # Path B (GatedDeltaNet)
-python run_all_4_gated_deltanet_block.py \
+python run\_all\_4\_gated\_deltanet\_block.py \
     --models distilbert,roberta,gpt2 \
-    --use_full_attention false
+    --use\_full\_attention false
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -142,10 +142,10 @@ Single seed (42).
 To verify weight transfer, add logging:
 
 \begin{lstlisting}
-# In copy_weights:
-logger.info(f"Q/K/V concat shape: {qkv_w.shape}")
-logger.info(f"Target in_proj_weight shape: {self.attn.in_proj_weight.shape}")
-logger.info(f"Match: {qkv_w.shape == self.attn.in_proj_weight.shape}")
+# In copy\_weights:
+logger.info(f"Q/K/V concat shape: {qkv\_w.shape}")
+logger.info(f"Target in\_proj\_weight shape: {self.attn.in\_proj\_weight.shape}")
+logger.info(f"Match: {qkv\_w.shape == self.attn.in\_proj\_weight.shape}")
 \end{lstlisting}
 
 \subsection{Baselines}

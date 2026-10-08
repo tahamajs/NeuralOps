@@ -5,14 +5,14 @@
 Standard softmax attention:
 
 \[
-\text{Attn}(Q, K, V) = \frac{\exp(QK^\top / \sqrt{d_h}) V}{\exp(QK^\top / \sqrt{d_h}) \mathbf{1}}
+\text{Attn}(Q, K, V) = \frac{\exp(QK^\top / \sqrt{d\_h}) V}{\exp(QK^\top / \sqrt{d\_h}) \mathbf{1}}
 \tag{3.1}
 \]
 
 If $\kappa(q, k) = \phi(q)^\top \phi(k)$:
 
 \[
-\text{Attn}(Q, K, V)_i \approx \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(Q, K, V)\_i \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.2}
 \]
 
@@ -23,14 +23,14 @@ Complexity: $\mathcal{O}(L F d_h)$.
 For the Gaussian kernel $\kappa(x - y) = \exp(-\|x - y\|^2 / 2)$:
 
 \[
-\kappa(x - y) = \mathbb{E}_{\omega \sim \mathcal{N}(0, I)}[\cos(\omega^\top (x - y))]
+\kappa(x - y) = \mathbb{E}\_{\omega \sim \mathcal{N}(0, I)}[\cos(\omega^\top (x - y))]
 \tag{3.3}
 \]
 
 Estimator with $F$ frequencies:
 
 \[
-\hat{\kappa}(x - y) = \frac{1}{F} \sum_{i=1}^F [\cos(\omega_i^\top x)\cos(\omega_i^\top y) + \sin(\omega_i^\top x)\sin(\omega_i^\top y)]
+\hat{\kappa}(x - y) = \frac{1}{F} \sum\_{i=1}^F [\cos(\omega\_i^\top x)\cos(\omega\_i^\top y) + \sin(\omega\_i^\top x)\sin(\omega\_i^\top y)]
 \tag{3.4}
 \]
 
@@ -41,14 +41,14 @@ Feature map: $\phi(x) = \frac{1}{\sqrt{F}} [\cos(xW) \| \sin(xW)]$.
 Given a set of $L$ token features $\{\phi(k_i)\}$ and a scorer $s_\theta$:
 
 \[
-\mathcal{S}_\text{land} = \text{TopK}(\{s_\theta(\phi(k_i))\}, L_\text{max})
+\mathcal{S}\_\text{land} = \text{TopK}(\{s\_\theta(\phi(k\_i))\}, L\_\text{max})
 \tag{3.5}
 \]
 
 The landmark features $\phi(K)_\text{land}$ replace the full aggregate:
 
 \[
-\text{Attn}_\text{land}(q_i) = \frac{\phi(q_i)^\top \phi(K_\text{land})^\top V_\text{land}}{\phi(q_i)^\top \phi(K_\text{land})^\top \mathbf{1}}
+\text{Attn}\_\text{land}(q\_i) = \frac{\phi(q\_i)^\top \phi(K\_\text{land})^\top V\_\text{land}}{\phi(q\_i)^\top \phi(K\_\text{land})^\top \mathbf{1}}
 \tag{3.6}
 \]
 
@@ -60,7 +60,7 @@ attention.
 A variant of softmax that handles masked rows:
 
 \[
-\text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
+\text{softpick}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
 \tag{3.7}
 \]
 
@@ -78,7 +78,7 @@ masked.
 For window size $W$, each query attends to positions $[i - W/2, i + W/2]$:
 
 \[
-\text{Local}_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\text{Local}\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
 \tag{3.8}
 \]
 
@@ -87,7 +87,7 @@ For window size $W$, each query attends to positions $[i - W/2, i + W/2]$:
 A per-head learnable scalar $g_h \in (0, 1)$:
 
 \[
-\text{out} = (1 - g_h) \cdot \text{Local} + g_h \cdot \text{Global}
+\text{out} = (1 - g\_h) \cdot \text{Local} + g\_h \cdot \text{Global}
 \tag{3.9}
 \]
 

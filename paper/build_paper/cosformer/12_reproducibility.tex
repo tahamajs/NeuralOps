@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -14,19 +14,19 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py \
+python run\_all\_4\_cosformer.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-cosformer",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-cosformer",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -36,29 +36,29 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_cosformer.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Chunk size)}
 
 \begin{lstlisting}
 for cs in 16 32 64 128; do
-    python run_all_4_cosformer.py --chunk_size $cs --output_suffix cs$cs
+    python run\_all\_4\_cosformer.py --chunk\_size $cs --output_suffix cs$cs
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Activation)}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py --act_fun relu --output_suffix relu
-python run_all_4_cosformer.py --act_fun softplus --output_suffix softplus
+python run\_all\_4\_cosformer.py --act\_fun relu --output\_suffix relu
+python run\_all\_4\_cosformer.py --act\_fun softplus --output\_suffix softplus
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -84,19 +84,19 @@ GPT-2 & 70.18\% $\pm$ 2\% & PASS \\
 \begin{lstlisting}
 import math
 N = 128
-max_L = 512
-theta = [math.pi * i / (2 * max_L) for i in range(N)]
+max\_L = 512
+theta = [math.pi * i / (2 * max\_L) for i in range(N)]
 assert theta[0] == 0.0
-assert theta[N-1] < math.pi / 2
+assert theta[N-1] \textless{} math.pi / 2
 \end{lstlisting}
 
 \subsubsection{Verify Causality}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{Known Issues}

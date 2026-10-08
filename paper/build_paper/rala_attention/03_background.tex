@@ -6,14 +6,14 @@
 Standard softmax attention:
 
 \[
-\text{Attn}(q_i) = \frac{\sum_j e^{q_i^\top k_j} v_j}{\sum_j e^{q_i^\top k_j}}
+\text{Attn}(q\_i) = \frac{\sum\_j e^{q\_i^\top k\_j} v\_j}{\sum\_j e^{q\_i^\top k\_j}}
 \tag{3.1}
 \]
 
 Linear attention replaces $e^{q^\top k}$ with $\phi(q)^\top \phi(k)$:
 
 \[
-\text{LinAttn}(q_i) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{LinAttn}(q\_i) = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.2}
 \]
 
@@ -29,15 +29,15 @@ $\mathcal{O}(L m d)$. Total: $\mathcal{O}(L m d)$, linear in $L$.
 For autoregressive models, the sums must be \textit{prefix} sums:
 
 \[
-S_i = \sum_{j \le i} \phi(k_j) v_j^\top, \quad
-z_i = \sum_{j \le i} \phi(k_j)
+S\_i = \sum\_{j \le i} \phi(k\_j) v\_j^\top, \quad
+z\_i = \sum\_{j \le i} \phi(k\_j)
 \tag{3.3}
 \]
 
 The output is:
 
 \[
-y_i = \frac{\phi(q_i)^\top S_i}{\phi(q_i)^\top z_i}
+y\_i = \frac{\phi(q\_i)^\top S\_i}{\phi(q\_i)^\top z\_i}
 \tag{3.4}
 \]
 
@@ -73,7 +73,7 @@ Given a matrix $M \in \mathbb{R}^{d \times d}$, its best rank-$r$
 approximation is:
 
 \[
-M_r = U_r \Sigma_r V_r^\top
+M\_r = U\_r \Sigma\_r V\_r^\top
 \tag{3.6}
 \]
 
@@ -90,7 +90,7 @@ LoRA (Hu et al., 2021) adds a rank-$r_{\text{L}}$ update to a frozen
 weight:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha_{\text{L}}}{r_{\text{L}}} B A
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha\_{\text{L}}}{r\_{\text{L}}} B A
 \tag{3.7}
 \]
 

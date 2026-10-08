@@ -36,10 +36,10 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 \toprule
 \textbf{Rank bucket} & \textbf{Count} & \textbf{Notable layers} \\
 \midrule
-< 32 & 8 \& V (all layers) \\
+\textless{} 32 & 8 \& V (all layers) \\
 32--64 & 6 \& O, V (later) \\
 64--128 & 8 \& Q, K \\
-> 128 & 2 \& Q, K (middle) \\
+\textgreater{} 128 & 2 \& Q, K (middle) \\
 \bottomrule
 \end{tabular}
 \end{table}

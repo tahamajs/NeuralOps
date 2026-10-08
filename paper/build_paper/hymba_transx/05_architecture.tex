@@ -25,35 +25,35 @@ Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
 from framework.core.adapters import UniversalAdapter
 adapter = UniversalAdapter()
 for k in ["q", "k", "v", "o"]:
-    w, b = adapter.get_weight_bias(src, k)
+    w, b = adapter.get\_weight\_bias(src, k)
 \end{lstlisting}
 
 \subsubsection{GPT-2 Fused Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight  # (in, out) for Conv1D
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight  # (in, out) for Conv1D
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
 s = src.self
-q_w = s.query.weight
-k_w = s.key.weight
-v_w = s.value.weight
-o_w = src.output.dense.weight
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{DistilBERT Flat}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{Soft Fallback on Missing Weights}
@@ -61,10 +61,10 @@ o_w = src.out_lin.weight
 Unlike SOA Fused Attention, we do \textbf{not} raise on missing weights. Instead:
 
 \begin{lstlisting}
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
-if missing_after:
-    logger.warning(f"Missing {missing_after}, keeping Kaiming defaults.")
+missing\_after = [k for k, (w, \_) in extracted.items() 
+                 if w is None and (k != "o" or not self.is\_nested\_encoder)]
+if missing\_after:
+    logger.warning(f"Missing {missing\_after}, keeping Kaiming defaults.")
 \end{lstlisting}
 
 The projection retains its Kaiming initialization. This makes HymbaTransX 
@@ -76,8 +76,8 @@ $W_{Q_2}, W_{K_2}$ are initialized via Kaiming uniform and \textbf{never copied}
 from the pretrained model -- the parent model has no analogue.
 
 \begin{lstlisting}
-nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
-nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_q2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_k2.weight, a=math.sqrt(5))
 \end{lstlisting}
 
 \subsection{HeadRoPE Fallback}
@@ -86,9 +86,9 @@ If the parent model provides \texttt{position\_embeddings} (external RoPE), we u
 them directly. Otherwise, we apply \texttt{HeadRoPE}:
 
 \begin{lstlisting}
-if position_embeddings is not None:
-    cos, sin = position_embeddings
-    q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
 else:
     q1 = self.rope(q1)
     k1 = self.rope(k1)
@@ -103,15 +103,15 @@ else:
 Input:  model M, config c
 Output: M with attention replaced
 
-1: layer_list $\leftarrow$ find_transformer_layers(M)
-2: for i, layer in enumerate(layer_list):
-3:     src $\leftarrow$ extract_attention(layer)
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for i, layer in enumerate(layer\_list):
+3:     src $\leftarrow$ extract\_attention(layer)
 4:     if src is None: continue
 5:     try:
-6:         new $\leftarrow$ HymbaTransXBlock(c, old_attn=src)
+6:         new $\leftarrow$ HymbaTransXBlock(c, old\_attn=src)
 7:         replace(layer, new)
 8:     except Exception:
-9:         log_error("Layer {i} failed")
+9:         log\_error("Layer {i} failed")
 10: return M
 \end{lstlisting}
 
@@ -123,10 +123,10 @@ raw context, and the outer \texttt{output.dense} applies the projection.
 \subsection{Causality Preservation}
 
 \begin{lstlisting}
-if self.is_decoder:
-    causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
-    scores1 = scores1.masked_fill(~causal_mask, -1e4)
-    scores2 = scores2.masked_fill(~causal_mask, -1e4)
+if self.is\_decoder:
+    causal\_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+    scores1 = scores1.masked\_fill(~causal\_mask, -1e4)
+    scores2 = scores2.masked\_fill(~causal\_mask, -1e4)
 \end{lstlisting}
 
 The mask applies to \textbf{both} attention maps before the subtraction.
@@ -139,12 +139,12 @@ decoder-only, not encoder-decoder.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("hymba_transx")
+@ATTENTION\_REGISTRY.register("hymba\_transx")
 class HymbaTransXBlock(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("hymba_transx_inject")
-def inject_hymba_transx(...):
+@ATTENTION\_REGISTRY.register("hymba\_transx\_inject")
+def inject\_hymba\_transx(...):
     ...
 \end{lstlisting}
 \begin{lstlisting}
@@ -156,6 +156,6 @@ def inject_hymba_transx(...):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of hymba\_transx.}
-\label{fig:arch_hymba-transx}
+\label{fig:arch\_hymba-transx}
 \end{figure}
 

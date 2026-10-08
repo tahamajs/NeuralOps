@@ -60,7 +60,7 @@ CHELA-SLAY computes two parallel streams:
 Standard softmax attention:
 
 \[
-O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 This is our anchor -- it preserves pretrained behavior.
@@ -71,8 +71,8 @@ We spherical-normalize Q, K, apply a Yat-Kernel feature map, and compute
 linear attention:
 
 \[
-\hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad
-\hat{K} = \frac{K}{\|K\|_2 + \epsilon}
+\hat{Q} = \frac{Q}{\|Q\|\_2 + \epsilon}, \quad
+\hat{K} = \frac{K}{\|K\|\_2 + \epsilon}
 \]
 
 \[
@@ -88,8 +88,8 @@ O^\text{linear} = \frac{\phi(\hat{Q}) \left[ \phi(\hat{K})^\top V \right]}{\phi(
 A learnable per-head, per-token gate blends the two streams:
 
 \[
-g = \sigma(W_g X + b_g), \quad
-\text{Output} = W_O \left( g \odot O^\text{dense} + (1 - g) \odot O^\text{linear} \right)
+g = \sigma(W\_g X + b\_g), \quad
+\text{Output} = W\_O \left( g \odot O^\text{dense} + (1 - g) \odot O^\text{linear} \right)
 \]
 
 We initialize $W_g = 0$ and $b_g = 5.0$, so 

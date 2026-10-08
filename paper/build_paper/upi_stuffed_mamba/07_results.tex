@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_upistuffedmamba} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_upistuffedmamba} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -11,19 +11,19 @@ Table~\ref{tab:results_acc_upistuffedmamba} details empirical evaluation metrics
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Upi Stuffed Mamba} & \textbf{50.92\%} & -40.02\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 581.4 MB & 28.4 & -- \\
+DistilBERT & \textbf{Upi Stuffed Mamba} & \textbf{50.92\%} & -40.02\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 581.4 MB & 28.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Upi Stuffed Mamba} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.89$\times$} & 923.2 MB & 511.5 & -- \\
+RoBERTa & \textbf{Upi Stuffed Mamba} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.89$\times$} & 923.2 MB & 511.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Upi Stuffed Mamba} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6728 & 0 & \textbf{0.94$\times$} & 816.1 MB & 32.1 & -- \\
+GPT-2 & \textbf{Upi Stuffed Mamba} & \textbf{51.03\%} & -6.88\% & PASS\_LOW & 0.6728 & 0 & \textbf{0.94$\times$} & 816.1 MB & 32.1 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_upistuffedmamba} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_upistuffedmamba} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_upistuffedmamba} documents parameter compression f
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{upistuffedmamba}.}
-\label{tab:results_params_upistuffedmamba}
+\label{tab:results\_params\_upistuffedmamba}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_upistuffedmamba} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_upistuffedmamba} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_upistuffedmamba} presents memory profiling and execu
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{upistuffedmamba}.}
-\label{tab:results_vram_upistuffedmamba}
+\label{tab:results\_vram\_upistuffedmamba}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/upi_stuffed_mamba_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{upi_stuffed_mamba}.}
-\label{fig:results_upi_stuffed_mamba}
+\includegraphics[width=0.85\linewidth]{figures/upi\_stuffed\_mamba\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{upi\_stuffed\_mamba}.}
+\label{fig:results\_upi\_stuffed\_mamba}
 \end{figure}

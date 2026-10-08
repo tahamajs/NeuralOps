@@ -97,7 +97,7 @@ The condition number of $F_2$ can be large when landmarks are
 insufficient. We regularize via:
 
 \[
-F_2^{-1} = \text{pinv}(F_2, \text{rcond}=10^{-4})
+F\_2^{-1} = \text{pinv}(F\_2, \text{rcond}=10^{-4})
 \]
 
 The \texttt{rcond} threshold zeros out singular values below $10^{-4} \sigma_\text{max}$.

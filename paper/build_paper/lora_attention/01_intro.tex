@@ -14,8 +14,8 @@ LoRA (Hu et al., 2021) reduces this dramatically by freezing the base model
 and training only rank-$r_L$ adapters:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad
-B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A, \quad
+B \in \mathbb{R}^{d \times r\_L}, \quad A \in \mathbb{R}^{r\_L \times k}
 \tag{1.1}
 \]
 
@@ -34,7 +34,7 @@ $\{W_Q, W_K, W_V, W_O\}$, we seek a parameter-efficient adaptation mechanism
 $\mathcal{A}'$ such that:
 
 \[
-\text{Params}_\text{trainable}(\mathcal{A}') \ll \text{Params}(\mathcal{M})
+\text{Params}\_\text{trainable}(\mathcal{A}') \ll \text{Params}(\mathcal{M})
 \tag{1.2}
 \]
 

@@ -7,7 +7,7 @@ The softmax attention function (Vaswani et al., 2017) is the fundamental
 primitive of transformer architecture:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -40,7 +40,7 @@ Peters et al. (2019) introduce \textbf{$\alpha$-entmax}, a family of activation 
 parameterized by $\alpha \in [1, 2]$:
 
 \[
-\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
 \tag{1.2}
 \]
 

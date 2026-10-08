@@ -5,7 +5,7 @@
 For $W \in \mathbb{R}^{m \times n}$:
 
 \[
-W = U \Sigma V^\top \approx U_r \Sigma_r V_r^\top
+W = U \Sigma V^\top \approx U\_r \Sigma\_r V\_r^\top
 \tag{3.1}
 \]
 
@@ -14,7 +14,7 @@ with error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 \textbf{Factorization.} We use:
 
 \[
-U_r = U_{:, :r} \Sigma_r^{1/2}, \quad V_r = \Sigma_r^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_r^{1/2}, \quad V\_r = \Sigma\_r^{1/2} V\_{:r, :}^\top
 \tag{3.2}
 \]
 
@@ -25,7 +25,7 @@ for balanced magnitudes.
 \textbf{LoRA} (Hu et al., 2021) parameterizes a rank-$r_L$ update:
 
 \[
-\Delta W = B A, \quad A \in \mathbb{R}^{r_L \times d}, \quad B \in \mathbb{R}^{d \times r_L}
+\Delta W = B A, \quad A \in \mathbb{R}^{r\_L \times d}, \quad B \in \mathbb{R}^{d \times r\_L}
 \tag{3.3}
 \]
 
@@ -37,7 +37,7 @@ with $B = 0$ at init.
 with a tractable $q_\phi(z)$. The ELBO is:
 
 \[
-\mathcal{L} = \mathbb{E}_{q}[\log p(x | z)] - \text{KL}(q(z) \| p(z))
+\mathcal{L} = \mathbb{E}\_{q}[\log p(x | z)] - \text{KL}(q(z) \| p(z))
 \tag{3.4}
 \]
 
@@ -55,7 +55,7 @@ allows gradient flow to $\mu, \sigma$.
 Standard:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d\_h}}\right) V
 \tag{3.6}
 \]
 

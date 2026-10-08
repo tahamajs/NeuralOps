@@ -31,7 +31,7 @@ components:
         +-----------+                 |
         | Centroid- |                 |
         | to-Key    |                 |
-        | $\to$ V_cent  |                 |
+        | $\to$ V\_cent  |                 |
         +-----+-----+                 |
               |                       |
                                       |
@@ -77,14 +77,14 @@ We run \textbf{3 iterations} of standard Lloyd's algorithm:
 
 \textbf{Assignment:}
 \[
-a_{b,h,i} = \arg\min_{k \in [K]} \|Q_{b,h,i} - C_{b,h,k}\|_2^2
+a\_{b,h,i} = \arg\min\_{k \in [K]} \|Q\_{b,h,i} - C\_{b,h,k}\|\_2^2
 \]
 
 Implemented via \texttt{torch.cdist} on FP32 for numerical stability.
 
 \textbf{Update:}
 \[
-C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
+C\_{b,h,k} = \frac{\sum\_{i: a\_{b,h,i} = k} Q\_{b,h,i}}{\sum\_{i: a\_{b,h,i} = k} 1}
 \]
 
 Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
@@ -105,15 +105,15 @@ Empirically, 3 iterations are enough for attention clustering:
 For each centroid $C_k$, compute attention to all keys:
 
 \[
-\text{scores}_{b,h,k,j} = \frac{C_{b,h,k} \cdot K_{b,h,j}}{\sqrt{d_h}}
+\text{scores}\_{b,h,k,j} = \frac{C\_{b,h,k} \cdot K\_{b,h,j}}{\sqrt{d\_h}}
 \]
 
 \[
-\alpha_{b,h,k,j} = \text{softmax}_j(\text{scores}_{b,h,k,j})
+\alpha\_{b,h,k,j} = \text{softmax}\_j(\text{scores}\_{b,h,k,j})
 \]
 
 \[
-V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
+V\_{\text{cent}, b,h,k} = \sum\_j \alpha\_{b,h,k,j} V\_{b,h,j}
 \]
 
 \textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ -- linear in $L$!
@@ -128,13 +128,13 @@ scores are restricted to $j \leq$ some threshold. See Section 5.4.
 Each query is assigned to centroids via soft attention:
 
 \[
-\text{assign}_{b,h,i,k} = \text{softmax}_k\!\left(\frac{Q_{b,h,i} \cdot C_{b,h,k}}{\sqrt{d_h} \cdot \tau}\right)
+\text{assign}\_{b,h,i,k} = \text{softmax}\_k\!\left(\frac{Q\_{b,h,i} \cdot C\_{b,h,k}}{\sqrt{d\_h} \cdot \tau}\right)
 \]
 
 with learnable temperature $\tau$. The global context is:
 
 \[
-\text{Global}_{b,h,i} = \sum_k \text{assign}_{b,h,i,k} \cdot V_{\text{cent}, b,h,k}
+\text{Global}\_{b,h,i} = \sum\_k \text{assign}\_{b,h,i,k} \cdot V\_{\text{cent}, b,h,k}
 \]
 
 \textbf{Why temperature?} Small $\tau$ sharpens the assignment toward the 
@@ -152,11 +152,11 @@ Clustering captures global structure but can miss fine-grained local
 dependencies. We add a sliding-window attention branch:
 
 \[
-\text{scores}^\text{local}_{b,h,i,j} = \frac{Q_{b,h,i} \cdot K_{b,h,j}}{\sqrt{d_h}} \cdot \mathbf{1}[|i - j| \leq W]
+\text{scores}^\text{local}\_{b,h,i,j} = \frac{Q\_{b,h,i} \cdot K\_{b,h,j}}{\sqrt{d\_h}} \cdot \mathbf{1}[|i - j| \leq W]
 \]
 
 \[
-\text{Local}_{b,h,i} = \sum_{j: |i-j| \leq W} \text{softmax}_j(\text{scores}^\text{local}) \cdot V_{b,h,j}
+\text{Local}\_{b,h,i} = \sum\_{j: |i-j| \leq W} \text{softmax}\_j(\text{scores}^\text{local}) \cdot V\_{b,h,j}
 \]
 
 \textbf{Complexity.} $\mathcal{O}(L \cdot W \cdot d_h)$.
@@ -173,51 +173,51 @@ where $\alpha \in \mathbb{R}$ is a \textbf{learnable scalar} initialized to 0
 (so $\sigma(0) = 0.5$, giving 50/50 blend at start).
 
 \textbf{Why sigmoid?} Enforces $\alpha_\text{blend} \in (0, 1)$, avoiding 
-negative or >1 weights.
+negative or \textgreater{}1 weights.
 
 \subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
-Output: Y, attn_weights
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
+Output: Y, attn\_weights
 
- 1: Q $\leftarrow$ LoRALinear_Q(X)                         Frozen base + LoRA
- 2: K $\leftarrow$ LoRALinear_K(X)
- 3: V $\leftarrow$ LoRALinear_V(X)
+ 1: Q $\leftarrow$ LoRALinear\_Q(X)                         Frozen base + LoRA
+ 2: K $\leftarrow$ LoRALinear\_K(X)
+ 3: V $\leftarrow$ LoRALinear\_V(X)
  4:
- 5: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
- 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 5: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+ 6: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
  7:
  8: if decoder:                                   Exact causal path
- 9:     S $\leftarrow$ QK^T / $\sqrt{}$d_h
-10:     S $\leftarrow$ causal_mask(S)
+ 9:     S $\leftarrow$ QK^T / $\sqrt{}$d\_h
+10:     S $\leftarrow$ causal\_mask(S)
 11:     A $\leftarrow$ softmax(S)
-12:     Y_ctx $\leftarrow$ A @ V
+12:     Y\_ctx $\leftarrow$ A @ V
 13: else:                                          Cluster path
 14:     C, ids, counts $\leftarrow$ kmeans(Q, K, iters=3)     Cluster queries
-15:     S_cent $\leftarrow$ C K^T / $\sqrt{}$d_h
-16:     A_cent $\leftarrow$ softmax(S_cent)
-17:     V_cent $\leftarrow$ A_cent @ V                         Centroid contexts
-18:     S_assign $\leftarrow$ Q C^T / ($\sqrt{}$d_h   $\tau$)
-19:     A_assign $\leftarrow$ softmax(S_assign)
-20:     Y_global $\leftarrow$ A_assign @ V_cent
+15:     S\_cent $\leftarrow$ C K^T / $\sqrt{}$d\_h
+16:     A\_cent $\leftarrow$ softmax(S\_cent)
+17:     V\_cent $\leftarrow$ A\_cent @ V                         Centroid contexts
+18:     S\_assign $\leftarrow$ Q C^T / ($\sqrt{}$d\_h   $\tau$)
+19:     A\_assign $\leftarrow$ softmax(S\_assign)
+20:     Y\_global $\leftarrow$ A\_assign @ V\_cent
 21:
-22:     if W > 0:
-23:         S_local $\leftarrow$ QK^T / $\sqrt{}$d_h
-24:         S_local $\leftarrow$ window_mask(S_local, W)
-25:         A_local $\leftarrow$ softmax(S_local)
-26:         Y_local $\leftarrow$ A_local @ V
-27:         $\alpha$ $\leftarrow$ $\sigma$(learned_scalar)
-28:         Y_ctx $\leftarrow$ (1-$\alpha$) Y_global + $\alpha$ Y_local
+22:     if W \textgreater{} 0:
+23:         S\_local $\leftarrow$ QK^T / $\sqrt{}$d\_h
+24:         S\_local $\leftarrow$ window\_mask(S\_local, W)
+25:         A\_local $\leftarrow$ softmax(S\_local)
+26:         Y\_local $\leftarrow$ A\_local @ V
+27:         $\alpha$ $\leftarrow$ $\sigma$(learned\_scalar)
+28:         Y\_ctx $\leftarrow$ (1-$\alpha$) Y\_global + $\alpha$ Y\_local
 29:     else:
-30:         Y_ctx $\leftarrow$ Y_global
+30:         Y\_ctx $\leftarrow$ Y\_global
 31:
-32: Y $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
-33: if nested: Y_out $\leftarrow$ Y
-34: else: Y_out $\leftarrow$ LoRALinear_O(Y)
+32: Y $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+33: if nested: Y\_out $\leftarrow$ Y
+34: else: Y\_out $\leftarrow$ LoRALinear\_O(Y)
 35:
-36: return Y_out
+36: return Y\_out
 \end{lstlisting}
 
 \subsection{Complexity Analysis}
@@ -316,7 +316,7 @@ grouping tokens. The approximation error is bounded by the K-means
 distortion:
 
 \[
-\epsilon \leq \sum_i \|Q_i - C_{a_i}\|_2^2
+\epsilon \leq \sum\_i \|Q\_i - C\_{a\_i}\|\_2^2
 \]
 
 See Appendix A.5 for details.

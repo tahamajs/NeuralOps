@@ -61,7 +61,7 @@ inside attention:
 \]
 
 \[
-\text{final} = W_O \left( \text{attn\_out} + \gamma \cdot \text{MoE\_out} \right)
+\text{final} = W\_O \left( \text{attn\_out} + \gamma \cdot \text{MoE\_out} \right)
 \tag{1.3}
 \]
 
@@ -74,7 +74,7 @@ where $\gamma = \sigma(b_g)$ and $b_g = 0.1$ initially.
 Every expert's final projection is zero-initialized:
 
 \[
-W_2^{(e)} = 0 \implies \text{MoE\_out} = 0 \text{ at step 0}
+W\_2^{(e)} = 0 \implies \text{MoE\_out} = 0 \text{ at step 0}
 \tag{1.4}
 \]
 
@@ -90,7 +90,7 @@ W_2^{(e)} = 0 \implies \text{MoE\_out} = 0 \text{ at step 0}
 Each expert selects $k = \lceil T / E \rceil$ tokens:
 
 \[
-\text{Top-}k_e = \text{TopK}\!\left(\text{softmax}(\text{logits})[:, e], k\right)
+\text{Top-}k\_e = \text{TopK}\!\left(\text{softmax}(\text{logits})[:, e], k\right)
 \tag{1.6}
 \]
 

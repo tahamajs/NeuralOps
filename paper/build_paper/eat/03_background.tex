@@ -6,14 +6,14 @@
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{3.1}
 \]
 
 with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 \[
-\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \tag{3.2}
 \]
 
@@ -22,7 +22,7 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 For GQA with $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
 \tag{3.3}
 \]
 
@@ -33,7 +33,7 @@ with $K, V$ repeated $H / H_{kv}$ times before attention.
 RoPE (Su et al., 2021) rotates Q, K by position-dependent angles:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.4}
 \]
 
@@ -42,7 +42,7 @@ RoPE (Su et al., 2021) rotates Q, K by position-dependent angles:
 LoRA (Hu et al., 2021) freezes $W$ and adds a low-rank update:
 
 \[
-W_\text{eff} = W + \frac{\alpha}{r} B A
+W\_\text{eff} = W + \frac{\alpha}{r} B A
 \tag{3.5}
 \]
 

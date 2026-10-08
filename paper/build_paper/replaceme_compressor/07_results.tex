@@ -20,11 +20,11 @@ GPT-2 & \textbf{Replaceme} & \textbf{56.77\%} & -4.01\% & PASS & 0.6808 & 0 & \t
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}
-Table~\ref{tab:params_replaceme_compressor} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
+Table~\ref{tab:params\_replaceme\_compressor} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
 
 \begin{table*}[t]
 \centering
@@ -39,7 +39,7 @@ AG News & 66,956,548 & 53,965,060 & -12,991,488 (-19.40\%) & 593,668 & 0 & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Parameter allocation and layer decomposition for \texttt{replaceme\_compressor}.}
-\label{tab:params_replaceme_compressor}
+\label{tab:params\_replaceme\_compressor}
 \end{table*}
 
 \subsection{Inference Efficiency and Memory Footprint}
@@ -48,7 +48,7 @@ Execution profiling demonstrates that \texttt{replaceme\_compressor} executes wi
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/replaceme_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{replaceme_compressor}.}
-\label{fig:results_replaceme_compressor}
+\includegraphics[width=0.85\linewidth]{figures/replaceme\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{replaceme\_compressor}.}
+\label{fig:results\_replaceme\_compressor}
 \end{figure}

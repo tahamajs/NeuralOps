@@ -44,7 +44,7 @@ Gated DeltaNet has four components:
                                    |
                                     
                         +----------------------+
-                        |  out_proj            |
+                        |  out\_proj            |
                         +----------------------+
 \end{lstlisting}
 
@@ -54,10 +54,10 @@ Given hidden states $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
 \begin{aligned}
-Q &= X W_Q \in \mathbb{R}^{B \times L \times H d_h} \\
-K &= X W_K \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
-V &= X W_V \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
-Z &= X W_Z \in \mathbb{R}^{B \times L \times H d_h}
+Q &= X W\_Q \in \mathbb{R}^{B \times L \times H d\_h} \\
+K &= X W\_K \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+V &= X W\_V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+Z &= X W\_Z \in \mathbb{R}^{B \times L \times H d\_h}
 \end{aligned}
 \tag{4.1}
 \]
@@ -70,8 +70,8 @@ We initialize it from $W_Q$ (see Section 5.3).
 Per-head scalars are computed from the input:
 
 \[
-\alpha_t = \sigma(W_\alpha x_t + b_\alpha), \quad
-\beta_t = \sigma(W_\beta x_t + b_\beta)
+\alpha\_t = \sigma(W\_\alpha x\_t + b\_\alpha), \quad
+\beta\_t = \sigma(W\_\beta x\_t + b\_\beta)
 \tag{4.2}
 \]
 
@@ -87,7 +87,7 @@ The state $S \in \mathbb{R}^{d_h \times d_h}$ is updated as:
 
 \[
 \boxed{
-S_t = \beta_t S_{t-1} + \alpha_t \cdot \frac{k_t^\top (v_t - k_t S_{t-1})}{1 + \|k_t\|^2}
+S\_t = \beta\_t S\_{t-1} + \alpha\_t \cdot \frac{k\_t^\top (v\_t - k\_t S\_{t-1})}{1 + \|k\_t\|^2}
 }
 \tag{4.3}
 \]
@@ -104,7 +104,7 @@ where:
 \textbf{Output:}
 
 \[
-y_t = q_t S_t
+y\_t = q\_t S\_t
 \tag{4.4}
 \]
 
@@ -115,12 +115,12 @@ where $q_t$ is the normalized query.
 For encoder models, we compute two independent scans:
 
 \[
-y_\text{fwd} = \text{scan}(Q, K, V, \alpha, \beta)
+y\_\text{fwd} = \text{scan}(Q, K, V, \alpha, \beta)
 \tag{4.5}
 \]
 
 \[
-y_\text{bwd} = \text{flip}(\text{scan}(\text{flip}(Q), \text{flip}(K), \text{flip}(V), 
+y\_\text{bwd} = \text{flip}(\text{scan}(\text{flip}(Q), \text{flip}(K), \text{flip}(V), 
 \text{flip}(\alpha), \text{flip}(\beta)))
 \tag{4.6}
 \]
@@ -128,7 +128,7 @@ y_\text{bwd} = \text{flip}(\text{scan}(\text{flip}(Q), \text{flip}(K), \text{fli
 The final output is the average:
 
 \[
-y = \frac{1}{2}(y_\text{fwd} + y_\text{bwd})
+y = \frac{1}{2}(y\_\text{fwd} + y\_\text{bwd})
 \tag{4.7}
 \]
 
@@ -137,7 +137,7 @@ y = \frac{1}{2}(y_\text{fwd} + y_\text{bwd})
 For decoder models, we use only the forward scan:
 
 \[
-y = y_\text{fwd}
+y = y\_\text{fwd}
 \tag{4.8}
 \]
 
@@ -166,7 +166,7 @@ iterations, where $C$ is the chunk size.
 After the recurrence, we apply gated linear unit with SiLU:
 
 \[
-y_\text{final} = y \odot \text{SiLU}(Z)
+y\_\text{final} = y \odot \text{SiLU}(Z)
 \tag{4.9}
 \]
 
@@ -177,29 +177,29 @@ beyond $W_Z$.
 
 \textbf{Algorithm 1:} Gated DeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, chunk\_size C
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V;  Z $\leftarrow$ X W_Z
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V;  Z $\leftarrow$ X W\_Z
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 3: if GQA:  (K, V) $\leftarrow$ repeat_kv(K, V)
+ 3: if GQA:  (K, V) $\leftarrow$ repeat\_kv(K, V)
  4: Q $\leftarrow$ normalize(Q);  K $\leftarrow$ normalize(K) / sqrt(d)
- 5: $\beta$ $\leftarrow$ sigmoid(W_$\beta$ X);  $\alpha$ $\leftarrow$ sigmoid(W_$\alpha$ X)     [B, H, L]
+ 5: $\beta$ $\leftarrow$ sigmoid(W\_$\beta$ X);  $\alpha$ $\leftarrow$ sigmoid(W\_$\alpha$ X)     [B, H, L]
  6:
  7: # Forward scan
- 8: y_fwd $\leftarrow$ chunked_scan(Q, K, V, $\alpha$, $\beta$, C)
+ 8: y\_fwd $\leftarrow$ chunked\_scan(Q, K, V, $\alpha$, $\beta$, C)
  9:
-10: if not is_decoder:
+10: if not is\_decoder:
 11:     # Backward scan
 12:     Q' $\leftarrow$ flip(Q); K' $\leftarrow$ flip(K); V' $\leftarrow$ flip(V)
 13:     $\alpha$' $\leftarrow$ flip($\alpha$); $\beta$' $\leftarrow$ flip($\beta$)
-14:     y_bwd $\leftarrow$ flip(chunked_scan(Q', K', V', $\alpha$', $\beta$', C))
-15:     y $\leftarrow$ 0.5 * (y_fwd + y_bwd)
+14:     y\_bwd $\leftarrow$ flip(chunked\_scan(Q', K', V', $\alpha$', $\beta$', C))
+15:     y $\leftarrow$ 0.5 * (y\_fwd + y\_bwd)
 16: else:
-17:     y $\leftarrow$ y_fwd
+17:     y $\leftarrow$ y\_fwd
 18:
 19: y $\leftarrow$ y   SiLU(Z)
-20: return out_proj(y)
+20: return out\_proj(y)
 \end{lstlisting}
 
 \subsection{Complexity Analysis}

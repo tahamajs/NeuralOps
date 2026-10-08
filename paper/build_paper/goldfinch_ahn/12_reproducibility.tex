@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -14,20 +14,20 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_goldfinch_ahn.py \
+python run\_all\_4\_goldfinch\_ahn.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --window_size 128
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --window\_size 128
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch_ahn",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch\_ahn",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -37,14 +37,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_goldfinch_ahn.py --models distilbert,roberta,gpt2
+python run\_all\_4\_goldfinch\_ahn.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Window Ablation}
 
 \begin{lstlisting}
 for W in 16 32 64 128; do
-    python run_all_4_goldfinch_ahn.py --window_size $W --output_suffix w$W
+    python run\_all\_4\_goldfinch\_ahn.py --window\_size $W --output_suffix w$W
 done
 \end{lstlisting}
 
@@ -52,7 +52,7 @@ done
 
 \begin{lstlisting}
 for b in 0.0 1.0 1.8 3.0; do
-    python run_all_4_goldfinch_ahn.py --gate_init_bias $b --output_suffix b$b
+    python run\_all\_4\_goldfinch\_ahn.py --gate\_init\_bias $b --output_suffix b$b
 done
 \end{lstlisting}
 
@@ -60,7 +60,7 @@ done
 
 \begin{lstlisting}
 for g in 0.0 1.0 2.0 5.0; do
-    python run_all_4_goldfinch_ahn.py --output_gate_init $g --output_suffix ag$g
+    python run\_all\_4\_goldfinch\_ahn.py --output\_gate\_init $g --output_suffix ag$g
 done
 \end{lstlisting}
 
@@ -68,8 +68,8 @@ done
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -98,7 +98,7 @@ L = 16
 W = 4
 idx = torch.arange(L)
 dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
-M = dist <= W
+M = dist \textless{}= W
 # Check band structure
 assert M[0, 0] == True
 assert M[0, W+1] == False
@@ -110,15 +110,15 @@ assert M[0, W+1] == False
 import torch
 alpha = torch.sigmoid(torch.tensor(2.0))
 # alpha $\approx$ 0.88
-assert 0.85 < alpha.item() < 0.90
+assert 0.85 \textless{} alpha.item() \textless{} 0.90
 \end{lstlisting}
 
 \subsubsection{Verify Gate Mean}
 
 \begin{lstlisting}
 x = torch.randn(2, 8, 768)
-gate_raw = torch.sigmoid(torch.nn.Linear(768, 12)(x))  # (2, 8, 12)
-gate = gate_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
+gate\_raw = torch.sigmoid(torch.nn.Linear(768, 12)(x))  # (2, 8, 12)
+gate = gate\_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
 # Confirm scalar per token
 assert gate.shape == (2, 8, 1)
 \end{lstlisting}

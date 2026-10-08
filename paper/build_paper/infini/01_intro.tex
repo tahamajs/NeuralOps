@@ -59,15 +59,15 @@ The local branch uses sliding-window attention, which for causal models
 combines a causal mask and a distance-band mask:
 
 \[
-\text{LocalAttn}_{ij} = \text{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}} + M_{ij}\right), \quad
-M_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+\text{LocalAttn}\_{ij} = \text{softmax}\!\left(\frac{Q\_i K\_j^\top}{\sqrt{d\_h}} + M\_{ij}\right), \quad
+M\_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
 \tag{1.2}
 \]
 
 The memory branch computes:
 
 \[
-\text{MemAttn}_i = \text{softmax}\!\left(\frac{Q_i M^\top}{\sqrt{d_h}}\right) M
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
 \tag{1.3}
 \]
 

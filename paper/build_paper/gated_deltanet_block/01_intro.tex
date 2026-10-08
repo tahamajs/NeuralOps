@@ -32,14 +32,14 @@ normalization and residual structure, rather than just the attention?
 Given a pretrained transformer block:
 
 \[
-\text{Block}_\text{pre}(X) = \text{LN}_\text{pre}(X + \text{Attn}_\text{pre}(X))
+\text{Block}\_\text{pre}(X) = \text{LN}\_\text{pre}(X + \text{Attn}\_\text{pre}(X))
 \tag{1.3}
 \]
 
 we seek a replacement block:
 
 \[
-\text{Block}_\text{new}(X) = \text{LN}_\text{new}(X + \text{Attn}_\text{new}(X))
+\text{Block}\_\text{new}(X) = \text{LN}\_\text{new}(X + \text{Attn}\_\text{new}(X))
 \tag{1.4}
 \]
 
@@ -106,5 +106,5 @@ $r$ & LoRA rank & 4.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 

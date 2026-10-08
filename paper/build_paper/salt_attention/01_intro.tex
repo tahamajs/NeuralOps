@@ -9,7 +9,7 @@ is the most widely used: it freezes the base weight $W$ and adds a trainable
 rank-$r$ update:
 
 \[
-W_\text{LoRA} = W_\text{frozen} + \frac{\alpha}{r} B A
+W\_\text{LoRA} = W\_\text{frozen} + \frac{\alpha}{r} B A
 \tag{1.1}
 \]
 
@@ -44,7 +44,7 @@ We seek a parameterization $\mathcal{P}(W)$ such that:
 SALT parameterizes $W$ as:
 
 \[
-W = U_{:,:r} \cdot \text{diag}(\Sigma_{:r} \odot \gamma) \cdot V_{:r,:}^\top + A B
+W = U\_{:,:r} \cdot \text{diag}(\Sigma\_{:r} \odot \gamma) \cdot V\_{:r,:}^\top + A B
 \tag{1.2}
 \]
 
@@ -110,7 +110,7 @@ $\alpha$ \& LoRA scaling & 3.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

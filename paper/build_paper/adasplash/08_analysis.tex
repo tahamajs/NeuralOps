@@ -191,8 +191,8 @@ If all scores for a query are near-uniform (low variance), entmax's bisection
 may produce an empty support. Our softmax fallback handles this:
 
 \begin{lstlisting}
-if sum(p) < 1e-7:
-    p = softmax(s_masked)
+if sum(p) \textless{} 1e-7:
+    p = softmax(s\_masked)
 \end{lstlisting}
 
 \subsubsection{Numerical Issues}

@@ -16,30 +16,30 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
 
 \begin{lstlisting}
    +--------------------------------------------------+
-   |  Input: hidden_states $\in$ R^{B$\times$L$\times$d}                |
+   |  Input: hidden\_states $\in$ R^{B$\times$L$\times$d}                |
    +-------------------+------------------------------+
                        |
                         
    +--------------------------------------------------+
    |  Phase 1: CUR Projections                        |
-   |  Q = CUR_Q(hidden_states)                        |
-   |  K = CUR_K(hidden_states)                        |
-   |  V = CUR_V(hidden_states)                        |
+   |  Q = CUR\_Q(hidden\_states)                        |
+   |  K = CUR\_K(hidden\_states)                        |
+   |  V = CUR\_V(hidden\_states)                        |
    +-------------------+------------------------------+
                        |
                         
    +--------------------------------------------------+
    |  Phase 2: Multi-Round LSH Attention              |
    |  For round r in 1..R:                            |
-   |    hash_Q, hash_K $\leftarrow$ random proj + sign           |
-   |    match $\leftarrow$ (hash_Q == hash_K)                    |
-   |    attn_r $\leftarrow$ softpick(scores   match)             |
-   |  Output = mean(attn_r   V)                       |
+   |    hash\_Q, hash\_K $\leftarrow$ random proj + sign           |
+   |    match $\leftarrow$ (hash\_Q == hash\_K)                    |
+   |    attn\_r $\leftarrow$ softpick(scores   match)             |
+   |  Output = mean(attn\_r   V)                       |
    +-------------------+------------------------------+
                        |
                         
    +--------------------------------------------------+
-   |  Phase 3: Output Projection (CUR_O)              |
+   |  Phase 3: Output Projection (CUR\_O)              |
    +-------------------+------------------------------+
                        |
                         
@@ -55,7 +55,7 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
 Each projection $W$ is replaced by a two-layer factorization:
 
 \[
-y = U_\text{up} \cdot (D_\text{down} \cdot x) + b
+y = U\_\text{up} \cdot (D\_\text{down} \cdot x) + b
 \tag{4.1}
 \]
 
@@ -97,30 +97,30 @@ W = U \Sigma V^\top
 \textbf{Column leverage} (importance of each input dimension):
 
 \[
-\pi_j = \sum_{k=1}^{\min(m, n)} (V_{j, k})^2
+\pi\_j = \sum\_{k=1}^{\min(m, n)} (V\_{j, k})^2
 \tag{4.3}
 \]
 
 \textbf{Row leverage} (importance of each output dimension):
 
 \[
-\rho_i = \sum_{k=1}^{\min(m, n)} (U_{i, k})^2
+\rho\_i = \sum\_{k=1}^{\min(m, n)} (U\_{i, k})^2
 \tag{4.4}
 \]
 
 We normalize both to sum to 1:
 
 \[
-\tilde{\pi}_j = \frac{\pi_j}{\sum_{j'} \pi_{j'}}, \qquad
-\tilde{\rho}_i = \frac{\rho_i}{\sum_{i'} \rho_{i'}}
+\tilde{\pi}\_j = \frac{\pi\_j}{\sum\_{j'} \pi\_{j'}}, \qquad
+\tilde{\rho}\_i = \frac{\rho\_i}{\sum\_{i'} \rho\_{i'}}
 \tag{4.5}
 \]
 
 Then select the top-$r$ columns and rows:
 
 \[
-\mathcal{J} = \text{top}_r(\tilde{\pi}), \qquad
-\mathcal{I} = \text{top}_r(\tilde{\rho})
+\mathcal{J} = \text{top}\_r(\tilde{\pi}), \qquad
+\mathcal{I} = \text{top}\_r(\tilde{\rho})
 \tag{4.6}
 \]
 
@@ -129,24 +129,24 @@ Then select the top-$r$ columns and rows:
 Define:
 
 \[
-C = W[:, \mathcal{J}] \in \mathbb{R}^{d_\text{out} \times r}
+C = W[:, \mathcal{J}] \in \mathbb{R}^{d\_\text{out} \times r}
 \tag{4.7}
 \]
 
 \[
-R = W[\mathcal{I}, :] \in \mathbb{R}^{r \times d_\text{in}}
+R = W[\mathcal{I}, :] \in \mathbb{R}^{r \times d\_\text{in}}
 \tag{4.8}
 \]
 
 \[
-W_\text{intersection} = W[\mathcal{I}, \mathcal{J}] \in \mathbb{R}^{r \times r}
+W\_\text{intersection} = W[\mathcal{I}, \mathcal{J}] \in \mathbb{R}^{r \times r}
 \tag{4.9}
 \]
 
 The reconstruction is:
 
 \[
-W_\text{CUR} = C \cdot W_\text{intersection}^+ \cdot R
+W\_\text{CUR} = C \cdot W\_\text{intersection}^+ \cdot R
 \tag{4.10}
 \]
 
@@ -155,19 +155,19 @@ W_\text{CUR} = C \cdot W_\text{intersection}^+ \cdot R
 We assign the CUR factors to the down/up projections as follows:
 
 \[
-D_\text{down} = R \in \mathbb{R}^{r \times d_\text{in}}
+D\_\text{down} = R \in \mathbb{R}^{r \times d\_\text{in}}
 \tag{4.11}
 \]
 
 \[
-U_\text{up} = C \cdot W_\text{intersection}^+ \in \mathbb{R}^{d_\text{out} \times r}
+U\_\text{up} = C \cdot W\_\text{intersection}^+ \in \mathbb{R}^{d\_\text{out} \times r}
 \tag{4.12}
 \]
 
 The factorized layer computes:
 
 \[
-y = U_\text{up} \cdot (D_\text{down} \cdot x) + b
+y = U\_\text{up} \cdot (D\_\text{down} \cdot x) + b
 \tag{4.13}
 \]
 
@@ -214,7 +214,7 @@ For each of $R_\ell$ rounds:
 For padding and causality:
 
 \[
-M^{(r)}_{ij} \leftarrow M^{(r)}_{ij} \land \text{valid}_j \land (\neg \text{causal}_{ij})
+M^{(r)}\_{ij} \leftarrow M^{(r)}\_{ij} \land \text{valid}\_j \land (\neg \text{causal}\_{ij})
 \tag{4.18}
 \]
 
@@ -225,19 +225,19 @@ where $\text{causal}_{ij} = \mathbb{1}[i < j]$.
 For each round, compute the attention scores:
 
 \[
-S^{(r)}_{ij} = \frac{Q_i \cdot K_j^\top}{\sqrt{d_h}}
+S^{(r)}\_{ij} = \frac{Q\_i \cdot K\_j^\top}{\sqrt{d\_h}}
 \tag{4.19}
 \]
 
 Then mask and apply softpick:
 
 \[
-S^{(r)}_{ij} \leftarrow S^{(r)}_{ij} + (M^{(r)}_{ij} - 1) \cdot \infty
+S^{(r)}\_{ij} \leftarrow S^{(r)}\_{ij} + (M^{(r)}\_{ij} - 1) \cdot \infty
 \tag{4.20}
 \]
 
 \[
-\alpha^{(r)} = \text{softpick}(S^{(r)}, \tau_s)
+\alpha^{(r)} = \text{softpick}(S^{(r)}, \tau\_s)
 \tag{4.21}
 \]
 
@@ -253,7 +253,7 @@ O^{(r)} = \alpha^{(r)} \cdot V
 The final attention output is the mean over rounds:
 
 \[
-O = \frac{1}{R_\ell} \sum_{r=1}^{R_\ell} O^{(r)}
+O = \frac{1}{R\_\ell} \sum\_{r=1}^{R\_\ell} O^{(r)}
 \tag{4.23}
 \]
 
@@ -282,14 +282,14 @@ $\mathcal{O}(L^2 / 16)$ -- a 16$\times$ reduction.
 We define softpick with a fallback to softmax:
 
 \[
-\text{softpick}_i(x) = \text{ReLU}\!\left(e^{(x_i - m)/\tau_s} - e^{-m/\tau_s}\right)
+\text{softpick}\_i(x) = \text{ReLU}\!\left(e^{(x\_i - m)/\tau\_s} - e^{-m/\tau\_s}\right)
 \tag{4.24}
 \]
 
 where $m = \max_j x_j$. The output is normalized:
 
 \[
-\hat{p}_i = \frac{\text{softpick}_i(x)}{\sum_j \text{softpick}_j(x) + \epsilon}
+\hat{p}\_i = \frac{\text{softpick}\_i(x)}{\sum\_j \text{softpick}\_j(x) + \epsilon}
 \tag{4.25}
 \]
 
@@ -297,7 +297,7 @@ where $m = \max_j x_j$. The output is normalized:
 we substitute:
 
 \[
-p_i = \text{softmax}(x_i / \tau_s)
+p\_i = \text{softmax}(x\_i / \tau\_s)
 \tag{4.26}
 \]
 
@@ -308,32 +308,32 @@ masking), which would otherwise produce a zero row.
 
 \textbf{Algorithm 1:} PHANTOM forward pass
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B$\times$L$\times$d}, mask
+Input:  hidden\_states $\in$ R^{B$\times$L$\times$d}, mask
 Output: y $\in$ R^{B$\times$L$\times$d}
 
 1:  # Phase 1: CUR projections
-2:  Q $\leftarrow$ CUR_q(hidden_states)
-3:  K $\leftarrow$ CUR_k(hidden_states)
-4:  V $\leftarrow$ CUR_v(hidden_states)
+2:  Q $\leftarrow$ CUR\_q(hidden\_states)
+3:  K $\leftarrow$ CUR\_k(hidden\_states)
+4:  V $\leftarrow$ CUR\_v(hidden\_states)
 5:  reshape Q, K, V into heads
 6:
 7:  # Phase 2: Multi-round LSH attention
 8:  accum $\leftarrow$ 0
-9:  for r in 1..R_  do
-10:     A $\leftarrow$ random_projection(d_h, k)
-11:     h_Q $\leftarrow$ lsh_hash(Q, A)
-12:     h_K $\leftarrow$ lsh_hash(K, A)
-13:     M $\leftarrow$ (h_Q == h_K)   I
+9:  for r in 1..R\_  do
+10:     A $\leftarrow$ random\_projection(d\_h, k)
+11:     h\_Q $\leftarrow$ lsh\_hash(Q, A)
+12:     h\_K $\leftarrow$ lsh\_hash(K, A)
+13:     M $\leftarrow$ (h\_Q == h\_K)   I
 14:     M $\leftarrow$ M   valid   ( causal)
-15:     S $\leftarrow$ Q K^T / $\sqrt{}$d_h
+15:     S $\leftarrow$ Q K^T / $\sqrt{}$d\_h
 16:     S $\leftarrow$ mask(S, M)
-17:     $\alpha$ $\leftarrow$ softpick(S, $\tau$_s)
+17:     $\alpha$ $\leftarrow$ softpick(S, $\tau$\_s)
 18:     accum $\leftarrow$ accum + $\alpha$ V
 19: end for
-20: context $\leftarrow$ accum / R_ 
+20: context $\leftarrow$ accum / R\_ 
 21:
 22: # Phase 3: Output projection
-23: y $\leftarrow$ CUR_o(context)
+23: y $\leftarrow$ CUR\_o(context)
 24: return y
 \end{lstlisting}
 
@@ -420,7 +420,7 @@ $\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$\times$ re
 \textbf{Proposition.} If rows and columns are selected by highest leverage score, then:
 
 \[
-\|W - C U^+ R\|_F \leq \|W - W_r\|_F + \epsilon
+\|W - C U^+ R\|\_F \leq \|W - W\_r\|\_F + \epsilon
 \tag{4.27}
 \]
 
@@ -448,7 +448,7 @@ At temperature $\tau_s$, the fraction of non-zero entries in softpick is
 approximately:
 
 \[
-\text{sparsity} \approx \frac{\#\{i : x_i > m - \tau_s \log(2)\}}{L}
+\text{sparsity} \approx \frac{\#\{i : x\_i \textgreater{} m - \tau\_s \log(2)\}}{L}
 \tag{4.29}
 \]
 

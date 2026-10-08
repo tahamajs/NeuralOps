@@ -32,7 +32,7 @@ Each Q/K/V/O projection is factorized via SVD at rank $r = 64$, with
 the top-$r$ singular vectors retained:
 
 \[
-W \approx U_r \Sigma_r V_r^\top = (U_r \Sigma_r^{1/2})(\Sigma_r^{1/2} V_r^\top)
+W \approx U\_r \Sigma\_r V\_r^\top = (U\_r \Sigma\_r^{1/2})(\Sigma\_r^{1/2} V\_r^\top)
 \]
 
 The factors are frozen; LoRA adapters provide recovery.
@@ -77,8 +77,8 @@ The \texttt{copy\_weights} method contains:
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 If \texttt{UniversalAdapter.get\_weight\_bias} fails for any of the four 

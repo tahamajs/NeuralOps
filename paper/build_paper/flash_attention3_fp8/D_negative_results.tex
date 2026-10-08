@@ -32,7 +32,7 @@ Cast Q/K/V manually to fp8 & SDPA does not accept fp8 inputs \\
 We tried casting Q/K/V to FP8 before SDPA:
 
 \begin{lstlisting}
-q8 = q.to(torch.float8_e4m3fn).to(q.dtype)
+q8 = q.to(torch.float8\_e4m3fn).to(q.dtype)
 # Then call SDPA with the cast-back values
 \end{lstlisting}
 

@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 pip install -r requirements.txt
 \end{lstlisting}
 
@@ -27,31 +27,31 @@ datasets & 1.0.0 \\
 \subsection{Running Res-SVD}
 
 \begin{lstlisting}
-python run_all_4_res_svd.py \
+python run\_all\_4\_res\_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank 32 \
-    --residual_rank 16 \
-    --recovery_steps 50
+    --base\_rank 32 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_res_svd.py --models distilbert,roberta,gpt2
+python run\_all\_4\_res\_svd.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (base rank)}
 \begin{lstlisting}
 for rb in 8 16 32 64; do
-    python run_all_4_res_svd.py --base_rank $rb --output_suffix rb$rb
+    python run\_all\_4\_res\_svd.py --base\_rank $rb --output_suffix rb$rb
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (residual rank)}
 \begin{lstlisting}
 for rr in 0 2 4 8 16; do
-    python run_all_4_res_svd.py --residual_rank $rr --output_suffix rr$rr
+    python run\_all\_4\_res\_svd.py --residual\_rank $rr --output_suffix rr$rr
 done
 \end{lstlisting}
 
@@ -61,7 +61,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

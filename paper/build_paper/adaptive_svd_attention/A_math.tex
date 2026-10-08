@@ -16,7 +16,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \textbf{Proof.} By the Eckart--Young theorem:
 
 \[
-\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2
+\|W - W\_r\|\_F^2 = \sum\_{i \textgreater{} r} \sigma\_i^2 = (1 - \mathcal{E}(r)) \|W\|\_F^2
 \tag{A.2}
 \]
 
@@ -29,14 +29,14 @@ iff $\mathcal{E}(r) \geq \tau$. The minimum such $r$ is $r^*(\tau)$. $\square$
 Then:
 
 \[
-U_r V_r = U_{:, :r} \Sigma V_{:r, :}^\top = W_r
+U\_r V\_r = U\_{:, :r} \Sigma V\_{:r, :}^\top = W\_r
 \tag{A.3}
 \]
 
 \textbf{Proof.} Direct matrix multiplication:
 
 \[
-U_r V_r = U_{:, :r} \Sigma^{1/2} \cdot \Sigma^{1/2} V_{:r, :}^\top = U_{:, :r} \Sigma V_{:r, :}^\top \qquad \square
+U\_r V\_r = U\_{:, :r} \Sigma^{1/2} \cdot \Sigma^{1/2} V\_{:r, :}^\top = U\_{:, :r} \Sigma V\_{:r, :}^\top \qquad \square
 \]
 
 \subsection{A.3 Factor Magnitude Balance}
@@ -47,7 +47,7 @@ the largest singular value.
 \textbf{Proof.} For symmetric SVD:
 
 \[
-U_r = U_{:, :r} \Sigma^{1/2} \Rightarrow U_r^\top U_r = \Sigma^{1/2} U_{:, :r}^\top U_{:, :r} \Sigma^{1/2} = \Sigma
+U\_r = U\_{:, :r} \Sigma^{1/2} \Rightarrow U\_r^\top U\_r = \Sigma^{1/2} U\_{:, :r}^\top U\_{:, :r} \Sigma^{1/2} = \Sigma
 \tag{A.4}
 \]
 
@@ -62,7 +62,7 @@ This balanced magnitude is crucial for FP16 stability.
 \textbf{Claim.} With $B = 0$:
 
 \[
-\text{Proj}_P(x) = (x V_r^\top) U_r^\top + (x A^\top) \cdot 0 + b = W_r x + b
+\text{Proj}\_P(x) = (x V\_r^\top) U\_r^\top + (x A^\top) \cdot 0 + b = W\_r x + b
 \tag{A.5}
 \]
 
@@ -93,14 +93,14 @@ For a square $d \times d$ projection:
 \]
 
 \[
-\text{Compressed params} = r(d + d) + r_L(d + d) + d = 2d(r + r_L) + d
+\text{Compressed params} = r(d + d) + r\_L(d + d) + d = 2d(r + r\_L) + d
 \tag{A.7}
 \]
 
 Reduction ratio:
 
 \[
-\rho = \frac{d^2}{2d(r + r_L) + d} \approx \frac{d}{2(r + r_L)}
+\rho = \frac{d^2}{2d(r + r\_L) + d} \approx \frac{d}{2(r + r\_L)}
 \tag{A.8}
 \]
 
@@ -116,7 +116,7 @@ At $d = 768$, $r = 128$, $r_L = 16$:
 For truncated SVD at rank $r^*$:
 
 \[
-\frac{\|W - W_{r^*}\|_F}{\|W\|_F} = \sqrt{1 - \mathcal{E}(r^*)} \leq \sqrt{1 - \tau}
+\frac{\|W - W\_{r^*}\|\_F}{\|W\|\_F} = \sqrt{1 - \mathcal{E}(r^*)} \leq \sqrt{1 - \tau}
 \tag{A.10}
 \]
 

@@ -5,21 +5,21 @@
 Given input $X \in \mathbb{R}^{T \times d}$ with $T = B \cdot L$:
 
 \[
-\mathbf{r} = W_g \cdot \text{LayerNorm}(X) \in \mathbb{R}^{T \times E}
+\mathbf{r} = W\_g \cdot \text{LayerNorm}(X) \in \mathbb{R}^{T \times E}
 \tag{A.1}
 \]
 
 Softmax over tokens (axis 0):
 
 \[
-\mathbf{s}_{t, e} = \frac{\exp(\mathbf{r}_{t, e})}{\sum_{t'=1}^{T} \exp(\mathbf{r}_{t', e})}
+\mathbf{s}\_{t, e} = \frac{\exp(\mathbf{r}\_{t, e})}{\sum\_{t'=1}^{T} \exp(\mathbf{r}\_{t', e})}
 \tag{A.2}
 \]
 
 For each expert $e$:
 
 \[
-\text{Top-}k_e = \text{TopK}(\mathbf{s}[:, e], k), \quad k = \left\lceil \frac{T}{E} \cdot \text{CF} \right\rceil
+\text{Top-}k\_e = \text{TopK}(\mathbf{s}[:, e], k), \quad k = \left\lceil \frac{T}{E} \cdot \text{CF} \right\rceil
 \tag{A.3}
 \]
 
@@ -28,19 +28,19 @@ For each expert $e$:
 \subsection{A.2 Expert Forward}
 
 \[
-\mathbf{y}_e = \text{Expert}_e(X[\text{Top-}k_e])
+\mathbf{y}\_e = \text{Expert}\_e(X[\text{Top-}k\_e])
 \tag{A.4}
 \]
 
 \[
-\text{Expert}_e(\mathbf{x}) = W_2^{(e)} \text{GELU}(W_1^{(e)} \mathbf{x})
+\text{Expert}\_e(\mathbf{x}) = W\_2^{(e)} \text{GELU}(W\_1^{(e)} \mathbf{x})
 \tag{A.5}
 \]
 
 \subsection{A.3 Aggregation}
 
 \[
-\mathbf{y}_{\text{out}}[t] = \sum_{e : t \in \text{Top-}k_e} \mathbf{s}_{t, e} \cdot \mathbf{y}_e[\text{position of } t \text{ in } \text{Top-}k_e]
+\mathbf{y}\_{\text{out}}[t] = \sum\_{e : t \in \text{Top-}k\_e} \mathbf{s}\_{t, e} \cdot \mathbf{y}\_e[\text{position of } t \text{ in } \text{Top-}k\_e]
 \tag{A.6}
 \]
 
@@ -72,12 +72,12 @@ $\text{MoE\_out} = 0$.
 For $E$ experts with hidden size $2d$:
 
 \[
-\text{params}_\text{expert} = 2 d^2 + 2 d^2 = 4 d^2
+\text{params}\_\text{expert} = 2 d^2 + 2 d^2 = 4 d^2
 \tag{A.8}
 \]
 
 \[
-\text{params}_\text{MoE} = E \cdot 4 d^2 + E d
+\text{params}\_\text{MoE} = E \cdot 4 d^2 + E d
 \tag{A.9}
 \]
 

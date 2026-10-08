@@ -18,10 +18,10 @@ GoldFinch-AHN has the following structure:
        |              |                |
                                         
    +----------------------+      +-----------+
-   | Sliding-window       |      | long_out  |
+   | Sliding-window       |      | long\_out  |
    | attention            |      +-----+-----+
    +--------+-------------+            |
-            | short_out                |
+            | short\_out                |
             |                          |
        +----+--------------------------+----+
        |                                    |
@@ -31,7 +31,7 @@ GoldFinch-AHN has the following structure:
                 |
                  
        +------------------+
-       | out_proj         |
+       | out\_proj         |
        +--------+---------+
                 |
                  
@@ -50,28 +50,28 @@ GoldFinch-AHN has the following structure:
 We compute standard scaled dot-product attention with a band mask:
 
 \[
-\text{scores}_{ij} = \frac{q_i^\top k_j}{\sqrt{d}}
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d}}
 \tag{4.1}
 \]
 
 Apply window mask:
 
 \[
-M_{ij} = \begin{cases} 1 & |i - j| \leq W \\ 0 & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W \\ 0 & \text{otherwise} \end{cases}
 \tag{4.2}
 \]
 
 For causal decoders:
 
 \[
-M_{ij} = \begin{cases} 1 & 0 \leq i - j \leq W \\ 0 & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 1 & 0 \leq i - j \leq W \\ 0 & \text{otherwise} \end{cases}
 \tag{4.3}
 \]
 
 Then:
 
 \[
-\text{short}_i = \sum_j \text{softmax}_j(\text{scores}_{ij} + \log M_{ij}) v_j
+\text{short}\_i = \sum\_j \text{softmax}\_j(\text{scores}\_{ij} + \log M\_{ij}) v\_j
 \tag{4.4}
 \]
 
@@ -81,7 +81,7 @@ Then:
 implements:
 
 \begin{lstlisting}
-long_out = self.delta_mem(x)  # = Linear(x)
+long\_out = self.delta\_mem(x)  # = Linear(x)
 \end{lstlisting}
 
 There is no recurrence, no gating, no state. It is a single linear 
@@ -89,7 +89,7 @@ projection $W_m \in \mathbb{R}^{d \times d}$. Its role in the architecture
 is:
 
 \[
-\text{long}_t = W_m x_t + b_m
+\text{long}\_t = W\_m x\_t + b\_m
 \tag{4.5}
 \]
 
@@ -102,7 +102,7 @@ processes each token independently.
 The gate:
 
 \[
-g_t = \sigma(W_g x_t + b_g) \in \mathbb{R}^H
+g\_t = \sigma(W\_g x\_t + b\_g) \in \mathbb{R}^H
 \tag{4.6}
 \]
 
@@ -111,14 +111,14 @@ with $W_g \in \mathbb{R}^{d \times H}$ and $b_g \in \mathbb{R}^H$.
 \textbf{Mean over heads:} In forward, the gate is reduced to a scalar per token:
 
 \[
-g'_t = \frac{1}{H} \sum_{h=1}^H g_{t,h}
+g'\_t = \frac{1}{H} \sum\_{h=1}^H g\_{t,h}
 \tag{4.7}
 \]
 
 \textbf{Fusion:}
 
 \[
-\text{fused}_t = g'_t \cdot \text{short}_t + (1 - g'_t) \cdot \text{long}_t
+\text{fused}\_t = g'\_t \cdot \text{short}\_t + (1 - g'\_t) \cdot \text{long}\_t
 \tag{4.8}
 \]
 
@@ -127,14 +127,14 @@ g'_t = \frac{1}{H} \sum_{h=1}^H g_{t,h}
 Output projection:
 
 \[
-\text{out} = W_O \cdot \text{fused} + b_O
+\text{out} = W\_O \cdot \text{fused} + b\_O
 \tag{4.9}
 \]
 
 Then the preservation gate:
 
 \[
-\alpha = \sigma(w_\alpha) \approx 0.88 \text{ at init}
+\alpha = \sigma(w\_\alpha) \approx 0.88 \text{ at init}
 \tag{4.10}
 \]
 
@@ -203,29 +203,29 @@ For $W \ll L$: GoldFinch is $\mathcal{O}(L d^2)$ -- linear in $L$.
 
 \textbf{Algorithm 1:} GoldFinch-AHN forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, W (window)
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, W (window)
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
 4:
 5: # Sliding-window attention
 6: scores $\leftarrow$ Q K^T / sqrt(d)
-7: M $\leftarrow$ band_mask(L, W, causal=is_decoder)
+7: M $\leftarrow$ band\_mask(L, W, causal=is\_decoder)
 8: scores $\leftarrow$ scores + log(M)
 9: attn $\leftarrow$ softmax(scores)
 10: short $\leftarrow$ attn @ V
 11:
 12: # Long-memory branch (LINEAR PROJECTION)
-13: long $\leftarrow$ Linear_m(X)
+13: long $\leftarrow$ Linear\_m(X)
 14:
 15: # Input-dependent gate (mean over heads)
-16: gate $\leftarrow$ mean(sigmoid(W_g X + b_g))
+16: gate $\leftarrow$ mean(sigmoid(W\_g X + b\_g))
 17: fused $\leftarrow$ gate * short + (1 - gate) * long
 18:
-19: out $\leftarrow$ out_proj(fused)
-20: $\alpha$ $\leftarrow$ sigmoid(output_gate)     init $\approx$ 0.88
+19: out $\leftarrow$ out\_proj(fused)
+20: $\alpha$ $\leftarrow$ sigmoid(output\_gate)     init $\approx$ 0.88
 21: Y $\leftarrow$ $\alpha$ * out + (1 - $\alpha$) * X
 22: return Y
 \end{lstlisting}
@@ -237,7 +237,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 For fixed $W$ and sequence length $L$:
 
 \[
-T_\text{window} = \mathcal{O}(L W d)
+T\_\text{window} = \mathcal{O}(L W d)
 \tag{4.12}
 \]
 

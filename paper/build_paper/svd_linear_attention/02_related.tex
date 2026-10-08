@@ -9,7 +9,7 @@ Katharopoulos et al. (2020) show that softmax attention can be linearized
 by replacing $\text{softmax}(Q K^\top)$ with $\phi(Q) \phi(K)^\top$:
 
 \[
-\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_{j \leq t} \phi(K_j) V_j^\top}{\phi(Q_t) \sum_{j \leq t} \phi(K_j)}
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j)}
 \tag{2.1}
 \]
 
@@ -22,7 +22,7 @@ Choromanski et al. (2021) use orthogonal random features to approximate
 the softmax kernel:
 
 \[
-\exp(q \cdot k) \approx \phi_{\text{PORF}}(q)^\top \phi_{\text{PORF}}(k)
+\exp(q \cdot k) \approx \phi\_{\text{PORF}}(q)^\top \phi\_{\text{PORF}}(k)
 \tag{2.2}
 \]
 

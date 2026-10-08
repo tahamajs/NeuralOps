@@ -6,14 +6,14 @@
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{3.1}
 \]
 
 with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 \[
-\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \tag{3.2}
 \]
 
@@ -24,7 +24,7 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 Restrict attention to a window of size $W$ around each position:
 
 \[
-\text{SWA}(X)_i = \text{softmax}\!\left(\frac{Q_i K_{[i-W:i+W]}^\top}{\sqrt{d_h}}\right) V_{[i-W:i+W]}
+\text{SWA}(X)\_i = \text{softmax}\!\left(\frac{Q\_i K\_{[i-W:i+W]}^\top}{\sqrt{d\_h}}\right) V\_{[i-W:i+W]}
 \tag{3.3}
 \]
 
@@ -42,7 +42,7 @@ A compressive memory $M \in \mathbb{R}^{d_c \times d_h}$ is a small matrix
 that acts as $d_c$ learned "virtual tokens". Queries attend to it via:
 
 \[
-\text{MemAttn}_i = \text{softmax}\!\left(\frac{Q_i M^\top}{\sqrt{d_h}}\right) M
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
 \tag{3.4}
 \]
 
@@ -64,7 +64,7 @@ with $\beta$ a learnable scalar. The addition (rather than concatenation)
 preserves the pretrained output distribution when $\sigma(\beta) \to 0$.
 
 \textbf{Initialization.} Setting $\beta = -5$ gives $\sigma(-5) \approx 0.0067$, 
-meaning the memory contributes <1\% at start.
+meaning the memory contributes \textless{}1\% at start.
 
 \subsection{Grouped-Query Attention (GQA)}
 
@@ -76,7 +76,7 @@ attention. Infini-Attention supports GQA via \texttt{repeat\_kv}.
 RoPE rotates Q, K by position-dependent angles:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.6}
 \]
 

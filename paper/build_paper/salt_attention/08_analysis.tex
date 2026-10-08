@@ -13,9 +13,9 @@ SALT achieves two things simultaneously:
 \textbf{Why?} Because the forward pass reconstructs W:
 
 \begin{lstlisting}
-W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt   # full (d_out, d_in)
-W_lora = self.A @ self.B                               # full (d_out, d_in)
-W = W_svd + W_lora
+W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt   # full (d\_out, d\_in)
+W\_lora = self.A @ self.B                               # full (d\_out, d\_in)
+W = W\_svd + W\_lora
 \end{lstlisting}
 
 At runtime, we materialize a full $d_\text{out} \times d_\text{in}$ matrix, 
@@ -46,9 +46,9 @@ The correct forward avoids reconstruction:
 def forward(self, x):
     z = F.linear(x, self.Vt)                        # (B, L, r)
     z = z * (self.S * self.gamma)
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)
-    return y_svd + y_lora + self.bias
+    y\_svd = F.linear(z, self.U)                     # (B, L, d\_out)
+    y\_lora = F.linear(F.linear(x, self.B), self.A)
+    return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 \textbf{Cost:} $\mathcal{O}(BL \cdot r \cdot (d_\text{out} + d_\text{in}))$ -- 
@@ -112,8 +112,8 @@ PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W:
 \texttt{SALTLinear.\_\_init\_\_} defines:
 
 \begin{lstlisting}
-if not hasattr(self, 'output_scale'):
-    self.output_scale = nn.Parameter(torch.ones(1))
+if not hasattr(self, 'output\_scale'):
+    self.output\_scale = nn.Parameter(torch.ones(1))
 \end{lstlisting}
 
 But \texttt{forward} never uses \texttt{output\_scale}. This is dead code, adding 1 unused 
@@ -127,8 +127,8 @@ Our \texttt{copy\_weights} \textbf{raises} if extraction fails:
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This aborts injection for the entire model. Other modules in our framework 
@@ -137,7 +137,7 @@ log a warning and continue. This is a bug.
 \subsubsection{RuntimeError on Zero Norm}
 
 \begin{lstlisting}
-if norm < 1e-4:
+if norm \textless{} 1e-4:
     raise RuntimeError(f"... near-zero Frobenius norm ({norm.item():.6f})")
 \end{lstlisting}
 

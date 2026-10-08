@@ -35,7 +35,7 @@ Fused by a gated combiner.
          |            |               |
          |                            |
          |      +----------+          |
-         |      | out_proj |          |
+         |      | out\_proj |          |
          |      +-----+----+          |
          |            |               |
          +------------+---------------+
@@ -54,8 +54,8 @@ Each projection is stored as:
 
 \[
 W = U \Sigma V^\top, \qquad
-U \in \mathbb{R}^{d_\text{out} \times r}, \; \Sigma \in \mathbb{R}^r, \;
-V \in \mathbb{R}^{d_\text{in} \times r}
+U \in \mathbb{R}^{d\_\text{out} \times r}, \; \Sigma \in \mathbb{R}^r, \;
+V \in \mathbb{R}^{d\_\text{in} \times r}
 \tag{4.1}
 \]
 
@@ -82,19 +82,19 @@ where $s = \alpha / r_L$ and only $A, B$ are trained.
 Standard MHSA with SVD-factorized projections:
 
 \[
-Q = \text{SVDLinear}_Q(X), \quad
-K = \text{SVDLinear}_K(X), \quad
-V_a = \text{SVDLinear}_V(X)
+Q = \text{SVDLinear}\_Q(X), \quad
+K = \text{SVDLinear}\_K(X), \quad
+V\_a = \text{SVDLinear}\_V(X)
 \tag{4.4}
 \]
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_{a,h}
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_{a,h}
 \tag{4.5}
 \]
 
 \[
-Y_\text{attn} = \text{SVDLinear}_O(\text{Concat}(\text{head}_1, \dots, \text{head}_H))
+Y\_\text{attn} = \text{SVDLinear}\_O(\text{Concat}(\text{head}\_1, \dots, \text{head}\_H))
 \tag{4.6}
 \]
 
@@ -108,7 +108,7 @@ matrix.
 The hidden states are projected to a gated 2$\times$inner dimension:
 
 \[
-{[}x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
+{[}x; z] = \text{SVDLinear}\_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d\_\text{inner}}
 \tag{4.7}
 \]
 
@@ -119,7 +119,7 @@ where $d_\text{inner} = \text{expand} \cdot d$.
 A depthwise 1D convolution is applied:
 
 \[
-x_\text{conv} = \text{SiLU}(\text{Conv1d}(x))
+x\_\text{conv} = \text{SiLU}(\text{Conv1d}(x))
 \tag{4.8}
 \]
 
@@ -130,12 +130,12 @@ with kernel size $d_\text{conv}$ and no padding (causal).
 The SSM parameters are computed:
 
 \[
-{[}\Delta; B; C] = \text{SVDLinear}_{x}(x_\text{conv})
+{[}\Delta; B; C] = \text{SVDLinear}\_{x}(x\_\text{conv})
 \tag{4.9}
 \]
 
 \[
-\Delta = \text{softplus}(\text{SVDLinear}_{\Delta}([\Delta; B; C]) + b_\Delta)
+\Delta = \text{softplus}(\text{SVDLinear}\_{\Delta}([\Delta; B; C]) + b\_\Delta)
 \tag{4.10}
 \]
 
@@ -144,8 +144,8 @@ The SSM parameters are computed:
 With diagonal $A = -\exp(A_\text{log})$:
 
 \[
-\bar{A}_t = \exp(\Delta_t A), \qquad
-\bar{B}_t = \Delta_t B_t
+\bar{A}\_t = \exp(\Delta\_t A), \qquad
+\bar{B}\_t = \Delta\_t B\_t
 \tag{4.11}
 \]
 
@@ -156,21 +156,21 @@ For chunk size $C = 64$:
 Within a chunk, compute:
 
 \[
-\lambda_{c, i} = \sum_{j=1}^i \log \bar{A}_{c, j}
+\lambda\_{c, i} = \sum\_{j=1}^i \log \bar{A}\_{c, j}
 \tag{4.12}
 \]
 
 Then:
 
 \[
-h_{c, i}^\text{intra} = e^{\lambda_{c, i}} \sum_{j=1}^i e^{-\lambda_{c, j}} \bar{B}_{c, j} x_{c, j}
+h\_{c, i}^\text{intra} = e^{\lambda\_{c, i}} \sum\_{j=1}^i e^{-\lambda\_{c, j}} \bar{B}\_{c, j} x\_{c, j}
 \tag{4.13}
 \]
 
 Plus inter-chunk state:
 
 \[
-h_{c, i} = h_{c, i}^\text{intra} + e^{\lambda_{c, i}} h_{c-1, C}
+h\_{c, i} = h\_{c, i}^\text{intra} + e^{\lambda\_{c, i}} h\_{c-1, C}
 \tag{4.14}
 \]
 
@@ -179,7 +179,7 @@ h_{c, i} = h_{c, i}^\text{intra} + e^{\lambda_{c, i}} h_{c-1, C}
 The output is:
 
 \[
-y_t = \frac{C_t \cdot h_t}{\max(|C_t| \cdot |h_t^\text{denom}|, 10^{-4})} + D x_t
+y\_t = \frac{C\_t \cdot h\_t}{\max(|C\_t| \cdot |h\_t^\text{denom}|, 10^{-4})} + D x\_t
 \tag{4.15}
 \]
 
@@ -188,7 +188,7 @@ where $h_t^\text{denom}$ tracks $\sum |\bar{B}_j| x_j$.
 \subsubsection{Gating}
 
 \[
-Y_\text{SSM} = y \odot \text{SiLU}(z)
+Y\_\text{SSM} = y \odot \text{SiLU}(z)
 \tag{4.16}
 \]
 
@@ -197,19 +197,19 @@ Y_\text{SSM} = y \odot \text{SiLU}(z)
 A low-rank global aggregation:
 
 \[
-\text{global}_\text{scores} = X V_g \in \mathbb{R}^{B \times L \times r_g}
+\text{global}\_\text{scores} = X V\_g \in \mathbb{R}^{B \times L \times r\_g}
 \tag{4.17}
 \]
 
 \[
-Y_\text{global} = \text{SVDLinear}_\text{global}(\text{global}_\text{scores})
+Y\_\text{global} = \text{SVDLinear}\_\text{global}(\text{global}\_\text{scores})
 \tag{4.18}
 \]
 
 Added to $Y_\text{SSM}$:
 
 \[
-Y_\text{SSM}^\text{final} = Y_\text{SSM} + Y_\text{global}
+Y\_\text{SSM}^\text{final} = Y\_\text{SSM} + Y\_\text{global}
 \tag{4.19}
 \]
 
@@ -218,12 +218,12 @@ Y_\text{SSM}^\text{final} = Y_\text{SSM} + Y_\text{global}
 The two main paths are fused:
 
 \[
-\gamma = \sigma(W_g X)
+\gamma = \sigma(W\_g X)
 \tag{4.20}
 \]
 
 \[
-Y = \gamma \odot Y_\text{SSM}^\text{final} + (1 - \gamma) \odot Y_\text{attn}
+Y = \gamma \odot Y\_\text{SSM}^\text{final} + (1 - \gamma) \odot Y\_\text{attn}
 \tag{4.21}
 \]
 
@@ -240,34 +240,34 @@ The SSM is silent at start; the model behaves like the pretrained attention.
 
 \textbf{Algorithm 1:} SVD-Mamba forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: # Attention path
- 2: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V_a $\leftarrow$ SVDLinear_V(X)
+ 2: Q $\leftarrow$ SVDLinear\_Q(X); K $\leftarrow$ SVDLinear\_K(X); V\_a $\leftarrow$ SVDLinear\_V(X)
  3: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 4: if GQA:  K, V_a $\leftarrow$ repeat_kv(K, V_a)
- 5: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
- 6: scores $\leftarrow$ scores + causal_mask + pad_mask
- 7: Y_attn $\leftarrow$ SVDLinear_O(softmax(scores) V_a)
+ 4: if GQA:  K, V\_a $\leftarrow$ repeat\_kv(K, V\_a)
+ 5: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 6: scores $\leftarrow$ scores + causal\_mask + pad\_mask
+ 7: Y\_attn $\leftarrow$ SVDLinear\_O(softmax(scores) V\_a)
  8:
  9: # SSM path
-10: [x; z] $\leftarrow$ SVDLinear_in(X)
-11: x_conv $\leftarrow$ SiLU(Conv1d(x))
-12: [$\Delta$; B; C] $\leftarrow$ SVDLinear_x(x_conv)
-13: $\Delta$ $\leftarrow$ softplus(SVDLinear_$\Delta$([$\Delta$; B; C]) + b_$\Delta$)
+10: [x; z] $\leftarrow$ SVDLinear\_in(X)
+11: x\_conv $\leftarrow$ SiLU(Conv1d(x))
+12: [$\Delta$; B; C] $\leftarrow$ SVDLinear\_x(x\_conv)
+13: $\Delta$ $\leftarrow$ softplus(SVDLinear\_$\Delta$([$\Delta$; B; C]) + b\_$\Delta$)
 14:   $\leftarrow$ exp($\Delta$ A)
 15: for c in chunks:
-16:     h_c $\leftarrow$ scan( , B , x_conv) within chunk
-17:     h_c $\leftarrow$ h_c + carry_over
-18:     y_c $\leftarrow$ (C h_c) / (|C| |h_denom|)_clamp
-19: Y_ssm $\leftarrow$ y   SiLU(z)
-20: Y_ssm $\leftarrow$ Y_ssm + global_mix(X)
-21: Y_ssm $\leftarrow$ SVDLinear_out(Y_ssm)
+16:     h\_c $\leftarrow$ scan( , B , x\_conv) within chunk
+17:     h\_c $\leftarrow$ h\_c + carry\_over
+18:     y\_c $\leftarrow$ (C h\_c) / (|C| |h\_denom|)\_clamp
+19: Y\_ssm $\leftarrow$ y   SiLU(z)
+20: Y\_ssm $\leftarrow$ Y\_ssm + global\_mix(X)
+21: Y\_ssm $\leftarrow$ SVDLinear\_out(Y\_ssm)
 22:
 23: # Fusion
-24: $\gamma$ $\leftarrow$ $\sigma$(W_g X)
-25: Y $\leftarrow$ $\gamma$   Y_ssm + (1 - $\gamma$)   Y_attn
+24: $\gamma$ $\leftarrow$ $\sigma$(W\_g X)
+25: Y $\leftarrow$ $\gamma$   Y\_ssm + (1 - $\gamma$)   Y\_attn
 26: return Y
 \end{lstlisting}
 
@@ -343,7 +343,7 @@ LoRA & ~100K & ~600K \\
 
 \subsubsection{Gate Silence at Init}
 
-\textbf{Claim.} With $b_g = -7$, the SSM contributes < 0.1\% to the output at 
+\textbf{Claim.} With $b_g = -7$, the SSM contributes \textless{} 0.1\% to the output at 
 initialization.
 
 \textbf{Proof.} $\sigma(-7) = \frac{1}{1 + e^7} \approx 9.1 \times 10^{-4}$. $\square$

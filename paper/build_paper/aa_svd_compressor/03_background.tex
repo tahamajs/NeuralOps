@@ -17,7 +17,7 @@ $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 \textbf{Truncated SVD} keeps the top-$r$ singular values:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{3.2}
 \]
 
@@ -27,8 +27,8 @@ with error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 $\Sigma^{1/2}$ between the two factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{3.3}
 \]
 
@@ -39,15 +39,15 @@ so that $W_r = U_r V_r$, and the two factors have balanced magnitude.
 For a linear layer $y = Wx + b$ with input $x \sim \mathcal{D}$, define:
 
 \[
-C_X = \mathbb{E}_{x \sim \mathcal{D}}\!\left[x x^\top\right] \in \mathbb{R}^{d_\text{in} \times d_\text{in}}
+C\_X = \mathbb{E}\_{x \sim \mathcal{D}}\!\left[x x^\top\right] \in \mathbb{R}^{d\_\text{in} \times d\_\text{in}}
 \tag{3.4}
 \]
 
 This is a symmetric positive semi-definite matrix. Its eigendecomposition:
 
 \[
-C_X = Q \Lambda Q^\top, \qquad
-\Lambda = \mathrm{diag}(\lambda_1, \dots, \lambda_{d_\text{in}})
+C\_X = Q \Lambda Q^\top, \qquad
+\Lambda = \mathrm{diag}(\lambda\_1, \dots, \lambda\_{d\_\text{in}})
 \tag{3.5}
 \]
 
@@ -68,8 +68,8 @@ For a positive semi-definite matrix $C_X = Q \Lambda Q^\top$, the matrix
 square root is:
 
 \[
-C_X^{1/2} = Q \Lambda^{1/2} Q^\top, \qquad
-\Lambda^{1/2} = \mathrm{diag}(\sqrt{\lambda_1}, \dots, \sqrt{\lambda_{d_\text{in}}})
+C\_X^{1/2} = Q \Lambda^{1/2} Q^\top, \qquad
+\Lambda^{1/2} = \mathrm{diag}(\sqrt{\lambda\_1}, \dots, \sqrt{\lambda\_{d\_\text{in}}})
 \tag{3.6}
 \]
 
@@ -78,8 +78,8 @@ The inverse square root is defined similarly with $1/\sqrt{\lambda_i}$.
 \textbf{Regularization.} For numerical stability, we regularize:
 
 \[
-\lambda_i \leftarrow \max(\lambda_i, \epsilon_\text{reg}), \qquad
-\epsilon_\text{reg} = 10^{-6} \max_j \lambda_j + 10^{-8}
+\lambda\_i \leftarrow \max(\lambda\_i, \epsilon\_\text{reg}), \qquad
+\epsilon\_\text{reg} = 10^{-6} \max\_j \lambda\_j + 10^{-8}
 \tag{3.7}
 \]
 
@@ -89,8 +89,8 @@ Given a stream of covariance estimates $C_1, C_2, \dots, C_K$ (one per
 calibration batch), the EMA is:
 
 \[
-\hat{C}^{(k)} = \beta \hat{C}^{(k-1)} + (1 - \beta) C_k, \qquad
-\hat{C}^{(0)} = C_1
+\hat{C}^{(k)} = \beta \hat{C}^{(k-1)} + (1 - \beta) C\_k, \qquad
+\hat{C}^{(0)} = C\_1
 \tag{3.8}
 \]
 
@@ -110,7 +110,7 @@ batches.
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.9}
 \]
 
@@ -132,7 +132,7 @@ recovery capacity.
 For validation, we use the relative Frobenius error:
 
 \[
-\text{err}(W, U, V) = \frac{\|W - UV\|_F}{\|W\|_F + \epsilon}
+\text{err}(W, U, V) = \frac{\|W - UV\|\_F}{\|W\|\_F + \epsilon}
 \tag{3.11}
 \]
 

@@ -24,24 +24,24 @@ The \texttt{copy\_weights} procedure handles four patterns:
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = c_attn.weight.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = c_proj.weight.t()
+c\_w = c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Flat Modules}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight  # or q_proj or query
+q\_w = src.q\_lin.weight  # or q\_proj or query
 \end{lstlisting}
 
 \subsubsection{UniversalAdapter}
@@ -80,9 +80,9 @@ For GQA models (Qwen), we expand K, V via \texttt{repeat\_kv} before both stream
 Partial-coordinate RoPE:
 
 \begin{lstlisting}
-if rotary_dim < head_dim:
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    q = torch.cat([q_rot * cos + rot(q_rot) * sin, q_pass], dim=-1)
+if rotary\_dim \textless{} head\_dim:
+    q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+    q = torch.cat([q\_rot * cos + rot(q\_rot) * sin, q\_pass], dim=-1)
 \end{lstlisting}
 
 \subsection{Causality}
@@ -104,13 +104,13 @@ Input:  model M, config c
 Output: M with attention replaced
 
 1: for each layer with attention:
-2:     src $\leftarrow$ extract_attention(layer)
+2:     src $\leftarrow$ extract\_attention(layer)
 3:     if src is None: continue
 4:     try:
-5:         new $\leftarrow$ ChelaSlayAttention(c, pretrained_attn=src)
+5:         new $\leftarrow$ ChelaSlayAttention(c, pretrained\_attn=src)
 6:         replace(layer, new)
 7:     except Exception:
-8:         raise RuntimeError("copy_weights failed")
+8:         raise RuntimeError("copy\_weights failed")
 9: return M
 \end{lstlisting}
 
@@ -122,8 +122,8 @@ appropriate because the hybrid attention is complex.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("chela_slay")
-@ATTENTION_REGISTRY.register("chela_slay_attention")
+@ATTENTION\_REGISTRY.register("chela\_slay")
+@ATTENTION\_REGISTRY.register("chela\_slay\_attention")
 class ChelaSlayAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -134,6 +134,6 @@ class ChelaSlayAttention(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of chela\_slay.}
-\label{fig:arch_chela-slay}
+\label{fig:arch\_chela-slay}
 \end{figure}
 

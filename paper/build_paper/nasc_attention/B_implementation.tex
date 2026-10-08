@@ -5,22 +5,22 @@
 
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
-    orig_dtype = x.dtype
+    orig\_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -1e3, torch.zeros_like(m), m)  # clamp for masked rows
+    m = torch.where(m \textless{} -1e3, torch.zeros\_like(m), m)  # clamp for masked rows
     z = x - m
-    exp_z = torch.exp(z / temperature)
-    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
+    exp\_z = torch.exp(z / temperature)
+    exp\_neg\_m = torch.exp((-m) / temperature).clamp(max=1e4)
+    p = F.relu(exp\_z - exp\_neg\_m)
     denom = p.sum(dim=dim, keepdim=True)
-    zero_mask = denom <= 1e-8
-    if zero_mask.any():
+    zero\_mask = denom \textless{}= 1e-8
+    if zero\_mask.any():
         fallback = F.softmax(x, dim=dim)
-        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+        p = torch.where(zero\_mask, fallback, p / (denom + 1e-8))
     else:
         p = p / denom
-    return p.to(orig_dtype)
+    return p.to(orig\_dtype)
 \end{lstlisting}
 
 \textbf{Note.} The clamp \texttt{max=1e4} on \texttt{exp\_neg\_m} prevents overflow. The 
@@ -29,21 +29,21 @@ def softpick(x, dim=-1, temperature=1.0):
 \subsection{B.2 Local Window Attention}
 
 \begin{lstlisting}
-def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
+def \_local\_window\_attention(self, Q, K, V, valid\_mask, is\_causal):
     B, H, L, d = Q.shape
     scale = 1.0 / math.sqrt(d)
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     
     idx = torch.arange(L, device=Q.device)
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-    mask = dist > self.window_size
-    if is_causal:
-        mask = mask | (idx.unsqueeze(0) > idx.unsqueeze(1))
-    scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
+    mask = dist \textgreater{} self.window\_size
+    if is\_causal:
+        mask = mask | (idx.unsqueeze(0) \textgreater{} idx.unsqueeze(1))
+    scores = scores.masked\_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
     
-    pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)
-    scores = scores.masked_fill(pad_k, -10000.0)
-    scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+    pad\_k = (~valid\_mask).unsqueeze(1).unsqueeze(2)
+    scores = scores.masked\_fill(pad\_k, -10000.0)
+    scores = torch.nan\_to\_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
     
     attn = F.softmax(scores, dim=-1).to(Q.dtype)
     attn = self.dropout(attn)
@@ -53,72 +53,72 @@ def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
 \subsection{B.3 Sparse Block Attention (Python Loop)}
 
 \begin{lstlisting}
-def _sparse_block_attention(self, Q, K, V, valid_mask, is_causal):
-    # ... pad to multiple of block_size
-    nb = Lp // self.block_size
+def \_sparse\_block\_attention(self, Q, K, V, valid\_mask, is\_causal):
+    # ... pad to multiple of block\_size
+    nb = Lp // self.block\_size
     
     # Compute block-level scores
-    Q_mean = Qb.mean(dim=3)
-    K_mean = Kb.mean(dim=3)
-    blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1)) * scale
+    Q\_mean = Qb.mean(dim=3)
+    K\_mean = Kb.mean(dim=3)
+    blk\_scores = torch.matmul(Q\_mean.float(), K\_mean.float().transpose(-2, -1)) * scale
     
-    if is_causal:
-        blk_scores = blk_scores + causal_blk_mask
+    if is\_causal:
+        blk\_scores = blk\_scores + causal\_blk\_mask
     
-    top_k = min(self.top_k, nb)
-    _, top_idx = blk_scores.topk(top_k, dim=-1)
-    if is_causal:
+    top\_k = min(self.top\_k, nb)
+    \_, top\_idx = blk\_scores.topk(top\_k, dim=-1)
+    if is\_causal:
         for i in range(nb):
-            top_idx[:, :, i, 0] = i
+            top\_idx[:, :, i, 0] = i
     else:
-        top_idx[:, :, :, 0] = 0
+        top\_idx[:, :, :, 0] = 0
     
-    out_blocks = torch.zeros_like(Qb)
+    out\_blocks = torch.zeros\_like(Qb)
     for i in range(nb):  # $\leftarrow$ PYTHON LOOP
-        idx = top_idx[:, :, i, :]
-        idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
-        K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
-        V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
+        idx = top\_idx[:, :, i, :]
+        idx\_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block\_size, d)
+        K\_sel = torch.gather(Kb, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, d)
+        V\_sel = torch.gather(Vb, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, d)
         
-        scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1)) * scale
+        scores\_i = torch.matmul(Qb[:, :, i].float(), K\_sel.float().transpose(-2, -1)) * scale
         
         # Causal mask for selected tokens
         # ... 
         
-        attn_i = softpick(scores_i, dim=-1).to(Q.dtype)
-        out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
+        attn\_i = softpick(scores\_i, dim=-1).to(Q.dtype)
+        out\_blocks[:, :, i] = torch.matmul(attn\_i, V\_sel)
     
-    return out_blocks.view(B, H, Lp, d)[:, :, :L, :]
+    return out\_blocks.view(B, H, Lp, d)[:, :, :L, :]
 \end{lstlisting}
 
 \subsection{B.4 Global Spectral RFF}
 
 \begin{lstlisting}
-def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
+def \_global\_spectral\_rff\_attention(self, Q, K, V, valid\_mask, is\_causal):
     B, H, L, d = Q.shape
-    pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)
+    pad = (~valid\_mask).unsqueeze(1).unsqueeze(-1)
     
-    Qf = torch.matmul(Q.float(), self.rff_proj.float())
-    Kf = torch.matmul(K.float(), self.rff_proj.float())
-    norm = 1.0 / math.sqrt(self.rff_features)
-    phi_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
-    phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
+    Qf = torch.matmul(Q.float(), self.rff\_proj.float())
+    Kf = torch.matmul(K.float(), self.rff\_proj.float())
+    norm = 1.0 / math.sqrt(self.rff\_features)
+    phi\_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
+    phi\_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
     
-    phi_K = phi_K.masked_fill(pad, 0.0)
-    V_masked = V.float().masked_fill(pad, 0.0)
+    phi\_K = phi\_K.masked\_fill(pad, 0.0)
+    V\_masked = V.float().masked\_fill(pad, 0.0)
     
-    if is_causal:
-        KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, 2F, d]
-        KV_cumsum = torch.cumsum(KV, dim=2)
-        num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)
-        Z = torch.cumsum(phi_K, dim=2)
-        den = (phi_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
+    if is\_causal:
+        KV = phi\_K.unsqueeze(-1) * V\_masked.unsqueeze(-2)  # [B, H, L, 2F, d]
+        KV\_cumsum = torch.cumsum(KV, dim=2)
+        num = torch.matmul(phi\_Q.unsqueeze(-2), KV\_cumsum).squeeze(-2)
+        Z = torch.cumsum(phi\_K, dim=2)
+        den = (phi\_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
         return (num / den).to(Q.dtype)
     else:
-        KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
-        Z = phi_K.sum(dim=-2, keepdim=True)
-        num = torch.matmul(phi_Q, KV)
-        den = torch.matmul(phi_Q, Z.transpose(-2, -1)) + 1e-5
+        KV = torch.matmul(phi\_K.transpose(-2, -1), V\_masked)
+        Z = phi\_K.sum(dim=-2, keepdim=True)
+        num = torch.matmul(phi\_Q, KV)
+        den = torch.matmul(phi\_Q, Z.transpose(-2, -1)) + 1e-5
         return (num / den).to(Q.dtype)
 \end{lstlisting}
 
@@ -128,7 +128,7 @@ def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     raise e  # $\leftarrow$ Re-raises!
 \end{lstlisting}
 
@@ -174,16 +174,16 @@ model = ...
 
 \begin{lstlisting}
 summary = x.mean(dim=1)
-gates = F.softmax(model.gate_proj(summary), dim=-1)
+gates = F.softmax(model.gate\_proj(summary), dim=-1)
 print(f"Gate: {gates.mean(dim=0)}")
 \end{lstlisting}
 
 \subsubsection{Check RFF Memory}
 
 \begin{lstlisting}
-def measure_rff_memory(B, H, L, F, d):
+def measure\_rff\_memory(B, H, L, F, d):
     return B * H * L * 2 * F * d * 4 / 1e6  # MB
-print(measure_rff_memory(8, 12, 128, 64, 64))  # ~50 MB
+print(measure\_rff\_memory(8, 12, 128, 64, 64))  # ~50 MB
 \end{lstlisting}
 \begin{lstlisting}
 

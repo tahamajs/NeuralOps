@@ -3,100 +3,100 @@
 \subsection{B.1 Dispatch Logic}
 
 \begin{lstlisting}
-if N <= 128 or is_cross_attention:
+if N \textless{}= 128 or is\_cross\_attention:
     # Short path
-    scale = 1.0 / math.sqrt(self.head_dim)
+    scale = 1.0 / math.sqrt(self.head\_dim)
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-    if self.is_decoder:
-        causal_mask = torch.triu(torch.full((N, N), float("-inf")), diagonal=1)
-        scores = scores + causal_mask
+    if self.is\_decoder:
+        causal\_mask = torch.triu(torch.full((N, N), float("-inf")), diagonal=1)
+        scores = scores + causal\_mask
     # padding mask...
     probs = F.softmax(scores, dim=-1)
     context = torch.matmul(probs.to(v.dtype), v)
 else:
     # Long path
-    context = self._moba_block_attention(...)
+    context = self.\_moba\_block\_attention(...)
 \end{lstlisting}
 
 \subsection{B.2 Block Gate}
 
 \begin{lstlisting}
-# Pad to multiple of block_size
-pad_len = (self.block_size - (N % self.block_size)) % self.block_size
-q_padded = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
-k_padded = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
+# Pad to multiple of block\_size
+pad\_len = (self.block\_size - (N \% self.block\_size)) \% self.block\_size
+q\_padded = F.pad(q, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else q
+k\_padded = F.pad(k, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else k
 
 # Reshape and mean
-num_blocks = q_padded.size(2) // self.block_size
-q_blocks = q_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
-k_blocks = k_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
+num\_blocks = q\_padded.size(2) // self.block\_size
+q\_blocks = q\_padded.reshape(B, H, num\_blocks, self.block\_size, d\_h).mean(dim=-2)
+k\_blocks = k\_padded.reshape(B, H, num\_blocks, self.block\_size, d\_h).mean(dim=-2)
 
 # Gate scores
-q_gate = self.attn_gate(q_blocks).squeeze(-1)  # (B, H, num_blocks)
-k_gate = self.attn_gate(k_blocks).squeeze(-1)
-gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
-gate_scores = gate_scores / (self.gate_temp.abs() + 1e-5)
+q\_gate = self.attn\_gate(q\_blocks).squeeze(-1)  # (B, H, num\_blocks)
+k\_gate = self.attn\_gate(k\_blocks).squeeze(-1)
+gate\_scores = torch.matmul(q\_gate.unsqueeze(-1), k\_gate.unsqueeze(-2))
+gate\_scores = gate\_scores / (self.gate\_temp.abs() + 1e-5)
 \end{lstlisting}
 
 \subsection{B.3 MoBA Block Attention}
 
 \begin{lstlisting}
-def _moba_block_attention(self, q, k, v, gate_scores, valid_mask, is_causal):
+def \_moba\_block\_attention(self, q, k, v, gate\_scores, valid\_mask, is\_causal):
     B, H, N, D = q.shape
     
     # Pad
-    pad_len = (self.block_size - (N % self.block_size)) % self.block_size
-    q_pad = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
-    k_pad = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
-    v_pad = F.pad(v, (0, 0, 0, pad_len)) if pad_len > 0 else v
+    pad\_len = (self.block\_size - (N \% self.block\_size)) \% self.block\_size
+    q\_pad = F.pad(q, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else q
+    k\_pad = F.pad(k, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else k
+    v\_pad = F.pad(v, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else v
     
-    num_blocks = q_pad.size(2) // self.block_size
-    top_k = min(self.top_k_blocks, num_blocks)
+    num\_blocks = q\_pad.size(2) // self.block\_size
+    top\_k = min(self.top\_k\_blocks, num\_blocks)
     
-    _, top_indices = torch.topk(gate_scores, top_k, dim=-1)
-    top_indices[:, :, :, 0] = 0  # Always block 0
+    \_, top\_indices = torch.topk(gate\_scores, top\_k, dim=-1)
+    top\_indices[:, :, :, 0] = 0  # Always block 0
     
     # Reshape
-    q_blocks = q_pad.reshape(B, H, num_blocks, self.block_size, D)
-    k_blocks = k_pad.reshape(B, H, num_blocks, self.block_size, D)
-    v_blocks = v_pad.reshape(B, H, num_blocks, self.block_size, D)
+    q\_blocks = q\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
+    k\_blocks = k\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
+    v\_blocks = v\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
     
     # Attention per query block
-    out_blocks = []
-    for b in range(num_blocks):
-        idx_b = top_indices[:, :, b, :]
-        idx_exp = idx_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top_k, self.block_size, D)
-        k_sel = torch.gather(k_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
-        v_sel = torch.gather(v_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
+    out\_blocks = []
+    for b in range(num\_blocks):
+        idx\_b = top\_indices[:, :, b, :]
+        idx\_exp = idx\_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top\_k, self.block\_size, D)
+        k\_sel = torch.gather(k\_blocks, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, D)
+        v\_sel = torch.gather(v\_blocks, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, D)
         
-        q_curr = q_blocks[:, :, b, :, :]
-        attn_b = torch.matmul(q_curr.float(), k_sel.float().transpose(-2, -1)) / math.sqrt(D)
+        q\_curr = q\_blocks[:, :, b, :, :]
+        attn\_b = torch.matmul(q\_curr.float(), k\_sel.float().transpose(-2, -1)) / math.sqrt(D)
         
-        if is_causal:
-            causal_b = torch.triu(torch.full((self.block_size, top_k * self.block_size), float("-inf")), diagonal=1)
-            attn_b = attn_b + causal_b.unsqueeze(0).unsqueeze(0)
+        if is\_causal:
+            causal\_b = torch.triu(torch.full((self.block\_size, top\_k * self.block\_size), float("-inf")), diagonal=1)
+            attn\_b = attn\_b + causal\_b.unsqueeze(0).unsqueeze(0)
         
-        if valid_mask is not None:
-            pad_m = (~valid_mask).unsqueeze(1).unsqueeze(2)
-            if pad_m.shape[-1] < k_sel.shape[2]:
-                pad_m = F.pad(pad_m, (0, k_sel.shape[2] - pad_m.shape[-1]), value=True)
-            attn_b = attn_b.masked_fill(pad_m[:, :, :, :k_sel.shape[2]], float("-inf"))
+        if valid\_mask is not None:
+            pad\_m = (~valid\_mask).unsqueeze(1).unsqueeze(2)
+            if pad\_m.shape[-1] \textless{} k\_sel.shape[2]:
+                pad\_m = F.pad(pad\_m, (0, k\_sel.shape[2] - pad\_m.shape[-1]), value=True)
+            attn\_b = attn\_b.masked\_fill(pad\_m[:, :, :, :k\_sel.shape[2]], float("-inf"))
         
-        attn_b = F.softmax(attn_b, dim=-1)
-        attn_b = torch.nan_to_num(attn_b, nan=0.0)
-        attn_b = self.dropout(attn_b)
-        out_b = torch.matmul(attn_b.to(v_sel.dtype), v_sel)
-        out_blocks.append(out_b)
+        attn\_b = F.softmax(attn\_b, dim=-1)
+        attn\_b = torch.nan\_to\_num(attn\_b, nan=0.0)
+        attn\_b = self.dropout(attn\_b)
+        out\_b = torch.matmul(attn\_b.to(v\_sel.dtype), v\_sel)
+        out\_blocks.append(out\_b)
     
-    out_pad = torch.cat(out_blocks, dim=2)
-    return out_pad[:, :, :N, :]
+    out\_pad = torch.cat(out\_blocks, dim=2)
+    return out\_pad[:, :, :N, :]
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}
 
 \subsubsection{B.4.1 Threshold too High}
 
-If threshold > test L, sparsity never activates.
+If threshold \textgreater{} test L, sparsity never activates.
 
 \subsubsection{B.4.2 Gate Temperature Collapse}
 
@@ -120,7 +120,7 @@ RoBERTa: do not apply out\_proj.
 
 \begin{lstlisting}
 except Exception:
-    raise RuntimeError("copy_weights failed")
+    raise RuntimeError("copy\_weights failed")
 \end{lstlisting}
 
 This should be changed to:

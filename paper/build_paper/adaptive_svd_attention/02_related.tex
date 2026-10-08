@@ -29,10 +29,10 @@ factorization, this becomes the A3 method (Fisher diagonal weighting).
 \textbf{SmoothQuant.} Xiao et al. (2023) migrate activation scale to weights for 
 quantization. Analogous to AASVD's covariance weighting for low-rank.
 
-\textbf{A3.} Uses Fisher diagonal $F_i = \mathbb{E}[x_i^2]$ to weight the SVD input 
+\textbf{A3.} Uses Fisher diagonal $F\_i = \mathbb{E}[x\_i^2]$ to weight the SVD input 
 space. Requires calibration. Adaptive SVD is calibration-free.
 
-\textbf{AASVD.} Uses full covariance $C_X = \mathbb{E}[x x^\top]$. Requires 
+\textbf{AASVD.} Uses full covariance $C\_X = \mathbb{E}[x x^\top]$. Requires 
 streaming EMA accumulation. Adaptive SVD is calibration-free.
 
 \textbf{Key distinction.} Adaptive SVD does \textbf{not} use activation statistics. Its 
@@ -40,7 +40,7 @@ rank criterion is intrinsic to the weight matrix.
 
 \subsection{Parameter-Efficient Fine-Tuning}
 
-\textbf{LoRA.} Hu et al. (2021) add trainable rank-$r_L$ updates $B A$ with $B = 0$. 
+\textbf{LoRA.} Hu et al. (2021) add trainable rank-$r\_L$ updates $B A$ with $B = 0$. 
 Adaptive SVD uses the same residual structure, integrated with a frozen SVD base.
 
 \textbf{AdaLoRA.} Zhang et al. (2023) adaptively allocate LoRA rank per layer based 

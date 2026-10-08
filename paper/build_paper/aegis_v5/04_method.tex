@@ -99,7 +99,7 @@ For meaningful compression, we need $r < d/2$.
 We freeze $(U_r, V_r)$ and add LoRA adapters:
 
 \[
-y = U_r V_r x + \frac{\alpha}{r_L} B A x
+y = U\_r V\_r x + \frac{\alpha}{r\_L} B A x
 \]
 
 Only $A, B$ are trained.
@@ -115,8 +115,8 @@ correctness.
 We split $H$ heads:
 
 \[
-H_\text{local} = \lceil 2H/3 \rceil, \quad
-H_\text{global} = H - H_\text{local}
+H\_\text{local} = \lceil 2H/3 \rceil, \quad
+H\_\text{global} = H - H\_\text{local}
 \]
 
 For $H = 12$:
@@ -130,7 +130,7 @@ For $H = 12$:
 Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
 
 \[
-\text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
+\text{Out}\_\text{local}[i] = \text{softpick}\!\left(\frac{q\_i K\_\text{local}^\top}{\sqrt{d\_h}}\right) \cdot V\_\text{local}
 \]
 
 with a window mask $|i - j| \leq W/2$.
@@ -140,7 +140,7 @@ with a window mask $|i - j| \leq W/2$.
 Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
 
 \[
-\text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}\_\text{global}[i] = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
@@ -150,7 +150,7 @@ with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
 The outputs are concatenated:
 
 \[
-\text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
+\text{Out} = \text{Concat}(\text{Out}\_\text{local}, \text{Out}\_\text{global}) \in \mathbb{R}^{B \times H \times L \times d\_h}
 \]
 
 \subsection{Adaptive Gating}
@@ -160,7 +160,7 @@ The outputs are concatenated:
 Each head has a learnable scalar $g_h$:
 
 \[
-\text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
+\text{Out}\_\text{fused}[i] = \sigma(g\_h + 2.0) \cdot \text{Out}\_\text{local}[i] + (1 - \sigma(g\_h + 2.0)) \cdot \text{Out}\_\text{global}[i]
 \]
 
 where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
@@ -193,27 +193,27 @@ This preserves correctness at the cost of quadratic complexity for decoders.
 
 \textbf{Algorithm 1:} AEGIS-V5 forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, is\_decoder
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1:  Q $\leftarrow$ SVD_Q(X); K $\leftarrow$ SVD_K(X); V $\leftarrow$ SVD_V(X)
+1:  Q $\leftarrow$ SVD\_Q(X); K $\leftarrow$ SVD\_K(X); V $\leftarrow$ SVD\_V(X)
 2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
-3:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
-4:  if is_decoder:
+3:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+4:  if is\_decoder:
 5:      # Fallback to standard causal attention
-6:      scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
-7:      scores $\leftarrow$ mask_causal(scores)
+6:      scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+7:      scores $\leftarrow$ mask\_causal(scores)
 8:      out $\leftarrow$ softmax(scores) @ V
 9:  else:
 10:     # Split-head hybrid attention
-11:     Q_local $\leftarrow$ Q[:, :H_local]; K_local $\leftarrow$ K[:, :H_local]; V_local $\leftarrow$ V[:, :H_local]
-12:     Q_global $\leftarrow$ Q[:, H_local:]; K_global $\leftarrow$ K[:, H_local:]; V_global $\leftarrow$ V[:, H_local:]
-13:     Out_local $\leftarrow$ local_window(Q_local, K_local, V_local, W)
-14:     Out_global $\leftarrow$ kernel_linear(Q_global, K_global, V_global,  )
+11:     Q\_local $\leftarrow$ Q[:, :H\_local]; K\_local $\leftarrow$ K[:, :H\_local]; V\_local $\leftarrow$ V[:, :H\_local]
+12:     Q\_global $\leftarrow$ Q[:, H\_local:]; K\_global $\leftarrow$ K[:, H\_local:]; V\_global $\leftarrow$ V[:, H\_local:]
+13:     Out\_local $\leftarrow$ local\_window(Q\_local, K\_local, V\_local, W)
+14:     Out\_global $\leftarrow$ kernel\_linear(Q\_global, K\_global, V\_global,  )
 15:     # Per-head gate
-16:     g $\leftarrow$ $\sigma$(blend_logits + 2.0)
-17:     Out $\leftarrow$ g   Out_local + (1 - g)   Out_global
-18: Y $\leftarrow$ SVD_O(Out)
+16:     g $\leftarrow$ $\sigma$(blend\_logits + 2.0)
+17:     Out $\leftarrow$ g   Out\_local + (1 - g)   Out\_global
+18: Y $\leftarrow$ SVD\_O(Out)
 19: return Y
 \end{lstlisting}
 
@@ -287,7 +287,7 @@ For $d = 768$, $r = 128$:
 If $W = U\Sigma V^\top$, then:
 
 \[
-\|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - U\_r \Sigma\_r V\_r^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \]
 
 The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
@@ -297,7 +297,7 @@ The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
 Standard RFF bound (Rahimi \& Recht, 2007):
 
 \[
-\sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
+\sup\_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
 \]
 
 with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.

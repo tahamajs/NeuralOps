@@ -25,7 +25,7 @@ GPT-2 & \texttt{GPT2Attention} & No & No & No \\
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
     try:
-        w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
+        w, b = UniversalAdapter.get\_weight\_bias(pretrained\_attn, proj)
         if w is not None:
             extracted[proj] = (w, b)
     except Exception:
@@ -35,17 +35,17 @@ for proj in ["q", "k", "v", "o"]:
 \subsubsection{Tier 2: GPT-2 Conv1D}
 
 \begin{lstlisting}
-weight = pretrained_attn.c_attn.weight.data
-if weight.shape[1] == 3 * hidden_size:
+weight = pretrained\_attn.c\_attn.weight.data
+if weight.shape[1] == 3 * hidden\_size:
     weight = weight.t()
-q_w, k_w, v_w = weight.chunk(3, dim=0)
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Tier 3: RoBERTa Nested}
 
 \begin{lstlisting}
-if hasattr(pretrained_attn, "self"):
-    s = pretrained_attn.self
+if hasattr(pretrained\_attn, "self"):
+    s = pretrained\_attn.self
     extracted["q"] = (s.query.weight, ...)
     extracted["k"] = (s.key.weight, ...)
     extracted["v"] = (s.value.weight, ...)
@@ -54,11 +54,11 @@ if hasattr(pretrained_attn, "self"):
 \subsubsection{Tier 4: Named Projections}
 
 \begin{lstlisting}
-named_map = {
-    "q": ["q_proj", "q_lin", "query"],
-    "k": ["k_proj", "k_lin", "key"],
-    "v": ["v_proj", "v_lin", "value"],
-    "o": ["o_proj", "out_proj", "out_lin", "dense"],
+named\_map = {
+    "q": ["q\_proj", "q\_lin", "query"],
+    "k": ["k\_proj", "k\_lin", "key"],
+    "v": ["v\_proj", "v\_lin", "value"],
+    "o": ["o\_proj", "out\_proj", "out\_lin", "dense"],
 }
 \end{lstlisting}
 
@@ -67,26 +67,26 @@ named_map = {
 If source weight has smaller $d_\text{out}$ (GQA), we repeat:
 
 \begin{lstlisting}
-if w.shape[0] < self.all_head_size and self.all_head_size % w.shape[0] == 0:
-    rep = self.all_head_size // w.shape[0]
+if w.shape[0] \textless{} self.all\_head\_size and self.all\_head\_size \% w.shape[0] == 0:
+    rep = self.all\_head\_size // w.shape[0]
     w = w.repeat(rep, 1)
 \end{lstlisting}
 
 \subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-is_nested = False
-if hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_proj:
-    is_nested = True
+is\_nested = False
+if hasattr(pretrained\_attn, "self") and hasattr(getattr(pretrained\_attn, "self"), "query"):
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention") and not has\_out\_proj:
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{The Router $W_\text{rg}$}
 
 \begin{lstlisting}
-self.W_rg = nn.Linear(self.head_dim, self.head_dim, bias=False)
-nn.init.eye_(self.W_rg.weight)
+self.W\_rg = nn.Linear(self.head\_dim, self.head\_dim, bias=False)
+nn.init.eye\_(self.W\_rg.weight)
 \end{lstlisting}
 
 Initialized to identity, so the router starts as the dot product of page-mean 
@@ -97,17 +97,17 @@ queries and keys.
 Stored as a buffer (not a parameter):
 
 \begin{lstlisting}
-self.register_buffer("aux_loss", torch.tensor(0.0), persistent=False)
+self.register\_buffer("aux\_loss", torch.tensor(0.0), persistent=False)
 \end{lstlisting}
 
 Updated during forward:
 
 \begin{lstlisting}
-router_probs = F.softmax(router_logits, dim=-1)
-expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
-density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
-prob_mean = router_probs.mean(dim=(0, 1, 2))
-self.aux_loss = float(num_pages) * torch.sum(density * prob_mean)
+router\_probs = F.softmax(router\_logits, dim=-1)
+expert\_mask = F.one\_hot(topk\_indices, num\_classes=num\_pages).float()
+density = expert\_mask.sum(dim=-2).mean(dim=(0, 1, 2))
+prob\_mean = router\_probs.mean(dim=(0, 1, 2))
+self.aux\_loss = float(num\_pages) * torch.sum(density * prob\_mean)
 \end{lstlisting}
 
 \textbf{Usage.} The training loop should add \texttt{aux\_loss * $\lambda$} to the classification 
@@ -116,17 +116,17 @@ loss. Typical \texttt{$\lambda$ = 0.01}.
 \subsection{The `is\_causal` Flag}
 
 \begin{lstlisting}
-self.is_causal = bool(
-    getattr(config, "is_causal", False)
-    or getattr(config, "is_decoder", False)
-    or any(model_type.startswith(p) for p in ("gpt", "qwen", "llama", ...))
+self.is\_causal = bool(
+    getattr(config, "is\_causal", False)
+    or getattr(config, "is\_decoder", False)
+    or any(model\_type.startswith(p) for p in ("gpt", "qwen", "llama", ...))
 )
 \end{lstlisting}
 
 For causal models:
 \begin{itemize}
 \item Router logits are masked (upper-triangular).
-\item Full attention path is used when \texttt{num\_pages <= 2}.
+\item Full attention path is used when \texttt{num\_pages \textless{}= 2}.
 
 \end{itemize}
 \subsection{Injection Algorithm}
@@ -136,10 +136,10 @@ For causal models:
 Input:  model M, config
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
 3:     try:
-4:         new $\leftarrow$ MoEDeltaKVPagedAttention(config, pretrained_attn=src)
+4:         new $\leftarrow$ MoEDeltaKVPagedAttention(config, pretrained\_attn=src)
 5:         replace( , new)
 6:     except Exception as e:
 7:         raise RuntimeError(...)    HARD FAIL
@@ -169,7 +169,7 @@ OOM & CUDA error & Abort \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
+@ATTENTION\_REGISTRY.register("moe\_deltakv\_paged", supports\_causal=True, supports\_gqa=True)
 class MoEDeltaKVPagedAttention(nn.Module):
     ...
 \end{lstlisting}
@@ -194,6 +194,6 @@ For $d = 768$, $d_h = 64$, $r_L = 16$: ~102K per layer.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of moe\_deltakv\_paged.}
-\label{fig:arch_moe-deltakv-paged}
+\label{fig:arch\_moe-deltakv-paged}
 \end{figure}
 

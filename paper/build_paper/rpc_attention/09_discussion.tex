@@ -38,7 +38,7 @@ RPC does not reduce parameters. LoRA adds ~1\%.
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Long sequence (L > 512)? --- Yes --- Use RPC
+Long sequence (L \textgreater{} 512)? --- Yes --- Use RPC
   | No
    
 Memory-constrained? --- Yes --- Use AASVD or EAT

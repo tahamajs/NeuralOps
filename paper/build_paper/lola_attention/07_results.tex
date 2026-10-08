@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_lolaattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_lolaattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -13,17 +13,17 @@ Table~\ref{tab:results_acc_lolaattention} details empirical evaluation metrics a
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Lola Attention} & \textbf{77.87\%} & -12.61\% & PASS & 0.8016 & 0 & \textbf{1.23$\times$} & 338.5 MB & 8.0 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Lola Attention} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 377.8 MB & 14.2 & -- \\
+RoBERTa & \textbf{Lola Attention} & \textbf{50.92\%} & -24.19\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 377.8 MB & 14.2 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Lola Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 468.7 MB & 15.4 & -- \\
+GPT-2 & \textbf{Lola Attention} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 468.7 MB & 15.4 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_lolaattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_lolaattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_lolaattention} documents parameter compression fac
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{lolaattention}.}
-\label{tab:results_params_lolaattention}
+\label{tab:results\_params\_lolaattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_lolaattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_lolaattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_lolaattention} presents memory profiling and executi
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{lolaattention}.}
-\label{tab:results_vram_lolaattention}
+\label{tab:results\_vram\_lolaattention}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/lola_attention_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lola_attention}.}
-\label{fig:results_lola_attention}
+\includegraphics[width=0.85\linewidth]{figures/lola\_attention\_gpt2\_loss\_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lola\_attention}.}
+\label{fig:results\_lola\_attention}
 \end{figure}

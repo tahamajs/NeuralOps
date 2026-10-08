@@ -128,7 +128,7 @@ layer $\times$ $N_l$).
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,11 +157,11 @@ OS \& Windows / Linux \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_adaptive_svd.py \
+python run\_all\_4\_adaptive\_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold 0.92 \
-    --residual_rank 16 \
-    --recovery_steps 50
+    --energy\_threshold 0.92 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \textbf{Expected runtime:} ~15 minutes on RTX 4070.

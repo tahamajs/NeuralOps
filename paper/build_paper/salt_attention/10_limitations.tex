@@ -12,9 +12,9 @@ inference VRAM is identical to the baseline.
 \begin{lstlisting}
 z = F.linear(x, self.Vt)
 z = z * (self.S * self.gamma)
-y_svd = F.linear(z, self.U)
-y_lora = F.linear(F.linear(x, self.B), self.A)
-return y_svd + y_lora + self.bias
+y\_svd = F.linear(z, self.U)
+y\_lora = F.linear(F.linear(x, self.B), self.A)
+return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 Expected speedup: 2-4$\times$.
@@ -25,7 +25,7 @@ Unlike other modules in our framework, SALT \textbf{raises} on extraction failur
 
 \begin{lstlisting}
 except Exception as e:
-    raise RuntimeError(f"copy_weights failed: {e}")
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This aborts injection for the entire model. Should be a warning.

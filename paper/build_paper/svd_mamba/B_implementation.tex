@@ -4,105 +4,105 @@
 \subsection{B.1 The SVDMamba Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("svd_mamba")
+@ATTENTION\_REGISTRY.register("svd\_mamba")
 class SVDMamba(BaseAttention):
-    def __init__(self, config, rank=None, d_model=768, d_state=16,
-                 d_conv=4, expand=1, global_rank=8, lora_rank=16, ...):
-        super().__init__(config, rank)
-        self.d_model = d_model
-        self.d_state = d_state
-        self.d_conv = d_conv
-        self.inner_dim = expand * d_model
+    def \_\_init\_\_(self, config, rank=None, d\_model=768, d\_state=16,
+                 d\_conv=4, expand=1, global\_rank=8, lora\_rank=16, ...):
+        super().\_\_init\_\_(config, rank)
+        self.d\_model = d\_model
+        self.d\_state = d\_state
+        self.d\_conv = d\_conv
+        self.inner\_dim = expand * d\_model
         
         # Attention path
-        self.q_proj = SVDLinear(d_model, all_head_size, ...)
-        self.k_proj = SVDLinear(d_model, kv_head_size, ...)
-        self.v_proj = SVDLinear(d_model, kv_head_size, ...)
-        self.attn_out_proj = SVDLinear(all_head_size, d_model, ...)
+        self.q\_proj = SVDLinear(d\_model, all\_head\_size, ...)
+        self.k\_proj = SVDLinear(d\_model, kv\_head\_size, ...)
+        self.v\_proj = SVDLinear(d\_model, kv\_head\_size, ...)
+        self.attn\_out\_proj = SVDLinear(all\_head\_size, d\_model, ...)
         
         # SSM path
-        self.in_proj = SVDLinear(d_model, 2 * inner_dim, ...)
-        self.out_proj = SVDLinear(inner_dim, d_model, ...)
-        self.x_proj = SVDLinear(inner_dim, dt_rank + 2 * d_state, ...)
-        self.dt_proj = SVDLinear(dt_rank, inner_dim, ...)
-        self.conv1d = nn.Conv1d(inner_dim, inner_dim, kernel_size=d_conv, groups=inner_dim)
-        self.A_log = nn.Parameter(...)
-        self.D = nn.Parameter(torch.ones(inner_dim))
-        self.dt_bias = nn.Parameter(torch.zeros(inner_dim))
+        self.in\_proj = SVDLinear(d\_model, 2 * inner\_dim, ...)
+        self.out\_proj = SVDLinear(inner\_dim, d\_model, ...)
+        self.x\_proj = SVDLinear(inner\_dim, dt\_rank + 2 * d\_state, ...)
+        self.dt\_proj = SVDLinear(dt\_rank, inner\_dim, ...)
+        self.conv1d = nn.Conv1d(inner\_dim, inner\_dim, kernel\_size=d\_conv, groups=inner\_dim)
+        self.A\_log = nn.Parameter(...)
+        self.D = nn.Parameter(torch.ones(inner\_dim))
+        self.dt\_bias = nn.Parameter(torch.zeros(inner\_dim))
         
         # Global SVD mixing
-        self.global_V = nn.Parameter(torch.randn(d_model, global_rank) * 0.02)
-        self.global_out = SVDLinear(global_rank, inner_dim, ...)
+        self.global\_V = nn.Parameter(torch.randn(d\_model, global\_rank) * 0.02)
+        self.global\_out = SVDLinear(global\_rank, inner\_dim, ...)
         
         # Gating (init to silence SSM)
-        self.gating = nn.Linear(d_model, d_model)
-        nn.init.zeros_(self.gating.weight)
-        nn.init.constant_(self.gating.bias, -7.0)
+        self.gating = nn.Linear(d\_model, d\_model)
+        nn.init.zeros\_(self.gating.weight)
+        nn.init.constant\_(self.gating.bias, -7.0)
 \end{lstlisting}
 
 \subsection{B.2 The SVDLinear Module}
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=None, lora_rank=16, ...):
-        super().__init__()
-        self.U = nn.Parameter(torch.randn(out_features, rank) * 0.02)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=None, lora\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.U = nn.Parameter(torch.randn(out\_features, rank) * 0.02)
         self.S = nn.Parameter(torch.ones(rank))
-        self.V = nn.Parameter(torch.randn(in_features, rank) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.V = nn.Parameter(torch.randn(in\_features, rank) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out\_features))
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
     def forward(self, x):
         out = ((x @ self.V) * self.S) @ self.U.t() + self.bias
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.3 The SSM Forward}
 
 \begin{lstlisting}
-def ssm_forward(self, x):
-    # x: [B, L, inner_dim]
-    x_t = x.transpose(1, 2)
-    x_pad = F.pad(x_t, (self.d_conv - 1, 0))
-    x_conv = self.conv1d(x_pad)[..., :seqlen].transpose(1, 2)
-    x_conv = F.silu(x_conv)
+def ssm\_forward(self, x):
+    # x: [B, L, inner\_dim]
+    x\_t = x.transpose(1, 2)
+    x\_pad = F.pad(x\_t, (self.d\_conv - 1, 0))
+    x\_conv = self.conv1d(x\_pad)[..., :seqlen].transpose(1, 2)
+    x\_conv = F.silu(x\_conv)
     
-    x_proj = self.x_proj(x_conv)
-    delta = F.softplus(self.dt_proj(x_proj[:, :, :dt_rank]) + self.dt_bias)
+    x\_proj = self.x\_proj(x\_conv)
+    delta = F.softplus(self.dt\_proj(x\_proj[:, :, :dt\_rank]) + self.dt\_bias)
     delta = delta.clamp(min=1e-3, max=0.1)
-    B_ssm = x_proj[:, :, dt_rank:dt_rank+d_state]
-    C_ssm = x_proj[:, :, dt_rank+d_state:]
+    B\_ssm = x\_proj[:, :, dt\_rank:dt\_rank+d\_state]
+    C\_ssm = x\_proj[:, :, dt\_rank+d\_state:]
     
-    A = -torch.exp(self.A_log.clamp(min=-20, max=10))
+    A = -torch.exp(self.A\_log.clamp(min=-20, max=10))
     
     # Chunked scan
-    h_running = zeros(B, inner_dim, d_state)
-    y_chunks = []
+    h\_running = zeros(B, inner\_dim, d\_state)
+    y\_chunks = []
     for c in chunks:
         # ... intra-chunk scan + inter-chunk carry
-        y_chunks.append(y_c)
-    y = cat(y_chunks, dim=1)
-    y = y + self.D * x_conv
+        y\_chunks.append(y\_c)
+    y = cat(y\_chunks, dim=1)
+    y = y + self.D * x\_conv
     return y * F.silu(z)
 \end{lstlisting}
 
 \subsection{B.4 The Gating Module}
 
 \begin{lstlisting}
-self.gating = nn.Linear(self.d_model, self.d_model)
-nn.init.zeros_(self.gating.weight)
-nn.init.constant_(self.gating.bias, -7.0)
+self.gating = nn.Linear(self.d\_model, self.d\_model)
+nn.init.zeros\_(self.gating.weight)
+nn.init.constant\_(self.gating.bias, -7.0)
 \end{lstlisting}
 
 The gate is per-token, per-channel:
 \begin{lstlisting}
-gamma = torch.sigmoid(self.gating(hidden_states))
-Y = gamma * ssm_proj + (1.0 - gamma) * attn_out
+gamma = torch.sigmoid(self.gating(hidden\_states))
+Y = gamma * ssm\_proj + (1.0 - gamma) * attn\_out
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}

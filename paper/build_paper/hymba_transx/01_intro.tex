@@ -50,23 +50,23 @@ HymbaTransX has three components:
 Two query-key pairs:
 
 \[
-Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}, \quad
-Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}, \quad
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
 \tag{1.1}
 \]
 
 Two attention patterns:
 
 \[
-A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
-A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
 \tag{1.2}
 \]
 
 Differential output:
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2)
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2)
 \tag{1.3}
 \]
 
@@ -84,7 +84,7 @@ forward and backward, averaged.
 A single scalar gate $\alpha = \sigma(w)$ blends the two branches:
 
 \[
-\text{out} = \alpha \odot A_\text{diff} + (1 - \alpha) \odot M_\text{ssm}
+\text{out} = \alpha \odot A\_\text{diff} + (1 - \alpha) \odot M\_\text{ssm}
 \tag{1.4}
 \]
 

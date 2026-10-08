@@ -5,79 +5,79 @@
 
 \begin{lstlisting}
 class ProgressiveTokenPruning(BaseAttention):
-    def __init__(self, config=None, keep_ratio=0.8, rank=None, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config=None, keep\_ratio=0.8, rank=None, ...):
+        super().\_\_init\_\_(config, rank)
         
         # ... resolve dims ...
         
         # Score network
-        self.score_network = nn.Sequential(
+        self.score\_network = nn.Sequential(
             nn.Linear(self.dim, 64),
             nn.GELU(),
             nn.Linear(64, 1),
         )
         
         # Q/K/V/O with LoRA
-        self.q_lin = LoRALinear(...)
-        self.k_lin = LoRALinear(...)
-        self.v_lin = LoRALinear(...)
-        self.out_lin = LoRALinear(...)
+        self.q\_lin = LoRALinear(...)
+        self.k\_lin = LoRALinear(...)
+        self.v\_lin = LoRALinear(...)
+        self.out\_lin = LoRALinear(...)
 \end{lstlisting}
 
 \subsection{B.2 Scoring and Selection}
 
 \begin{lstlisting}
 # Score tokens
-scores = torch.sigmoid(self.score_network(x)).squeeze(-1)  # (B, L)
+scores = torch.sigmoid(self.score\_network(x)).squeeze(-1)  # (B, L)
 
 # CLS preservation
 scores[:, 0] = 1e4
 
 # Padding mask
-valid_mask = get_token_valid_mask(attention_mask, B, L, device)
-scores = scores.masked_fill(~valid_mask, -1e4)
+valid\_mask = get\_token\_valid\_mask(attention\_mask, B, L, device)
+scores = scores.masked\_fill(~valid\_mask, -1e4)
 
 # Re-apply CLS (padding mask may have overwritten)
 scores[:, 0] = 1e4
 
 # Top-k
-k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
-_, top_indices = torch.topk(scores, k_tokens, dim=-1)
-top_indices, _ = torch.sort(top_indices, dim=-1)
+k\_tokens = max(1, min(L, int(math.ceil(L * self.keep\_ratio))))
+\_, top\_indices = torch.topk(scores, k\_tokens, dim=-1)
+top\_indices, \_ = torch.sort(top\_indices, dim=-1)
 \end{lstlisting}
 
 \subsection{B.3 KV Gather}
 
 \begin{lstlisting}
 # Repeat KV for GQA if needed
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    k_all = repeat_kv(k_all, repeats)
-    v_all = repeat_kv(v_all, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    k\_all = repeat\_kv(k\_all, repeats)
+    v\_all = repeat\_kv(v\_all, repeats)
 
-# Gather K, V at top_indices
-top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(
-    -1, self.num_heads, -1, self.head_dim
+# Gather K, V at top\_indices
+top\_idx\_exp = top\_indices.unsqueeze(1).unsqueeze(-1).expand(
+    -1, self.num\_heads, -1, self.head\_dim
 )
-k_pruned = torch.gather(k_all, 2, top_idx_exp)
-v_pruned = torch.gather(v_all, 2, top_idx_exp)
+k\_pruned = torch.gather(k\_all, 2, top\_idx\_exp)
+v\_pruned = torch.gather(v\_all, 2, top\_idx\_exp)
 \end{lstlisting}
 
 \subsection{B.4 Causal Masking After Pruning}
 
 \begin{lstlisting}
-q_pos = torch.arange(L, device=device).view(1, 1, L, 1)
-k_orig_pos = top_indices.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
-causal_mask = k_orig_pos > q_pos
-attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
+q\_pos = torch.arange(L, device=device).view(1, 1, L, 1)
+k\_orig\_pos = top\_indices.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
+causal\_mask = k\_orig\_pos \textgreater{} q\_pos
+attn\_scores = attn\_scores.masked\_fill(causal\_mask, -1e4)
 \end{lstlisting}
 
 \subsection{B.5 Padding Mask for Pruned Keys}
 
 \begin{lstlisting}
-valid_keys = torch.gather(valid_mask, 1, top_indices)  # (B, k)
-attn_scores = attn_scores.masked_fill(
-    ~valid_keys.unsqueeze(1).unsqueeze(2), -1e4
+valid\_keys = torch.gather(valid\_mask, 1, top\_indices)  # (B, k)
+attn\_scores = attn\_scores.masked\_fill(
+    ~valid\_keys.unsqueeze(1).unsqueeze(2), -1e4
 )
 \end{lstlisting}
 

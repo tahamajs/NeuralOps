@@ -78,10 +78,10 @@ $w + k = 50\%$.
 We verify causality by finite differences:
 
 \begin{lstlisting}
-x = torch.randn(1, L, d, requires_grad=True)
+x = torch.randn(1, L, d, requires\_grad=True)
 out = model(x)
 out[0, i].sum().backward()
-assert x.grad[0, i+1:].abs().max() < 1e-6
+assert x.grad[0, i+1:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \textbf{Result.} 0.85
@@ -93,7 +93,7 @@ top-$k$:
 
 \begin{lstlisting}
 # All padding scores after masking = -1e4
-assert scores_masked[:, :, :, padding_positions].max() < -1000
+assert scores\_masked[:, :, :, padding\_positions].max() \textless{} -1000
 \end{lstlisting}
 
 \textbf{Result.} 0.85

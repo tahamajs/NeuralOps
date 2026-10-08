@@ -11,23 +11,23 @@ where $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, $W \in \ma
 \subsection{Spectral Decomposition and Truncated SVD}
 For any projection matrix $W \in \mathbb{R}^{m \times n}$ with rank $\rho = \min(m, n)$, Singular Value Decomposition (SVD) gives:
 \[
-W = U \Sigma V^\top = \sum_{i=1}^{\rho} \sigma_i u_i v_i^\top
+W = U \Sigma V^\top = \sum\_{i=1}^{\rho} \sigma\_i u\_i v\_i^\top
 \]
 where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ are unitary matrices, and $\Sigma = \operatorname{diag}(\sigma_1, \dots, \sigma_\rho)$ contains singular values ordered $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$.
 
 By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ surrogate ($r < \rho$) in Frobenius norm satisfies:
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:, :r}^\top = \sum\_{i=1}^{r} \sigma\_i u\_i v\_i^\top
 \]
 with residual truncation error:
 \[
-\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2, \quad \|W - W_r\|_2 = \sigma_{r+1}
+\|W - W\_r\|\_F^2 = \sum\_{i=r+1}^{\rho} \sigma\_i^2, \quad \|W - W\_r\|\_2 = \sigma\_{r+1}
 \]
 
 \subsection{Condition Number Bounds under Truncation}
 Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge \sigma_\rho > 0$. The condition number $\kappa(W) = \sigma_1 / \sigma_\rho$ measures numerical sensitivity to input perturbations. Under rank-$r$ truncation, the condition number of the factorized surrogate $W_r$ satisfies:
 \[
-\kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
+\kappa(W\_r) = \frac{\sigma\_1}{\sigma\_r} \le \kappa(W)
 \]
 Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
 
@@ -37,9 +37,9 @@ The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{
 \subsection{Symmetric Square-Root Splitting}
 To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{minimalsvdv2} implements symmetric singular value distribution:
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:, :r}^\top
 \]
 guaranteeing balanced Frobenius bounds:
 \[
-\|U_r\|_F = \|V_r\|_F = \left( \sum_{i=1}^{r} \sigma_i \right)^{1/2}
+\|U\_r\|\_F = \|V\_r\|\_F = \left( \sum\_{i=1}^{r} \sigma\_i \right)^{1/2}
 \]

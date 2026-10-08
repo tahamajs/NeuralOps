@@ -5,12 +5,12 @@
 For input $X \in \mathbb{R}^{B \times N \times d}$:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \tag{3.1}
 \]
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.2}
 \]
 
@@ -22,7 +22,7 @@ attention matrix a probabilistic interpretation.
 For the softmax:
 
 \[
-\text{softmax}(s_{ij}) = \frac{e^{s_{ij}}}{\sum_{j'} e^{s_{ij'}}}
+\text{softmax}(s\_{ij}) = \frac{e^{s\_{ij}}}{\sum\_{j'} e^{s\_{ij'}}}
 \tag{3.3}
 \]
 
@@ -30,7 +30,7 @@ The exponential $e^{s_{ij}} = \exp(q_i \cdot k_j)$ has a positive-definite
 kernel, but the explicit feature map is \textbf{infinite-dimensional}:
 
 \[
-\exp(x \cdot y) = \sum_{n=0}^\infty \frac{(x \cdot y)^n}{n!}
+\exp(x \cdot y) = \sum\_{n=0}^\infty \frac{(x \cdot y)^n}{n!}
 \tag{3.4}
 \]
 
@@ -50,7 +50,7 @@ K(q, k) = (1 + q \cdot k)^d
 Expansion:
 
 \[
-(1 + q \cdot k)^d = \sum_{n=0}^d \binom{d}{n} (q \cdot k)^n
+(1 + q \cdot k)^d = \sum\_{n=0}^d \binom{d}{n} (q \cdot k)^n
 \tag{3.6}
 \]
 
@@ -68,7 +68,7 @@ For small $d$ (e.g., $d = 2$), the feature map is tractable:
 PADRe uses the normalized version:
 
 \[
-K_\text{PADRe}(q, k) = \left(1 + \frac{s}{\text{order}}\right)^\text{order}
+K\_\text{PADRe}(q, k) = \left(1 + \frac{s}{\text{order}}\right)^\text{order}
 \tag{3.7}
 \]
 
@@ -77,7 +77,7 @@ where $s = (q \cdot k)/\sqrt{d_h}$ (with centering).
 \textbf{Why the $1/\text{order}$ scaling?} As $\text{order} \to \infty$:
 
 \[
-\lim_{d \to \infty} \left(1 + \frac{s}{d}\right)^d = e^s
+\lim\_{d \to \infty} \left(1 + \frac{s}{d}\right)^d = e^s
 \tag{3.8}
 \]
 
@@ -92,7 +92,7 @@ $(1 + s/\text{order})^\text{order}$ overflows for large $s$.
 \textbf{Solution.} Center over the max:
 
 \[
-s_{ij} \leftarrow s_{ij} - \max_j s_{ij}
+s\_{ij} \leftarrow s\_{ij} - \max\_j s\_{ij}
 \tag{3.9}
 \]
 
@@ -104,7 +104,7 @@ the result is bounded.
 LoRA (Hu et al., 2021) parameterizes weight updates:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.10}
 \]
 
@@ -115,7 +115,7 @@ with $B = 0$ at initialization. Used for post-substitution recovery.
 For $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times N \times H_{kv} \times d_h}
+K, V \in \mathbb{R}^{B \times N \times H\_{kv} \times d\_h}
 \tag{3.11}
 \]
 
@@ -124,7 +124,7 @@ Expanded to $H$ heads via \texttt{repeat\_kv}.
 \subsection{Rotary Position Embeddings (RoPE)}
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
 \tag{3.12}
 \]
 

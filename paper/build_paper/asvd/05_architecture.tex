@@ -23,10 +23,10 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & not tested \\
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
-extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
-extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
-extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -36,10 +36,10 @@ Detection:
 \begin{lstlisting}
 if (hasattr(src, "self") and hasattr(src.self, "query")
     and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested_encoder = True
-elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-      and not has_out_lin):
-    is_nested_encoder = True
+    is\_nested\_encoder = True
+elif (cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+      and not has\_out\_lin):
+    is\_nested\_encoder = True
 \end{lstlisting}
 
 Extraction:
@@ -49,29 +49,29 @@ s = src.self
 extracted["q"] = (s.query.weight.data, s.query.bias.data)
 extracted["k"] = (s.key.weight.data, s.key.bias.data)
 extracted["v"] = (s.value.weight.data, s.value.bias.data)
-# out_proj is handled by set_identity -- outer attention.output.dense applies it
+# out\_proj is handled by set\_identity -- outer attention.output.dense applies it
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data.clone()
-if "Conv1D" in type(src.c_attn).__name__:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-extracted["q"] = (q_w, src.c_attn.bias.data[:768])
-extracted["k"] = (k_w, src.c_attn.bias.data[768:1536])
-extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
-extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+c\_w = src.c\_attn.weight.data.clone()
+if "Conv1D" in type(src.c\_attn).\_\_name\_\_:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:768])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[768:1536])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[1536:2304])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_proj.weight.data, src.q_proj.bias.data)
-extracted["k"] = (src.k_proj.weight.data, src.k_proj.bias.data)
-extracted["v"] = (src.v_proj.weight.data, src.v_proj.bias.data)
-extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
+extracted["q"] = (src.q\_proj.weight.data, src.q\_proj.bias.data)
+extracted["k"] = (src.k\_proj.weight.data, src.k\_proj.bias.data)
+extracted["v"] = (src.v\_proj.weight.data, src.v\_proj.bias.data)
+extracted["o"] = (src.o\_proj.weight.data, src.o\_proj.bias.data)
 \end{lstlisting}
 
 \subsection{Nested Encoder Handling with `set\_identity`}
@@ -85,33 +85,33 @@ applies a projection, the result is a \textbf{double projection}.
 \texttt{set\_identity()}:
 
 \begin{lstlisting}
-if proj == "o" and self.is_nested_encoder:
-    self.out_proj.set_identity()
+if proj == "o" and self.is\_nested\_encoder:
+    self.out\_proj.set\_identity()
 \end{lstlisting}
 
 The identity configuration:
 
 \begin{lstlisting}
-def set_identity(self):
-    with torch.no_grad():
-        self.U.data.zero_()
-        self.V.data.zero_()
-        self.S.data.fill_(1.0)
-        r = min(self.rank, self.in_features, self.out_features)
-        self.U.data[:r, :r].fill_diagonal_(1.0)
-        self.V.data[:r, :r].fill_diagonal_(1.0)
+def set\_identity(self):
+    with torch.no\_grad():
+        self.U.data.zero\_()
+        self.V.data.zero\_()
+        self.S.data.fill\_(1.0)
+        r = min(self.rank, self.in\_features, self.out\_features)
+        self.U.data[:r, :r].fill\_diagonal\_(1.0)
+        self.V.data[:r, :r].fill\_diagonal\_(1.0)
         if self.bias is not None:
-            self.bias.data.zero_()
-        self.freeze_base_weights()
+            self.bias.data.zero\_()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 Then, in \texttt{forward}:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    out = context  # skip out_proj
+if self.is\_nested\_encoder:
+    out = context  # skip out\_proj
 else:
-    out = self.out_proj(context)
+    out = self.out\_proj(context)
 \end{lstlisting}
 
 \subsection{Injection with Pre-Flight Validation}
@@ -119,29 +119,29 @@ else:
 The \texttt{inject\_asvd} hook performs a \textbf{pre-flight test}:
 
 \begin{lstlisting}
-def inject_asvd(model=None, layer=None, config=None, ...):
-    target_model = model or ...
-    if target_model is not None:
-        return inject_attention(target_model, "asvd", ...)
+def inject\_asvd(model=None, layer=None, config=None, ...):
+    target\_model = model or ...
+    if target\_model is not None:
+        return inject\_attention(target\_model, "asvd", ...)
     
-    old_attn = find_attention(layer)
-    target_config = config or old_attn.config
+    old\_attn = find\_attention(layer)
+    target\_config = config or old\_attn.config
     
-    if old_attn is not None:
+    if old\_attn is not None:
         try:
-            new_attn = ASVDAttention(target_config, rank=rank,
-                                      pretrained_attn=old_attn, **kwargs)
-            replace_attention(layer, new_attn)
-            return new_attn
+            new\_attn = ASVDAttention(target\_config, rank=rank,
+                                      pretrained\_attn=old\_attn, **kwargs)
+            replace\_attention(layer, new\_attn)
+            return new\_attn
         except RuntimeError as err:
             logger.warning(f"Pre-flight weight extraction failed: {err}. Aborting.")
         except Exception as err:
             logger.warning(f"Unexpected error: {err}. Aborting.")
     
     # Fallback to random initialization with warning
-    new_attn = ASVDAttention(target_config, rank=rank, **kwargs)
-    replace_attention(layer, new_attn)
-    return new_attn
+    new\_attn = ASVDAttention(target\_config, rank=rank, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 \textbf{Key design choice.} ASVD attempts extraction \textbf{first} and aborts 
@@ -152,20 +152,20 @@ stricter than A3/AASVD (which log warnings).
 
 \begin{lstlisting}
 class ASVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank,
-                 bias=True, lora_rank=0, freeze_base=False):
-        super().__init__()
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+    def \_\_init\_\_(self, in\_features, out\_features, rank,
+                 bias=True, lora\_rank=0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         self.S = nn.Parameter(torch.empty(rank))
-        self.V = nn.Parameter(torch.empty(rank, in_features))
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
 \end{lstlisting}
 
 \textbf{Forward pass:}
@@ -177,17 +177,17 @@ def forward(self, x):
     out = F.linear(SVx, self.U)        # @ U^T
     if self.bias is not None:
         out = out + self.bias
-    if self.lora_rank > 0:
-        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
-        out = out + lora_out
-    return out * self.output_scale
+    if self.lora\_rank \textgreater{} 0:
+        lora\_out = F.linear(F.linear(x, self.lora\_A), self.lora\_B)
+        out = out + lora\_out
+    return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("asvd")
-@ATTENTION_REGISTRY.register("asvd_attention")
+@ATTENTION\_REGISTRY.register("asvd")
+@ATTENTION\_REGISTRY.register("asvd\_attention")
 class ASVDAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -208,7 +208,7 @@ position $j > i$ is zero.
 \midrule
 Missing projection & \texttt{copy\_weights} raises & Pre-flight check aborts \\
 Small Frobenius norm & Explicit check & Raises RuntimeError \\
-Reconstruction error > $\tau$ & Validation & Aborts injection \\
+Reconstruction error \textgreater{} $\tau$ & Validation & Aborts injection \\
 Cross-attention & Explicit check & Raises NotImplementedError \\
 \bottomrule
 \end{tabular}
@@ -217,7 +217,7 @@ Cross-attention & Explicit check & Raises NotImplementedError \\
 \subsection{Cross-Attention Not Supported}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
+if encoder\_hidden\_states is not None:
     raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
 \end{lstlisting}
 \begin{lstlisting}
@@ -229,6 +229,6 @@ if encoder_hidden_states is not None:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of asvd.}
-\label{fig:arch_asvd}
+\label{fig:arch\_asvd}
 \end{figure}
 

@@ -6,7 +6,7 @@
 An RNN maintains a hidden state $h_t$ updated as:
 
 \[
-h_t = f(h_{t-1}, x_t), \quad y_t = g(h_t)
+h\_t = f(h\_{t-1}, x\_t), \quad y\_t = g(h\_t)
 \tag{3.1}
 \]
 
@@ -20,7 +20,7 @@ For operations of the form $h_t = a_t h_{t-1} + b_t$ (linear recurrences),
 the \textbf{associative scan} computes all $h_t$ in parallel:
 
 \[
-h_t = \sum_{s=0}^{t} \left(\prod_{u=s+1}^{t} a_u\right) b_s
+h\_t = \sum\_{s=0}^{t} \left(\prod\_{u=s+1}^{t} a\_u\right) b\_s
 \tag{3.2}
 \]
 
@@ -36,7 +36,7 @@ The Delta Rule (Widrow \& Hoff, 1960) is a classical learning rule for linear
 associative memory. Given a key $k_t$ and target $v_t$:
 
 \[
-\Delta W = \eta (v_t - W k_t) k_t^\top
+\Delta W = \eta (v\_t - W k\_t) k\_t^\top
 \tag{3.3}
 \]
 
@@ -52,7 +52,7 @@ to reduce the prediction error.
 The Delta Rule alone has no forgetting mechanism. Adding a scalar decay:
 
 \[
-S_t = \alpha_t S_{t-1} + \beta_t k_t^\top (v_t - k_t S_{t-1})
+S\_t = \alpha\_t S\_{t-1} + \beta\_t k\_t^\top (v\_t - k\_t S\_{t-1})
 \tag{3.4}
 \]
 
@@ -64,7 +64,7 @@ are \textbf{input-dependent}, the model can selectively remember or forget.
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} BA
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} BA
 \tag{3.5}
 \]
 
@@ -110,5 +110,5 @@ $C$ & Chunk size (implementation) \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 

@@ -79,12 +79,12 @@ Catches \textbf{five exception types} and \textbf{silently swallows} them.
 We added logging to detect silent failures:
 
 \begin{lstlisting}
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
-if qkv_w.shape != self.attn.in_proj_weight.shape:
-    logger.warning(f"MISMATCH: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)
+if qkv\_w.shape != self.attn.in\_proj\_weight.shape:
+    logger.warning(f"MISMATCH: {qkv\_w.shape} vs {self.attn.in\_proj\_weight.shape}")
 else:
-    self.attn.in_proj_weight.copy_(qkv_w)
-    logger.info(f"Weight transfer OK: {qkv_w.shape}")
+    self.attn.in\_proj\_weight.copy\_(qkv\_w)
+    logger.info(f"Weight transfer OK: {qkv\_w.shape}")
 \end{lstlisting}
 
 \textbf{Result.} 32

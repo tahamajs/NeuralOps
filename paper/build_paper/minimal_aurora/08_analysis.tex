@@ -103,7 +103,7 @@ Complexity & Medium & Low \\
 \textbf{Critical finding.} \texttt{pres\_gate} is defined in \texttt{\_\_init\_\_}:
 
 \begin{lstlisting}
-self.pres_gate = nn.Parameter(torch.tensor(2.0))
+self.pres\_gate = nn.Parameter(torch.tensor(2.0))
 \end{lstlisting}
 
 But it is \textbf{never referenced in \texttt{forward}}. This is a code smell 
@@ -161,9 +161,9 @@ GPT-2 & 1.00 & 0.85 \\
 For RoBERTa/BERT, the output projection is set to identity:
 
 \begin{lstlisting}
-if proj_key == "o" and self.is_nested_encoder:
-    eye_w = torch.eye(self.hidden_size, self.all_head_size)
-    target.decompose_from_weight(eye_w, None, self.energy)
+if proj\_key == "o" and self.is\_nested\_encoder:
+    eye\_w = torch.eye(self.hidden\_size, self.all\_head\_size)
+    target.decompose\_from\_weight(eye\_w, None, self.energy)
 \end{lstlisting}
 
 This ensures the outer \texttt{attention.output.dense} applies the actual 

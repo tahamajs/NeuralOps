@@ -92,8 +92,8 @@ Precision & FP16 \\
 \subsubsection{KV Cache Calculation}
 
 \begin{lstlisting}
-kv_bytes_per_token_per_layer = 2 * G * d_h * 2  # FP16
-total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
+kv\_bytes\_per\_token\_per\_layer = 2 * G * d\_h * 2  # FP16
+total\_kv = N\_layers * L * B * kv\_bytes\_per\_token\_per\_layer
 \end{lstlisting}
 
 \subsection{Quality Gate}
@@ -107,7 +107,7 @@ total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,11 +132,11 @@ PyTorch & 2.4.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_gqa.py \
+python run\_all\_4\_gqa.py \
     --models distilbert,roberta,gpt2 \
-    --num_kv_heads 6 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --num\_kv\_heads 6 \
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Ablations}

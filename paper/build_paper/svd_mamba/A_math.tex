@@ -15,7 +15,7 @@ is $\bar{A} = e^{\Delta A}$, $\bar{B} = \Delta B$ for diagonal $A$.
 \textbf{Proof.} For constant input $x$ over interval $\Delta$:
 
 \[
-h(t + \Delta) = e^{A \Delta} h(t) + \int_0^\Delta e^{A(\Delta - s)} B x \, ds
+h(t + \Delta) = e^{A \Delta} h(t) + \int\_0^\Delta e^{A(\Delta - s)} B x \, ds
 \]
 
 \[
@@ -34,7 +34,7 @@ recurrence.
 Then within a chunk:
 
 \[
-h_{c, i} = e^{\lambda_{c, i}} \sum_{j \leq i} e^{-\lambda_{c, j}} \bar{B}_{c, j} x_{c, j} + e^{\lambda_{c, i}} h_{c-1, C}
+h\_{c, i} = e^{\lambda\_{c, i}} \sum\_{j \leq i} e^{-\lambda\_{c, j}} \bar{B}\_{c, j} x\_{c, j} + e^{\lambda\_{c, i}} h\_{c-1, C}
 \]
 
 The first term is the intra-chunk contribution; the second is the carry-over. 
@@ -48,7 +48,7 @@ By induction on chunks, the total equals the full sequential recurrence. $\squar
 fused output is:
 
 \[
-Y = \sigma(-7) Y_\text{SSM} + (1 - \sigma(-7)) Y_\text{attn} \approx 0.999 Y_\text{attn} + 0.0009 Y_\text{SSM}
+Y = \sigma(-7) Y\_\text{SSM} + (1 - \sigma(-7)) Y\_\text{attn} \approx 0.999 Y\_\text{attn} + 0.0009 Y\_\text{SSM}
 \]
 
 If $\|Y_\text{SSM}\| \sim \|Y_\text{attn}\|$, the SSM contributes ~0.09\%. $\square$
@@ -58,7 +58,7 @@ If $\|Y_\text{SSM}\| \sim \|Y_\text{attn}\|$, the SSM contributes ~0.09\%. $\squ
 \textbf{Claim.} SVD-Mamba's total parameter change is:
 
 \[
-\Delta P = P_\text{SSM} + P_\text{gate} + P_\text{global} + P_\text{LoRA} - P_\text{SVD saved}
+\Delta P = P\_\text{SSM} + P\_\text{gate} + P\_\text{global} + P\_\text{LoRA} - P\_\text{SVD saved}
 \tag{A.2}
 \]
 

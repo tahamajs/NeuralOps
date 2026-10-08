@@ -7,7 +7,7 @@ The Delta Rule (Widrow--Hoff, 1960) updates a weight matrix $W$ to
 minimize squared error:
 
 \[
-\Delta W_t = \eta (v_t - W_t x_t) x_t^\top
+\Delta W\_t = \eta (v\_t - W\_t x\_t) x\_t^\top
 \tag{A.1}
 \]
 
@@ -15,7 +15,7 @@ For attention, $x_t = k_t$ (key) and target is $v_t$ (value). The state
 $S$ replaces $W$:
 
 \[
-S_t = S_{t-1} + \eta (v_t - S_{t-1} k_t) k_t^\top
+S\_t = S\_{t-1} + \eta (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{A.2}
 \]
 
@@ -24,7 +24,7 @@ S_t = S_{t-1} + \eta (v_t - S_{t-1} k_t) k_t^\top
 Replace fixed step size $\eta$ with input-dependent scalars:
 
 \[
-S_t = \beta_t S_{t-1} + \alpha_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = \beta\_t S\_{t-1} + \alpha\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{A.3}
 \]
 
@@ -38,7 +38,7 @@ because keys are row vectors in our convention.
 For numerical stability, we normalize the update:
 
 \[
-S_t = \beta_t S_{t-1} + \alpha_t \cdot \frac{(v_t - k_t S_{t-1}) k_t^\top}{1 + \|k_t\|^2}
+S\_t = \beta\_t S\_{t-1} + \alpha\_t \cdot \frac{(v\_t - k\_t S\_{t-1}) k\_t^\top}{1 + \|k\_t\|^2}
 \tag{A.4}
 \]
 
@@ -49,8 +49,8 @@ The denominator $1 + \|k_t\|^2$ prevents overflow when $\|k_t\|$ is large.
 We additionally normalize keys and queries:
 
 \[
-k_t \leftarrow \frac{k_t}{\|k_t\|_2}, \quad
-q_t \leftarrow \frac{q_t}{\|q_t\|_2}
+k\_t \leftarrow \frac{k\_t}{\|k\_t\|\_2}, \quad
+q\_t \leftarrow \frac{q\_t}{\|q\_t\|\_2}
 \tag{A.5}
 \]
 
@@ -61,7 +61,7 @@ This ensures the inner products lie in $[-1, 1]$, matching softmax attention.
 \textbf{Claim.} The forward scan satisfies:
 
 \[
-\frac{\partial y_t}{\partial x_s} = 0 \text{ for } s > t
+\frac{\partial y\_t}{\partial x\_s} = 0 \text{ for } s \textgreater{} t
 \tag{A.6}
 \]
 
@@ -75,7 +75,7 @@ depends only on $x_1, \dots, x_t$. $\square$
 For encoders, we average forward and backward scans:
 
 \[
-y = \frac{1}{2}(y_\text{fwd} + y_\text{bwd})
+y = \frac{1}{2}(y\_\text{fwd} + y\_\text{bwd})
 \tag{A.7}
 \]
 
@@ -114,7 +114,7 @@ For $L = 128$ and $d = 64$: linear has ~2$\times$ fewer FLOPs.
 Due to Python loop overhead:
 
 \[
-T_\text{wall} \approx N_\text{iters} \cdot T_\text{iter}
+T\_\text{wall} \approx N\_\text{iters} \cdot T\_\text{iter}
 \tag{A.8}
 \]
 

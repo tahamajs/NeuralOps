@@ -11,7 +11,7 @@ captures long-range structure but is either expensive or coarse.
 \textbf{Hybrid attention} resolves this by combining multiple branches:
 
 \[
-\text{Output} = \sum_{i} g_i \cdot \text{Branch}_i(X)
+\text{Output} = \sum\_{i} g\_i \cdot \text{Branch}\_i(X)
 \tag{1.1}
 \]
 
@@ -37,7 +37,7 @@ The three branches are fused by a \textbf{gate} computed from the batch-mean
 hidden state:
 
 \[
-g = \text{softmax}(W_g \cdot \bar{x}), \quad \bar{x} = \frac{1}{L} \sum_t x_t
+g = \text{softmax}(W\_g \cdot \bar{x}), \quad \bar{x} = \frac{1}{L} \sum\_t x\_t
 \tag{1.2}
 \]
 
@@ -99,7 +99,7 @@ $\text{softpick}$ & ReLU-based attention & 3.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

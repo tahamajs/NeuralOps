@@ -10,7 +10,7 @@ This section describes our reproduction of Nystr mformer from Xiong et al.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input hidden_states $\in$ R^{B $\times$ N $\times$ D}         |
+   |  Input hidden\_states $\in$ R^{B $\times$ N $\times$ D}         |
    +--------------------+-------------------------+
                         |
                          
@@ -22,7 +22,7 @@ This section describes our reproduction of Nystr mformer from Xiong et al.
                          
    +----------------------------------------------+
    |  RoPE (if applicable)                         |
-   |  GQA repeat_kv (if applicable)                |
+   |  GQA repeat\_kv (if applicable)                |
    +--------------------+-------------------------+
                         |
                          
@@ -35,7 +35,7 @@ This section describes our reproduction of Nystr mformer from Xiong et al.
                         |
                          
    +----------------------------------------------+
-   |  out_proj (if not nested)                     |
+   |  out\_proj (if not nested)                     |
    +----------------------------------------------+
 \end{lstlisting}
 
@@ -63,7 +63,7 @@ For $N \leq \max(128, 2m)$, we use dense attention. Reasons:
 For $N > \max(128, 2m)$ and non-causal attention:
 
 \[
-\text{Output} = \text{softmax}(Q K_m^\top) \cdot \text{pinv}(A_{mm}) \cdot \text{softmax}(Q_m K^\top) V
+\text{Output} = \text{softmax}(Q K\_m^\top) \cdot \text{pinv}(A\_{mm}) \cdot \text{softmax}(Q\_m K^\top) V
 \tag{4.1}
 \]
 
@@ -74,8 +74,8 @@ where $A_{mm} = \text{softmax}(Q_m K_m^\top / \sqrt{d_h})$.
 We use \texttt{adaptive\_avg\_pool1d}:
 
 \begin{lstlisting}
-Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
-Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
+Q\_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
+Q\_landmarks = F.adaptive\_avg\_pool1d(Q\_flat, m).transpose(1, 2).reshape(B, H, m, d)
 \end{lstlisting}
 
 Same for $K$.
@@ -91,9 +91,9 @@ Same for $K$.
 
 \[
 \begin{aligned}
-F_1 &= \text{softmax}(Q K_m^\top / \sqrt{d_h}) \in \mathbb{R}^{N \times m} \\
-F_2 &= \text{softmax}(Q_m K_m^\top / \sqrt{d_h}) \in \mathbb{R}^{m \times m} \\
-F_3 &= \text{softmax}(Q_m K^\top / \sqrt{d_h}) \in \mathbb{R}^{m \times N}
+F\_1 &= \text{softmax}(Q K\_m^\top / \sqrt{d\_h}) \in \mathbb{R}^{N \times m} \\
+F\_2 &= \text{softmax}(Q\_m K\_m^\top / \sqrt{d\_h}) \in \mathbb{R}^{m \times m} \\
+F\_3 &= \text{softmax}(Q\_m K^\top / \sqrt{d\_h}) \in \mathbb{R}^{m \times N}
 \end{aligned}
 \tag{4.2}
 \]
@@ -101,7 +101,7 @@ F_3 &= \text{softmax}(Q_m K^\top / \sqrt{d_h}) \in \mathbb{R}^{m \times N}
 Then:
 
 \[
-\text{Output} = F_1 \cdot \text{pinv}(F_2) \cdot (F_3 V)
+\text{Output} = F\_1 \cdot \text{pinv}(F\_2) \cdot (F\_3 V)
 \tag{4.3}
 \]
 
@@ -114,17 +114,17 @@ total.
 Nystr mformer uses Newton-Schulz iteration:
 
 \begin{lstlisting}
-def _iterative_pinv(A, iters=3):
+def \_iterative\_pinv(A, iters=3):
     try:
         return torch.linalg.pinv(A.float()).to(A.dtype)
     except Exception:
         # Newton-Schulz fallback
-        norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
+        norm\_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        norm\_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        alpha = 1.0 / (norm\_1 * norm\_inf + 1e-5)
         V = alpha * A.transpose(-2, -1)
         I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
-        for _ in range(iters):
+        for \_ in range(iters):
             V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
         return V
 \end{lstlisting}
@@ -157,25 +157,25 @@ Qwen3.5 & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} \\
 \subsubsection{Conv1D Transposition}
 
 \begin{lstlisting}
-if is_conv1d:
-    c_w = c_w.t()
+if is\_conv1d:
+    c\_w = c\_w.t()
 \end{lstlisting}
 
 \subsubsection{Nested Encoder Bypass}
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    out = context   # Skip out_proj
+if self.is\_nested\_encoder:
+    out = context   # Skip out\_proj
 else:
-    out = self.out_proj(context)
+    out = self.out\_proj(context)
 \end{lstlisting}
 
 \subsubsection{GQA}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    K = repeat_kv(K, self.kv_repeat)
-    V = repeat_kv(V, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    K = repeat\_kv(K, self.kv\_repeat)
+    V = repeat\_kv(V, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{The Full Algorithm}
@@ -183,33 +183,33 @@ if self.kv_repeat > 1:
 \textbf{Algorithm 1:} Nystr m attention forward
 \begin{lstlisting}
 Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ N $\times$ d}
-        valid_mask $\in$ {0,1}^{B $\times$ N}
-        num_landmarks m
+        valid\_mask $\in$ {0,1}^{B $\times$ N}
+        num\_landmarks m
 Output: context $\in$ R^{B $\times$ H $\times$ N $\times$ d}
 
-1:  if is_causal or is_decoder:
+1:  if is\_causal or is\_decoder:
 2:      # Dense causal attention
-3:      A $\leftarrow$ softmax(Q K^T / $\sqrt{}$d + causal_mask + valid_mask)
+3:      A $\leftarrow$ softmax(Q K^T / $\sqrt{}$d + causal\_mask + valid\_mask)
 4:      context $\leftarrow$ A V
 5:      return context
 6:
 7:  if N $\le$ max(128, 2m):
 8:      # Dense attention
-9:      A $\leftarrow$ softmax(Q K^T / $\sqrt{}$d + valid_mask)
+9:      A $\leftarrow$ softmax(Q K^T / $\sqrt{}$d + valid\_mask)
 10:     context $\leftarrow$ A V
 11:     return context
 12:
 13: # Nystr m branch
-14: Q_m $\leftarrow$ adaptive_avg_pool(Q, m)
-15: K_m $\leftarrow$ adaptive_avg_pool(K, m)
+14: Q\_m $\leftarrow$ adaptive\_avg\_pool(Q, m)
+15: K\_m $\leftarrow$ adaptive\_avg\_pool(K, m)
 16:
-17: F1 $\leftarrow$ softmax(Q K_m^T / $\sqrt{}$d)         # (B, H, N, m)
-18: F2 $\leftarrow$ softmax(Q_m K_m^T / $\sqrt{}$d)       # (B, H, m, m)
-19: F3 $\leftarrow$ softmax(Q_m K^T / $\sqrt{}$d)         # (B, H, m, N)
+17: F1 $\leftarrow$ softmax(Q K\_m^T / $\sqrt{}$d)         # (B, H, N, m)
+18: F2 $\leftarrow$ softmax(Q\_m K\_m^T / $\sqrt{}$d)       # (B, H, m, m)
+19: F3 $\leftarrow$ softmax(Q\_m K^T / $\sqrt{}$d)         # (B, H, m, N)
 20:
-21: F2_pinv $\leftarrow$ iterative_pinv(F2)       # (B, H, m, m)
+21: F2\_pinv $\leftarrow$ iterative\_pinv(F2)       # (B, H, m, m)
 22: step1 $\leftarrow$ F3 V                        # (B, H, m, d)
-23: step2 $\leftarrow$ F2_pinv step1               # (B, H, m, d)
+23: step2 $\leftarrow$ F2\_pinv step1               # (B, H, m, d)
 24: context $\leftarrow$ F1 step2                  # (B, H, N, d)
 25:
 26: return context
@@ -234,7 +234,7 @@ Nystr m & $\mathcal{O}(N m d_h)$ & $\mathcal{O}(N m)$ \\
 \textbf{Nystr m speedup:}
 
 \[
-\frac{\text{Dense}}{\text{Nystr m}} = \frac{N^2 d_h}{N m d_h} = \frac{N}{m}
+\frac{\text{Dense}}{\text{Nystr m}} = \frac{N^2 d\_h}{N m d\_h} = \frac{N}{m}
 \tag{4.4}
 \]
 

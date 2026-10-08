@@ -5,7 +5,7 @@
 Standard transformer attention (Vaswani et al., 2017) computes:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -66,7 +66,7 @@ LEKAv1 has four components:
 Before projection, we normalize each head:
 
 \[
-\tilde{x} = \text{LayerNorm}(x) \in \mathbb{R}^{d_h}
+\tilde{x} = \text{LayerNorm}(x) \in \mathbb{R}^{d\_h}
 \tag{1.5}
 \]
 

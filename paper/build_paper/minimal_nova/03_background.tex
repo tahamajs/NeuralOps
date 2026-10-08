@@ -17,7 +17,7 @@ $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 \textbf{Truncated SVD} keeps the top-$r$ singular values:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{3.2}
 \]
 
@@ -25,7 +25,7 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
 rank-$r$ matrices. The error is:
 
 \[
-\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - W\_r\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{3.3}
 \]
 
@@ -33,8 +33,8 @@ rank-$r$ matrices. The error is:
 factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{3.4}
 \]
 
@@ -45,7 +45,7 @@ so that $W_r = U_r V_r$ with balanced magnitudes.
 Define the \textbf{cumulative spectral energy} of $W$:
 
 \[
-E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_{i=1}^{\min(m, n)} \sigma\_i^2}
 \tag{3.5}
 \]
 
@@ -54,7 +54,7 @@ $E(r)$ is monotonically increasing from $E(0) = 0$ to $E(\min(m, n)) = 1$.
 \textbf{Effective rank.} Given threshold $\eta$, the energy-adaptive rank is:
 
 \[
-r_\text{eff}(\eta) = \min\{r : E(r) \geq \eta\}
+r\_\text{eff}(\eta) = \min\{r : E(r) \geq \eta\}
 \tag{3.6}
 \]
 
@@ -72,9 +72,9 @@ For input $X \in \mathbb{R}^{B \times L \times d}$, MHSA computes:
 
 \[
 \begin{aligned}
-Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
-\text{head}_h &= \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h \\
-\text{MHSA}(X) &= \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+Q &= X W\_Q, \quad K = X W\_K, \quad V = X W\_V \\
+\text{head}\_h &= \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h \\
+\text{MHSA}(X) &= \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \end{aligned}
 \tag{3.7}
 \]
@@ -86,7 +86,7 @@ MinimalNOVA factorizes each of $W_Q, W_K, W_V, W_O$.
 Modern models use $H_{kv} < H$ KV heads:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
 \tag{3.8}
 \]
 
@@ -99,7 +99,7 @@ $H_{kv} d_h$ output dimension, then applying \texttt{repeat\_kv} during forward.
 RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.9}
 \]
 
@@ -111,7 +111,7 @@ structure.
 LoRA (Hu et al., 2021) parameterizes:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.10}
 \]
 
@@ -149,7 +149,7 @@ as \texttt{(in\_features, out\_features)}:
 
 \begin{lstlisting}
 class Conv1D(nn.Module):
-    def __init__(self, nf, nx):
+    def \_\_init\_\_(self, nf, nx):
         self.weight = nn.Parameter(torch.empty(nx, nf))  # (in, out)
 \end{lstlisting}
 

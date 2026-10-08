@@ -4,15 +4,15 @@
 \subsection{B.1 Orthogonal Matrix Construction}
 
 \begin{lstlisting}
-def _build_orthogonal_matrix(self, d, m):
+def \_build\_orthogonal\_matrix(self, d, m):
     blocks = []
     remaining = m
-    while remaining > 0:
-        block_size = min(d, remaining)
-        g = torch.randn(d, block_size)
-        q, _ = torch.linalg.qr(g)
+    while remaining \textgreater{} 0:
+        block\_size = min(d, remaining)
+        g = torch.randn(d, block\_size)
+        q, \_ = torch.linalg.qr(g)
         blocks.append(q)
-        remaining -= block_size
+        remaining -= block\_size
     W = torch.cat(blocks, dim=1) * math.sqrt(d)
     return W.t().contiguous()
 \end{lstlisting}
@@ -22,13 +22,13 @@ def _build_orthogonal_matrix(self, d, m):
 \subsection{B.2 Feature Map}
 
 \begin{lstlisting}
-def _feature_map(self, x):
+def \_feature\_map(self, x):
     proj = torch.matmul(x, self.omega.to(dtype=x.dtype).t())
-    diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
-    max_proj = proj.amax(dim=-1, keepdim=True).detach()
-    diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
+    diag\_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    max\_proj = proj.amax(dim=-1, keepdim=True).detach()
+    diff = torch.clamp(proj - max\_proj - diag\_sq, min=-30.0, max=10.0)
     phi = torch.exp(diff) + self.eps
-    phi = phi / (math.sqrt(self.num_features) + self.eps)
+    phi = phi / (math.sqrt(self.num\_features) + self.eps)
     return phi
 \end{lstlisting}
 
@@ -42,14 +42,14 @@ def _feature_map(self, x):
 \subsection{B.3 Causal Chunked Scan}
 
 \begin{lstlisting}
-if self.is_decoder:
-    M = Q_feat.shape[-1]
-    chunk_size = min(64, N)
-    num_chunks = (N + chunk_size - 1) // chunk_size
+if self.is\_decoder:
+    M = Q\_feat.shape[-1]
+    chunk\_size = min(64, N)
+    num\_chunks = (N + chunk\_size - 1) // chunk\_size
     S = torch.zeros(B, H, M, d, dtype=torch.float32)
     z = torch.zeros(B, H, M, dtype=torch.float32)
     
-    for c in range(num_chunks):
+    for c in range(num\_chunks):
         # ... intra, inter, update S, z
 \end{lstlisting}
 
@@ -59,9 +59,9 @@ For $N = 128$: 2 iterations.
 
 \begin{lstlisting}
 try:
-    new_attn = PerformerAttention(...)
+    new\_attn = PerformerAttention(...)
 except Exception as e:
-    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
     raise RuntimeError(f"Injection failed")  # $\leftarrow$ BUG
 \end{lstlisting}
 
@@ -69,7 +69,7 @@ except Exception as e:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction failed: %s", e)
+    logger.warning("PerformerAttention construction failed: \%s", e)
     return None
 \end{lstlisting}
 
@@ -77,15 +77,15 @@ except Exception as e:
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, ...):
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, ...):
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \textbf{Should be removed} -- no theoretical justification.
@@ -93,8 +93,8 @@ class LoRALinear(nn.Module):
 \subsection{B.6 Cross-Attention Bypass}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
-    return hidden_states, None
+if encoder\_hidden\_states is not None:
+    return hidden\_states, None
 \end{lstlisting}
 
 Returns input unchanged.
@@ -103,7 +103,7 @@ Returns input unchanged.
 
 \subsubsection{B.7.1 Feature Map Overflows Without Stabilization}
 
-Without max-subtraction: \texttt{exp($\omega$^T x)} overflows for \texttt{||x|| > 5}.
+Without max-subtraction: \texttt{exp($\omega$^T x)} overflows for \texttt{||x|| \textgreater{} 5}.
 
 \subsubsection{B.7.2 Injection Raises}
 
@@ -122,31 +122,31 @@ No warning when cross-attention is requested.
 \subsubsection{Verify Feature Positivity}
 
 \begin{lstlisting}
-Q_feat = model._feature_map(Q)
-assert (Q_feat >= 0).all()
+Q\_feat = model.\_feature\_map(Q)
+assert (Q\_feat \textgreater{}= 0).all()
 \end{lstlisting}
 
 \subsubsection{Verify Omega Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
+sd = model.state\_dict()
 assert any('omega' in k for k in sd)
 \end{lstlisting}
 
 \subsubsection{Verify Causal}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{B.9 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("performer")
-@ATTENTION_REGISTRY.register("performer_attention")
+@ATTENTION\_REGISTRY.register("performer")
+@ATTENTION\_REGISTRY.register("performer\_attention")
 class PerformerAttention(BaseAttention):
     ...
 \end{lstlisting}

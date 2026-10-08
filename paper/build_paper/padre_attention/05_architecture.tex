@@ -33,9 +33,9 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Yes \\
 \begin{lstlisting}
 if (hasattr(src, "self") and hasattr(src.self, "query")
     and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_lin:
-    is_nested = True
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention") and not has\_out\_lin:
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{Frobenius Validation}
@@ -43,7 +43,7 @@ elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_l
 For each projection:
 
 \[
-\|W\|_F \geq 10^{-4}
+\|W\|\_F \geq 10^{-4}
 \tag{5.1}
 \]
 
@@ -54,13 +54,13 @@ Otherwise raise. This catches corrupt weight extraction.
 In \texttt{inject\_padre}, we validate the output against the source module:
 
 \begin{lstlisting}
-dummy_x = torch.randn(1, 4, hidden_size)
-with torch.no_grad():
-    orig_out = source_module(dummy_x)[0]
-    new_out = new_attn(dummy_x)[0]
-    err = torch.norm(orig_out - new_out) / torch.norm(orig_out)
-    if err > max_err:
-        logger.warning("Skipping replacement, error %.4f", err)
+dummy\_x = torch.randn(1, 4, hidden\_size)
+with torch.no\_grad():
+    orig\_out = source\_module(dummy\_x)[0]
+    new\_out = new\_attn(dummy\_x)[0]
+    err = torch.norm(orig\_out - new\_out) / torch.norm(orig\_out)
+    if err \textgreater{} max\_err:
+        logger.warning("Skipping replacement, error \%.4f", err)
         return None
 \end{lstlisting}
 
@@ -78,7 +78,7 @@ output.
 \midrule
 Missing Q/K/V & \texttt{missing\_after} non-empty & \textbf{Raise} \\
 Near-zero norm & Frobenius check & \textbf{Raise} \\
-Output error > max & Equivalence check & Skip layer, return None \\
+Output error \textgreater{} max & Equivalence check & Skip layer, return None \\
 Injection exception & try/except & Log, return None \\
 \bottomrule
 \end{tabular}
@@ -87,8 +87,8 @@ Injection exception & try/except & Log, return None \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("padre")
-@ATTENTION_REGISTRY.register("padre_attention")
+@ATTENTION\_REGISTRY.register("padre")
+@ATTENTION\_REGISTRY.register("padre\_attention")
 class PADReAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -106,15 +106,15 @@ Per-layer trainable (d = 768, r\_L = 16): ~98K parameters.
 Input:  model M, config, order d
 Output: M with PADRe where equivalence check passes
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ PADReAttention(config, order=d, pretrained_attn=src)
-4:     err $\leftarrow$ output_equivalence(src, new)
-5:     if err $\le$ max_error:
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ PADReAttention(config, order=d, pretrained\_attn=src)
+4:     err $\leftarrow$ output\_equivalence(src, new)
+5:     if err $\le$ max\_error:
 6:         replace( , new)
 7:     else:
 8:         freeze(src)
-9:         log_skip( , err)
+9:         log\_skip( , err)
 10: end for
 \end{lstlisting}
 
@@ -128,7 +128,7 @@ Output: M with PADRe where equivalence check passes
 
 \begin{lstlisting}
 thresh = -5e3 if scores.dtype in (fp16, bf16) else -1e8
-max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+max\_scores = torch.where(max\_scores \textless{}= thresh, torch.zeros\_like(max\_scores), max\_scores)
 \end{lstlisting}
 
 Prevents NaN when a query has no valid keys.

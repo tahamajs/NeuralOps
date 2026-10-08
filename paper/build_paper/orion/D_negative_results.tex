@@ -5,7 +5,7 @@
 
 \begin{lstlisting}
 except Exception as e:
-    raise RuntimeError(f"copy_weights failed: {e}")
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 \textbf{Impact.} Any UniversalAdapter failure aborts injection.
@@ -15,7 +15,7 @@ except Exception as e:
 \subsection{D.2 The `rff\_proj` Persistence Bug}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", ..., persistent=False)
+self.register\_buffer("rff\_proj", ..., persistent=False)
 \end{lstlisting}
 
 \textbf{Impact.} Train/test mismatch on model save/reload.
@@ -23,14 +23,14 @@ self.register_buffer("rff_proj", ..., persistent=False)
 \textbf{Verification.}
 
 \begin{lstlisting}
-sd = model1.state_dict()
-assert 'rff_proj' not in sd  # Confirms bug
+sd = model1.state\_dict()
+assert 'rff\_proj' not in sd  # Confirms bug
 \end{lstlisting}
 
 \subsection{D.3 Softpick Masked Row Collapse}
 
 \begin{lstlisting}
-p = F.relu(torch.exp(x_f) - 1.0)
+p = F.relu(torch.exp(x\_f) - 1.0)
 return p / (p.sum(dim=dim, keepdim=True) + 1e-8)
 \end{lstlisting}
 
@@ -92,7 +92,7 @@ All full & 0.85 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} RFF with <128 features underperforms.
+\textbf{Observation.} RFF with \textless{}128 features underperforms.
 
 \subsection{D.5 Failed Alternatives}
 

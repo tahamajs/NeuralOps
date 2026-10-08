@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_spectraformerattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_spectraformerattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -15,15 +15,15 @@ DistilBERT & \textbf{Spectraformer Attention} & \textbf{77.64\%} & -12.84\% & PA
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Spectraformer Attention} & \textbf{57.45\%} & -17.66\% & PASS & 0.6986 & 0 & \textbf{0.94$\times$} & 376.2 MB & 29.0 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Spectraformer Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 568.8 MB & 27.4 & -- \\
+GPT-2 & \textbf{Spectraformer Attention} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 568.8 MB & 27.4 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_spectraformerattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_spectraformerattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -47,11 +47,11 @@ Table~\ref{tab:results_params_spectraformerattention} documents parameter compre
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{spectraformerattention}.}
-\label{tab:results_params_spectraformerattention}
+\label{tab:results\_params\_spectraformerattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_spectraformerattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_spectraformerattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -75,13 +75,13 @@ Table~\ref{tab:results_vram_spectraformerattention} presents memory profiling an
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{spectraformerattention}.}
-\label{tab:results_vram_spectraformerattention}
+\label{tab:results\_vram\_spectraformerattention}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/spectraformer_attention_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{spectraformer_attention}.}
-\label{fig:results_spectraformer_attention}
+\includegraphics[width=0.85\linewidth]{figures/spectraformer\_attention\_gpt2\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{spectraformer\_attention}.}
+\label{fig:results\_spectraformer\_attention}
 \end{figure}

@@ -6,15 +6,15 @@
 Starting from softmax attention:
 
 \[
-\text{Attn}(q_i) = \frac{\sum_j e^{q_i^\top k_j} v_j}{\sum_j e^{q_i^\top k_j}}
+\text{Attn}(q\_i) = \frac{\sum\_j e^{q\_i^\top k\_j} v\_j}{\sum\_j e^{q\_i^\top k\_j}}
 \tag{A.1}
 \]
 
 Approximating $e^{q^\top k} \approx \phi(q)^\top \phi(k)$:
 
 \[
-\text{Attn}(q_i) \approx \frac{\sum_j \phi(q_i)^\top \phi(k_j) v_j}{\sum_j \phi(q_i)^\top \phi(k_j)}
-= \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(q\_i) \approx \frac{\sum\_j \phi(q\_i)^\top \phi(k\_j) v\_j}{\sum\_j \phi(q\_i)^\top \phi(k\_j)}
+= \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{A.2}
 \]
 
@@ -27,7 +27,7 @@ We add a per-head matrix $M_h = U_h V_h^\top \in \mathbb{R}^{d \times d}$.
 The augmented output is:
 
 \[
-\text{aug}_i = \frac{\phi(q_i)^\top M_h}{\phi(q_i)^\top z_i}
+\text{aug}\_i = \frac{\phi(q\_i)^\top M\_h}{\phi(q\_i)^\top z\_i}
 \tag{A.3}
 \]
 
@@ -63,14 +63,14 @@ The softplus function satisfies:
 The elu+1 kernel is:
 
 \[
-\phi_{\text{elu}}(x) = \begin{cases} x + 1 & x > 0 \\ e^x & x \le 0 \end{cases}
+\phi\_{\text{elu}}(x) = \begin{cases} x + 1 & x \textgreater{} 0 \\ e^x & x \le 0 \end{cases}
 \tag{A.7}
 \]
 
 \textbf{Derivative:}
 
 \[
-\phi'_{\text{elu}}(x) = \begin{cases} 1 & x > 0 \\ e^x & x \le 0 \end{cases}
+\phi'\_{\text{elu}}(x) = \begin{cases} 1 & x \textgreater{} 0 \\ e^x & x \le 0 \end{cases}
 \tag{A.8}
 \]
 

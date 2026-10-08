@@ -30,7 +30,7 @@ $\square$
 \textbf{Claim.} The difference between PTP and dense attention output is:
 
 \[
-\|O - O_\text{dense}\|_F \leq 2 \max_j \|V_j\|_F \cdot \sum_{j \notin \mathcal{T}} P_j
+\|O - O\_\text{dense}\|\_F \leq 2 \max\_j \|V\_j\|\_F \cdot \sum\_{j \notin \mathcal{T}} P\_j
 \tag{A.1}
 \]
 
@@ -39,13 +39,13 @@ $O_\text{dense} = \sum_{j=1}^L P_j V_j$. The difference is
 $\sum_{j \notin \mathcal{T}} P_j V_j$. Taking norms:
 
 \[
-\|O - O_\text{dense}\|_F = \left\|\sum_{j \notin \mathcal{T}} P_j V_j\right\|_F \leq \sum_{j \notin \mathcal{T}} P_j \|V_j\|_F
+\|O - O\_\text{dense}\|\_F = \left\|\sum\_{j \notin \mathcal{T}} P\_j V\_j\right\|\_F \leq \sum\_{j \notin \mathcal{T}} P\_j \|V\_j\|\_F
 \]
 
 Using $\|V_j\|_F \leq \max_j \|V_j\|_F$:
 
 \[
-\|O - O_\text{dense}\|_F \leq \max_j \|V_j\|_F \cdot \sum_{j \notin \mathcal{T}} P_j \qquad \square
+\|O - O\_\text{dense}\|\_F \leq \max\_j \|V\_j\|\_F \cdot \sum\_{j \notin \mathcal{T}} P\_j \qquad \square
 \]
 
 \subsection{A.4 Complexity}
@@ -78,7 +78,7 @@ $\text{Acc}(\rho) \approx \text{Acc}(1) \cdot m(\rho)$.
 We seek:
 
 \[
-\rho^* = \arg\max_\rho \left[\text{Acc}(1) m(\rho) - \lambda \rho\right]
+\rho^* = \arg\max\_\rho \left[\text{Acc}(1) m(\rho) - \lambda \rho\right]
 \tag{A.2}
 \]
 
@@ -97,7 +97,7 @@ For loss $\mathcal{L}$ and score $s_i = \sigma(g_i)$ where
 $g_i = \text{MLP}(x_i)$:
 
 \[
-\frac{\partial \mathcal{L}}{\partial g_i} = \frac{\partial \mathcal{L}}{\partial s_i} \cdot \sigma(g_i)(1 - \sigma(g_i))
+\frac{\partial \mathcal{L}}{\partial g\_i} = \frac{\partial \mathcal{L}}{\partial s\_i} \cdot \sigma(g\_i)(1 - \sigma(g\_i))
 \tag{A.4}
 \]
 
@@ -110,7 +110,7 @@ non-selected ones).
 \textbf{Claim.} Random pruning of $k$ tokens has expected accuracy:
 
 \[
-\mathbb{E}[\text{Acc}_\text{random}] \approx \text{Acc}(1) \cdot \frac{k}{L}
+\mathbb{E}[\text{Acc}\_\text{random}] \approx \text{Acc}(1) \cdot \frac{k}{L}
 \tag{A.5}
 \]
 

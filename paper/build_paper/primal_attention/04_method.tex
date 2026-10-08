@@ -7,7 +7,7 @@ Primal Attention approximates the $L \times L$ attention matrix via a
 low-rank factorization through $m$ landmarks:
 
 \[
-A \approx F_1 F_2^{-1} F_3
+A \approx F\_1 F\_2^{-1} F\_3
 \]
 
 where $F_1 \in \mathbb{R}^{L \times m}$, $F_2 \in \mathbb{R}^{m \times m}$, 
@@ -16,18 +16,18 @@ $F_3 \in \mathbb{R}^{m \times L}$.
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-      Q, K $\in$ R^{L $\times$ d_h}
+      Q, K $\in$ R^{L $\times$ d\_h}
              |
               
       +-----------------+
       |  Pool to        |
       |  landmarks      |
-      |  Q_l, K_l       |
+      |  Q\_l, K\_l       |
       +--------+--------+
                |
       +--------+--------+-----------+
                                      
-   F$_1$ = Q K_l       F$_2$ = Q_l K_l    F$_3$ = Q_l K 
+   F$_1$ = Q K\_l       F$_2$ = Q\_l K\_l    F$_3$ = Q\_l K 
     (L $\times$ m)          (m $\times$ m)         (m $\times$ L)
                        |
                         
@@ -51,14 +51,14 @@ Given sequence length $L$ and target landmark count $m$, we divide the
 sequence into $m$ equal segments of size $s = L / m$ and average each:
 
 \[
-Q_\text{land}[i] = \frac{1}{s} \sum_{j = i s}^{(i+1) s - 1} Q[j], \qquad i = 0, \ldots, m - 1
+Q\_\text{land}[i] = \frac{1}{s} \sum\_{j = i s}^{(i+1) s - 1} Q[j], \qquad i = 0, \ldots, m - 1
 \]
 
 Similarly for $K_\text{land}$. If $L$ is not divisible by $m$, we use 
 uniform strided sampling:
 
 \[
-Q_\text{land}[i] = Q[\lfloor i L / m \rfloor], \qquad i = 0, \ldots, m - 1
+Q\_\text{land}[i] = Q[\lfloor i L / m \rfloor], \qquad i = 0, \ldots, m - 1
 \]
 
 \textbf{Why segment pooling?} It provides \textbf{uniform coverage} regardless of 
@@ -75,15 +75,15 @@ their landmarks $Q_\text{land}, K_\text{land} \in \mathbb{R}^{m \times d_h}$,
 we compute:
 
 \[
-F_1 = \frac{Q K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times m}
+F\_1 = \frac{Q K\_\text{land}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{L \times m}
 \]
 
 \[
-F_2 = \frac{Q_\text{land} K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times m}
+F\_2 = \frac{Q\_\text{land} K\_\text{land}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{m \times m}
 \]
 
 \[
-F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
+F\_3 = \frac{Q\_\text{land} K^\top}{\sqrt{d\_h}} \in \mathbb{R}^{m \times L}
 \]
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
@@ -93,7 +93,7 @@ The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
 The approximate attention matrix is:
 
 \[
-\tilde{A} = F_1 F_2^{-1} F_3 \in \mathbb{R}^{L \times L}
+\tilde{A} = F\_1 F\_2^{-1} F\_3 \in \mathbb{R}^{L \times L}
 \]
 
 \textbf{Why this works.} If the true attention matrix $A$ has rank $\le m$, then 
@@ -116,7 +116,7 @@ space). For general $A$, this is a low-rank approximation.
 The correct approach:
 
 \[
-\tilde{A} V = (F_1 F_2^{-1} F_3) V = F_1 (F_2^{-1} (F_3 V))
+\tilde{A} V = (F\_1 F\_2^{-1} F\_3) V = F\_1 (F\_2^{-1} (F\_3 V))
 \]
 
 where the associativity allows computing left-to-right:
@@ -141,7 +141,7 @@ provides a good starting point for the Schulz iteration.
 For $K$ iterations (default $K = 4$):
 
 \[
-X_{t+1} = X_t (2I - F_2 X_t)
+X\_{t+1} = X\_t (2I - F\_2 X\_t)
 \]
 
 where $I \in \mathbb{R}^{m \times m}$ is the identity.
@@ -149,7 +149,7 @@ where $I \in \mathbb{R}^{m \times m}$ is the identity.
 \textbf{Convergence analysis.} Let $E_t = I - F_2 X_t$. Then:
 
 \[
-E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
+E\_{t+1} = I - F\_2 X\_{t+1} = I - F\_2 X\_t (2I - F\_2 X\_t) = (I - F\_2 X\_t)^2 = E\_t^2
 \]
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
@@ -171,14 +171,14 @@ $m \le 128$; larger $m$ may benefit from more.
 For decoder models, the attention matrix must be lower-triangular (causal):
 
 \[
-A_{ij} = 0 \quad \text{for } j > i
+A\_{ij} = 0 \quad \text{for } j \textgreater{} i
 \]
 
 We enforce this by adding a causal mask to $\tilde{A}$:
 
 \[
-\tilde{A}_\text{causal} = \tilde{A} + M, \qquad
-M_{ij} = \begin{cases} 0 \& j \le i \\ -10^4 \& j > i \end{cases}
+\tilde{A}\_\text{causal} = \tilde{A} + M, \qquad
+M\_{ij} = \begin{cases} 0 \& j \le i \\ -10^4 \& j \textgreater{} i \end{cases}
 \]
 
 Then softmax. This is not a true causal approximation (the landmarks see 
@@ -188,39 +188,39 @@ the whole sequence), but empirically works well for generation.
 
 \textbf{Algorithm 1:} Primal Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
-        attention_mask, is_causal
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d\_h}
+        attention\_mask, is\_causal
         m (num landmarks), K (pinv iters)
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d\_h}
 
 1:  # Segment pooling for landmarks
-2:  Q_l, K_l $\leftarrow$ pool_to_landmarks(Q, K, m)     # (B, H, m, d_h)
+2:  Q\_l, K\_l $\leftarrow$ pool\_to\_landmarks(Q, K, m)     # (B, H, m, d\_h)
 3:
 4:  # Compute factors
-5:  scale $\leftarrow$ 1 / sqrt(d_h)
-6:  F$_1$ $\leftarrow$ (Q @ K_l ) * scale                    # (B, H, L, m)
-7:  F$_2$ $\leftarrow$ (Q_l @ K_l ) * scale                  # (B, H, m, m)
-8:  F$_3$ $\leftarrow$ (Q_l @ K ) * scale                    # (B, H, m, L)
+5:  scale $\leftarrow$ 1 / sqrt(d\_h)
+6:  F$_1$ $\leftarrow$ (Q @ K\_l ) * scale                    # (B, H, L, m)
+7:  F$_2$ $\leftarrow$ (Q\_l @ K\_l ) * scale                  # (B, H, m, m)
+8:  F$_3$ $\leftarrow$ (Q\_l @ K ) * scale                    # (B, H, m, L)
 9:
 10: # Pseudoinverse of F$_2$
-11: F$_2$_inv $\leftarrow$ linalg.pinv(F$_2$)
+11: F$_2$\_inv $\leftarrow$ linalg.pinv(F$_2$)
 12: for t in 0..K-1 do
-13:     F$_2$_inv $\leftarrow$ F$_2$_inv @ (2I - F$_2$ @ F$_2$_inv)   # Schulz
+13:     F$_2$\_inv $\leftarrow$ F$_2$\_inv @ (2I - F$_2$ @ F$_2$\_inv)   # Schulz
 14: end for
 15:
 16: # Approximate attention (associative, linear in L)
-17: F$_3$V\leftarrow$ F$_3$ @ V                              # (B, H, m, d_h)
-18: F$_2$_inv_F$_3$V\leftarrow$ F$_2$_inv @ F$_3$V                # (B, H, m, d_h)
-19: A $\leftarrow$ F$_1$ @ F$_2$_inv_F$_3$V                       # (B, H, L, d_h)
+17: F$_3$V\leftarrow$ F$\_3$ @ V                              # (B, H, m, d_h)
+18: F$\_2$_inv_F$\_3$V\leftarrow$ F$_2$\_inv @ F$_3$V                # (B, H, m, d\_h)
+19: A $\leftarrow$ F$_1$ @ F$_2$\_inv\_F$_3$V                       # (B, H, L, d\_h)
 20:
 21: # Causal mask
-22: if is_causal:
-23:     A $\leftarrow$ A + causal_mask
+22: if is\_causal:
+23:     A $\leftarrow$ A + causal\_mask
 24: end if
 25:
 26: # Standard attention mask
-27: if attention_mask:
-28:     A $\leftarrow$ apply_attention_mask(A, attention_mask)
+27: if attention\_mask:
+28:     A $\leftarrow$ apply\_attention\_mask(A, attention\_mask)
 29: end if
 30:
 31: probs $\leftarrow$ softmax(A)
@@ -259,7 +259,7 @@ Primal Attention \textbf{does not reduce parameters} relative to MHA. The query,
 key, value, and output projections are unchanged:
 
 \[
-|\theta_\text{Primal}| = |\theta_\text{MHA}|
+|\theta\_\text{Primal}| = |\theta\_\text{MHA}|
 \]
 
 It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and 
@@ -272,7 +272,7 @@ It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and
 For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
 \[
-\|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
+\|A - \tilde{A}\|\_F \leq \sqrt{\sum\_{i \textgreater{} m} \sigma\_i^2} + \epsilon\_\text{landmark}
 \]
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
@@ -287,7 +287,7 @@ span the row/column spaces).
 If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 
 \[
-\|E_K\| \le \rho^{2^K}
+\|E\_K\| \le \rho^{2^K}
 \]
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.

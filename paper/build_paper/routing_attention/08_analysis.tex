@@ -6,12 +6,12 @@
 The naive implementation computes $K$ full attention matrices:
 
 \begin{lstlisting}
-for k in range(K_num):
+for k in range(K\_num):
     scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # $\leftarrow$ full L$\times$L
-    scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
+    scores = scores.masked\_fill(~mask\_k.unsqueeze(2), -1e4)
     attn = F.softmax(scores, dim=-1)
-    out_k = torch.matmul(attn, V)
-    outputs = torch.where(mask_k.unsqueeze(-1), out_k, outputs)
+    out\_k = torch.matmul(attn, V)
+    outputs = torch.where(mask\_k.unsqueeze(-1), out\_k, outputs)
 \end{lstlisting}
 
 Each iteration:
@@ -65,7 +65,7 @@ but the cluster IDs are discrete).
 \textbf{Alternative.} Use Gumbel-Softmax for soft cluster assignment:
 
 \[
-c_i = \text{softmax}(-\|f_i - \mu_k\|_2^2 / \tau)
+c\_i = \text{softmax}(-\|f\_i - \mu\_k\|\_2^2 / \tau)
 \tag{8.1}
 \]
 
@@ -87,8 +87,8 @@ query).
 Padding tokens are included in clustering:
 
 \begin{lstlisting}
-joint_feat = F.normalize(Q + K, p=2, dim=-1)
-cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)
+joint\_feat = F.normalize(Q + K, p=2, dim=-1)
+cluster\_ids = self.\_kmeans\_assign(joint\_feat, K\_num, self.n\_iters)
 \end{lstlisting}
 
 This may distort centroids, especially for sequences with many padding 
@@ -97,7 +97,7 @@ tokens.
 \textbf{Fix.} Exclude padding before clustering:
 
 \begin{lstlisting}
-valid_mask = get_token_valid_mask(attention_mask, B, L, device)
+valid\_mask = get\_token\_valid\_mask(attention\_mask, B, L, device)
 # Use only valid tokens for k-means
 \end{lstlisting}
 

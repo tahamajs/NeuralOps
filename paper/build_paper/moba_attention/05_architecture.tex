@@ -22,39 +22,39 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data
-if c_w.shape[0] < c_w.shape[1]:  # Conv1D stores (in, out)
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.data
+if c\_w.shape[0] \textless{} c\_w.shape[1]:  # Conv1D stores (in, out)
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    is_nested_encoder = True
-    q_w = src.self.query.weight
-    k_w = src.self.key.weight
-    v_w = src.self.value.weight
-    o_w = src.output.dense.weight
+    is\_nested\_encoder = True
+    q\_w = src.self.query.weight
+    k\_w = src.self.key.weight
+    v\_w = src.self.value.weight
+    o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Qwen GQA}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight  # (H d_h, d)
-k_w = src.k_proj.weight  # (H_kv d_h, d)
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{Weight Reuse Strategy}
@@ -79,9 +79,9 @@ $p_2$ (second d) & $W_Q$ & Gating signal \\
 If source weight has $d_\text{out} < d$ (e.g., GQA K/V), we repeat:
 
 \begin{lstlisting}
-if w_main.shape[0] < D and D % w_main.shape[0] == 0:
-    rep = D // w_main.shape[0]
-    w_main = w_main.repeat(rep, 1)
+if w\_main.shape[0] \textless{} D and D \% w\_main.shape[0] == 0:
+    rep = D // w\_main.shape[0]
+    w\_main = w\_main.repeat(rep, 1)
 \end{lstlisting}
 
 \subsubsection{out\_proj Weight Layout}
@@ -93,16 +93,16 @@ Direct copy from $W_O$.
 For nested encoders, \texttt{out\_proj} is set to identity:
 
 \begin{lstlisting}
-elif self.is_nested_encoder:
-    nn.init.eye_(self.out_proj.weight)
-    if self.out_proj.bias is not None:
-        nn.init.zeros_(self.out_proj.bias)
+elif self.is\_nested\_encoder:
+    nn.init.eye\_(self.out\_proj.weight)
+    if self.out\_proj.bias is not None:
+        nn.init.zeros\_(self.out\_proj.bias)
 \end{lstlisting}
 
 \subsection{The A\_log Parameter}
 
 \begin{lstlisting}
-self.A_log = nn.Parameter(torch.log(torch.arange(1, self.d_model + 1, dtype=torch.float32)))
+self.A\_log = nn.Parameter(torch.log(torch.arange(1, self.d\_model + 1, dtype=torch.float32)))
 \end{lstlisting}
 
 \textbf{Init.} $A_{\log, i} = \log(i)$, so $\gamma_i = \sigma(-i)$.
@@ -113,7 +113,7 @@ $\to$ faster forgetting.
 \subsection{The Preservation Gate}
 
 \begin{lstlisting}
-self.pres_gate = nn.Parameter(torch.tensor(2.0))
+self.pres\_gate = nn.Parameter(torch.tensor(2.0))
 \end{lstlisting}
 
 At init, $\alpha = \sigma(2.0) \approx 0.88$. During training, the model can 
@@ -126,9 +126,9 @@ shift $\alpha$ toward 0 (rely on residual) or 1 (rely on SSM output).
 Input:  model M, config
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ Mamba(d_model, old_attn=src)
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ Mamba(d\_model, old\_attn=src)
 4:     replace( , new)
 5: end for
 6: return M
@@ -144,7 +144,7 @@ The injection hook skips:
 
 \end{itemize}
 \begin{lstlisting}
-if "DeltaNet" in c_name or "LinearAttention" in c_name:
+if "DeltaNet" in c\_name or "LinearAttention" in c\_name:
     return None
 \end{lstlisting}
 
@@ -171,7 +171,7 @@ The injection hook catches them and returns None.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("mamba")
+@ATTENTION\_REGISTRY.register("mamba")
 class Mamba(BaseAttention):
     ...
 \end{lstlisting}
@@ -197,6 +197,6 @@ Trainable parameter count per layer (d = 768, r\_L = 16):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of moba.}
-\label{fig:arch_moba}
+\label{fig:arch\_moba}
 \end{figure}
 

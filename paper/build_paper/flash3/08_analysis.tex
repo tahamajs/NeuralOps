@@ -10,14 +10,14 @@ q = torch.randn(2, 8, 128, 64)
 k = torch.randn(2, 8, 128, 64)
 v = torch.randn(2, 8, 128, 64)
 
-out_sdpa = F.scaled_dot_product_attention(q, k, v)
-out_naive = torch.softmax(q @ k.T / 8.0, dim=-1) @ v
+out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v)
+out\_naive = torch.softmax(q @ k.T / 8.0, dim=-1) @ v
 
-diff = (out_sdpa - out_naive).abs().max().item()
+diff = (out\_sdpa - out\_naive).abs().max().item()
 print(f"Max diff: {diff:.6e}")
 \end{lstlisting}
 
-\textbf{Result:} \texttt{diff < 1e-5} on all test inputs. Both paths are exact.
+\textbf{Result:} \texttt{diff \textless{} 1e-5} on all test inputs. Both paths are exact.
 
 \subsection{Path Dispatch Analysis}
 
@@ -43,14 +43,14 @@ CPU & No & No & Math (slow) \\
 FP8 e4m3 has 3 mantissa bits. Casting Q, K, V introduces:
 
 \[
-\epsilon_{\text{rel}} \approx 2^{-3} = 0.125
+\epsilon\_{\text{rel}} \approx 2^{-3} = 0.125
 \]
 
 \textbf{Simulation.} On RTX 4070 (no FP8 tensor cores), we simulate FP8 by 
 casting to FP8 then back to FP16:
 
 \begin{lstlisting}
-q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
+q\_fp8 = q.to(torch.float8\_e4m3fn).to(torch.float16)
 \end{lstlisting}
 
 Accuracy drop: 86.4\%\%.

@@ -143,12 +143,12 @@ Step  Loss
 {
   "gqa": {
     "distilbert": {
-      "num_kv_heads": 6,
-      "accuracy_pct": 88.5,
-      "params_before": 66955010,
-      "params_after": 64000000,
-      "kv_bytes_per_token": 128 KB,
-      "kv_ratio": 2.0
+      "num\_kv\_heads": 6,
+      "accuracy\_pct": 88.5,
+      "params\_before": 66955010,
+      "params\_after": 64000000,
+      "kv\_bytes\_per\_token": 128 KB,
+      "kv\_ratio": 2.0
     },
     "roberta": {...},
     "gpt2": {...}
@@ -160,10 +160,10 @@ Step  Loss
 
 \begin{lstlisting}
 # Main
-python run_all_4_gqa.py --num_kv_heads 6
+python run\_all\_4\_gqa.py --num\_kv\_heads 6
 
 # Rank ablation
 for kv in 1 2 3 4 6 12; do
-    python run_all_4_gqa.py --num_kv_heads $kv
+    python run\_all\_4\_gqa.py --num\_kv\_heads $kv
 done
 \end{lstlisting}

@@ -6,8 +6,8 @@ Given input $X \in \mathbb{R}^{B \times L \times d}$, a linear recurrent
 attention maintains a state $S_t$ updated at each timestep:
 
 \[
-S_t = f(S_{t-1}, x_t), \quad
-y_t = g(S_t, x_t)
+S\_t = f(S\_{t-1}, x\_t), \quad
+y\_t = g(S\_t, x\_t)
 \tag{3.1}
 \]
 
@@ -19,7 +19,7 @@ past. This gives $\mathcal{O}(L)$ complexity in time and memory.
 HGRN-2 (Qin et al., 2024) uses an element-wise recurrence:
 
 \[
-s_t = \alpha_t \odot s_{t-1} + (1 - \alpha_t) \odot u_t
+s\_t = \alpha\_t \odot s\_{t-1} + (1 - \alpha\_t) \odot u\_t
 \tag{3.2}
 \]
 
@@ -40,7 +40,7 @@ The Delta rule (Widrow \& Hoff, 1960) updates a matrix memory by the
 prediction error:
 
 \[
-S_t = S_{t-1} + \beta_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = S\_{t-1} + \beta\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{3.3}
 \]
 
@@ -59,7 +59,7 @@ error into the memory, keyed by $k_t$.
 \textbf{Gating.} Gated DeltaNet adds a forget gate:
 
 \[
-S_t = \alpha_t S_{t-1} + \beta_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = \alpha\_t S\_{t-1} + \beta\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{3.4}
 \]
 
@@ -70,8 +70,8 @@ This allows the memory to decay when the input distribution shifts.
 Gating is a classical technique for combining multiple pathways:
 
 \[
-y = \gamma \odot y_1 + (1 - \gamma) \odot y_2, \quad
-\gamma = \sigma(W_g x)
+y = \gamma \odot y\_1 + (1 - \gamma) \odot y\_2, \quad
+\gamma = \sigma(W\_g x)
 \tag{3.5}
 \]
 

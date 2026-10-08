@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -13,43 +13,43 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_vspec.py \
+python run\_all\_4\_vspec.py \
     --models distilbert,roberta,gpt2 \
     --rank 128 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --modules full,vspec \
     --rank 128 \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_vspec.py
+python run\_all\_4\_vspec.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4-7.6 (Ablations)}
 \begin{lstlisting}
-python run_all_4_vspec.py --no_router
-python run_all_4_vspec.py --no_spectral_gate
-python run_all_4_vspec.py --no_head_gate
-python run_all_4_vspec.py --deterministic
+python run\_all\_4\_vspec.py --no\_router
+python run\_all\_4\_vspec.py --no\_spectral\_gate
+python run\_all\_4\_vspec.py --no\_head\_gate
+python run\_all\_4\_vspec.py --deterministic
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (Rank)}
 \begin{lstlisting}
 for rank in 32 64 128 192 256; do
-    python run_all_4_vspec.py --rank $rank --output_suffix r$rank
+    python run\_all\_4\_vspec.py --rank $rank --output_suffix r$rank
 done
 \end{lstlisting}
 
@@ -60,8 +60,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

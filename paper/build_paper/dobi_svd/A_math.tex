@@ -6,7 +6,7 @@
 \textbf{Theorem.} For $W \in \mathbb{R}^{m \times n}$ and $r \leq \min(m, n)$:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r^* = \arg\min\_{\text{rank}(W\_r) \leq r} \|W - W\_r\|\_F = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{A.1}
 \]
 
@@ -18,7 +18,7 @@ $\square$
 initialized to $\alpha_0$, then the gate-compensated forward equals the SVD:
 
 \[
-(x (V_r / \sigma(\alpha_0) \odot \sigma(\alpha_0))^\top) U_r^\top = (x V_r^\top) U_r^\top
+(x (V\_r / \sigma(\alpha\_0) \odot \sigma(\alpha\_0))^\top) U\_r^\top = (x V\_r^\top) U\_r^\top
 \tag{A.2}
 \]
 
@@ -29,8 +29,8 @@ initialized to $\alpha_0$, then the gate-compensated forward equals the SVD:
 Let $y = (x (V \odot g)^\top) U^\top$ where $g = \sigma(\alpha)$. Then:
 
 \[
-\frac{\partial \mathcal{L}}{\partial \alpha_i}
-= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial g_i} \cdot \sigma(\alpha_i)(1 - \sigma(\alpha_i))
+\frac{\partial \mathcal{L}}{\partial \alpha\_i}
+= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial g\_i} \cdot \sigma(\alpha\_i)(1 - \sigma(\alpha\_i))
 \tag{A.3}
 \]
 
@@ -42,7 +42,7 @@ natural gradient landscape for pruning.
 Let $\tau_g$ be the pruning threshold. The effective rank is:
 
 \[
-r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}
+r\_\text{eff} = \#\{i : \sigma(\alpha\_i) \textgreater{} \tau\_g\}
 \tag{A.4}
 \]
 
@@ -67,7 +67,7 @@ Without bias & $r(d_\text{in} + d_\text{out} + 1)$ \\
 \textbf{Reduction factor:}
 
 \[
-\rho = \frac{d_\text{in} d_\text{out}}{r(d_\text{in} + d_\text{out} + 1)}
+\rho = \frac{d\_\text{in} d\_\text{out}}{r(d\_\text{in} + d\_\text{out} + 1)}
 \tag{A.5}
 \]
 
@@ -76,14 +76,14 @@ Without bias & $r(d_\text{in} + d_\text{out} + 1)$ \\
 Requiring $\rho > 1$:
 
 \[
-r < \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out} + 1}
+r \textless{} \frac{d\_\text{in} d\_\text{out}}{d\_\text{in} + d\_\text{out} + 1}
 \tag{A.6}
 \]
 
 Dobi-SVD enforces this via \texttt{max\_reduction\_r}:
 
 \[
-r_\text{max} = \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1
+r\_\text{max} = \left\lfloor \frac{d\_\text{in} d\_\text{out}}{d\_\text{in} + d\_\text{out}} \right\rfloor - 1
 \tag{A.7}
 \]
 
@@ -110,14 +110,14 @@ $1/\sigma \approx 1.0$, well-conditioned.
 After initialization, the reconstruction error is:
 
 \[
-\text{err}_0 = \frac{\|W - U_r V_r\|_F}{\|W\|_F}
+\text{err}\_0 = \frac{\|W - U\_r V\_r\|\_F}{\|W\|\_F}
 \tag{A.8}
 \]
 
 After training with gates $\alpha$:
 
 \[
-\text{err}_t = \frac{\|W - U_r (V_r \odot \sigma(\alpha))\|_F}{\|W\|_F}
+\text{err}\_t = \frac{\|W - U\_r (V\_r \odot \sigma(\alpha))\|\_F}{\|W\|\_F}
 \tag{A.9}
 \]
 

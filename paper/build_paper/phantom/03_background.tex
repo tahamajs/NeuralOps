@@ -22,7 +22,7 @@ where:
 sampled with probability proportional to leverage scores, then:
 
 \[
-\|W - C U^+ R\|_F \leq (1 + \epsilon) \|W - W_r\|_F
+\|W - C U^+ R\|\_F \leq (1 + \epsilon) \|W - W\_r\|\_F
 \tag{3.2}
 \]
 
@@ -35,14 +35,14 @@ For a matrix $W = U \Sigma V^\top$ with rank $r^*$, the \textbf{column leverage 
 of column $j$ is:
 
 \[
-\pi_j = \sum_{k=1}^{r^*} (V_{j, k})^2
+\pi\_j = \sum\_{k=1}^{r^*} (V\_{j, k})^2
 \tag{3.3}
 \]
 
 and the \textbf{row leverage score} of row $i$ is:
 
 \[
-\rho_i = \sum_{k=1}^{r^*} (U_{i, k})^2
+\rho\_i = \sum\_{k=1}^{r^*} (U\_{i, k})^2
 \tag{3.4}
 \]
 
@@ -60,14 +60,14 @@ Angular LSH (Charikar, 2002) hashes vectors based on their direction. For a
 random projection $a \sim \mathcal{N}(0, I_d)$, define:
 
 \[
-h_a(x) = \text{sign}(a^\top x) \in \{-1, +1\}
+h\_a(x) = \text{sign}(a^\top x) \in \{-1, +1\}
 \tag{3.5}
 \]
 
 For $k$ independent projections $a_1, \dots, a_k$, the $k$-bit hash is:
 
 \[
-H(x) = \sum_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}[h_{a_i}(x) = +1]
+H(x) = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}[h\_{a\_i}(x) = +1]
 \tag{3.6}
 \]
 
@@ -86,7 +86,7 @@ $R_\ell$ independent rounds, each with a fresh projection matrix, and
 averages the resulting attention outputs:
 
 \[
-\text{Output} = \frac{1}{R_\ell} \sum_{r=1}^{R_\ell} \text{Attn}_{\text{LSH}}^{(r)}(Q, K, V)
+\text{Output} = \frac{1}{R\_\ell} \sum\_{r=1}^{R\_\ell} \text{Attn}\_{\text{LSH}}^{(r)}(Q, K, V)
 \tag{3.8}
 \]
 
@@ -95,7 +95,7 @@ averages the resulting attention outputs:
 Softpick (Lu et al., 2024) generalizes softmax by subtracting a fixed baseline:
 
 \[
-\text{softpick}(x_i) = \text{ReLU}\!\left(e^{(x_i - m)/\tau_s} - e^{-m/\tau_s}\right)
+\text{softpick}(x\_i) = \text{ReLU}\!\left(e^{(x\_i - m)/\tau\_s} - e^{-m/\tau\_s}\right)
 \tag{3.9}
 \]
 
@@ -105,7 +105,7 @@ $x_i \ll m$ are truncated to zero, producing sparse attention.
 \textbf{Normalization.} The unnormalized weights are normalized:
 
 \[
-\hat{p}_i = \frac{\text{softpick}(x_i)}{\sum_j \text{softpick}(x_j) + \epsilon}
+\hat{p}\_i = \frac{\text{softpick}(x\_i)}{\sum\_j \text{softpick}(x\_j) + \epsilon}
 \tag{3.10}
 \]
 
@@ -114,7 +114,7 @@ masking), then $e^{-m/\tau_s} \geq 1$ and the ReLU may zero out the entire
 row. PHANTOM adds a softmax fallback:
 
 \[
-p_i = \begin{cases} \hat{p}_i & \text{if } \sum_j \text{softpick}(x_j) > 10^{-5} \\ \text{softmax}(x_i / \tau_s) & \text{otherwise} \end{cases}
+p\_i = \begin{cases} \hat{p}\_i & \text{if } \sum\_j \text{softpick}(x\_j) \textgreater{} 10^{-5} \\ \text{softmax}(x\_i / \tau\_s) & \text{otherwise} \end{cases}
 \tag{3.11}
 \]
 
@@ -123,7 +123,7 @@ p_i = \begin{cases} \hat{p}_i & \text{if } \sum_j \text{softpick}(x_j) > 10^{-5}
 LoRA (Hu et al., 2021) adds trainable low-rank adapters to frozen base weights:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
 \tag{3.12}
 \]
 

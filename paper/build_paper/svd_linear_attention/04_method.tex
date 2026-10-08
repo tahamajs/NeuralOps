@@ -16,14 +16,14 @@ whose projections are SVD-factorized.
         +------------+------------+
                                    
     +---------------+      +---------------+
-    | SVDLinear Q,K,V|      | decay_gate    |
+    | SVDLinear Q,K,V|      | decay\_gate    |
     | (factorized)  |      | (x $\to$ $\lambda$)       |
     +-------+-------+      +-------+-------+
             |                      |
                                     
     +---------------+      +---------------+
     |  (Q),  (K)    |      | Chunked scan  |
-    | feature map   |      | S_t, Z_t      |
+    | feature map   |      | S\_t, Z\_t      |
     +-------+-------+      +-------+-------+
             |                      |
             +----------+-----------+
@@ -33,7 +33,7 @@ whose projections are SVD-factorized.
               +-------+-------+
                        
               +---------------+
-              | out_proj (SVD)|
+              | out\_proj (SVD)|
               +---------------+
 \end{lstlisting}
 
@@ -78,12 +78,12 @@ For a non-causal encoder:
 
 \[
 S = \phi(K)^\top V, \qquad
-Z = \sum_j \phi(K_j)
+Z = \sum\_j \phi(K\_j)
 \tag{4.4}
 \]
 
 \[
-\text{Out}_t = \frac{\phi(Q_t) S}{\phi(Q_t) Z + \epsilon}
+\text{Out}\_t = \frac{\phi(Q\_t) S}{\phi(Q\_t) Z + \epsilon}
 \tag{4.5}
 \]
 
@@ -96,26 +96,26 @@ For a causal decoder with decay gating, we use a chunked scan (chunk size $C = 6
 \textbf{Within chunk $c$:}
 
 \[
-\log \gamma_{c, i} = \sum_{j \leq i} \log \lambda_{c, j}
+\log \gamma\_{c, i} = \sum\_{j \leq i} \log \lambda\_{c, j}
 \tag{4.6}
 \]
 
 \[
-S_{c, i}^{\text{intra}} = e^{\log \gamma_{c, i}} \sum_{j \leq i} e^{-\log \gamma_{c, j}} \phi(K_{c, j}) V_{c, j}^\top
+S\_{c, i}^{\text{intra}} = e^{\log \gamma\_{c, i}} \sum\_{j \leq i} e^{-\log \gamma\_{c, j}} \phi(K\_{c, j}) V\_{c, j}^\top
 \tag{4.7}
 \]
 
 \textbf{Inter-chunk:}
 
 \[
-S_{c, i} = S_{c, i}^{\text{intra}} + e^{\log \gamma_{c, i}} S_{c-1, C}
+S\_{c, i} = S\_{c, i}^{\text{intra}} + e^{\log \gamma\_{c, i}} S\_{c-1, C}
 \tag{4.8}
 \]
 
 \textbf{Output:}
 
 \[
-\text{Out}_{c, i} = \frac{\phi(Q_{c, i}) S_{c, i}}{\phi(Q_{c, i}) Z_{c, i} + \epsilon}
+\text{Out}\_{c, i} = \frac{\phi(Q\_{c, i}) S\_{c, i}}{\phi(Q\_{c, i}) Z\_{c, i} + \epsilon}
 \tag{4.9}
 \]
 
@@ -127,14 +127,14 @@ $\mathcal{O}(N d_h^2)$ for the state updates.
 \subsubsection{Decay Computation}
 
 \[
-\lambda_t = \exp(-\text{softplus}(W_g x_t + b_g))
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t + b\_g))
 \tag{4.10}
 \]
 
 For channel-wise decay:
 
 \[
-\lambda_{t, h, k} = \exp(-\text{softplus}(W_g x_t)_{h, k} + b_{g, h, k})
+\lambda\_{t, h, k} = \exp(-\text{softplus}(W\_g x\_t)\_{h, k} + b\_{g, h, k})
 \tag{4.11}
 \]
 
@@ -143,21 +143,21 @@ For channel-wise decay:
 We want the initial decay times $\tau_{h} = -\log \lambda_h$ to be log-spaced:
 
 \[
-\tau_h = \exp\!\left(\text{linspace}(\log 1, \log 1024, H)\right) \quad \text{for } h = 1, \dots, H
+\tau\_h = \exp\!\left(\text{linspace}(\log 1, \log 1024, H)\right) \quad \text{for } h = 1, \dots, H
 \tag{4.12}
 \]
 
 Since $\lambda = e^{-\tau}$ and $\lambda = e^{-\text{softplus}(b)}$, we set:
 
 \[
-b_{g, h} = -\log \tau_h = \text{softplus}^{-1}(\log \tau_h)
+b\_{g, h} = -\log \tau\_h = \text{softplus}^{-1}(\log \tau\_h)
 \tag{4.13}
 \]
 
 In practice, we approximate $\text{softplus}(b) \approx \log(1 + e^b) \approx \log \tau_h$ for large $\tau_h$, so:
 
 \[
-b_{g, h} \approx \log(\log \tau_h)
+b\_{g, h} \approx \log(\log \tau\_h)
 \tag{4.14}
 \]
 
@@ -165,7 +165,7 @@ The code uses \texttt{bias\_target = -torch.log(decay\_times)} which is the
 \textbf{exact} target for the \textbf{unbounded} log-decay, not the softplus-bounded one. The actual decay is:
 
 \[
-\lambda = e^{-\text{softplus}(W_g x + b_g)}
+\lambda = e^{-\text{softplus}(W\_g x + b\_g)}
 \]
 
 so the effective initial decay is \textbf{not exactly} the target. We do not 
@@ -176,7 +176,7 @@ correct for this.
 For padding tokens, we force $\lambda_t = 1$:
 
 \[
-\lambda_t = \begin{cases} 1 & \text{if } x_t \text{ is padding} \\ \lambda_t & \text{otherwise} \end{cases}
+\lambda\_t = \begin{cases} 1 & \text{if } x\_t \text{ is padding} \\ \lambda\_t & \text{otherwise} \end{cases}
 \tag{4.15}
 \]
 
@@ -187,8 +187,8 @@ This ensures that padding does not artificially decay the memory state.
 The \texttt{step\_recurrent} method processes one token at a time:
 
 \[
-S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top, \qquad
-\text{Out}_t = \frac{\phi(Q_t) S_t}{\phi(Q_t) Z_t + \epsilon}
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top, \qquad
+\text{Out}\_t = \frac{\phi(Q\_t) S\_t}{\phi(Q\_t) Z\_t + \epsilon}
 \tag{4.16}
 \]
 
@@ -201,15 +201,15 @@ order, but reduces memory from $\mathcal{O}(N d_h^2)$ to $\mathcal{O}(d_h^2)$.
 
 \textbf{Algorithm 1:} SVD-Linear Attention batch forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask
 Output: Y $\in$ R^{B$\times$N$\times$d}
 
- 1: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V $\leftarrow$ SVDLinear_V(X)
+ 1: Q $\leftarrow$ SVDLinear\_Q(X); K $\leftarrow$ SVDLinear\_K(X); V $\leftarrow$ SVDLinear\_V(X)
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 3: if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
- 4:  _Q $\leftarrow$ ELU(Q) + 1;  _K $\leftarrow$ ELU(K) + 1
- 5: apply padding mask to  _K
- 6: $\lambda$ $\leftarrow$ exp(-softplus(decay_gate(X)))
+ 3: if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+ 4:  \_Q $\leftarrow$ ELU(Q) + 1;  \_K $\leftarrow$ ELU(K) + 1
+ 5: apply padding mask to  \_K
+ 6: $\lambda$ $\leftarrow$ exp(-softplus(decay\_gate(X)))
  7: force $\lambda$=1 on padding
  8:
  9: # Chunked scan
@@ -219,25 +219,25 @@ Output: Y $\in$ R^{B$\times$N$\times$d}
 13:     compute output for chunk c
 14:     update running state
 15:
-16: Y $\leftarrow$ SVDLinear_O(concat(outputs))
+16: Y $\leftarrow$ SVDLinear\_O(concat(outputs))
 17: return Y
 \end{lstlisting}
 
 \textbf{Algorithm 2:} \texttt{step\_recurrent} (streaming)
 \begin{lstlisting}
-Input:  x_t $\in$ R^{B$\times$d}, past_state (S, Z)
-Output: y_t $\in$ R^{B$\times$d}, new_state
+Input:  x\_t $\in$ R^{B$\times$d}, past\_state (S, Z)
+Output: y\_t $\in$ R^{B$\times$d}, new\_state
 
-1: q $\leftarrow$ SVDLinear_Q(x_t); k $\leftarrow$ SVDLinear_K(x_t); v $\leftarrow$ SVDLinear_V(x_t)
-2:  _q $\leftarrow$ ELU(q) + 1;  _k $\leftarrow$ ELU(k) + 1
-3: $\lambda$ $\leftarrow$ exp(-softplus(decay_gate(x_t)))
-4: S $\leftarrow$ $\lambda$   S +  _k^T v
-5: Z $\leftarrow$ $\lambda$   Z +  _k^T
-6: num $\leftarrow$  _q S
-7: den $\leftarrow$  _q Z + $\epsilon$
+1: q $\leftarrow$ SVDLinear\_Q(x\_t); k $\leftarrow$ SVDLinear\_K(x\_t); v $\leftarrow$ SVDLinear\_V(x\_t)
+2:  \_q $\leftarrow$ ELU(q) + 1;  \_k $\leftarrow$ ELU(k) + 1
+3: $\lambda$ $\leftarrow$ exp(-softplus(decay\_gate(x\_t)))
+4: S $\leftarrow$ $\lambda$   S +  \_k^T v
+5: Z $\leftarrow$ $\lambda$   Z +  \_k^T
+6: num $\leftarrow$  \_q S
+7: den $\leftarrow$  \_q Z + $\epsilon$
 8: context $\leftarrow$ num / den
-9: y_t $\leftarrow$ SVDLinear_O(context)
-10: return y_t, (S, Z)
+9: y\_t $\leftarrow$ SVDLinear\_O(context)
+10: return y\_t, (S, Z)
 \end{lstlisting}
 
 \subsection{Complexity Analysis}

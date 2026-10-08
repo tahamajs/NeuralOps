@@ -108,7 +108,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56\% \\
 PASS\_LOW & 50.92--56\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +133,11 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_leka_v2.py \
+python run\_all\_4\_leka\_v2.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim 64 \
-    --landmark_ratio 0.25 \
-    --recovery_steps 50
+    --feature\_dim 64 \
+    --landmark\_ratio 0.25 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

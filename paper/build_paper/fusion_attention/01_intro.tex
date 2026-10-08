@@ -6,7 +6,7 @@ Transformer attention computes a pairwise score between every query and
 every key:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -61,7 +61,7 @@ FUSIONATTN dispatches based on sequence length:
 Standard softmax attention. No sparsity, no overhead. Mathematically 
 identical to the pretrained model (given base weights copied exactly).
 
-\subsubsection{Long Path (L > 128)}
+\subsubsection{Long Path (L \textgreater{} 128)}
 
 Block-sparse attention with content-based gating:
 
@@ -72,7 +72,7 @@ Block-sparse attention with content-based gating:
 
 \end{enumerate}
 \[
-g(i, j) = \text{GateMLP}(\bar{Q}_i)^\top \cdot \text{GateMLP}(\bar{K}_j) / \tau
+g(i, j) = \text{GateMLP}(\bar{Q}\_i)^\top \cdot \text{GateMLP}(\bar{K}\_j) / \tau
 \tag{1.2}
 \]
 

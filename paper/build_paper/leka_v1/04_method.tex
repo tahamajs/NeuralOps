@@ -36,7 +36,7 @@ LEKAv1 replaces standard attention with a kernel approximation pipeline:
          A =  (Q) KV / ( (Q) Z)
               |
                
-        out_proj (LoRA)
+        out\_proj (LoRA)
               |
                
       $\alpha$ A + (1-$\alpha$) X
@@ -50,14 +50,14 @@ LEKAv1 replaces standard attention with a kernel approximation pipeline:
 \textbf{Step 1: Head-wise LayerNorm.}
 
 \[
-\tilde{x} = \text{LN}(x) \in \mathbb{R}^{d_h}
+\tilde{x} = \text{LN}(x) \in \mathbb{R}^{d\_h}
 \tag{4.1}
 \]
 
 \textbf{Step 2: Random projection.}
 
 \[
-f = \tilde{x} W, \quad W \in \mathbb{R}^{d_h \times F}
+f = \tilde{x} W, \quad W \in \mathbb{R}^{d\_h \times F}
 \tag{4.2}
 \]
 
@@ -71,7 +71,7 @@ f = \tilde{x} W, \quad W \in \mathbb{R}^{d_h \times F}
 \textbf{Kernel interpretation.} For $x, y \in \mathbb{R}^{d_h}$:
 
 \[
-\phi(x)^\top \phi(y) = \frac{1}{F} \sum_{i=1}^F \cos(w_i^\top (x - y))
+\phi(x)^\top \phi(y) = \frac{1}{F} \sum\_{i=1}^F \cos(w\_i^\top (x - y))
 \tag{4.4}
 \]
 
@@ -84,7 +84,7 @@ We initialize $W \in \mathbb{R}^{d_h \times F}$ via QR orthogonalization:
 \textbf{Case 1:} $F \leq d_h$ (typical):
 
 \[
-G \sim \mathcal{N}(0, I_{d_h \times F}), \quad G = Q R, \quad W = Q
+G \sim \mathcal{N}(0, I\_{d\_h \times F}), \quad G = Q R, \quad W = Q
 \tag{4.5}
 \]
 
@@ -95,7 +95,7 @@ This ensures $W^\top W = I_F$.
 We concatenate orthogonal blocks of size $d_h$:
 
 \[
-W = [Q_1 \| Q_2 \| \dots], \quad Q_k \in \mathbb{R}^{d_h \times d_h}
+W = [Q\_1 \| Q\_2 \| \dots], \quad Q\_k \in \mathbb{R}^{d\_h \times d\_h}
 \tag{4.6}
 \]
 
@@ -108,12 +108,12 @@ Both cases give approximately orthonormal columns.
 For decoders, we compute cumulative sums:
 
 \[
-\text{KV}_i = \sum_{j \leq i} \phi(k_j) v_j^\top \in \mathbb{R}^{2F \times d_h}
+\text{KV}\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top \in \mathbb{R}^{2F \times d\_h}
 \tag{4.7}
 \]
 
 \[
-\text{Z}_i = \sum_{j \leq i} \phi(k_j) \in \mathbb{R}^{2F}
+\text{Z}\_i = \sum\_{j \leq i} \phi(k\_j) \in \mathbb{R}^{2F}
 \tag{4.8}
 \]
 
@@ -122,7 +122,7 @@ Implemented as \texttt{torch.cumsum} on the outer product $\phi(k) \otimes v$.
 \textbf{Attention output:}
 
 \[
-A_i = \frac{\phi(q_i)^\top \text{KV}_i}{\phi(q_i)^\top \text{Z}_i + \epsilon}
+A\_i = \frac{\phi(q\_i)^\top \text{KV}\_i}{\phi(q\_i)^\top \text{Z}\_i + \epsilon}
 \tag{4.9}
 \]
 
@@ -131,13 +131,13 @@ A_i = \frac{\phi(q_i)^\top \text{KV}_i}{\phi(q_i)^\top \text{Z}_i + \epsilon}
 For encoders:
 
 \[
-\text{KV} = \sum_{j=1}^L \phi(k_j) v_j^\top, \quad
-\text{Z} = \sum_{j=1}^L \phi(k_j)
+\text{KV} = \sum\_{j=1}^L \phi(k\_j) v\_j^\top, \quad
+\text{Z} = \sum\_{j=1}^L \phi(k\_j)
 \tag{4.10}
 \]
 
 \[
-A_i = \frac{\phi(q_i)^\top \text{KV}}{\phi(q_i)^\top \text{Z} + \epsilon}
+A\_i = \frac{\phi(q\_i)^\top \text{KV}}{\phi(q\_i)^\top \text{Z} + \epsilon}
 \tag{4.11}
 \]
 
@@ -146,8 +146,8 @@ A_i = \frac{\phi(q_i)^\top \text{KV}}{\phi(q_i)^\top \text{Z} + \epsilon}
 \textbf{Padding.} We apply the mask before aggregation:
 
 \[
-\phi(k_j) \leftarrow \phi(k_j) \cdot m_j, \quad
-v_j \leftarrow v_j \cdot m_j
+\phi(k\_j) \leftarrow \phi(k\_j) \cdot m\_j, \quad
+v\_j \leftarrow v\_j \cdot m\_j
 \tag{4.12}
 \]
 
@@ -158,7 +158,7 @@ Then $\text{KV}$ and $\text{Z}$ automatically account for valid tokens.
 \subsection{Preservation Gate}
 
 \[
-\alpha = \sigma(w), \quad w_0 = 2
+\alpha = \sigma(w), \quad w\_0 = 2
 \tag{4.13}
 \]
 
@@ -183,7 +183,7 @@ Then $\text{KV}$ and $\text{Z}$ automatically account for valid tokens.
 We also learn an \texttt{output\_scale} parameter:
 
 \[
-\text{out} = s \cdot \text{out}, \quad s_0 = 1
+\text{out} = s \cdot \text{out}, \quad s\_0 = 1
 \tag{4.15}
 \]
 
@@ -193,28 +193,28 @@ This provides a per-layer gain that can be adjusted during recovery.
 
 \textbf{Algorithm 1:} LEKAv1 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
- 2: reshape to (B, H, L, d_h)
- 3: if RoPE: Q, K $\leftarrow$ apply_rotary(Q, K, pos)
- 4: if GQA:  K, V $\leftarrow$ repeat_kv
- 5:  _Q $\leftarrow$ kernel_map(Q)               (B, H, L, 2F)
- 6:  _K $\leftarrow$ kernel_map(K)
- 7: if mask:  _K $\leftarrow$  _K   m; V $\leftarrow$ V   m
+ 2: reshape to (B, H, L, d\_h)
+ 3: if RoPE: Q, K $\leftarrow$ apply\_rotary(Q, K, pos)
+ 4: if GQA:  K, V $\leftarrow$ repeat\_kv
+ 5:  \_Q $\leftarrow$ kernel\_map(Q)               (B, H, L, 2F)
+ 6:  \_K $\leftarrow$ kernel\_map(K)
+ 7: if mask:  \_K $\leftarrow$  \_K   m; V $\leftarrow$ V   m
  8: if decoder:
- 9:     KV $\leftarrow$ cumsum( _K   V)            (B, H, L, 2F, d_h)
-10:     Z  $\leftarrow$ cumsum( _K)                (B, H, L, 2F)
+ 9:     KV $\leftarrow$ cumsum( \_K   V)            (B, H, L, 2F, d\_h)
+10:     Z  $\leftarrow$ cumsum( \_K)                (B, H, L, 2F)
 11: else:
-12:     KV $\leftarrow$ sum( _K   V)
-13:     Z  $\leftarrow$ sum( _K)
-14: A $\leftarrow$ ( _Q   KV) / ( _Q   Z + $\epsilon$)
+12:     KV $\leftarrow$ sum( \_K   V)
+13:     Z  $\leftarrow$ sum( \_K)
+14: A $\leftarrow$ ( \_Q   KV) / ( \_Q   Z + $\epsilon$)
 15: A $\leftarrow$ reshape to (B, L, d)
-16: A $\leftarrow$ out_proj(A)
-17: $\alpha$ $\leftarrow$ sigmoid(pres_gate)
+16: A $\leftarrow$ out\_proj(A)
+17: $\alpha$ $\leftarrow$ sigmoid(pres\_gate)
 18: Y $\leftarrow$ $\alpha$   A + (1 - $\alpha$)   X
-19: Y $\leftarrow$ Y   output_scale
+19: Y $\leftarrow$ Y   output\_scale
 20: return Y
 \end{lstlisting}
 

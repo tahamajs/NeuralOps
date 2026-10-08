@@ -5,7 +5,7 @@
 For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.1}
 \]
 
@@ -17,7 +17,7 @@ apply softmax, multiply by $V$. Memory: $\mathcal{O}(L^2)$.
 FlashAttention partitions $Q, K, V$ into blocks:
 
 \[
-Q = [Q_1, Q_2, \dots, Q_T], \quad K = [K_1, \dots, K_T], \quad V = [V_1, \dots, V_T]
+Q = [Q\_1, Q\_2, \dots, Q\_T], \quad K = [K\_1, \dots, K\_T], \quad V = [V\_1, \dots, V\_T]
 \tag{3.2}
 \]
 
@@ -26,17 +26,17 @@ in shared memory. Uses \textbf{online softmax} to avoid materializing the full
 attention matrix:
 
 \[
-m_i^{(t)} = \max(m_i^{(t-1)}, \max_j (Q_i K_j^\top / \sqrt{d_h}))
+m\_i^{(t)} = \max(m\_i^{(t-1)}, \max\_j (Q\_i K\_j^\top / \sqrt{d\_h}))
 \tag{3.3}
 \]
 
 \[
-\ell_i^{(t)} = e^{m_i^{(t-1)} - m_i^{(t)}} \ell_i^{(t-1)} + \sum_j e^{Q_i K_j^\top / \sqrt{d_h} - m_i^{(t)}}
+\ell\_i^{(t)} = e^{m\_i^{(t-1)} - m\_i^{(t)}} \ell\_i^{(t-1)} + \sum\_j e^{Q\_i K\_j^\top / \sqrt{d\_h} - m\_i^{(t)}}
 \tag{3.4}
 \]
 
 \[
-O_i^{(t)} = \text{diag}(e^{m_i^{(t-1)} - m_i^{(t)}}) O_i^{(t-1)} + \sum_j e^{Q_i K_j^\top / \sqrt{d_h} - m_i^{(t)}} V_j
+O\_i^{(t)} = \text{diag}(e^{m\_i^{(t-1)} - m\_i^{(t)}}) O\_i^{(t-1)} + \sum\_j e^{Q\_i K\_j^\top / \sqrt{d\_h} - m\_i^{(t)}} V\_j
 \tag{3.5}
 \]
 
@@ -77,14 +77,14 @@ The wrapper dispatches to SDPA when FlashAttention-3 is unavailable.
 For GQA, $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times H_{kv} \times L \times d_h}
+K, V \in \mathbb{R}^{B \times H\_{kv} \times L \times d\_h}
 \tag{3.6}
 \]
 
 Before attention, repeat each KV head $H/H_{kv}$ times:
 
 \[
-\text{repeat\_kv}(K, n) = K[:, :, \text{None}, :, :].\text{expand}(B, H_{kv}, n, L, d_h).\text{reshape}(B, H, L, d_h)
+\text{repeat\_kv}(K, n) = K[:, :, \text{None}, :, :].\text{expand}(B, H\_{kv}, n, L, d\_h).\text{reshape}(B, H, L, d\_h)
 \tag{3.7}
 \]
 
@@ -93,7 +93,7 @@ Before attention, repeat each KV head $H/H_{kv}$ times:
 RoPE rotates $Q, K$ by position-dependent angles:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.8}
 \]
 

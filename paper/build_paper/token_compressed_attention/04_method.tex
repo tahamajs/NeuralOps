@@ -54,7 +54,7 @@ The overall pipeline:
 For each token $i$, we compute:
 
 \[
-s_i = \underbrace{\|x_i\|_2}_{\text{energy}} + \underbrace{f_\theta(x_i)}_{\text{learned}}
+s\_i = \underbrace{\|x\_i\|\_2}\_{\text{energy}} + \underbrace{f\_\theta(x\_i)}\_{\text{learned}}
 \tag{4.1}
 \]
 
@@ -79,14 +79,14 @@ where:
 We force the first token to be retained (attention sink):
 
 \[
-s_0 \leftarrow 10^4
+s\_0 \leftarrow 10^4
 \tag{4.2}
 \]
 
 We mask out padding tokens:
 
 \[
-s_i \leftarrow -10^4 \quad \text{for padding tokens}
+s\_i \leftarrow -10^4 \quad \text{for padding tokens}
 \tag{4.3}
 \]
 
@@ -107,7 +107,7 @@ and sort them to preserve order:
 Finally, we gather:
 
 \[
-K_c = K[\mathcal{S}], \quad V_c = V[\mathcal{S}]
+K\_c = K[\mathcal{S}], \quad V\_c = V[\mathcal{S}]
 \tag{4.6}
 \]
 
@@ -118,14 +118,14 @@ K_c = K[\mathcal{S}], \quad V_c = V[\mathcal{S}]
 Standard attention over the compressed keys:
 
 \[
-\text{scores}_{i, j'} = \frac{q_i \cdot K_{c, j'}^\top}{\sqrt{d_h}}
+\text{scores}\_{i, j'} = \frac{q\_i \cdot K\_{c, j'}^\top}{\sqrt{d\_h}}
 \tag{4.7}
 \]
 
 For decoders, we add a mask based on \textbf{original positions}:
 
 \[
-\text{mask}_{i, j'} = \begin{cases} 0 & \mathcal{S}_{j'} \leq i \\ -\infty & \mathcal{S}_{j'} > i \end{cases}
+\text{mask}\_{i, j'} = \begin{cases} 0 & \mathcal{S}\_{j'} \leq i \\ -\infty & \mathcal{S}\_{j'} \textgreater{} i \end{cases}
 \tag{4.8}
 \]
 
@@ -135,38 +135,38 @@ whose original position exceeds $i$.
 \textbf{Computing the mask:}
 
 \begin{lstlisting}
-q_pos = torch.arange(L).view(1, 1, L, 1)       # (1, 1, L, 1)
-k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2) # (B, 1, 1, k)
-causal_mask = (k_orig_pos > q_pos)             # (B, 1, L, k)
-scores = scores.masked_fill(causal_mask, -inf)
+q\_pos = torch.arange(L).view(1, 1, L, 1)       # (1, 1, L, 1)
+k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2) # (B, 1, 1, k)
+causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)             # (B, 1, L, k)
+scores = scores.masked\_fill(causal\_mask, -inf)
 \end{lstlisting}
 
 \subsection{Combined Algorithm}
 
 \textbf{Algorithm 1:} TCA forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
-        attention_mask $\in$ {0,1}^{B$\times$L}
-        position_ids
+Input:  hidden\_states X $\in$ R^{B$\times$L$\times$d}
+        attention\_mask $\in$ {0,1}^{B$\times$L}
+        position\_ids
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
- 2: Q, K $\leftarrow$ RoPE(Q, K, position_ids)
- 3: s $\leftarrow$  X _2 + score_net(X)          Per-token score
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+ 2: Q, K $\leftarrow$ RoPE(Q, K, position\_ids)
+ 3: s $\leftarrow$  X \_2 + score\_net(X)          Per-token score
  4: s[0] $\leftarrow$ 1e4                         Pin [CLS]
  5: s[padding] $\leftarrow$ -1e4                  Mask padding
  6: S $\leftarrow$ TopK(s, k)                     Select top-k
  7: S $\leftarrow$ Sort(S)                        Order-preserve
- 8: K_c $\leftarrow$ K[S];  V_c $\leftarrow$ V[S]            Gather
- 9: K_c $\leftarrow$ repeat_kv(K_c, H/H_kv)       GQA expand
-10: scores $\leftarrow$ Q @ K_c^T / $\sqrt{}$d_h
-11: if is_decoder:
-12:     mask $\leftarrow$ (S[None,None,None,:] > arange(L)[None,None,:,None])
-13:     scores $\leftarrow$ scores.masked_fill(mask, -inf)
-14: scores $\leftarrow$ mask_padding(scores, attention_mask)
+ 8: K\_c $\leftarrow$ K[S];  V\_c $\leftarrow$ V[S]            Gather
+ 9: K\_c $\leftarrow$ repeat\_kv(K\_c, H/H\_kv)       GQA expand
+10: scores $\leftarrow$ Q @ K\_c^T / $\sqrt{}$d\_h
+11: if is\_decoder:
+12:     mask $\leftarrow$ (S[None,None,None,:] \textgreater{} arange(L)[None,None,:,None])
+13:     scores $\leftarrow$ scores.masked\_fill(mask, -inf)
+14: scores $\leftarrow$ mask\_padding(scores, attention\_mask)
 15: A $\leftarrow$ softmax(scores)
-16: Y $\leftarrow$ A @ V_c
-17: Y $\leftarrow$ out_proj(Y)
+16: Y $\leftarrow$ A @ V\_c
+17: Y $\leftarrow$ out\_proj(Y)
 18: return Y
 \end{lstlisting}
 

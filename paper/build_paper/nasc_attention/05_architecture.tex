@@ -24,7 +24,7 @@ The flag \texttt{enable\_cascade\_on\_encoders} defaults to \texttt{True} **in t
 but the \texttt{use\_dense} decision also checks**:
 
 \begin{lstlisting}
-use_dense = is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders)
+use\_dense = is\_cross or (not self.is\_decoder and not self.enable\_cascade\_on\_encoders)
 \end{lstlisting}
 
 If \texttt{enable\_cascade\_on\_encoders=True} (default), encoders use cascade. If 
@@ -37,37 +37,37 @@ Standard four-architecture copy:
 
 \begin{lstlisting}
 # GPT-2
-c_w = src.c_attn.weight.data
-if is_conv1d:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.data.t()
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.data.t()
 
 # RoBERTa
-q_w = src.self.query.weight.data
-k_w = src.self.key.weight.data
-v_w = src.self.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
 
 # DistilBERT
-q_w = src.q_lin.weight.data
+q\_w = src.q\_lin.weight.data
 # ...
 \end{lstlisting}
 
 \subsection{GQA Handling}
 
 \begin{lstlisting}
-if proj_key in ("k", "v"):
-    if src_out == out_d:
-        target_w.data.copy_(w_oriented)
-    elif src_out > out_d and src_out % out_d == 0:
+if proj\_key in ("k", "v"):
+    if src\_out == out\_d:
+        target\_w.data.copy\_(w\_oriented)
+    elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
         # Mean-pool
-        rep = src_out // out_d
-        target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
-    elif src_out < out_d and out_d % src_out == 0:
+        rep = src\_out // out\_d
+        target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+    elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
         # Repeat
-        rep = out_d // src_out
-        target_w.data.copy_(w_oriented.repeat(rep, 1))
+        rep = out\_d // src\_out
+        target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
 \end{lstlisting}
 
 This handles GQA where $H_{kv} < H$ (Qwen, LLaMA).
@@ -76,13 +76,13 @@ This handles GQA where $H_{kv} < H$ (Qwen, LLaMA).
 
 \textbf{Algorithm 2:} Inject NASC
 \begin{lstlisting}
-1: new $\leftarrow$ NASCAttention(config, old=old_attn)
-2: if copy_weights fails: raise (NOT return None)
+1: new $\leftarrow$ NASCAttention(config, old=old\_attn)
+2: if copy\_weights fails: raise (NOT return None)
 3: if   has .attention.self:
-4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
 5: elif   has .attention:  .attention $\leftarrow$ new
-6: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
-7: elif   has .self_attn:  .self_attn $\leftarrow$ new
+6: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+7: elif   has .self\_attn:  .self\_attn $\leftarrow$ new
 8: elif   has .attn:  .attn $\leftarrow$ new
 9: return new
 \end{lstlisting}
@@ -91,7 +91,7 @@ This handles GQA where $H_{kv} < H$ (Qwen, LLaMA).
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     raise e
 \end{lstlisting}
 
@@ -116,10 +116,10 @@ The fallback triggers when \textbf{any} row has zero denominator (batch-level),
 not per-row:
 
 \begin{lstlisting}
-zero_mask = denom <= 1e-8  # shape (B, H, L, 1)
-if zero_mask.any():
+zero\_mask = denom \textless{}= 1e-8  # shape (B, H, L, 1)
+if zero\_mask.any():
     fallback = F.softmax(x, dim=dim)
-    p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+    p = torch.where(zero\_mask, fallback, p / (denom + 1e-8))
 \end{lstlisting}
 
 The \texttt{torch.where} uses per-element fallback, but the \texttt{if} only triggers 
@@ -130,9 +130,9 @@ if any element is affected. This is slightly better than fully batch-level.
 NASC logs the path once per instance:
 
 \begin{lstlisting}
-if not hasattr(self, '_logged_once'):
-    logger.debug("NASCAttention: L=%d, ...")
-    self._logged_once = True
+if not hasattr(self, '\_logged\_once'):
+    logger.debug("NASCAttention: L=\%d, ...")
+    self.\_logged\_once = True
 \end{lstlisting}
 
 This is a fix from previous log spam.
@@ -145,6 +145,6 @@ This is a fix from previous log spam.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of nasc\_attention.}
-\label{fig:arch_nasc-attention}
+\label{fig:arch\_nasc-attention}
 \end{figure}
 

@@ -33,7 +33,7 @@ pass:
     +--------+---------+
              |
     +-------- ---------+
-    | Scores: QK^T/$\sqrt{}$d_h|
+    | Scores: QK^T/$\sqrt{}$d\_h|
     +--------+---------+
              |
     +-------- ---------+
@@ -66,7 +66,7 @@ pass:
     +--------+---------+
              |
     +-------- ---------+
-    | out_proj         |
+    | out\_proj         |
     +--------+---------+
              |
         Output
@@ -77,7 +77,7 @@ pass:
 Standard scaled dot-product:
 
 \[
-s_{ij} = \frac{q_i \cdot k_j}{\sqrt{d_h}}
+s\_{ij} = \frac{q\_i \cdot k\_j}{\sqrt{d\_h}}
 \tag{4.1}
 \]
 
@@ -95,7 +95,7 @@ We combine two masks:
 Both are combined into a single boolean \texttt{invalid\_mask}:
 
 \[
-\text{invalid}_{ij} = \text{pad}(j) \lor \text{causal}(i, j)
+\text{invalid}\_{ij} = \text{pad}(j) \lor \text{causal}(i, j)
 \tag{4.2}
 \]
 
@@ -104,7 +104,7 @@ Both are combined into a single boolean \texttt{invalid\_mask}:
 For each query $i$, find the maximum score over \textbf{valid} keys:
 
 \[
-m_i = \max_{j: \text{valid}_{ij}} s_{ij}
+m\_i = \max\_{j: \text{valid}\_{ij}} s\_{ij}
 \tag{4.3}
 \]
 
@@ -112,13 +112,13 @@ If all keys are invalid (rare), we set $m_i = 0$ to avoid NaN:
 
 \begin{lstlisting}
 thresh = -5e3 if scores.dtype in (fp16, bf16) else -1e8
-max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+max\_scores = torch.where(max\_scores \textless{}= thresh, torch.zeros\_like(max\_scores), max\_scores)
 \end{lstlisting}
 
 Then center:
 
 \[
-s_{ij} \leftarrow (s_{ij} - m_i) / T
+s\_{ij} \leftarrow (s\_{ij} - m\_i) / T
 \tag{4.4}
 \]
 
@@ -129,12 +129,12 @@ where $T$ is a temperature.
 Apply the polynomial kernel:
 
 \[
-\text{base}_{ij} = \text{ReLU}\!\left(1 + \frac{s_{ij}}{d}\right)
+\text{base}\_{ij} = \text{ReLU}\!\left(1 + \frac{s\_{ij}}{d}\right)
 \tag{4.5}
 \]
 
 \[
-\text{attn}_{ij} = \text{base}_{ij}^d
+\text{attn}\_{ij} = \text{base}\_{ij}^d
 \tag{4.6}
 \]
 
@@ -156,7 +156,7 @@ So PADRe is a \textbf{first-order approximation of the softmax kernel}.
 After the polynomial activation, we zero invalid positions:
 
 \[
-\text{attn}_{ij} \leftarrow 0 \quad \text{if invalid}_{ij}
+\text{attn}\_{ij} \leftarrow 0 \quad \text{if invalid}\_{ij}
 \tag{4.8}
 \]
 
@@ -168,7 +168,7 @@ then zero after the polynomial for the final normalization.
 \subsection{Normalization}
 
 \[
-\text{attn}_{ij} \leftarrow \frac{\text{attn}_{ij}}{\sum_{j'} \text{attn}_{ij'} + \epsilon}
+\text{attn}\_{ij} \leftarrow \frac{\text{attn}\_{ij}}{\sum\_{j'} \text{attn}\_{ij'} + \epsilon}
 \tag{4.9}
 \]
 
@@ -177,7 +177,7 @@ then zero after the polynomial for the final normalization.
 Standard dropout on attention weights:
 
 \[
-\text{attn}_{ij} \leftarrow \text{Dropout}(\text{attn}_{ij}, p)
+\text{attn}\_{ij} \leftarrow \text{Dropout}(\text{attn}\_{ij}, p)
 \tag{4.10}
 \]
 
@@ -194,7 +194,7 @@ For nested encoders (RoBERTa), the context is returned directly. For flat
 encoders and decoders, it's passed through \texttt{out\_proj}:
 
 \[
-\text{Output} = W_O \cdot \text{Context} + b_O
+\text{Output} = W\_O \cdot \text{Context} + b\_O
 \tag{4.12}
 \]
 
@@ -202,26 +202,26 @@ encoders and decoders, it's passed through \texttt{out\_proj}:
 
 \textbf{Algorithm 1:} PADRe forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
-        order d, temperature T, is_decoder
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask, position\_embeddings
+        order d, temperature T, is\_decoder
 Output: Y $\in$ R^{B$\times$N$\times$d}
 
- 1: Q $\leftarrow$ q_proj(X); K $\leftarrow$ k_proj(X); V $\leftarrow$ v_proj(X)
- 2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
- 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
- 4: s $\leftarrow$ QK^T / $\sqrt{}$d_h
- 5: invalid $\leftarrow$ pad_mask | causal_mask
- 6: m $\leftarrow$ max(s.masked_fill(invalid, -1e4), dim=-1)
- 7: m $\leftarrow$ where(m < -5e3, 0, m)                          All-masked guard
- 8: s_centered $\leftarrow$ (s - m) / T
- 9: base $\leftarrow$ ReLU(1 + s_centered / d)
+ 1: Q $\leftarrow$ q\_proj(X); K $\leftarrow$ k\_proj(X); V $\leftarrow$ v\_proj(X)
+ 2: if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 4: s $\leftarrow$ QK^T / $\sqrt{}$d\_h
+ 5: invalid $\leftarrow$ pad\_mask | causal\_mask
+ 6: m $\leftarrow$ max(s.masked\_fill(invalid, -1e4), dim=-1)
+ 7: m $\leftarrow$ where(m \textless{} -5e3, 0, m)                          All-masked guard
+ 8: s\_centered $\leftarrow$ (s - m) / T
+ 9: base $\leftarrow$ ReLU(1 + s\_centered / d)
 10: attn $\leftarrow$ base^d
-11: attn $\leftarrow$ attn.masked_fill(invalid, 0)
+11: attn $\leftarrow$ attn.masked\_fill(invalid, 0)
 12: denom $\leftarrow$ attn.sum(dim=-1, keepdim=True) + 1e-8
 13: attn $\leftarrow$ attn / denom
 14: attn $\leftarrow$ dropout(attn)
 15: context $\leftarrow$ attn @ V
-16: Y $\leftarrow$ out_proj(context)
+16: Y $\leftarrow$ out\_proj(context)
 17: return Y
 \end{lstlisting}
 
@@ -261,7 +261,7 @@ If we implement the kernelization:
 The complexity becomes:
 
 \[
-\mathcal{O}(N \cdot F \cdot d_h)
+\mathcal{O}(N \cdot F \cdot d\_h)
 \tag{4.14}
 \]
 

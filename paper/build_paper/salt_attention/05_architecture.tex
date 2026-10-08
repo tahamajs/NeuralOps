@@ -23,12 +23,12 @@ Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes & 0.85 \\
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    weight = src.c_attn.weight.data
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
-    split_size = weight.shape[0] // 3
-    q_w, k_w, v_w = weight[:split_size], weight[split_size:2*split_size], weight[2*split_size:]
+    split\_size = weight.shape[0] // 3
+    q\_w, k\_w, v\_w = weight[:split\_size], weight[split\_size:2*split\_size], weight[2*split\_size:]
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -46,19 +46,19 @@ if hasattr(src.output, "dense"):
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight.data
-extracted["k"] = src.k_lin.weight.data
-extracted["v"] = src.v_lin.weight.data
-extracted["o"] = src.out_lin.weight.data
+extracted["q"] = src.q\_lin.weight.data
+extracted["k"] = src.k\_lin.weight.data
+extracted["v"] = src.v\_lin.weight.data
+extracted["o"] = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-self.is_nested_encoder = (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
-) and not has_out_proj
+self.is\_nested\_encoder = (
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
+) and not has\_out\_proj
 \end{lstlisting}
 
 \textbf{Test cases:}
@@ -73,12 +73,12 @@ self.is_nested_encoder = (
 For Qwen with $H_{kv} < H$, we compress K and V to \texttt{kv\_head\_size}:
 
 \begin{lstlisting}
-if src_out == out_dim:
-    final_w = w_oriented
-elif src_out > out_dim and src_out % out_dim == 0:
+if src\_out == out\_dim:
+    final\_w = w\_oriented
+elif src\_out \textgreater{} out\_dim and src\_out \% out\_dim == 0:
     # GQA: pool (mean) over groups
-    rep = src_out // out_dim
-    final_w = w_oriented.view(out_dim, rep, -1).mean(dim=1)
+    rep = src\_out // out\_dim
+    final\_w = w\_oriented.view(out\_dim, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 This is a \textbf{lossy} operation: if the pretrained K has more heads than our 
@@ -103,11 +103,11 @@ For each projection, we:
 Input:  model M, config c, rank r
 Output: M with SALTLinear projections
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ extract_attention( )
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ extract\_attention( )
 3:     if src is None: continue
-4:     new_attn $\leftarrow$ SALTAttention(c, rank=r, pretrained_attn=src)
-5:     replace_attention( , new_attn)
+4:     new\_attn $\leftarrow$ SALTAttention(c, rank=r, pretrained\_attn=src)
+5:     replace\_attention( , new\_attn)
 6: end for
 7: return M
 \end{lstlisting}
@@ -137,8 +137,8 @@ which log and continue. This is a bug -- see  10.
 The \texttt{SALTLinear} module defines \texttt{self.output\_scale} but \textbf{never uses it}:
 
 \begin{lstlisting}
-if not hasattr(self, 'output_scale'):
-    self.output_scale = nn.Parameter(torch.ones(1))
+if not hasattr(self, 'output\_scale'):
+    self.output\_scale = nn.Parameter(torch.ones(1))
 \end{lstlisting}
 
 The forward pass does not multiply by \texttt{output\_scale}. This is dead code, 
@@ -151,13 +151,13 @@ wasting one parameter per layer.
 GPT-2's \texttt{Conv1D} stores \texttt{(in, out)}. We transpose:
 
 \begin{lstlisting}
-if weight.shape[1] == 3 * self.hidden_size:
+if weight.shape[1] == 3 * self.hidden\_size:
     weight = weight.t()
 \end{lstlisting}
 
 \subsubsection{GQA Pooling}
 
-When \texttt{src\_out > out\_dim}, we average groups. This is lossy but necessary 
+When \texttt{src\_out \textgreater{} out\_dim}, we average groups. This is lossy but necessary 
 if the source has more KV heads than target.
 
 \subsubsection{Nested Encoder}
@@ -169,8 +169,8 @@ For nested, we do not extract \texttt{o}. The outer block's \texttt{output.dense
 SALT is registered as:
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("salt_attention")
-@ATTENTION_REGISTRY.register("salt")
+@ATTENTION\_REGISTRY.register("salt\_attention")
+@ATTENTION\_REGISTRY.register("salt")
 class SALTAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -185,6 +185,6 @@ It integrates with the LoRA recovery pipeline.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of salt.}
-\label{fig:arch_salt}
+\label{fig:arch\_salt}
 \end{figure}
 

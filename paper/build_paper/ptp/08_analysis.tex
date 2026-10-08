@@ -37,7 +37,7 @@ scores; function words (determiners, prepositions) have lower.
 We compute the Pearson correlation between learned scores and TF-IDF:
 
 \[
-\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = 0.91
+\rho\_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = 0.91
 \tag{8.1}
 \]
 
@@ -92,10 +92,10 @@ Token magnitude & 0.85 & 32 & 0.85 \\
 We verify causality via finite differences:
 
 \begin{lstlisting}
-x = torch.randn(1, L, d, requires_grad=True)
+x = torch.randn(1, L, d, requires\_grad=True)
 out = model(x)
 out[0, i].sum().backward()
-assert x.grad[0, i+1:].abs().max() < 1e-6
+assert x.grad[0, i+1:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \textbf{Result.} 0.85

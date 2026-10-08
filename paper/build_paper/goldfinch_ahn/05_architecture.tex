@@ -23,35 +23,35 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data
-if is_conv1d:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
-q_w = src.self.query.weight.data
-k_w = src.self.key.weight.data
-v_w = src.self.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight.data
-k_w = src.k_lin.weight.data
-v_w = src.v_lin.weight.data
-o_w = src.out_lin.weight.data
+q\_w = src.q\_lin.weight.data
+k\_w = src.k\_lin.weight.data
+v\_w = src.v\_lin.weight.data
+o\_w = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsection{Gate Initialization}
 
 \begin{lstlisting}
-self.gate = nn.Linear(self.dim, self.num_heads)
-self.gate.bias.data.fill_(gate_init_bias)  # default 1.8
+self.gate = nn.Linear(self.dim, self.num\_heads)
+self.gate.bias.data.fill\_(gate\_init\_bias)  # default 1.8
 \end{lstlisting}
 
 With \texttt{gate\_init\_bias = 1.8}: $\sigma(1.8) \approx 0.86$. The gate initially 
@@ -60,7 +60,7 @@ favors the short (sliding-window) branch.
 \subsection{Preservation Gate Initialization}
 
 \begin{lstlisting}
-self.output_gate = nn.Parameter(torch.tensor(2.0))
+self.output\_gate = nn.Parameter(torch.tensor(2.0))
 \end{lstlisting}
 
 At initialization: $\alpha = \sigma(2.0) \approx 0.88$.
@@ -70,15 +70,15 @@ At initialization: $\alpha = \sigma(2.0) \approx 0.88$.
 For Qwen:
 
 \begin{lstlisting}
-if position_embeddings is not None:
-    cos, sin = position_embeddings
-    q, k = apply_rotary_pos_emb(q, k, cos, sin)
-elif self.rotary_emb is not None:
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
+elif self.rotary\_emb is not None:
     try:
-        cos, sin = rotary_module(q, seq_len=L)
+        cos, sin = rotary\_module(q, seq\_len=L)
     except Exception:
         try:
-            cos, sin = rotary_module(q, pos_ids)
+            cos, sin = rotary\_module(q, pos\_ids)
         except Exception:
             cos, sin = None, None
 \end{lstlisting}
@@ -86,22 +86,22 @@ elif self.rotary_emb is not None:
 \subsection{GQA Support}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{Injection}
 
 \textbf{Algorithm 2:} Inject GoldFinch-AHN
 \begin{lstlisting}
-1: new $\leftarrow$ GoldFinchAHNBlock(config, old=old_attn)
-2: if copy_weights fails: return None
+1: new $\leftarrow$ GoldFinchAHNBlock(config, old=old\_attn)
+2: if copy\_weights fails: return None
 3: if   has .attention.self:
-4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
 5: elif   has .attention:
 6:      .attention $\leftarrow$ new
-7: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+7: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
 8: elif   has .attn:  .attn $\leftarrow$ new
 9: return new
 \end{lstlisting}
@@ -137,8 +137,8 @@ next layer. This makes the block \textbf{conservative}.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("goldfinch_ahn")
-@ATTENTION_REGISTRY.register("goldfinch")
+@ATTENTION\_REGISTRY.register("goldfinch\_ahn")
+@ATTENTION\_REGISTRY.register("goldfinch")
 class GoldFinchAHNBlock(BaseAttention):
     ...
 \end{lstlisting}
@@ -149,6 +149,6 @@ class GoldFinchAHNBlock(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of goldfinch\_ahn.}
-\label{fig:arch_goldfinch-ahn}
+\label{fig:arch\_goldfinch-ahn}
 \end{figure}
 

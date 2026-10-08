@@ -5,30 +5,30 @@
 
 \begin{lstlisting}
 class NativeSparseAttention(BaseAttention):
-    def __init__(self, config=None, window_size=32, top_k=16, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config=None, window\_size=32, top\_k=16, ...):
+        super().\_\_init\_\_(config, rank)
         
-        # ... resolve dim, num_heads ...
+        # ... resolve dim, num\_heads ...
         
-        self.window_size = window_size
-        self.top_k = top_k
+        self.window\_size = window\_size
+        self.top\_k = top\_k
         
         # Projections with LoRA
-        self.q_proj = LoRALinear(...)
-        self.k_proj = LoRALinear(...)
-        self.v_proj = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.q\_proj = LoRALinear(...)
+        self.k\_proj = LoRALinear(...)
+        self.v\_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass -- Local + Top-K Mask}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, L, D = hidden\_states.shape
     
-    Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-    K = self.k_proj(hidden_states).view(B, L, G, d).permute(0, 2, 1, 3)
-    V = self.v_proj(hidden_states).view(B, L, G, d).permute(0, 2, 1, 3)
+    Q = self.q\_proj(hidden\_states).view(B, L, H, d).permute(0, 2, 1, 3)
+    K = self.k\_proj(hidden\_states).view(B, L, G, d).permute(0, 2, 1, 3)
+    V = self.v\_proj(hidden\_states).view(B, L, G, d).permute(0, 2, 1, 3)
     
     # RoPE, GQA
     ...
@@ -36,39 +36,39 @@ def forward(self, hidden_states, attention_mask=None, ...):
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     
     # Valid mask
-    valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
-    key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
+    valid\_mask\_2d = get\_token\_valid\_mask(attention\_mask, B, L, device)
+    key\_valid\_4d = valid\_mask\_2d.unsqueeze(1).unsqueeze(2)
     
     # Local window mask
     idx = torch.arange(L, device=device)
-    if self.is_decoder:
-        local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size) \
-                   & (idx.unsqueeze(1) >= idx.unsqueeze(0))
+    if self.is\_decoder:
+        local\_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) \textless{}= self.window\_size) \
+                   & (idx.unsqueeze(1) \textgreater{}= idx.unsqueeze(0))
     else:
-        local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-    local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
+        local\_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{}= self.window\_size
+    local\_mask\_4d = local\_mask.unsqueeze(0).unsqueeze(0)
     
     # Union mask
-    if L <= (2 * self.window_size + 1):
-        total_mask = local_mask_4d & key_valid_4d
+    if L \textless{}= (2 * self.window\_size + 1):
+        total\_mask = local\_mask\_4d & key\_valid\_4d
     else:
-        non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
-        if is_dec:
-            causal_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
-            non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
-        k_val = min(self.top_k, max(1, L - (2 * self.window_size + 1)))
-        _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
-        topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
-        total_mask = (local_mask_4d | topk_mask) & key_valid_4d
+        non\_local\_scores = scores.masked\_fill(local\_mask\_4d | (~key\_valid\_4d), -1e4)
+        if is\_dec:
+            causal\_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
+            non\_local\_scores = non\_local\_scores.masked\_fill(~causal\_tril, -1e4)
+        k\_val = min(self.top\_k, max(1, L - (2 * self.window\_size + 1)))
+        \_, topk\_ind = torch.topk(non\_local\_scores, k=k\_val, dim=-1)
+        topk\_mask = torch.zeros\_like(scores, dtype=torch.bool).scatter\_(-1, topk\_ind, True)
+        total\_mask = (local\_mask\_4d | topk\_mask) & key\_valid\_4d
     
-    if is_dec:
-        causal_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
-        total_mask = total_mask & causal_tril
+    if is\_dec:
+        causal\_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
+        total\_mask = total\_mask & causal\_tril
     
     # Softmax on masked scores
-    scores = scores.masked_fill(~total_mask, -1e4)
+    scores = scores.masked\_fill(~total\_mask, -1e4)
     attn = F.softmax(scores, dim=-1).to(dtype)
-    attn = torch.nan_to_num(attn, nan=0.0)
+    attn = torch.nan\_to\_num(attn, nan=0.0)
     attn = self.dropout(attn)
     
     context = torch.matmul(attn, V)
@@ -80,8 +80,8 @@ def forward(self, hidden_states, attention_mask=None, ...):
 If $L \leq 2w + 1$, every key is already in the window. Skip top-$k$:
 
 \begin{lstlisting}
-if L <= (2 * self.window_size + 1):
-    total_mask = local_mask_4d & key_valid_4d
+if L \textless{}= (2 * self.window\_size + 1):
+    total\_mask = local\_mask\_4d & key\_valid\_4d
 \end{lstlisting}
 
 \subsection{B.4 Causal Mask Ordering}
@@ -90,14 +90,14 @@ if L <= (2 * self.window_size + 1):
 
 \begin{lstlisting}
 # 1. Mask local window + padding
-non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
+non\_local\_scores = scores.masked\_fill(local\_mask\_4d | (~key\_valid\_4d), -1e4)
 
 # 2. Mask future (for decoder)
-if is_dec:
-    non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
+if is\_dec:
+    non\_local\_scores = non\_local\_scores.masked\_fill(~causal\_tril, -1e4)
 
 # 3. Top-k on remaining
-_, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
+\_, topk\_ind = torch.topk(non\_local\_scores, k=k\_val, dim=-1)
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}

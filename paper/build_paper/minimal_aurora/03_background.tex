@@ -22,7 +22,7 @@ $V_r = \Sigma_{:r}^{1/2} V_{:r, :}^\top$, then $W_r = U_r V_r$.
 Define cumulative energy:
 
 \[
-E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m,n)} \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{i=1}^{\min(m,n)} \sigma\_i^2}
 \tag{3.2}
 \]
 
@@ -36,7 +36,7 @@ r(\varepsilon) = \min\{r : E(r) \geq \varepsilon\}
 \textbf{Reconstruction bound:}
 
 \[
-\|W - W_{r(\varepsilon)}\|_F^2 \leq (1 - \varepsilon) \|W\|_F^2
+\|W - W\_{r(\varepsilon)}\|\_F^2 \leq (1 - \varepsilon) \|W\|\_F^2
 \tag{3.4}
 \]
 
@@ -45,7 +45,7 @@ r(\varepsilon) = \min\{r : E(r) \geq \varepsilon\}
 LoRA (Hu et al., 2021):
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.5}
 \]
 
@@ -56,8 +56,8 @@ with $A \in \mathbb{R}^{r_L \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out
 MinimalAURORA uses:
 
 \begin{lstlisting}
-self.down = nn.Linear(in_features, rank, bias=False)
-self.up = nn.Linear(rank, out_features, bias=True)
+self.down = nn.Linear(in\_features, rank, bias=False)
+self.up = nn.Linear(rank, out\_features, bias=True)
 \end{lstlisting}
 
 Forward:

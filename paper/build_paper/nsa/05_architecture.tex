@@ -33,8 +33,8 @@ Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own 
 Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA + RoPE)}
@@ -63,8 +63,8 @@ For decoders:
 Padding keys are excluded from both local window and top-$k$:
 
 \begin{lstlisting}
-key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
-non_local_scores = non_local_scores.masked_fill(~key_valid_4d, -1e4)
+key\_valid\_4d = valid\_mask\_2d.unsqueeze(1).unsqueeze(2)
+non\_local\_scores = non\_local\_scores.masked\_fill(~key\_valid\_4d, -1e4)
 \end{lstlisting}
 
 \subsection{RoPE Integration}
@@ -78,11 +78,11 @@ RoPE applied to Q, K \textbf{before} score computation and top-$k$ selection.
 Input:  model M, config c, w, k
 Output: M with NSA attention
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
-4:      new $\leftarrow$ NativeSparseAttention(config=c, pretrained_attn=src, w, k)
-5:      replace_attention( , new)
+4:      new $\leftarrow$ NativeSparseAttention(config=c, pretrained\_attn=src, w, k)
+5:      replace\_attention( , new)
 6: end for
 \end{lstlisting}
 
@@ -92,7 +92,7 @@ Output: M with NSA attention
 
 \begin{lstlisting}
 try:
-    new_attn = NativeSparseAttention(...)
+    new\_attn = NativeSparseAttention(...)
 except Exception as e:
     logger.error(f"NSA injection failed: {e}")
     return None
@@ -119,8 +119,8 @@ LoRA & 0 & $2 r (\cdots)$ \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("nsa")
-@ATTENTION_REGISTRY.register("nsa_attention")
+@ATTENTION\_REGISTRY.register("nsa")
+@ATTENTION\_REGISTRY.register("nsa\_attention")
 class NativeSparseAttention(BaseAttention): ...
 \end{lstlisting}
 
@@ -135,6 +135,6 @@ class NativeSparseAttention(BaseAttention): ...
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of nsa.}
-\label{fig:arch_nsa}
+\label{fig:arch\_nsa}
 \end{figure}
 

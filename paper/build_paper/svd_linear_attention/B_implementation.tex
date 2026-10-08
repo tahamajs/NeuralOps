@@ -5,37 +5,37 @@
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank, lora_rank=16, ...):
-        super().__init__()
-        self.V = nn.Parameter(torch.empty(rank, in_features))
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, lora\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
     def forward(self, x):
         Vx = F.linear(x, self.V)
         out = F.linear(Vx, self.U, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 The Decay Gate}
 
 \begin{lstlisting}
-def _init_decay_gate(self):
-    with torch.no_grad():
-        nn.init.kaiming_uniform_(self.decay_gate.weight, a=math.sqrt(5))
-        if self.decay_channel_wise:
-            decay_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num_heads))
-            decay_times = decay_times.repeat_interleave(self.head_dim)
+def \_init\_decay\_gate(self):
+    with torch.no\_grad():
+        nn.init.kaiming\_uniform\_(self.decay\_gate.weight, a=math.sqrt(5))
+        if self.decay\_channel\_wise:
+            decay\_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num\_heads))
+            decay\_times = decay\_times.repeat\_interleave(self.head\_dim)
         else:
-            decay_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num_heads))
-        bias_target = -torch.log(decay_times)
-        self.decay_gate.bias.copy_(bias_target)
+            decay\_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num\_heads))
+        bias\_target = -torch.log(decay\_times)
+        self.decay\_gate.bias.copy\_(bias\_target)
 \end{lstlisting}
 
 \textbf{Note.} As shown in Appendix A.6, this initialization is \textbf{inverted}. 
@@ -45,122 +45,122 @@ ranges from 1.001 to 2. Heads converge during training.
 \subsection{B.3 The Chunked Scan}
 
 \begin{lstlisting}
-def _forward_decay_gated_linear_kernel(self, q, k, v, hidden_states, mask=None, past_state=None):
-    B, H, N, D_k = q.shape
-    D_v = v.shape[-1]
+def \_forward\_decay\_gated\_linear\_kernel(self, q, k, v, hidden\_states, mask=None, past\_state=None):
+    B, H, N, D\_k = q.shape
+    D\_v = v.shape[-1]
     
-    phi_q = F.elu(q.float()) + 1.0
-    phi_k = F.elu(k.float()) + 1.0
-    v_f = v.float()
+    phi\_q = F.elu(q.float()) + 1.0
+    phi\_k = F.elu(k.float()) + 1.0
+    v\_f = v.float()
     
     if mask is not None:
-        phi_k = phi_k * mask_expanded
+        phi\_k = phi\_k * mask\_expanded
     
     # Decay
-    decay_logits = self.decay_gate(hidden_states)
-    if self.decay_channel_wise:
-        decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
-        lambda_decay = compute_exponential_decay(decay_logits).unsqueeze(-1)
+    decay\_logits = self.decay\_gate(hidden\_states)
+    if self.decay\_channel\_wise:
+        decay\_logits = decay\_logits.view(B, N, H, D\_k).permute(0, 2, 1, 3)
+        lambda\_decay = compute\_exponential\_decay(decay\_logits).unsqueeze(-1)
     else:
-        decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
-        lambda_decay = compute_exponential_decay(decay_logits)
+        decay\_logits = decay\_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+        lambda\_decay = compute\_exponential\_decay(decay\_logits)
     
     # Force padding to have $\lambda$=1
     if mask is not None:
-        lambda_decay = torch.where(mask_decay > 0, lambda_decay, torch.ones_like(lambda_decay))
+        lambda\_decay = torch.where(mask\_decay \textgreater{} 0, lambda\_decay, torch.ones\_like(lambda\_decay))
     
     # Chunked scan
-    chunk_size = 64
-    num_chunks = (N + chunk_size - 1) // chunk_size
-    S_chunk = torch.zeros(B, H, D_k, D_v, dtype=torch.float32)
-    Z_chunk = torch.zeros(B, H, D_k, 1, dtype=torch.float32)
+    chunk\_size = 64
+    num\_chunks = (N + chunk\_size - 1) // chunk\_size
+    S\_chunk = torch.zeros(B, H, D\_k, D\_v, dtype=torch.float32)
+    Z\_chunk = torch.zeros(B, H, D\_k, 1, dtype=torch.float32)
     outputs = []
     
-    for c in range(num_chunks):
-        s, e = c * chunk_size, min(N, (c+1) * chunk_size)
-        qc, kc, vc = phi_q[:,:,s:e], phi_k[:,:,s:e], v_f[:,:,s:e]
-        lam_c = lambda_decay[:,:,s:e]
+    for c in range(num\_chunks):
+        s, e = c * chunk\_size, min(N, (c+1) * chunk\_size)
+        qc, kc, vc = phi\_q[:,:,s:e], phi\_k[:,:,s:e], v\_f[:,:,s:e]
+        lam\_c = lambda\_decay[:,:,s:e]
         Lc = e - s
         
         # Intra-chunk
-        log_lam = torch.log(lam_c.clamp(min=1e-6))
-        log_gamma = torch.cumsum(log_lam, dim=-1)
-        log_M = log_gamma.unsqueeze(-1) - log_gamma.unsqueeze(-2)
-        M_intra = torch.exp(log_M.clamp(max=0.0)) * causal_tril
-        aff = torch.matmul(qc, kc.transpose(-1, -2)) * M_intra
-        num_intra = torch.matmul(aff, vc)
-        den_intra = aff.sum(dim=-1, keepdim=True)
+        log\_lam = torch.log(lam\_c.clamp(min=1e-6))
+        log\_gamma = torch.cumsum(log\_lam, dim=-1)
+        log\_M = log\_gamma.unsqueeze(-1) - log\_gamma.unsqueeze(-2)
+        M\_intra = torch.exp(log\_M.clamp(max=0.0)) * causal\_tril
+        aff = torch.matmul(qc, kc.transpose(-1, -2)) * M\_intra
+        num\_intra = torch.matmul(aff, vc)
+        den\_intra = aff.sum(dim=-1, keepdim=True)
         
         # Inter-chunk
-        decay = torch.exp(log_gamma.clamp(max=0.0)).unsqueeze(-1)
-        num_inter = torch.matmul(qc, S_chunk) * decay
-        den_inter = torch.matmul(qc, Z_chunk) * decay
+        decay = torch.exp(log\_gamma.clamp(max=0.0)).unsqueeze(-1)
+        num\_inter = torch.matmul(qc, S\_chunk) * decay
+        den\_inter = torch.matmul(qc, Z\_chunk) * decay
         
-        out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
-        outputs.append(out_c)
+        out\_c = (num\_intra + num\_inter) / (den\_intra + den\_inter + self.eps)
+        outputs.append(out\_c)
         
         # Update state
-        total_decay = torch.exp(log_gamma[:,:,-1:].clamp(max=0.0)).unsqueeze(-1)
-        w_to_end = torch.exp((log_gamma[:,:,-1:] - log_gamma).clamp(max=0.0)).unsqueeze(-1)
-        kc_w = kc * w_to_end
-        S_chunk = total_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2), vc)
-        Z_chunk = total_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
+        total\_decay = torch.exp(log\_gamma[:,:,-1:].clamp(max=0.0)).unsqueeze(-1)
+        w\_to\_end = torch.exp((log\_gamma[:,:,-1:] - log\_gamma).clamp(max=0.0)).unsqueeze(-1)
+        kc\_w = kc * w\_to\_end
+        S\_chunk = total\_decay * S\_chunk + torch.matmul(kc\_w.transpose(-1, -2), vc)
+        Z\_chunk = total\_decay * Z\_chunk + kc\_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
     
     context = torch.cat(outputs, dim=2).to(q.dtype)
-    return context, (S_chunk, Z_chunk)
+    return context, (S\_chunk, Z\_chunk)
 \end{lstlisting}
 
 \subsection{B.4 The `step\_recurrent` Method}
 
 \begin{lstlisting}
-def step_recurrent(self, x_t, past_state=None):
-    if x_t.dim() == 2:
-        x_t = x_t.unsqueeze(1)
+def step\_recurrent(self, x\_t, past\_state=None):
+    if x\_t.dim() == 2:
+        x\_t = x\_t.unsqueeze(1)
     
-    B = x_t.shape[0]
-    q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2)
-    k = self.k_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
-    v = self.v_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    B = x\_t.shape[0]
+    q = self.q\_proj(x\_t).view(B, 1, self.num\_heads, self.head\_dim).transpose(1, 2)
+    k = self.k\_proj(x\_t).view(B, 1, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
+    v = self.v\_proj(x\_t).view(B, 1, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
     
-    if self.num_kv_heads < self.num_heads:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.num\_kv\_heads \textless{} self.num\_heads:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
-    phi_q = F.elu(q.float()) + 1.0
-    phi_k = F.elu(k.float()) + 1.0
+    phi\_q = F.elu(q.float()) + 1.0
+    phi\_k = F.elu(k.float()) + 1.0
     
     # Decay
-    if self.use_decay_gating:
-        decay_logits = self.decay_gate(x_t)
-        # ... compute $\lambda$_t ...
+    if self.use\_decay\_gating:
+        decay\_logits = self.decay\_gate(x\_t)
+        # ... compute $\lambda$\_t ...
     else:
-        lam_t = torch.ones(B, H, 1, 1)
+        lam\_t = torch.ones(B, H, 1, 1)
     
     # Update state
-    if past_state is not None:
-        S_prev, Z_prev = past_state
+    if past\_state is not None:
+        S\_prev, Z\_prev = past\_state
     else:
-        S_prev = torch.zeros(B, H, D_k, D_v)
-        Z_prev = torch.zeros(B, H, D_k, 1)
+        S\_prev = torch.zeros(B, H, D\_k, D\_v)
+        Z\_prev = torch.zeros(B, H, D\_k, 1)
     
-    kt_t = phi_k.transpose(-1, -2)
-    kv_t = torch.matmul(kt_t, v.float())
+    kt\_t = phi\_k.transpose(-1, -2)
+    kv\_t = torch.matmul(kt\_t, v.float())
     
-    S_t = lam_t * S_prev + kv_t
-    Z_t = lam_t * Z_prev + kt_t
+    S\_t = lam\_t * S\_prev + kv\_t
+    Z\_t = lam\_t * Z\_prev + kt\_t
     
-    num_t = torch.matmul(phi_q, S_t)
-    den_t = torch.matmul(phi_t, Z_t) + self.eps
-    y_t = num_t / den_t
+    num\_t = torch.matmul(phi\_q, S\_t)
+    den\_t = torch.matmul(phi\_t, Z\_t) + self.eps
+    y\_t = num\_t / den\_t
     
     # Output projection
-    context = y_t.transpose(1, 2).contiguous().view(B, 1, self.all_head_size)
-    if self.is_nested_encoder:
-        out_t = context
+    context = y\_t.transpose(1, 2).contiguous().view(B, 1, self.all\_head\_size)
+    if self.is\_nested\_encoder:
+        out\_t = context
     else:
-        out_t = self.out_proj(context)
+        out\_t = self.out\_proj(context)
     
-    return out_t, (S_t, Z_t)
+    return out\_t, (S\_t, Z\_t)
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -172,7 +172,7 @@ fixing to \texttt{bias\_target = -softplus\_inv(log(decay\_times))}.
 
 \subsubsection{B.5.2 Padding in Feature Map}
 
- (x) = ELU(x) + 1 > 0 always, so padding tokens contribute to the state. 
+ (x) = ELU(x) + 1 \textgreater{} 0 always, so padding tokens contribute to the state. 
 We mask them with \texttt{phi\_k = phi\_k * mask\_expanded}.
 
 \subsubsection{B.5.3 Chunk Size}

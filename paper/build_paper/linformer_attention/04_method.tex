@@ -18,17 +18,17 @@ Our Linformer implementation has four phases:
 Standard projections via LoRALinear:
 
 \begin{lstlisting}
-q = self.q_proj(hidden_states)
-k = self.k_proj(hidden_states)
-v = self.v_proj(hidden_states)
+q = self.q\_proj(hidden\_states)
+k = self.k\_proj(hidden\_states)
+v = self.v\_proj(hidden\_states)
 \end{lstlisting}
 
 Reshape to multi-head:
 
 \begin{lstlisting}
-q = q.view(B, N, H, d_h).transpose(1, 2)
-k = k.view(B, N, H_kv, d_h).transpose(1, 2)
-v = v.view(B, N, H_kv, d_h).transpose(1, 2)
+q = q.view(B, N, H, d\_h).transpose(1, 2)
+k = k.view(B, N, H\_kv, d\_h).transpose(1, 2)
+v = v.view(B, N, H\_kv, d\_h).transpose(1, 2)
 \end{lstlisting}
 
 Apply RoPE if position embeddings available.
@@ -36,9 +36,9 @@ Apply RoPE if position embeddings available.
 \subsection{GQA Expansion}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 After this, $K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
@@ -68,8 +68,8 @@ Given sequence length $L$, projection dim $k$, and pre-allocated $L_\text{max}$:
 For short sequences, no compression is applied:
 
 \begin{lstlisting}
-E_act = self.E[:L, :L]
-K_proj = E_act @ k  # (B, H, L, d_h)
+E\_act = self.E[:L, :L]
+K\_proj = E\_act @ k  # (B, H, L, d\_h)
 \end{lstlisting}
 
 This preserves exact attention for short sequences, ensuring no accuracy 
@@ -80,9 +80,9 @@ loss when compression isn't needed.
 Standard Linformer:
 
 \begin{lstlisting}
-k_eff = min(self.k_proj_dim, L)
-E_act = self.E[:k_eff, :L]
-K_proj = E_act @ k  # (B, H, k_eff, d_h)
+k\_eff = min(self.k\_proj\_dim, L)
+E\_act = self.E[:k\_eff, :L]
+K\_proj = E\_act @ k  # (B, H, k\_eff, d\_h)
 \end{lstlisting}
 
 $K$ and $V$ are projected from $L$ to $k_\text{eff}$ positions.
@@ -92,11 +92,11 @@ $K$ and $V$ are projected from $L$ to $k_\text{eff}$ positions.
 For sequences longer than the pre-allocated max:
 
 \begin{lstlisting}
-E_act = F.interpolate(
-    self.E[:k_eff].unsqueeze(0),
+E\_act = F.interpolate(
+    self.E[:k\_eff].unsqueeze(0),
     size=L,
     mode="linear",
-    align_corners=False,
+    align\_corners=False,
 ).squeeze(0)
 \end{lstlisting}
 
@@ -109,7 +109,7 @@ robustness.
 \subsubsection{Scores}
 
 \[
-\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L \times k_\text{eff}}
+\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{B \times H \times L \times k\_\text{eff}}
 \tag{4.1}
 \]
 
@@ -122,15 +122,15 @@ Standard softmax over $k_\text{eff}$ dimension.
 \subsubsection{Context}
 
 \[
-\text{context} = \text{attn} \cdot \tilde{V} \in \mathbb{R}^{B \times H \times L \times d_h}
+\text{context} = \text{attn} \cdot \tilde{V} \in \mathbb{R}^{B \times H \times L \times d\_h}
 \tag{4.2}
 \]
 
 \subsubsection{Output Projection}
 
 \begin{lstlisting}
-context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-out = self.out_proj(context * self.output_scale)
+context = context.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
+out = self.out\_proj(context * self.output\_scale)
 \end{lstlisting}
 
 Where \texttt{output\_scale} is a learnable scalar initialized to 1.
@@ -141,7 +141,7 @@ Where \texttt{output\_scale} is a learnable scalar initialized to 1.
 information:
 
 \[
-\tilde{K}_j = \sum_{i=1}^L E_{j, i} K_i
+\tilde{K}\_j = \sum\_{i=1}^L E\_{j, i} K\_i
 \tag{4.3}
 \]
 
@@ -151,12 +151,12 @@ causal mask over $\tilde{K}_j$ is meaningless.
 \textbf{The solution.} Fall back to exact dense attention:
 
 \begin{lstlisting}
-if self.is_decoder and L > self.k_proj_dim:
+if self.is\_decoder and L \textgreater{} self.k\_proj\_dim:
     # Cannot compress without breaking causality
-    causal_scores = q @ k.transpose(-2, -1) / sqrt(d_h)
-    causal_mask = tril(ones(L, L))
-    scores = causal_scores.masked_fill(~causal_mask, -inf)
-    V_proj = v  # Use unprojected V
+    causal\_scores = q @ k.transpose(-2, -1) / sqrt(d\_h)
+    causal\_mask = tril(ones(L, L))
+    scores = causal\_scores.masked\_fill(~causal\_mask, -inf)
+    V\_proj = v  # Use unprojected V
 \end{lstlisting}
 
 This preserves causality at the cost of $\mathcal{O}(L^2)$ for decoders 
@@ -170,33 +170,33 @@ case.
 
 \textbf{Algorithm 1:} Linformer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, k, L_max
+Input:  X $\in$ R^{B$\times$L$\times$d}, k, L\_max
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
+ 1: Q $\leftarrow$ X W\_Q; K $\leftarrow$ X W\_K; V $\leftarrow$ X W\_V
  2: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
- 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 3: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
  4: if L $\le$ k:
- 5:     E_act $\leftarrow$ E[:L, :L]; F_act $\leftarrow$ F[:L, :L]
- 6:     V_proj $\leftarrow$ F_act @ V
- 7: elif L $\le$ L_max:
- 8:     k_eff $\leftarrow$ min(k, L)
- 9:     E_act $\leftarrow$ E[:k_eff, :L]; F_act $\leftarrow$ F[:k_eff, :L]
-10:     V_proj $\leftarrow$ F_act @ V
+ 5:     E\_act $\leftarrow$ E[:L, :L]; F\_act $\leftarrow$ F[:L, :L]
+ 6:     V\_proj $\leftarrow$ F\_act @ V
+ 7: elif L $\le$ L\_max:
+ 8:     k\_eff $\leftarrow$ min(k, L)
+ 9:     E\_act $\leftarrow$ E[:k\_eff, :L]; F\_act $\leftarrow$ F[:k\_eff, :L]
+10:     V\_proj $\leftarrow$ F\_act @ V
 11: else:
-12:     E_act $\leftarrow$ interpolate(E, size=L); F_act $\leftarrow$ interpolate(F, size=L)
-13:     V_proj $\leftarrow$ F_act @ V
-14: K_proj $\leftarrow$ E_act @ K
-15: scores $\leftarrow$ Q @ K_proj^T / $\sqrt{}$d_h
-16: if is_decoder and L > k:
+12:     E\_act $\leftarrow$ interpolate(E, size=L); F\_act $\leftarrow$ interpolate(F, size=L)
+13:     V\_proj $\leftarrow$ F\_act @ V
+14: K\_proj $\leftarrow$ E\_act @ K
+15: scores $\leftarrow$ Q @ K\_proj^T / $\sqrt{}$d\_h
+16: if is\_decoder and L \textgreater{} k:
 17:     # Fallback: dense causal attention
-18:     scores $\leftarrow$ Q @ K^T / $\sqrt{}$d_h
-19:     V_proj $\leftarrow$ V
-20:     scores $\leftarrow$ mask_causal(scores)
-21: scores $\leftarrow$ mask_padding(scores)
+18:     scores $\leftarrow$ Q @ K^T / $\sqrt{}$d\_h
+19:     V\_proj $\leftarrow$ V
+20:     scores $\leftarrow$ mask\_causal(scores)
+21: scores $\leftarrow$ mask\_padding(scores)
 22: attn $\leftarrow$ softmax(scores)
-23: out $\leftarrow$ attn @ V_proj
-24: out $\leftarrow$ out_proj(out * output_scale)
+23: out $\leftarrow$ attn @ V\_proj
+24: out $\leftarrow$ out\_proj(out * output\_scale)
 25: return out
 \end{lstlisting}
 
@@ -305,14 +305,14 @@ We state this \textbf{explicitly} in the abstract.
 If the attention matrix $P$ has effective rank $r \ll L$, then:
 
 \[
-\|P - \tilde{P}\|_F \leq \sqrt{\sum_{i=r+1}^L \sigma_i^2}
+\|P - \tilde{P}\|\_F \leq \sqrt{\sum\_{i=r+1}^L \sigma\_i^2}
 \tag{4.4}
 \]
 
 where $\sigma_i$ are singular values of $P$. For $k \geq r$:
 
 \[
-\|P - \tilde{P}\|_F \approx 0
+\|P - \tilde{P}\|\_F \approx 0
 \tag{4.5}
 \]
 

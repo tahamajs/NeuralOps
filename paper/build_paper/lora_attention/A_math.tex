@@ -5,7 +5,7 @@
 For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \[
-W = W_0 + \Delta W, \quad \Delta W = \frac{\alpha}{r_L} B A
+W = W\_0 + \Delta W, \quad \Delta W = \frac{\alpha}{r\_L} B A
 \tag{A.1}
 \]
 
@@ -25,7 +25,7 @@ At initialization:
 \end{itemize}
 Then:
 \[
-\Delta W = \frac{\alpha}{r_L} \cdot 0 \cdot A = 0
+\Delta W = \frac{\alpha}{r\_L} \cdot 0 \cdot A = 0
 \tag{A.2}
 \]
 
@@ -39,7 +39,7 @@ LoRA parameters: $r_L \cdot d_\text{in} + d_\text{out} \cdot r_L = r_L (d_\text{
 
 \textbf{Reduction ratio:}
 \[
-\frac{d_\text{out} \cdot d_\text{in}}{r_L (d_\text{in} + d_\text{out})}
+\frac{d\_\text{out} \cdot d\_\text{in}}{r\_L (d\_\text{in} + d\_\text{out})}
 \tag{A.3}
 \]
 
@@ -54,7 +54,7 @@ For $d_\text{out} = d_\text{in} = 768$, $r_L = 16$:
 For all four projections (with $H_{kv} = H$):
 
 \[
-\text{Trainable}_\text{LoRA} = r_L (2d + 2 H d_h)
+\text{Trainable}\_\text{LoRA} = r\_L (2d + 2 H d\_h)
 \tag{A.5}
 \]
 
@@ -68,13 +68,13 @@ For $d = 768$, $H = 12$, $d_h = 64$:
 
 After training, define:
 \[
-W_\text{merged} = W_0 + \frac{\alpha}{r_L} B A
+W\_\text{merged} = W\_0 + \frac{\alpha}{r\_L} B A
 \tag{A.7}
 \]
 
 Then:
 \[
-y = W_\text{merged} x = W_0 x + \frac{\alpha}{r_L} B A x
+y = W\_\text{merged} x = W\_0 x + \frac{\alpha}{r\_L} B A x
 \tag{A.8}
 \]
 
@@ -103,7 +103,7 @@ LoRA requires:
 LoRA can represent any $\Delta W$ of rank $\leq r_L$:
 
 \[
-\text{rank}(\Delta W) = \text{rank}(BA) \leq \min(r_L, \text{rank}(B), \text{rank}(A)) \leq r_L
+\text{rank}(\Delta W) = \text{rank}(BA) \leq \min(r\_L, \text{rank}(B), \text{rank}(A)) \leq r\_L
 \tag{A.9}
 \]
 

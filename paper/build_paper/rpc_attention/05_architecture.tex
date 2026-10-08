@@ -21,12 +21,12 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
 \subsection{Adaptive Rank}
 
 \begin{lstlisting}
-num_layers = config.num_hidden_layers
-if num_layers > 12:
+num\_layers = config.num\_hidden\_layers
+if num\_layers \textgreater{} 12:
     self.rank = max(self.rank, 128)
-elif num_layers > 6:
+elif num\_layers \textgreater{} 6:
     self.rank = max(self.rank, 64)
-self.rank = max(1, min(self.rank, self.head_dim))
+self.rank = max(1, min(self.rank, self.head\_dim))
 \end{lstlisting}
 
 The rank is capped at \texttt{head\_dim} because projecting beyond the head 
@@ -37,10 +37,10 @@ dimension is not a compression.
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight
-extracted["k"] = src.k_lin.weight
-extracted["v"] = src.v_lin.weight
-extracted["o"] = src.out_lin.weight
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (nested)}
@@ -56,20 +56,20 @@ extracted["o"] = src.output.dense.weight
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = q_w
-extracted["k"] = k_w
-extracted["v"] = v_w
-extracted["o"] = src.c_proj.weight.t()
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsection{Random Projection Buffer}
 
 \begin{lstlisting}
-self.register_buffer(
+self.register\_buffer(
     "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
 )
 \end{lstlisting}
 
@@ -87,20 +87,20 @@ context without applying its own \texttt{out\_proj}. The outer \texttt{attention
 applies the actual output projection.
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     out = context
 else:
-    out = self.out_proj(context)
+    out = self.out\_proj(context)
 \end{lstlisting}
 
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_rpc(layer, model_config=None, old_attn=None, **kwargs):
-    src = old_attn or find_attention(layer)
-    new_attn = RPCAttention(config=model_config, pretrained_attn=src, **kwargs)
-    replace_attention(layer, new_attn)
-    return new_attn
+def inject\_rpc(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = RPCAttention(config=model\_config, pretrained\_attn=src, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 \subsection{Failure Modes}
@@ -125,7 +125,7 @@ OOM & RuntimeError & Reduce batch \\
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_rpc failed: %s", e)
+    logger.error("inject\_rpc failed: \%s", e)
     raise RuntimeError(f"Injection failed")
 \end{lstlisting}
 
@@ -134,8 +134,8 @@ This is \textbf{stricter} than NHA/EAT but similar to ASVD and OHA.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("rpc")
-@ATTENTION_REGISTRY.register("rpc_attention")
+@ATTENTION\_REGISTRY.register("rpc")
+@ATTENTION\_REGISTRY.register("rpc\_attention")
 class RPCAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -158,6 +158,6 @@ use it. Cross-attention is effectively unsupported.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of rpc.}
-\label{fig:arch_rpc}
+\label{fig:arch\_rpc}
 \end{figure}
 

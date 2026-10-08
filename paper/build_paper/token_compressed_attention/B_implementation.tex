@@ -3,75 +3,75 @@
 \subsection{B.1 Core Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
     
     # 1. Project
-    q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-    k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
-    v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
+    q = self.q\_lin(hidden\_states).view(B, L, H, Dh).transpose(1, 2)
+    k = self.k\_lin(hidden\_states).view(B, L, H\_kv, Dh).transpose(1, 2)
+    v = self.v\_lin(hidden\_states).view(B, L, H\_kv, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. Compress
-    k, v, top_idx, comp_mask = self._select_compressed_tokens(
-        hidden_states, k, v, attention_mask
+    k, v, top\_idx, comp\_mask = self.\_select\_compressed\_tokens(
+        hidden\_states, k, v, attention\_mask
     )
     
     # 4. GQA
-    if H_kv != H:
-        k = repeat_kv(k, H // H_kv)
-        v = repeat_kv(v, H // H_kv)
+    if H\_kv != H:
+        k = repeat\_kv(k, H // H\_kv)
+        v = repeat\_kv(v, H // H\_kv)
     
     # 5. Attention with causal mask
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
-    if self.is_decoder:
-        q_pos = torch.arange(L).view(1, 1, L, 1)
-        k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)
-        causal_mask = (k_orig_pos > q_pos)
-        scores = scores.masked_fill(causal_mask, float("-inf"))
+    if self.is\_decoder:
+        q\_pos = torch.arange(L).view(1, 1, L, 1)
+        k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2)
+        causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)
+        scores = scores.masked\_fill(causal\_mask, float("-inf"))
     
     # 6. Padding mask
-    if comp_mask is not None:
-        scores = apply_attention_mask(scores, comp_mask)
+    if comp\_mask is not None:
+        scores = apply\_attention\_mask(scores, comp\_mask)
     
     # 7. Softmax, context, output
     attn = F.softmax(scores, dim=-1)
     context = torch.matmul(attn, v)
     context = context.transpose(1, 2).contiguous().view(B, L, H * Dh)
     
-    return self.out_lin(context), None
+    return self.out\_lin(context), None
 \end{lstlisting}
 
 \subsection{B.2 Score Computation}
 
 \begin{lstlisting}
-def _select_compressed_tokens(self, x, k_tensor, v_tensor, mask):
+def \_select\_compressed\_tokens(self, x, k\_tensor, v\_tensor, mask):
     B, L, D = x.shape
     
     energy = torch.norm(x.float(), p=2, dim=-1)          # (B, L)
-    learned = self.score_net(x.float()).squeeze(-1)       # (B, L)
-    total_importance = energy + learned
+    learned = self.score\_net(x.float()).squeeze(-1)       # (B, L)
+    total\_importance = energy + learned
     
-    k_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression_ratio)))))
+    k\_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression\_ratio)))))
     
-    total_importance[:, 0] = 1e4  # Pin [CLS]
+    total\_importance[:, 0] = 1e4  # Pin [CLS]
     
     if mask is not None:
         if mask.dim() == 2:
-            total_importance = total_importance.masked_fill(mask == 0, -1e4)
-        total_importance[:, 0] = 1e4
+            total\_importance = total\_importance.masked\_fill(mask == 0, -1e4)
+        total\_importance[:, 0] = 1e4
     
-    _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
-    top_indices, _ = torch.sort(top_indices, dim=-1)
+    \_, top\_indices = torch.topk(total\_importance, k\_keep, dim=-1)
+    top\_indices, \_ = torch.sort(top\_indices, dim=-1)
     
-    top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
-    k_comp = torch.gather(k_tensor, 2, top_idx_exp)
-    v_comp = torch.gather(v_tensor, 2, top_idx_exp)
+    top\_idx\_exp = top\_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H\_kv, -1, Dh)
+    k\_comp = torch.gather(k\_tensor, 2, top\_idx\_exp)
+    v\_comp = torch.gather(v\_tensor, 2, top\_idx\_exp)
     
-    return k_comp, v_comp, top_indices, comp_mask
+    return k\_comp, v\_comp, top\_indices, comp\_mask
 \end{lstlisting}
 
 \subsection{B.3 Weight Copy}

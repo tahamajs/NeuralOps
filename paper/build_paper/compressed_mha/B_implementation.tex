@@ -3,55 +3,55 @@
 \subsection{B.1 Core Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, N, _ = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, N, \_ = hidden\_states.shape
     
     # 1. Joint QKV projection (SVD + LoRA)
-    proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
-    qkv_comp = torch.matmul(proj, self.U_qkv.t())
-    if self.lora_rank > 0:
-        lora_qkv = F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
-        qkv_comp = qkv_comp + lora_qkv
+    proj = torch.matmul(hidden\_states, self.Vh\_qkv.t()) * self.S\_qkv.unsqueeze(0).unsqueeze(0)
+    qkv\_comp = torch.matmul(proj, self.U\_qkv.t())
+    if self.lora\_rank \textgreater{} 0:
+        lora\_qkv = F.linear(F.linear(hidden\_states, self.lora\_A\_qkv), self.lora\_B\_qkv) * self.lora\_scaling
+        qkv\_comp = qkv\_comp + lora\_qkv
     
     # 2. Split
-    q_raw, k_raw, v_raw = torch.split(qkv_comp, 
-                                       [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
-    q = q_raw + self.bias_q
-    k = k_raw + self.bias_k
-    v = v_raw + self.bias_v
+    q\_raw, k\_raw, v\_raw = torch.split(qkv\_comp, 
+                                       [self.all\_head\_size, self.kv\_head\_size, self.kv\_head\_size], dim=-1)
+    q = q\_raw + self.bias\_q
+    k = k\_raw + self.bias\_k
+    v = v\_raw + self.bias\_v
     
     # 3. Reshape
-    q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-    k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-    v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    q = q.view(B, N, self.num\_heads, self.head\_dim).transpose(1, 2)
+    k = k.view(B, N, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
+    v = v.view(B, N, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
     
     # 4. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 5. GQA
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 6. Attention
-    scores = torch.matmul(q, k.transpose(-2, -1)) * (1.0 / math.sqrt(self.head_dim))
+    scores = torch.matmul(q, k.transpose(-2, -1)) * (1.0 / math.sqrt(self.head\_dim))
     # masks
-    if is_decoder:
+    if is\_decoder:
         causal = torch.tril(torch.ones(N, N))
-        scores = scores.masked_fill(~causal, -1e4)
+        scores = scores.masked\_fill(~causal, -1e4)
     attn = F.softmax(scores.float(), dim=-1)
     context = torch.matmul(attn, v)
-    context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+    context = context.transpose(1, 2).contiguous().view(B, N, self.all\_head\_size)
     
     # 7. Output
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return context, None
-    out_proj = torch.matmul(context, self.Vh_out.t()) * self.S_out.unsqueeze(0).unsqueeze(0)
-    out = torch.matmul(out_proj, self.U_out.t()) + self.bias_out
-    if self.lora_rank > 0:
-        lora_out = F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling
-        out = out + lora_out
+    out\_proj = torch.matmul(context, self.Vh\_out.t()) * self.S\_out.unsqueeze(0).unsqueeze(0)
+    out = torch.matmul(out\_proj, self.U\_out.t()) + self.bias\_out
+    if self.lora\_rank \textgreater{} 0:
+        lora\_out = F.linear(F.linear(context, self.lora\_A\_out), self.lora\_B\_out) * self.lora\_scaling
+        out = out + lora\_out
     return out, None
 \end{lstlisting}
 
@@ -59,17 +59,17 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 
 \begin{lstlisting}
 # Priority 1: explicit flat output projections
-if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
-    self.is_nested_encoder = False
+if hasattr(src, "out\_lin") or hasattr(src, "c\_proj") or hasattr(src, "o\_proj"):
+    self.is\_nested\_encoder = False
 # Priority 2: nested structure
 elif (hasattr(src, "self") and hasattr(src, "output") 
       and hasattr(src.output, "dense")):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
 # Priority 3: class name (last resort)
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
-    self.is_nested_encoder = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention"):
+    self.is\_nested\_encoder = True
 else:
-    self.is_nested_encoder = False
+    self.is\_nested\_encoder = False
 \end{lstlisting}
 
 \textbf{Why the order matters:} \texttt{DistilBert.MultiHeadSelfAttention} ends with 
@@ -81,7 +81,7 @@ as nested.
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
     try:
-        w, b = UniversalAdapter.get_weight_bias(src, proj)
+        w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         if w is not None:
             extracted[proj] = (w, b)
     except Exception as e:
@@ -94,10 +94,10 @@ for proj in ["q", "k", "v", "o"]:
 \subsection{B.4 Rank Defaults}
 
 \begin{lstlisting}
-rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
-if rank is None and "rank_qkv" not in kwargs:
-    rank_val = max(rank_qkv, min(384, all_head_size + 2 * kv_head_size, hidden_size))
-self.rank_qkv = min(rank_val, all_head_size + 2 * kv_head_size, hidden_size)
+rank\_val = rank or kwargs.get("rank\_qkv", rank\_qkv)
+if rank is None and "rank\_qkv" not in kwargs:
+    rank\_val = max(rank\_qkv, min(384, all\_head\_size + 2 * kv\_head\_size, hidden\_size))
+self.rank\_qkv = min(rank\_val, all\_head\_size + 2 * kv\_head\_size, hidden\_size)
 \end{lstlisting}
 
 \textbf{Important:} The default value is designed to be \textbf{safe but not compressive} 

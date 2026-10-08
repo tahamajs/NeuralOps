@@ -5,11 +5,11 @@
 For input $X \in \mathbb{R}^{B \times L \times d}$, standard attention:
 
 \[
-Q = X W_Q^\top, \quad K = X W_K^\top, \quad V = X W_V^\top
+Q = X W\_Q^\top, \quad K = X W\_K^\top, \quad V = X W\_V^\top
 \]
 
 \[
-\text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 \subsection{Mixture of Experts}
@@ -17,7 +17,7 @@ Q = X W_Q^\top, \quad K = X W_K^\top, \quad V = X W_V^\top
 An MoE layer replaces a single FFN with $E$ expert FFNs and a router:
 
 \[
-\text{MoE}(X) = \sum_{i \in \text{top-}k} g_i \cdot \text{Expert}_i(X)
+\text{MoE}(X) = \sum\_{i \in \text{top-}k} g\_i \cdot \text{Expert}\_i(X)
 \]
 
 where $g_i$ is the router weight after softmax, and top-$k$ selects the 
@@ -26,7 +26,7 @@ $k$ highest-weighted experts. Only those experts run forward.
 \textbf{Load balancing loss.} To prevent router collapse:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
 \]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
@@ -56,7 +56,7 @@ mechanisms:
 LoRA (Hu et al., 2021):
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at init}
+\Delta W = \frac{\alpha}{r\_L} B A, \quad B = 0 \text{ at init}
 \]
 
 with $A \in \mathbb{R}^{r_L \times d}$, $B \in \mathbb{R}^{d \times r_L}$.
@@ -69,7 +69,7 @@ preserves GQA structure.
 \subsection{Rotary Position Embeddings}
 
 RoPE rotates Q, K by position-dependent angles. BAM-UMoE supports **partial 
-RoPE** (Qwen3.5 with rotary\_dim < head\_dim) by rotating the first 
+RoPE** (Qwen3.5 with rotary\_dim \textless{} head\_dim) by rotating the first 
 \texttt{rotary\_dim} coordinates.
 
 \subsection{Notation Summary}

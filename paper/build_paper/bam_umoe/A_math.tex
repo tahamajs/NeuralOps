@@ -8,20 +8,20 @@ attention's forward pass.
 \textbf{Proof.} The MoE branch output is:
 
 \[
-\text{MoE}(X) = \sum_{j=1}^{k} \text{scores}_j \cdot E_{\text{out}}[\text{topk\_idx}_j]
+\text{MoE}(X) = \sum\_{j=1}^{k} \text{scores}\_j \cdot E\_{\text{out}}[\text{topk\_idx}\_j]
 \]
 
 where each $E_\text{out}[e] = \text{Expert}_e(X)$. By the zero-init of 
 $W_2^{(e)}$ and $b_2^{(e)}$:
 
 \[
-\text{Expert}_e(X) = 0 \cdot \text{GELU}(W_1^{(e)} X + b_1^{(e)}) + 0 = 0
+\text{Expert}\_e(X) = 0 \cdot \text{GELU}(W\_1^{(e)} X + b\_1^{(e)}) + 0 = 0
 \]
 
 Therefore $\text{MoE}(X) = 0$ for all $X$. So:
 
 \[
-V' = V + \alpha \cdot g_\text{gate} \cdot 0 = V
+V' = V + \alpha \cdot g\_\text{gate} \cdot 0 = V
 \]
 
 The attention then reduces to the pretrained attention with base weights 
@@ -36,7 +36,7 @@ layer) is nonzero at step 0.
 on $W_2^{(e)}$ (multiplied by $\text{GELU}(W_1^{(e)} X)$). At $W_2^{(e)} = 0$:
 
 \[
-\frac{\partial \mathcal{L}}{\partial W_1^{(e)}} \propto \frac{\partial \mathcal{L}}{\partial \text{MoE}} \cdot \frac{\partial \text{MoE}}{\partial W_2^{(e)}} \cdot \frac{\partial W_2^{(e)}}{\partial W_1^{(e)}}
+\frac{\partial \mathcal{L}}{\partial W\_1^{(e)}} \propto \frac{\partial \mathcal{L}}{\partial \text{MoE}} \cdot \frac{\partial \text{MoE}}{\partial W\_2^{(e)}} \cdot \frac{\partial W\_2^{(e)}}{\partial W\_1^{(e)}}
 \]
 
 The last term is nonzero (since $W_2^{(e)}$ multiplies $\text{GELU}(W_1^{(e)} X)$). 
@@ -47,7 +47,7 @@ So gradient flows despite $W_2^{(e)} = 0$. $\square$
 \textbf{Derivation.} Following Switch Transformer:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
 \]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
@@ -57,13 +57,13 @@ mean router probability for expert $e$.
 $P_e = 1/E$ for all $e$:
 
 \[
-\mathcal{L}_\text{aux}^\text{min} = E \cdot \sum_{e=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot \frac{1}{E} = 1
+\mathcal{L}\_\text{aux}^\text{min} = E \cdot \sum\_{e=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot \frac{1}{E} = 1
 \]
 
 \textbf{Maximum.} If all tokens route to expert 0 ($f_0 = 1$, $P_0 = 1$), then:
 
 \[
-\mathcal{L}_\text{aux}^\text{max} = E \cdot 1 \cdot 1 = E
+\mathcal{L}\_\text{aux}^\text{max} = E \cdot 1 \cdot 1 = E
 \]
 
 So $\mathcal{L}_\text{aux} \in [1, E]$.

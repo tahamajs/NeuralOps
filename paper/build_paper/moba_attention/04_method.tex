@@ -10,14 +10,14 @@ Mamba-Inspired Gated SSM Attention replaces standard attention with a
            |
             
     +----------------------+
-    | in_proj: d $\to$ 2d      |
+    | in\_proj: d $\to$ 2d      |
     |   first d = p1       |  $\leftarrow$ SSM branch
     |   second d = p2      |  $\leftarrow$ Gate branch
     +-------+--------------+
             |
     +------- --------------+
     | Learned decay        |
-    |   $\gamma$_i = $\sigma$(-exp(A_i)) |
+    |   $\gamma$\_i = $\sigma$(-exp(A\_i)) |
     |   softmax over dist  |
     +-------+--------------+
             |
@@ -27,7 +27,7 @@ Mamba-Inspired Gated SSM Attention replaces standard attention with a
     +-------+--------------+
             |
     +------- --------------+
-    | out_proj: d $\to$ d      |
+    | out\_proj: d $\to$ d      |
     +-------+--------------+
             |
     +------- --------------+
@@ -43,7 +43,7 @@ Mamba-Inspired Gated SSM Attention replaces standard attention with a
 Instead of standard Q, K, V projections, we use:
 
 \[
-[p_1; p_2] = W_\text{in} X + b_\text{in}
+[p\_1; p\_2] = W\_\text{in} X + b\_\text{in}
 \tag{4.1}
 \]
 
@@ -59,7 +59,7 @@ where $W_\text{in} \in \mathbb{R}^{d \times 2d}$ and $p_1, p_2 \in \mathbb{R}^{B
 This gives:
 
 \[
-W_\text{in} = \begin{pmatrix} W_V \\ W_Q \end{pmatrix}
+W\_\text{in} = \begin{pmatrix} W\_V \\ W\_Q \end{pmatrix}
 \tag{4.2}
 \]
 
@@ -68,9 +68,9 @@ W_\text{in} = \begin{pmatrix} W_V \\ W_Q \end{pmatrix}
 If $d_\text{out}$ of the source projection is smaller than $d$, we \textbf{repeat}:
 
 \begin{lstlisting}
-if w_main.shape[0] < D and D % w_main.shape[0] == 0:
-    rep = D // w_main.shape[0]
-    w_main = w_main.repeat(rep, 1)
+if w\_main.shape[0] \textless{} D and D \% w\_main.shape[0] == 0:
+    rep = D // w\_main.shape[0]
+    w\_main = w\_main.repeat(rep, 1)
 \end{lstlisting}
 
 \subsection{Learned Decay}
@@ -80,14 +80,14 @@ if w_main.shape[0] < D and D % w_main.shape[0] == 0:
 For each dimension $i \in \{1, \dots, d\}$:
 
 \[
-\gamma_i = \sigma(-\exp(A_{\log, i}))
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
 \tag{4.3}
 \]
 
 We initialize $A_{\log, i} = \log(i)$ (from \texttt{torch.log(arange(1, D+1))}), so:
 
 \[
-\gamma_i = \sigma(-i)
+\gamma\_i = \sigma(-i)
 \tag{4.4}
 \]
 
@@ -99,7 +99,7 @@ $\gamma_i \to 0$.
 For decoders, we define:
 
 \[
-\text{dist}_{ij} = \begin{cases} j - i & j \geq i \\ 0 & j < i \end{cases}
+\text{dist}\_{ij} = \begin{cases} j - i & j \geq i \\ 0 & j \textless{} i \end{cases}
 \tag{4.5}
 \]
 
@@ -117,14 +117,14 @@ position $i$ \textbf{for $j \leq i$}.
 The log weights:
 
 \[
-\log w_{ij}^{(d)} = \text{dist}_{ij} \cdot \log \gamma_d
+\log w\_{ij}^{(d)} = \text{dist}\_{ij} \cdot \log \gamma\_d
 \tag{4.6}
 \]
 
 Then softmax over $j$ (dim=1):
 
 \[
-w_{ij}^{(d)} = \frac{\exp(\log w_{ij}^{(d)})}{\sum_{j'} \exp(\log w_{ij'}^{(d)})}
+w\_{ij}^{(d)} = \frac{\exp(\log w\_{ij}^{(d)})}{\sum\_{j'} \exp(\log w\_{ij'}^{(d)})}
 \tag{4.7}
 \]
 
@@ -146,8 +146,8 @@ decayed weight. This emulates SSM's "forget gate".
 The causal mask sets entries with $j > i$ to $-\infty$:
 
 \begin{lstlisting}
-causal_mask = torch.tril(torch.ones(L, L))
-log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
+causal\_mask = torch.tril(torch.ones(L, L))
+log\_weights = log\_weights.masked\_fill(~causal\_mask, float("-inf"))
 \end{lstlisting}
 
 \subsection{Bidirectional Mode}
@@ -155,8 +155,8 @@ log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
 For encoders, we compute forward and backward distances:
 
 \[
-\text{dist}^\text{fwd}_{ij} = \max(0, i - j), \quad
-\text{dist}^\text{bwd}_{ij} = \max(0, j - i)
+\text{dist}^\text{fwd}\_{ij} = \max(0, i - j), \quad
+\text{dist}^\text{bwd}\_{ij} = \max(0, j - i)
 \tag{4.8}
 \]
 
@@ -170,14 +170,14 @@ Both are masked appropriately:
 Then:
 
 \[
-\text{Out} = 0.5 \cdot (w^\text{fwd} p_1 + w^\text{bwd} p_1)
+\text{Out} = 0.5 \cdot (w^\text{fwd} p\_1 + w^\text{bwd} p\_1)
 \tag{4.9}
 \]
 
 \subsection{Gated Fusion}
 
 \[
-\text{Out}_\text{SSM} = \text{SiLU}(p_1^\text{decayed}) \odot p_2
+\text{Out}\_\text{SSM} = \text{SiLU}(p\_1^\text{decayed}) \odot p\_2
 \tag{4.10}
 \]
 
@@ -193,7 +193,7 @@ where SiLU is:
 Standard LoRALinear:
 
 \[
-\text{Out} = W_O \cdot \text{Out}_\text{SSM} + b_O
+\text{Out} = W\_O \cdot \text{Out}\_\text{SSM} + b\_O
 \tag{4.12}
 \]
 
@@ -223,32 +223,32 @@ progresses, $\alpha$ can shift toward 1.0 if the SSM output improves.
 
 \textbf{Algorithm 1:} Mamba-Inspired Gated SSM Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, is\_decoder
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: X $\leftarrow$ RoPE(X) if position_embeddings provided
- 2: proj $\leftarrow$ in_proj(X)                          [B, L, 2d]
+ 1: X $\leftarrow$ RoPE(X) if position\_embeddings provided
+ 2: proj $\leftarrow$ in\_proj(X)                          [B, L, 2d]
  3: p1, p2 $\leftarrow$ chunk(proj, 2, dim=-1)            Two branches
- 4: $\gamma$ $\leftarrow$ $\sigma$(-exp(A_log[:d]))                      [d]
- 5: if is_decoder and L > 1:
+ 4: $\gamma$ $\leftarrow$ $\sigma$(-exp(A\_log[:d]))                      [d]
+ 5: if is\_decoder and L \textgreater{} 1:
  6:     dist $\leftarrow$ max(0, i - j)                    [L, L]
- 7:     log_w $\leftarrow$ dist   log $\gamma$                    [L, L, d]
- 8:     log_w $\leftarrow$ mask_causal(log_w)
- 9:     w $\leftarrow$ softmax(log_w, dim=1)               [L, L, d]
-10:     p1 $\leftarrow$ einsum("ijd,bjd->bid", w, p1)
+ 7:     log\_w $\leftarrow$ dist   log $\gamma$                    [L, L, d]
+ 8:     log\_w $\leftarrow$ mask\_causal(log\_w)
+ 9:     w $\leftarrow$ softmax(log\_w, dim=1)               [L, L, d]
+10:     p1 $\leftarrow$ einsum("ijd,bjd-\textgreater{}bid", w, p1)
 11:     gated $\leftarrow$ SiLU(p1) * p2
-12: elif L > 1:
+12: elif L \textgreater{} 1:
 13:     # Bidirectional
-14:     dist_fwd $\leftarrow$ max(0, i - j); dist_bwd $\leftarrow$ max(0, j - i)
-15:     w_fwd $\leftarrow$ softmax(dist_fwd   log $\gamma$, dim=1)
-16:     w_bwd $\leftarrow$ softmax(dist_bwd   log $\gamma$, dim=1)
-17:     p1_mix $\leftarrow$ 0.5 * (w_fwd @ p1 + w_bwd @ p1)
-18:     gated $\leftarrow$ SiLU(p1_mix) * p2
+14:     dist\_fwd $\leftarrow$ max(0, i - j); dist\_bwd $\leftarrow$ max(0, j - i)
+15:     w\_fwd $\leftarrow$ softmax(dist\_fwd   log $\gamma$, dim=1)
+16:     w\_bwd $\leftarrow$ softmax(dist\_bwd   log $\gamma$, dim=1)
+17:     p1\_mix $\leftarrow$ 0.5 * (w\_fwd @ p1 + w\_bwd @ p1)
+18:     gated $\leftarrow$ SiLU(p1\_mix) * p2
 19: else:
 20:     gated $\leftarrow$ SiLU(p1) * p2
-21: Out $\leftarrow$ out_proj(gated)                         d $\to$ d
-22: Out $\leftarrow$ mask_padding(Out, attention_mask)
-23: $\alpha$ $\leftarrow$ $\sigma$(pres_gate)
+21: Out $\leftarrow$ out\_proj(gated)                         d $\to$ d
+22: Out $\leftarrow$ mask\_padding(Out, attention\_mask)
+23: $\alpha$ $\leftarrow$ $\sigma$(pres\_gate)
 24: Final $\leftarrow$ $\alpha$ * Out + (1 - $\alpha$) * X
 25: return Final
 \end{lstlisting}
@@ -367,7 +367,7 @@ dimensions forget faster.
 The softmax over distance is equivalent to a \textbf{geometric decay prior}:
 
 \[
-w_{ij} \propto \gamma_i^{|i - j|}
+w\_{ij} \propto \gamma\_i^{|i - j|}
 \tag{4.16}
 \]
 

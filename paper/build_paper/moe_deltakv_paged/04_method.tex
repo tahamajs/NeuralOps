@@ -34,7 +34,7 @@ MoE-DeltaKV-Paged has four stages:
             |
     +------- --------------+
     | MoBA Router          |
-    |    _ij = q _i   k _j    |
+    |    \_ij = q \_i   k \_j    |
     |   TopK pages         |
     |   Page-0 boost       |
     +-------+--------------+
@@ -46,11 +46,11 @@ MoE-DeltaKV-Paged has four stages:
             |
     +------- --------------+
     | Gated fusion         |
-    |   $\Sigma$ g_j   out_j      |
+    |   $\Sigma$ g\_j   out\_j      |
     +-------+--------------+
             |
     +------- --------------+
-    | out_proj             |
+    | out\_proj             |
     +-------+--------------+
             |
         Output
@@ -61,9 +61,9 @@ MoE-DeltaKV-Paged has four stages:
 Standard LoRALinear projections:
 
 \begin{lstlisting}
-q = self.query(hidden_states)
-k = self.key(hidden_states)
-v = self.value(hidden_states)
+q = self.query(hidden\_states)
+k = self.key(hidden\_states)
+v = self.value(hidden\_states)
 \end{lstlisting}
 
 Reshape to $[B, H, N, d_h]$ and apply RoPE if \texttt{position\_embeddings} is provided.
@@ -73,24 +73,24 @@ Reshape to $[B, H, N, d_h]$ and apply RoPE if \texttt{position\_embeddings} is p
 \subsubsection{Delta Computation}
 
 \begin{lstlisting}
-delta_K = K[:, :, 1:, :] - K[:, :, :-1, :]  # [B, H, N-1, d]
-delta_V = V[:, :, 1:, :] - V[:, :, :-1, :]
+delta\_K = K[:, :, 1:, :] - K[:, :, :-1, :]  # [B, H, N-1, d]
+delta\_V = V[:, :, 1:, :] - V[:, :, :-1, :]
 \end{lstlisting}
 
 \subsubsection{Low-Rank SVD + 4-bit Quantization}
 
 \begin{lstlisting}
-def low_rank_svd_quantize(delta, rank):
+def low\_rank\_svd\_quantize(delta, rank):
     B, H, N, d = delta.shape
-    delta_flat = delta.reshape(-1, d)
+    delta\_flat = delta.reshape(-1, d)
     
-    U, S, Vh = torch.linalg.svd(delta_flat.float(), full_matrices=False)
+    U, S, Vh = torch.linalg.svd(delta\_flat.float(), full\_matrices=False)
     U, S, Vh = U[:, :rank], S[:rank], Vh[:rank, :]
     
-    delta_approx = ((U * S.unsqueeze(0)) @ Vh).to(delta.dtype)
-    delta_approx = delta_approx.reshape(B, H, N, d)
+    delta\_approx = ((U * S.unsqueeze(0)) @ Vh).to(delta.dtype)
+    delta\_approx = delta\_approx.reshape(B, H, N, d)
     
-    return ste_quantize_4bit(delta_approx)
+    return ste\_quantize\_4bit(delta\_approx)
 \end{lstlisting}
 
 \textbf{Why SVD first?} Temporal deltas have low-rank structure (natural language is 
@@ -100,8 +100,8 @@ smooth), so truncating to rank $r$ removes noise without losing signal. The
 \subsubsection{Reconstruction}
 
 \begin{lstlisting}
-K_hat[:, :, 0] = K[:, :, 0]
-K_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta_K_hat, dim=2)
+K\_hat[:, :, 0] = K[:, :, 0]
+K\_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta\_K\_hat, dim=2)
 \end{lstlisting}
 
 \subsubsection{Caveat: This is Simulation}
@@ -118,23 +118,23 @@ Partition $q, k_\text{hat}, v_\text{hat}$ into $N_p = \lceil N / P \rceil$
 pages of size $P$ (padding with zeros if needed):
 
 \begin{lstlisting}
-num_pages = (N + P - 1) // P
-pad_len = num_pages * P - N
-q_padded = F.pad(q, (0, 0, 0, pad_len))
-k_padded = F.pad(k_hat, (0, 0, 0, pad_len))
+num\_pages = (N + P - 1) // P
+pad\_len = num\_pages * P - N
+q\_padded = F.pad(q, (0, 0, 0, pad\_len))
+k\_padded = F.pad(k\_hat, (0, 0, 0, pad\_len))
 \end{lstlisting}
 
 \subsubsection{Page-Mean Projections}
 
 \begin{lstlisting}
-q_bar = (q_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True)
-k_bar = (k_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True)
+q\_bar = (q\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True)
+k\_bar = (k\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True)
 \end{lstlisting}
 
 \subsubsection{Router Logits}
 
 \[
-\ell_{ij} = \frac{(W_\text{rg} \bar{q}_i) \cdot \bar{k}_j}{\sqrt{d_h}}
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
 \tag{4.1}
 \]
 
@@ -145,24 +145,24 @@ $W_\text{rg}$ is initialized to identity.
 For decoders:
 
 \[
-\ell_{ij} \leftarrow -\infty \quad \text{if } j > i
+\ell\_{ij} \leftarrow -\infty \quad \text{if } j \textgreater{} i
 \tag{4.2}
 \]
 
 \subsubsection{CLS Boost}
 
 \[
-\ell_{i, 0} \leftarrow \ell_{i, 0} + 10^4
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
 \tag{4.3}
 \]
 
 \subsubsection{Top-K Selection}
 
 \begin{lstlisting}
-k_experts = min(self.k_experts, num_pages)
-_, topk_indices = torch.topk(router_logits_biased, k_experts, dim=-1)
-topk_logits = torch.gather(router_logits, -1, topk_indices)
-g_j = F.softmax(topk_logits, dim=-1)
+k\_experts = min(self.k\_experts, num\_pages)
+\_, topk\_indices = torch.topk(router\_logits\_biased, k\_experts, dim=-1)
+topk\_logits = torch.gather(router\_logits, -1, topk\_indices)
+g\_j = F.softmax(topk\_logits, dim=-1)
 \end{lstlisting}
 
 \subsection{Block Attention}
@@ -170,49 +170,49 @@ g_j = F.softmax(topk_logits, dim=-1)
 \subsubsection{Gather Selected Pages}
 
 \begin{lstlisting}
-expanded_indices = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, P, d)
-k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
-k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_indices)
+expanded\_indices = topk\_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, P, d)
+k\_blocks\_exp = k\_blocks.unsqueeze(2).expand(-1, -1, num\_pages, -1, -1, -1)
+k\_gathered = torch.gather(k\_blocks\_exp, dim=3, index=expanded\_indices)
 \end{lstlisting}
 
 \subsubsection{Attention Per Expert}
 
 \begin{lstlisting}
-attn_scores = torch.matmul(q_expanded, k_gathered.transpose(-1, -2)) / math.sqrt(d)
-attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -10000.0)
-attn_probs = F.softmax(attn_scores, dim=-1)
-context_per_expert = torch.matmul(attn_probs, v_gathered)
+attn\_scores = torch.matmul(q\_expanded, k\_gathered.transpose(-1, -2)) / math.sqrt(d)
+attn\_scores = attn\_scores.masked\_fill(~k\_valid.unsqueeze(-2), -10000.0)
+attn\_probs = F.softmax(attn\_scores, dim=-1)
+context\_per\_expert = torch.matmul(attn\_probs, v\_gathered)
 \end{lstlisting}
 
 \subsubsection{Gated Fusion}
 
 \begin{lstlisting}
-g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
-context = (context_per_expert * g_j_exp).sum(dim=3)
+g\_j\_exp = g\_j.unsqueeze(-1).unsqueeze(-1)
+context = (context\_per\_expert * g\_j\_exp).sum(dim=3)
 \end{lstlisting}
 
 \subsection{Full Algorithm}
 
 \textbf{Algorithm 1:} MoE-DeltaKV-Paged forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ query(X); K $\leftarrow$ key(X); V $\leftarrow$ value(X)
- 2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
- 3: (K_hat, V_hat) $\leftarrow$ simulate_paged_delta_kv(K, V, rank)    Delta-KV
- 4: Partition into N_p pages of size P
- 5: Compute q_bar, k_bar (page means)
- 6:   $\leftarrow$ (W_rg q_bar)   k_bar^T / $\sqrt{}$d_h                      Router
- 7: if causal:   $\leftarrow$ mask_triu( )
+ 2: if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
+ 3: (K\_hat, V\_hat) $\leftarrow$ simulate\_paged\_delta\_kv(K, V, rank)    Delta-KV
+ 4: Partition into N\_p pages of size P
+ 5: Compute q\_bar, k\_bar (page means)
+ 6:   $\leftarrow$ (W\_rg q\_bar)   k\_bar^T / $\sqrt{}$d\_h                      Router
+ 7: if causal:   $\leftarrow$ mask\_triu( )
  8:  [:, :, :, 0] += 1e4                                     CLS boost
- 9: topk_idx $\leftarrow$ TopK( , k_experts)
-10: g $\leftarrow$ softmax(gather( , topk_idx))
+ 9: topk\_idx $\leftarrow$ TopK( , k\_experts)
+10: g $\leftarrow$ softmax(gather( , topk\_idx))
 11: Gather K, V from selected pages
-12: scores $\leftarrow$ q @ k_gathered^T / $\sqrt{}$d_h
+12: scores $\leftarrow$ q @ k\_gathered^T / $\sqrt{}$d\_h
 13: attn $\leftarrow$ softmax(scores)
-14: context $\leftarrow$ $\Sigma$ g_j   (attn @ v_j)                          Gated fusion
-15: Y $\leftarrow$ out_proj(context)
+14: context $\leftarrow$ $\Sigma$ g\_j   (attn @ v\_j)                          Gated fusion
+15: Y $\leftarrow$ out\_proj(context)
 16: return Y
 \end{lstlisting}
 

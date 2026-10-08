@@ -6,11 +6,11 @@
 \begin{lstlisting}
 try:
     adapter = UniversalAdapter()
-    w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+    w\_q, b\_q = adapter.get\_weight\_bias(old\_attn, "q")
     ...
-    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
-    if qkv_w.shape == self.attn.in_proj_weight.shape:
-        self.attn.in_proj_weight.copy_(qkv_w)
+    qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)
+    if qkv\_w.shape == self.attn.in\_proj\_weight.shape:
+        self.attn.in\_proj\_weight.copy\_(qkv\_w)
     ...
 except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
     pass
@@ -37,8 +37,8 @@ except Exception as e:
 \subsection{B.2 The Nested Encoder Path}
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    return delta_out, None  # $\leftarrow$ no LN, no residual
+if self.is\_nested\_encoder:
+    return delta\_out, None  # $\leftarrow$ no LN, no residual
 \end{lstlisting}
 
 For RoBERTa, this returns raw context. The outer \texttt{BertSelfOutput} applies 
@@ -49,9 +49,9 @@ residual + LN.
 \begin{lstlisting}
 # Check that self.norm is not used
 def forward(self, x):
-    if self.is_nested_encoder:
-        assert not hasattr(self, '_norm_used')  # should not be touched
-        return delta_out, None
+    if self.is\_nested\_encoder:
+        assert not hasattr(self, '\_norm\_used')  # should not be touched
+        return delta\_out, None
 \end{lstlisting}
 
 \subsection{B.3 Causal Masking for GPT-2}
@@ -59,30 +59,30 @@ def forward(self, x):
 The \texttt{use\_full\_attention=True} path does not pass \texttt{attn\_mask}:
 
 \begin{lstlisting}
-attn_out, attn_weights = self.attn(
-    x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
+attn\_out, attn\_weights = self.attn(
+    x, x, x, key\_padding\_mask=key\_padding\_mask, need\_weights=output\_attentions
 )
 \end{lstlisting}
 
 \textbf{Fix for GPT-2:}
 
 \begin{lstlisting}
-if self.is_decoder:
-    seq_len = x.shape[1]
-    causal_mask = torch.triu(
-        torch.full((seq_len, seq_len), float('-inf'), device=x.device),
+if self.is\_decoder:
+    seq\_len = x.shape[1]
+    causal\_mask = torch.triu(
+        torch.full((seq\_len, seq\_len), float('-inf'), device=x.device),
         diagonal=1
     )
-    attn_out, _ = self.attn(x, x, x, attn_mask=causal_mask)
+    attn\_out, \_ = self.attn(x, x, x, attn\_mask=causal\_mask)
 \end{lstlisting}
 
 \subsection{B.4 Shape Padding Logic}
 
 \begin{lstlisting}
-if attn_out.shape[-1] != x.shape[-1]:
-    attn_out = F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1])) \
-               if attn_out.shape[-1] < x.shape[-1] \
-               else attn_out[..., :x.shape[-1]]
+if attn\_out.shape[-1] != x.shape[-1]:
+    attn\_out = F.pad(attn\_out, (0, x.shape[-1] - attn\_out.shape[-1])) \
+               if attn\_out.shape[-1] \textless{} x.shape[-1] \
+               else attn\_out[..., :x.shape[-1]]
 \end{lstlisting}
 
 \textbf{Concern.} If shapes mismatch, this silently pads/truncates. \textbf{Should} 
@@ -94,15 +94,15 @@ Add explicit logging:
 
 \begin{lstlisting}
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(\_\_name\_\_)
 
 # After weight transfer:
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
-if qkv_w.shape == self.attn.in_proj_weight.shape:
-    self.attn.in_proj_weight.copy_(qkv_w)
-    logger.info(f"Q/K/V transfer OK: {qkv_w.shape}")
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)
+if qkv\_w.shape == self.attn.in\_proj\_weight.shape:
+    self.attn.in\_proj\_weight.copy\_(qkv\_w)
+    logger.info(f"Q/K/V transfer OK: {qkv\_w.shape}")
 else:
-    logger.error(f"Q/K/V shape mismatch: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+    logger.error(f"Q/K/V shape mismatch: {qkv\_w.shape} vs {self.attn.in\_proj\_weight.shape}")
 \end{lstlisting}
 
 \subsection{B.6 Common Pitfalls}
@@ -125,7 +125,7 @@ pretrained. Consider copying pretrained LN if available.
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_deltanet_block")
+@ATTENTION\_REGISTRY.register("gated\_deltanet\_block")
 class GatedDeltaNetBlock(BaseAttention):
     ...
 \end{lstlisting}
@@ -137,15 +137,15 @@ Standard pattern (see \texttt{05\_architecture.md}).
 \subsection{B.9 Diagnostics}
 
 \begin{lstlisting}
-def diagnose_block(model):
-    for name, mod in model.named_modules():
+def diagnose\_block(model):
+    for name, mod in model.named\_modules():
         if isinstance(mod, GatedDeltaNetBlock):
             print(f"{name}:")
-            print(f"  use_full_attention: {mod.use_full_attention}")
-            print(f"  is_nested_encoder: {mod.is_nested_encoder}")
-            print(f"  deltanet.is_nested_encoder: {mod.deltanet.is_nested_encoder}")
+            print(f"  use\_full\_attention: {mod.use\_full\_attention}")
+            print(f"  is\_nested\_encoder: {mod.is\_nested\_encoder}")
+            print(f"  deltanet.is\_nested\_encoder: {mod.deltanet.is\_nested\_encoder}")
             if mod.attn is not None:
-                w = mod.attn.in_proj_weight
-                print(f"  in_proj_weight norm: {w.norm().item():.4f}")
+                w = mod.attn.in\_proj\_weight
+                print(f"  in\_proj\_weight norm: {w.norm().item():.4f}")
 \end{lstlisting}
 

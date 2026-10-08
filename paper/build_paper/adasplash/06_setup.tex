@@ -116,7 +116,7 @@ layers = 8$N_l$ tensors.
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,12 +142,12 @@ Transformers & 4.44.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_adasplash.py \
+python run\_all\_4\_adasplash.py \
     --models distilbert,roberta,gpt2 \
     --alpha 1.5 \
-    --splash_radius 32 \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --splash\_radius 32 \
+    --lora\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 Runtime: ~20 minutes.

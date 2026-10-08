@@ -107,7 +107,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +133,11 @@ Transformers & 4.36.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_nystrom.py \
+python run\_all\_4\_nystrom.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks 32 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --num\_landmarks 32 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 Runtime: ~PyTorch 2.0 minutes.
@@ -149,10 +149,10 @@ sequences must be $N > 128$. We test this in a separate experiment with
 $N = 512$:
 
 \begin{lstlisting}
-python run_all_4_nystrom.py \
+python run\_all\_4\_nystrom.py \
     --models distilbert \
-    --seq_len 512 \
-    --num_landmarks 32
+    --seq\_len 512 \
+    --num\_landmarks 32
 \end{lstlisting}
 
 \subsection{Seeds}

@@ -4,25 +4,25 @@
 
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
-    orig_dtype = x.dtype
+    orig\_dtype = x.dtype
     temp = max(temperature, 1e-6)
-    x_scaled = torch.clamp(x.float() / temp, max=85.0)
-    p = F.relu(torch.exp(x_scaled) - 1.0)
+    x\_scaled = torch.clamp(x.float() / temp, max=85.0)
+    p = F.relu(torch.exp(x\_scaled) - 1.0)
     denom = p.sum(dim=dim, keepdim=True) + 1e-8
-    return (p / denom).to(orig_dtype)
+    return (p / denom).to(orig\_dtype)
 \end{lstlisting}
 
 \subsection{B.2 XAttention Scoring}
 
 \begin{lstlisting}
 @staticmethod
-def score_blocks(Q, K, block_size, stride=2):
+def score\_blocks(Q, K, block\_size, stride=2):
     B, H, N, D = Q.shape
-    n_blocks = (N + block_size - 1) // block_size
-    Q_sample = Q[:, :, ::stride, :]
-    K_sample = K[:, :, ::stride, :]
-    attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1)) * (D**-0.5)
-    scores = torch.zeros(B, H, n_blocks, n_blocks)
+    n\_blocks = (N + block\_size - 1) // block\_size
+    Q\_sample = Q[:, :, ::stride, :]
+    K\_sample = K[:, :, ::stride, :]
+    attn\_sample = torch.matmul(Q\_sample, K\_sample.transpose(-2, -1)) * (D**-0.5)
+    scores = torch.zeros(B, H, n\_blocks, n\_blocks)
     # ... block-wise mean
     return scores
 \end{lstlisting}
@@ -31,21 +31,21 @@ def score_blocks(Q, K, block_size, stride=2):
 
 \begin{lstlisting}
 class SeerGating(nn.Module):
-    def __init__(self, head_dim, num_heads, gate_rank, top_k, temperature):
-        self.q_pool = nn.Sequential(
-            nn.Linear(head_dim, gate_rank),
+    def \_\_init\_\_(self, head\_dim, num\_heads, gate\_rank, top\_k, temperature):
+        self.q\_pool = nn.Sequential(
+            nn.Linear(head\_dim, gate\_rank),
             nn.GELU(),
-            nn.Linear(gate_rank, gate_rank),
+            nn.Linear(gate\_rank, gate\_rank),
         )
-        self.k_pool = nn.Sequential(...)
+        self.k\_pool = nn.Sequential(...)
     
-    def forward(self, Q, K, n_blocks, training):
-        Q_pooled = Q.mean(dim=2)
-        K_pooled = K.mean(dim=2)
-        q_gate = self.q_pool(Q_pooled).view(B, H, 1, gr)
-        k_gate = self.k_pool(K_pooled).view(B, H, gr, 1)
-        gate_score = torch.sigmoid((q_gate @ k_gate).squeeze() / T)
-        keep_per_head = torch.clamp((gate_score * n_blocks).long(), 1, n_blocks)
+    def forward(self, Q, K, n\_blocks, training):
+        Q\_pooled = Q.mean(dim=2)
+        K\_pooled = K.mean(dim=2)
+        q\_gate = self.q\_pool(Q\_pooled).view(B, H, 1, gr)
+        k\_gate = self.k\_pool(K\_pooled).view(B, H, gr, 1)
+        gate\_score = torch.sigmoid((q\_gate @ k\_gate).squeeze() / T)
+        keep\_per\_head = torch.clamp((gate\_score * n\_blocks).long(), 1, n\_blocks)
         # Build mask
         ...
 \end{lstlisting}

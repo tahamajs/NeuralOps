@@ -6,7 +6,7 @@ For a weight matrix $W$ with SVD $W = U \Sigma V^\top$, the energy captured
 by rank $r$ is:
 
 \[
-E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_{i} \sigma_i^2}
+E(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_{i} \sigma\_i^2}
 \]
 
 We select $r^* = \min \{ r : E(r) \geq \eta \}$.
@@ -14,13 +14,13 @@ We select $r^* = \min \{ r : E(r) \geq \eta \}$.
 \textbf{Claim.} The Frobenius error after rank-$r^*$ truncation is bounded by:
 
 \[
-\|W - W_{r^*}\|_F \leq \sqrt{1 - \eta} \cdot \|W\|_F
+\|W - W\_{r^*}\|\_F \leq \sqrt{1 - \eta} \cdot \|W\|\_F
 \]
 
 \textbf{Proof.} By definition of $E(r^*)$:
 
 \[
-\sum_{i > r^*} \sigma_i^2 = (1 - E(r^*)) \|W\|_F^2 \leq (1 - \eta) \|W\|_F^2
+\sum\_{i \textgreater{} r^*} \sigma\_i^2 = (1 - E(r^*)) \|W\|\_F^2 \leq (1 - \eta) \|W\|\_F^2
 \]
 
 Taking square roots gives (A.2). $\square$
@@ -31,7 +31,7 @@ For an encoder with $H_\text{local}$ local heads and $H_\text{global}$
 global heads:
 
 \[
-\text{FLOPs} = B \cdot L \cdot d_h \cdot (H_\text{local} \cdot W + H_\text{global} \cdot F)
+\text{FLOPs} = B \cdot L \cdot d\_h \cdot (H\_\text{local} \cdot W + H\_\text{global} \cdot F)
 \]
 
 For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
@@ -41,13 +41,13 @@ For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 For query at position $i$, the window mask is:
 
 \[
-\text{mask}_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
+\text{mask}\_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
 \]
 
 Causal variant:
 
 \[
-\text{mask}_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
+\text{mask}\_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
 \]
 
 \subsection{A.4 Kernel Linear Attention}
@@ -55,19 +55,19 @@ Causal variant:
 RFF feature map:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} x)
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W\_\text{rff} x)
 \]
 
 Attention output:
 
 \[
-\text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 \textbf{Zero-sum keys.} Subtract mean:
 
 \[
-\tilde{k}_j = k_j - \bar{k}
+\tilde{k}\_j = k\_j - \bar{k}
 \]
 
 Then $\phi(\tilde{k}_j)$ is centered around 1.
@@ -77,7 +77,7 @@ Then $\phi(\tilde{k}_j)$ is centered around 1.
 The V5 stable softmax:
 
 \[
-\text{softpick}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}
+\text{softpick}(x)\_i = \frac{e^{x\_i}}{\sum\_j e^{x\_j}}
 \]
 
 This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
@@ -85,7 +85,7 @@ This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
 The V4 (broken) version:
 
 \[
-\text{softpick}_\text{V4}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
+\text{softpick}\_\text{V4}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
 \]
 
 \textbf{Failure case.} If $m < 0$, then $e^{-m/T} > 1$, and 

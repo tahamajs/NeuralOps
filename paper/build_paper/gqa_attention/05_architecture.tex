@@ -29,10 +29,10 @@ preserve or further reduce.
 DistilBERT has four projections:
 
 \begin{lstlisting}
-q_lin: Linear(768, 768)   # H = 12, d_h = 64
-k_lin: Linear(768, 768)
-v_lin: Linear(768, 768)
-out_lin: Linear(768, 768)
+q\_lin: Linear(768, 768)   # H = 12, d\_h = 64
+k\_lin: Linear(768, 768)
+v\_lin: Linear(768, 768)
+out\_lin: Linear(768, 768)
 \end{lstlisting}
 
 \textbf{Extraction:} Direct. \texttt{q\_lin.weight} copied to \texttt{query.weight}, etc.
@@ -54,24 +54,24 @@ attention.output.dense: Linear(768, 768)
 \subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
-attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
-attn.c_proj: Conv1D(768, 768)
+attn.c\_attn: Conv1D(768, 2304)   # fused Q, K, V
+attn.c\_proj: Conv1D(768, 768)
 \end{lstlisting}
 
 \textbf{Extraction:} Transpose (Conv1D stores \texttt{(in, out)}) and split:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # (2304, 768)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()  # (2304, 768)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA-native)}
 
 \begin{lstlisting}
-q_proj: Linear(1024, 2048)   # 8 heads $\times$ 256
-k_proj: Linear(1024, 512)    # 2 heads $\times$ 256
-v_proj: Linear(1024, 512)
-o_proj: Linear(2048, 1024)
+q\_proj: Linear(1024, 2048)   # 8 heads $\times$ 256
+k\_proj: Linear(1024, 512)    # 2 heads $\times$ 256
+v\_proj: Linear(1024, 512)
+o\_proj: Linear(2048, 1024)
 \end{lstlisting}
 
 \textbf{Extraction:} Direct. Source is already GQA. If reducing $G$ from 2 to 1, 
@@ -84,15 +84,15 @@ we average the two KV heads.
 Input:  model M, config c, G (target KV heads)
 Output: M with GQA-injected attention
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
-4:      H $\leftarrow$ num_query_heads(src)
+4:      H $\leftarrow$ num\_query\_heads(src)
 5:      G $\leftarrow$ min(G, H)    Cannot exceed H
-6:      G $\leftarrow$ largest_divisor(H, G)    Must divide H
+6:      G $\leftarrow$ largest\_divisor(H, G)    Must divide H
 7:      new $\leftarrow$ GQA(config=c, H=H, G=G)
-8:      new.copy_weights(src)    See Algorithm 1
-9:      replace_attention( , new)
+8:      new.copy\_weights(src)    See Algorithm 1
+9:      replace\_attention( , new)
 10: end for
 \end{lstlisting}
 
@@ -118,8 +118,8 @@ returns context without applying \texttt{out\_proj}. The outer projection handle
 For GPT-2 and Qwen, causal masking is applied:
 
 \begin{lstlisting}
-causal_tril = torch.tril(torch.ones((N_q, N_k)))
-scores = scores.masked_fill(~causal_tril, -10000.0)
+causal\_tril = torch.tril(torch.ones((N\_q, N\_k)))
+scores = scores.masked\_fill(~causal\_tril, -10000.0)
 \end{lstlisting}
 
 RoPE is applied to $Q, K$ before KV repetition, preserving causality.
@@ -130,9 +130,9 @@ The \texttt{inject\_gqa} function returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
-    new_layer = GroupedQueryAttention(config=cfg, old_attn=curr_attn, ...)
+    new\_layer = GroupedQueryAttention(config=cfg, old\_attn=curr\_attn, ...)
 except Exception as ex:
-    logger.warning("Failed to instantiate GQA: %s", ex)
+    logger.warning("Failed to instantiate GQA: \%s", ex)
     return None
 \end{lstlisting}
 
@@ -190,13 +190,13 @@ benefit is \textbf{KV cache} reduction at inference.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gqa")
-@ATTENTION_REGISTRY.register("grouped_query_attention")
+@ATTENTION\_REGISTRY.register("gqa")
+@ATTENTION\_REGISTRY.register("grouped\_query\_attention")
 class GroupedQueryAttention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("gqa_inject")
-def inject_gqa(layer, model_config, ...):
+@ATTENTION\_REGISTRY.register("gqa\_inject")
+def inject\_gqa(layer, model\_config, ...):
     ...
 \end{lstlisting}
 
@@ -205,7 +205,7 @@ def inject_gqa(layer, model_config, ...):
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/wgqa_attention_architecture.png}
+\includegraphics[width=\linewidth]{figures/wgqa\_attention\_architecture.png}
 \caption{Architectural schematic of gqa.}
-\label{fig:arch_gqa}
+\label{fig:arch\_gqa}
 \end{figure}

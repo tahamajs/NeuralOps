@@ -15,8 +15,8 @@ Only SST-2 is evaluated.
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B params & Not tested \\
+\textgreater{}24 layers & Not tested \\
 MoE & Not tested \\
 \bottomrule
 \end{tabular}
@@ -30,7 +30,7 @@ Only tested on RTX 4070 Laptop (8 GB).
 
 Explicit storage of $\Sigma$ without distributing $\Sigma^{1/2}$ between 
 the factors can be \textbf{less numerically stable in FP16} than symmetric 
-storage. In our experiments, the difference is small (<0.3\% accuracy), 
+storage. In our experiments, the difference is small (\textless{}0.3\% accuracy), 
 but for extreme FP16-only deployments, symmetric storage may be safer.
 
 \subsection{No Reconstruction Bound per Layer}

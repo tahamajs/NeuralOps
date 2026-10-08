@@ -7,7 +7,7 @@ The softmax attention mechanism (Vaswani et al., 2017) scales quadratically
 with sequence length $L$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 producing an $L \times L$ attention matrix that requires $\mathcal{O}(L^2)$ 
@@ -39,7 +39,7 @@ and value $V \in \mathbb{R}^{L \times d}$, we seek a low-rank approximation
 of the attention output:
 
 \[
-\text{Attn}(Q, K, V) \approx \text{Attn}_\text{low-rank}(Q, K, V)
+\text{Attn}(Q, K, V) \approx \text{Attn}\_\text{low-rank}(Q, K, V)
 \]
 
 such that:
@@ -58,7 +58,7 @@ We propose \textbf{Primal Attention}, which decomposes the attention matrix
 asymmetrically:
 
 \[
-A \approx F_1 F_2^{-1} F_3
+A \approx F\_1 F\_2^{-1} F\_3
 \]
 
 where:
@@ -74,7 +74,7 @@ to the dual representation which uses $L \times L$ kernels). The pseudoinverse
 $F_2^{-1}$ is computed via \textbf{Schulz iteration}:
 
 \[
-X_{t+1} = X_t (2I - F_2 X_t)
+X\_{t+1} = X\_t (2I - F\_2 X\_t)
 \]
 
 which converges quadratically to $F_2^{-1}$ in a few steps and is differentiable.

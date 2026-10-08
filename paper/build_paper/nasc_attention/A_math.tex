@@ -4,7 +4,7 @@
 \subsection{A.1 Local Window Attention}
 
 \[
-O_{\text{loc}, i} = \frac{\sum_{j: |i - j| \leq W, j \leq i} \exp(q_i^\top k_j / \sqrt{d}) v_j}{\sum_{j} \exp(q_i^\top k_j / \sqrt{d})}
+O\_{\text{loc}, i} = \frac{\sum\_{j: |i - j| \leq W, j \leq i} \exp(q\_i^\top k\_j / \sqrt{d}) v\_j}{\sum\_{j} \exp(q\_i^\top k\_j / \sqrt{d})}
 \tag{A.1}
 \]
 
@@ -15,16 +15,16 @@ Standard softmax over the window.
 For blocks $i, j$:
 
 \[
-s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}, \quad
-\bar{q}_i = \frac{1}{B_s} \sum_{t \in \text{block}_i} q_t
+s\_{ij} = \frac{\bar{q}\_i^\top \bar{k}\_j}{\sqrt{d}}, \quad
+\bar{q}\_i = \frac{1}{B\_s} \sum\_{t \in \text{block}\_i} q\_t
 \tag{A.2}
 \]
 
 Selection:
 
 \[
-\mathcal{B}_i = \text{topk}_{k}\{s_{ij}\}_j, \quad
-O_{\text{sp}, i} = \text{softpick}(Q_i K_{\mathcal{B}_i}^\top / \sqrt{d}) V_{\mathcal{B}_i}
+\mathcal{B}\_i = \text{topk}\_{k}\{s\_{ij}\}\_j, \quad
+O\_{\text{sp}, i} = \text{softpick}(Q\_i K\_{\mathcal{B}\_i}^\top / \sqrt{d}) V\_{\mathcal{B}\_i}
 \tag{A.3}
 \]
 
@@ -51,49 +51,49 @@ For $\Omega$ with orthogonal rows, this approximates $\exp(q^\top k)$.
 For causal decoder:
 
 \[
-(KV_c)_i = \sum_{j \leq i} \phi(k_j) v_j^\top
+(KV\_c)\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top
 \tag{A.6}
 \]
 
 \[
-(Z_c)_i = \sum_{j \leq i} \phi(k_j)
+(Z\_c)\_i = \sum\_{j \leq i} \phi(k\_j)
 \tag{A.7}
 \]
 
 Computed via \texttt{cumsum} along sequence dimension.
 
 \[
-O_{\text{glb}, i} = \frac{\phi(q_i)^\top (KV_c)_i}{\phi(q_i)^\top (Z_c)_i + \epsilon}
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top (KV\_c)\_i}{\phi(q\_i)^\top (Z\_c)\_i + \epsilon}
 \tag{A.8}
 \]
 
 \subsection{A.5 Gate Computation}
 
 \[
-g = \text{softmax}(W_g \bar{x}), \quad
-\bar{x} = \frac{1}{L} \sum_{t=1}^{L} x_t, \quad
-W_g \in \mathbb{R}^{3 \times d}
+g = \text{softmax}(W\_g \bar{x}), \quad
+\bar{x} = \frac{1}{L} \sum\_{t=1}^{L} x\_t, \quad
+W\_g \in \mathbb{R}^{3 \times d}
 \tag{A.9}
 \]
 
 \subsection{A.6 Fusion}
 
 \[
-O = g_0 O_{\text{loc}} + g_1 O_{\text{sp}} + g_2 O_{\text{glb}}
+O = g\_0 O\_{\text{loc}} + g\_1 O\_{\text{sp}} + g\_2 O\_{\text{glb}}
 \tag{A.10}
 \]
 
 \subsection{A.7 Softpick with Fallback}
 
 \[
-p_i = \text{ReLU}(e^{x_i - m} - e^{-m})
+p\_i = \text{ReLU}(e^{x\_i - m} - e^{-m})
 \tag{A.11}
 \]
 
 where $m = \max_j x_j$ (clamped to $0$ if $m < -10^3$).
 
 \[
-\hat{p}_i = \begin{cases} p_i / \sum_j p_j & \text{if } \sum_j p_j > \epsilon \\ \text{softmax}(x)_i & \text{otherwise} \end{cases}
+\hat{p}\_i = \begin{cases} p\_i / \sum\_j p\_j & \text{if } \sum\_j p\_j \textgreater{} \epsilon \\ \text{softmax}(x)\_i & \text{otherwise} \end{cases}
 \tag{A.12}
 \]
 

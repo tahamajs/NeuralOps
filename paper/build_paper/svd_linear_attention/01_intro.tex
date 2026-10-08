@@ -41,7 +41,7 @@ SVD-Linear Attention replaces MHSA with a kernelized linear attention whose
 projection matrices are factorized:
 
 \[
-Q = \text{SVDLinear}_Q(X), \quad K = \text{SVDLinear}_K(X), \quad V = \text{SVDLinear}_V(X)
+Q = \text{SVDLinear}\_Q(X), \quad K = \text{SVDLinear}\_K(X), \quad V = \text{SVDLinear}\_V(X)
 \tag{1.1}
 \]
 
@@ -56,7 +56,7 @@ where $\phi(x) = \text{ELU}(x) + 1$ is a positive feature map. This admits
 the \textbf{prefix-sum identity}:
 
 \[
-(\phi(K)^\top V)_t = \sum_{j \leq t} \phi(K_j) V_j^\top
+(\phi(K)^\top V)\_t = \sum\_{j \leq t} \phi(K\_j) V\_j^\top
 \tag{1.3}
 \]
 
@@ -65,8 +65,8 @@ which can be computed with a single \texttt{torch.cumsum} in $\mathcal{O}(N)$.
 For decoders, we additionally apply an \textbf{input-dependent exponential decay}:
 
 \[
-S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top, \qquad
-\lambda_t = \exp(-\text{softplus}(W_g x_t)) \in (0, 1)
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top, \qquad
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t)) \in (0, 1)
 \tag{1.4}
 \]
 

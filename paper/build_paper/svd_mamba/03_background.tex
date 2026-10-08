@@ -6,17 +6,17 @@
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \tag{3.1}
 \]
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{3.2}
 \]
 
 \[
-\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \tag{3.3}
 \]
 
@@ -49,8 +49,8 @@ Using zero-order hold with step size $\Delta$:
 For diagonal $A$, this simplifies to:
 
 \[
-\bar{A}_t = \exp(\Delta_t A), \qquad
-\bar{B}_t = \Delta_t B_t
+\bar{A}\_t = \exp(\Delta\_t A), \qquad
+\bar{B}\_t = \Delta\_t B\_t
 \tag{3.6}
 \]
 
@@ -60,9 +60,9 @@ The \textbf{selective} aspect is that $\Delta_t, B_t, C_t$ are functions of the
 input:
 
 \[
-\Delta_t = \text{softplus}(W_\Delta x_t + b_\Delta), \qquad
-B_t = W_B x_t, \qquad
-C_t = W_C x_t
+\Delta\_t = \text{softplus}(W\_\Delta x\_t + b\_\Delta), \qquad
+B\_t = W\_B x\_t, \qquad
+C\_t = W\_C x\_t
 \tag{3.7}
 \]
 
@@ -74,8 +74,8 @@ of what to remember.
 The SSM updates:
 
 \[
-h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t, \qquad
-y_t = C_t h_t + D x_t
+h\_t = \bar{A}\_t h\_{t-1} + \bar{B}\_t x\_t, \qquad
+y\_t = C\_t h\_t + D x\_t
 \tag{3.8}
 \]
 
@@ -87,7 +87,7 @@ a parallel prefix scan, achieving $\mathcal{O}(\log L)$ depth.
 For long sequences, a chunked scan is used. For chunk size $C$:
 
 \[
-h_{c, i} = \bar{A}_{c, i} h_{c, i-1} + \bar{B}_{c, i} x_{c, i}
+h\_{c, i} = \bar{A}\_{c, i} h\_{c, i-1} + \bar{B}\_{c, i} x\_{c, i}
 \tag{3.9}
 \]
 
@@ -95,7 +95,7 @@ Within a chunk, intra-chunk scan is used. Between chunks, the state is
 carried:
 
 \[
-h_{c+1, 0} = h_{c, C}
+h\_{c+1, 0} = h\_{c, C}
 \tag{3.10}
 \]
 
@@ -113,7 +113,7 @@ W = U \Sigma V^\top
 Truncating to rank $r$:
 
 \[
-W \approx U_{:, :r} \Sigma_{:r} V_{:r, :}^\top
+W \approx U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
 \tag{3.12}
 \]
 
@@ -124,7 +124,7 @@ Parameter count: $r(m + n + 1)$ vs $mn$.
 Two paths $Y_a, Y_b$ fused by:
 
 \[
-Y = \sigma(W_g X) \odot Y_a + (1 - \sigma(W_g X)) \odot Y_b
+Y = \sigma(W\_g X) \odot Y\_a + (1 - \sigma(W\_g X)) \odot Y\_b
 \tag{3.13}
 \]
 

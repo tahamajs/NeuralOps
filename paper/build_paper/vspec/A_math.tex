@@ -3,14 +3,14 @@
 \subsection{A.1 SVD Factorization}
 
 \[
-W = U \Sigma V^\top, \quad W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W = U \Sigma V^\top, \quad W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{A.1}
 \]
 
 \textbf{Symmetric split:}
 
 \[
-W_r = (U_{:, :r} \Sigma_{:r, :r}^{1/2}) (\Sigma_{:r, :r}^{1/2} V_{:r, :}^\top)
+W\_r = (U\_{:, :r} \Sigma\_{:r, :r}^{1/2}) (\Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top)
 \tag{A.2}
 \]
 
@@ -47,21 +47,21 @@ Both gradients flow through the sigmoid, allowing standard SGD.
 If we add a prior $\mathcal{N}(0, I)$, the KL term:
 
 \[
-\text{KL}(q \| p) = \frac{1}{2} \sum_i \left(\mu_i^2 + \sigma_i^2 - 1 - \log \sigma_i^2\right)
+\text{KL}(q \| p) = \frac{1}{2} \sum\_i \left(\mu\_i^2 + \sigma\_i^2 - 1 - \log \sigma\_i^2\right)
 \tag{A.6}
 \]
 
 We use a simplified penalty:
 
 \[
-\mathcal{L}_\text{reg} = \beta \sum_i (\mu_i^2 + \sigma_i^2 - 1)
+\mathcal{L}\_\text{reg} = \beta \sum\_i (\mu\_i^2 + \sigma\_i^2 - 1)
 \tag{A.7}
 \]
 
 \subsection{A.4 Attention with Head Gate}
 
 \[
-\text{scores}_{i, j, h} = \frac{Q_{i, h} \cdot K_{j, h}}{\sqrt{d_h}} \cdot h_h
+\text{scores}\_{i, j, h} = \frac{Q\_{i, h} \cdot K\_{j, h}}{\sqrt{d\_h}} \cdot h\_h
 \tag{A.8}
 \]
 
@@ -77,7 +77,7 @@ because the V contribution remains.
 \textbf{Saliency.}
 
 \[
-s_i = \sigma(f_\theta(x_i))
+s\_i = \sigma(f\_\theta(x\_i))
 \tag{A.9}
 \]
 
@@ -118,7 +118,7 @@ LoRA & $O(k d r_L)$ & $4 r_L d$ \\
 We set:
 
 \[
-W_\text{last} = 0, \quad b_\text{last} = [\mathbf{3}, \mathbf{-3}]
+W\_\text{last} = 0, \quad b\_\text{last} = [\mathbf{3}, \mathbf{-3}]
 \tag{A.11}
 \]
 

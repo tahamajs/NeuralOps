@@ -3,15 +3,15 @@
 \subsection{B.1 Dual-Scale Feature Map}
 
 \begin{lstlisting}
-def kernel_feature_map(self, x):
-    W1 = self.rand_proj1.to(x.dtype)
-    W2 = self.rand_proj2.to(x.dtype)
+def kernel\_feature\_map(self, x):
+    W1 = self.rand\_proj1.to(x.dtype)
+    W2 = self.rand\_proj2.to(x.dtype)
     
     proj1 = torch.matmul(x, W1)
-    f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(self.feature_dim)
+    f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(self.feature\_dim)
     
     proj2 = torch.matmul(x, W2)
-    f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(self.feature_dim // 2)
+    f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(self.feature\_dim // 2)
     
     return torch.cat([f1, f2], dim=-1)
 \end{lstlisting}
@@ -19,24 +19,24 @@ def kernel_feature_map(self, x):
 \subsection{B.2 Landmark Selection}
 
 \begin{lstlisting}
-def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None):
-    B, H, N, feat_dim = K_features.shape
-    target = num_landmarks or self.num_landmarks
-    L_max = min(target, N)
+def select\_landmarks(self, K\_features, V, valid\_mask=None, num\_landmarks=None):
+    B, H, N, feat\_dim = K\_features.shape
+    target = num\_landmarks or self.num\_landmarks
+    L\_max = min(target, N)
     
-    scores = self.landmark_scorer(K_features).squeeze(-1)  # (B, H, N)
-    if valid_mask is not None:
-        scores = scores.masked_fill((~valid_mask).unsqueeze(1), -1e4)
+    scores = self.landmark\_scorer(K\_features).squeeze(-1)  # (B, H, N)
+    if valid\_mask is not None:
+        scores = scores.masked\_fill((~valid\_mask).unsqueeze(1), -1e4)
     
     # Force position 0
     scores[:, :, 0] = 1e4
-    _, idx = scores.topk(L_max, dim=-1)
+    \_, idx = scores.topk(L\_max, dim=-1)
     idx = idx.clone()
     idx[:, :, 0] = 0
     
-    K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
-    V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
-    return K_land, V_land, idx
+    K\_land = torch.gather(K\_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat\_dim))
+    V\_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
+    return K\_land, V\_land, idx
 \end{lstlisting}
 
 \subsection{B.3 Softpick}
@@ -46,16 +46,16 @@ def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None):
 def softpick(x, dim=-1, temperature=1.0):
     x = x.float() / temperature
     m = x.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -100.0, torch.zeros_like(m), m)
+    m = torch.where(m \textless{} -100.0, torch.zeros\_like(m), m)
     z = x - m
-    exp_z = torch.exp(z)
-    exp_neg_m = torch.exp(-m).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
+    exp\_z = torch.exp(z)
+    exp\_neg\_m = torch.exp(-m).clamp(max=1e4)
+    p = F.relu(exp\_z - exp\_neg\_m)
     denom = p.sum(dim=dim, keepdim=True)
-    is_empty = denom < 1e-6
-    p_safe = p / denom.clamp(min=1e-6)
-    uniform = torch.ones_like(p) / p.shape[dim]
-    return torch.where(is_empty.expand_as(p), uniform, p_safe).to(x.dtype)
+    is\_empty = denom \textless{} 1e-6
+    p\_safe = p / denom.clamp(min=1e-6)
+    uniform = torch.ones\_like(p) / p.shape[dim]
+    return torch.where(is\_empty.expand\_as(p), uniform, p\_safe).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.4 Local Attention}
@@ -63,25 +63,25 @@ def softpick(x, dim=-1, temperature=1.0):
 \begin{lstlisting}
 idx = torch.arange(N)
 dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-window = min(self.local_window_size, N)
-window_mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
+window = min(self.local\_window\_size, N)
+window\_mask = (dist \textless{}= window // 2).unsqueeze(0).unsqueeze(0)
 
-local_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
-local_scores = local_scores.masked_fill(~window_mask, -1e4)
+local\_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+local\_scores = local\_scores.masked\_fill(~window\_mask, -1e4)
 
-if self.is_decoder:
+if self.is\_decoder:
     causal = torch.tril(torch.ones(N, N, dtype=torch.bool))
-    local_scores = local_scores.masked_fill(~causal, -1e4)
+    local\_scores = local\_scores.masked\_fill(~causal, -1e4)
 
-local_attn = F.softmax(local_scores, dim=-1).to(v.dtype)
-context_local = torch.matmul(local_attn, v)
+local\_attn = F.softmax(local\_scores, dim=-1).to(v.dtype)
+context\_local = torch.matmul(local\_attn, v)
 \end{lstlisting}
 
 \subsection{B.5 Fusion}
 
 \begin{lstlisting}
-gate_val = torch.sigmoid(self.local_gate).view(1, H, 1, 1)
-context = (1.0 - gate_val) * context_local + gate_val * context_leka
+gate\_val = torch.sigmoid(self.local\_gate).view(1, H, 1, 1)
+context = (1.0 - gate\_val) * context\_local + gate\_val * context\_leka
 \end{lstlisting}
 
 \textbf{Note the order.} With $w_h = -2$, $g_h \approx 0.12$, so $(1-g_h) \approx 0.88$ -- local path dominates.
@@ -100,18 +100,18 @@ quadratic.
 
 \subsubsection{B.6.3 Correction Matrix Scaling}
 
-For large $d_h$ (>128), the correction matrix is expensive.
+For large $d_h$ (\textgreater{}128), the correction matrix is expensive.
 
 \subsection{B.7 Diagnostic Checks}
 
 \begin{lstlisting}
 # After init
-assert self.rand_proj1.shape == (d_h, F)
-assert self.rand_proj2.shape == (d_h, F // 2)
-assert self.W_corr.shape == (H, d_h, d_h)
+assert self.rand\_proj1.shape == (d\_h, F)
+assert self.rand\_proj2.shape == (d\_h, F // 2)
+assert self.W\_corr.shape == (H, d\_h, d\_h)
 
 # After forward
-assert context.shape == (B, H, N, d_h)
+assert context.shape == (B, H, N, d\_h)
 assert not torch.isnan(context).any()
 \end{lstlisting}
 \begin{lstlisting}

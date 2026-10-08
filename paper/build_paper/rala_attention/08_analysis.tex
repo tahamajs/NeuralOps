@@ -35,10 +35,10 @@ $\alpha$ frozen at 1, accuracy is 86.4\%\%.
 The Python loop over sequence length dominates runtime:
 
 \begin{lstlisting}
-for i in range(seq_len):    # 128 iterations
-    S = S + einsum("bhd,bhe->bhde", k_i, v_i)  # kernel launch
-    z = z + k_i                                # kernel launch
-    num_i = einsum("bhd,bhde->bhe", q_i, S)   # kernel launch
+for i in range(seq\_len):    # 128 iterations
+    S = S + einsum("bhd,bhe-\textgreater{}bhde", k\_i, v\_i)  # kernel launch
+    z = z + k\_i                                # kernel launch
+    num\_i = einsum("bhd,bhde-\textgreater{}bhe", q\_i, S)   # kernel launch
     ...
 \end{lstlisting}
 
@@ -54,9 +54,9 @@ $128 \times 4 \times 144 = 73{,}728$ kernel launches per forward pass.
 In our implementation, $U, V$ are frozen when LoRA is active:
 
 \begin{lstlisting}
-if self.freeze_base:
-    self.U.requires_grad = False
-    self.V.requires_grad = False
+if self.freeze\_base:
+    self.U.requires\_grad = False
+    self.V.requires\_grad = False
 \end{lstlisting}
 
 \textbf{Consequence.} The augmentation branch computes 

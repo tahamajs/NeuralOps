@@ -96,7 +96,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,12 +121,12 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_svd_mamba.py \
+python run\_all\_4\_svd\_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state Optimal \
-    --d_conv 15 steps \
-    --global_rank 32 \
-    --recovery_steps 50
+    --d\_state Optimal \
+    --d\_conv 15 steps \
+    --global\_rank 32 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

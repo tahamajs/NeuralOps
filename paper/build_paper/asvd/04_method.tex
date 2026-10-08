@@ -17,7 +17,7 @@ ASVD compresses each targeted linear projection in four phases:
 
 \begin{lstlisting}
     +---------------------------------------------+
-    |  Phase 1: Extract W_Q, W_K, W_V, W_O        |
+    |  Phase 1: Extract W\_Q, W\_K, W\_V, W\_O        |
     |  (multi-arch: DistilBERT, RoBERTa, GPT-2,   |
     |   Qwen)                                     |
     +------------------+--------------------------+
@@ -25,20 +25,20 @@ ASVD compresses each targeted linear projection in four phases:
                         
     +---------------------------------------------+
     |  Phase 2: Weight by activation energy       |
-    |  W_weighted = W   diag($\sqrt{}$F)                  |
+    |  W\_weighted = W   diag($\sqrt{}$F)                  |
     +------------------+--------------------------+
                        |
                         
     +---------------------------------------------+
     |  Phase 3: SVD + energy-based rank           |
-    |  U, $\Sigma$, V = svd(W_weighted)                  |
+    |  U, $\Sigma$, V = svd(W\_weighted)                  |
     |  r = min{r : E(r) $\ge$ $\epsilon$}                      |
     +------------------+--------------------------+
                        |
                         
     +---------------------------------------------+
     |  Phase 4: Validate + replace                |
-    |  err =  W - U$\Sigma$V^T _F /  W _F                |
+    |  err =  W - U$\Sigma$V^T \_F /  W \_F                |
     |  if err $\le$ $\tau$: replace with ASVDLinear        |
     |  else: abort injection                      |
     +---------------------------------------------+
@@ -52,10 +52,10 @@ ASVD extracts the four projections from the source attention via the
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight
-extracted["k"] = src.k_lin.weight
-extracted["v"] = src.v_lin.weight
-extracted["o"] = src.out_lin.weight
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -65,18 +65,18 @@ s = src.self
 extracted["q"] = s.query.weight
 extracted["k"] = s.key.weight
 extracted["v"] = s.value.weight
-# out_proj handled via set_identity (outer attention.output.dense applies it)
+# out\_proj handled via set\_identity (outer attention.output.dense applies it)
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = q_w
-extracted["k"] = k_w
-extracted["v"] = v_w
-extracted["o"] = src.c_proj.weight.t()
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -97,7 +97,7 @@ fallback to random initialization**.
 Given weight $W$ and per-input-dimension activation energy $F \in \mathbb{R}^n$:
 
 \[
-W_\text{weighted} = W \cdot \text{diag}(\sqrt{F + \epsilon})
+W\_\text{weighted} = W \cdot \text{diag}(\sqrt{F + \epsilon})
 \]
 
 with $\epsilon = 10^{-6}$.
@@ -133,13 +133,13 @@ The full SVD of a $768 \times 768$ matrix takes ~5 ms on RTX 4070.
 Compute cumulative energy:
 
 \[
-E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{i=1}^{\min(m, n)} \sigma\_i^2}
 \]
 
 Select the minimal $r$ such that $E(r) \geq \varepsilon$:
 
 \[
-r_\text{energy} = \min\{r : E(r) \geq \varepsilon\}
+r\_\text{energy} = \min\{r : E(r) \geq \varepsilon\}
 \]
 
 \subsubsection{Dynamic vs Fixed Rank}
@@ -165,7 +165,7 @@ rank is reached.
 \subsubsection{Frobenius Error}
 
 \[
-\text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|_F}{\|W\|_F + 10^{-9}}
+\text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|\_F}{\|W\|\_F + 10^{-9}}
 \]
 
 \subsubsection{Failure Handling}
@@ -174,8 +174,8 @@ If $\text{err} > \tau$ at maximum rank, ASVD \textbf{aborts injection}:
 
 \begin{lstlisting}
 raise RuntimeError(
-    f"Relative Frobenius reconstruction error ({rel_err:.2%}) for projection "
-    f"'{proj_name}' exceeds {self.error_threshold:.0%} threshold."
+    f"Relative Frobenius reconstruction error ({rel\_err:.2\%}) for projection "
+    f"'{proj\_name}' exceeds {self.error\_threshold:.0\%} threshold."
 )
 \end{lstlisting}
 
@@ -186,27 +186,27 @@ continues). ASVD's strict failure prevents silently broken models.
 
 \begin{lstlisting}
 class ASVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True, lora_rank=0):
-        super().__init__()
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True, lora\_rank=0):
+        super().\_\_init\_\_()
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         self.S = nn.Parameter(torch.empty(rank))
-        self.V = nn.Parameter(torch.empty(rank, in_features))
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
     def forward(self, x):
         Vx = F.linear(x, self.V)          # (B, L, r)
         SVx = Vx * self.S                  # (B, L, r)
-        out = F.linear(SVx, self.U)        # (B, L, d_out)
+        out = F.linear(SVx, self.U)        # (B, L, d\_out)
         if self.bias is not None:
             out = out + self.bias
-        if self.lora_rank > 0:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
-            out = out + lora_out
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            lora\_out = F.linear(F.linear(x, self.lora\_A), self.lora\_B)
+            out = out + lora\_out
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsubsection{The `set\_identity` Method}
@@ -215,14 +215,14 @@ For nested encoders (RoBERTa/BERT), the output projection is applied
 externally. ASVD handles this by setting the out\_proj to identity:
 
 \begin{lstlisting}
-def set_identity(self):
-    with torch.no_grad():
-        self.U.data.zero_()
-        self.V.data.zero_()
-        self.S.data.fill_(1.0)
-        r = min(self.rank, self.in_features, self.out_features)
-        self.U.data[:r, :r].fill_diagonal_(1.0)
-        self.V.data[:r, :r].fill_diagonal_(1.0)
+def set\_identity(self):
+    with torch.no\_grad():
+        self.U.data.zero\_()
+        self.V.data.zero\_()
+        self.S.data.fill\_(1.0)
+        r = min(self.rank, self.in\_features, self.out\_features)
+        self.U.data[:r, :r].fill\_diagonal\_(1.0)
+        self.V.data[:r, :r].fill\_diagonal\_(1.0)
 \end{lstlisting}
 
 The module then acts as a pass-through, so the outer layer's 
@@ -232,36 +232,36 @@ The module then acts as a pass-through, so the outer layer's
 
 \textbf{Algorithm 1:} ASVD compression
 \begin{lstlisting}
-Input:  model M, rank r_target, $\epsilon$, $\tau$
+Input:  model M, rank r\_target, $\epsilon$, $\tau$
         calibration data D (optional)
 Output: compressed model M'
 
-1:  for layer   in attention_layers(M) do
-2:      W_q, W_k, W_v, W_o $\leftarrow$ extract( )
+1:  for layer   in attention\_layers(M) do
+2:      W\_q, W\_k, W\_v, W\_o $\leftarrow$ extract( )
 3:
-4:      for W, target in [(W_q, q), (W_k, k), (W_v, v), (W_o, o)]:
-5:          if target is nested out_proj:
-6:              target.set_identity()
+4:      for W, target in [(W\_q, q), (W\_k, k), (W\_v, v), (W\_o, o)]:
+5:          if target is nested out\_proj:
+6:              target.set\_identity()
 7:              continue
 8:
 9:          # Optional: compute activation energy F from D
-10:         if use_activation_weighting and D is not None:
+10:         if use\_activation\_weighting and D is not None:
 11:             W = W   diag($\sqrt{}$F)
 12:
 13:         # SVD
 14:         U, $\Sigma$, Vt $\leftarrow$ svd(W)
-15:         cum_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
-16:         r $\leftarrow$ min{r : cum_energy[r] $\ge$ $\epsilon$}
-17:         r $\leftarrow$ max(r, r_min)
+15:         cum\_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
+16:         r $\leftarrow$ min{r : cum\_energy[r] $\ge$ $\epsilon$}
+17:         r $\leftarrow$ max(r, r\_min)
 18:         r $\leftarrow$ min(r, min(m, n))
 19:
 20:         # Validate
-21:         W_rec $\leftarrow$ U[:, :r] $\Sigma$[:r] Vt[:r, :]
-22:         err $\leftarrow$  W - W_rec _F /  W _F
-23:         if err > $\tau$:
+21:         W\_rec $\leftarrow$ U[:, :r] $\Sigma$[:r] Vt[:r, :]
+22:         err $\leftarrow$  W - W\_rec \_F /  W \_F
+23:         if err \textgreater{} $\tau$:
 24:             raise RuntimeError(...)
 25:
-26:         target.set_svd_factors(U[:, :r], Vt[:r, :], $\Sigma$[:r])
+26:         target.set\_svd\_factors(U[:, :r], Vt[:r, :], $\Sigma$[:r])
 27:     end for
 28: end for
 29: return M'
@@ -355,7 +355,7 @@ minimizes $\|W - W_r\|_F$ over all rank-$r$ matrices.
 satisfies:
 
 \[
-\|W - W_r\|_F \leq (1 - \varepsilon) \|W\|_F
+\|W - W\_r\|\_F \leq (1 - \varepsilon) \|W\|\_F
 \]
 
 \textbf{Proof.} $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - E(r)) \|W\|_F^2$. 
@@ -379,7 +379,7 @@ re-factorization.
 compression, we simply truncate:
 
 \[
-W \to W' = U_{:, :r'} \Sigma_{:r'} V_{:r', :}^\top
+W \to W' = U\_{:, :r'} \Sigma\_{:r'} V\_{:r', :}^\top
 \]
 
 This is immediate; no additional SVD is required. $\square$

@@ -25,25 +25,25 @@ Standard four-architecture copy.
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data
-if is_conv1d:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight.data
-k_w = src.self.key.weight.data
-v_w = src.self.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT Flat}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight.data
+q\_w = src.q\_lin.weight.data
 # ...
 \end{lstlisting}
 
@@ -52,8 +52,8 @@ q_w = src.q_lin.weight.data
 \textbf{Encoder path} masks both K and Q:
 
 \begin{lstlisting}
-K_feat = self._feature_map(K) * mask_expanded
-Q_feat = self._feature_map(Q) * mask_expanded  # $\leftarrow$ Important
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+Q\_feat = self.\_feature\_map(Q) * mask\_expanded  # $\leftarrow$ Important
 \end{lstlisting}
 
 Masking Q ensures that padding queries do not contribute to the output.
@@ -61,8 +61,8 @@ Masking Q ensures that padding queries do not contribute to the output.
 \textbf{Decoder path} only masks K:
 
 \begin{lstlisting}
-K_feat = self._feature_map(K) * mask_expanded
-# Q_feat is not masked
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+# Q\_feat is not masked
 \end{lstlisting}
 
 Because causal attention already limits the influence of future tokens.
@@ -70,8 +70,8 @@ Because causal attention already limits the influence of future tokens.
 \subsection{Causal Chunked Scan}
 
 \begin{lstlisting}
-chunk_size = min(64, N)
-num_chunks = (N + chunk_size - 1) // chunk_size
+chunk\_size = min(64, N)
+num\_chunks = (N + chunk\_size - 1) // chunk\_size
 \end{lstlisting}
 
 For $N = 128$: 2 chunks.
@@ -79,25 +79,25 @@ For $N = 128$: 2 chunks.
 \textbf{Intra-chunk attention:}
 
 \begin{lstlisting}
-causal_mask = torch.tril(torch.ones(L, L, ...))
-intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+causal\_mask = torch.tril(torch.ones(L, L, ...))
+intra\_attn = torch.matmul(q\_c, k\_c.transpose(-1, -2)) * causal\_mask
 \end{lstlisting}
 
 \textbf{Inter-chunk via running state:}
 
 \begin{lstlisting}
-inter_num = torch.matmul(q_c, S)
-S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+inter\_num = torch.matmul(q\_c, S)
+S = S + torch.matmul(k\_c.transpose(-1, -2), v\_c)
 \end{lstlisting}
 
 \subsection{Injection}
 
 \textbf{Algorithm 2:} Inject Performer
 \begin{lstlisting}
-1: src $\leftarrow$ extract_attention( )
+1: src $\leftarrow$ extract\_attention( )
 2: new $\leftarrow$ PerformerAttention(config, old=src)
-3: if copy_weights fails: raise (BUG -- should return None)
-4: install new in  .attention.self (or .attn, .self_attn)
+3: if copy\_weights fails: raise (BUG -- should return None)
+4: install new in  .attention.self (or .attn, .self\_attn)
 5: return new
 \end{lstlisting}
 
@@ -116,8 +116,8 @@ another module that also scales, double-scaling can occur.
 \subsubsection{Cross-Attention Bypass}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
-    return hidden_states, None
+if encoder\_hidden\_states is not None:
+    return hidden\_states, None
 \end{lstlisting}
 
 Cross-attention is \textbf{not supported}. The module returns the input 
@@ -126,7 +126,7 @@ unchanged.
 \subsubsection{The `omega` Buffer is Persistent}
 
 \begin{lstlisting}
-self.register_buffer("omega", omega, persistent=True)
+self.register\_buffer("omega", omega, persistent=True)
 \end{lstlisting}
 
 Good -- the RFF projection is saved and reloaded.
@@ -134,8 +134,8 @@ Good -- the RFF projection is saved and reloaded.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("performer")
-@ATTENTION_REGISTRY.register("performer_attention")
+@ATTENTION\_REGISTRY.register("performer")
+@ATTENTION\_REGISTRY.register("performer\_attention")
 class PerformerAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -159,6 +159,6 @@ Standard pipeline:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of performer\_attention.}
-\label{fig:arch_performer-attention}
+\label{fig:arch\_performer-attention}
 \end{figure}
 

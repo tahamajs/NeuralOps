@@ -9,7 +9,7 @@ restricting softmax to the union set.
 \textbf{Proof.} 
 
 \[
-P_{ij} = \frac{\mathcal{S}_{ij} \exp(s_{ij})}{\sum_{j'} \mathcal{S}_{ij'} \exp(s_{ij'})}
+P\_{ij} = \frac{\mathcal{S}\_{ij} \exp(s\_{ij})}{\sum\_{j'} \mathcal{S}\_{ij'} \exp(s\_{ij'})}
 \tag{A.1}
 \]
 
@@ -52,7 +52,7 @@ adds at most $k$ more. The union is bounded by the sum. $\square$
 The attention density is:
 
 \[
-\rho = \frac{\mathbb{E}_i[|\mathcal{S}_i|]}{L} \leq \frac{2w + 1 + k}{L}
+\rho = \frac{\mathbb{E}\_i[|\mathcal{S}\_i|]}{L} \leq \frac{2w + 1 + k}{L}
 \tag{A.2}
 \]
 
@@ -63,7 +63,7 @@ For long $L$, density decreases as $\mathcal{O}((w + k) / L)$.
 For an attention distribution $P$ and a subset $\mathcal{S}$:
 
 \[
-\text{Preserved mass} = \sum_{j \in \mathcal{S}} P_j
+\text{Preserved mass} = \sum\_{j \in \mathcal{S}} P\_j
 \tag{A.3}
 \]
 

@@ -5,65 +5,65 @@
 
 \begin{lstlisting}
 class SqueezingHeadsDistiller(BaseAttention):
-    def __init__(self, config=None, old_attn=None, rank=None,
-                 lora_rank=16, lora_alpha=32.0, is_decoder=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config=None, old\_attn=None, rank=None,
+                 lora\_rank=16, lora\_alpha=32.0, is\_decoder=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         
         # Resolve dims
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.head_dim = ...
-        self.num_kv_heads = ...
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.head\_dim = ...
+        self.num\_kv\_heads = ...
         
         # LoRA-wrapped projections
-        self.q_proj = LoRALinear(self.hidden_size, self.q_head_size,
-                                  lora_rank=lora_rank, lora_alpha=lora_alpha,
-                                  freeze_base=True)
-        self.k_proj = LoRALinear(...)
-        self.v_proj = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.q\_proj = LoRALinear(self.hidden\_size, self.q\_head\_size,
+                                  lora\_rank=lora\_rank, lora\_alpha=lora\_alpha,
+                                  freeze\_base=True)
+        self.k\_proj = LoRALinear(...)
+        self.v\_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
-        if old_attn is not None:
-            self.copy_weights(old_attn)
+        if old\_attn is not None:
+            self.copy\_weights(old\_attn)
 \end{lstlisting}
 
 \subsection{B.2 copy\_weights -- Core Logic}
 
 \begin{lstlisting}
-def copy_weights(self, old_attn):
+def copy\_weights(self, old\_attn):
     # Detect nested encoder
-    has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj")
-    if has_out_lin:
-        self.is_nested_encoder = False
-    elif hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-        self.is_nested_encoder = True
+    has\_out\_lin = hasattr(old\_attn, "out\_lin") or hasattr(old\_attn, "c\_proj")
+    if has\_out\_lin:
+        self.is\_nested\_encoder = False
+    elif hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+        self.is\_nested\_encoder = True
     
     # Extract Q, K, V, O per architecture
-    if hasattr(src, "c_attn"):  # GPT-2
-        w = src.c_attn.weight.t()
-        q_w, k_w, v_w = w.chunk(3, dim=0)
+    if hasattr(src, "c\_attn"):  # GPT-2
+        w = src.c\_attn.weight.t()
+        q\_w, k\_w, v\_w = w.chunk(3, dim=0)
     elif hasattr(src, "query"):  # RoBERTa
-        q_w = src.query.weight
-        k_w = src.key.weight
-        v_w = src.value.weight
-    elif hasattr(src, "q_proj"):  # Qwen
-        q_w = src.q_proj.weight
+        q\_w = src.query.weight
+        k\_w = src.key.weight
+        v\_w = src.value.weight
+    elif hasattr(src, "q\_proj"):  # Qwen
+        q\_w = src.q\_proj.weight
         ...
-    elif hasattr(src, "q_lin"):  # DistilBERT
-        q_w = src.q_lin.weight
+    elif hasattr(src, "q\_lin"):  # DistilBERT
+        q\_w = src.q\_lin.weight
         ...
     
     # Copy with head-dim slicing
-    self.q_proj.weight.zero_()
-    m_out = min(self.q_head_size, w_q.shape[0])
-    m_in = min(self.hidden_size, w_q.shape[1])
-    self.q_proj.weight[:m_out, :m_in].copy_(w_q[:m_out, :m_in])
+    self.q\_proj.weight.zero\_()
+    m\_out = min(self.q\_head\_size, w\_q.shape[0])
+    m\_in = min(self.hidden\_size, w\_q.shape[1])
+    self.q\_proj.weight[:m\_out, :m\_in].copy\_(w\_q[:m\_out, :m\_in])
     
     # Copy with GQA pooling for K, V
-    if w_k.shape[0] > self.kv_head_size:
-        rep = w_k.shape[0] // self.kv_head_size
-        w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1)
-        self.k_proj.weight.copy_(w_k_pooled)
+    if w\_k.shape[0] \textgreater{} self.kv\_head\_size:
+        rep = w\_k.shape[0] // self.kv\_head\_size
+        w\_k\_pooled = w\_k.view(self.num\_kv\_heads, rep, self.head\_dim, -1).mean(dim=1)
+        self.k\_proj.weight.copy\_(w\_k\_pooled)
 \end{lstlisting}
 
 \subsection{B.3 Common Pitfalls}
@@ -75,10 +75,10 @@ AND outside, doubling the output.
 
 \begin{lstlisting}
 # Correct check:
-if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj"):
-    self.is_nested_encoder = False
-elif hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
+if hasattr(old\_attn, "out\_lin") or hasattr(old\_attn, "c\_proj"):
+    self.is\_nested\_encoder = False
+elif hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.3.2 Wrong Conv1D Transpose}
@@ -86,9 +86,9 @@ elif hasattr(old_attn, "self") and hasattr(old_attn, "output"):
 GPT-2 Conv1D stores weights as \texttt{(in, out)}. Must transpose:
 
 \begin{lstlisting}
-c_attn_w = src.c_attn.weight.detach()
-if "Conv1D" in cls_name or hasattr(src.c_attn, "nf"):
-    c_attn_w = c_attn_w.t()
+c\_attn\_w = src.c\_attn.weight.detach()
+if "Conv1D" in cls\_name or hasattr(src.c\_attn, "nf"):
+    c\_attn\_w = c\_attn\_w.t()
 \end{lstlisting}
 
 \subsubsection{B.3.3 GQA Pooling Shape}
@@ -96,11 +96,11 @@ if "Conv1D" in cls_name or hasattr(src.c_attn, "nf"):
 When pooling GQA heads, the reshape must be exact:
 
 \begin{lstlisting}
-w_k_pooled = (
-    w_k[:, :self.hidden_size]
-    .view(self.num_kv_heads, rep, self.head_dim, -1)
+w\_k\_pooled = (
+    w\_k[:, :self.hidden\_size]
+    .view(self.num\_kv\_heads, rep, self.head\_dim, -1)
     .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    .view(self.kv\_head\_size, -1)
 )
 \end{lstlisting}
 

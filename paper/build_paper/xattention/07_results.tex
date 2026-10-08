@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_xattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_xattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -13,17 +13,17 @@ Table~\ref{tab:results_acc_xattention} details empirical evaluation metrics acro
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Xattention} & \textbf{83.14\%} & -7.80\% & PASS & 0.8534 & 0 & \textbf{0.99$\times$} & 328.6 MB & 19.9 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Xattention} & \textbf{51.03\%} & -24.43\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 659.2 MB & 26.6 & -- \\
+RoBERTa & \textbf{Xattention} & \textbf{51.03\%} & -24.43\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 659.2 MB & 26.6 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Xattention} & \textbf{53.21\%} & -4.70\% & PASS_LOW & 0.6837 & 0 & \textbf{0.99$\times$} & 568.7 MB & 28.7 & -- \\
+GPT-2 & \textbf{Xattention} & \textbf{53.21\%} & -4.70\% & PASS\_LOW & 0.6837 & 0 & \textbf{0.99$\times$} & 568.7 MB & 28.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_xattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_xattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_xattention} documents parameter compression factor
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{xattention}.}
-\label{tab:results_params_xattention}
+\label{tab:results\_params\_xattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_xattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_xattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_xattention} presents memory profiling and execution 
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{xattention}.}
-\label{tab:results_vram_xattention}
+\label{tab:results\_vram\_xattention}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/xattention_gpt2_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/xattention\_gpt2\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{xattention}.}
-\label{fig:results_xattention}
+\label{fig:results\_xattention}
 \end{figure}

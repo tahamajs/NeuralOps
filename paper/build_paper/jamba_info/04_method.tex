@@ -20,9 +20,9 @@ The branches are fused by a learned scalar gate.
                       
    +-------+    +---------------+
    | Diff  |    |  Bottleneck   |
-   | Attn  |    |  W_down $\to$     |
+   | Attn  |    |  W\_down $\to$     |
    |       |    |  GELU $\to$       |
-   |       |    |  W_up         |
+   |       |    |  W\_up         |
    +---+---+    +-------+-------+
        |                 
        |            +-------+
@@ -34,7 +34,7 @@ The branches are fused by a learned scalar gate.
    (1-$\alpha$) A + $\alpha$ M
        |
         
-     out_proj
+     out\_proj
        |
         
     Output Y
@@ -45,25 +45,25 @@ The branches are fused by a learned scalar gate.
 Same as HymbaTransX:
 
 \[
-Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}, \quad
-Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}, \quad
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
 \tag{4.1}
 \]
 
 \[
-A_1 = \text{softmax}(Q_1 K_1^\top / \sqrt{d_h}), \quad
-A_2 = \text{softmax}(Q_2 K_2^\top / \sqrt{d_h})
+A\_1 = \text{softmax}(Q\_1 K\_1^\top / \sqrt{d\_h}), \quad
+A\_2 = \text{softmax}(Q\_2 K\_2^\top / \sqrt{d\_h})
 \tag{4.2}
 \]
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2), \quad
-\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum A_\text{diff} + \epsilon}
+A\_\text{diff} = \text{ReLU}(A\_1 - 0.2 A\_2), \quad
+\tilde{A}\_\text{diff} = \frac{A\_\text{diff}}{\sum A\_\text{diff} + \epsilon}
 \tag{4.3}
 \]
 
 \[
-A_\text{out} = \tilde{A}_\text{diff} V, \quad V = X W_V
+A\_\text{out} = \tilde{A}\_\text{diff} V, \quad V = X W\_V
 \tag{4.4}
 \]
 
@@ -72,7 +72,7 @@ A_\text{out} = \tilde{A}_\text{diff} V, \quad V = X W_V
 \textbf{Step 1 -- Bottleneck projection:}
 
 \[
-z = W_\text{up} \cdot \text{GELU}(W_\text{down} X)
+z = W\_\text{up} \cdot \text{GELU}(W\_\text{down} X)
 \tag{4.5}
 \]
 
@@ -82,18 +82,18 @@ with $W_\text{down} \in \mathbb{R}^{b \times d}$, $W_\text{up} \in \mathbb{R}^{d
 
 For decoders:
 \[
-M_\text{concept} = \text{SSM}(z)
+M\_\text{concept} = \text{SSM}(z)
 \tag{4.6}
 \]
 
 For encoders (bidirectional):
 \[
-M_\text{fwd} = \text{SSM}(z), \quad M_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(z)))
+M\_\text{fwd} = \text{SSM}(z), \quad M\_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(z)))
 \tag{4.7}
 \]
 
 \[
-M_\text{concept} = 0.5(M_\text{fwd} + M_\text{bwd})
+M\_\text{concept} = 0.5(M\_\text{fwd} + M\_\text{bwd})
 \tag{4.8}
 \]
 
@@ -121,12 +121,12 @@ bottleneck dimension is appropriate.
 \subsection{Fusion}
 
 \[
-\alpha = \sigma(w), \quad w_0 = -2
+\alpha = \sigma(w), \quad w\_0 = -2
 \tag{4.9}
 \]
 
 \[
-\text{combined} = (1 - \alpha) \odot A_\text{out} + \alpha \odot M_\text{concept}
+\text{combined} = (1 - \alpha) \odot A\_\text{out} + \alpha \odot M\_\text{concept}
 \tag{4.10}
 \]
 
@@ -166,25 +166,25 @@ In the evaluated architecture, \texttt{sparsity} establishes the coefficient for
 
 \textbf{Algorithm 1:} JambaInfo forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-        position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+        position\_embeddings
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q1, K1 $\leftarrow$ W_q1(X), W_k1(X)
- 2: Q2, K2 $\leftarrow$ W_q2(X), W_k2(X)
- 3: V $\leftarrow$ W_v(X)
- 4: if pos_emb: apply RoPE
- 5: if GQA: repeat_kv
- 6: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d_h)
- 7: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d_h)
- 8: A_diff $\leftarrow$ ReLU(A1 - 0.2 A2)
- 9: A_out $\leftarrow$ normalize(A_diff) @ V
-10: z $\leftarrow$ W_up(GELU(W_down(X)))         Concept
+ 1: Q1, K1 $\leftarrow$ W\_q1(X), W\_k1(X)
+ 2: Q2, K2 $\leftarrow$ W\_q2(X), W\_k2(X)
+ 3: V $\leftarrow$ W\_v(X)
+ 4: if pos\_emb: apply RoPE
+ 5: if GQA: repeat\_kv
+ 6: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d\_h)
+ 7: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d\_h)
+ 8: A\_diff $\leftarrow$ ReLU(A1 - 0.2 A2)
+ 9: A\_out $\leftarrow$ normalize(A\_diff) @ V
+10: z $\leftarrow$ W\_up(GELU(W\_down(X)))         Concept
 11: if decoder: M $\leftarrow$ SSM(z)
 12: else: M $\leftarrow$ 0.5(SSM(z) + flip(SSM(flip(z))))
 13: $\alpha$ $\leftarrow$ sigmoid(w)
-14: out $\leftarrow$ (1-$\alpha$) A_out + $\alpha$ M
-15: Y $\leftarrow$ out_proj(out)
+14: out $\leftarrow$ (1-$\alpha$) A\_out + $\alpha$ M
+15: Y $\leftarrow$ out\_proj(out)
 16: return Y
 \end{lstlisting}
 

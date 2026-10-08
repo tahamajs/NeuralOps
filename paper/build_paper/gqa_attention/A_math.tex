@@ -8,14 +8,14 @@
 For a single layer at sequence position $t$, the KV cache stores:
 
 \[
-K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times H \times d_h}
+K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times H \times d\_h}
 \tag{A.1}
 \]
 
 Total bytes per token per layer:
 
 \[
-\text{KV}^{(t)}_\text{MHA} = 2 \cdot B \cdot H \cdot d_h \cdot \text{bytes}
+\text{KV}^{(t)}\_\text{MHA} = 2 \cdot B \cdot H \cdot d\_h \cdot \text{bytes}
 \tag{A.2}
 \]
 
@@ -24,19 +24,19 @@ For $B = 1$, FP16 ($2$ bytes): $2 \cdot H \cdot d_h \cdot 2 = 4 H d_h$ bytes.
 \subsubsection{A.1.2 GQA}
 
 \[
-K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times G \times d_h}
+K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times G \times d\_h}
 \tag{A.3}
 \]
 
 \[
-\text{KV}^{(t)}_\text{GQA} = 2 \cdot B \cdot G \cdot d_h \cdot \text{bytes}
+\text{KV}^{(t)}\_\text{GQA} = 2 \cdot B \cdot G \cdot d\_h \cdot \text{bytes}
 \tag{A.4}
 \]
 
 \textbf{Reduction:}
 
 \[
-\frac{\text{KV}_\text{MHA}}{\text{KV}_\text{GQA}} = \frac{H}{G}
+\frac{\text{KV}\_\text{MHA}}{\text{KV}\_\text{GQA}} = \frac{H}{G}
 \tag{A.5}
 \]
 
@@ -47,7 +47,7 @@ K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times G \times d_h}
 Given $r = H / G$ heads in a group, we produce one KV head by averaging:
 
 \[
-W_K^{(\text{new})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h
+W\_K^{(\text{new})}\_g = \frac{1}{r} \sum\_{h \in g} W\_K^{(\text{old})}\_h
 \tag{A.6}
 \]
 
@@ -57,14 +57,14 @@ The averaged head approximates the mean behavior of the original heads.
 For any input $x$:
 
 \[
-W_K^{(\text{new})}_g x = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h x = \mathbb{E}_{h \in g}[W_K^{(\text{old})}_h x]
+W\_K^{(\text{new})}\_g x = \frac{1}{r} \sum\_{h \in g} W\_K^{(\text{old})}\_h x = \mathbb{E}\_{h \in g}[W\_K^{(\text{old})}\_h x]
 \tag{A.7}
 \]
 
 The variance of the approximation error is:
 
 \[
-\text{Var}[W_K^{(\text{new})}_g x - W_K^{(\text{old})}_h x] = \text{Var}_{h \in g}[W_K^{(\text{old})}_h x]
+\text{Var}[W\_K^{(\text{new})}\_g x - W\_K^{(\text{old})}\_h x] = \text{Var}\_{h \in g}[W\_K^{(\text{old})}\_h x]
 \tag{A.8}
 \]
 
@@ -76,14 +76,14 @@ approximation is close. If they are diverse, error is large.
 The \texttt{repeat\_kv} operation:
 
 \[
-\tilde{K} = \text{repeat\_kv}(K, r) \in \mathbb{R}^{B \times H \times L \times d_h}
+\tilde{K} = \text{repeat\_kv}(K, r) \in \mathbb{R}^{B \times H \times L \times d\_h}
 \tag{A.9}
 \]
 
 Implementation:
 
 \[
-\tilde{K}_{b, g \cdot r + i, l, :} = K_{b, g, l, :}, \quad i \in [0, r)
+\tilde{K}\_{b, g \cdot r + i, l, :} = K\_{b, g, l, :}, \quad i \in [0, r)
 \tag{A.10}
 \]
 
@@ -94,14 +94,14 @@ This is a memory-free operation via \texttt{expand} and \texttt{reshape}.
 For decoder models, the causal mask is:
 
 \[
-M_{ij} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{otherwise} \end{cases}
 \tag{A.11}
 \]
 
 Applied \textbf{after} KV repetition:
 
 \[
-\text{scores} = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d_h}} + M\right)
+\text{scores} = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d\_h}} + M\right)
 \tag{A.12}
 \]
 
@@ -125,14 +125,14 @@ For $H = 12$ and $G = 5$, $G^* = 4$ (largest divisor $\le 5$).
 After GQA injection with LoRA recovery at rank $r_L$:
 
 \[
-\Delta W = W_\text{GQA} - W_\text{MHA} + \frac{\alpha}{r_L} B A
+\Delta W = W\_\text{GQA} - W\_\text{MHA} + \frac{\alpha}{r\_L} B A
 \tag{A.14}
 \]
 
 The recovery objective minimizes:
 
 \[
-\mathcal{L} = \mathcal{L}_\text{task} + \lambda \|\Delta W\|_F^2
+\mathcal{L} = \mathcal{L}\_\text{task} + \lambda \|\Delta W\|\_F^2
 \tag{A.15}
 \]
 

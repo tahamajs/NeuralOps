@@ -5,29 +5,29 @@
 
 \begin{lstlisting}
 class DobiSVDLinearLayer(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True,
-                 init_gate_val=2.5, dtype=torch.float32, device=None):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = max(1, min(rank, in_features, out_features))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True,
+                 init\_gate\_val=2.5, dtype=torch.float32, device=None):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = max(1, min(rank, in\_features, out\_features))
         
-        self.V = nn.Parameter(torch.empty(self.rank, in_features, ...))
-        self.U = nn.Parameter(torch.empty(out_features, self.rank, ...))
-        self.gate = nn.Parameter(torch.full((self.rank,), init_gate_val, ...))
+        self.V = nn.Parameter(torch.empty(self.rank, in\_features, ...))
+        self.U = nn.Parameter(torch.empty(out\_features, self.rank, ...))
+        self.gate = nn.Parameter(torch.full((self.rank,), init\_gate\_val, ...))
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, ...))
+            self.bias = nn.Parameter(torch.empty(out\_features, ...))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
-        if x.shape[-1] != self.in_features:
+        if x.shape[-1] != self.in\_features:
             # Pad or truncate
             ...
         g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
-        V_gated = self.V * g
-        latent = F.linear(x, V_gated)
+        V\_gated = self.V * g
+        latent = F.linear(x, V\_gated)
         out = F.linear(latent, self.U, self.bias)
         return out
 \end{lstlisting}
@@ -35,26 +35,26 @@ class DobiSVDLinearLayer(nn.Module):
 \subsection{B.2 Initialization with Gate Compensation}
 
 \begin{lstlisting}
-# In compress_linear:
-init_gate_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init_gate_val)))
+# In compress\_linear:
+init\_gate\_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init\_gate\_val)))
 
-U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
+U\_r = (U[:, :r] * sqrt\_S.unsqueeze(0)).to(dtype=dtype, device=device)
+V\_r = (sqrt\_S.unsqueeze(1) * Vt[:r, :] * init\_gate\_scale).to(dtype=dtype, device=device)
 
-dobi_layer = DobiSVDLinearLayer(
-    in_features=in_f, out_features=out_f, rank=r,
-    bias=target_mod.bias is not None,
-    init_gate_val=self.init_gate_val,
+dobi\_layer = DobiSVDLinearLayer(
+    in\_features=in\_f, out\_features=out\_f, rank=r,
+    bias=target\_mod.bias is not None,
+    init\_gate\_val=self.init\_gate\_val,
     dtype=dtype, device=device,
 )
-dobi_layer.set_low_rank_factors(U_r, V_r)
+dobi\_layer.set\_low\_rank\_factors(U\_r, V\_r)
 \end{lstlisting}
 
 \subsection{B.3 Reconstruction Validation}
 
 \begin{lstlisting}
-W_recon = dobi_layer.weight.float()   # This uses sigmoid(gate) internally
-err = float(torch.norm(W - W_recon, p="fro").item() / norm_w)
+W\_recon = dobi\_layer.weight.float()   # This uses sigmoid(gate) internally
+err = float(torch.norm(W - W\_recon, p="fro").item() / norm\_w)
 \end{lstlisting}
 
 The \texttt{.weight} property computes:
@@ -71,51 +71,51 @@ def weight(self):
 \begin{lstlisting}
 class DobiSVDCompressor(BaseCompressor):
     def compress(self):
-        for name, module in target_layers:
-            new_layer, err, r = self.compress_linear(module)
+        for name, module in target\_layers:
+            new\_layer, err, r = self.compress\_linear(module)
             
-            if new_layer is None or err > self.max_error:
-                if self.fallback_to_original:
-                    self.fallback_layers.append(name)
+            if new\_layer is None or err \textgreater{} self.max\_error:
+                if self.fallback\_to\_original:
+                    self.fallback\_layers.append(name)
                     for p in module.parameters():
-                        p.requires_grad = False
+                        p.requires\_grad = False
                     continue
             
             # Replace
-            if hasattr(module, "base_layer"):
-                module.base_layer = new_layer
-            elif hasattr(module, "linear") and hasattr(module, "lora_A"):
-                module.linear = new_layer
+            if hasattr(module, "base\_layer"):
+                module.base\_layer = new\_layer
+            elif hasattr(module, "linear") and hasattr(module, "lora\_A"):
+                module.linear = new\_layer
             else:
-                replace_module(self.model, name, new_layer)
+                replace\_module(self.model, name, new\_layer)
 \end{lstlisting}
 
 \subsection{B.5 Registry}
 
 \begin{lstlisting}
-@COMPRESSOR_REGISTRY.register("dobi")
-@COMPRESSOR_REGISTRY.register("dobi_svd")
-@COMPRESSOR_REGISTRY.register("dobi_compressor")
-def dobi_factory(model, comp_config, **kwargs):
+@COMPRESSOR\_REGISTRY.register("dobi")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd")
+@COMPRESSOR\_REGISTRY.register("dobi\_compressor")
+def dobi\_factory(model, comp\_config, **kwargs):
     ...
 \end{lstlisting}
 
 \subsection{B.6 Post-Hoc Pruning Script}
 
 \begin{lstlisting}
-def prune_gates(model, tau=0.5):
-    for name, module in model.named_modules():
+def prune\_gates(model, tau=0.5):
+    for name, module in model.named\_modules():
         if isinstance(module, DobiSVDLinearLayer):
             g = torch.sigmoid(module.gate)
-            keep = g > tau
-            r_eff = keep.sum().item()
+            keep = g \textgreater{} tau
+            r\_eff = keep.sum().item()
             
-            if r_eff < module.rank:
+            if r\_eff \textless{} module.rank:
                 # Physically prune
                 module.V.data = module.V.data[keep, :]
                 module.U.data = module.U.data[:, keep]
                 module.gate.data = module.gate.data[keep]
-                module.rank = r_eff
+                module.rank = r\_eff
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -139,9 +139,9 @@ Default $\alpha_0 = 2.5$ is a good balance.
 \subsubsection{B.7.3 Conv1D Orientation}
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(target_mod, "nf"):
+if "conv1d" in cls\_name or hasattr(target\_mod, "nf"):
     # Conv1D stores (in, out); need (out, in)
-    W = raw_w.t().float()
+    W = raw\_w.t().float()
 \end{lstlisting}
 
 \subsubsection{B.7.4 Missing LoRA Preservation}
@@ -149,12 +149,12 @@ if "conv1d" in cls_name or hasattr(target_mod, "nf"):
 When a layer is wrapped in \texttt{LoRALinear}:
 
 \begin{lstlisting}
-if hasattr(module, "base_layer"):
-    module.base_layer = new_layer   # Preserve wrapper
+if hasattr(module, "base\_layer"):
+    module.base\_layer = new\_layer   # Preserve wrapper
     # LoRA stays trainable
-    for p_name, p in module.named_parameters():
-        if "lora_" in p_name.lower():
-            p.requires_grad = True
+    for p\_name, p in module.named\_parameters():
+        if "lora\_" in p\_name.lower():
+            p.requires\_grad = True
 \end{lstlisting}
 
 \subsection{B.8 Gate Dynamics Monitoring}
@@ -162,7 +162,7 @@ if hasattr(module, "base_layer"):
 During training, monitor gate statistics:
 
 \begin{lstlisting}
-for name, module in model.named_modules():
+for name, module in model.named\_modules():
     if isinstance(module, DobiSVDLinearLayer):
         gates = torch.sigmoid(module.gate)
         print(f"{name}: mean={gates.mean():.3f} min={gates.min():.3f}")
@@ -173,9 +173,9 @@ for name, module in model.named_modules():
 When \texttt{fallback\_to\_original = True} and error exceeds threshold:
 
 \begin{lstlisting}
-self.fallback_layers.append(name)
+self.fallback\_layers.append(name)
 for p in module.parameters():
-    p.requires_grad = False   # Freeze the original layer
+    p.requires\_grad = False   # Freeze the original layer
 \end{lstlisting}
 
 This ensures recovery training does not touch fallback layers.

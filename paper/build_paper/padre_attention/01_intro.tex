@@ -11,7 +11,7 @@ is why standard attention is quadratic.
 \textbf{softmax kernel} $e^{q \cdot k}$ can be approximated by a \textbf{polynomial}:
 
 \[
-e^x \approx \sum_{n=0}^{d} \frac{x^n}{n!}
+e^x \approx \sum\_{n=0}^{d} \frac{x^n}{n!}
 \tag{1.1}
 \]
 
@@ -19,7 +19,7 @@ Truncating this at order $d$ yields a polynomial kernel that \textbf{is}
 kernelizable:
 
 \[
-(1 + x)^d = \sum_{n=0}^{d} \binom{d}{n} x^n
+(1 + x)^d = \sum\_{n=0}^{d} \binom{d}{n} x^n
 \tag{1.2}
 \]
 
@@ -57,7 +57,7 @@ subject to:
 PADRe replaces softmax with:
 
 \[
-\text{attn}(q_i, k_j) = \frac{(1 + s_{ij}/\text{order})^\text{order}}{\sum_{j'} (1 + s_{ij'}/\text{order})^\text{order}}
+\text{attn}(q\_i, k\_j) = \frac{(1 + s\_{ij}/\text{order})^\text{order}}{\sum\_{j'} (1 + s\_{ij'}/\text{order})^\text{order}}
 \tag{1.4}
 \]
 

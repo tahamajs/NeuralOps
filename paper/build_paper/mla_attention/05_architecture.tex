@@ -22,18 +22,18 @@ Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No & Yes \\
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Extraction:}
 \begin{lstlisting}
-w_q = src.q_lin.weight.data
-w_k = src.k_lin.weight.data
-w_v = src.v_lin.weight.data
-w_o = src.out_lin.weight.data
+w\_q = src.q\_lin.weight.data
+w\_k = src.k\_lin.weight.data
+w\_v = src.v\_lin.weight.data
+w\_o = src.out\_lin.weight.data
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -52,11 +52,11 @@ roberta.encoder.layer.0.attention
 
 \textbf{Extraction:}
 \begin{lstlisting}
-src_inner = src.self
-w_q = src_inner.query.weight.data
-w_k = src_inner.key.weight.data
-w_v = src_inner.value.weight.data
-w_o = src.output.dense.weight.data
+src\_inner = src.self
+w\_q = src\_inner.query.weight.data
+w\_k = src\_inner.key.weight.data
+w\_v = src\_inner.value.weight.data
+w\_o = src.output.dense.weight.data
 \end{lstlisting}
 
 \textbf{Nested detection:} \texttt{hasattr(src, "self") and hasattr(src.self, "query")}.
@@ -68,17 +68,17 @@ w_o = src.output.dense.weight.data
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)
-+-- c_proj  (Conv1D 768 $\to$ 768)
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Extraction:}
 \begin{lstlisting}
-weight = src.c_attn.weight.data
-if weight.shape[1] == 3 * hidden_size:   # Conv1D stores (in, out)
+weight = src.c\_attn.weight.data
+if weight.shape[1] == 3 * hidden\_size:   # Conv1D stores (in, out)
     weight = weight.t()
-q_w, k_w, v_w = weight.chunk(3, dim=0)
-w_o = src.c_proj.weight.data
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+w\_o = src.c\_proj.weight.data
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -86,18 +86,18 @@ w_o = src.c_proj.weight.data
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)
-+-- k_proj  (Linear 1024 $\to$ 512)
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA dimension match:}
 \begin{lstlisting}
-if w_k_f.shape[0] > self.kv_dim:
-    rep = w_k_f.shape[0] // self.kv_dim
-    w_k_f = w_k_f.view(self.kv_dim, rep, -1).mean(dim=1)
+if w\_k\_f.shape[0] \textgreater{} self.kv\_dim:
+    rep = w\_k\_f.shape[0] // self.kv\_dim
+    w\_k\_f = w\_k\_f.view(self.kv\_dim, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 \textbf{RoPE applied after up-projection} via \texttt{position\_embeddings} in kwargs.
@@ -107,26 +107,26 @@ if w_k_f.shape[0] > self.kv_dim:
 \subsection{Injection Hook}
 
 \begin{lstlisting}
-def inject_mla(layer, model_config, comp_config=None, old_attn=None, ...):
-    rank = getattr(comp_config, "mla_rank", 128) if comp_config else 128
-    new_attn = MLAAttention(model_config, rank=rank)
+def inject\_mla(layer, model\_config, comp\_config=None, old\_attn=None, ...):
+    rank = getattr(comp\_config, "mla\_rank", 128) if comp\_config else 128
+    new\_attn = MLAAttention(model\_config, rank=rank)
     
-    src_attn = old_attn or getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        new_attn.copy_weights(src_attn)
-        p = next(src_attn.parameters(), None)
+    src\_attn = old\_attn or getattr(layer, "attention", getattr(layer, "self", None))
+    if src\_attn is not None:
+        new\_attn.copy\_weights(src\_attn)
+        p = next(src\_attn.parameters(), None)
         if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
+            new\_attn.to(device=p.device, dtype=p.dtype)
     
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
+            layer.attention.self = new\_attn
         else:
-            layer.attention = new_attn
+            layer.attention = new\_attn
     elif hasattr(layer, "self"):
-        layer.self = new_attn
+        layer.self = new\_attn
     
-    return new_attn
+    return new\_attn
 \end{lstlisting}
 
 \textbf{Note.} This injection hook is \textbf{single-layer only}. Whole-model traversal 
@@ -142,7 +142,7 @@ is the caller's responsibility.
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing Q/K/V & \texttt{copy\_weights} raises & Abort \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
 Wrong Conv1D & \texttt{hasattr(src, "c\_attn")} & Handle \\
 Missing out\_proj (nested) & \texttt{is\_nested\_encoder} & Identity matrix \\
 GQA dimension mismatch & Shape check & Mean-pool \\
@@ -153,13 +153,13 @@ GQA dimension mismatch & Shape check & Mean-pool \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("mla")
-@ATTENTION_REGISTRY.register("mla_attention")
+@ATTENTION\_REGISTRY.register("mla")
+@ATTENTION\_REGISTRY.register("mla\_attention")
 class MLAAttention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("mla_inject")
-def inject_mla(...):
+@ATTENTION\_REGISTRY.register("mla\_inject")
+def inject\_mla(...):
     ...
 \end{lstlisting}
 
@@ -214,6 +214,6 @@ Output scale & Not specified & Trainable scalar \\
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of mla\_attention.}
-\label{fig:arch_mla-attention}
+\label{fig:arch\_mla-attention}
 \end{figure}
 

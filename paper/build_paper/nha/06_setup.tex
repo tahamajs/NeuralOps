@@ -108,7 +108,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +133,11 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_nha.py \
+python run\_all\_4\_nha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size 128 \
-    --rff_features 64 \
-    --recovery_steps 50
+    --window\_size 128 \
+    --rff\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Ablations}

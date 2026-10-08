@@ -10,7 +10,7 @@
 
 \textbf{Conclusion.} Zero-init is essential.
 
-\subsubsection{D.1.2 Capacity Factor < 0.5}
+\subsubsection{D.1.2 Capacity Factor \textless{} 0.5}
 
 \textbf{Goal.} Very aggressive compression.
 
@@ -116,8 +116,8 @@ We tested MoE without the gate. Result: unstable training.
 
 \begin{enumerate}
 \item \textbf{Zero-init is essential.}
-\item \textbf{Expert-choice > token-choice} for load balance.
-\item \textbf{Attention output > values} for MoE placement.
+\item \textbf{Expert-choice \textgreater{} token-choice} for load balance.
+\item \textbf{Attention output \textgreater{} values} for MoE placement.
 \item \textbf{CF $\ge$ 0.5 required.}
 \item \textbf{8 experts is a good default.}
 

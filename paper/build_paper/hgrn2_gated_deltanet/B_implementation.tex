@@ -4,38 +4,38 @@
 
 \begin{lstlisting}
 class HGRN2GatedDeltaNet(BaseAttention):
-    def __init__(self, config, rank=None, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=None, ...):
+        super().\_\_init\_\_(config, rank)
         
         # Resolve dims
-        self.d_model = ...
-        self.num_heads = ...
-        self.is_decoder = ...
-        self.lora_rank = ...
+        self.d\_model = ...
+        self.num\_heads = ...
+        self.is\_decoder = ...
+        self.lora\_rank = ...
         
         # Branches
         self.hgrn = HGRN2Layer(...)
         self.deltanet = GatedDeltaNet(...)
         
         # Gate
-        self.gate = nn.Linear(self.d_model, self.d_model)
-        with torch.no_grad():
-            self.gate.weight.zero_()
-            self.gate.bias.fill_(0.0)
+        self.gate = nn.Linear(self.d\_model, self.d\_model)
+        with torch.no\_grad():
+            self.gate.weight.zero\_()
+            self.gate.bias.fill\_(0.0)
         
         # Output
-        self.out_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
-        if old_attn is not None:
-            self.copy_weights(old_attn)
+        if old\_attn is not None:
+            self.copy\_weights(old\_attn)
 \end{lstlisting}
 
 \subsection{B.2 The Gate Initialization}
 
 \begin{lstlisting}
-with torch.no_grad():
-    self.gate.weight.zero_()
-    self.gate.bias.fill_(0.0)
+with torch.no\_grad():
+    self.gate.weight.zero\_()
+    self.gate.bias.fill\_(0.0)
 \end{lstlisting}
 
 \textbf{Why?} Initializing to zero gives $\gamma = 0.5$, which is a neutral 
@@ -45,10 +45,10 @@ arbitrarily.
 \subsection{B.3 Failure-Bias}
 
 \begin{lstlisting}
-if hgrn_ok and not deltanet_ok:
-    with torch.no_grad():
-        self.gate.weight.zero_()
-        self.gate.bias.fill_(4.0)  # sigmoid(4) $\approx$ 0.98
+if hgrn\_ok and not deltanet\_ok:
+    with torch.no\_grad():
+        self.gate.weight.zero\_()
+        self.gate.bias.fill\_(4.0)  # sigmoid(4) $\approx$ 0.98
 \end{lstlisting}
 
 When one branch's weight copy fails, we bias the gate toward the surviving 
@@ -57,8 +57,8 @@ branch. This prevents the failed branch from injecting random noise.
 \subsection{B.4 The `sub\_kwargs` Pattern}
 
 \begin{lstlisting}
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub\_kwargs = {k: v for k, v in kwargs.items() 
+              if k not in ("is\_decoder", "is\_causal", "lora\_rank", "lora\_alpha")}
 \end{lstlisting}
 
 This is essential to avoid the "multiple values for keyword argument" error 
@@ -67,16 +67,16 @@ when the same \texttt{kwargs} dict is passed to nested constructors.
 \subsection{B.5 Output Projection Search}
 
 \begin{lstlisting}
-if w_o is None:
-    for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
-        for target in (old_attn, old_attn.self, old_attn.attention, old_attn.output):
+if w\_o is None:
+    for cand in ("out\_proj", "out\_lin", "o\_proj", "output", "proj", "c\_proj", "dense"):
+        for target in (old\_attn, old\_attn.self, old\_attn.attention, old\_attn.output):
             if target and hasattr(target, cand):
                 mod = getattr(target, cand)
                 if hasattr(mod, "dense"):
                     mod = mod.dense
-                cw, cb = _unpack_weight_bias(mod)
+                cw, cb = \_unpack\_weight\_bias(mod)
                 if cw is not None:
-                    w_o, b_o = cw, cb
+                    w\_o, b\_o = cw, cb
                     break
 \end{lstlisting}
 
@@ -91,10 +91,10 @@ This search handles:
 \subsection{B.6 Double-Injection Guard}
 
 \begin{lstlisting}
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr\_attn, HGRN2GatedDeltaNet): return None
+if "HGRN2GatedDeltaNet" in curr\_attn.\_\_class\_\_.\_\_name\_\_: return None
+if hasattr(curr\_attn, "inner") and isinstance(curr\_attn.inner, HGRN2GatedDeltaNet): return None
+if hasattr(curr\_attn, "\_wrapped\_attention") and isinstance(curr\_attn.\_wrapped\_attention, HGRN2GatedDeltaNet): return None
 \end{lstlisting}
 
 Four checks cover:
@@ -108,7 +108,7 @@ Four checks cover:
 \subsection{B.7 Skip Hybrid Layers}
 
 \begin{lstlisting}
-if "DeltaNet" in c_name or "LinearAttention" in c_name:
+if "DeltaNet" in c\_name or "LinearAttention" in c\_name:
     return None
 \end{lstlisting}
 
@@ -118,33 +118,33 @@ to avoid double-replacing recurrent modules.
 \subsection{B.8 Cross-Attention Warning}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
+if encoder\_hidden\_states is not None:
     logger.warning(
-        "HGRN2GatedDeltaNet received encoder_hidden_states but cross-attention "
-        "is not implemented. Returning raw hidden_states (identity)."
+        "HGRN2GatedDeltaNet received encoder\_hidden\_states but cross-attention "
+        "is not implemented. Returning raw hidden\_states (identity)."
     )
-    return hidden_states, None
+    return hidden\_states, None
 \end{lstlisting}
 
 \subsection{B.9 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
     # 1. Branch forwards
-    hgrn_out = self.hgrn(hidden_states, attention_mask=attention_mask, **kwargs)[0]
-    delta_out = self.deltanet(hidden_states, attention_mask=attention_mask, **kwargs)[0]
+    hgrn\_out = self.hgrn(hidden\_states, attention\_mask=attention\_mask, **kwargs)[0]
+    delta\_out = self.deltanet(hidden\_states, attention\_mask=attention\_mask, **kwargs)[0]
     
     # 2. Shape align
-    if hgrn_out.shape != delta_out.shape:
+    if hgrn\_out.shape != delta\_out.shape:
         # pad
         ...
     
     # 3. Gate + fuse
-    gamma = torch.sigmoid(self.gate(hidden_states))
-    fused = gamma * hgrn_out + (1 - gamma) * delta_out
+    gamma = torch.sigmoid(self.gate(hidden\_states))
+    fused = gamma * hgrn\_out + (1 - gamma) * delta\_out
     
     # 4. Output
-    out = self.out_proj(fused)
+    out = self.out\_proj(fused)
     
     return out, None
 \end{lstlisting}

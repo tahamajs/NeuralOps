@@ -50,7 +50,7 @@ U, \Sigma, V^\top = \text{SVD}(W)
 Compute cumulative energy:
 
 \[
-E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m,n)} \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{i=1}^{\min(m,n)} \sigma\_i^2}
 \tag{4.2}
 \]
 
@@ -64,27 +64,27 @@ r^{(\varepsilon)} = \min\{r : E(r) \geq \varepsilon\}
 \subsubsection{The `decompose\_from\_weight` Method}
 
 \begin{lstlisting}
-def decompose_from_weight(self, W, bias=None, energy=None):
+def decompose\_from\_weight(self, W, bias=None, energy=None):
     U, S, Vt = torch.linalg.svd(W)
-    target_energy = energy if energy is not None else self.energy
-    cum_energy = torch.cumsum(S**2, dim=0) / (S**2).sum()
-    calc_rank = int((cum_energy < target_energy).sum().item()) + 1
-    r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+    target\_energy = energy if energy is not None else self.energy
+    cum\_energy = torch.cumsum(S**2, dim=0) / (S**2).sum()
+    calc\_rank = int((cum\_energy \textless{} target\_energy).sum().item()) + 1
+    r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
     r = max(1, r)
     
-    sqrt_s = torch.sqrt(S[:r])
-    A = U[:, :r] * sqrt_s
-    B = sqrt_s[:, None] * Vt[:r, :]
+    sqrt\_s = torch.sqrt(S[:r])
+    A = U[:, :r] * sqrt\_s
+    B = sqrt\_s[:, None] * Vt[:r, :]
     
     self.up.weight.data[:, :r] = A
     self.down.weight.data[:r, :] = B
-    self.freeze_base_weights()
+    self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{Forward Pass}
 
 \[
-y = \text{up}(\text{down}(x)) + \frac{\alpha}{r_L} B A x
+y = \text{up}(\text{down}(x)) + \frac{\alpha}{r\_L} B A x
 \tag{4.4}
 \]
 
@@ -102,37 +102,37 @@ The \texttt{copy\_weights} routine handles four cases:
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.t()  # transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-# Also c_proj
+w = src.c\_attn.weight.data.t()  # transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+# Also c\_proj
 \end{lstlisting}
 
 \subsubsection{RoBERTa / BERT (Nested)}
 
 \begin{lstlisting}
 s = src.self
-q_w = s.query.weight.data
-k_w = s.key.weight.data
-v_w = s.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = s.query.weight.data
+k\_w = s.key.weight.data
+v\_w = s.value.weight.data
+o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight.data
-k_w = src.k_lin.weight.data
-v_w = src.v_lin.weight.data
-o_w = src.out_lin.weight.data
+q\_w = src.q\_lin.weight.data
+k\_w = src.k\_lin.weight.data
+v\_w = src.v\_lin.weight.data
+o\_w = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsubsection{Qwen / LLaMA}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight.data
-k_w = src.k_proj.weight.data
-v_w = src.v_proj.weight.data
-o_w = src.o_proj.weight.data
+q\_w = src.q\_proj.weight.data
+k\_w = src.k\_proj.weight.data
+v\_w = src.v\_proj.weight.data
+o\_w = src.o\_proj.weight.data
 \end{lstlisting}
 
 \subsubsection{GQA Handling}
@@ -141,12 +141,12 @@ For GQA where $H_{kv} < H$, the extracted K/V weights may have different
 dimensions. \texttt{decompose\_from\_weight} handles this:
 
 \begin{lstlisting}
-if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
-    rep = self.out_features // W.shape[0]
+if W.shape[0] \textless{} self.out\_features and self.out\_features \% W.shape[0] == 0:
+    rep = self.out\_features // W.shape[0]
     W = W.repeat(rep, 1)
-elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
-    rep = W.shape[0] // self.out_features
-    W = W.view(self.out_features, rep, -1).mean(dim=1)
+elif W.shape[0] \textgreater{} self.out\_features and W.shape[0] \% self.out\_features == 0:
+    rep = W.shape[0] // self.out\_features
+    W = W.view(self.out\_features, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 \subsection{Parameter Count}
@@ -187,18 +187,18 @@ MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$\times$} \\
 
 \textbf{Algorithm 1:} MinimalAURORA factorization
 \begin{lstlisting}
-Input:  W $\in$ R^{m$\times$n}, $\epsilon$, r_max, r_L
+Input:  W $\in$ R^{m$\times$n}, $\epsilon$, r\_max, r\_L
 Output: FactorisedLinear with frozen base + trainable LoRA
 
 1:  U, $\Sigma$, V^T $\leftarrow$ svd(W)
-2:  cum_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
-3:  r $\leftarrow$ min{r : cum_energy[r] $\ge$ $\epsilon$}
-4:  r $\leftarrow$ min(r, r_max, m, n)
-5:  sqrt_$\Sigma$ $\leftarrow$ sqrt($\Sigma$[:r])
-6:  up.weight $\leftarrow$ U[:, :r]   sqrt_$\Sigma$
-7:  down.weight $\leftarrow$ sqrt_$\Sigma$   V^T[:r, :]
+2:  cum\_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
+3:  r $\leftarrow$ min{r : cum\_energy[r] $\ge$ $\epsilon$}
+4:  r $\leftarrow$ min(r, r\_max, m, n)
+5:  sqrt\_$\Sigma$ $\leftarrow$ sqrt($\Sigma$[:r])
+6:  up.weight $\leftarrow$ U[:, :r]   sqrt\_$\Sigma$
+7:  down.weight $\leftarrow$ sqrt\_$\Sigma$   V^T[:r, :]
 8:  freeze(up.weight); freeze(down.weight)
-9:  initialize lora_A (Kaiming), lora_B = 0
+9:  initialize lora\_A (Kaiming), lora\_B = 0
 10: return
 \end{lstlisting}
 
@@ -229,7 +229,7 @@ For DistilBERT with 4 projections per layer, 6 layers: ~30 SVDs.
 \textbf{Claim.} With energy threshold $\varepsilon$:
 
 \[
-\|W - W_{r(\varepsilon)}\|_F \leq \sqrt{1 - \varepsilon} \cdot \|W\|_F
+\|W - W\_{r(\varepsilon)}\|\_F \leq \sqrt{1 - \varepsilon} \cdot \|W\|\_F
 \tag{4.5}
 \]
 

@@ -6,7 +6,7 @@
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 \[
-S = \frac{QK^\top}{\sqrt{d_h}}, \quad
+S = \frac{QK^\top}{\sqrt{d\_h}}, \quad
 P = \text{softmax}(S), \quad
 O = PV
 \tag{3.1}
@@ -19,7 +19,7 @@ O = PV
 Restrict attention to a fixed subset $\mathcal{S}_{ij}$:
 
 \[
-P_{ij} = \frac{\mathbb{1}[\mathcal{S}_{ij}] \exp(s_{ij})}{\sum_{j'} \mathbb{1}[\mathcal{S}_{ij'}] \exp(s_{ij'})}
+P\_{ij} = \frac{\mathbb{1}[\mathcal{S}\_{ij}] \exp(s\_{ij})}{\sum\_{j'} \mathbb{1}[\mathcal{S}\_{ij'}] \exp(s\_{ij'})}
 \tag{3.2}
 \]
 
@@ -34,7 +34,7 @@ P_{ij} = \frac{\mathbb{1}[\mathcal{S}_{ij}] \exp(s_{ij})}{\sum_{j'} \mathbb{1}[\
 Given scores $s_i \in \mathbb{R}^L$, the top-$k$ set is:
 
 \[
-\text{TopK}(s_i) = \{j : s_{ij} \geq \tau_i\}
+\text{TopK}(s\_i) = \{j : s\_{ij} \geq \tau\_i\}
 \tag{3.3}
 \]
 
@@ -49,14 +49,14 @@ this does not matter.
 NSA uses:
 
 \[
-\mathcal{S}_{ij} = \mathbb{1}[|i - j| \leq w] \lor \mathbb{1}[j \in \text{TopK}_i]
+\mathcal{S}\_{ij} = \mathbb{1}[|i - j| \leq w] \lor \mathbb{1}[j \in \text{TopK}\_i]
 \tag{3.4}
 \]
 
 The mask is applied \textbf{before} softmax:
 
 \[
-P_{ij} = \frac{\mathcal{S}_{ij} \exp(s_{ij})}{\sum_{j'} \mathcal{S}_{ij'} \exp(s_{ij'})}
+P\_{ij} = \frac{\mathcal{S}\_{ij} \exp(s\_{ij})}{\sum\_{j'} \mathcal{S}\_{ij'} \exp(s\_{ij'})}
 \tag{3.5}
 \]
 
@@ -65,7 +65,7 @@ P_{ij} = \frac{\mathcal{S}_{ij} \exp(s_{ij})}{\sum_{j'} \mathcal{S}_{ij'} \exp(s
 For decoders:
 
 \[
-\mathcal{S}_{ij}^\text{causal} = \mathcal{S}_{ij} \land \mathbb{1}[j \leq i]
+\mathcal{S}\_{ij}^\text{causal} = \mathcal{S}\_{ij} \land \mathbb{1}[j \leq i]
 \tag{3.6}
 \]
 
@@ -76,7 +76,7 @@ Applied \textbf{after} top-$k$ so that top-$k$ never selects future positions.
 Padding keys must be excluded:
 
 \[
-\mathcal{S}_{ij}^\text{final} = \mathcal{S}_{ij}^\text{causal} \land \mathbb{1}[\text{valid}_j]
+\mathcal{S}\_{ij}^\text{final} = \mathcal{S}\_{ij}^\text{causal} \land \mathbb{1}[\text{valid}\_j]
 \tag{3.7}
 \]
 
@@ -85,7 +85,7 @@ Padding keys must be excluded:
 The density of attention is:
 
 \[
-\rho = \frac{\mathbb{E}_i[|\mathcal{S}_i|]}{L} \approx \frac{2w + 1 + k}{L}
+\rho = \frac{\mathbb{E}\_i[|\mathcal{S}\_i|]}{L} \approx \frac{2w + 1 + k}{L}
 \tag{3.8}
 \]
 
@@ -98,7 +98,7 @@ For $w = 32$, $k = 16$, $L = 2048$: $\rho \approx 0.04$.
 LoRA (Hu et al., 2021) adds trainable adapters:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r} B A
 \tag{3.9}
 \]
 

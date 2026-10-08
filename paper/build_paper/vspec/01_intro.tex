@@ -44,7 +44,7 @@ VSpec++ has four components:
 Given $X$ and a validity mask, a learned saliency network computes:
 
 \[
-s_i = \sigma(f_\theta(x_i)) \in [0, 1]
+s\_i = \sigma(f\_\theta(x\_i)) \in [0, 1]
 \tag{1.1}
 \]
 
@@ -52,7 +52,7 @@ We force $s_0 = 10^4$ (retaining \texttt{[CLS]}), mask padding to $-\infty$, and
 select the top-$k$ indices. Then gather:
 
 \[
-X_\text{routed} = \text{gather}(X, \mathcal{S}), \quad k = \lceil \rho L \rceil
+X\_\text{routed} = \text{gather}(X, \mathcal{S}), \quad k = \lceil \rho L \rceil
 \tag{1.2}
 \]
 
@@ -81,7 +81,7 @@ At inference, $g = \sigma(\mu)$.
 A small network computes per-head importances:
 
 \[
-h = \sigma(f_h(\text{pool}(x))) \in [0, 1]^H
+h = \sigma(f\_h(\text{pool}(x))) \in [0, 1]^H
 \tag{1.5}
 \]
 
@@ -92,7 +92,7 @@ These multiply the attention logits.
 Each projection is:
 
 \[
-W_\text{eff} = U \cdot \text{diag}(S \odot g) \cdot V^\top + B A
+W\_\text{eff} = U \cdot \text{diag}(S \odot g) \cdot V^\top + B A
 \tag{1.6}
 \]
 

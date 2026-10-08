@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_spectron} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_spectron} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -13,17 +13,17 @@ Table~\ref{tab:results_acc_spectron} details empirical evaluation metrics across
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Spectron} & \textbf{86.58\%} & -4.36\% & PASS & 0.8765 & 0 & \textbf{1.15$\times$} & 294.1 MB & 22.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Spectron} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.09$\times$} & 587.2 MB & 29.0 & -- \\
+RoBERTa & \textbf{Spectron} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.09$\times$} & 587.2 MB & 29.0 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Spectron} & \textbf{51.26\%} & -6.65\% & PASS_LOW & 0.6758 & 0 & \textbf{1.17$\times$} & 495.9 MB & 32.6 & -- \\
+GPT-2 & \textbf{Spectron} & \textbf{51.26\%} & -6.65\% & PASS\_LOW & 0.6758 & 0 & \textbf{1.17$\times$} & 495.9 MB & 32.6 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_spectron} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_spectron} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_spectron} documents parameter compression factors 
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{spectron}.}
-\label{tab:results_params_spectron}
+\label{tab:results\_params\_spectron}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_spectron} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_spectron} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_spectron} presents memory profiling and execution th
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{spectron}.}
-\label{tab:results_vram_spectron}
+\label{tab:results\_vram\_spectron}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/spectron_dissection_profile.png}
+\includegraphics[width=0.85\linewidth]{figures/spectron\_dissection\_profile.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{spectron}.}
-\label{fig:results_spectron}
+\label{fig:results\_spectron}
 \end{figure}

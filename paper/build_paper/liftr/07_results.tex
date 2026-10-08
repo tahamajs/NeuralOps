@@ -20,11 +20,11 @@ GPT-2 & \textbf{Liftr} & \textbf{61.01\%} & +0.23\% & PASS & 0.6654 & 0 & \textb
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}
-Table~\ref{tab:params_liftr} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
+Table~\ref{tab:params\_liftr} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
 
 \begin{table*}[t]
 \centering
@@ -39,7 +39,7 @@ AG News & 66,956,548 & 66,956,548 & +0 (+0.00\%) & 593,668 & 0 & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Parameter allocation and layer decomposition for \texttt{liftr}.}
-\label{tab:params_liftr}
+\label{tab:params\_liftr}
 \end{table*}
 
 \subsection{Inference Efficiency and Memory Footprint}
@@ -48,7 +48,7 @@ Execution profiling demonstrates that \texttt{liftr} executes within the hardwar
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/liftr_distilbert_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/liftr\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{liftr}.}
-\label{fig:results_liftr}
+\label{fig:results\_liftr}
 \end{figure}

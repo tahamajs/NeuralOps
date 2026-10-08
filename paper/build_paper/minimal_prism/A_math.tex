@@ -6,7 +6,7 @@
 \textbf{Theorem.} For any $W \in \mathbb{R}^{m \times n}$ and $r \leq \min(m, n)$:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r^* = \arg\min\_{\text{rank}(W\_r) \leq r} \|W - W\_r\|\_F = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{A.1}
 \]
 
@@ -19,7 +19,7 @@ $\square$
 rank with $E(r_\text{eff}) \geq \eta$. Then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{A.2}
 \]
 
@@ -74,7 +74,7 @@ For GQA with $H_{kv} < H$:
 Factorized parameter count:
 
 \[
-|W_Q| + |W_K| + |W_V| = r(d + H d_h) + r(d + H_{kv} d_h) + r(d + H_{kv} d_h)
+|W\_Q| + |W\_K| + |W\_V| = r(d + H d\_h) + r(d + H\_{kv} d\_h) + r(d + H\_{kv} d\_h)
 \tag{A.4}
 \]
 
@@ -101,9 +101,9 @@ rank-$r_\text{eff}$ approximation. $\square$
 \textbf{Proof.} The causal mask is applied after computing scores:
 
 \begin{lstlisting}
-if self.is_decoder and N > 1:
-    causal_mask = torch.triu(...)
-    scores = scores + causal_mask
+if self.is\_decoder and N \textgreater{} 1:
+    causal\_mask = torch.triu(...)
+    scores = scores + causal\_mask
 \end{lstlisting}
 
 Positions $j > i$ are set to $-\infty$ before softmax. This is independent 
@@ -120,8 +120,8 @@ The symmetric factorization (4.6) distributes $\Sigma^{1/2}$ evenly, keeping
 both factors at similar magnitudes:
 
 \[
-\|U_r\|_2 \approx \|\Sigma_r^{1/2}\|_2 = \sqrt{\sigma_1}, \quad
-\|V_r\|_2 \approx \sqrt{\sigma_1}
+\|U\_r\|\_2 \approx \|\Sigma\_r^{1/2}\|\_2 = \sqrt{\sigma\_1}, \quad
+\|V\_r\|\_2 \approx \sqrt{\sigma\_1}
 \tag{A.5}
 \]
 

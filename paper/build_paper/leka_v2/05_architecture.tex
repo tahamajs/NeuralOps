@@ -24,20 +24,20 @@ UniversalAdapter first, then fallbacks:
 \subsubsection{GPT-2 Fused Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
 s = src.self
-q_w = s.query.weight
-k_w = s.key.weight
-v_w = s.value.weight
-o_w = src.output.dense.weight
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Flat Modules}
@@ -78,10 +78,10 @@ For RoBERTa, \texttt{is\_nested\_encoder = True}. Raw context returned.
 \textbf{Global branch.} Masked via landmark positions:
 
 \begin{lstlisting}
-q_pos = torch.arange(N).view(1, 1, N, 1)
-k_land_pos = land_idx.unsqueeze(2)
-causal_land_mask = (k_land_pos <= q_pos)
-attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
+q\_pos = torch.arange(N).view(1, 1, N, 1)
+k\_land\_pos = land\_idx.unsqueeze(2)
+causal\_land\_mask = (k\_land\_pos \textless{}= q\_pos)
+attn\_weights = attn\_weights.masked\_fill(~causal\_land\_mask, -1e4)
 \end{lstlisting}
 
 \textbf{Local branch.} Standard causal mask.
@@ -93,30 +93,30 @@ attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
 Input:  model M, config c
 Output: M with attention replaced
 
-1: for layer in transformer_layers(M):
-2:     src $\leftarrow$ extract_attention(layer)
-3:     if src is None or is_already_injected: continue
+1: for layer in transformer\_layers(M):
+2:     src $\leftarrow$ extract\_attention(layer)
+3:     if src is None or is\_already\_injected: continue
 4:     try:
-5:         new $\leftarrow$ LEKAv2Attention(c, old_attn=src)
+5:         new $\leftarrow$ LEKAv2Attention(c, old\_attn=src)
 6:         replace(layer, new)
 7:     except Exception:
-8:         log_error; continue
+8:         log\_error; continue
 9: return M
 \end{lstlisting}
 
 \subsection{Double-Injection Guard}
 
 \begin{lstlisting}
-if isinstance(src_attn, LEKAv2Attention): return None
-if "LEKAv2" in src_attn.__class__.__name__: return None
-if "LEKA" in src_attn.__class__.__name__: return None
+if isinstance(src\_attn, LEKAv2Attention): return None
+if "LEKAv2" in src\_attn.\_\_class\_\_.\_\_name\_\_: return None
+if "LEKA" in src\_attn.\_\_class\_\_.\_\_name\_\_: return None
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("leka_v2")
-@ATTENTION_REGISTRY.register("leka_v2_attention")
+@ATTENTION\_REGISTRY.register("leka\_v2")
+@ATTENTION\_REGISTRY.register("leka\_v2\_attention")
 class LEKAv2Attention(BaseAttention):
     ...
 \end{lstlisting}
@@ -133,6 +133,6 @@ Not supported.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of leka\_v2.}
-\label{fig:arch_leka-v2}
+\label{fig:arch\_leka-v2}
 \end{figure}
 

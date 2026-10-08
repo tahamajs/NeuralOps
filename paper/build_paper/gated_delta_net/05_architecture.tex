@@ -23,34 +23,34 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Causal \\
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-if hasattr(old_attn, "c_attn"):
-    c_w = old_attn.c_attn.weight.data
-    if "Conv1D" in cls_c or hasattr(old_attn.c_attn, "nf"):
-        c_w = c_w.t()
-    split_size = c_w.size(0) // 3
-    extracted["q"] = c_w[:split_size, :]
-    extracted["k"] = c_w[split_size:2*split_size, :]
-    extracted["v"] = c_w[2*split_size:, :]
+if hasattr(old\_attn, "c\_attn"):
+    c\_w = old\_attn.c\_attn.weight.data
+    if "Conv1D" in cls\_c or hasattr(old\_attn.c\_attn, "nf"):
+        c\_w = c\_w.t()
+    split\_size = c\_w.size(0) // 3
+    extracted["q"] = c\_w[:split\_size, :]
+    extracted["k"] = c\_w[split\_size:2*split\_size, :]
+    extracted["v"] = c\_w[2*split\_size:, :]
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
-elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
-    extracted["q"] = old_attn.self.query.weight.data
-    extracted["k"] = old_attn.self.key.weight.data
-    extracted["v"] = old_attn.self.value.weight.data
-    extracted["o"] = old_attn.output.dense.weight.data
+elif hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query"):
+    extracted["q"] = old\_attn.self.query.weight.data
+    extracted["k"] = old\_attn.self.key.weight.data
+    extracted["v"] = old\_attn.self.value.weight.data
+    extracted["o"] = old\_attn.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 else:
-    extracted["q"] = old_attn.q_lin.weight.data
-    extracted["k"] = old_attn.k_lin.weight.data
-    extracted["v"] = old_attn.v_lin.weight.data
-    extracted["o"] = old_attn.out_lin.weight.data
+    extracted["q"] = old\_attn.q\_lin.weight.data
+    extracted["k"] = old\_attn.k\_lin.weight.data
+    extracted["v"] = old\_attn.v\_lin.weight.data
+    extracted["o"] = old\_attn.out\_lin.weight.data
 \end{lstlisting}
 
 \subsubsection{The Z Projection}
@@ -58,7 +58,7 @@ else:
 The \textbf{Z projection} is new. We initialize from $W_Q$:
 
 \begin{lstlisting}
-self.z_proj.weight.data[:out_z, :in_z].copy_(w_q[:out_z, :in_z])
+self.z\_proj.weight.data[:out\_z, :in\_z].copy\_(w\_q[:out\_z, :in\_z])
 \end{lstlisting}
 
 \subsection{Nested Encoder Detection}
@@ -66,13 +66,13 @@ self.z_proj.weight.data[:out_z, :in_z].copy_(w_q[:out_z, :in_z])
 The detection order:
 
 \begin{lstlisting}
-if (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
-    and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")):
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...):
-    is_nested = True
-elif model_type in ("roberta", "bert", "xlm-roberta") and not is_decoder:
-    is_nested = True
+if (hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query")
+    and hasattr(old\_attn, "output") and hasattr(old\_attn.output, "dense")):
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention", ...):
+    is\_nested = True
+elif model\_type in ("roberta", "bert", "xlm-roberta") and not is\_decoder:
+    is\_nested = True
 \end{lstlisting}
 
 For nested encoders, \texttt{forward} returns raw context without \texttt{out\_proj}.
@@ -80,9 +80,9 @@ For nested encoders, \texttt{forward} returns raw context without \texttt{out\_p
 \subsection{GQA Support}
 
 \begin{lstlisting}
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{RoPE Support}
@@ -90,11 +90,11 @@ if self.num_kv_heads != self.num_heads:
 Handled via partial-dimension slicing:
 
 \begin{lstlisting}
-rotary_dim = cos.shape[-1]
-if rotary_dim < head_dim:
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    q_rot_embed = q_rot * cos + rotate_half(q_rot) * sin
-    q = torch.cat([q_rot_embed, q_pass], dim=-1)
+rotary\_dim = cos.shape[-1]
+if rotary\_dim \textless{} head\_dim:
+    q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+    q\_rot\_embed = q\_rot * cos + rotate\_half(q\_rot) * sin
+    q = torch.cat([q\_rot\_embed, q\_pass], dim=-1)
 \end{lstlisting}
 
 \subsection{Injection Algorithm}
@@ -104,12 +104,12 @@ if rotary_dim < head_dim:
 Input:  model M, config c
 Output: M with all attention replaced
 
-1: layer_list $\leftarrow$ find_transformer_layers(M)
-2: for   in layer_list:
-3:     src $\leftarrow$ extract_attention( )
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for   in layer\_list:
+3:     src $\leftarrow$ extract\_attention( )
 4:     new $\leftarrow$ GatedDeltaNet(c, old=src)
-5:     new.copy_weights(src)
-6:     replace_attention( , new)
+5:     new.copy\_weights(src)
+6:     replace\_attention( , new)
 7: return M
 \end{lstlisting}
 
@@ -118,37 +118,37 @@ Output: M with all attention replaced
 The core implementation is \texttt{chunked\_delta\_rule\_scan}:
 
 \begin{lstlisting}
-def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8):
+def chunked\_delta\_rule\_scan(q, k, v, beta, alpha, chunk\_size=8):
     # Normalize
-    k_unit = k / k.norm(dim=-1, keepdim=True).clamp(min=1e-6)
-    q_unit = q / q.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+    k\_unit = k / k.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+    q\_unit = q / q.norm(dim=-1, keepdim=True).clamp(min=1e-6)
     
     # Reshape into chunks
-    q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
+    q\_c = q\_unit.view(B, H, num\_chunks, chunk\_size, d)
     ...
     
     S = torch.zeros(B, H, d, d)  # state
     outputs = []
     
-    for c in range(num_chunks):       # $\leftarrow$ OUTER PYTHON LOOP
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
-        if use_checkpoint:
-            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, ...)
+    for c in range(num\_chunks):       # $\leftarrow$ OUTER PYTHON LOOP
+        q\_i, k\_i, v\_i = q\_c[:,:,c], k\_c[:,:,c], v\_c[:,:,c]
+        if use\_checkpoint:
+            y\_i, S = checkpoint(\_delta\_chunk\_forward, S, q\_i, k\_i, v\_i, ...)
         else:
-            y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, ...)
-        outputs.append(y_i)
+            y\_i, S = \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, ...)
+        outputs.append(y\_i)
     
     return torch.cat(outputs, dim=2)
 
-def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
-    for t in range(chunk_size):       # $\leftarrow$ INNER PYTHON LOOP
-        kt, vt, qt = k_i[:,:,t:t+1], v_i[:,:,t:t+1], q_i[:,:,t:t+1]
-        bt, at = beta_i[:,:,t:t+1], alpha_i[:,:,t:t+1]
+def \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i):
+    for t in range(chunk\_size):       # $\leftarrow$ INNER PYTHON LOOP
+        kt, vt, qt = k\_i[:,:,t:t+1], v\_i[:,:,t:t+1], q\_i[:,:,t:t+1]
+        bt, at = beta\_i[:,:,t:t+1], alpha\_i[:,:,t:t+1]
         
-        inter_v = torch.matmul(kt, S)
-        err = vt - inter_v
-        norm_k_sq = (kt * kt).sum(-1, keepdim=True)
-        step = (at / (1 + norm_k_sq).clamp(min=1.0)).clamp(0, 1)
+        inter\_v = torch.matmul(kt, S)
+        err = vt - inter\_v
+        norm\_k\_sq = (kt * kt).sum(-1, keepdim=True)
+        step = (at / (1 + norm\_k\_sq).clamp(min=1.0)).clamp(0, 1)
         
         S = bt * S + step * torch.matmul(kt.transpose(-1, -2), err)
         yt = torch.matmul(qt, S)
@@ -191,7 +191,7 @@ peak memory.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_delta_net")
+@ATTENTION\_REGISTRY.register("gated\_delta\_net")
 class GatedDeltaNet(BaseAttention):
     ...
 \end{lstlisting}
@@ -214,6 +214,6 @@ baseline attention.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of gated\_delta\_net.}
-\label{fig:arch_gated-delta-net}
+\label{fig:arch\_gated-delta-net}
 \end{figure}
 

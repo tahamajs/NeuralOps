@@ -5,11 +5,11 @@
 
 \begin{lstlisting}
 class GatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model: int, use_spectral_norm: bool = False) -> None:
-        super().__init__()
-        self.net = nn.Linear(d_model, d_model)
+    def \_\_init\_\_(self, d\_model: int, use\_spectral\_norm: bool = False) -\textgreater{} None:
+        super().\_\_init\_\_()
+        self.net = nn.Linear(d\_model, d\_model)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -\textgreater{} torch.Tensor:
         return self.net(x)
 \end{lstlisting}
 
@@ -20,12 +20,12 @@ gating, no delta rule, no recurrence.
 
 \begin{lstlisting}
 class RealGatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model):
-        super().__init__()
-        self.W_k = nn.Linear(d_model, d_model, bias=False)
-        self.W_v = nn.Linear(d_model, d_model, bias=False)
-        self.W_q = nn.Linear(d_model, d_model, bias=False)
-        self.beta_proj = nn.Linear(d_model, 1)
+    def \_\_init\_\_(self, d\_model):
+        super().\_\_init\_\_()
+        self.W\_k = nn.Linear(d\_model, d\_model, bias=False)
+        self.W\_v = nn.Linear(d\_model, d\_model, bias=False)
+        self.W\_q = nn.Linear(d\_model, d\_model, bias=False)
+        self.beta\_proj = nn.Linear(d\_model, 1)
         # ...
 
     def forward(self, x):
@@ -36,8 +36,8 @@ class RealGatedDeltaNetLayer(nn.Module):
 \subsection{B.2 The Gate and Mean-Pooling}
 
 \begin{lstlisting}
-self.gate = nn.Linear(self.dim, self.num_heads)
-self.gate.bias.data.fill_(gate_init_bias)  # default 1.8
+self.gate = nn.Linear(self.dim, self.num\_heads)
+self.gate.bias.data.fill\_(gate\_init\_bias)  # default 1.8
 # ...
 gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)  # (B, L, 1)
 \end{lstlisting}
@@ -50,20 +50,20 @@ same gate value.
 \begin{lstlisting}
 gate = torch.sigmoid(self.gate(x))  # (B, L, H)
 gate = gate.transpose(1, 2).unsqueeze(-1)  # (B, H, L, 1)
-short_per_head = short_out.view(B, H, L, self.head_dim)
-long_per_head = long_out.view(B, H, L, self.head_dim)
-fused = gate * short_per_head + (1 - gate) * long_per_head
+short\_per\_head = short\_out.view(B, H, L, self.head\_dim)
+long\_per\_head = long\_out.view(B, H, L, self.head\_dim)
+fused = gate * short\_per\_head + (1 - gate) * long\_per\_head
 \end{lstlisting}
 
 \subsection{B.3 The Preservation Gate}
 
 \begin{lstlisting}
-self.output_scale = nn.Parameter(torch.ones(1))
-self.output_gate = nn.Parameter(torch.tensor(2.0))
+self.output\_scale = nn.Parameter(torch.ones(1))
+self.output\_gate = nn.Parameter(torch.tensor(2.0))
 # ...
-out = self.out_proj(fused)
-out = out * self.output_scale
-alpha = torch.sigmoid(self.output_gate)
+out = self.out\_proj(fused)
+out = out * self.output\_scale
+alpha = torch.sigmoid(self.output\_gate)
 out = alpha * out + (1.0 - alpha) * x
 \end{lstlisting}
 
@@ -75,7 +75,7 @@ This creates \textbf{double scaling}.
 Standard four-architecture handling:
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
+if hasattr(src, "c\_attn"):
     # GPT-2 fused Conv1D
     ...
 elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -115,8 +115,8 @@ present in the pretrained model. On \texttt{load\_state\_dict}, it defaults to 1
 
 \begin{lstlisting}
 x = torch.randn(2, 8, 768)
-gate_raw = torch.sigmoid(model.gate(x))  # (2, 8, 12)
-gate = gate_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
+gate\_raw = torch.sigmoid(model.gate(x))  # (2, 8, 12)
+gate = gate\_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
 print(f"Gate mean: {gate.mean().item():.4f}")
 # At init, should be $\approx$ 0.86
 \end{lstlisting}
@@ -124,7 +124,7 @@ print(f"Gate mean: {gate.mean().item():.4f}")
 \subsubsection{Check Preservation Gate}
 
 \begin{lstlisting}
-alpha = torch.sigmoid(model.output_gate)
+alpha = torch.sigmoid(model.output\_gate)
 print(f"$\alpha$ = {alpha.item():.4f}")
 # At init: $\approx$ 0.88
 \end{lstlisting}
@@ -132,14 +132,14 @@ print(f"$\alpha$ = {alpha.item():.4f}")
 \subsubsection{Check Long-Memory Norm}
 
 \begin{lstlisting}
-long_out = model.delta_mem(x)
-print(f"long_out norm: {long_out.norm().item():.4f}")
+long\_out = model.delta\_mem(x)
+print(f"long\_out norm: {long\_out.norm().item():.4f}")
 \end{lstlisting}
 
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("goldfinch_ahn")
+@ATTENTION\_REGISTRY.register("goldfinch\_ahn")
 class GoldFinchAHNBlock(BaseAttention):
     ...
 \end{lstlisting}

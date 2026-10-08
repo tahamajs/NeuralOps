@@ -3,7 +3,7 @@
 \subsection{A.1 Decay Parameterization}
 
 \[
-\gamma_i = \sigma(-\exp(A_{\log, i}))
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
 \tag{A.1}
 \]
 
@@ -18,12 +18,12 @@ Since $\sigma(z) \in (0, 1)$:
 For query $i$ and key $j$, define:
 
 \[
-d_{ij} = \max(0, i - j)
+d\_{ij} = \max(0, i - j)
 \tag{A.2}
 \]
 
 \[
-\ell_{ij}^{(d)} = d_{ij} \cdot \log \gamma_d
+\ell\_{ij}^{(d)} = d\_{ij} \cdot \log \gamma\_d
 \tag{A.3}
 \]
 
@@ -31,7 +31,7 @@ For $j \leq i$: $d_{ij} = i - j \geq 0$. Since $\log \gamma_d < 0$
 (for $\gamma_d < 1$):
 
 \[
-\ell_{ij}^{(d)} = (i - j) \log \gamma_d \leq 0
+\ell\_{ij}^{(d)} = (i - j) \log \gamma\_d \leq 0
 \tag{A.4}
 \]
 
@@ -43,7 +43,7 @@ For $j > i$: we mask with $-\infty$ (causal).
 \subsection{A.3 Softmax Over Distance}
 
 \[
-w_{ij}^{(d)} = \frac{\exp(\ell_{ij}^{(d)})}{\sum_{j'} \exp(\ell_{ij'}^{(d)})}
+w\_{ij}^{(d)} = \frac{\exp(\ell\_{ij}^{(d)})}{\sum\_{j'} \exp(\ell\_{ij'}^{(d)})}
 \tag{A.5}
 \]
 
@@ -59,7 +59,7 @@ This is a geometric decay over distance.
 For encoders, we compute both directions:
 
 \[
-\text{Out} = 0.5 \cdot (W^\text{fwd} P_1 + W^\text{bwd} P_1)
+\text{Out} = 0.5 \cdot (W^\text{fwd} P\_1 + W^\text{bwd} P\_1)
 \tag{A.6}
 \]
 
@@ -89,7 +89,7 @@ At init $g = 2.0$:
 \subsection{A.6 Gated Fusion}
 
 \[
-\text{Out} = \text{SiLU}(p_1) \odot p_2
+\text{Out} = \text{SiLU}(p\_1) \odot p\_2
 \tag{A.10}
 \]
 
@@ -118,7 +118,7 @@ $j \leq i$.
 \textbf{Proof.} The causal mask sets $w_{ij} = 0$ for $j > i$. So:
 
 \[
-\text{Out}_i = \sum_{j \leq i} w_{ij} \cdot p_1[j]
+\text{Out}\_i = \sum\_{j \leq i} w\_{ij} \cdot p\_1[j]
 \tag{A.12}
 \]
 

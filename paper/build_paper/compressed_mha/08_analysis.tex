@@ -55,8 +55,8 @@ this is where compression has the most impact.
 
 An earlier version checked:
 \begin{lstlisting}
-if (cls_name.endswith("SelfAttention") and not has_out_proj):
-    is_nested_encoder = True
+if (cls\_name.endswith("SelfAttention") and not has\_out\_proj):
+    is\_nested\_encoder = True
 \end{lstlisting}
 
 For DistilBERT, \texttt{cls\_name = "MultiHeadSelfAttention"} -- ends with 
@@ -69,8 +69,8 @@ projection was \textbf{skipped} $\to$ double projection at the outer level $\to$
 
 \begin{lstlisting}
 # Check flat models FIRST
-if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
-    self.is_nested_encoder = False
+if hasattr(src, "out\_lin") or hasattr(src, "c\_proj") or hasattr(src, "o\_proj"):
+    self.is\_nested\_encoder = False
 \end{lstlisting}
 
 This ensures DistilBERT (with \texttt{out\_lin}) is correctly classified as flat.

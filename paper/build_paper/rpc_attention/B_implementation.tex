@@ -4,78 +4,78 @@
 \subsection{B.1 The Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("rpc")
+@ATTENTION\_REGISTRY.register("rpc")
 class RPCAttention(BaseAttention):
-    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         self.dim = 768
-        self.num_heads = 12
-        self.head_dim = 64
-        self.rank = min(rank, self.head_dim)
+        self.num\_heads = 12
+        self.head\_dim = 64
+        self.rank = min(rank, self.head\_dim)
         
         # Projections with LoRA
-        self.W_q = LoRALinear(768, 768, lora_rank=16)
-        self.W_k = LoRALinear(768, 768, lora_rank=16)
-        self.W_v = LoRALinear(768, 768, lora_rank=16)
-        self.out_proj = LoRALinear(768, 768, lora_rank=16)
+        self.W\_q = LoRALinear(768, 768, lora\_rank=16)
+        self.W\_k = LoRALinear(768, 768, lora\_rank=16)
+        self.W\_v = LoRALinear(768, 768, lora\_rank=16)
+        self.out\_proj = LoRALinear(768, 768, lora\_rank=16)
         
         # Random projection buffer (NOT a parameter)
-        self.register_buffer(
+        self.register\_buffer(
             "proj",
-            torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+            torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
         )
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
     
     # 1. Project
-    q = self.W_q(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
-    k = self.W_k(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
-    v = self.W_v(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
+    q = self.W\_q(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
+    k = self.W\_k(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
+    v = self.W\_v(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, *position\_embeddings)
     
     # 3. GQA
-    if H != H_kv:
-        k = repeat_kv(k, H // H_kv)
-        v = repeat_kv(v, H // H_kv)
+    if H != H\_kv:
+        k = repeat\_kv(k, H // H\_kv)
+        v = repeat\_kv(v, H // H\_kv)
     
     # 4. Sketch
     proj = self.proj.to(dtype=q.dtype, device=q.device)
-    q_sk = torch.einsum("bhld,hdr->bhlr", q, proj)
-    k_sk = torch.einsum("bhld,hdr->bhlr", k, proj)
+    q\_sk = torch.einsum("bhld,hdr-\textgreater{}bhlr", q, proj)
+    k\_sk = torch.einsum("bhld,hdr-\textgreater{}bhlr", k, proj)
     
     # 5. Score
     scale = 1.0 / math.sqrt(self.rank)
-    scores = torch.matmul(q_sk.float(), k_sk.float().transpose(-2, -1)) * scale
+    scores = torch.matmul(q\_sk.float(), k\_sk.float().transpose(-2, -1)) * scale
     
     # 6. Masks
-    if self.is_decoder:
-        causal_mask = torch.triu(torch.full((L, L), -1e4), diagonal=1)
-        scores = scores + causal_mask
+    if self.is\_decoder:
+        causal\_mask = torch.triu(torch.full((L, L), -1e4), diagonal=1)
+        scores = scores + causal\_mask
     
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 7. Attend
-    probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+    probs = F.softmax(scores, dim=-1).to(hidden\_states.dtype)
     context = torch.matmul(probs, v)
-    context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all\_head\_size)
     
     # 8. Output
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         out = context
     else:
-        out = self.out_proj(context)
+        out = self.out\_proj(context)
     
     return out, None
 \end{lstlisting}
@@ -83,9 +83,9 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 \subsection{B.3 The Projection Buffer}
 
 \begin{lstlisting}
-self.register_buffer(
+self.register\_buffer(
     "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
 )
 \end{lstlisting}
 
@@ -99,10 +99,10 @@ self.register_buffer(
 \subsection{B.4 The `raise` on Failure}
 
 \begin{lstlisting}
-if missing_after:
+if missing\_after:
     raise RuntimeError(
-        f"RPCAttention copy_weights failed: missing mandatory projections "
-        f"{missing_after} from {src.__class__.__name__}."
+        f"RPCAttention copy\_weights failed: missing mandatory projections "
+        f"{missing\_after} from {src.\_\_class\_\_.\_\_name\_\_}."
     )
 \end{lstlisting}
 
@@ -110,7 +110,7 @@ And:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_rpc failed: %s", e)
+    logger.error("inject\_rpc failed: \%s", e)
     raise RuntimeError(f"Injection failed")
 \end{lstlisting}
 

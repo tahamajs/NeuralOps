@@ -23,13 +23,13 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
 Infini-Attention scales compression dimensions based on model depth:
 
 \begin{lstlisting}
-num_layers = config.num_hidden_layers
-if num_layers > 12:
+num\_layers = config.num\_hidden\_layers
+if num\_layers \textgreater{} 12:
     self.rank = max(self.rank, 128)
-    self.lora_rank = max(self.lora_rank, 32)
-elif num_layers > 6:
+    self.lora\_rank = max(self.lora\_rank, 32)
+elif num\_layers \textgreater{} 6:
     self.rank = max(self.rank, 64)
-    self.lora_rank = max(self.lora_rank, 32)
+    self.lora\_rank = max(self.lora\_rank, 32)
 \end{lstlisting}
 
 This ensures RoBERTa (12 layers) and larger models get sufficient 
@@ -40,10 +40,10 @@ capacity.
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
-extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
-extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
-extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -64,12 +64,12 @@ output projection).
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.t()  # transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = (q_w, src.c_attn.bias.data[:768])
-extracted["k"] = (k_w, src.c_attn.bias.data[768:1536])
-extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
-extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+w = src.c\_attn.weight.data.t()  # transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:768])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[768:1536])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[1536:2304])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -80,49 +80,49 @@ Direct copy from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}; RoPE preserved via
 \subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-cls_name = src.__class__.__name__
-has_out = (hasattr(src, "dense") or hasattr(src, "out_proj")
-           or hasattr(src, "out_lin") or hasattr(src, "c_proj")
-           or hasattr(src, "o_proj"))
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out = (hasattr(src, "dense") or hasattr(src, "out\_proj")
+           or hasattr(src, "out\_lin") or hasattr(src, "c\_proj")
+           or hasattr(src, "o\_proj"))
 
-is_nested = False
-if (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-    or (hasattr(src, "query") and not has_out)):
-    is_nested = True
+is\_nested = False
+if (cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+    or (hasattr(src, "query") and not has\_out)):
+    is\_nested = True
 if hasattr(src, "self") and hasattr(src, "output"):
-    is_nested = True
-self.is_nested_encoder = is_nested
+    is\_nested = True
+self.is\_nested\_encoder = is\_nested
 \end{lstlisting}
 
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_infini(layer, model_config=None, old_attn=None, **kwargs):
-    src = old_attn or find_attention(layer)
-    new_attn = InfiniAttention(config=model_config, old_attn=src, **kwargs)
+def inject\_infini(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = InfiniAttention(config=model\_config, old\_attn=src, **kwargs)
     if src is not None:
-        new_attn.copy_weights(src)
-    replace_attention(layer, new_attn)
-    return new_attn
+        new\_attn.copy\_weights(src)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 \subsection{The `InfiniAttention` Module Structure}
 
 \begin{lstlisting}
 class InfiniAttention(BaseAttention):
-    def __init__(self, config, rank=64, compress_dim=128,
-                 local_window=128, pretrained_attn=None, ...):
-        super().__init__(config, rank)
-        self.q_proj = LoRALinear(d, H*d_h, lora_rank=r)
-        self.k_proj = LoRALinear(d, H_kv*d_h, lora_rank=r)
-        self.v_proj = LoRALinear(d, H_kv*d_h, lora_rank=r)
-        self.out_proj = LoRALinear(H*d_h, d, lora_rank=r)
+    def \_\_init\_\_(self, config, rank=64, compress\_dim=128,
+                 local\_window=128, pretrained\_attn=None, ...):
+        super().\_\_init\_\_(config, rank)
+        self.q\_proj = LoRALinear(d, H*d\_h, lora\_rank=r)
+        self.k\_proj = LoRALinear(d, H\_kv*d\_h, lora\_rank=r)
+        self.v\_proj = LoRALinear(d, H\_kv*d\_h, lora\_rank=r)
+        self.out\_proj = LoRALinear(H*d\_h, d, lora\_rank=r)
         
-        self.memory = nn.Parameter(torch.randn(1, H, d_c, d_h) * 0.001)
+        self.memory = nn.Parameter(torch.randn(1, H, d\_c, d\_h) * 0.001)
         self.beta = nn.Parameter(torch.tensor([-5.0]))
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{Causality}
@@ -130,7 +130,7 @@ class InfiniAttention(BaseAttention):
 For decoders, the causal + window mask ensures:
 
 \[
-M_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
 \tag{5.1}
 \]
 
@@ -158,8 +158,8 @@ NaN in memory & \texttt{torch.isnan} & Not handled \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("infini")
-@ATTENTION_REGISTRY.register("infini_attention")
+@ATTENTION\_REGISTRY.register("infini")
+@ATTENTION\_REGISTRY.register("infini\_attention")
 class InfiniAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -169,7 +169,7 @@ class InfiniAttention(BaseAttention):
 Infini-Attention \textbf{raises NotImplementedError} for cross-attention:
 
 \begin{lstlisting}
-if kwargs.get("encoder_hidden_states", None) is not None:
+if kwargs.get("encoder\_hidden\_states", None) is not None:
     raise NotImplementedError(...)
 \end{lstlisting}
 
@@ -183,6 +183,6 @@ This is a limitation for encoder-decoder models.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of infini.}
-\label{fig:arch_infini}
+\label{fig:arch\_infini}
 \end{figure}
 

@@ -6,7 +6,7 @@
 For query-key scores $s = Q K^\top / \sqrt{d_h}$, softmax produces:
 
 \[
-p_i = \frac{e^{s_i}}{\sum_j e^{s_j}}, \quad p_i > 0, \quad \sum_i p_i = 1
+p\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}}, \quad p\_i \textgreater{} 0, \quad \sum\_i p\_i = 1
 \tag{3.1}
 \]
 
@@ -18,7 +18,7 @@ Two properties matter here:
 
 \end{enumerate}
 \[
-\text{softmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H(p)
+\text{softmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H(p)
 \tag{3.2}
 \]
 
@@ -30,9 +30,9 @@ uniformly.
 Replacing Shannon entropy with \textbf{Tsallis entropy} $H_\alpha^T$:
 
 \[
-H_\alpha^T(p) = \begin{cases}
-\frac{1}{\alpha (\alpha - 1)} \sum_i (p_i - p_i^\alpha) & \alpha \neq 1 \\
--\sum_i p_i \log p_i & \alpha = 1
+H\_\alpha^T(p) = \begin{cases}
+\frac{1}{\alpha (\alpha - 1)} \sum\_i (p\_i - p\_i^\alpha) & \alpha \neq 1 \\
+-\sum\_i p\_i \log p\_i & \alpha = 1
 \end{cases}
 \tag{3.3}
 \]
@@ -40,14 +40,14 @@ H_\alpha^T(p) = \begin{cases}
 gives the $\alpha$-entmax family:
 
 \[
-\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
 \tag{3.4}
 \]
 
 \textbf{Closed form.} For $\alpha > 1$:
 
 \[
-\text{$\alpha$-entmax}(s)_i = \max\!\left(0, (\alpha - 1) s_i - \tau\right)^{1/(\alpha - 1)}
+\text{$\alpha$-entmax}(s)\_i = \max\!\left(0, (\alpha - 1) s\_i - \tau\right)^{1/(\alpha - 1)}
 \tag{3.5}
 \]
 
@@ -56,7 +56,7 @@ where $\tau$ is chosen so that $\sum_i p_i = 1$.
 \textbf{Support.} The value $\tau$ determines the \textbf{support} of the output:
 
 \[
-S = \{i : (\alpha - 1) s_i > \tau\}
+S = \{i : (\alpha - 1) s\_i \textgreater{} \tau\}
 \tag{3.6}
 \]
 
@@ -67,7 +67,7 @@ For $\alpha = 1.5$: $p_i \propto \max(0, 0.5 s_i - \tau)^2$.
 Solving for $\tau$ is a one-dimensional root-finding problem:
 
 \[
-f(\tau) = \sum_i \max(0, (\alpha - 1) s_i - \tau)^{1/(\alpha - 1)} - 1 = 0
+f(\tau) = \sum\_i \max(0, (\alpha - 1) s\_i - \tau)^{1/(\alpha - 1)} - 1 = 0
 \tag{3.7}
 \]
 
@@ -102,7 +102,7 @@ the first few tokens act as sinks because:
 
 \begin{enumerate}
 \item Positional embeddings for position 0 are unique.
-\item Token 0 is often \texttt{[CLS]} or \texttt{<s>}, a natural aggregator.
+\item Token 0 is often \texttt{[CLS]} or \texttt{\textless{}s\textgreater{}}, a natural aggregator.
 
 \end{enumerate}
 \textbf{Empirical observation.} Removing sink tokens causes measurable accuracy 
@@ -116,7 +116,7 @@ For causal decoders, we restrict attention to:
 \[
 \text{mask}(i, j) = \begin{cases}
 1 & \text{if } 0 \leq i - j \leq W \\
-1 & \text{if } j < S \\
+1 & \text{if } j \textless{} S \\
 0 & \text{otherwise}
 \end{cases}
 \tag{3.8}
@@ -130,7 +130,7 @@ Non-causal (bidirectional) models use the full attention (no windowing).
 LoRA (Hu et al., 2021) parameterizes a weight update:
 
 \[
-W_\text{effective} = W_\text{frozen} + B A
+W\_\text{effective} = W\_\text{frozen} + B A
 \tag{3.9}
 \]
 

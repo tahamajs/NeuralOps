@@ -7,13 +7,13 @@ Squeezing Heads replaces each pretrained attention projection with a
 \textbf{LoRA-wrapped linear layer}:
 
 \[
-\text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
+\text{Projection}\_{W} = \text{LoRALinear}(W\_\text{frozen}, r\_L, \alpha)
 \]
 
 The forward pass is:
 
 \[
-y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
+y = x W\_\text{frozen}^\top + \frac{\alpha}{r\_L} x A^\top B^\top + b
 \]
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
@@ -28,7 +28,7 @@ adapters (trainable), and $b$ is the bias (frozen).
                              
   +----------+        +----------+
   | Frozen   |        | LoRA     |
-  | W_frozen |        | BA       |
+  | W\_frozen |        | BA       |
   +----+-----+        +----+-----+
        |                   |
        +---------+---------+
@@ -43,7 +43,7 @@ adapters (trainable), and $b$ is the bias (frozen).
 For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 
 \[
-y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
+y = \text{Linear}(x, W\_\text{frozen}, b) + \frac{\alpha}{r\_L} \text{Linear}(\text{Linear}(x, A), B)
 \]
 
 \textbf{Complexity.}
@@ -77,13 +77,13 @@ To reduce head dimension from $d_h$ to $d_h'$, we slice the leading rows
 of $W_Q, W_K, W_V$:
 
 \[
-W_Q^{(\text{new})} = {W_Q^{(\text{old})}}_{:d_h' H, :}
+W\_Q^{(\text{new})} = {W\_Q^{(\text{old})}}\_{:d\_h' H, :}
 \]
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
 
 \[
-W_O^{(\text{new})} = {W_O^{(\text{old})}}_{:, :d_h' H}
+W\_O^{(\text{new})} = {W\_O^{(\text{old})}}\_{:, :d\_h' H}
 \]
 
 \textbf{Why leading?} The leading dimensions correspond to the principal 
@@ -99,7 +99,7 @@ When the source attention has $H_\text{source}$ KV heads and the target has
 $H_\text{target} < H_\text{source}$:
 
 \[
-{W_K^{(\text{pool})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+{W\_K^{(\text{pool})}}\_g = \frac{1}{r} \sum\_{h \in g} {W\_K^{(\text{source})}}\_h
 \]
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
@@ -110,16 +110,16 @@ heads in group $g$.
 \textbf{Algorithm 1:} Squeezing Heads initialization
 \begin{lstlisting}
 Input:  config c, pretrained attention A
-        head_dim target d_h', lora_rank r_L
+        head\_dim target d\_h', lora\_rank r\_L
 Output: SqueezingHeadsDistiller instance
 
- 1: Extract d_h, H, H_kv from A
+ 1: Extract d\_h, H, H\_kv from A
  2: Create LoRALinear projections for Q, K, V, O
- 3: Call copy_weights(A):
- 4:     - Slice source W_Q to leading d_h' * H rows
- 5:     - Pool source W_K to H_kv target heads
- 6:     - Slice source W_V to leading d_h' * H_kv rows
- 7:     - Slice source W_O to leading d_h' * H columns
+ 3: Call copy\_weights(A):
+ 4:     - Slice source W\_Q to leading d\_h' * H rows
+ 5:     - Pool source W\_K to H\_kv target heads
+ 6:     - Slice source W\_V to leading d\_h' * H\_kv rows
+ 7:     - Slice source W\_O to leading d\_h' * H columns
  8:     - Copy bias where shapes match
  9:     - Freeze base weights; keep LoRA trainable
 10: return wrapper
@@ -129,24 +129,24 @@ Output: SqueezingHeadsDistiller instance
 
 \textbf{Algorithm 2:} Squeezing Heads forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
-        attention_mask, position_embeddings
+Input:  hidden\_states $\in$ R^{B $\times$ L $\times$ d}
+        attention\_mask, position\_embeddings
 Output: output $\in$ R^{B $\times$ L $\times$ d}
 
- 1: Q $\leftarrow$ LoRALinear_q(hidden_states)
- 2: K $\leftarrow$ LoRALinear_k(hidden_states)
- 3: V $\leftarrow$ LoRALinear_v(hidden_states)
- 4: Reshape to (B, H, L, d_h')
- 5: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
- 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
- 7: S $\leftarrow$ Q K^T / sqrt(d_h')
- 8: if causal: S $\leftarrow$ S + causal_mask
- 9: if mask: S $\leftarrow$ apply_mask(S, mask)
+ 1: Q $\leftarrow$ LoRALinear\_q(hidden\_states)
+ 2: K $\leftarrow$ LoRALinear\_k(hidden\_states)
+ 3: V $\leftarrow$ LoRALinear\_v(hidden\_states)
+ 4: Reshape to (B, H, L, d\_h')
+ 5: if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
+ 6: if GQA: K, V $\leftarrow$ repeat\_kv(K, V, H/H\_kv)
+ 7: S $\leftarrow$ Q K^T / sqrt(d\_h')
+ 8: if causal: S $\leftarrow$ S + causal\_mask
+ 9: if mask: S $\leftarrow$ apply\_mask(S, mask)
 10: P $\leftarrow$ softmax(S)
 11: O $\leftarrow$ P V
-12: Merge heads $\to$ (B, L, H * d_h')
-13: if nested_encoder: return O
-14: else: return LoRALinear_o(O)
+12: Merge heads $\to$ (B, L, H * d\_h')
+13: if nested\_encoder: return O
+14: else: return LoRALinear\_o(O)
 \end{lstlisting}
 
 \subsection{Complexity Analysis}
@@ -174,7 +174,7 @@ Storage & $4 d^2$ & $4 d^2$ + $4 r_L d$ \\
 If we reduce head dimension from $d_h$ to $d_h'$:
 
 \[
-\text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
+\text{Params reduction} = \frac{d\_h}{d\_h'} \cdot \left(1 + O(r\_L / d\_h)\right)
 \]
 
 \textbf{Example.} $d_h = 64 \to d_h' = 32$, $r_L = 16$:

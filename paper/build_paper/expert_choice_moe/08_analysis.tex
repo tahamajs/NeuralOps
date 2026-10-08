@@ -129,7 +129,7 @@ LoRA & 0.098M \\
 OOM & 8 experts $\times$ 2-layer MLP & Reduce E \\
 Slow & Python loop over experts & Batch experts \\
 Unstable & No zero-init & Add zero-init \\
-Underutilization & CF < 0.5 & Increase CF \\
+Underutilization & CF \textless{} 0.5 & Increase CF \\
 \bottomrule
 \end{tabular}
 \end{table}

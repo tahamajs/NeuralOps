@@ -49,25 +49,25 @@ Given a projection weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \textbf{Step 1.} Compute the top-$r_b$ SVD:
 \[
-W_b = U_b \Sigma_b V_b^\top, \quad r_b \ll \min(d_\text{in}, d_\text{out})
+W\_b = U\_b \Sigma\_b V\_b^\top, \quad r\_b \ll \min(d\_\text{in}, d\_\text{out})
 \tag{1.2}
 \]
 
 \textbf{Step 2.} Compute the residual:
 \[
-R = W - W_b
+R = W - W\_b
 \tag{1.3}
 \]
 
 \textbf{Step 3.} Take the top-$r_r$ SVD of the residual:
 \[
-R \approx U_r \Sigma_r V_r^\top
+R \approx U\_r \Sigma\_r V\_r^\top
 \tag{1.4}
 \]
 
 \textbf{Step 4.} Initialize the LoRA adapter with:
 \[
-B = U_r \Sigma_r^{1/2}, \quad A = \Sigma_r^{1/2} V_r^\top
+B = U\_r \Sigma\_r^{1/2}, \quad A = \Sigma\_r^{1/2} V\_r^\top
 \tag{1.5}
 \]
 
@@ -75,7 +75,7 @@ B = U_r \Sigma_r^{1/2}, \quad A = \Sigma_r^{1/2} V_r^\top
 
 The forward pass computes:
 \[
-y = x (U_b V_b)^\top + \alpha x (B A)^\top + b
+y = x (U\_b V\_b)^\top + \alpha x (B A)^\top + b
 \tag{1.6}
 \]
 

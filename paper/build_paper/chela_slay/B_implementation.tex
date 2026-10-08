@@ -4,49 +4,49 @@
 
 \begin{lstlisting}
 class ChelaSlayAttention(BaseAttention):
-    def __init__(self, config, rank=64, feature_dim=128, gate_init_bias=5.0, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, feature\_dim=128, gate\_init\_bias=5.0, ...):
+        super().\_\_init\_\_(config, rank)
         
         self.dim = ...
-        self.num_heads = ...
-        self.head_dim = ...
-        self.feature_dim = feature_dim
+        self.num\_heads = ...
+        self.head\_dim = ...
+        self.feature\_dim = feature\_dim
         
         # LoRA projections
-        self.W_q = LoRALinear(...)
-        self.W_k = LoRALinear(...)
-        self.W_v = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.W\_q = LoRALinear(...)
+        self.W\_k = LoRALinear(...)
+        self.W\_v = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
         # Yat-Kernel RFF
-        self.register_buffer("random_proj", 
-                             torch.randn(self.head_dim, feature_dim) * 0.02)
+        self.register\_buffer("random\_proj", 
+                             torch.randn(self.head\_dim, feature\_dim) * 0.02)
         
         # Adaptive gate
-        self.gate = nn.Linear(self.dim, self.num_heads)
-        nn.init.zeros_(self.gate.weight)
-        self.gate.bias.data.fill_(gate_init_bias)
+        self.gate = nn.Linear(self.dim, self.num\_heads)
+        nn.init.zeros\_(self.gate.weight)
+        self.gate.bias.data.fill\_(gate\_init\_bias)
 \end{lstlisting}
 
 \subsection{B.2 Spherical Normalization}
 
 \begin{lstlisting}
-def _spherical_normalize(self, x):
+def \_spherical\_normalize(self, x):
     return F.normalize(x, p=2, dim=-1, eps=1e-6)
 \end{lstlisting}
 
 \subsection{B.3 Yat-Kernel Feature Map}
 
 \begin{lstlisting}
-def _yat_feature_map(self, x):
-    if self.random_proj.shape[0] != x.shape[-1]:
-        self.random_proj = torch.randn(
-            x.shape[-1], self.feature_dim, 
+def \_yat\_feature\_map(self, x):
+    if self.random\_proj.shape[0] != x.shape[-1]:
+        self.random\_proj = torch.randn(
+            x.shape[-1], self.feature\_dim, 
             device=x.device, dtype=x.dtype
         ) * 0.02
-    proj = torch.matmul(x, self.random_proj.to(device=x.device, dtype=x.dtype))
+    proj = torch.matmul(x, self.random\_proj.to(device=x.device, dtype=x.dtype))
     return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (
-        1.0 / (self.feature_dim ** 0.25)
+        1.0 / (self.feature\_dim ** 0.25)
     )
 \end{lstlisting}
 
@@ -54,31 +54,31 @@ def _yat_feature_map(self, x):
 
 \begin{lstlisting}
 # Outer product
-outer_prod = k_feat.float().unsqueeze(-1) * v_masked.float().unsqueeze(-2)
+outer\_prod = k\_feat.float().unsqueeze(-1) * v\_masked.float().unsqueeze(-2)
 # Cumsum
-S = torch.cumsum(outer_prod, dim=2)
-Z = torch.cumsum(k_feat.float(), dim=2)
+S = torch.cumsum(outer\_prod, dim=2)
+Z = torch.cumsum(k\_feat.float(), dim=2)
 
-num = torch.matmul(q_feat.float().unsqueeze(-2), S).squeeze(-2)
-denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
-linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+num = torch.matmul(q\_feat.float().unsqueeze(-2), S).squeeze(-2)
+denom = (q\_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
+linear\_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.5 Bidirectional Linear Attention}
 
 \begin{lstlisting}
-KV = torch.matmul(k_feat.transpose(-2, -1).float(), v_masked.float())
-Z = k_feat.float().sum(dim=2, keepdim=True)
-num = torch.matmul(q_feat.float(), KV)
-denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
-linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+KV = torch.matmul(k\_feat.transpose(-2, -1).float(), v\_masked.float())
+Z = k\_feat.float().sum(dim=2, keepdim=True)
+num = torch.matmul(q\_feat.float(), KV)
+denom = (q\_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
+linear\_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.6 Gate Fusion}
 
 \begin{lstlisting}
 g = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)
-fused = g * dense_out + (1.0 - g) * linear_out
+fused = g * dense\_out + (1.0 - g) * linear\_out
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}

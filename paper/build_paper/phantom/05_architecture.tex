@@ -26,10 +26,10 @@ Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\
 factorized via CUR.
 
 \begin{lstlisting}
-target.q_proj.copy_cur(src.q_lin.weight, src.q_lin.bias)
-target.k_proj.copy_cur(src.k_lin.weight, src.k_lin.bias)
-target.v_proj.copy_cur(src.v_lin.weight, src.v_lin.bias)
-target.out_proj.copy_cur(src.out_lin.weight, src.out_lin.bias)
+target.q\_proj.copy\_cur(src.q\_lin.weight, src.q\_lin.bias)
+target.k\_proj.copy\_cur(src.k\_lin.weight, src.k\_lin.bias)
+target.v\_proj.copy\_cur(src.v\_lin.weight, src.v\_lin.bias)
+target.out\_proj.copy\_cur(src.out\_lin.weight, src.out\_lin.bias)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -37,10 +37,10 @@ target.out_proj.copy_cur(src.out_lin.weight, src.out_lin.bias)
 Extract from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}, \texttt{output.dense}.
 
 \begin{lstlisting}
-target.q_proj.copy_cur(src.self.query.weight, src.self.query.bias)
-target.k_proj.copy_cur(src.self.key.weight, src.self.key.bias)
-target.v_proj.copy_cur(src.self.value.weight, src.self.value.bias)
-# out_proj is bypassed via is_nested_encoder = True
+target.q\_proj.copy\_cur(src.self.query.weight, src.self.query.bias)
+target.k\_proj.copy\_cur(src.self.key.weight, src.self.key.bias)
+target.v\_proj.copy\_cur(src.self.value.weight, src.self.value.bias)
+# out\_proj is bypassed via is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
@@ -48,12 +48,12 @@ target.v_proj.copy_cur(src.self.value.weight, src.self.value.bias)
 GPT-2 fuses Q, K, V into \texttt{c\_attn}:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D stores (in, out) $\to$ transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-target.q_proj.copy_cur(q_w, q_bias)
-target.k_proj.copy_cur(k_w, k_bias)
-target.v_proj.copy_cur(v_w, v_bias)
-target.out_proj.copy_cur(src.c_proj.weight.t(), src.c_proj.bias)
+w = src.c\_attn.weight.t()  # Conv1D stores (in, out) $\to$ transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+target.q\_proj.copy\_cur(q\_w, q\_bias)
+target.k\_proj.copy\_cur(k\_w, k\_bias)
+target.v\_proj.copy\_cur(v\_w, v\_bias)
+target.out\_proj.copy\_cur(src.c\_proj.weight.t(), src.c\_proj.bias)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA)}
@@ -79,10 +79,10 @@ outer \texttt{BertSelfOutput.dense} handle the projection.
 For GQA models ($H_{kv} < H$):
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    K = repeat_kv(K, repeats)
-    V = repeat_kv(V, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    K = repeat\_kv(K, repeats)
+    V = repeat\_kv(V, repeats)
 \end{lstlisting}
 
 Applied after projection, before attention.
@@ -92,9 +92,9 @@ Applied after projection, before attention.
 For models with RoPE (Qwen, LLaMA):
 
 \begin{lstlisting}
-if position_embeddings is not None:
-    cos, sin = position_embeddings
-    Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
 \end{lstlisting}
 
 Applied after projection, before GQA expansion.
@@ -106,12 +106,12 @@ Applied after projection, before GQA expansion.
 Input:  model M, config c
 Output: M' with attention replaced
 
-1:  for layer   in transformer_layers(M):
-2:      src $\leftarrow$ extract_attention( )
+1:  for layer   in transformer\_layers(M):
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
 4:      new $\leftarrow$ PHANTOMAttention(c, old=src)
-5:      new.copy_weights(src)
-6:      replace_attention( , new)
+5:      new.copy\_weights(src)
+6:      replace\_attention( , new)
 7:  end for
 8:  return M'
 \end{lstlisting}
@@ -119,63 +119,63 @@ Output: M' with attention replaced
 \subsection{The `FactorisedLinear\_CUR` Module}
 
 \begin{lstlisting}
-class FactorisedLinear_CUR(nn.Module):
-    def __init__(self, in_features, out_features, cur_rank=16, ...):
-        super().__init__()
-        self.down = nn.Linear(in_features, cur_rank, bias=False)
-        self.up = nn.Linear(cur_rank, out_features, bias=bias)
+class FactorisedLinear\_CUR(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, cur\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.down = nn.Linear(in\_features, cur\_rank, bias=False)
+        self.up = nn.Linear(cur\_rank, out\_features, bias=bias)
         # Optional LoRA
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
-    def copy_cur(self, weight, bias):
+    def copy\_cur(self, weight, bias):
         # 1. SVD
         U, S, Vt = torch.linalg.svd(weight)
         # 2. Leverage scores
-        col_lev = (Vt ** 2).sum(dim=0)
-        row_lev = (U ** 2).sum(dim=1)
+        col\_lev = (Vt ** 2).sum(dim=0)
+        row\_lev = (U ** 2).sum(dim=1)
         # 3. Top-r selection
-        col_idx = torch.topk(col_lev, k=rank).indices
-        row_idx = torch.topk(row_lev, k=rank).indices
+        col\_idx = torch.topk(col\_lev, k=rank).indices
+        row\_idx = torch.topk(row\_lev, k=rank).indices
         # 4. CUR factors
-        C = weight[:, col_idx]
-        R = weight[row_idx, :]
-        W_int = weight[row_idx][:, col_idx]
+        C = weight[:, col\_idx]
+        R = weight[row\_idx, :]
+        W\_int = weight[row\_idx][:, col\_idx]
         # 5. Assign
         self.down.weight.data = R
-        self.up.weight.data = C @ torch.linalg.pinv(W_int)
+        self.up.weight.data = C @ torch.linalg.pinv(W\_int)
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{LSH Attention Module}
 
 \begin{lstlisting}
-def lsh_attention(Q, K, V, rounds=4, bucket_size=4, softpick_temp=1.0, ...):
+def lsh\_attention(Q, K, V, rounds=4, bucket\_size=4, softpick\_temp=1.0, ...):
     B, H, N, D = Q.shape
     scale = D ** -0.5
-    n_bits = min(bucket_size, 8)
-    bit_shifts = torch.tensor([2**i for i in range(n_bits)])
+    n\_bits = min(bucket\_size, 8)
+    bit\_shifts = torch.tensor([2**i for i in range(n\_bits)])
     
-    Q_norm = F.normalize(Q, p=2, dim=-1)
-    K_norm = F.normalize(K, p=2, dim=-1)
+    Q\_norm = F.normalize(Q, p=2, dim=-1)
+    K\_norm = F.normalize(K, p=2, dim=-1)
     
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     # ... masking ...
     
-    accum = torch.zeros_like(V)
-    for _ in range(rounds):
-        proj = F.normalize(torch.randn(D, n_bits), p=2, dim=0)
-        hq = (Q_norm @ proj > 0).float() @ bit_shifts
-        hk = (K_norm @ proj > 0).float() @ bit_shifts
+    accum = torch.zeros\_like(V)
+    for \_ in range(rounds):
+        proj = F.normalize(torch.randn(D, n\_bits), p=2, dim=0)
+        hq = (Q\_norm @ proj \textgreater{} 0).float() @ bit\_shifts
+        hk = (K\_norm @ proj \textgreater{} 0).float() @ bit\_shifts
         match = (hq.unsqueeze(-1) == hk.unsqueeze(-2)) | eye
-        scores_r = scores.masked_fill(~match, -1e4)
-        alpha = softpick(scores_r, dim=-1, temperature=softpick_temp)
+        scores\_r = scores.masked\_fill(~match, -1e4)
+        alpha = softpick(scores\_r, dim=-1, temperature=softpick\_temp)
         accum += alpha @ V
     
     return accum / rounds
@@ -194,7 +194,7 @@ SVD failure & Exception & Kaiming init \\
 Pseudoinverse failure & NaN/Inf & Kaiming init \\
 Missing weights & \texttt{copy\_weights} raises & Skip layer \\
 Shape mismatch & Assertion & Skip layer \\
-Frobenius norm < 1e-4 & Check after copy & Raise error \\
+Frobenius norm \textless{} 1e-4 & Check after copy & Raise error \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -202,8 +202,8 @@ Frobenius norm < 1e-4 & Check after copy & Raise error \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("phantom")
-@ATTENTION_REGISTRY.register("phantom_module")
+@ATTENTION\_REGISTRY.register("phantom")
+@ATTENTION\_REGISTRY.register("phantom\_module")
 class PHANTOMAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -214,10 +214,10 @@ For decoder models, we verify that the output at position $i$ depends only on
 inputs $\leq i$ via gradient check:
 
 \begin{lstlisting}
-X = torch.randn(1, N, d, requires_grad=True)
+X = torch.randn(1, N, d, requires\_grad=True)
 Y = model(X)
 Y[0, i].sum().backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i+1:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 \begin{lstlisting}
 
@@ -228,6 +228,6 @@ assert X.grad[0, i+1:].abs().max() < 1e-6
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of phantom.}
-\label{fig:arch_phantom}
+\label{fig:arch\_phantom}
 \end{figure}
 

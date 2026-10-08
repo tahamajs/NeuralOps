@@ -6,7 +6,7 @@
 Standard scaled dot-product attention (Vaswani et al., 2017) computes:
 
 \[
-\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -23,14 +23,14 @@ rows and columns to reconstruct it.
 The reconstruction takes the form:
 
 \[
-\tilde{A} = \text{softmax}(Q K_m^\top) \cdot \text{pinv}(\text{softmax}(Q_m K_m^\top)) \cdot \text{softmax}(Q_m K^\top)
+\tilde{A} = \text{softmax}(Q K\_m^\top) \cdot \text{pinv}(\text{softmax}(Q\_m K\_m^\top)) \cdot \text{softmax}(Q\_m K^\top)
 \tag{1.2}
 \]
 
 where $Q_m, K_m$ are landmark queries and keys. This gives the output:
 
 \[
-\text{Output} = \tilde{A} V = \underbrace{\text{softmax}(Q K_m^\top)}_{N \times m} \cdot \underbrace{\text{pinv}(A_{mm})}_{m \times m} \cdot \underbrace{\text{softmax}(Q_m K^\top) V}_{m \times d_h}
+\text{Output} = \tilde{A} V = \underbrace{\text{softmax}(Q K\_m^\top)}\_{N \times m} \cdot \underbrace{\text{pinv}(A\_{mm})}\_{m \times m} \cdot \underbrace{\text{softmax}(Q\_m K^\top) V}\_{m \times d\_h}
 \tag{1.3}
 \]
 

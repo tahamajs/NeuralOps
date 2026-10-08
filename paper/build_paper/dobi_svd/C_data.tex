@@ -78,7 +78,7 @@ Compressed layers & 0.85 \\
 \small
 \begin{tabular}{llllll}
 \toprule
-\textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% < 0.3} & \textbf{\% > 0.9} \\
+\textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% \textless{} 0.3} & \textbf{\% \textgreater{} 0.9} \\
 \midrule
 0 & q\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
 0 & k\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
@@ -191,14 +191,14 @@ Step  Loss  Mean gate
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": D_PARAMS_FULL,
-    "effective_ratio": 50\%,
-    "accuracy_pct": 86.4,
+    "params\_before": 66955010,
+    "params\_after": D\_PARAMS\_FULL,
+    "effective\_ratio": 50\%,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "nominal_rank": 32,
-    "effective_rank": 32,
-    "mean_gate": 0.88
+    "nominal\_rank": 32,
+    "effective\_rank": 32,
+    "mean\_gate": 0.88
   },
   "roberta": {...},
   "gpt2": {...}

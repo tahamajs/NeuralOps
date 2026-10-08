@@ -25,11 +25,11 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Decoder \\
 The detection order matters. We check \texttt{has\_out} first:
 
 \begin{lstlisting}
-has_out = any(hasattr(src, x) for x in ['dense', 'out_proj', 'out_lin', 'c_proj', 'o_proj'])
-if cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out):
-    self.is_nested_encoder = True
+has\_out = any(hasattr(src, x) for x in ['dense', 'out\_proj', 'out\_lin', 'c\_proj', 'o\_proj'])
+if cls\_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has\_out):
+    self.is\_nested\_encoder = True
 if hasattr(src, 'self') and hasattr(src, 'output'):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \textbf{Key insight.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with "SelfAttention" but has \texttt{out\_lin}, so \texttt{has\_out=True} and it is \textbf{not} classified as nested. This is correct.
@@ -39,21 +39,21 @@ if hasattr(src, 'self') and hasattr(src, 'output'):
 For Qwen:
 
 \begin{lstlisting}
-if hasattr(src, "rotary_emb"):
-    self.rotary_emb = src.rotary_emb
+if hasattr(src, "rotary\_emb"):
+    self.rotary\_emb = src.rotary\_emb
 \end{lstlisting}
 
 Then at forward time, we try three call signatures:
 
 \begin{lstlisting}
 try:
-    cos, sin = rotary_mod(Q, seq_len=kv_len)
+    cos, sin = rotary\_mod(Q, seq\_len=kv\_len)
 except Exception:
     try:
-        cos, sin = rotary_mod(Q, pos_ids)
+        cos, sin = rotary\_mod(Q, pos\_ids)
     except Exception:
         try:
-            cos, sin = rotary_mod(Q)
+            cos, sin = rotary\_mod(Q)
         except Exception:
             cos, sin = None, None
 \end{lstlisting}
@@ -66,14 +66,14 @@ silently for unusual RoPE implementations.
 \subsubsection{Encoder Path (Bidirectional)}
 
 \begin{lstlisting}
-KV_cos = torch.matmul(K_cos.transpose(-2, -1), V)
-KV_sin = torch.matmul(K_sin.transpose(-2, -1), V)
-Z_cos = K_cos.sum(dim=2, keepdim=True)
-Z_sin = K_sin.sum(dim=2, keepdim=True)
+KV\_cos = torch.matmul(K\_cos.transpose(-2, -1), V)
+KV\_sin = torch.matmul(K\_sin.transpose(-2, -1), V)
+Z\_cos = K\_cos.sum(dim=2, keepdim=True)
+Z\_sin = K\_sin.sum(dim=2, keepdim=True)
 
-num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + \
-        torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
+num = torch.matmul(Q\_cos, KV\_cos) + torch.matmul(Q\_sin, KV\_sin)
+denom = torch.matmul(Q\_cos, Z\_cos.transpose(-2, -1)) + \
+        torch.matmul(Q\_sin, Z\_sin.transpose(-2, -1)) + self.eps
 context = num / denom.clamp(min=self.eps)
 \end{lstlisting}
 
@@ -82,15 +82,15 @@ context = num / denom.clamp(min=self.eps)
 \subsubsection{Decoder Path (Chunked)}
 
 \begin{lstlisting}
-chunk_size = 32
-if N <= chunk_size:
+chunk\_size = 32
+if N \textless{}= chunk\_size:
     # Single chunk -- direct computation with causal mask
     ...
 else:
     # Multiple chunks
-    for c in range(num_chunks):
-        num_inter = Q_c @ S_cos + Q_sin @ S_sin
-        denom_inter = Q_c @ Z_cos + Q_sin @ Z_sin
+    for c in range(num\_chunks):
+        num\_inter = Q\_c @ S\_cos + Q\_sin @ S\_sin
+        denom\_inter = Q\_c @ Z\_cos + Q\_sin @ Z\_sin
         # ... append, update state
 \end{lstlisting}
 
@@ -102,8 +102,8 @@ Total ~20 extra kernel launches. Fast enough.
 Masks are applied to \textbf{both K and V} (not just K):
 
 \begin{lstlisting}
-K = K * mask_expanded
-V = V * mask_expanded
+K = K * mask\_expanded
+V = V * mask\_expanded
 \end{lstlisting}
 
 This is \textbf{critical} for the chunked scan -- otherwise padding tokens 
@@ -113,16 +113,16 @@ contribute to the state.
 
 \textbf{Algorithm 2:} Inject CosformerAttention
 \begin{lstlisting}
-Input:  layer  , config, old_attn
+Input:  layer  , config, old\_attn
 Output: new attention in  
 
-1: new $\leftarrow$ CosformerAttention(config, old=old_attn)
-2: if copy_weights fails: return None
+1: new $\leftarrow$ CosformerAttention(config, old=old\_attn)
+2: if copy\_weights fails: return None
 3: if   has .attention.self:
-4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
 5: elif   has .attention:
 6:      .attention $\leftarrow$ new
-7: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+7: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
 8: elif   has .attn:  .attn $\leftarrow$ new
 9: return new
 \end{lstlisting}
@@ -151,8 +151,8 @@ accumulates garbage.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("cosformer")
-@ATTENTION_REGISTRY.register("cosformer_attention")
+@ATTENTION\_REGISTRY.register("cosformer")
+@ATTENTION\_REGISTRY.register("cosformer\_attention")
 class CosformerAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -216,6 +216,6 @@ The standard pipeline applies:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of cosformer.}
-\label{fig:arch_cosformer}
+\label{fig:arch\_cosformer}
 \end{figure}
 

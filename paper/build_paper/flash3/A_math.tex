@@ -7,14 +7,14 @@
 \textbf{Proof.} Let $s \in \mathbb{R}^L$ be scores. Standard softmax:
 
 \[
-\text{softmax}(s)_i = \frac{e^{s_i}}{\sum_j e^{s_j}}
+\text{softmax}(s)\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}}
 \tag{A.1}
 \]
 
 For numerical stability, subtract $\max_j s_j$:
 
 \[
-\text{softmax}(s)_i = \frac{e^{s_i - m}}{\sum_j e^{s_j - m}}, \quad m = \max_j s_j
+\text{softmax}(s)\_i = \frac{e^{s\_i - m}}{\sum\_j e^{s\_j - m}}, \quad m = \max\_j s\_j
 \tag{A.2}
 \]
 
@@ -33,12 +33,12 @@ m^{(t)} = \max(m^{(t-1)}, \max(s^{(t)}))
 \]
 
 \[
-\ell^{(t)} = e^{m^{(t-1)} - m^{(t)}} \ell^{(t-1)} + \sum_j e^{s_j^{(t)} - m^{(t)}}
+\ell^{(t)} = e^{m^{(t-1)} - m^{(t)}} \ell^{(t-1)} + \sum\_j e^{s\_j^{(t)} - m^{(t)}}
 \tag{A.4}
 \]
 
 \[
-O^{(t)} = e^{m^{(t-1)} - m^{(t)}} O^{(t-1)} + \sum_j e^{s_j^{(t)} - m^{(t)}} v_j
+O^{(t)} = e^{m^{(t-1)} - m^{(t)}} O^{(t-1)} + \sum\_j e^{s\_j^{(t)} - m^{(t)}} v\_j
 \tag{A.5}
 \]
 
@@ -57,14 +57,14 @@ accesses reduced by factor $B$, giving effective speedup.
 For FP8 e4m3:
 
 \[
-\epsilon_{\text{rel}} = \frac{2^{-3}}{2} = \frac{1}{16} = 0.0625
+\epsilon\_{\text{rel}} = \frac{2^{-3}}{2} = \frac{1}{16} = 0.0625
 \tag{A.6}
 \]
 
 \textbf{Propagation.} If $Q, K, V$ are quantized:
 
 \[
-\tilde{Q} = Q(1 + \epsilon_Q), \quad |\epsilon_Q| \leq 0.0625
+\tilde{Q} = Q(1 + \epsilon\_Q), \quad |\epsilon\_Q| \leq 0.0625
 \tag{A.7}
 \]
 
@@ -83,7 +83,7 @@ $j = i$, a triangular mask is applied.
 For GQA with $H_{kv} < H$:
 
 \[
-\text{repeat\_kv}(K, n)_{b, h, i, d} = K_{b, h \bmod H_{kv}, i, d}
+\text{repeat\_kv}(K, n)\_{b, h, i, d} = K\_{b, h \bmod H\_{kv}, i, d}
 \tag{A.8}
 \]
 
@@ -94,7 +94,7 @@ where $n = H / H_{kv}$. This gives $H$ heads from $H_{kv}$.
 For head\_dim = 256 and rotary\_dim = 64:
 
 \[
-\tilde{Q}_i = [\text{RoPE}(Q_{i, :64}), \ Q_{i, 64:}]
+\tilde{Q}\_i = [\text{RoPE}(Q\_{i, :64}), \ Q\_{i, 64:}]
 \tag{A.9}
 \]
 

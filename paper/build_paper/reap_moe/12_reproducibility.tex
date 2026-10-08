@@ -3,19 +3,19 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 pip install -r requirements.txt
 \end{lstlisting}
 
 \subsection{Running REAP-MoE}
 
 \begin{lstlisting}
-python run_all_4_reap_moe.py \
+python run\_all\_4\_reap\_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts 8 \
-    --top_k 2 \
-    --recovery_steps 50
+    --n\_experts 8 \
+    --top\_k 2 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 Runtime: ~PyTorch 2.0 min.
@@ -23,31 +23,31 @@ Runtime: ~PyTorch 2.0 min.
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,reap_moe \
-    --n_experts 8 \
-    --top_k 2
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,reap\_moe \
+    --n\_experts 8 \
+    --top\_k 2
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_reap_moe.py --models distilbert,roberta,gpt2
+python run\_all\_4\_reap\_moe.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Experts)}
 \begin{lstlisting}
 for E in 2 4 8 16; do
-    python run_all_4_reap_moe.py --n_experts $E --output_suffix E$E
+    python run\_all\_4\_reap\_moe.py --n\_experts $E --output_suffix E$E
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Top-k)}
 \begin{lstlisting}
 for k in 1 2 4; do
-    python run_all_4_reap_moe.py --top_k $k --output_suffix k$k
+    python run\_all\_4\_reap\_moe.py --top\_k $k --output_suffix k$k
 done
 \end{lstlisting}
 
@@ -57,8 +57,8 @@ done
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

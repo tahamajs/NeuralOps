@@ -21,7 +21,7 @@ an \textbf{expert-choice MoE block} on the attention output:
 \]
 
 \[
-\text{final} = W_O \cdot \text{enriched}
+\text{final} = W\_O \cdot \text{enriched}
 \tag{4.4}
 \]
 
@@ -40,7 +40,7 @@ where $\gamma = \sigma(b_g)$.
    Attention |
    |        |
             |
-   attn_out |
+   attn\_out |
    |        |
    +--------+
    |        |
@@ -48,10 +48,10 @@ where $\gamma = \sigma(b_g)$.
    MoE      |
    |        |
              
-   enriched = attn_out + $\gamma$ MoE_out
+   enriched = attn\_out + $\gamma$ MoE\_out
        |
         
-    W_o
+    W\_o
        |
         
     Output Y
@@ -70,7 +70,7 @@ $\mathbf{x} \in \mathbb{R}^{T \times d}$ with $T = B \cdot L$.
 \]
 
 \[
-\mathbf{r} = W_g \tilde{\mathbf{x}} \in \mathbb{R}^{T \times E}
+\mathbf{r} = W\_g \tilde{\mathbf{x}} \in \mathbb{R}^{T \times E}
 \tag{4.6}
 \]
 
@@ -88,7 +88,7 @@ with $\sigma = 0.05$.
 \subsubsection{Softmax over Tokens per Expert}
 
 \[
-\mathbf{s} = \text{Softmax}_T(\mathbf{r}) \in \mathbb{R}^{T \times E}
+\mathbf{s} = \text{Softmax}\_T(\mathbf{r}) \in \mathbb{R}^{T \times E}
 \tag{4.8}
 \]
 
@@ -100,7 +100,7 @@ dimension.
 For each expert $e$:
 
 \[
-\text{Top-}k_e = \text{TopK}\!\left(\mathbf{s}[:, e], k\right), \quad
+\text{Top-}k\_e = \text{TopK}\!\left(\mathbf{s}[:, e], k\right), \quad
 k = \left\lceil \frac{T}{E} \cdot \text{capacity\_factor} \right\rceil
 \tag{4.9}
 \]
@@ -110,21 +110,21 @@ Every expert selects exactly $k$ tokens.
 \subsubsection{Expert Forward}
 
 \[
-\mathbf{y}_e = \text{Expert}_e\!\left(\mathbf{x}[\text{Top-}k_e]\right)
+\mathbf{y}\_e = \text{Expert}\_e\!\left(\mathbf{x}[\text{Top-}k\_e]\right)
 \tag{4.10}
 \]
 
 Each expert is a 2-layer MLP:
 
 \[
-\text{Expert}_e(\mathbf{x}) = W_2^{(e)} \text{GELU}(W_1^{(e)} \mathbf{x})
+\text{Expert}\_e(\mathbf{x}) = W\_2^{(e)} \text{GELU}(W\_1^{(e)} \mathbf{x})
 \tag{4.11}
 \]
 
 \subsubsection{Aggregation}
 
 \[
-\mathbf{y}_{\text{out}} = \sum_e \mathbf{s}[\text{Top-}k_e, e] \cdot \mathbf{y}_e
+\mathbf{y}\_{\text{out}} = \sum\_e \mathbf{s}[\text{Top-}k\_e, e] \cdot \mathbf{y}\_e
 \tag{4.12}
 \]
 
@@ -136,8 +136,8 @@ via \texttt{index\_add\_} to handle overlapping tokens.
 
 \begin{lstlisting}
 for expert in self.experts:
-    nn.init.zeros_(expert[2].weight)
-    nn.init.zeros_(expert[2].bias)
+    nn.init.zeros\_(expert[2].weight)
+    nn.init.zeros\_(expert[2].bias)
 \end{lstlisting}
 
 \textbf{Consequence.} $\text{MoE\_out} = 0$ for any input at initialization.
@@ -167,7 +167,7 @@ processes exactly $k = T / E$ tokens.
 independently. By construction, every expert processes exactly $k$ tokens. 
 $\square$
 
-\textbf{Note.} With \texttt{capacity\_factor > 1}, each expert processes $\lceil T \cdot 
+\textbf{Note.} With \texttt{capacity\_factor \textgreater{} 1}, each expert processes $\lceil T \cdot 
 \text{cf} / E \rceil$ tokens, still balanced.
 
 \subsection{Dynamic Per-Token Capacity}
@@ -183,8 +183,8 @@ The MoE block operates on the attention output, which is computed from
 either self- or cross-attention:
 
 \begin{lstlisting}
-is_cross_attention = encoder_hidden_states is not None
-kv_input = encoder_hidden_states if is_cross_attention else hidden_states
+is\_cross\_attention = encoder\_hidden\_states is not None
+kv\_input = encoder\_hidden\_states if is\_cross\_attention else hidden\_states
 \end{lstlisting}
 
 The MoE applies uniformly to both.
@@ -193,35 +193,35 @@ The MoE applies uniformly to both.
 
 \textbf{Algorithm 1:} ExpertChoiceMoEAttention forward pass
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings (optional)
-        encoder_hidden_states (optional)
+Input:  X, attention\_mask, position\_embeddings (optional)
+        encoder\_hidden\_states (optional)
 Output: Y
 
- 1: if cross: kv_input $\leftarrow$ encoder_hidden_states
- 2: else: kv_input $\leftarrow$ X
- 3: Q $\leftarrow$ W_q X
- 4: K $\leftarrow$ W_k kv_input
- 5: V $\leftarrow$ W_v kv_input
+ 1: if cross: kv\_input $\leftarrow$ encoder\_hidden\_states
+ 2: else: kv\_input $\leftarrow$ X
+ 3: Q $\leftarrow$ W\_q X
+ 4: K $\leftarrow$ W\_k kv\_input
+ 5: V $\leftarrow$ W\_v kv\_input
  6: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
- 7: if GQA: K, V $\leftarrow$ repeat_kv(...)
- 8: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
- 9: if causal: scores += causal_mask
-10: scores = mask(scores, attention_mask)
-11: attn_out $\leftarrow$ softmax(scores) V
+ 7: if GQA: K, V $\leftarrow$ repeat\_kv(...)
+ 8: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 9: if causal: scores += causal\_mask
+10: scores = mask(scores, attention\_mask)
+11: attn\_out $\leftarrow$ softmax(scores) V
 12:
 13: # MoE
-14: x_flat $\leftarrow$ attn_out.view(-1, all_head_size)
-15: logits $\leftarrow$ router(x_flat)
+14: x\_flat $\leftarrow$ attn\_out.view(-1, all\_head\_size)
+15: logits $\leftarrow$ router(x\_flat)
 16: scores $\leftarrow$ softmax(logits, dim=0)     over tokens
 17: for e in 0..E-1:
-18:     topk_vals, topk_idx $\leftarrow$ TopK(scores[:, e], k)
-19:     expert_out $\leftarrow$ Expert_e(x_flat[topk_idx])
-20:     out_flat.index_add_(0, topk_idx, expert_out * topk_vals)
-21: MoE_out $\leftarrow$ out_flat.view(B, L, all_head_size)
+18:     topk\_vals, topk\_idx $\leftarrow$ TopK(scores[:, e], k)
+19:     expert\_out $\leftarrow$ Expert\_e(x\_flat[topk\_idx])
+20:     out\_flat.index\_add\_(0, topk\_idx, expert\_out * topk\_vals)
+21: MoE\_out $\leftarrow$ out\_flat.view(B, L, all\_head\_size)
 22:
-23: $\gamma$ $\leftarrow$ $\sigma$(b_g)
-24: enriched $\leftarrow$ attn_out + $\gamma$   MoE_out
-25: Y $\leftarrow$ W_o enriched
+23: $\gamma$ $\leftarrow$ $\sigma$(b\_g)
+24: enriched $\leftarrow$ attn\_out + $\gamma$   MoE\_out
+25: Y $\leftarrow$ W\_o enriched
 26: return Y
 \end{lstlisting}
 
@@ -310,7 +310,7 @@ balanced. We do, however, track a \textbf{usage entropy} for monitoring.
 
 \begin{lstlisting}
 # Monitoring only, not optimized
-usage = torch.bincount(selected_indices, minlength=E).float()
+usage = torch.bincount(selected\_indices, minlength=E).float()
 entropy = -(usage / usage.sum() * torch.log(usage / usage.sum() + 1e-9)).sum()
 \end{lstlisting}
 

@@ -39,7 +39,7 @@ ORION replaces the standard attention block with:
        +-------+--------+
                |
                 
-        Concatenate + out_proj (factorized)
+        Concatenate + out\_proj (factorized)
                |
                 
             Output Y
@@ -61,14 +61,14 @@ For each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 \textbf{Forward:}
 
 \[
-y = W_\text{up}(W_\text{down} x) + b
+y = W\_\text{up}(W\_\text{down} x) + b
 \tag{4.1}
 \]
 
 \textbf{LoRA recovery:}
 
 \[
-y = W_\text{up}(W_\text{down} x) + \frac{\alpha_L}{r_L} B(A x) + b
+y = W\_\text{up}(W\_\text{down} x) + \frac{\alpha\_L}{r\_L} B(A x) + b
 \tag{4.2}
 \]
 
@@ -77,7 +77,7 @@ y = W_\text{up}(W_\text{down} x) + \frac{\alpha_L}{r_L} B(A x) + b
 For $H$ heads:
 
 \[
-H_f = \max(1, \lfloor H / 3 \rfloor), \quad H_k = H - H_f
+H\_f = \max(1, \lfloor H / 3 \rfloor), \quad H\_k = H - H\_f
 \tag{4.3}
 \]
 
@@ -90,7 +90,7 @@ Kernel heads index $0, \ldots, H_k - 1$; full heads index $H_k, \ldots, H - 1$.
 For the first $H_k$ heads:
 
 \[
-Q_\phi = \phi(Q_k), \quad K_\phi = \phi(K_k)
+Q\_\phi = \phi(Q\_k), \quad K\_\phi = \phi(K\_k)
 \tag{4.4}
 \]
 
@@ -99,12 +99,12 @@ where $\phi(x) = [\cos(\Omega x), \sin(\Omega x)] / \sqrt{2F}$.
 \textbf{Non-causal path:}
 
 \[
-KV = K_\phi^\top V, \quad Z = \sum_j K_\phi^{(j)}
+KV = K\_\phi^\top V, \quad Z = \sum\_j K\_\phi^{(j)}
 \tag{4.5}
 \]
 
 \[
-O_{\text{kernel}, i} = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z}
+O\_{\text{kernel}, i} = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z}
 \tag{4.6}
 \]
 
@@ -118,21 +118,21 @@ intra-chunk causal attention; across chunks, use the running state $S, Z$.
 For the last $H_f$ heads:
 
 \[
-\text{scores}_{ij} = \frac{q_i^\top k_j}{\sqrt{d_h}}
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d\_h}}
 \tag{4.7}
 \]
 
 Mask causal and padding:
 
 \[
-\text{scores}_{ij} \leftarrow \begin{cases} \text{scores}_{ij} & j \leq i \text{ and valid} \\ -10^4 & \text{otherwise} \end{cases}
+\text{scores}\_{ij} \leftarrow \begin{cases} \text{scores}\_{ij} & j \leq i \text{ and valid} \\ -10^4 & \text{otherwise} \end{cases}
 \tag{4.8}
 \]
 
 Softpick:
 
 \[
-\text{attn}_{ij} = \frac{\text{ReLU}(e^{\text{scores}_{ij}} - 1)}{\sum_k \text{ReLU}(e^{\text{scores}_{ik}} - 1) + \epsilon}
+\text{attn}\_{ij} = \frac{\text{ReLU}(e^{\text{scores}\_{ij}} - 1)}{\sum\_k \text{ReLU}(e^{\text{scores}\_{ik}} - 1) + \epsilon}
 \tag{4.9}
 \]
 
@@ -146,7 +146,7 @@ zero. \textbf{But} if all keys in a row are masked, the denominator becomes 0
 Concatenate kernel and full heads:
 
 \[
-O = \text{concat}(O_{\text{kernel}}, O_{\text{full}})
+O = \text{concat}(O\_{\text{kernel}}, O\_{\text{full}})
 \tag{4.10}
 \]
 
@@ -215,27 +215,27 @@ Input:  X $\in$ R^{B$\times$L$\times$d}
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: # Factorized projections
-2: Q_all $\leftarrow$ W_Q_up(W_Q_down(X))
-3: K_all $\leftarrow$ W_K_up(W_K_down(X))
-4: V_all $\leftarrow$ W_V_up(W_V_down(X))
+2: Q\_all $\leftarrow$ W\_Q\_up(W\_Q\_down(X))
+3: K\_all $\leftarrow$ W\_K\_up(W\_K\_down(X))
+4: V\_all $\leftarrow$ W\_V\_up(W\_V\_down(X))
 5:
 6: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-7: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+7: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
 8:
 9: # Split heads
-10: Q_kernel, Q_full $\leftarrow$ Q[:, :H_k], Q[:, H_k:]
-11: K_kernel, K_full $\leftarrow$ K[:, :H_k], K[:, H_k:]
-12: V_kernel, V_full $\leftarrow$ V[:, :H_k], V[:, H_k:]
+10: Q\_kernel, Q\_full $\leftarrow$ Q[:, :H\_k], Q[:, H\_k:]
+11: K\_kernel, K\_full $\leftarrow$ K[:, :H\_k], K[:, H\_k:]
+12: V\_kernel, V\_full $\leftarrow$ V[:, :H\_k], V[:, H\_k:]
 13:
 14: # Kernel heads
-15: O_kernel $\leftarrow$ RFF_linear_attention(Q_kernel, K_kernel, V_kernel)
+15: O\_kernel $\leftarrow$ RFF\_linear\_attention(Q\_kernel, K\_kernel, V\_kernel)
 16:
 17: # Full heads
-18: O_full $\leftarrow$ softpick_attention(Q_full, K_full, V_full)
+18: O\_full $\leftarrow$ softpick\_attention(Q\_full, K\_full, V\_full)
 19:
 20: # Concatenate + output
-21: O $\leftarrow$ concat(O_kernel, O_full)
-22: Y $\leftarrow$ W_O_up(W_O_down(O))
+21: O $\leftarrow$ concat(O\_kernel, O\_full)
+22: Y $\leftarrow$ W\_O\_up(W\_O\_down(O))
 23: return Y
 \end{lstlisting}
 
@@ -244,18 +244,18 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 \textbf{Critical.} The \texttt{copy\_weights} method contains:
 
 \begin{lstlisting}
-missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+missing = [k for k, (w, \_) in extracted.items() if w is None and (k != "o" or not self.is\_nested\_encoder)]
 if missing:
     try:
         from framework.core.adapters import UniversalAdapter
         adapter = UniversalAdapter()
         for k in missing:
-            w, b = adapter.get_weight_bias(src, k)
+            w, b = adapter.get\_weight\_bias(src, k)
             if w is not None:
                 extracted[k] = (w.clone(), b.clone() if b is not None else None)
     except Exception as e:
-        print(f'copy_weights failed: {e}')
-        raise RuntimeError(f"copy_weights failed: {e}")  # $\leftarrow$ BUG
+        print(f'copy\_weights failed: {e}')
+        raise RuntimeError(f"copy\_weights failed: {e}")  # $\leftarrow$ BUG
 \end{lstlisting}
 
 \textbf{Two failure modes:}

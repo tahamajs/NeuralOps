@@ -16,7 +16,7 @@ FASA has two paths:
                     |
                      
               +-----------+
-              | is_causal |
+              | is\_causal |
               | or cross? |
               +--+----+---+
                  | No | Yes
@@ -39,7 +39,7 @@ FASA has two paths:
 For keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
 \[
-\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \text{Var}_{d_h}(K_{b,h,i,:})
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}\_{d\_h}(K\_{b,h,i,:})
 \tag{4.1}
 \]
 
@@ -56,7 +56,7 @@ For keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$:
 instead:
 
 \[
-\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \|K_{b,h,i,:}\|_2
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \|K\_{b,h,i,:}\|\_2
 \tag{4.2}
 \]
 
@@ -86,7 +86,7 @@ The \texttt{max(8, ...)} floor prevents over-pruning short sequences.
 The selected indices:
 
 \[
-\mathcal{S} = \text{topk}_k(\text{imp}) \quad \text{(sorted ascending)}
+\mathcal{S} = \text{topk}\_k(\text{imp}) \quad \text{(sorted ascending)}
 \tag{4.5}
 \]
 
@@ -97,15 +97,15 @@ Sorting ensures stable gather and preserves positional order.
 Given $\mathcal{S}$, gather:
 
 \[
-K_{\mathcal{S}} = \text{gather}(K, \mathcal{S}), \quad
-V_{\mathcal{S}} = \text{gather}(V, \mathcal{S})
+K\_{\mathcal{S}} = \text{gather}(K, \mathcal{S}), \quad
+V\_{\mathcal{S}} = \text{gather}(V, \mathcal{S})
 \tag{4.6}
 \]
 
 Then compute standard attention:
 
 \[
-\text{Attn}' = \text{softmax}\!\left(\frac{Q K_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\text{Attn}' = \text{softmax}\!\left(\frac{Q K\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
 \tag{4.7}
 \]
 
@@ -117,13 +117,13 @@ $L \times L \times d_h$ $\to$ $L \times k \times d_h$.
 \textbf{Critical.} For causal attention, FASA \textbf{does not prune}. The code:
 
 \begin{lstlisting}
-is_causal = bool(self.is_decoder and not is_cross and L > 1)
-if is_causal or is_cross:
+is\_causal = bool(self.is\_decoder and not is\_cross and L \textgreater{} 1)
+if is\_causal or is\_cross:
     # Standard full attention
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-    if is_causal:
-        causal_mask = torch.triu(...)
-        scores = scores + causal_mask
+    if is\_causal:
+        causal\_mask = torch.triu(...)
+        scores = scores + causal\_mask
     ...
 \end{lstlisting}
 
@@ -175,36 +175,36 @@ For $k = rL$ with $r = 0.5$: bidirectional scores reduce by factor 2.
 
 \textbf{Algorithm 1:} FASA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_causal, fasa_keep_ratio r
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_causal, fasa\_keep\_ratio r
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+ 3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
  4:
- 5: is_causal $\leftarrow$ is_decoder and not cross
+ 5: is\_causal $\leftarrow$ is\_decoder and not cross
  6:
- 7: if is_causal or cross:
+ 7: if is\_causal or cross:
  8:     # Standard full attention (no pruning)
- 9:     scores $\leftarrow$ Q K^T / sqrt(d_h)
+ 9:     scores $\leftarrow$ Q K^T / sqrt(d\_h)
 10:     apply causal mask if needed
 11:     attn $\leftarrow$ softmax(scores)
 12:     out $\leftarrow$ attn @ V
 13: else:
 14:     # FASA pruning path
-15:     imp $\leftarrow$ mean_over_heads(Var_over_dh(K))
+15:     imp $\leftarrow$ mean\_over\_heads(Var\_over\_dh(K))
 16:     imp[:, 0] $\leftarrow$ 1e9                 CLS pinning
 17:     k $\leftarrow$ max(8, min(L, floor(r * L)))
-18:     S $\leftarrow$ sorted_topk(imp, k)
-19:     K_S $\leftarrow$ gather(K, S);  V_S $\leftarrow$ gather(V, S)
-20:     scores $\leftarrow$ Q K_S^T / sqrt(d_h)
+18:     S $\leftarrow$ sorted\_topk(imp, k)
+19:     K\_S $\leftarrow$ gather(K, S);  V\_S $\leftarrow$ gather(V, S)
+20:     scores $\leftarrow$ Q K\_S^T / sqrt(d\_h)
 21:     attn $\leftarrow$ softmax(scores)
-22:     out $\leftarrow$ attn @ V_S
+22:     out $\leftarrow$ attn @ V\_S
 23:
 24: if nested encoder:
 25:     return out
 26: else:
-27:     return out_proj(out)
+27:     return out\_proj(out)
 \end{lstlisting}
 
 \subsection{Theoretical Notes}
@@ -214,7 +214,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 \textbf{Upper bound.} For any $Q$, the pruned attention differs from full attention by:
 
 \[
-\|\text{Attn}'(Q, K, V) - \text{Attn}(Q, K, V)\|_2 \leq \|V_{\bar{\mathcal{S}}}\|_2 \cdot \max_i \text{softmax}_i
+\|\text{Attn}'(Q, K, V) - \text{Attn}(Q, K, V)\|\_2 \leq \|V\_{\bar{\mathcal{S}}}\|\_2 \cdot \max\_i \text{softmax}\_i
 \tag{4.8}
 \]
 

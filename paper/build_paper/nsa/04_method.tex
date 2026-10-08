@@ -12,17 +12,17 @@ NSA computes a hybrid sparse attention mask that combines:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-      Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+      Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d\_h}
                  |
                   
       +------------------------+
-      |  S = Q K^T / $\sqrt{}$d_h      |
+      |  S = Q K^T / $\sqrt{}$d\_h      |
       +----------+-------------+
                  |
                   
       +------------------------+
       |  Local window mask     |
-      |  W_ij = |i-j| <= w     |
+      |  W\_ij = |i-j| \textless{}= w     |
       +----------+-------------+
                  |
                   
@@ -50,14 +50,14 @@ NSA computes a hybrid sparse attention mask that combines:
 For window size $w$:
 
 \[
-\mathcal{W}_{ij} = \begin{cases} 1 & |i - j| \leq w \\ 0 & \text{otherwise} \end{cases}
+\mathcal{W}\_{ij} = \begin{cases} 1 & |i - j| \leq w \\ 0 & \text{otherwise} \end{cases}
 \tag{4.1}
 \]
 
 \textbf{Causal version:}
 
 \[
-\mathcal{W}_{ij} = \mathbb{1}[j \leq i \text{ and } i - j \leq w]
+\mathcal{W}\_{ij} = \mathbb{1}[j \leq i \text{ and } i - j \leq w]
 \tag{4.2}
 \]
 
@@ -69,14 +69,14 @@ Given scores $s_{ij} = Q_i^\top K_j / \sqrt{d_h}$, we mask out the local
 window and padding:
 
 \[
-\tilde{s}_{ij} = \begin{cases} s_{ij} & j \notin \mathcal{W}_i \text{ and valid}_j \\ -\infty & \text{otherwise} \end{cases}
+\tilde{s}\_{ij} = \begin{cases} s\_{ij} & j \notin \mathcal{W}\_i \text{ and valid}\_j \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.3}
 \]
 
 \textbf{Causal-aware:} For decoders, also mask future positions:
 
 \[
-\tilde{s}_{ij} = -\infty \quad \text{if } j > i
+\tilde{s}\_{ij} = -\infty \quad \text{if } j \textgreater{} i
 \tag{4.4}
 \]
 
@@ -85,7 +85,7 @@ window and padding:
 We select the top-$k$ positions:
 
 \[
-\text{topk-ind}_i = \arg\text{topk}_{k}(\tilde{s}_i)
+\text{topk-ind}\_i = \arg\text{topk}\_{k}(\tilde{s}\_i)
 \tag{4.5}
 \]
 
@@ -103,14 +103,14 @@ maximizing the union coverage.
 The combined mask is:
 
 \[
-\mathcal{S}_{ij} = \mathcal{W}_{ij} \lor \text{topk-mask}_{ij}
+\mathcal{S}\_{ij} = \mathcal{W}\_{ij} \lor \text{topk-mask}\_{ij}
 \tag{4.6}
 \]
 
 \textbf{Final mask (with padding and causality):}
 
 \[
-\mathcal{S}_{ij}^\text{final} = \mathcal{S}_{ij} \land \text{valid}_j \land \text{causal}_{ij}
+\mathcal{S}\_{ij}^\text{final} = \mathcal{S}\_{ij} \land \text{valid}\_j \land \text{causal}\_{ij}
 \tag{4.7}
 \]
 
@@ -120,7 +120,7 @@ When $L \leq 2w + 1$, every key is already in the window. The top-$k$ step
 is skipped:
 
 \[
-\mathcal{S}_{ij}^\text{final} = \mathcal{W}_{ij} \land \text{valid}_j \land \text{causal}_{ij}
+\mathcal{S}\_{ij}^\text{final} = \mathcal{W}\_{ij} \land \text{valid}\_j \land \text{causal}\_{ij}
 \tag{4.8}
 \]
 
@@ -132,11 +132,11 @@ This avoids unnecessary computation for short sequences.
 
 \begin{lstlisting}
 # Mask local window and padding
-masked_scores = scores.masked_fill(local_mask_4d | ~key_valid_4d, -1e4)
+masked\_scores = scores.masked\_fill(local\_mask\_4d | ~key\_valid\_4d, -1e4)
 # Top-k
-_, topk_idx = torch.topk(masked_scores, k=k, dim=-1)
+\_, topk\_idx = torch.topk(masked\_scores, k=k, dim=-1)
 # Build mask
-topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_idx, True)
+topk\_mask = torch.zeros\_like(scores, dtype=torch.bool).scatter\_(-1, topk\_idx, True)
 \end{lstlisting}
 
 \textbf{Complexity.} \texttt{torch.topk} on an $L \times L$ matrix costs 
@@ -155,15 +155,15 @@ to prevent future leakage:
 
 \begin{lstlisting}
 # 1. Mask local window + padding + causal
-non_local_scores = scores.masked_fill(local_mask | ~key_valid_4d, -1e4)
-if is_dec:
-    non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
+non\_local\_scores = scores.masked\_fill(local\_mask | ~key\_valid\_4d, -1e4)
+if is\_dec:
+    non\_local\_scores = non\_local\_scores.masked\_fill(~causal\_tril, -1e4)
 
 # 2. Top-k on non-local + non-future
-_, topk_ind = torch.topk(non_local_scores, k=k, dim=-1)
+\_, topk\_ind = torch.topk(non\_local\_scores, k=k, dim=-1)
 
 # 3. Build mask
-topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
+topk\_mask = torch.zeros\_like(scores, dtype=torch.bool).scatter\_(-1, topk\_ind, True)
 \end{lstlisting}
 
 \textbf{Verify.} For decoder, $j > i$ positions are never selected.
@@ -172,40 +172,40 @@ topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, Tr
 
 \textbf{Algorithm 1:} NSA forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
-        attention_mask, is_causal, w, k
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d\_h}
+        attention\_mask, is\_causal, w, k
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d\_h}
 
- 1: S $\leftarrow$ Q K^T / sqrt(d_h)                    # (B, H, L, L)
- 2: valid $\leftarrow$ get_token_valid_mask(attention_mask)
+ 1: S $\leftarrow$ Q K^T / sqrt(d\_h)                    # (B, H, L, L)
+ 2: valid $\leftarrow$ get\_token\_valid\_mask(attention\_mask)
  3:
  4: # Local window mask
  5: idx $\leftarrow$ arange(L)
- 6: if is_causal:
- 7:     local_mask $\leftarrow$ (idx_q - idx_k <= w) & (idx_k <= idx_q)
+ 6: if is\_causal:
+ 7:     local\_mask $\leftarrow$ (idx\_q - idx\_k \textless{}= w) & (idx\_k \textless{}= idx\_q)
  8: else:
- 9:     local_mask $\leftarrow$ |idx_q - idx_k| <= w
+ 9:     local\_mask $\leftarrow$ |idx\_q - idx\_k| \textless{}= w
 10:
 11: # Union mask
-12: if L <= 2w + 1:
-13:     total_mask $\leftarrow$ local_mask & valid
+12: if L \textless{}= 2w + 1:
+13:     total\_mask $\leftarrow$ local\_mask & valid
 14: else:
 15:     # Mask out local window + padding
-16:     non_local $\leftarrow$ S.masked_fill(local_mask | ~valid, -1e4)
-17:     if is_causal:
-18:         non_local $\leftarrow$ non_local.masked_fill(~causal_tril, -1e4)
+16:     non\_local $\leftarrow$ S.masked\_fill(local\_mask | ~valid, -1e4)
+17:     if is\_causal:
+18:         non\_local $\leftarrow$ non\_local.masked\_fill(~causal\_tril, -1e4)
 19:     # Top-k selection
-20:     _, topk_ind $\leftarrow$ topk(non_local, k=min(k, L - (2w + 1)))
-21:     topk_mask $\leftarrow$ zeros_like(S).scatter(-1, topk_ind, True)
-22:     total_mask $\leftarrow$ (local_mask | topk_mask) & valid
+20:     \_, topk\_ind $\leftarrow$ topk(non\_local, k=min(k, L - (2w + 1)))
+21:     topk\_mask $\leftarrow$ zeros\_like(S).scatter(-1, topk\_ind, True)
+22:     total\_mask $\leftarrow$ (local\_mask | topk\_mask) & valid
 23:
 24: # Final causal (redundant but safe)
-25: if is_causal:
-26:     total_mask $\leftarrow$ total_mask & causal_tril
+25: if is\_causal:
+26:     total\_mask $\leftarrow$ total\_mask & causal\_tril
 27:
 28: # Softmax with mask
-29: S_masked $\leftarrow$ S.masked_fill(~total_mask, -1e4)
-30: P $\leftarrow$ softmax(S_masked)
+29: S\_masked $\leftarrow$ S.masked\_fill(~total\_mask, -1e4)
+30: P $\leftarrow$ softmax(S\_masked)
 31: P $\leftarrow$ dropout(P)
 32: O $\leftarrow$ P V
 33: return O
@@ -270,7 +270,7 @@ hyperparameters, not trainable.
 count $k$ such that the preserved attention mass is at least $1 - \epsilon$:
 
 \[
-\sum_{j \in \mathcal{S}_i} P_{ij} \geq 1 - \epsilon
+\sum\_{j \in \mathcal{S}\_i} P\_{ij} \geq 1 - \epsilon
 \tag{4.10}
 \]
 
@@ -302,7 +302,7 @@ Combined with a final causal AND, causality is guaranteed. $\square$
 \textbf{Claim.} The number of attended keys is bounded by:
 
 \[
-|\mathcal{S}_i| \leq 2w + 1 + k
+|\mathcal{S}\_i| \leq 2w + 1 + k
 \tag{4.11}
 \]
 

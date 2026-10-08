@@ -41,7 +41,7 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 Need size reduction? --- Yes --- Use A3/AASVD
   | No
    
-Sequence length > 256? --- No --- Use baseline (or LoRA-only)
+Sequence length \textgreater{} 256? --- No --- Use baseline (or LoRA-only)
   | Yes
    
 Content-dependent sparsity needed? --- No --- Use Longformer
@@ -110,7 +110,7 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \begin{enumerate}
 \item \textbf{Optimal threshold} for various tasks?
 \item \textbf{Gate training} -- does it learn meaningful patterns?
-\item \textbf{Very long context} ($L > 8192$) behavior?
+\item \textbf{Very long context} ($L \textgreater{} 8192$) behavior?
 \item \textbf{Combination with quantization}?
 
 \end{enumerate}
@@ -131,5 +131,5 @@ MoBA & Block sparse & $O(KL)$ & No \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO$\_2$eq.
 

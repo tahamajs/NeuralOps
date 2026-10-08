@@ -6,7 +6,7 @@
 \textbf{Theorem.} For any $W \in \mathbb{R}^{m \times n}$ and $r \leq \min(m, n)$:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^H
+W\_r^* = \arg\min\_{\text{rank}(W\_r) \leq r} \|W - W\_r\|\_F = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^H
 \tag{A.1}
 \]
 
@@ -18,7 +18,7 @@ W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r,
 rank with $E(r_\text{eff}) \geq \eta$. Then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{A.2}
 \]
 
@@ -62,7 +62,7 @@ Given $W_K \in \mathbb{R}^{H d_h \times d}$ with $H > H_{kv}$, we
 mean-pool:
 
 \[
-(W_K^{\text{pooled}})_{h, :} = \frac{1}{|G_h|} \sum_{g \in G_h} W_{g, :}
+(W\_K^{\text{pooled}})\_{h, :} = \frac{1}{|G\_h|} \sum\_{g \in G\_h} W\_{g, :}
 \tag{A.4}
 \]
 
@@ -87,9 +87,9 @@ $x (U_r \Sigma_r V_r^H)^\top = x (V_r^{H\top} \Sigma_r U_r^\top)$. $\square$
 \textbf{Proof.} Causal mask applied after scores:
 
 \begin{lstlisting}
-if self.is_decoder and seq_len > 1:
-    causal_mask = torch.triu(...)
-    scores = scores + causal_mask
+if self.is\_decoder and seq\_len \textgreater{} 1:
+    causal\_mask = torch.triu(...)
+    scores = scores + causal\_mask
 \end{lstlisting}
 
 Positions $j > i$ set to $-\infty$ before softmax. $\square$

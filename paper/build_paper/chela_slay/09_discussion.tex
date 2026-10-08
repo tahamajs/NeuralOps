@@ -69,8 +69,8 @@ VRAM & 183 MB & 374 MB MB & 4.9$\times$ \\
 \textbf{Future work.} Replace the cumsum with a \textbf{chunked state-passing}:
 
 \begin{lstlisting}
-for chunk_start in range(0, L, C):
-    chunk_end = chunk_start + C
+for chunk\_start in range(0, L, C):
+    chunk\_end = chunk\_start + C
     # intra-chunk: cumsum within C tokens
     # inter-chunk: add previous chunk's final state
 \end{lstlisting}
@@ -99,6 +99,6 @@ This would reduce memory to $\mathcal{O}(C \cdot 2F \cdot d_h)$.
 \item \textbf{Chunked cumsum:} Would it eliminate the memory bottleneck?
 \item \textbf{Learned $\Omega$:} Could training $\Omega$ improve the linear stream?
 \item \textbf{Different gate shapes:} Would a per-token per-dimension gate help?
-\item \textbf{Scale to L > 4096:} Does the linear stream become dominant?
+\item \textbf{Scale to L \textgreater{} 4096:} Does the linear stream become dominant?
 
 \end{enumerate}

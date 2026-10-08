@@ -69,7 +69,7 @@ Precision & FP16 \\
 \end{itemize}
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -78,10 +78,10 @@ RTX 4070 Laptop, 8 GB.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_padre.py \
+python run\_all\_4\_padre.py \
     --models distilbert,roberta,gpt2 \
     --order 2 \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

@@ -5,7 +5,7 @@
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \]
 
 where $W_Q \in \mathbb{R}^{d \times H \cdot d_h}$, $W_K, W_V \in \mathbb{R}^{d \times H_{kv} \cdot d_h}$.
@@ -13,7 +13,7 @@ where $W_Q \in \mathbb{R}^{d \times H \cdot d_h}$, $W_K, W_V \in \mathbb{R}^{d \
 The output projection:
 
 \[
-\text{Out} = \text{Attn}(Q, K, V) W_O
+\text{Out} = \text{Attn}(Q, K, V) W\_O
 \]
 
 where $W_O \in \mathbb{R}^{H \cdot d_h \times d}$.
@@ -54,7 +54,7 @@ $V \in \mathbb{R}^{n \times n}$ orthogonal.
 \textbf{Truncated SVD.} Rank-$r$ approximation:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \]
 
 \textbf{Error.} $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
@@ -64,7 +64,7 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
 For numerical stability, distribute $\Sigma^{1/2}$:
 
 \[
-W_r = \underbrace{U_{:, :r} \Sigma_{:r, :r}^{1/2}}_{U_r'} \underbrace{\Sigma_{:r, :r}^{1/2} V_{:r, :}^\top}_{V_r'}
+W\_r = \underbrace{U\_{:, :r} \Sigma\_{:r, :r}^{1/2}}\_{U\_r'} \underbrace{\Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top}\_{V\_r'}
 \]
 
 Both factors have balanced magnitude.
@@ -74,13 +74,13 @@ Both factors have balanced magnitude.
 Instead of separate SVD per projection, we stack:
 
 \[
-W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
+W\_{QKV} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{(H d\_h + 2 H\_{kv} d\_h) \times d}
 \]
 
 Then:
 
 \[
-W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
+W\_{QKV} = U\_{QKV} \Sigma\_{QKV} V\_{QKV}^\top
 \]
 
 \textbf{Key property.} The right factor $V_{QKV}$ is a \textbf{single basis} for the 
@@ -94,7 +94,7 @@ same input features drive all three. A joint SVD captures this correlation.
 LoRA (Hu et al., 2021) adds trainable low-rank deltas:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \]
 
 with $B = 0$ initially. Applied to both QKV and output branches.
@@ -104,7 +104,7 @@ with $B = 0$ initially. Applied to both QKV and output branches.
 For $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}
 \]
 
 Expanded to $H$ heads via \texttt{repeat\_kv}.
@@ -112,7 +112,7 @@ Expanded to $H$ heads via \texttt{repeat\_kv}.
 \subsection{Rotary Position Embeddings (RoPE)}
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
 \]
 
 Applied to $Q, K$ after projection.

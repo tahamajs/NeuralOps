@@ -21,8 +21,8 @@ Only SST-2 is evaluated. ASVD may behave differently on:
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M parameters & Tested \\
->1B parameters & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B parameters & Not tested \\
+\textgreater{}24 layers & Not tested \\
 MoE & Not tested \\
 Vision transformers & Not tested \\
 \bottomrule
@@ -48,7 +48,7 @@ encoder-decoder models (T5, BART).
 ASVD raises \texttt{RuntimeError} on:
 \begin{itemize}
 \item Missing projections
-\item Reconstruction error > $\tau$
+\item Reconstruction error \textgreater{} $\tau$
 
 \end{itemize}
 Unlike A3/AASVD, which fallback per-layer, ASVD aborts injection entirely. 

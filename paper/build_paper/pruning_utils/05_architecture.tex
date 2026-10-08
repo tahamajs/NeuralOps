@@ -7,33 +7,33 @@ The \texttt{pruning\_utils} architecture decouples frozen compressed base repres
 \centering
 \begin{verbatim}
 +-------------------------------------------------------------+
-|                           pruning_utils                     |
-|  Input X [B, N, D_in]                                       |
+|                           pruning\_utils                     |
+|  Input X [B, N, D\_in]                                       |
 |        |                                                    |
 |        +----------------------------+                       |
 |        | (Base Path)                | (LoRA Path)           |
 |        v                            v                       |
 |  +--------------------+       +-----------------------+     |
-|  | Down-Proj: V_r     |       | LoRA A: (r_lora, In)  |     |
+|  | Down-Proj: V\_r     |       | LoRA A: (r\_lora, In)  |     |
 |  | Frozen: (r, In)    |       | Trainable: True       |     |
 |  +---------+----------+       +-----------+-----------+     |
 |            |                              |                 |
 |            v                              v                 |
 |  +--------------------+       +-----------------------+     |
-|  | Up-Proj: U_r       |       | LoRA B: (Out, r_lora) |     |
+|  | Up-Proj: U\_r       |       | LoRA B: (Out, r\_lora) |     |
 |  | Frozen: (Out, r)   |       | Trainable: True       |     |
 |  +---------+----------+       +-----------+-----------+     |
 |            |                              |                 |
 |            v                              v                 |
-|       Base Output  <---- (+) ------ Adapter Output          |
-|  Output Y [B, N, D_out]                                     |
+|       Base Output  \textless{}---- (+) ------ Adapter Output          |
+|  Output Y [B, N, D\_out]                                     |
 +-------------------------------------------------------------+
 \end{verbatim}
 \caption{Submodule tensor flow and adapter integration in \texttt{pruning\_utils}.}
 \end{figure}
 
 \subsection{Submodule Specification Matrix}
-Table~\ref{tab:submodules_pruningutils} details the structural parameter buffers comprising \texttt{pruning\_utils}:
+Table~\ref{tab:submodules\_pruningutils} details the structural parameter buffers comprising \texttt{pruning\_utils}:
 
 \begin{table}[H]
 \centering
@@ -51,7 +51,7 @@ Table~\ref{tab:submodules_pruningutils} details the structural parameter buffers
 \bottomrule
 \end{tabular}
 \caption{Submodule specifications for \texttt{pruning\_utils}.}
-\label{tab:submodules_pruningutils}
+\label{tab:submodules\_pruningutils}
 \end{table}
 
 \subsection{Cross-Backbone Tensor Interfaces}
@@ -69,7 +69,7 @@ LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rota
 \bottomrule
 \end{tabular}
 \caption{Cross-backbone tensor interface parameters.}
-\label{tab:backbone_interfaces}
+\label{tab:backbone\_interfaces}
 \end{table}
 
 \subsection{Backbone Compatibility Mechanisms}

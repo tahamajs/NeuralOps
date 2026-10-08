@@ -9,7 +9,7 @@ Given $W \in \mathbb{R}^{m \times n}$ and weights $w \in \mathbb{R}_+^n$,
 we seek:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) = r} \sum_{i, j} w_j (W_{ij} - (W_r)_{ij})^2
+W\_r^* = \arg\min\_{\text{rank}(W\_r) = r} \sum\_{i, j} w\_j (W\_{ij} - (W\_r)\_{ij})^2
 \tag{A.1}
 \]
 
@@ -18,7 +18,7 @@ W_r^* = \arg\min_{\text{rank}(W_r) = r} \sum_{i, j} w_j (W_{ij} - (W_r)_{ij})^2
 Define $D = \mathrm{diag}(\sqrt{w})$. Then:
 
 \[
-\sum_{i, j} w_j (W - W_r)_{ij}^2 = \|(W - W_r) D\|_F^2 = \|(W D - W_r D)\|_F^2
+\sum\_{i, j} w\_j (W - W\_r)\_{ij}^2 = \|(W - W\_r) D\|\_F^2 = \|(W D - W\_r D)\|\_F^2
 \tag{A.2}
 \]
 
@@ -26,7 +26,7 @@ Since $\text{rank}(W_r D) \leq r$, the optimal $W_r D$ is the rank-$r$ SVD
 of $W D$. If $W D = U \Sigma V^\top$, then:
 
 \[
-W_r^* D = U_r \Sigma_r V_r^\top \implies W_r^* = U_r \Sigma_r V_r^\top D^{-1}
+W\_r^* D = U\_r \Sigma\_r V\_r^\top \implies W\_r^* = U\_r \Sigma\_r V\_r^\top D^{-1}
 \tag{A.3}
 \]
 
@@ -38,21 +38,21 @@ This is exactly Algorithm A3.
 expected reconstruction error is:
 
 \[
-\mathbb{E}_x\!\left[\|W x - W_r x\|_2^2\right] = \|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F^2
+\mathbb{E}\_x\!\left[\|W x - W\_r x\|\_2^2\right] = \|(W - W\_r) \mathrm{diag}(\sqrt{F})\|\_F^2
 \tag{A.4}
 \]
 
 \textbf{Proof.} Let $x$ have covariance $\Sigma = \mathrm{diag}(F_1, \dots, F_n)$. Then:
 
 \[
-\mathbb{E}_x[\|(W - W_r) x\|_2^2] = \mathrm{Tr}[(W - W_r) \Sigma (W - W_r)^\top]
+\mathbb{E}\_x[\|(W - W\_r) x\|\_2^2] = \mathrm{Tr}[(W - W\_r) \Sigma (W - W\_r)^\top]
 \tag{A.5}
 \]
 
 With $\Sigma = \mathrm{diag}(F)$:
 
 \[
-\mathrm{Tr}[(W - W_r) \mathrm{diag}(F) (W - W_r)^\top] = \sum_{i, j} F_j (W - W_r)_{ij}^2
+\mathrm{Tr}[(W - W\_r) \mathrm{diag}(F) (W - W\_r)^\top] = \sum\_{i, j} F\_j (W - W\_r)\_{ij}^2
 \tag{A.6}
 \]
 
@@ -63,7 +63,7 @@ which equals $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F^2$. $\square$
 \textbf{Proposition.} After weighted SVD at rank $r$:
 
 \[
-\|W - U_r V_r\|_F \leq \sqrt{\frac{\sum_{i > r} \sigma_i^2}{\min_j F_j}}
+\|W - U\_r V\_r\|\_F \leq \sqrt{\frac{\sum\_{i \textgreater{} r} \sigma\_i^2}{\min\_j F\_j}}
 \tag{A.7}
 \]
 
@@ -72,7 +72,7 @@ where $\sigma_i$ are singular values of $W \cdot \mathrm{diag}(\sqrt{F})$.
 \textbf{Proof sketch.} We have $\|W \mathrm{diag}(\sqrt{F}) - U_r \Sigma_r V_r\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}$ by Eckart-Young. So:
 
 \[
-\|W - U_r V_r\|_F \cdot \min_j \sqrt{F_j} \leq \|(W - U_r V_r) \mathrm{diag}(\sqrt{F})\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - U\_r V\_r\|\_F \cdot \min\_j \sqrt{F\_j} \leq \|(W - U\_r V\_r) \mathrm{diag}(\sqrt{F})\|\_F \leq \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.8}
 \]
 
@@ -92,14 +92,14 @@ Let $\sigma_{\mathrm{pre}}^2$ denote the empirical per-channel activation varian
 To preserve the dynamic range and gradient magnitude received by subsequent sub-layers, the effective gain after normalization should restore pre-compression representation variance: $\mathrm{LN}_{\mathrm{post}}(x_{\mathrm{post}}) \approx \mathrm{LN}_{\mathrm{pre}}(x_{\mathrm{pre}})$. Taking the ratio of scaling factors across normalized representations:
 
 \[
-\frac{\gamma_{\mathrm{new}}}{\sqrt{\sigma_{\mathrm{current}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma_{\mathrm{target}}^2 + \epsilon}}
+\frac{\gamma\_{\mathrm{new}}}{\sqrt{\sigma\_{\mathrm{current}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma\_{\mathrm{target}}^2 + \epsilon}}
 \tag{A.10}
 \]
 
 Neglecting $\epsilon \ll \sigma^2$ for active transformer channels yields the closed-form gain compensation rule:
 
 \[
-\gamma_{\mathrm{new}} = \gamma \odot \frac{\sigma_{\mathrm{target}}}{\sigma_{\mathrm{current}}}
+\gamma\_{\mathrm{new}} = \gamma \odot \frac{\sigma\_{\mathrm{target}}}{\sigma\_{\mathrm{current}}}
 \tag{A.11}
 \]
 
@@ -113,23 +113,23 @@ converges to $\mathbb{E}[x x^\top]$ as the number of batches grows.
 \textbf{Proof.} Each $C^{(k)} = \sum_{t \in \text{batch}_k} x_t x_t^\top$. Summing:
 
 \[
-\sum_k C^{(k)} = \sum_{t = 1}^{N_\text{total}} x_t x_t^\top
+\sum\_k C^{(k)} = \sum\_{t = 1}^{N\_\text{total}} x\_t x\_t^\top
 \tag{A.14}
 \]
 
 Dividing by $N_\text{total} = \sum_k N^{(k)}$:
 
 \[
-\hat{C} = \frac{1}{N_\text{total}} \sum_t x_t x_t^\top
+\hat{C} = \frac{1}{N\_\text{total}} \sum\_t x\_t x\_t^\top
 \tag{A.15}
 \]
 
 which converges to $\mathbb{E}[x x^\top]$ by the law of large numbers. $\square$
 
 \subsection{A.6 Complexity and Memory Footprint Analysis}
-\label{sec:app_complexity}
+\label{sec:app\_complexity}
 
-Table~\ref{tab:complexity_analysis} provides an asymptotic breakdown of computational runtime complexity and auxiliary working memory across the five stages of A3.
+Table~\ref{tab:complexity\_analysis} provides an asymptotic breakdown of computational runtime complexity and auxiliary working memory across the five stages of A3.
 
 \begin{table}[H]
 \centering
@@ -146,13 +146,13 @@ Phase 5: LayerNorm Recalibration & $\mathcal{O}(N \sum_\ell d_\ell)$ & $\mathcal
 \bottomrule
 \end{tabular}
 \caption{Asymptotic time and space complexity across A3 compression stages for $N$ calibration tokens, $N_l$ transformer layers, and maximum hidden dimension $d_\text{max}$.}
-\label{tab:complexity_analysis}
+\label{tab:complexity\_analysis}
 \end{table}
 
 On DistilBERT (66.95M parameters, $d=768$), total calibration and factorization consumes under 45 seconds of CPU/GPU wall-clock time on an NVIDIA RTX 4070 Laptop GPU, with maximum auxiliary host memory remaining below 17 MB.
 
 \subsection{A.7 Exact Parameter Counting and Dimensional Break-Even Bounds}
-\label{sec:app_parameter_counting}
+\label{sec:app\_parameter\_counting}
 
 For a linear projection matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, the uncompressed parameter count is $P_\text{orig} = d_\text{out} \cdot d_\text{in}$. Factoring $W$ into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ yields $P_\text{A3} = r(d_\text{out} + d_\text{in})$.
 
@@ -170,20 +170,20 @@ Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} 
 \bottomrule
 \end{tabular}
 \caption{Parameter counting formulation and representative numerical values across benchmark transformer dimensions.}
-\label{tab:parameter_counting_formulation}
+\label{tab:parameter\_counting\_formulation}
 \end{table}
 
 \textbf{Dimensional Break-Even Condition.} Factorization achieves genuine parameter reduction ($P_\text{A3} < P_\text{orig}$) if and only if:
 \[
-r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}
+r \textless{} r\_\text{break-even} = \frac{d\_\text{out} d\_\text{in}}{d\_\text{out} + d\_\text{in}}
 \tag{A.16}
 \]
 For square projections where $d_\text{in} = d_\text{out} = d$, the break-even rank is exactly $r_\text{break-even} = d/2 = 384$. By enforcing a strict rank ceiling $r_{\mathrm{ceiling}} \le 256 < 384$, A3 mathematically guarantees that factorized layers never expand parameter counts.
 
 \subsection{A.8 Mathematical Notation and Dimensionality Reference}
-\label{sec:app_notation}
+\label{sec:app\_notation}
 
-Table~\ref{tab:app_notation_summary} catalogs all mathematical symbols, tensor shapes, and operational variables deployed throughout the methodological formulation and empirical evaluation of A3.
+Table~\ref{tab:app\_notation\_summary} catalogs all mathematical symbols, tensor shapes, and operational variables deployed throughout the methodological formulation and empirical evaluation of A3.
 
 \begin{table}[H]
 \centering
@@ -215,5 +215,5 @@ $B$ & Forward evaluation batch size & scalar integer \\
 \bottomrule
 \end{tabular}
 \caption{Consolidated reference catalog of mathematical notations, symbols, and tensor dimensions.}
-\label{tab:app_notation_summary}
+\label{tab:app\_notation\_summary}
 \end{table}

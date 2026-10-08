@@ -6,7 +6,7 @@
 \textbf{Claim.}
 
 \[
-\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = \phi(q\_i)^\top \phi(k\_j) \cdot \cos(\theta\_i - \theta\_j)
 \]
 
 where:
@@ -21,21 +21,21 @@ where:
 
 \[
 \begin{aligned}
-\tilde{q}_i^\top \tilde{k}_j &= (\phi(q_i) \cos\theta_i)^\top (\phi(k_j) \cos\theta_j) \\
-&= \cos\theta_i \cos\theta_j \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i^\top \tilde{k}\_j &= (\phi(q\_i) \cos\theta\_i)^\top (\phi(k\_j) \cos\theta\_j) \\
+&= \cos\theta\_i \cos\theta\_j \cdot \phi(q\_i)^\top \phi(k\_j)
 \end{aligned}
 \]
 
 Similarly:
 
 \[
-\tilde{q}_i'^\top \tilde{k}_j' = \sin\theta_i \sin\theta_j \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i'^\top \tilde{k}\_j' = \sin\theta\_i \sin\theta\_j \cdot \phi(q\_i)^\top \phi(k\_j)
 \]
 
 Sum:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = (\cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j) \cdot \phi(q_i)^\top \phi(k_j) = \cos(\theta_i - \theta_j) \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = (\cos\theta\_i \cos\theta\_j + \sin\theta\_i \sin\theta\_j) \cdot \phi(q\_i)^\top \phi(k\_j) = \cos(\theta\_i - \theta\_j) \cdot \phi(q\_i)^\top \phi(k\_j)
 \]
 
 $\square$
@@ -45,7 +45,7 @@ $\square$
 With $\theta_i = \pi i / (2 M)$, we have $\theta_i - \theta_j = \pi (i - j) / (2 M)$.
 
 \[
-\cos(\theta_i - \theta_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
+\cos(\theta\_i - \theta\_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
 \]
 
 \textbf{Decay rate.} For $|i - j| = k$:
@@ -89,7 +89,7 @@ For $C \ll d$: $\mathcal{O}(L d^2)$.
 \textbf{ELU + 1 is not an RFF.} The approximation:
 
 \[
-\text{elu}(q)^\top \text{elu}(k) + \|q\|_1 + \|k\|_1 + d \approx \exp(q^\top k)
+\text{elu}(q)^\top \text{elu}(k) + \|q\|\_1 + \|k\|\_1 + d \approx \exp(q^\top k)
 \]
 
 is only approximate. The error grows with $\|q\|$ and $\|k\|$.
@@ -97,7 +97,7 @@ is only approximate. The error grows with $\|q\|$ and $\|k\|$.
 \textbf{Bounds.} For $\|q\|, \|k\| \leq R$:
 
 \[
-\left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C_R
+\left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C\_R
 \]
 
 where $C_R$ grows exponentially in $R$.
@@ -107,7 +107,7 @@ where $C_R$ grows exponentially in $R$.
 For the causal path:
 
 \[
-\frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
+\frac{\partial Y\_i}{\partial X\_j} = 0 \text{ for } j \textgreater{} i
 \]
 
 \textbf{Proof sketch.} Within a chunk, the causal mask zeros future contributions. 

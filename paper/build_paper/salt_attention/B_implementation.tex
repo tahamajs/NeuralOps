@@ -5,67 +5,67 @@
 
 \begin{lstlisting}
 class SALTLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=16,
-                 original_weight=None, original_bias=None):
-        super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))  # DEAD CODE
+    def \_\_init\_\_(self, in\_features, out\_features, rank=16,
+                 original\_weight=None, original\_bias=None):
+        super().\_\_init\_\_()
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))  # DEAD CODE
         
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, min(in_features, out_features))
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, min(in\_features, out\_features))
 
-        W = original_weight.float() if original_weight is not None else ...
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        W = original\_weight.float() if original\_weight is not None else ...
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Buffers
-        self.register_buffer("U", U[:, :self.rank])
-        self.register_buffer("Vt", Vt[:self.rank, :])
-        self.register_buffer("S", S[:self.rank])
+        self.register\_buffer("U", U[:, :self.rank])
+        self.register\_buffer("Vt", Vt[:self.rank, :])
+        self.register\_buffer("S", S[:self.rank])
         
         # Trainable
         self.gamma = nn.Parameter(torch.ones(self.rank))
-        self.A = nn.Parameter(torch.randn(out_features, self.rank) * 0.01)
-        self.B = nn.Parameter(torch.zeros(self.rank, in_features))
+        self.A = nn.Parameter(torch.randn(out\_features, self.rank) * 0.01)
+        self.B = nn.Parameter(torch.zeros(self.rank, in\_features))
         
-        if original_bias is not None:
-            self.bias = nn.Parameter(original_bias.clone())
+        if original\_bias is not None:
+            self.bias = nn.Parameter(original\_bias.clone())
         else:
-            self.bias = nn.Parameter(torch.zeros(out_features))
+            self.bias = nn.Parameter(torch.zeros(out\_features))
     
     @property
     def weight(self):
-        adapted_S = self.S * self.gamma
-        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
-        return W_svd + W_lora
+        adapted\_S = self.S * self.gamma
+        W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt
+        W\_lora = self.A @ self.B
+        return W\_svd + W\_lora
     
     def forward(self, x):
-        adapted_S = self.S * self.gamma
-        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
-        W = (W_svd + W_lora).to(dtype=x.dtype)
+        adapted\_S = self.S * self.gamma
+        W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt
+        W\_lora = self.A @ self.B
+        W = (W\_svd + W\_lora).to(dtype=x.dtype)
         return F.linear(x, W, self.bias.to(dtype=x.dtype))
 \end{lstlisting}
 
 \subsection{B.2 Fused Forward (Not Implemented)}
 
 \begin{lstlisting}
-def forward_fused(self, x):
+def forward\_fused(self, x):
     z = F.linear(x, self.Vt)                         # (B, L, r)
     z = z * (self.S * self.gamma)                     # scale
-    y_svd = F.linear(z, self.U)                       # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d_out)
-    return y_svd + y_lora + self.bias
+    y\_svd = F.linear(z, self.U)                       # (B, L, d\_out)
+    y\_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d\_out)
+    return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 \subsection{B.3 Weight Extraction}
 
 \begin{lstlisting}
 # GPT-2
-if hasattr(src, "c_attn"):
-    weight = src.c_attn.weight.data
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
     ...
 
@@ -75,7 +75,7 @@ if hasattr(src, "self") and hasattr(src.self, "query"):
     ...
 
 # DistilBERT
-extracted["q"] = src.q_lin.weight.data
+extracted["q"] = src.q\_lin.weight.data
 ...
 \end{lstlisting}
 
@@ -84,33 +84,33 @@ extracted["q"] = src.q_lin.weight.data
 \subsubsection{B.4.1 Conv1D Orientation}
 
 \begin{lstlisting}
-if weight.shape[1] == 3 * self.hidden_size:
+if weight.shape[1] == 3 * self.hidden\_size:
     weight = weight.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 \subsubsection{B.4.2 GQA Pooling}
 
 \begin{lstlisting}
-if src_out > out_dim and src_out % out_dim == 0:
-    rep = src_out // out_dim
-    final_w = w_oriented.view(out_dim, rep, -1).mean(dim=1)
+if src\_out \textgreater{} out\_dim and src\_out \% out\_dim == 0:
+    rep = src\_out // out\_dim
+    final\_w = w\_oriented.view(out\_dim, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 \subsubsection{B.4.3 Nested Encoder Detection}
 
 \begin{lstlisting}
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", ...))
-self.is_nested_encoder = (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
-) and not has_out_proj
+has\_out\_proj = any(hasattr(src, attr) for attr in ("dense", "out\_proj", ...))
+self.is\_nested\_encoder = (
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
+) and not has\_out\_proj
 \end{lstlisting}
 
 \subsection{B.5 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("salt_attention")
-@ATTENTION_REGISTRY.register("salt")
+@ATTENTION\_REGISTRY.register("salt\_attention")
+@ATTENTION\_REGISTRY.register("salt")
 class SALTAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -119,9 +119,9 @@ class SALTAttention(BaseAttention):
 
 \begin{lstlisting}
 # Verify injection
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if isinstance(mod, SALTLinear):
-        print(f"{name}: rank={mod.rank}, gamma_norm={mod.gamma.norm().item():.4f}")
+        print(f"{name}: rank={mod.rank}, gamma\_norm={mod.gamma.norm().item():.4f}")
 \end{lstlisting}
 \begin{lstlisting}
 

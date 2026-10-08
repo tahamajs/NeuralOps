@@ -15,14 +15,14 @@ Standard attention:
 A sliding-window mask restricts attention to nearby tokens:
 
 \[
-M_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
 \tag{3.2}
 \]
 
 Then:
 
 \[
-\text{Attn}_\text{window}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}} + \log M\right)V
+\text{Attn}\_\text{window}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}} + \log M\right)V
 \tag{3.3}
 \]
 
@@ -34,7 +34,7 @@ in $L$ for fixed $W$.
 An input-dependent gate:
 
 \[
-g_t = \sigma(W_g x_t + b_g)
+g\_t = \sigma(W\_g x\_t + b\_g)
 \tag{3.4}
 \]
 
@@ -75,7 +75,7 @@ different: we start with residual-dominant but not identity.
 LoRA (Hu et al., 2021):
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha_L}{r} BA
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha\_L}{r} BA
 \tag{3.6}
 \]
 
@@ -100,5 +100,5 @@ $r$ & LoRA rank \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 

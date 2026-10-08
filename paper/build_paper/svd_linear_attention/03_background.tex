@@ -6,7 +6,7 @@
 For $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.1}
 \]
 
@@ -17,7 +17,7 @@ For $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$:
 Replace the softmax kernel with a \textbf{positive feature map}:
 
 \[
-\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_{j \leq t} \phi(K_j) V_j^\top}{\phi(Q_t) \sum_{j \leq t} \phi(K_j)}
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j)}
 \tag{3.2}
 \]
 
@@ -27,7 +27,7 @@ with $\phi(x) = \text{ELU}(x) + 1 \in \mathbb{R}_{>0}^{d_h}$.
 $Z_t = \sum_{j \leq t} \phi(K_j)$. Then:
 
 \[
-\text{Attn}_t = \phi(Q_t) S_t / (\phi(Q_t) Z_t)
+\text{Attn}\_t = \phi(Q\_t) S\_t / (\phi(Q\_t) Z\_t)
 \tag{3.3}
 \]
 
@@ -38,14 +38,14 @@ $Z_t = \sum_{j \leq t} \phi(K_j)$. Then:
 Add a per-position retention factor:
 
 \[
-S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top
 \tag{3.4}
 \]
 
 with $\lambda_t \in (0, 1]$ computed from the input:
 
 \[
-\lambda_t = \exp(-\text{softplus}(W_g x_t + b_g))
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t + b\_g))
 \tag{3.5}
 \]
 
@@ -64,7 +64,7 @@ in $\mathcal{O}(N)$. For parallelism, we \textbf{chunk} the sequence:
 Within a chunk of size $C$:
 
 \[
-S_{c, i}^{\text{intra}} = e^{\lambda_{c, i}} \sum_{j \leq i} e^{-\lambda_{c, j}} u_{c, j}
+S\_{c, i}^{\text{intra}} = e^{\lambda\_{c, i}} \sum\_{j \leq i} e^{-\lambda\_{c, j}} u\_{c, j}
 \tag{3.6}
 \]
 
@@ -73,7 +73,7 @@ where $\lambda_{c, i} = \sum_{j \leq i} \log \lambda_{c, j}$.
 Between chunks:
 
 \[
-S_{c, i} = S_{c, i}^{\text{intra}} + e^{\lambda_{c, i}} S_{c-1, C}
+S\_{c, i} = S\_{c, i}^{\text{intra}} + e^{\lambda\_{c, i}} S\_{c-1, C}
 \tag{3.7}
 \]
 
@@ -85,7 +85,7 @@ depth within each chunk.
 For $W \in \mathbb{R}^{m \times n}$:
 
 \[
-W \approx U_{:, :r} \Sigma_{:r} V_{:r, :}^\top
+W \approx U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
 \tag{3.8}
 \]
 

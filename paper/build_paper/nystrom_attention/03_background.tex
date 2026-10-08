@@ -6,8 +6,8 @@
 For $Q, K, V \in \mathbb{R}^{N \times d_h}$:
 
 \[
-A = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{N \times N}, \qquad
-\text{Output} = A V \in \mathbb{R}^{N \times d_h}
+A = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) \in \mathbb{R}^{N \times N}, \qquad
+\text{Output} = A V \in \mathbb{R}^{N \times d\_h}
 \tag{3.1}
 \]
 
@@ -19,7 +19,7 @@ For a symmetric positive semi-definite kernel matrix $K \in \mathbb{R}^{N \times
 choose $m$ landmark indices $\{i_1, \dots, i_m\}$. Then:
 
 \[
-K \approx K_{:, m} K_{m, m}^{-1} K_{m, :}
+K \approx K\_{:, m} K\_{m, m}^{-1} K\_{m, :}
 \tag{3.2}
 \]
 
@@ -44,14 +44,14 @@ The softmax attention matrix $A = \mathrm{softmax}(Q K^\top / \sqrt{d_h})$
 is not symmetric, but the Nystr m structure still applies:
 
 \[
-\tilde{A} = \underbrace{\mathrm{softmax}(Q K_m^\top / \sqrt{d_h})}_{N \times m} \cdot \underbrace{\mathrm{pinv}(\mathrm{softmax}(Q_m K_m^\top / \sqrt{d_h}))}_{m \times m} \cdot \underbrace{\mathrm{softmax}(Q_m K^\top / \sqrt{d_h})}_{m \times N}
+\tilde{A} = \underbrace{\mathrm{softmax}(Q K\_m^\top / \sqrt{d\_h})}\_{N \times m} \cdot \underbrace{\mathrm{pinv}(\mathrm{softmax}(Q\_m K\_m^\top / \sqrt{d\_h}))}\_{m \times m} \cdot \underbrace{\mathrm{softmax}(Q\_m K^\top / \sqrt{d\_h})}\_{m \times N}
 \tag{3.3}
 \]
 
 Then output:
 
 \[
-\text{Output} = \tilde{A} V = \mathrm{softmax}(Q K_m^\top) \cdot \left[ \mathrm{pinv}(\mathrm{softmax}(Q_m K_m^\top)) \cdot \mathrm{softmax}(Q_m K^\top) V \right]
+\text{Output} = \tilde{A} V = \mathrm{softmax}(Q K\_m^\top) \cdot \left[ \mathrm{pinv}(\mathrm{softmax}(Q\_m K\_m^\top)) \cdot \mathrm{softmax}(Q\_m K^\top) V \right]
 \tag{3.4}
 \]
 
@@ -70,7 +70,7 @@ Total: $\mathcal{O}(N m d_h)$ instead of $\mathcal{O}(N^2 d_h)$.
 Nystr mformer uses \texttt{adaptive\_avg\_pool1d} on $Q, K$:
 
 \[
-Q_m = \mathrm{AdaptiveAvgPool1d}(Q, m) \in \mathbb{R}^{m \times d_h}
+Q\_m = \mathrm{AdaptiveAvgPool1d}(Q, m) \in \mathbb{R}^{m \times d\_h}
 \tag{3.5}
 \]
 
@@ -95,7 +95,7 @@ A A^+ A = A, \quad A^+ A A^+ = A^+, \quad (A A^+)^\top = A A^+, \quad (A^+ A)^\t
 The Newton-Schulz iteration:
 
 \[
-V_{k+1} = V_k (2 I - A V_k), \quad V_0 = \alpha A^\top
+V\_{k+1} = V\_k (2 I - A V\_k), \quad V\_0 = \alpha A^\top
 \tag{3.7}
 \]
 
@@ -111,7 +111,7 @@ with $\alpha = 1 / (\|A\|_1 \|A\|_\infty + \epsilon)$ ensures this.
 For causal decoders, the attention matrix is lower-triangular:
 
 \[
-A_{ij} = \begin{cases} \text{valid} & i \geq j \\ 0 & i < j \end{cases}
+A\_{ij} = \begin{cases} \text{valid} & i \geq j \\ 0 & i \textless{} j \end{cases}
 \tag{3.8}
 \]
 
@@ -124,7 +124,7 @@ future ones. Therefore, we fall back to dense causal attention for decoders.
 Standard MHSA:
 
 \[
-\text{MHSA}(X) = \mathrm{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\text{MHSA}(X) = \mathrm{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \tag{3.9}
 \]
 
@@ -143,7 +143,7 @@ RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles.
 LoRA (Hu et al., 2021) adds trainable residuals:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.10}
 \]
 

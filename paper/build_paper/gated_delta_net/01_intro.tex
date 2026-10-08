@@ -13,7 +13,7 @@ The core idea: replace the softmax attention matrix with a **fixed-size
 state** $S \in \mathbb{R}^{d_h \times d_h}$ that is updated as tokens arrive:
 
 \[
-S_t = f(S_{t-1}, K_t, V_t), \quad y_t = Q_t^\top S_t
+S\_t = f(S\_{t-1}, K\_t, V\_t), \quad y\_t = Q\_t^\top S\_t
 \tag{1.1}
 \]
 
@@ -111,5 +111,5 @@ $\text{chunk\_size}$ & Inner loop size & 4.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 

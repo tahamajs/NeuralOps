@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_squeezingheads} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_squeezingheads} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -13,17 +13,17 @@ Table~\ref{tab:results_acc_squeezingheads} details empirical evaluation metrics 
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Squeezing Heads} & \textbf{90.37\%} & -0.11\% & PASS & 0.9075 & 0 & \textbf{0.99$\times$} & 332.5 MB & 18.8 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Squeezing Heads} & \textbf{51.49\%} & -23.62\% & PASS_LOW & 0.6754 & 0 & \textbf{0.94$\times$} & 379.9 MB & 27.4 & -- \\
+RoBERTa & \textbf{Squeezing Heads} & \textbf{51.49\%} & -23.62\% & PASS\_LOW & 0.6754 & 0 & \textbf{0.94$\times$} & 379.9 MB & 27.4 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Squeezing Heads} & \textbf{51.61\%} & -9.17\% & PASS_LOW & 0.6774 & 0 & \textbf{0.99$\times$} & 568.7 MB & 25.5 & -- \\
+GPT-2 & \textbf{Squeezing Heads} & \textbf{51.61\%} & -9.17\% & PASS\_LOW & 0.6774 & 0 & \textbf{0.99$\times$} & 568.7 MB & 25.5 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_squeezingheads} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_squeezingheads} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_squeezingheads} documents parameter compression fa
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{squeezingheads}.}
-\label{tab:results_params_squeezingheads}
+\label{tab:results\_params\_squeezingheads}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_squeezingheads} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_squeezingheads} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_squeezingheads} presents memory profiling and execut
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{squeezingheads}.}
-\label{tab:results_vram_squeezingheads}
+\label{tab:results\_vram\_squeezingheads}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/squeezing_heads_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{squeezing_heads}.}
-\label{fig:results_squeezing_heads}
+\includegraphics[width=0.85\linewidth]{figures/squeezing\_heads\_roberta\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{squeezing\_heads}.}
+\label{fig:results\_squeezing\_heads}
 \end{figure}

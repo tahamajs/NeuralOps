@@ -3,60 +3,60 @@
 \subsection{B.1 STE Quantization}
 
 \begin{lstlisting}
-def ste_quantize_4bit(x):
+def ste\_quantize\_4bit(x):
     if x.numel() == 0:
         return x
-    x_min = x.min(dim=-1, keepdim=True)[0]
-    x_max = x.max(dim=-1, keepdim=True)[0]
-    scale = torch.clamp((x_max - x_min) / 15.0, min=1e-5)
-    x_q_int = torch.clamp(torch.round((x - x_min) / scale), 0, 15)
-    x_q = x_q_int * scale + x_min
-    return x + (x_q - x).detach()  # STE
+    x\_min = x.min(dim=-1, keepdim=True)[0]
+    x\_max = x.max(dim=-1, keepdim=True)[0]
+    scale = torch.clamp((x\_max - x\_min) / 15.0, min=1e-5)
+    x\_q\_int = torch.clamp(torch.round((x - x\_min) / scale), 0, 15)
+    x\_q = x\_q\_int * scale + x\_min
+    return x + (x\_q - x).detach()  # STE
 \end{lstlisting}
 
 \subsection{B.2 Delta-KV}
 
 \begin{lstlisting}
-def simulate_paged_delta_kv(K, V, rank):
+def simulate\_paged\_delta\_kv(K, V, rank):
     B, H, N, d = K.shape
-    if N <= 1:
+    if N \textless{}= 1:
         return K, V
     
-    K_hat = torch.zeros_like(K)
-    V_hat = torch.zeros_like(V)
-    K_hat[:, :, 0] = K[:, :, 0]
-    V_hat[:, :, 0] = V[:, :, 0]
+    K\_hat = torch.zeros\_like(K)
+    V\_hat = torch.zeros\_like(V)
+    K\_hat[:, :, 0] = K[:, :, 0]
+    V\_hat[:, :, 0] = V[:, :, 0]
     
-    delta_K = K[:, :, 1:] - K[:, :, :-1]
-    delta_V = V[:, :, 1:] - V[:, :, :-1]
+    delta\_K = K[:, :, 1:] - K[:, :, :-1]
+    delta\_V = V[:, :, 1:] - V[:, :, :-1]
     
-    delta_K_hat = low_rank_svd_quantize(delta_K, rank)
-    delta_V_hat = low_rank_svd_quantize(delta_V, rank)
+    delta\_K\_hat = low\_rank\_svd\_quantize(delta\_K, rank)
+    delta\_V\_hat = low\_rank\_svd\_quantize(delta\_V, rank)
     
-    K_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta_K_hat, dim=2)
-    V_hat[:, :, 1:] = V[:, :, 0:1] + torch.cumsum(delta_V_hat, dim=2)
+    K\_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta\_K\_hat, dim=2)
+    V\_hat[:, :, 1:] = V[:, :, 0:1] + torch.cumsum(delta\_V\_hat, dim=2)
     
-    return K_hat, V_hat
+    return K\_hat, V\_hat
 \end{lstlisting}
 
 \subsection{B.3 Router}
 
 \begin{lstlisting}
 # Page means
-q_bar = (q_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
-k_bar = (k_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
+q\_bar = (q\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True).clamp(min=1)
+k\_bar = (k\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True).clamp(min=1)
 
 # Router logits
-router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2)) / math.sqrt(d)
+router\_logits = torch.matmul(self.W\_rg(q\_bar), k\_bar.transpose(-1, -2)) / math.sqrt(d)
 
 # CLS boost
-router_logits_biased = router_logits.clone()
-router_logits_biased[:, :, :, 0] += 1e4
+router\_logits\_biased = router\_logits.clone()
+router\_logits\_biased[:, :, :, 0] += 1e4
 
 # Top-K
-_, topk_indices = torch.topk(router_logits_biased, k_experts, dim=-1)
-topk_logits = torch.gather(router_logits, -1, topk_indices)
-g_j = F.softmax(topk_logits, dim=-1)
+\_, topk\_indices = torch.topk(router\_logits\_biased, k\_experts, dim=-1)
+topk\_logits = torch.gather(router\_logits, -1, topk\_indices)
+g\_j = F.softmax(topk\_logits, dim=-1)
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}

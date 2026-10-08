@@ -104,7 +104,7 @@ We tested factorizing bias as well. Result: negligible parameter savings.
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
 Orthogonal init for U/V & Slow convergence & No change \\
-LayerNorm recalibration & Distribution shift & <0.3\% gain \\
+LayerNorm recalibration & Distribution shift & \textless{}0.3\% gain \\
 Weight tying between Q/K & Parameter sharing & Accuracy drop \\
 Adaptive $\beta$ in LoRA & Training stability & No change \\
 \bottomrule

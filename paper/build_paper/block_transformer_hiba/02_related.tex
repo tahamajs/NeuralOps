@@ -11,7 +11,7 @@ Transformer compression literature focuses on parameter and memory reduction thr
 \subsection{Sensitivity-Aware Saliency Metrics}
 Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
 \[
-S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{X}[|X_j|]
+S\_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W\_{ij}} W\_{ij} \right| \approx |W\_{ij}| \cdot \mathbb{E}\_{X}[|X\_j|]
 \]
 
 \subsection{Efficient Attention Formulations}

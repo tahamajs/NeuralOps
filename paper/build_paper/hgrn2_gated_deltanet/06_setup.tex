@@ -104,7 +104,7 @@ Frozen:
 \midrule
 PASS & $\ge$ 56\% \\
 PASS\_LOW & 50.92--56\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,10 +129,10 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_hgrn2_gated_deltanet.py \
+python run\_all\_4\_hgrn2\_gated\_deltanet.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}

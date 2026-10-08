@@ -6,7 +6,7 @@ A linear recurrent layer maintains a state $s_t \in \mathbb{R}^d$ updated
 per timestep:
 
 \[
-s_t = f_t \odot s_{t-1} + g_t
+s\_t = f\_t \odot s\_{t-1} + g\_t
 \tag{3.1}
 \]
 
@@ -21,22 +21,22 @@ $\mathcal{O}(L d)$ for the outputs). Compare to attention's $\mathcal{O}(L^2 d)$
 HGRN-2 (Qin et al., 2024) parameterizes (3.1) as:
 
 \[
-f_t = \exp(-\text{softplus}(W_f x_t + b_f))
+f\_t = \exp(-\text{softplus}(W\_f x\_t + b\_f))
 \tag{3.2}
 \]
 
 \[
-i_t = \sigma(W_i x_t + b_i)
+i\_t = \sigma(W\_i x\_t + b\_i)
 \tag{3.3}
 \]
 
 \[
-v_t = W_v x_t
+v\_t = W\_v x\_t
 \tag{3.4}
 \]
 
 \[
-s_t = f_t \odot s_{t-1} + (1 - f_t) \odot i_t \odot v_t
+s\_t = f\_t \odot s\_{t-1} + (1 - f\_t) \odot i\_t \odot v\_t
 \tag{3.5}
 \]
 
@@ -53,14 +53,14 @@ The recurrence (3.5) is \textbf{associative}: it can be computed by a prefix sca
 For a chunk of length $C$, define the cumulative log-forget:
 
 \[
-A_k = \sum_{j=1}^{k} \log f_j
+A\_k = \sum\_{j=1}^{k} \log f\_j
 \tag{3.6}
 \]
 
 Then within the chunk:
 
 \[
-h_k = \sum_{j=1}^{k} \exp(A_k - A_j) \cdot g_j
+h\_k = \sum\_{j=1}^{k} \exp(A\_k - A\_j) \cdot g\_j
 \tag{3.7}
 \]
 
@@ -70,7 +70,7 @@ For chunks, we carry the state $h_\text{prev}$ from the previous chunk and
 combine:
 
 \[
-h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + \text{intra-chunk sum}
+h\_k^\text{chunk} = h\_\text{prev} \cdot \exp(A\_k) + \text{intra-chunk sum}
 \tag{3.8}
 \]
 
@@ -90,7 +90,7 @@ For encoders, we run two scans:
 The output combines both:
 
 \[
-h_t = h_t^\text{fwd} + h_t^\text{bwd}
+h\_t = h\_t^\text{fwd} + h\_t^\text{bwd}
 \tag{3.9}
 \]
 

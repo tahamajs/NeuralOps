@@ -3,25 +3,25 @@
 
 \subsection{Overview}
 
-A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher_weighted_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
+A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming\_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher\_weighted\_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius\_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm\_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_4_1.pdf}
+\includegraphics[width=\columnwidth]{figures/fig\_4\_1.pdf}
 \caption{A3 five-phase compression pipeline: (1) streaming calibration, (2) Fisher-weighted SVD, (3) Frobenius validation, (4) adaptive rank escalation with fallback, (5) LayerNorm recalibration.}
 \label{fig:pipeline}
 \end{figure}
 
 \subsection{Phase 1: Streaming Calibration}
-\label{sec:streaming_calibration}
+\label{sec:streaming\_calibration}
 
 \subsubsection{Problem}
 
 We want to compute, for each linear layer $\ell$:
 
 \[
-F^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} \left(x_t^{(\ell)}\right)^2, \qquad
-C_X^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} x_t^{(\ell)} \left(x_t^{(\ell)}\right)^\top
+F^{(\ell)} = \frac{1}{N} \sum\_{t=1}^{N} \left(x\_t^{(\ell)}\right)^2, \qquad
+C\_X^{(\ell)} = \frac{1}{N} \sum\_{t=1}^{N} x\_t^{(\ell)} \left(x\_t^{(\ell)}\right)^\top
 \tag{4.1}
 \]
 
@@ -40,8 +40,8 @@ with input $x \in \mathbb{R}^{B \times L \times d}$, the hook:
 The streaming hook operates dynamically during forward propagation by reshaping intermediate activations $x$ to shape $(B L) \times d$, filtering out uninformative padding tokens where $\|x_i\|_1 \le 10^{-5}$, accumulating outer-product covariance matrices $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and diagonal squared energies $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$, and streaming these running statistics into pinned host memory buffers. After iterating through all calibration sequences, empirical estimates are finalized according to:
 
 \[
-F^{(\ell)} = \frac{\sum_k f^{(k)}}{\sum_k N^{(k)}}, \qquad
-C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
+F^{(\ell)} = \frac{\sum\_k f^{(k)}}{\sum\_k N^{(k)}}, \qquad
+C\_X^{(\ell)} = \frac{\sum\_k C^{(k)}}{\sum\_k N^{(k)}}
 \tag{4.2}
 \]
 
@@ -49,10 +49,10 @@ C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 
 \subsubsection{Calibration Data Sources}
 
-A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app_defensive_handling}).
+A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app\_defensive\_handling}).
 
 \subsection{Phase 2: Weighted SVD}
-\label{sec:fisher_weighted_svd}
+\label{sec:fisher\_weighted\_svd}
 
 \subsubsection{The Weighting Idea}
 
@@ -61,7 +61,7 @@ SVD minimizes $\|W - W_r\|_F^2$. We instead minimize an \textbf{activation-weigh
 error:
 
 \[
-\mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_x\!\left[\|W x - W_r x\|_2^2\right]
+\mathcal{L}\_\text{weighted}(W\_r) = \mathbb{E}\_x\!\left[\|W x - W\_r x\|\_2^2\right]
 \tag{4.3}
 \]
 
@@ -69,7 +69,7 @@ If we assume $x$ has approximately diagonal covariance
 $\mathrm{diag}(F_1, \dots, F_{d_\text{in}})$, then:
 
 \[
-\mathcal{L}_\text{weighted}(W_r) = \sum_{i=1}^{d_\text{in}} F_i \|(W - W_r)_{:, i}\|_2^2 = \|(W - W_r) \cdot \mathrm{diag}(\sqrt{F})\|_F^2
+\mathcal{L}\_\text{weighted}(W\_r) = \sum\_{i=1}^{d\_\text{in}} F\_i \|(W - W\_r)\_{:, i}\|\_2^2 = \|(W - W\_r) \cdot \mathrm{diag}(\sqrt{F})\|\_F^2
 \tag{4.4}
 \]
 
@@ -77,7 +77,7 @@ So the activation-weighted problem is equivalent to an \textbf{unweighted} probl
 on the transformed matrix:
 
 \[
-W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
+W\_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
 \tag{4.5}
 \]
 
@@ -87,12 +87,12 @@ where $\epsilon = 10^{-6}$ prevents division by zero.
 
 The Fisher-weighted decomposition proceeds in four mathematical steps. First, the weight matrix is rescaled by the normalized sensitivity diagonal to form $W_\text{weighted}$ via (4.5). Second, the truncated SVD is evaluated:
 \[
-W_\text{weighted} \approx U_r \Sigma_r V_r^\top
+W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
 \tag{4.6}
 \]
 Third, the right factor is unweighted to recover the original activation coordinate space:
 \[
-V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+V\_r^\text{unweighted} = V\_r^\top \cdot \mathrm{diag}\left(\frac{1}{\sqrt{F + \epsilon}}\right)
 \tag{4.7}
 \]
 Finally, singular values are symmetrically distributed across factors via $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$, yielding the factorized operator $y = (x V^\top) U^\top + b$.
@@ -103,7 +103,7 @@ Finally, singular values are symmetrically distributed across factors via $U = U
 \]
 When scale normalization is enabled (\texttt{normalize\_scale=True}), the scale vector is normalized by its root-mean-square magnitude and dynamically clamped to avoid conditioning degradation:
 \[
-\mathbf{s}_{\mathrm{norm}} = \mathrm{clamp}\!\left(\frac{\mathbf{s}}{\|\mathbf{s}\|_2 / \sqrt{d_{\mathrm{in}}} + 10^{-8}},\, 10^{-3},\, 10^{3}\right)
+\mathbf{s}\_{\mathrm{norm}} = \mathrm{clamp}\!\left(\frac{\mathbf{s}}{\|\mathbf{s}\|\_2 / \sqrt{d\_{\mathrm{in}}} + 10^{-8}},\, 10^{-3},\, 10^{3}\right)
 \tag{4.9}
 \]
 and the weighted weight matrix is constructed via $W_{\mathrm{weighted}} = W \cdot \mathrm{diag}(\mathbf{s}_{\mathrm{norm}})$.
@@ -113,33 +113,33 @@ and the weighted weight matrix is constructed via $W_{\mathrm{weighted}} = W \cd
 If factorization fails validation at the rank ceiling, the layer safely retains its original dense parameters $W$.
 
 \subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
-\label{sec:frobenius_validation}
+\label{sec:frobenius\_validation}
 
 \subsubsection{Frobenius Error Formulation}
 
 Validation computes the relative reconstruction error:
 \[
-\mathrm{Err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F}
+\mathrm{Err}(W, U, V) = \frac{\|W - U V\|\_F}{\|W\|\_F}
 \tag{4.10}
 \]
 A factorized layer is accepted if $\mathrm{Err} \le \tau$, where $\tau = 0.50$ is the operational default (with conservative baseline $\tau = 0.40$).
 
 To prevent parameter expansion ($r(d_{\mathrm{in}} + d_{\mathrm{out}}) \ge d_{\mathrm{in}} d_{\mathrm{out}}$), A3 calculates the theoretical break-even rank $r_{\mathrm{break\_even}} = \frac{d_{\mathrm{in}} d_{\mathrm{out}}}{d_{\mathrm{in}} + d_{\mathrm{out}}}$ (384 for $768 \times 768$ projections) and enforces a strict ceiling:
 \[
-r_{\mathrm{ceiling}} = \min\!\left(\lfloor 0.90 \cdot r_{\mathrm{break\_even}} \rfloor,\, 320\right)
+r\_{\mathrm{ceiling}} = \min\!\left(\lfloor 0.90 \cdot r\_{\mathrm{break\_even}} \rfloor,\, 320\right)
 \tag{4.10a}
 \]
 guaranteeing a minimum 10\% parameter savings over dense weights on factorized layers (e.g., $r_{\mathrm{ceiling}} = 320$ for standard 768-dimensional projections; bounded by 256 in conservative configurations).
 
 If the initial factorization error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}}$, recomputing the SVD until convergence or fallback:
 \[
-r_{k+1} = \min\!\left(r_{\mathrm{ceiling}},\, r_k + \max\!\left(16,\, \left\lfloor\frac{r_{\mathrm{ceiling}} - r_k}{\max(1, K - k)}\right\rfloor\right)\right)
+r\_{k+1} = \min\!\left(r\_{\mathrm{ceiling}},\, r\_k + \max\!\left(16,\, \left\lfloor\frac{r\_{\mathrm{ceiling}} - r\_k}{\max(1, K - k)}\right\rfloor\right)\right)
 \tag{4.11}
 \]
 where $K$ denotes the maximum retry count (default $K=5$). Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
 
 \subsection{Phase 5: LayerNorm Recalibration}
-\label{sec:layernorm_recalibration}
+\label{sec:layernorm\_recalibration}
 
 \subsubsection{Motivation}
 
@@ -154,18 +154,18 @@ non-unit variance even after normalization. The LayerNorm computes:
 
 If the input feature standard deviation shifts from the pre-compression target $\sigma_{\mathrm{target}}$ to post-factorization $\sigma_{\mathrm{current}}$, the unadjusted affine scale vector $\gamma$ miscalibrates downstream feature dynamic ranges. When pre-compression target statistics are recorded, A3 updates the affine parameter $\gamma$ in closed form via bounded ratio scaling:
 \[
-\gamma_{\mathrm{new}} = \gamma \odot \mathrm{clamp}\!\left(\frac{\sigma_{\mathrm{target}}}{\sigma_{\mathrm{current}}},\, 0.5,\, 2.0\right)
+\gamma\_{\mathrm{new}} = \gamma \odot \mathrm{clamp}\!\left(\frac{\sigma\_{\mathrm{target}}}{\sigma\_{\mathrm{current}}},\, 0.5,\, 2.0\right)
 \tag{4.13}
 \]
 When target standard deviations are not pre-cached, the update adopts a dampened inverse-variance scaling $\gamma_{\mathrm{new}} = \gamma \cdot (0.8 + 0.2 \cdot \mathrm{clamp}(1.0/\sigma_{\mathrm{current}}, 0.5, 2.0))$. Normalization modules in classification heads, poolers, and embeddings are strictly protected from modification to prevent task drift. Recalibration is executed whenever \texttt{recalibrate\_ln = True} and calibration sources are present.
 
 \subsection{Algorithm and Complexity Summary}
 
-The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app_complexity} (Table~\ref{tab:complexity_analysis}).
+The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app\_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app\_complexity} (Table~\ref{tab:complexity\_analysis}).
 
 \subsection{Parameter Reduction and Break-Even Bounds}
 
-For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app_parameter_counting} (Table~\ref{tab:parameter_counting_formulation}).
+For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app\_parameter\_counting} (Table~\ref{tab:parameter\_counting\_formulation}).
 
 \subsection{Theoretical Notes}
 
@@ -188,12 +188,12 @@ SVD reduces to standard SVD.
 For any $W$, $U_r$, $V_r$ from weighted SVD:
 
 \[
-\|W - U_r V_r\|_F \leq \left\|W - W^*_r\right\|_F + \|W^*_r - U_r V_r\|_F
+\|W - U\_r V\_r\|\_F \leq \left\|W - W^*\_r\right\|\_F + \|W^*\_r - U\_r V\_r\|\_F
 \tag{4.14}
 \]
 
 where $W^*_r$ is the unweighted optimal rank-$r$ approximation. Combined with the weighted SVD bound from Appendix A.3:
 \[
-\|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2(W_\text{weighted})}}{\sqrt{\min_j F_j}}
+\|W - U\_r V\_r\|\_F \leq \frac{\sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2(W\_\text{weighted})}}{\sqrt{\min\_j F\_j}}
 \]
 This makes the bound non-trivial: the reconstruction error is explicitly controlled by the tail singular values of the weighted matrix scaled by the minimal Fisher sensitivity. In practice, the weighted SVD achieves lower task degradation because the weighting suppresses reconstruction error in directions with small Fisher entries.

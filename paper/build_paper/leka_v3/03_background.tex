@@ -5,7 +5,7 @@
 Standard attention computes:
 
 \[
-\text{Attn}(q_i, K, V)_i = \frac{\sum_j e^{q_i \cdot k_j / \sqrt{d_h}} v_j}{\sum_j e^{q_i \cdot k_j / \sqrt{d_h}}}
+\text{Attn}(q\_i, K, V)\_i = \frac{\sum\_j e^{q\_i \cdot k\_j / \sqrt{d\_h}} v\_j}{\sum\_j e^{q\_i \cdot k\_j / \sqrt{d\_h}}}
 \tag{3.1}
 \]
 
@@ -20,7 +20,7 @@ e^{q \cdot k} \approx \phi(q)^\top \phi(k)
 Substituting:
 
 \[
-\text{Attn}(q_i, K, V) \approx \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(q\_i, K, V) \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.3}
 \]
 
@@ -33,14 +33,14 @@ to store.
 Rahimi \& Recht (2007) showed:
 
 \[
-e^{x \cdot y} \approx \mathbb{E}_{\omega \sim \mathcal{N}(0, I)}\left[e^{i \omega \cdot (x - y)}\right]
+e^{x \cdot y} \approx \mathbb{E}\_{\omega \sim \mathcal{N}(0, I)}\left[e^{i \omega \cdot (x - y)}\right]
 \tag{3.4}
 \]
 
 For real-valued features:
 
 \[
-\phi(x) = \frac{1}{\sqrt{m}} \begin{pmatrix} \cos(\omega_1 \cdot x) \\ \vdots \\ \cos(\omega_m \cdot x) \\ \sin(\omega_1 \cdot x) \\ \vdots \\ \sin(\omega_m \cdot x) \end{pmatrix}
+\phi(x) = \frac{1}{\sqrt{m}} \begin{pmatrix} \cos(\omega\_1 \cdot x) \\ \vdots \\ \cos(\omega\_m \cdot x) \\ \sin(\omega\_1 \cdot x) \\ \vdots \\ \sin(\omega\_m \cdot x) \end{pmatrix}
 \tag{3.5}
 \]
 
@@ -63,7 +63,7 @@ where $\tilde{Q}, \tilde{K}$ are landmarks.
 LEKAv3 simplifies this to a direct landmark attention:
 
 \[
-\text{Attn}_\text{land}(Q, K_\mathcal{L}, V_\mathcal{L}) = \text{softpick}(Q K_\mathcal{L}^\top) V_\mathcal{L}
+\text{Attn}\_\text{land}(Q, K\_\mathcal{L}, V\_\mathcal{L}) = \text{softpick}(Q K\_\mathcal{L}^\top) V\_\mathcal{L}
 \tag{3.7}
 \]
 
@@ -74,7 +74,7 @@ with $\text{softpick}$ a sparsifying alternative to softmax.
 Longformer (Beltagy et al., 2020) applies a local window:
 
 \[
-\text{Attn}_\text{local}(q_i, K, V) = \sum_{j: |i - j| \leq W/2} \alpha_{ij} v_j
+\text{Attn}\_\text{local}(q\_i, K, V) = \sum\_{j: |i - j| \leq W/2} \alpha\_{ij} v\_j
 \tag{3.8}
 \]
 
@@ -85,7 +85,7 @@ LEKAv3 makes this \textbf{causal-aware}: for decoders, only $j \leq i$ is includ
 LEKAv3 uses a sparsifying attention function called \texttt{softpick}:
 
 \[
-\text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right), \quad m = \max_j x_j
+\text{softpick}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right), \quad m = \max\_j x\_j
 \tag{3.9}
 \]
 
@@ -96,8 +96,8 @@ normalized across $j$. This drops low-scoring tokens, giving sparse attention.
 GQA shares KV across $H/H_{kv}$ query heads:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}, \qquad
-K_{\text{expanded}} = \text{repeat\_kv}(K, H/H_{kv})
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}, \qquad
+K\_{\text{expanded}} = \text{repeat\_kv}(K, H/H\_{kv})
 \tag{3.10}
 \]
 
@@ -106,7 +106,7 @@ K_{\text{expanded}} = \text{repeat\_kv}(K, H/H_{kv})
 RoPE applies position-dependent rotations:
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
 \tag{3.11}
 \]
 

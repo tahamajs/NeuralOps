@@ -24,10 +24,10 @@ Res-SVD uses the same weight extraction as companion modules:
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight
-extracted["k"] = src.k_lin.weight
-extracted["v"] = src.v_lin.weight
-extracted["o"] = src.out_lin.weight
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (nested)}
@@ -43,8 +43,8 @@ extracted["o"] = src.output.dense.weight
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen}
@@ -57,18 +57,18 @@ For RoBERTa/BERT, the output projection is applied externally.
 Res-SVD handles this via \textbf{identity initialization} of the output projection:
 
 \begin{lstlisting}
-if proj_key == "o" and self.is_nested_encoder:
-    temp_linear = nn.Linear(target.in_features, target.out_features)
-    nn.init.eye_(temp_linear.weight)
-    nn.init.zeros_(temp_linear.bias)
-    new_layer = ResSVDLinear.from_linear(temp_linear, ...)
-    target.load_state_dict(new_layer.state_dict())
+if proj\_key == "o" and self.is\_nested\_encoder:
+    temp\_linear = nn.Linear(target.in\_features, target.out\_features)
+    nn.init.eye\_(temp\_linear.weight)
+    nn.init.zeros\_(temp\_linear.bias)
+    new\_layer = ResSVDLinear.from\_linear(temp\_linear, ...)
+    target.load\_state\_dict(new\_layer.state\_dict())
 \end{lstlisting}
 
 Then in forward:
 \begin{lstlisting}
-if self.is_nested_encoder:
-    return context  # skip out_proj
+if self.is\_nested\_encoder:
+    return context  # skip out\_proj
 \end{lstlisting}
 
 \subsection{The `ResSVDLinear` Module}
@@ -77,58 +77,58 @@ Located in \texttt{framework/compression\_engine/res\_svd.py}. Structure:
 
 \begin{lstlisting}
 class ResSVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, base_rank, residual_rank,
-                 scaling=1.0, factorize_base=True, bias=True):
-        super().__init__()
-        self.V_base = nn.Parameter(torch.empty(base_rank, in_features))
-        self.U_base = nn.Parameter(torch.empty(out_features, base_rank))
-        self.lora_A = nn.Parameter(torch.empty(residual_rank, in_features))
-        self.lora_B = nn.Parameter(torch.empty(out_features, residual_rank))
+    def \_\_init\_\_(self, in\_features, out\_features, base\_rank, residual\_rank,
+                 scaling=1.0, factorize\_base=True, bias=True):
+        super().\_\_init\_\_()
+        self.V\_base = nn.Parameter(torch.empty(base\_rank, in\_features))
+        self.U\_base = nn.Parameter(torch.empty(out\_features, base\_rank))
+        self.lora\_A = nn.Parameter(torch.empty(residual\_rank, in\_features))
+        self.lora\_B = nn.Parameter(torch.empty(out\_features, residual\_rank))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         self.scaling = scaling
     
     @classmethod
-    def from_linear(cls, linear, base_rank, residual_rank, ...):
+    def from\_linear(cls, linear, base\_rank, residual\_rank, ...):
         W = linear.weight.data.float()
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Base
-        U_b = U[:, :base_rank]
-        S_b = S[:base_rank]
-        Vt_b = Vt[:base_rank, :]
+        U\_b = U[:, :base\_rank]
+        S\_b = S[:base\_rank]
+        Vt\_b = Vt[:base\_rank, :]
         
         # Residual
-        W_b = (U_b * S_b) @ Vt_b
-        R = W - W_b
-        U_r, S_r, Vt_r = torch.linalg.svd(R, full_matrices=False)
+        W\_b = (U\_b * S\_b) @ Vt\_b
+        R = W - W\_b
+        U\_r, S\_r, Vt\_r = torch.linalg.svd(R, full\_matrices=False)
         
         # LoRA init
-        S_r_sqrt = torch.sqrt(S_r[:residual_rank])
-        B_init = U_r[:, :residual_rank] * S_r_sqrt
-        A_init = S_r_sqrt[:, None] * Vt_r[:residual_rank, :]
+        S\_r\_sqrt = torch.sqrt(S\_r[:residual\_rank])
+        B\_init = U\_r[:, :residual\_rank] * S\_r\_sqrt
+        A\_init = S\_r\_sqrt[:, None] * Vt\_r[:residual\_rank, :]
         
         layer = cls(...)
-        layer.U_base.data = U_b
-        layer.V_base.data = Vt_b
-        layer.lora_B.data = B_init
-        layer.lora_A.data = A_init
+        layer.U\_base.data = U\_b
+        layer.V\_base.data = Vt\_b
+        layer.lora\_B.data = B\_init
+        layer.lora\_A.data = A\_init
         return layer
     
     def forward(self, x):
-        h_b = F.linear(x, self.V_base)
-        y_b = F.linear(h_b, self.U_base)
-        h_r = F.linear(x, self.lora_A)
-        y_r = F.linear(h_r, self.lora_B)
-        return y_b + self.scaling * y_r + self.bias
+        h\_b = F.linear(x, self.V\_base)
+        y\_b = F.linear(h\_b, self.U\_base)
+        h\_r = F.linear(x, self.lora\_A)
+        y\_r = F.linear(h\_r, self.lora\_B)
+        return y\_b + self.scaling * y\_r + self.bias
 \end{lstlisting}
 
 \subsection{Freezing Base Weights}
 
 \begin{lstlisting}
-self.U_base.requires_grad = False
-self.V_base.requires_grad = False
-# lora_A, lora_B remain trainable
+self.U\_base.requires\_grad = False
+self.V\_base.requires\_grad = False
+# lora\_A, lora\_B remain trainable
 \end{lstlisting}
 
 \subsection{Injection}
@@ -143,7 +143,7 @@ The \texttt{inject\_res\_svd} hook:
 \end{itemize}
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_res_svd failed at layer %d: %s", layer_idx, e)
+    logger.error("inject\_res\_svd failed at layer \%d: \%s", layer\_idx, e)
     return None
 \end{lstlisting}
 
@@ -166,8 +166,8 @@ Injection error & Returns None (silent) \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("res_svd")
-@ATTENTION_REGISTRY.register("spectral_residual_svd")
+@ATTENTION\_REGISTRY.register("res\_svd")
+@ATTENTION\_REGISTRY.register("spectral\_residual\_svd")
 class ResSVDAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -175,7 +175,7 @@ class ResSVDAttention(BaseAttention):
 \subsection{Cross-Attention}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
+if encoder\_hidden\_states is not None:
     raise NotImplementedError(...)
 \end{lstlisting}
 \begin{lstlisting}
@@ -187,6 +187,6 @@ if encoder_hidden_states is not None:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of res\_svd.}
-\label{fig:arch_res-svd}
+\label{fig:arch\_res-svd}
 \end{figure}
 

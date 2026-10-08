@@ -24,29 +24,29 @@ Handles four patterns (UniversalAdapter first, then fallbacks).
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
 s = src.self
-q_w = s.query.weight
-k_w = s.key.weight
-v_w = s.value.weight
-o_w = src.output.dense.weight
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Flat Modules}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight  # or q_proj or query
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight  # or q\_proj or query
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{Soft Fallback}
@@ -74,14 +74,14 @@ Appendix D).
 Input:  layer, config
 Output: layer with attention replaced
 
-1: src $\leftarrow$ extract_attention(layer)
+1: src $\leftarrow$ extract\_attention(layer)
 2: if src is None: return None
 3: try:
-4:     new $\leftarrow$ JambaInfoBlock(config, old_attn=src)
+4:     new $\leftarrow$ JambaInfoBlock(config, old\_attn=src)
 5:     replace(layer, new)
 6:     return new
 7: except Exception:
-8:     log_error
+8:     log\_error
 9:     return None
 \end{lstlisting}
 
@@ -101,12 +101,12 @@ Not supported. JambaInfo is encoder-only or decoder-only.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("jamba_info")
+@ATTENTION\_REGISTRY.register("jamba\_info")
 class JambaInfoBlock(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("jamba_info_inject")
-def inject_jamba_info(...):
+@ATTENTION\_REGISTRY.register("jamba\_info\_inject")
+def inject\_jamba\_info(...):
     ...
 \end{lstlisting}
 \begin{lstlisting}
@@ -118,6 +118,6 @@ def inject_jamba_info(...):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of jamba\_info.}
-\label{fig:arch_jamba-info}
+\label{fig:arch\_jamba-info}
 \end{figure}
 

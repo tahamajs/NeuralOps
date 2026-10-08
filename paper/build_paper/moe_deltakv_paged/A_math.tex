@@ -5,7 +5,7 @@
 For input $x$:
 
 \[
-Q(x) = \text{round}\!\left(\frac{x - x_\text{min}}{s}\right) \cdot s + x_\text{min}
+Q(x) = \text{round}\!\left(\frac{x - x\_\text{min}}{s}\right) \cdot s + x\_\text{min}
 \tag{A.1}
 \]
 
@@ -28,35 +28,35 @@ STE backward:
 Deltas:
 
 \[
-\Delta k_t = k_t - k_{t-1}, \quad t \geq 1
+\Delta k\_t = k\_t - k\_{t-1}, \quad t \geq 1
 \tag{A.4}
 \]
 
 SVD:
 
 \[
-\Delta \approx U_r \Sigma_r V_r^\top
+\Delta \approx U\_r \Sigma\_r V\_r^\top
 \tag{A.5}
 \]
 
 Reconstruction:
 
 \[
-\hat{k}_t = k_0 + \sum_{\tau=1}^t (U_r \Sigma_r V_r^\top)_\tau
+\hat{k}\_t = k\_0 + \sum\_{\tau=1}^t (U\_r \Sigma\_r V\_r^\top)\_\tau
 \tag{A.6}
 \]
 
 \textbf{Error bound:}
 
 \[
-\|\Delta - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|\Delta - U\_r \Sigma\_r V\_r^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.7}
 \]
 
 \subsection{A.3 Router Logits}
 
 \[
-\ell_{ij} = \frac{(W_\text{rg} \bar{q}_i) \cdot \bar{k}_j}{\sqrt{d_h}}
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
 \tag{A.8}
 \]
 
@@ -65,14 +65,14 @@ where $\bar{q}_i, \bar{k}_j$ are page means.
 \subsection{A.4 Top-K Selection}
 
 \[
-\mathcal{S}_i = \text{TopK}(\ell_{i, :}, k_\text{exp})
+\mathcal{S}\_i = \text{TopK}(\ell\_{i, :}, k\_\text{exp})
 \tag{A.9}
 \]
 
 \subsection{A.5 Gated Attention}
 
 \[
-\text{Out}_i = \sum_{j \in \mathcal{S}_i} g_{ij} \cdot \text{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}}\right) V_j
+\text{Out}\_i = \sum\_{j \in \mathcal{S}\_i} g\_{ij} \cdot \text{softmax}\!\left(\frac{Q\_i K\_j^\top}{\sqrt{d\_h}}\right) V\_j
 \tag{A.10}
 \]
 
@@ -81,26 +81,26 @@ where $g_{ij} = \text{softmax}_j(\ell_{i, j})$.
 \subsection{A.6 Load Balancing Loss}
 
 \[
-\mathcal{L}_\text{aux} = N_p \cdot \sum_{j=1}^{N_p} \rho_j \cdot \pi_j
+\mathcal{L}\_\text{aux} = N\_p \cdot \sum\_{j=1}^{N\_p} \rho\_j \cdot \pi\_j
 \tag{A.11}
 \]
 
 where:
 
 \[
-\rho_j = \frac{1}{N_p} \sum_{i=1}^{N_p} \mathbb{1}[j \in \mathcal{S}_i]
+\rho\_j = \frac{1}{N\_p} \sum\_{i=1}^{N\_p} \mathbb{1}[j \in \mathcal{S}\_i]
 \tag{A.12}
 \]
 
 \[
-\pi_j = \frac{1}{N_p} \sum_{i=1}^{N_p} \text{softmax}(\ell_{i, :})_j
+\pi\_j = \frac{1}{N\_p} \sum\_{i=1}^{N\_p} \text{softmax}(\ell\_{i, :})\_j
 \tag{A.13}
 \]
 
 \subsection{A.7 CLS Boost}
 
 \[
-\ell_{i, 0} \leftarrow \ell_{i, 0} + 10^4
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
 \tag{A.14}
 \]
 
@@ -120,7 +120,7 @@ Per query page:
 Total:
 
 \[
-\mathcal{O}(N_p (N_p + k_\text{exp} P^2) d_h)
+\mathcal{O}(N\_p (N\_p + k\_\text{exp} P^2) d\_h)
 \tag{A.15}
 \]
 

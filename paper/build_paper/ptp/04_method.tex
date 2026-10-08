@@ -27,7 +27,7 @@ attention with a pruned $L \times k$ attention:
                               |
    +--------------+           |
    | Top-k        |           |
-   | T = top_k(s) |           |
+   | T = top\_k(s) |           |
    +------+-------+           |
           |                   |
                                
@@ -38,7 +38,7 @@ attention with a pruned $L \times k$ attention:
            
    +--------------+
    | Attention    |
-   | Q   K_T^T    |
+   | Q   K\_T^T    |
    +--------------+
 \end{lstlisting}
 
@@ -47,7 +47,7 @@ attention with a pruned $L \times k$ attention:
 \subsubsection{Architecture}
 
 \[
-s_i = \sigma\!\left(W_2 \cdot \text{GELU}(W_1 x_i + b_1) + b_2\right)
+s\_i = \sigma\!\left(W\_2 \cdot \text{GELU}(W\_1 x\_i + b\_1) + b\_2\right)
 \tag{4.1}
 \]
 
@@ -107,8 +107,8 @@ scores[:, 0] = 1e4
 Set padding scores to $-10^4$:
 
 \begin{lstlisting}
-valid_mask = get_token_valid_mask(attention_mask, B, L, device)
-scores = scores.masked_fill(~valid_mask, -1e4)
+valid\_mask = get\_token\_valid\_mask(attention\_mask, B, L, device)
+scores = scores.masked\_fill(~valid\_mask, -1e4)
 \end{lstlisting}
 
 \subsubsection{Order of Operations}
@@ -118,7 +118,7 @@ if [CLS] is padding (it never should be), it is still excluded.
 
 \begin{lstlisting}
 scores[:, 0] = 1e4               # CLS preservation
-scores = scores.masked_fill(~valid_mask, -1e4)  # Padding
+scores = scores.masked\_fill(~valid\_mask, -1e4)  # Padding
 scores[:, 0] = 1e4               # Re-apply CLS (padding mask may have overwritten)
 \end{lstlisting}
 
@@ -133,9 +133,9 @@ k = \lceil \rho L \rceil, \quad
 We sort the indices for consistent gathering:
 
 \begin{lstlisting}
-k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
-_, top_indices = torch.topk(scores, k_tokens, dim=-1)
-top_indices, _ = torch.sort(top_indices, dim=-1)
+k\_tokens = max(1, min(L, int(math.ceil(L * self.keep\_ratio))))
+\_, top\_indices = torch.topk(scores, k\_tokens, dim=-1)
+top\_indices, \_ = torch.sort(top\_indices, dim=-1)
 \end{lstlisting}
 
 Sorting ensures the pruned sequence preserves original order, which helps 
@@ -149,16 +149,16 @@ Given $K_\text{all}, V_\text{all} \in \mathbb{R}^{B \times H \times L \times d_h
 and indices $\mathcal{T} \in \mathbb{Z}^{B \times k}$:
 
 \[
-K_\text{pruned}[b, h, i, :] = K_\text{all}[b, h, \mathcal{T}[b, i], :]
+K\_\text{pruned}[b, h, i, :] = K\_\text{all}[b, h, \mathcal{T}[b, i], :]
 \tag{4.3}
 \]
 
 Implemented via \texttt{torch.gather}:
 
 \begin{lstlisting}
-top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, d_h)
-k_pruned = torch.gather(k_all, 2, top_idx_exp)
-v_pruned = torch.gather(v_all, 2, top_idx_exp)
+top\_idx\_exp = top\_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, d\_h)
+k\_pruned = torch.gather(k\_all, 2, top\_idx\_exp)
+v\_pruned = torch.gather(v\_all, 2, top\_idx\_exp)
 \end{lstlisting}
 
 \subsubsection{Complexity}
@@ -181,7 +181,7 @@ Attention & $\mathcal{O}(B H L k d_h)$ \\
 \subsection{Attention on Pruned KV}
 
 \[
-S = \frac{Q K_\text{pruned}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L \times k}
+S = \frac{Q K\_\text{pruned}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{B \times H \times L \times k}
 \tag{4.4}
 \]
 
@@ -191,17 +191,17 @@ For decoders, queries can only attend to keys at positions $\leq$ query
 position. After pruning, we compare \textbf{original} positions:
 
 \[
-\text{mask}_{ij} = \mathbb{1}[\mathcal{T}[b, j] > i]
+\text{mask}\_{ij} = \mathbb{1}[\mathcal{T}[b, j] \textgreater{} i]
 \tag{4.5}
 \]
 
 \textbf{Implementation:}
 
 \begin{lstlisting}
-q_pos = torch.arange(L, device=device).view(1, 1, L, 1)
-k_orig_pos = top_indices.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
-causal_mask = k_orig_pos > q_pos
-attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
+q\_pos = torch.arange(L, device=device).view(1, 1, L, 1)
+k\_orig\_pos = top\_indices.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
+causal\_mask = k\_orig\_pos \textgreater{} q\_pos
+attn\_scores = attn\_scores.masked\_fill(causal\_mask, -1e4)
 \end{lstlisting}
 
 \subsubsection{Padding Masking}
@@ -209,8 +209,8 @@ attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
 We gather padding validity for the retained keys:
 
 \begin{lstlisting}
-valid_keys = torch.gather(valid_mask, 1, top_indices)  # (B, k)
-attn_scores = attn_scores.masked_fill(~valid_keys.unsqueeze(1).unsqueeze(2), -1e4)
+valid\_keys = torch.gather(valid\_mask, 1, top\_indices)  # (B, k)
+attn\_scores = attn\_scores.masked\_fill(~valid\_keys.unsqueeze(1).unsqueeze(2), -1e4)
 \end{lstlisting}
 
 \subsubsection{Softmax and Dropout}
@@ -227,7 +227,7 @@ P = \text{softmax}(S), \quad P \leftarrow \text{Dropout}(P)
 For non-nested encoders:
 
 \[
-O = P V_\text{pruned}, \quad \text{out} = W_O O + b_O
+O = P V\_\text{pruned}, \quad \text{out} = W\_O O + b\_O
 \tag{4.7}
 \]
 
@@ -242,15 +242,15 @@ For nested encoders (RoBERTa/BERT), we skip $W_O$:
 
 \textbf{Algorithm 1:} PTP forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
-        attention_mask, position_embeddings, is_causal
-        keep_ratio  
+Input:  hidden\_states $\in$ R^{B $\times$ L $\times$ d}
+        attention\_mask, position\_embeddings, is\_causal
+        keep\_ratio  
 Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: # 1. Score tokens
- 2: s $\leftarrow$ sigmoid(MLP(hidden_states))          # (B, L)
+ 2: s $\leftarrow$ sigmoid(MLP(hidden\_states))          # (B, L)
  3: s[:, 0] $\leftarrow$ 1e4                            # CLS preservation
- 4: s $\leftarrow$ s.masked_fill(~valid_mask, -1e4)     # Padding
+ 4: s $\leftarrow$ s.masked\_fill(~valid\_mask, -1e4)     # Padding
  5: s[:, 0] $\leftarrow$ 1e4                            # Re-apply CLS
  6:
  7: # 2. Top-k selection
@@ -259,30 +259,30 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 10: T $\leftarrow$ sort(T)                             # Preserve order
 11:
 12: # 3. Project Q, K, V
-13: Q $\leftarrow$ W_Q(hidden_states)
-14: K_all $\leftarrow$ W_K(hidden_states)
-15: V_all $\leftarrow$ W_V(hidden_states)
+13: Q $\leftarrow$ W\_Q(hidden\_states)
+14: K\_all $\leftarrow$ W\_K(hidden\_states)
+15: V\_all $\leftarrow$ W\_V(hidden\_states)
 16:
 17: # 4. RoPE
-18: if position_embeddings: Q, K_all $\leftarrow$ RoPE(Q, K_all)
+18: if position\_embeddings: Q, K\_all $\leftarrow$ RoPE(Q, K\_all)
 19:
 20: # 5. GQA repeat
-21: if H_kv < H: K_all, V_all $\leftarrow$ repeat_kv(K_all, V_all, H/H_kv)
+21: if H\_kv \textless{} H: K\_all, V\_all $\leftarrow$ repeat\_kv(K\_all, V\_all, H/H\_kv)
 22:
 23: # 6. Gather K, V at T
-24: K $\leftarrow$ gather(K_all, dim=2, T)
-25: V $\leftarrow$ gather(V_all, dim=2, T)
+24: K $\leftarrow$ gather(K\_all, dim=2, T)
+25: V $\leftarrow$ gather(V\_all, dim=2, T)
 26:
 27: # 7. Attention
-28: S $\leftarrow$ Q K^T / sqrt(d_h)
-29: if is_causal: S $\leftarrow$ S + causal_mask_from_T
-30: S $\leftarrow$ S + padding_mask_from_T
+28: S $\leftarrow$ Q K^T / sqrt(d\_h)
+29: if is\_causal: S $\leftarrow$ S + causal\_mask\_from\_T
+30: S $\leftarrow$ S + padding\_mask\_from\_T
 31: P $\leftarrow$ softmax(S)
 32: O $\leftarrow$ P V
 33:
 34: # 8. Output projection
-35: if nested_encoder: out $\leftarrow$ O
-36: else: out $\leftarrow$ W_O(O)
+35: if nested\_encoder: out $\leftarrow$ O
+36: else: out $\leftarrow$ W\_O(O)
 37:
 38: return out
 \end{lstlisting}
@@ -350,7 +350,7 @@ only original positions $\leq i$ are attended. $\square$
 \textbf{Claim.} The output of PTP attention is bounded by:
 
 \[
-\|O - O_\text{dense}\| \leq 2 \max_i \|V_i\| \cdot \sum_{j \notin \mathcal{T}} P_j
+\|O - O\_\text{dense}\| \leq 2 \max\_i \|V\_i\| \cdot \sum\_{j \notin \mathcal{T}} P\_j
 \tag{4.9}
 \]
 

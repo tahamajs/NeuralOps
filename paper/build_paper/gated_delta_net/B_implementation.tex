@@ -4,69 +4,69 @@
 \subsection{B.1 State Update Inner Loop}
 
 \begin{lstlisting}
-def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
-    """Inner loop over chunk_size tokens."""
-    C = q_i.shape[2]
-    chunk_outs = []
-    curr_S = S
+def \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i):
+    """Inner loop over chunk\_size tokens."""
+    C = q\_i.shape[2]
+    chunk\_outs = []
+    curr\_S = S
     for t in range(C):
-        kt = k_i[:, :, t:t+1, :]
-        vt = v_i[:, :, t:t+1, :]
-        qt = q_i[:, :, t:t+1, :]
-        bt = beta_i[:, :, t:t+1].unsqueeze(-1)
-        at = alpha_i[:, :, t:t+1].unsqueeze(-1)
+        kt = k\_i[:, :, t:t+1, :]
+        vt = v\_i[:, :, t:t+1, :]
+        qt = q\_i[:, :, t:t+1, :]
+        bt = beta\_i[:, :, t:t+1].unsqueeze(-1)
+        at = alpha\_i[:, :, t:t+1].unsqueeze(-1)
         
         # Prediction error
-        inter_v = torch.matmul(kt, curr_S)
-        err = vt - inter_v
+        inter\_v = torch.matmul(kt, curr\_S)
+        err = vt - inter\_v
         
         # Normalized step
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
-        denom = (1.0 + norm_k_sq).clamp(min=1.0)
+        norm\_k\_sq = (kt * kt).sum(dim=-1, keepdim=True)
+        denom = (1.0 + norm\_k\_sq).clamp(min=1.0)
         step = (at / denom).clamp(min=0.0, max=1.0)
         
         # State update
-        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
-        curr_S = bt * curr_S + delta_update
-        curr_S = torch.nan_to_num(curr_S, nan=0.0, posinf=1e4, neginf=-1e4)
+        delta\_update = step * torch.matmul(kt.transpose(-1, -2), err)
+        curr\_S = bt * curr\_S + delta\_update
+        curr\_S = torch.nan\_to\_num(curr\_S, nan=0.0, posinf=1e4, neginf=-1e4)
         
         # Output
-        yt = torch.matmul(qt, curr_S)
-        chunk_outs.append(yt)
+        yt = torch.matmul(qt, curr\_S)
+        chunk\_outs.append(yt)
     
-    return torch.cat(chunk_outs, dim=2), curr_S
+    return torch.cat(chunk\_outs, dim=2), curr\_S
 \end{lstlisting}
 
 \subsection{B.2 Outer Chunk Loop}
 
 \begin{lstlisting}
-def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=True):
+def chunked\_delta\_rule\_scan(q, k, v, beta, alpha, chunk\_size=8, use\_checkpoint=True):
     B, H, L, d = q.shape
     
     # FP32 for numerical stability
-    q_f = q.float(); k_f = k.float(); v_f = v.float()
-    beta_f = beta.float().clamp(1e-4, 1-1e-4)
-    alpha_f = alpha.float().clamp(1e-4, 1)
+    q\_f = q.float(); k\_f = k.float(); v\_f = v.float()
+    beta\_f = beta.float().clamp(1e-4, 1-1e-4)
+    alpha\_f = alpha.float().clamp(1e-4, 1)
     
     # Normalize
-    k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-    k_unit = k_f / k_norm
-    q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-    q_unit = q_f / q_norm
+    k\_norm = torch.norm(k\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    k\_unit = k\_f / k\_norm
+    q\_norm = torch.norm(q\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    q\_unit = q\_f / q\_norm
     
     # Pad
-    pad_len = (chunk_size - L % chunk_size) % chunk_size
-    if pad_len > 0:
-        q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
-        k_unit = F.pad(k_unit, (0, 0, 0, pad_len))
-        v_f = F.pad(v_f, (0, 0, 0, pad_len))
-        beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
-        alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
+    pad\_len = (chunk\_size - L \% chunk\_size) \% chunk\_size
+    if pad\_len \textgreater{} 0:
+        q\_unit = F.pad(q\_unit, (0, 0, 0, pad\_len))
+        k\_unit = F.pad(k\_unit, (0, 0, 0, pad\_len))
+        v\_f = F.pad(v\_f, (0, 0, 0, pad\_len))
+        beta\_f = F.pad(beta\_f, (0, pad\_len), value=0.0)
+        alpha\_f = F.pad(alpha\_f, (0, pad\_len), value=1.0)
     
     # Reshape
-    L_pad = L + pad_len
-    num_chunks = L_pad // chunk_size
-    q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
+    L\_pad = L + pad\_len
+    num\_chunks = L\_pad // chunk\_size
+    q\_c = q\_unit.view(B, H, num\_chunks, chunk\_size, d)
     # ... same for k, v, beta, alpha
     
     # Recurrence
@@ -74,21 +74,21 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=T
     outputs = []
     
     from torch.utils.checkpoint import checkpoint
-    for c in range(num_chunks):                    # $\leftarrow$ outer Python loop
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
-        beta_i, alpha_i = beta_c[:,:,c], alpha_c[:,:,c]
+    for c in range(num\_chunks):                    # $\leftarrow$ outer Python loop
+        q\_i, k\_i, v\_i = q\_c[:,:,c], k\_c[:,:,c], v\_c[:,:,c]
+        beta\_i, alpha\_i = beta\_c[:,:,c], alpha\_c[:,:,c]
         
-        if use_checkpoint and q.requires_grad:
-            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, 
-                                 beta_i, alpha_i, use_reentrant=False)
+        if use\_checkpoint and q.requires\_grad:
+            y\_i, S = checkpoint(\_delta\_chunk\_forward, S, q\_i, k\_i, v\_i, 
+                                 beta\_i, alpha\_i, use\_reentrant=False)
         else:
-            y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
-        outputs.append(y_i)
+            y\_i, S = \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i)
+        outputs.append(y\_i)
     
     y = torch.cat(outputs, dim=2)
-    if pad_len > 0:
+    if pad\_len \textgreater{} 0:
         y = y[:, :, :L, :]
-    return torch.nan_to_num(y, nan=0.0)
+    return torch.nan\_to\_num(y, nan=0.0)
 \end{lstlisting}
 
 \subsection{B.3 The Z Projection}
@@ -96,16 +96,16 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=T
 The Z projection is used for SiLU gating:
 
 \begin{lstlisting}
-z = self.z_proj(hidden_states)
+z = self.z\_proj(hidden\_states)
 # ... after recurrence:
-gated_y = y * F.silu(z)
+gated\_y = y * F.silu(z)
 \end{lstlisting}
 
 It is \textbf{not present} in baseline attention. We initialize it from $W_Q$:
 
 \begin{lstlisting}
-self.z_proj.weight.data.copy_(w_q)
-self.z_proj.bias.data.copy_(b_q)
+self.z\_proj.weight.data.copy\_(w\_q)
+self.z\_proj.bias.data.copy\_(b\_q)
 \end{lstlisting}
 
 \subsection{B.4 Weight Copy (All Architectures)}
@@ -114,19 +114,19 @@ Standard four-architecture extraction:
 
 \begin{lstlisting}
 # 1. GPT-2 fused Conv1D
-if hasattr(old_attn, "c_attn"):
-    c_w = old_attn.c_attn.weight.data.t()  # transpose
-    q_w, k_w, v_w = c_w.chunk(3, dim=0)
+if hasattr(old\_attn, "c\_attn"):
+    c\_w = old\_attn.c\_attn.weight.data.t()  # transpose
+    q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
     ...
 
 # 2. RoBERTa nested
-elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
-    q_w = old_attn.self.query.weight.data
+elif hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query"):
+    q\_w = old\_attn.self.query.weight.data
     ...
 
 # 3. DistilBERT flat
 else:
-    q_w = old_attn.q_lin.weight.data
+    q\_w = old\_attn.q\_lin.weight.data
     ...
 \end{lstlisting}
 
@@ -137,7 +137,7 @@ else:
 The recurrence \textbf{must} be done in FP32. FP16 accumulates error:
 
 \begin{lstlisting}
-q_f = q.float(); k_f = k.float(); v_f = v.float()
+q\_f = q.float(); k\_f = k.float(); v\_f = v.float()
 \end{lstlisting}
 
 \subsubsection{B.5.2 Missing Normalization}
@@ -145,24 +145,24 @@ q_f = q.float(); k_f = k.float(); v_f = v.float()
 Without normalization, the state can explode or vanish:
 
 \begin{lstlisting}
-k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-k_unit = k_f / k_norm
+k\_norm = torch.norm(k\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+k\_unit = k\_f / k\_norm
 \end{lstlisting}
 
 \subsubsection{B.5.3 Padding Handling}
 
-Padding with \texttt{pad\_len > 0} requires:
+Padding with \texttt{pad\_len \textgreater{} 0} requires:
 
 \begin{lstlisting}
-if pad_len > 0:
-    q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
-    beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
+if pad\_len \textgreater{} 0:
+    q\_unit = F.pad(q\_unit, (0, 0, 0, pad\_len))
+    beta\_f = F.pad(beta\_f, (0, pad\_len), value=0.0)
 \end{lstlisting}
 
 \subsubsection{B.5.4 Gradient Checkpointing Requires `.requires\_grad`}
 
 \begin{lstlisting}
-if use_checkpoint and q.requires_grad:
+if use\_checkpoint and q.requires\_grad:
     ...checkpoint...
 else:
     ...normal forward...
@@ -178,33 +178,33 @@ Without \texttt{requires\_grad}, checkpointing fails or is a no-op.
 # Single-token
 k = torch.randn(1, 1, 1, 64)
 v = torch.randn(1, 1, 1, 64)
-S_prev = torch.zeros(1, 1, 64, 64)
+S\_prev = torch.zeros(1, 1, 64, 64)
 beta, alpha = torch.tensor([[[0.9]]]), torch.tensor([[[0.5]]])
 
-S_new, _ = _delta_chunk_forward(S_prev, k, k, v, beta, alpha)
+S\_new, \_ = \_delta\_chunk\_forward(S\_prev, k, k, v, beta, alpha)
 
 # Manual check
-err = v - torch.matmul(k, S_prev)
-norm_k_sq = (k * k).sum(-1, keepdim=True)
-step = alpha / (1 + norm_k_sq).clamp(min=1.0)
-expected = beta * S_prev + step * torch.matmul(k.transpose(-1, -2), err)
+err = v - torch.matmul(k, S\_prev)
+norm\_k\_sq = (k * k).sum(-1, keepdim=True)
+step = alpha / (1 + norm\_k\_sq).clamp(min=1.0)
+expected = beta * S\_prev + step * torch.matmul(k.transpose(-1, -2), err)
 
-assert torch.allclose(S_new, expected, atol=1e-5)
+assert torch.allclose(S\_new, expected, atol=1e-5)
 \end{lstlisting}
 
 \subsubsection{Verify Causality}
 
 \begin{lstlisting}
-X = torch.randn(1, L, d, requires_grad=True)
+X = torch.randn(1, L, d, requires\_grad=True)
 y = model(X)
 y[0, 5].sum().backward()
-assert X.grad[0, 6:].abs().max() < 1e-6
+assert X.grad[0, 6:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_delta_net")
+@ATTENTION\_REGISTRY.register("gated\_delta\_net")
 class GatedDeltaNet(BaseAttention):
     ...
 \end{lstlisting}
@@ -212,24 +212,24 @@ class GatedDeltaNet(BaseAttention):
 \subsection{B.8 Injection Factory}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_delta_net_inject")
-def inject_gated_delta_net(layer, model_config, comp_config, old_attn=None, **kwargs):
+@ATTENTION\_REGISTRY.register("gated\_delta\_net\_inject")
+def inject\_gated\_delta\_net(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
     # Find source attention
-    src_attn = old_attn or extract_attention(layer)
+    src\_attn = old\_attn or extract\_attention(layer)
     
     # Create new
     try:
-        new_block = GatedDeltaNet(
-            config=model_config, comp_config=comp_config,
-            d_model=hidden_size, num_heads=num_heads,
-            old_attn=src_attn, **kwargs,
+        new\_block = GatedDeltaNet(
+            config=model\_config, comp\_config=comp\_config,
+            d\_model=hidden\_size, num\_heads=num\_heads,
+            old\_attn=src\_attn, **kwargs,
         )
     except Exception as e:
         logger.error(f"Injection failed: {e}")
         return None
     
     # Replace
-    replace_attention(layer, new_block)
-    return new_block
+    replace\_attention(layer, new\_block)
+    return new\_block
 \end{lstlisting}
 

@@ -21,17 +21,17 @@ GPT-2 & \texttt{GPT2Attention} & No & Fragile transfer & GatedDeltaNet (slow) \\
 
 \textbf{Algorithm 2:} Inject GatedDeltaNetBlock
 \begin{lstlisting}
-Input:  layer  , config, old_attn
+Input:  layer  , config, old\_attn
 Output: new block in  
 
-1: Determine d_model, num_heads from config or src
-2: new $\leftarrow$ GatedDeltaNetBlock(config, d_model, num_heads, use_full_attention)
-3: if src_attn is not None:
-4:     new.copy_weights(src_attn)        May fail silently
+1: Determine d\_model, num\_heads from config or src
+2: new $\leftarrow$ GatedDeltaNetBlock(config, d\_model, num\_heads, use\_full\_attention)
+3: if src\_attn is not None:
+4:     new.copy\_weights(src\_attn)        May fail silently
 5: Replace attention slot:
-6:     if   has .attention.self:  .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+6:     if   has .attention.self:  .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
 7:     elif   has .attention:  .attention $\leftarrow$ new
-8:     elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+8:     elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
 9:     elif   has .attn:  .attn $\leftarrow$ new
 10: return new
 \end{lstlisting}
@@ -42,8 +42,8 @@ For RoBERTa, \texttt{is\_nested\_encoder=True}. The block returns **raw attentio
 output** without residual or LayerNorm:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    return delta_out, None
+if self.is\_nested\_encoder:
+    return delta\_out, None
 \end{lstlisting}
 
 \textbf{Why?} Because in RoBERTa, the outer \texttt{BertAttention} block already wraps 
@@ -51,14 +51,14 @@ attention in a residual + LayerNorm:
 
 \begin{lstlisting}
 class BertAttention(nn.Module):
-    def __init__(...):
+    def \_\_init\_\_(...):
         self.self = BertSelfAttention(...)
         self.output = BertSelfOutput(...)  # has dense + LayerNorm + residual
     
-    def forward(self, hidden_states):
-        self_outputs = self.self(hidden_states)
-        attention_output = self.output(self_outputs[0], hidden_states)
-        return (attention_output,)
+    def forward(self, hidden\_states):
+        self\_outputs = self.self(hidden\_states)
+        attention\_output = self.output(self\_outputs[0], hidden\_states)
+        return (attention\_output,)
 \end{lstlisting}
 
 So replacing \texttt{layer.attention.self} means the outer \texttt{output} block handles 
@@ -73,33 +73,33 @@ inefficiency but not a correctness issue.
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-w_q = src.q_lin.weight.data  # (768, 768)
-w_k = src.k_lin.weight.data  # (768, 768)
-w_v = src.v_lin.weight.data  # (768, 768)
-w_o = src.out_lin.weight.data  # (768, 768)
+w\_q = src.q\_lin.weight.data  # (768, 768)
+w\_k = src.k\_lin.weight.data  # (768, 768)
+w\_v = src.v\_lin.weight.data  # (768, 768)
+w\_o = src.out\_lin.weight.data  # (768, 768)
 
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
-# nn.MultiheadAttention.in_proj_weight.shape = (2304, 768)
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)  # (2304, 768)
+# nn.MultiheadAttention.in\_proj\_weight.shape = (2304, 768)
 # $\to$ copy succeeds
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
-w_q = src.self.query.weight.data  # (768, 768)
+w\_q = src.self.query.weight.data  # (768, 768)
 ...
-w_o = src.output.dense.weight.data  # (768, 768)
+w\_o = src.output.dense.weight.data  # (768, 768)
 
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)  # (2304, 768)
 # $\to$ copy succeeds
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-c_attn_w = src.c_attn.weight.data.t()  # (2304, 768)
-w_q, w_k, w_v = c_attn_w.chunk(3, dim=0)  # each (768, 768)
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
+c\_attn\_w = src.c\_attn.weight.data.t()  # (2304, 768)
+w\_q, w\_k, w\_v = c\_attn\_w.chunk(3, dim=0)  # each (768, 768)
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)  # (2304, 768)
 # $\to$ copy succeeds
 \end{lstlisting}
 
@@ -159,8 +159,8 @@ path.
 The single most dangerous issue. Add explicit logging:
 
 \begin{lstlisting}
-if qkv_w.shape != self.attn.in_proj_weight.shape:
-    logger.warning(f"Q/K/V shape mismatch: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+if qkv\_w.shape != self.attn.in\_proj\_weight.shape:
+    logger.warning(f"Q/K/V shape mismatch: {qkv\_w.shape} vs {self.attn.in\_proj\_weight.shape}")
 \end{lstlisting}
 
 \subsubsection{LayerNorm Fresh Init}
@@ -183,6 +183,6 @@ top of our LayerNorm, leading to \textbf{double normalization}.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of gated\_deltanet\_block.}
-\label{fig:arch_gated-deltanet-block}
+\label{fig:arch\_gated-deltanet-block}
 \end{figure}
 

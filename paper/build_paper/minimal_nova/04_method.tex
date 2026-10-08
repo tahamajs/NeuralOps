@@ -19,7 +19,7 @@ adaptively per layer based on spectral energy.
 
 \begin{lstlisting}
        +------------------------------------------+
-       |  Input weight W $\in$ R^{d_out $\times$ d_in}       |
+       |  Input weight W $\in$ R^{d\_out $\times$ d\_in}       |
        +----------------+-------------------------+
                         |
                          
@@ -30,14 +30,14 @@ adaptively per layer based on spectral energy.
                          
        +------------------------------------------+
        |  Compute cumulative energy E(r)          |
-       |  r_eff = min(r_max, argmin E(r) $\ge$  )     |
+       |  r\_eff = min(r\_max, argmin E(r) $\ge$  )     |
        +----------------+-------------------------+
                         |
                          
        +------------------------------------------+
-       |  Truncate to r_eff, symmetrize $\Sigma$         |
-       |  U_r = U[:, :r]   $\sqrt{}$$\Sigma$_r                   |
-       |  V_r = $\sqrt{}$$\Sigma$_r   V[:r, :]^T                 |
+       |  Truncate to r\_eff, symmetrize $\Sigma$         |
+       |  U\_r = U[:, :r]   $\sqrt{}$$\Sigma$\_r                   |
+       |  V\_r = $\sqrt{}$$\Sigma$\_r   V[:r, :]^T                 |
        +----------------+-------------------------+
                         |
                          
@@ -162,8 +162,8 @@ calibration data.
 We distribute $\Sigma^{1/2}$ between the two factors:
 
 \[
-U_r = U_{:, :r} \cdot \Sigma_{:r, :r}^{1/2}, \qquad
-V_r = \Sigma_{:r, :r}^{1/2} \cdot V_{:r, :}^\top
+U\_r = U\_{:, :r} \cdot \Sigma\_{:r, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :r}^{1/2} \cdot V\_{:r, :}^\top
 \tag{4.5}
 \]
 
@@ -175,8 +175,8 @@ training stability.
 The framework stores $V_r$ in \texttt{down.weight} and $U_r$ in \texttt{up.weight}:
 
 \begin{lstlisting}
-self.down.weight.data[:r, :] = V_r       # (r, d_in)
-self.up.weight.data[:, :r] = U_r         # (d_out, r)
+self.down.weight.data[:r, :] = V\_r       # (r, d\_in)
+self.up.weight.data[:, :r] = U\_r         # (d\_out, r)
 \end{lstlisting}
 
 For $r < \text{target rank}$, the remaining rows/columns are zero.
@@ -209,15 +209,15 @@ Qwen3.5 & \texttt{q\_proj} & \texttt{k\_proj} & \texttt{v\_proj} & \texttt{o\_pr
 GPT-2 fuses $Q, K, V$ into one \texttt{c\_attn}:
 
 \[
-W_{c\_attn} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
+W\_{c\_attn} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
 \tag{4.6}
 \]
 
 (Conv1D stores this transposed.) MinimalNOVA splits:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()   # (3d, d)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()   # (3d, d)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
@@ -227,12 +227,12 @@ inner attention:
 
 \begin{lstlisting}
 # Extract Q, K, V from inner self-attention
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
 
-# Extract W_O from outer layer
-w_o = src.output.dense.weight
+# Extract W\_O from outer layer
+w\_o = src.output.dense.weight
 \end{lstlisting}
 
 When replacing the inner attention, the outer \texttt{output.dense} remains in 
@@ -246,8 +246,8 @@ For GQA, $H_{kv} < H$. The K and V projections have smaller output
 dimensions:
 
 \[
-W_K \in \mathbb{R}^{H_{kv} d_h \times d}, \quad
-W_V \in \mathbb{R}^{H_{kv} d_h \times d}
+W\_K \in \mathbb{R}^{H\_{kv} d\_h \times d}, \quad
+W\_V \in \mathbb{R}^{H\_{kv} d\_h \times d}
 \tag{4.7}
 \]
 
@@ -266,7 +266,7 @@ for proj in ["q", "k", "v"]:
     w = extracted[proj][0]
     if w is not None:
         norm = torch.linalg.norm(w.float())
-        if norm < 1e-4:
+        if norm \textless{} 1e-4:
             raise RuntimeError(f"Near-zero Frobenius norm on {proj}")
 \end{lstlisting}
 
@@ -283,20 +283,20 @@ The original attention is preserved.
 After factorization, base weights are frozen:
 
 \begin{lstlisting}
-def freeze_base_weights(self):
-    self.down.weight.requires_grad = False
-    self.up.weight.requires_grad = False
+def freeze\_base\_weights(self):
+    self.down.weight.requires\_grad = False
+    self.up.weight.requires\_grad = False
     if self.up.bias is not None:
-        self.up.bias.requires_grad = False
-    if self.lora_rank > 0:
-        self.lora_A.requires_grad = True
-        self.lora_B.requires_grad = True
+        self.up.bias.requires\_grad = False
+    if self.lora\_rank \textgreater{} 0:
+        self.lora\_A.requires\_grad = True
+        self.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 Only \texttt{lora\_A} and \texttt{lora\_B} are trained. LoRA $B$ is initialized to zero, so:
 
 \[
-y_{\text{init}} = (x V^\top) U^\top + b
+y\_{\text{init}} = (x V^\top) U^\top + b
 \tag{4.8}
 \]
 
@@ -306,25 +306,25 @@ which equals the SVD approximation.
 
 \textbf{Algorithm 1:} MinimalNOVA injection
 \begin{lstlisting}
-Input:  model M, rank_cap r_max, energy  
+Input:  model M, rank\_cap r\_max, energy  
 Output: model M' with factorized attention
 
-1:  for layer   in transformer_layers(M) do
-2:      src $\leftarrow$ get_attention( )
+1:  for layer   in transformer\_layers(M) do
+2:      src $\leftarrow$ get\_attention( )
 3:      extract Q, K, V, O from src  (architecture-dependent)
 4:
-5:      for (W, target) in [(Q, q_proj), (K, k_proj), (V, v_proj), (O, out_proj)] do
+5:      for (W, target) in [(Q, q\_proj), (K, k\_proj), (V, v\_proj), (O, out\_proj)] do
 6:          U, $\Sigma$, V $\leftarrow$ svd(W)
 7:          E(r) $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
-8:          r_eff $\leftarrow$ min(r_max, |{i: E(i) <  }| + 1)
-9:          U_r $\leftarrow$ U[:, :r]   $\sqrt{}$$\Sigma$[:r]
-10:         V_r $\leftarrow$ $\sqrt{}$$\Sigma$[:r]   V[:r, :]
-11:         target.down.weight[:r_eff, :] $\leftarrow$ V_r
-12:         target.up.weight[:, :r_eff] $\leftarrow$ U_r
+8:          r\_eff $\leftarrow$ min(r\_max, |{i: E(i) \textless{}  }| + 1)
+9:          U\_r $\leftarrow$ U[:, :r]   $\sqrt{}$$\Sigma$[:r]
+10:         V\_r $\leftarrow$ $\sqrt{}$$\Sigma$[:r]   V[:r, :]
+11:         target.down.weight[:r\_eff, :] $\leftarrow$ V\_r
+12:         target.up.weight[:, :r\_eff] $\leftarrow$ U\_r
 13:     end for
 14:
-15:     freeze_all_base_factors( )
-16:     replace_attention( , new)
+15:     freeze\_all\_base\_factors( )
+16:     replace\_attention( , new)
 17: end for
 18: return M'
 \end{lstlisting}
@@ -359,7 +359,7 @@ Given rank $r$, the truncated SVD is optimal in Frobenius norm by Eckart--Young.
 \textbf{Proposition.} The energy-adaptive rank satisfies:
 
 \[
-\frac{\|W - U_r V_r\|_F^2}{\|W\|_F^2} = 1 - E(r)
+\frac{\|W - U\_r V\_r\|\_F^2}{\|W\|\_F^2} = 1 - E(r)
 \tag{4.9}
 \]
 

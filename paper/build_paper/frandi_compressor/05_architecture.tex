@@ -8,32 +8,32 @@ The \texttt{FRanDILinear} architecture decouples frozen compressed base represen
 \begin{verbatim}
 +-------------------------------------------------------------+
 |                            FRanDILinear                     |
-|  Input X [B, N, D_in]                                       |
+|  Input X [B, N, D\_in]                                       |
 |        |                                                    |
 |        +----------------------------+                       |
 |        | (Base Path)                | (LoRA Path)           |
 |        v                            v                       |
 |  +--------------------+       +-----------------------+     |
-|  | Down-Proj: V_r     |       | LoRA A: (r_lora, In)  |     |
+|  | Down-Proj: V\_r     |       | LoRA A: (r\_lora, In)  |     |
 |  | Frozen: (r, In)    |       | Trainable: True       |     |
 |  +---------+----------+       +-----------+-----------+     |
 |            |                              |                 |
 |            v                              v                 |
 |  +--------------------+       +-----------------------+     |
-|  | Up-Proj: U_r       |       | LoRA B: (Out, r_lora) |     |
+|  | Up-Proj: U\_r       |       | LoRA B: (Out, r\_lora) |     |
 |  | Frozen: (Out, r)   |       | Trainable: True       |     |
 |  +---------+----------+       +-----------+-----------+     |
 |            |                              |                 |
 |            v                              v                 |
-|       Base Output  <---- (+) ------ Adapter Output          |
-|  Output Y [B, N, D_out]                                     |
+|       Base Output  \textless{}---- (+) ------ Adapter Output          |
+|  Output Y [B, N, D\_out]                                     |
 +-------------------------------------------------------------+
 \end{verbatim}
 \caption{Submodule tensor flow and adapter integration in \texttt{FRanDILinear}.}
 \end{figure}
 
 \subsection{Submodule Specification Matrix}
-Table~\ref{tab:submodules_frandi} details the structural parameter buffers comprising \texttt{FRanDILinear}:
+Table~\ref{tab:submodules\_frandi} details the structural parameter buffers comprising \texttt{FRanDILinear}:
 
 \begin{table}[H]
 \centering
@@ -51,7 +51,7 @@ Table~\ref{tab:submodules_frandi} details the structural parameter buffers compr
 \bottomrule
 \end{tabular}
 \caption{Submodule specifications for \texttt{FRanDILinear}.}
-\label{tab:submodules_frandi}
+\label{tab:submodules\_frandi}
 \end{table}
 
 \subsection{Cross-Backbone Tensor Interfaces}
@@ -69,7 +69,7 @@ LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rota
 \bottomrule
 \end{tabular}
 \caption{Cross-backbone tensor interface parameters.}
-\label{tab:backbone_interfaces}
+\label{tab:backbone\_interfaces}
 \end{table}
 
 \subsection{Backbone Compatibility Mechanisms}

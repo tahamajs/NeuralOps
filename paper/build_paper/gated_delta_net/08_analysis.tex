@@ -9,9 +9,9 @@ $\mathcal{O}(L)$ with a \textbf{very large constant}. Three factors:
 \subsubsection{Nested Python Loops}
 
 \begin{lstlisting}
-for c in range(num_chunks):              # outer
+for c in range(num\_chunks):              # outer
     ...
-    for t in range(chunk_size):          # inner
+    for t in range(chunk\_size):          # inner
         ...
 \end{lstlisting}
 
@@ -81,7 +81,7 @@ sequential kernel launches.
 Each layer holds a state $S \in \mathbb{R}^{B \times H \times d_h \times d_h}$:
 
 \[
-|S| = B \cdot H \cdot d_h^2 = 8 \times 12 \times 64^2 = 393,216 \text{ floats} 
+|S| = B \cdot H \cdot d\_h^2 = 8 \times 12 \times 64^2 = 393,216 \text{ floats} 
 = 1.5 \text{ MB}
 \]
 
@@ -96,7 +96,7 @@ for backward. This includes:
 \item Per-token intermediate tensors
 
 \end{itemize}
-For 12-layer RoBERTa with $L=128$: peak memory \textbf{>8 GB} $\to$ OOM.
+For 12-layer RoBERTa with $L=128$: peak memory \textbf{\textgreater{}8 GB} $\to$ OOM.
 
 \subsection{Why the Baseline Attention Doesn't Have This Problem}
 
@@ -180,7 +180,7 @@ HBM roundtrips & ~10\% \\
 \midrule
 \textbf{Extreme slow} & 90s / 5 steps & Python loops \\
 \textbf{OOM} & CUDA error & State + checkpointing \\
-\textbf{Timeout} & Wall clock >3600s & Compounded slowness \\
+\textbf{Timeout} & Wall clock \textgreater{}3600s & Compounded slowness \\
 \textbf{Numerical drift} & Loss instability & FP16 state accumulation \\
 \bottomrule
 \end{tabular}

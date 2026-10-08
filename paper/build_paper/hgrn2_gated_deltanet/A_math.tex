@@ -5,14 +5,14 @@
 The HGRN-2 update:
 
 \[
-s_t = \alpha_t \odot s_{t-1} + (1 - \alpha_t) \odot u_t
+s\_t = \alpha\_t \odot s\_{t-1} + (1 - \alpha\_t) \odot u\_t
 \tag{A.1}
 \]
 
 Unrolled:
 
 \[
-s_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} \alpha_i \right) (1 - \alpha_j) u_j
+s\_t = \sum\_{j=1}^{t} \left( \prod\_{i=j+1}^{t} \alpha\_i \right) (1 - \alpha\_j) u\_j
 \tag{A.2}
 \]
 
@@ -25,14 +25,14 @@ exponential decay with horizon $1/(1-\alpha)$.
 The Gated DeltaNet update:
 
 \[
-S_t = \alpha_t S_{t-1} + \beta_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = \alpha\_t S\_{t-1} + \beta\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{A.3}
 \]
 
 Expanding:
 
 \[
-S_t = \alpha_t S_{t-1} + \beta_t v_t k_t^\top - \beta_t S_{t-1} k_t k_t^\top
+S\_t = \alpha\_t S\_{t-1} + \beta\_t v\_t k\_t^\top - \beta\_t S\_{t-1} k\_t k\_t^\top
 \tag{A.4}
 \]
 
@@ -43,7 +43,7 @@ prediction's influence before writing the new target.
 \subsection{A.3 Fusion Gate}
 
 \[
-\gamma_t = \sigma(W_g x_t + b_g) \in (0, 1)^d
+\gamma\_t = \sigma(W\_g x\_t + b\_g) \in (0, 1)^d
 \tag{A.5}
 \]
 
@@ -57,7 +57,7 @@ Y = \gamma \odot Y^\text{HGRN} + (1 - \gamma) \odot Y^\text{Delta}
 \]
 
 \[
-\text{out} = W_o Y + b_o
+\text{out} = W\_o Y + b\_o
 \tag{A.7}
 \]
 

@@ -72,7 +72,7 @@ Precision & FP16 \\
 \end{itemize}
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -81,11 +81,11 @@ RTX 4070 Laptop, 8 GB VRAM, CUDA 12.1, PyTorch 2.4.0.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_bam_umoe.py \
+python run\_all\_4\_bam\_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts 8 \
-    --top_k 2 \
-    --recovery_steps 50
+    --num\_experts 8 \
+    --top\_k 2 \
+    --recovery\_steps 50
 \end{lstlisting}
 \begin{lstlisting}
 

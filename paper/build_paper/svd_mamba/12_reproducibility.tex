@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -30,41 +30,41 @@ datasets & 1.0.0 \\
 \subsection{Running SVD-Mamba}
 
 \begin{lstlisting}
-python run_all_4_svd_mamba.py \
+python run\_all\_4\_svd\_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state Optimal \
-    --d_conv 15 steps \
-    --global_rank 32 \
-    --recovery_steps 50
+    --d\_state Optimal \
+    --d\_conv 15 steps \
+    --global\_rank 32 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,svd_mamba \
-    --recovery_steps 50
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,svd\_mamba \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_svd_mamba.py --models distilbert,roberta,gpt2
+python run\_all\_4\_svd\_mamba.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (d\_state)}
 \begin{lstlisting}
 for ds in 8 16 32 64; do
-    python run_all_4_svd_mamba.py --d_state $ds --output_suffix ds$ds
+    python run\_all\_4\_svd\_mamba.py --d\_state $ds --output_suffix ds$ds
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (gate bias)}
 \begin{lstlisting}
 for gb in -10 -7 -5 0; do
-    python run_all_4_svd_mamba.py --gate_bias $gb --output_suffix gb$gb
+    python run\_all\_4\_svd\_mamba.py --gate\_bias $gb --output_suffix gb$gb
 done
 \end{lstlisting}
 
@@ -74,7 +74,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 

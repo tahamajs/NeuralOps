@@ -18,7 +18,7 @@ non-negative entries $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 approximation in Frobenius norm:
 
 \[
-W_r = U_{:, :r} \Sigma_{:, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:, :r} V\_{:r, :}^\top
 \tag{3.2}
 \]
 
@@ -28,8 +28,8 @@ with squared error $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$, or equivalently 
 $\Sigma^{1/2}$ between the two factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:, :r}^{1/2}, \qquad
-V_r = \Sigma_{:r, :}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :}^{1/2} V\_{:r, :}^\top
 \tag{3.3}
 \]
 
@@ -40,14 +40,14 @@ so that $W_r = U_r V_r$.
 For a probabilistic model $p_\theta(y | x)$, the Fisher information is:
 
 \[
-\mathcal{F}_{ij} = \mathbb{E}_{x, y}\!\left[\frac{\partial \log p_\theta(y | x)}{\partial \theta_i} \cdot \frac{\partial \log p_\theta(y | x)}{\partial \theta_j}\right]
+\mathcal{F}\_{ij} = \mathbb{E}\_{x, y}\!\left[\frac{\partial \log p\_\theta(y | x)}{\partial \theta\_i} \cdot \frac{\partial \log p\_\theta(y | x)}{\partial \theta\_j}\right]
 \tag{3.4}
 \]
 
 For a linear layer $y = Wx + b$, the Fisher with respect to $x$ is:
 
 \[
-\mathcal{F}_x = \mathbb{E}_{x}\!\left[\left(\frac{\partial \mathcal{L}}{\partial x}\right) \left(\frac{\partial \mathcal{L}}{\partial x}\right)^\top\right]
+\mathcal{F}\_x = \mathbb{E}\_{x}\!\left[\left(\frac{\partial \mathcal{L}}{\partial x}\right) \left(\frac{\partial \mathcal{L}}{\partial x}\right)^\top\right]
 \tag{3.5}
 \]
 
@@ -58,7 +58,7 @@ we assume the downstream loss has roughly uniform sensitivity to $y$, the
 diagonal Fisher is approximately:
 
 \[
-\mathcal{F}_{x, i} \approx \mathbb{E}_{x}\!\left[x_i^2\right] = F_i
+\mathcal{F}\_{x, i} \approx \mathbb{E}\_{x}\!\left[x\_i^2\right] = F\_i
 \tag{3.6}
 \]
 
@@ -70,8 +70,8 @@ Given a stream of activation vectors $x_1, x_2, \dots, x_N \in \mathbb{R}^d$,
 we want to compute:
 
 \[
-C = \frac{1}{N} \sum_{t=1}^N x_t x_t^\top, \qquad
-F = \frac{1}{N} \sum_{t=1}^N x_t \odot x_t
+C = \frac{1}{N} \sum\_{t=1}^N x\_t x\_t^\top, \qquad
+F = \frac{1}{N} \sum\_{t=1}^N x\_t \odot x\_t
 \tag{3.7}
 \]
 
@@ -79,8 +79,8 @@ Naively this requires storing all $x_t$, which costs $\mathcal{O}(Nd)$ memory.
 The \textbf{streaming} formulation accumulates only the running sums:
 
 \begin{align}
-C^{(k)} &= C^{(k-1)} + \sum_{t \in \text{batch}_k} x_t x_t^\top, \tag{3.8a} \\
-N^{(k)} &= N^{(k-1)} + |\text{batch}_k| \tag{3.8b}
+C^{(k)} &= C^{(k-1)} + \sum\_{t \in \text{batch}\_k} x\_t x\_t^\top, \tag{3.8a} \\
+N^{(k)} &= N^{(k-1)} + |\text{batch}\_k| \tag{3.8b}
 \end{align}
 
 with $\mathcal{O}(d^2)$ memory. We use this in A3.
@@ -129,6 +129,6 @@ where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the
 bulk of the computation; LoRA provides the recovery signal.
 
 \subsection{Notation Summary}
-\label{sec:notation_summary}
+\label{sec:notation\_summary}
 
-Mathematical notations, symbols, tensor dimensions, and operational parameters used throughout the theoretical formulation and experimental evaluations of A3 are consolidated in Appendix~\ref{sec:app_notation} (Table~\ref{tab:app_notation_summary}). Key tensors include base weights $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$, low-rank factors $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$, empirical sensitivity vector $F \in \mathbb{R}^{d_{\mathrm{in}}}$, streaming covariance $C_X \in \mathbb{R}^{d_{\mathrm{in}} \times d_{\mathrm{in}}}$, and LayerNorm affine parameters $\gamma, \beta \in \mathbb{R}^{d_{\mathrm{model}}}$.
+Mathematical notations, symbols, tensor dimensions, and operational parameters used throughout the theoretical formulation and experimental evaluations of A3 are consolidated in Appendix~\ref{sec:app\_notation} (Table~\ref{tab:app\_notation\_summary}). Key tensors include base weights $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$, low-rank factors $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$, empirical sensitivity vector $F \in \mathbb{R}^{d_{\mathrm{in}}}$, streaming covariance $C_X \in \mathbb{R}^{d_{\mathrm{in}} \times d_{\mathrm{in}}}$, and LayerNorm affine parameters $\gamma, \beta \in \mathbb{R}^{d_{\mathrm{model}}}$.

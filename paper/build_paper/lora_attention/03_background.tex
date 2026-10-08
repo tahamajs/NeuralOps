@@ -5,7 +5,7 @@
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \tag{3.1}
 \]
 
@@ -14,7 +14,7 @@ with $W_Q \in \mathbb{R}^{d \times H d_h}$ and $W_K, W_V \in \mathbb{R}^{d \time
 The output projection:
 
 \[
-\text{Out} = \text{Attn}(Q, K, V) \cdot W_O, \quad W_O \in \mathbb{R}^{H d_h \times d}
+\text{Out} = \text{Attn}(Q, K, V) \cdot W\_O, \quad W\_O \in \mathbb{R}^{H d\_h \times d}
 \tag{3.2}
 \]
 
@@ -25,7 +25,7 @@ Total attention parameters: $4 d^2$ for standard MHA.
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.3}
 \]
 
@@ -37,14 +37,14 @@ $\Delta W = 0$ at step 0.
 \textbf{Forward.} For input $x$:
 
 \[
-y = W_\text{frozen} x + \frac{\alpha}{r_L} B A x
+y = W\_\text{frozen} x + \frac{\alpha}{r\_L} B A x
 \tag{3.4}
 \]
 
 \textbf{Mergeability.} After training, we can compute:
 
 \[
-W_\text{merged} = W_\text{frozen} + \frac{\alpha}{r_L} B A
+W\_\text{merged} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
 \tag{3.5}
 \]
 
@@ -55,7 +55,7 @@ and discard $A, B$, giving zero inference overhead.
 For each attention projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \[
-\text{Trainable}_\text{LoRA} = r_L (d_\text{out} + d_\text{in})
+\text{Trainable}\_\text{LoRA} = r\_L (d\_\text{out} + d\_\text{in})
 \tag{3.6}
 \]
 
@@ -101,7 +101,7 @@ For DistilBERT attention (14.2M params):
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_attn.weight.shape = (d, 3d)  # (in, out) -- must transpose
+c\_attn.weight.shape = (d, 3d)  # (in, out) -- must transpose
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
@@ -114,14 +114,14 @@ layer.attention.output.dense.weight
 \subsubsection{Qwen GQA}
 
 \begin{lstlisting}
-q_proj.weight.shape = (H d_h, d)
-k_proj.weight.shape = (H_kv d_h, d)  # smaller
+q\_proj.weight.shape = (H d\_h, d)
+k\_proj.weight.shape = (H\_kv d\_h, d)  # smaller
 \end{lstlisting}
 
 \subsubsection{DistilBERT Flat}
 
 \begin{lstlisting}
-q_lin.weight.shape = (d, d)  # standard Linear
+q\_lin.weight.shape = (d, d)  # standard Linear
 \end{lstlisting}
 
 \subsection{Nested vs Flat Encoders}
@@ -146,7 +146,7 @@ GPT-2 & Flat & \texttt{c\_proj} inside attention \\
 \subsection{Grouped-Query Attention (GQA)}
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}
 \tag{3.7}
 \]
 
@@ -155,7 +155,7 @@ Expanded via \texttt{repeat\_kv} before attention.
 \subsection{Rotary Position Embeddings (RoPE)}
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
 \tag{3.8}
 \]
 

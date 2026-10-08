@@ -25,36 +25,36 @@ branch modules:
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight  # (768, 768)
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight  # (768, 768)
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.t()  # transpose
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight.t()  # transpose
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 GQA}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight  # (H d_h, d)
-k_w = src.k_proj.weight  # (H_kv d_h, d)
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
 \end{lstlisting}
 
 \subsection{The `out\_proj` Search}
@@ -62,8 +62,8 @@ o_w = src.o_proj.weight
 The output projection is extracted using a search over candidate attributes:
 
 \begin{lstlisting}
-for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
-    for target in (old_attn, old_attn.self, old_attn.attention, old_attn.output):
+for cand in ("out\_proj", "out\_lin", "o\_proj", "output", "proj", "c\_proj", "dense"):
+    for target in (old\_attn, old\_attn.self, old\_attn.attention, old\_attn.output):
         if target and hasattr(target, cand):
             ...
 \end{lstlisting}
@@ -75,18 +75,18 @@ injecting a random-init projection.
 
 \textbf{Algorithm 2:} Inject HGRN2-GatedDeltaNet into a full model
 \begin{lstlisting}
-Input:  model M, config c, lora_rank, lora_alpha
+Input:  model M, config c, lora\_rank, lora\_alpha
 Output: M with attention replaced
 
-1: layer_list $\leftarrow$ find_transformer_layers(M)
-2: for i, layer in enumerate(layer_list) do
-3:     src $\leftarrow$ extract_attention(layer)
-4:     if src is None or is_already_injected(src): continue
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for i, layer in enumerate(layer\_list) do
+3:     src $\leftarrow$ extract\_attention(layer)
+4:     if src is None or is\_already\_injected(src): continue
 5:     try:
-6:         new $\leftarrow$ HGRN2GatedDeltaNet(c, old_attn=src, ...)
+6:         new $\leftarrow$ HGRN2GatedDeltaNet(c, old\_attn=src, ...)
 7:         replace(layer, new)
 8:     except Exception as e:
-9:         log_warning(f"Layer {i} failed: {e}")
+9:         log\_warning(f"Layer {i} failed: {e}")
 10:        continue
 11: end for
 12: return M
@@ -98,8 +98,8 @@ To avoid the "multiple values for keyword argument" error, we filter
 \texttt{kwargs} before passing to sub-branches:
 
 \begin{lstlisting}
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub\_kwargs = {k: v for k, v in kwargs.items() 
+              if k not in ("is\_decoder", "is\_causal", "lora\_rank", "lora\_alpha")}
 \end{lstlisting}
 
 This is essential when the same \texttt{kwargs} dict is passed through multiple 
@@ -108,10 +108,10 @@ levels of the call hierarchy.
 \subsection{Causal Detection}
 
 \begin{lstlisting}
-_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
+\_decoder\_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
                      "opt", "bloom", "falcon")
-if any(model_type.startswith(p) for p in _decoder_prefixes):
-    is_dec = True
+if any(model\_type.startswith(p) for p in \_decoder\_prefixes):
+    is\_dec = True
 \end{lstlisting}
 
 The flag is passed to both branches, which use it to switch between 
@@ -123,10 +123,10 @@ The injection function checks whether the target already contains a
 \texttt{HGRN2GatedDeltaNet}:
 
 \begin{lstlisting}
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr\_attn, HGRN2GatedDeltaNet): return None
+if "HGRN2GatedDeltaNet" in curr\_attn.\_\_class\_\_.\_\_name\_\_: return None
+if hasattr(curr\_attn, "inner") and isinstance(curr\_attn.inner, HGRN2GatedDeltaNet): return None
+if hasattr(curr\_attn, "\_wrapped\_attention") and isinstance(curr\_attn.\_wrapped\_attention, HGRN2GatedDeltaNet): return None
 \end{lstlisting}
 
 This prevents accidentally wrapping the module twice.
@@ -136,7 +136,7 @@ This prevents accidentally wrapping the module twice.
 Qwen3.5 has some layers using \texttt{DeltaNet} or \texttt{LinearAttention}. We skip them:
 
 \begin{lstlisting}
-if "DeltaNet" in c_name or "LinearAttention" in c_name:
+if "DeltaNet" in c\_name or "LinearAttention" in c\_name:
     return None
 \end{lstlisting}
 
@@ -151,6 +151,6 @@ if "DeltaNet" in c_name or "LinearAttention" in c_name:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of hgrn2\_gated\_deltanet.}
-\label{fig:arch_hgrn2-gated-deltanet}
+\label{fig:arch\_hgrn2-gated-deltanet}
 \end{figure}
 
