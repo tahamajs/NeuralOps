@@ -1,3 +1,5 @@
+"""Module providing data_config implementations for NeuralOps."""
+
 from dataclasses import dataclass, field
 
 from neuralops.utils.paths import get_glue_dir

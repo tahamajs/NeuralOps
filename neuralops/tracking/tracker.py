@@ -126,9 +126,11 @@ class ExperimentTracker:
 
         class TrackingCallback(TrainerCallback):
             def __init__(self, tracker_instance):
+                """Execute __init__ operation."""
                 self.tracker = tracker_instance
 
             def on_log(self, args, state, control, logs=None, **kwargs):
+                """Execute on_log operation."""
                 if logs:
                     step = state.global_step if state else None
                     self.tracker.log_metrics(logs, step=step)

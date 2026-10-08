@@ -1,3 +1,5 @@
+"""Module providing ab_testing implementations for NeuralOps."""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,6 +20,7 @@ class ABTestResult:
 
 class ABTester:
     def __init__(self, alpha: float = 0.05) -> None:
+        """Execute __init__ operation."""
         self.alpha = alpha
 
     def compare(

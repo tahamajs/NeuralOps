@@ -42,6 +42,7 @@ def generate_plots_for_run(
         plots_dir = run_dir / "plots"
 
         def save_fig(name: str, fig: Any) -> None:
+            """Execute save_fig operation."""
             fig.savefig(plots_dir / f"{name}.png", dpi=dpi, bbox_inches="tight")
             plt.close(fig)
 

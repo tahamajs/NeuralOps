@@ -94,6 +94,7 @@ def r3f_forward(
 
 class MethodTrainer(Trainer):
     def __init__(self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs) -> None:
+        """Execute __init__ operation."""
         super().__init__(*args, **kwargs)
         self.method = method
         self.rdrop_alpha = rdrop_alpha
