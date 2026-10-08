@@ -131,6 +131,10 @@ class ClassificationAdapter:
         if self.model is None:
             raise RuntimeError("Setup must be run before applying module.")
 
+        if self.module_type in ("baseline", "none", "full", "dense"):
+            LOG.info("Baseline run: skipping module injection.")
+            return
+
         if self.module_type == "attention":
             self.model = apply_attention_module(
                 self.model,
@@ -148,6 +152,7 @@ class ClassificationAdapter:
             )
         else:
             raise ValueError(f"Unknown module type: {self.module_type}")
+
 
         # Update params in metadata
         if self.model_meta is not None:
