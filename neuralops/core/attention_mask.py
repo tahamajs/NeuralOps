@@ -158,3 +158,15 @@ def create_band_mask(
     idx = torch.arange(seq_len, device=device)
     diff = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
     return diff <= window_size
+
+
+_get_valid_mask = get_token_valid_mask
+
+__all__ = [
+    "apply_attention_mask",
+    "get_token_valid_mask",
+    "_get_valid_mask",
+    "create_causal_mask",
+    "create_band_mask",
+]
+

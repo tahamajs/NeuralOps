@@ -304,3 +304,6 @@ def bwd(
         out, _ = fwd(u_req, delta_req, A_req, B_req, C_req, D=D, state=state, eps=eps, **kwargs)
         grads = torch.autograd.grad(out, [u_req, delta_req, A_req, B_req, C_req], grad_out)
     return grads
+
+
+__all__ = ['is_supported', 'fwd', 'bwd']
