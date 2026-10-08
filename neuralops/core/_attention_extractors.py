@@ -11,7 +11,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.core._attention_helpers import _replace_layers
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -101,18 +100,24 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str = "", model_type: str =
 def _replace_bert_attention(
     layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
 ) -> None:
+    from neuralops.core._attention_helpers import _replace_layers
+
     _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "bert")
 
 
 def _replace_gpt_attention(
     layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
 ) -> None:
+    from neuralops.core._attention_helpers import _replace_layers
+
     _replace_layers([layer], "attn", inject_fn, model_config, kwargs, "gpt2")
 
 
 def _replace_distilbert_attention(
     layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
 ) -> None:
+    from neuralops.core._attention_helpers import _replace_layers
+
     _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "distilbert")
 
 
