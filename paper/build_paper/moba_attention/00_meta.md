@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `moba_attention`
+**Legacy Folder Name:** `moba` (standardized in v1.2.0)
+
 # Mamba-Inspired Gated State-Space Attention: A Drop-In Replacement for Multi-Head Attention
 
 **Authors:**
