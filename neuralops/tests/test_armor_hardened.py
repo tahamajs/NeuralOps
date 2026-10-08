@@ -20,10 +20,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Ensure framework can be imported
-HERE = Path(__file__).resolve().parent
-CODES_DIR = HERE.parent.parent
-if str(CODES_DIR) not in sys.path:
 
 from neuralops.compression_engine.armor_pruner import (ARMORLinear,
                                                        ARMORPruner,
