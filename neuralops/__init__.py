@@ -187,7 +187,7 @@ _LAZY_EXPORTS = {
     "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
     "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
     "MultiModeBenchmarkRunner": ("neuralops.benchmarks.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
-    "ResultWriter": ("neuralops.pipeline.result_writer", "ResultWriter"),
+    "ResultWriter": ("neuralops.results_saver.pipeline.result_writer", "ResultWriter"),
     "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
     "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
     "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
