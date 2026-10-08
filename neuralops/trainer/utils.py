@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from neuralops.core.memory import cleanup_gpu_memory
-from neuralops.utils.helpers import count_parameters
+from neuralops.utils.helpers import count_parameters  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
