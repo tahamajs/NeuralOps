@@ -65,7 +65,23 @@ __all__ = [
     # Validation
     "DataValidator",
     "ValidationReport",
-    # Augmentation
     "AUGMENTATION_REGISTRY",
     "random_mask_augment",
+]
+
+# Re-exported dataset utilities
+from .dataset_discovery import list_local_datasets  # noqa: E402
+from .glue import load_superglue_dataset  # noqa: E402
+from .glue_loader import load_glue_split  # noqa: E402
+from .synthetic_generator import (  # noqa: E402
+    compute_empirical_entropy,
+    generate_zipfian_markov_tokens,
+)
+
+__all__ += [
+    "list_local_datasets",
+    "load_glue_split",
+    "load_superglue_dataset",
+    "generate_zipfian_markov_tokens",
+    "compute_empirical_entropy",
 ]
