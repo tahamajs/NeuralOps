@@ -169,15 +169,6 @@ class AdaptiveSVDLinear(nn.Module):
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
-    "adaptive_svd_attn",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
-    "adaptive_svd", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "adaptive_svd_attention",
     supports_causal=True,
     supports_bidirectional=True,

@@ -184,21 +184,7 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "gqa",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
-@ATTENTION_REGISTRY.register(
     "gqa_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
-@ATTENTION_REGISTRY.register(
-    "grouped_query_attention",
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
