@@ -67,7 +67,35 @@ __all__ = [
     "generate_interactive_report",
     "detect_least_compressible_layers",
     "filter_results",
-    "get_best_configurations",
     "correlation_matrix",
     "statistical_tests",
+]
+
+# Statistical testing suite
+from .comparison import (  # noqa: E402
+    bayesian_correlated_ttest,
+    bayesian_signed_rank_test,
+    finner_correction,
+    hochberg_correction,
+    holland_copenhaver_correction,
+    holm_correction,
+    hommel_correction,
+    mcnemar_test,
+    run_full_statistical_analysis,
+    sign_test,
+    wilcoxon_signed_rank_test,
+)
+
+__all__ += [
+    "holm_correction",
+    "hochberg_correction",
+    "finner_correction",
+    "hommel_correction",
+    "holland_copenhaver_correction",
+    "wilcoxon_signed_rank_test",
+    "sign_test",
+    "mcnemar_test",
+    "bayesian_correlated_ttest",
+    "bayesian_signed_rank_test",
+    "run_full_statistical_analysis",
 ]
