@@ -106,8 +106,6 @@ def inspect_module_capabilities(
 
 def discover_all_modules() -> list[ModuleMetadata]:
     """Discover and return capabilities for all 232 registered modules."""
-    import neuralops.attentions  # Ensure attention registry populated
-    import neuralops.compression_engine  # Ensure compressor registry populated
 
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []

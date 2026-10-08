@@ -8,7 +8,6 @@ import inspect
 import logging
 from typing import Any
 
-import torch
 import torch.nn as nn
 
 from neuralops.core.registry import ATTENTION_REGISTRY

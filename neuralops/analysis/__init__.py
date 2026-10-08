@@ -38,6 +38,7 @@ from .utils import (
 )
 
 __all__ = [
+    "get_best_configurations",
     "plot_loss_curve",
     "plot_accuracy_curve",
     "plot_lr_schedule",
