@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import unittest
 
-from neuralops.core.multi_mode_benchmark import MultiModeBenchmarkRunner
+from neuralops.benchmarks.multi_mode_benchmark import MultiModeBenchmarkRunner
 
 
 class TestMultiModeBenchmark(unittest.TestCase):
