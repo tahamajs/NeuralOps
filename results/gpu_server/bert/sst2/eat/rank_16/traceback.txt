@@ -1,1 +1,0 @@
-Error: Module 'eat' is in DEPRECATED_MODULES.
