@@ -1,30 +1,49 @@
-# NeuralOps
+# 🧬 NeuralOps
+
+### **High-Performance Attention Mechanisms & Model Compression for PyTorch**
+
+> 159 attention mechanisms · 73 compression engines · 19 Triton kernels · 8 transformer architectures
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
-[![Python](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml)
-
-**NeuralOps** is a production-grade, mathematically verified framework for linear attention mechanisms, model compression engines, and fused Triton kernels.
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/SVD_linear_Attention/)
+[![PyPI - Wheel](https://img.shields.io/pypi/wheel/neuralops.svg)](https://pypi.org/project/neuralops/)
 
 ---
 
-## 📑 Table of Contents
+## 📖 Table of Contents
 
-1. [Key Highlights](#key-highlights)
-2. [Installation](#installation)
-3. [Quick Start](#quick-start)
-4. [Architecture & Data Flow](#architecture-overview)
-5. [Attention Mechanism Zoo (159)](#attention-mechanism-zoo-159)
-6. [Compression Engine Registry (73)](#compression-engine-registry-73)
-7. [Fused Triton Kernels](#fused-triton-kernels)
-8. [Supported Architectures](#supported-architectures)
-9. [Performance & Tradeoffs](#performance-and-tradeoffs)
-10. [API Reference](#api-reference)
-11. [Benchmarking CLI](#benchmarking-cli)
-12. [FAQ](#faq)
-13. [Contributing](#contributing)
-14. [Citation & License](#citation-and-license)
+- [News](#-news)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Models](#-models)
+- [Compression Engines](#-compression-engines)
+- [Triton Kernels](#-triton-kernels)
+- [Benchmarks](#-benchmarks)
+- [Hugging Face Integration](#-hugging-face-integration)
+- [Evaluation](#-evaluation)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [Citation](#-citation)
+- [License](#-license)
+
+---
+
+## 📰 News
+
+- **[2026-10]** 🚀 **v1.1.1** released on PyPI — [install now](https://pypi.org/project/neuralops/)
+- **[2026-10]** 📚 Complete documentation suite published (HTML + Markdown)
+- **[2026-10]** 🧪 Full test coverage for all 232 modules
+- **[2026-09]** ⚡ 19 Triton kernels with verified CPU fallbacks
+- **[2026-09]** 🔧 Registry cleanup — 159 canonical attention keys, 73 compressor engines
+- **[2026-08]** 📊 Master benchmark summary (16,199 results)
+- **[2026-08]** 🏆 94% module coverage across 5 datasets
+- **[2026-07]** 🎯 Unified benchmark CLI released
+- **[2026-07]** 📦 Package reorganized into semantic subpackages
+- **[2026-06]** 🔬 Zero-shot attention injection for 8 architectures
 
 ---
 
@@ -38,37 +57,45 @@
 
 ---
 
-## Installation
+## 🚀 Installation
 
-### Requirements
-
-| Component | Minimum | Recommended |
-|:---|:---|:---|
-| Python | 3.10 | 3.11+ |
-| PyTorch | 2.2.0 | 2.4.0+ |
-| CUDA (Optional) | 12.1 | 12.4+ |
-| Triton (Optional) | 2.3.0 | 3.0.0+ |
-
-### Platform Matrix
-
-| Platform | Core Framework | Triton Kernels | Fallback Support |
-|:---|:---:|:---:|:---:|
-| Linux (NVIDIA GPU) | ✅ | ✅ | PyTorch Autograd |
-| macOS (Apple Silicon) | ✅ | ❌ | MPS / CPU Fallback |
-| Windows 10/11 | ✅ | ❌ | PyTorch Fallback |
-| Linux (CPU) | ✅ | ❌ | PyTorch Fallback |
-
-### Installation via PyPI
+### Choose your backend
 
 ```bash
-# Standard install
-pip install neuralops
+# NVIDIA GPU (recommended for training)
+pip install neuralops[cuda]
 
-# Install from source
-git clone https://github.com/tahamajs/SVD_linear_Attention.git
-cd SVD_linear_Attention
-pip install -e ".[dev]"
+# AMD GPU
+pip install --index-url https://download.pytorch.org/whl/rocm6.0 torch
+pip install neuralops[rocm]
+
+# Apple Silicon (MPS)
+pip install neuralops[mps]
+
+# CPU only
+pip install neuralops[cpu]
+
+# Everything (dev + eval + benchmark + docs)
+pip install neuralops[all]
 ```
+
+### Platform Support Matrix
+
+| Backend | GPU | Status | Notes |
+|:---|:---|:---:|:---|
+| **CUDA** | H100, H200, A100, A800, RTX 30/40 | ✅ | Full Triton support |
+| **ROCm** | MI250, MI300 | ✅ | Via Triton AMD |
+| **MPS** | Apple M1/M2/M3/M4 | ✅ | PyTorch fallback |
+| **CPU** | any x86_64 / ARM | ✅ | PyTorch fallback |
+| **XPU** | Intel Arc | ⚠️ | Experimental |
+
+### Minimal install (library only)
+
+```bash
+pip install neuralops
+```
+
+This installs only the core library without torch. You must install torch separately depending on your backend.
 
 Verify your installation:
 ```bash
@@ -451,15 +478,48 @@ Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) and 
 
 ---
 
-## Citation and License
+## 📖 Citation
+
+If you use NeuralOps in your research, please cite:
 
 ```bibtex
 @software{neuralops2026,
-  title  = {NeuralOps: SVD Linear Attention & Model Compression Framework},
+  title = {NeuralOps: Unified Framework for Subquadratic Attention and Deep Model Compression},
   author = {Majlesi, Taha},
-  year   = {2026},
-  url    = {https://github.com/tahamajs/SVD_linear_Attention}
+  year = {2026},
+  url = {https://github.com/tahamajs/SVD_linear_Attention},
+  version = {1.1.1}
 }
 ```
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+### Related Work
+
+NeuralOps builds on top of:
+- [FlashAttention](https://arxiv.org/abs/2205.14135) — IO-aware exact attention
+- [Flash Linear Attention](https://github.com/fla-org/flash-linear-attention) — Triton kernels for linear attention
+- [Mamba](https://arxiv.org/abs/2312.00752) — Selective state space models
+- [SVD-LLM](https://arxiv.org/abs/2403.07378) — Low-rank compression
+- [SliceGPT](https://arxiv.org/abs/2401.15024) — Structured compression
+
+---
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=tahamajs/SVD_linear_Attention&type=Date)](https://star-history.com/#tahamajs/SVD_linear_Attention&Date)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgements
+
+We thank the following projects and communities:
+- [PyTorch](https://pytorch.org/)
+- [Hugging Face](https://huggingface.co/)
+- [OpenAI Triton](https://github.com/openai/triton)
+- [Flash Linear Attention](https://github.com/fla-org/flash-linear-attention)
+- All our contributors
