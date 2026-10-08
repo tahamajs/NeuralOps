@@ -424,6 +424,120 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 
 
+class ResSVDLinear(nn.Module):
+    """
+    Spectral Residual LoRA (Res-SVD) Linear Layer.
+
+    Executes forward pass as:
+    y = x @ W_base^T + scaling * (x @ A^T) @ B^T + bias
+    where W_base is factorized or full, and (lora_A, lora_B) are trainable residual adapters.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        max_possible_rank = min(in_features, out_features)
+
+        self.base_rank = max(1, min(base_rank, max_possible_rank))
+        remaining_rank = max(0, max_possible_rank - self.base_rank)
+        self.residual_rank = max(0, min(residual_rank, remaining_rank))
+        self.scaling = float(scaling)
+        self.factorize_base = factorize_base
+
+        if self.factorize_base:
+            self.base_V = nn.Parameter(
+                torch.empty((self.base_rank, in_features), dtype=dtype, device=device)
+            )
+            self.base_U = nn.Parameter(
+                torch.empty((out_features, self.base_rank), dtype=dtype, device=device)
+            )
+            self.base_V.requires_grad = False
+            self.base_U.requires_grad = False
+        else:
+            self.base_weight = nn.Parameter(
+                torch.empty((out_features, in_features), dtype=dtype, device=device)
+            )
+            self.base_weight.requires_grad = False
+
+        if self.residual_rank > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.residual_rank, in_features), dtype=dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, self.residual_rank), dtype=dtype, device=device)
+            )
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty((out_features,), dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """Kaiming uniform parameter initialization for base and zero for adapters."""
+        if self.factorize_base:
+            nn.init.kaiming_uniform_(self.base_V, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.base_U, a=math.sqrt(5))
+        else:
+            nn.init.kaiming_uniform_(self.base_weight, a=math.sqrt(5))
+
+        if self.residual_rank > 0:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+
+        if self.bias is not None:
+            fan_in = self.in_features
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        if self.factorize_base:
+            base = torch.matmul(self.base_U, self.base_V)
+        else:
+            base = self.base_weight
+        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
+            return base + res
+        return base
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward execution: y = Base(x) + scaling * (x @ A^T) @ B^T + bias."""
+        if self.factorize_base:
+            base_intermediate = F.linear(x, self.base_V)
+            base_out = F.linear(base_intermediate, self.base_U)
+        else:
+            base_out = F.linear(x, self.base_weight)
+
+        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            res_intermediate = F.linear(x, self.lora_A)
+            res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
+            out = base_out + res_out
+        else:
+            out = base_out
+
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -432,6 +546,7 @@ __all__ = [
     "LoRALinear",
     "FactorizedLinear",
     "_FactorizedLinear",
+    "ResSVDLinear",
     "softpick",
 ]
 
