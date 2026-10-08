@@ -432,3 +432,6 @@ def selective_scan_fn(
         D:     (D,) optional
     """
     return TritonSelectiveScanFunction.apply(u, delta, A, B, C, D, delta_softplus)
+
+
+__all__ = ['TritonSelectiveScanFunction', 'selective_scan_fn']

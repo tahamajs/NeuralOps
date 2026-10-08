@@ -477,3 +477,6 @@ def gla_scan_triton(
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
     return _GLAScanFn.apply(q, k, v, lambdas)
+
+
+__all__ = ['gla_scan_triton']
