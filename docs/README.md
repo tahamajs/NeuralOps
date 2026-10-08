@@ -162,7 +162,7 @@ If you use the NeuralOps framework or any of its attention/compression modules i
 
 ```bibtex
 @software{neuralops2026,
-  author = {Majs, Taha and NeuralOps Research Team},
+  author = {Majlesi, Taha and NeuralOps Research Team},
   title = {NeuralOps: Unified Framework for Subquadratic Attention and Deep Model Compression},
   year = {2026},
   url = {https://github.com/tahamajs/SVD_linear_Attention}
