@@ -15,8 +15,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.compression_engine.residual_svd_compressor import ResSVDLinear
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import ResSVDLinear
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
