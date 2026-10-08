@@ -115,8 +115,8 @@ def main():
     parser.add_argument("--num_chunks", type=int, default=800)
 
     # Training
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size (default: 8 for high GPU utilization without VRAM OOM)")
-    parser.add_argument("--learning_rate", type=float, default=5e-6)
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size (default: 8 for high GPU utilization without VRAM OOM)")
+    parser.add_argument("--learning_rate", type=float, default=5e-5)
     parser.add_argument("--recovery_steps", type=int, default=300)
     parser.add_argument("--warmup_steps", type=int, default=30)
     parser.add_argument("--eval_every", type=int, default=100)

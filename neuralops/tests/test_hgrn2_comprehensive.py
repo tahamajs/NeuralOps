@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from neuralops.attentions.hgrn2_gated_deltanet import (
     HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet)
-from neuralops.attentions.hgrn2_layer import HGRN2Layer, inject_hgrn2_layer
+from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer, inject_hgrn2_layer
 
 
 def test_hgrn2_layer_standalone():

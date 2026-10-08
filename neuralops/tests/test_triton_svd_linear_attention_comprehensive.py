@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.triton_svd_linear_attention import (
+from neuralops.core.triton_kernels.triton_svd_linear_attention import (
     SVDLinearProjection, TritonSVDLinearAttention,
     inject_triton_svd_linear_attention, triton_linear_attention)
 
