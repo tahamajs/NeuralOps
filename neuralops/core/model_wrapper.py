@@ -1,4 +1,9 @@
 """
+Model wrapper for custom attention configurations.
+
+NOTE: This module has limited usage. If you are not loading models
+with custom attention, you likely do not need this.
+
 UnifiedTransformerModel – wraps any HuggingFace model with Hub support,
 attention replacement, and config serialization.
 
