@@ -10,7 +10,7 @@ and interactive visualization.
 import importlib
 from typing import Any, List
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 import importlib.machinery
 import importlib.util
