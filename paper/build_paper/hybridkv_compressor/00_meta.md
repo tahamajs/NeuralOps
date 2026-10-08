@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `hybridkv_compressor`
+**Legacy Folder Name:** `hybridkv` (standardized in v1.2.0)
+
 # Hybridkv: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `hybridkv`  
