@@ -1,4 +1,5 @@
 """Unit tests for neuralops.trainer.optimizers package."""
+from __future__ import annotations
 
 import pytest
 import torch
@@ -7,10 +8,14 @@ from neuralops.trainer.optimizers import (
     OPTIMIZER_REGISTRY,
     Muon,
     RiemannianStiefelOptimizer,
+    create_adabelief,
     create_adam,
     create_adamw,
+    create_lamb,
+    create_lars,
     create_muon,
     create_muon_adamw_reg,
+    create_ranger,
     create_riemannian_stiefel,
     create_sgd,
 )
@@ -39,6 +44,45 @@ class TestOptimizerFactories:
         opt_adam = create_adam([p], lr=2e-3)
         assert opt_adam is not None
         assert opt_adam.defaults["lr"] == 2e-3
+
+    def test_lamb_lars_ranger_adabelief_factories(self):
+        p = nn.Parameter(torch.randn(4, 4))
+        try:
+            import torch_optimizer
+            opt_lamb = create_lamb([p], lr=1e-3)
+            assert opt_lamb is not None
+
+            opt_lars = create_lars([p], lr=1e-3)
+            assert opt_lars is not None
+
+            opt_ranger = create_ranger([p], lr=1e-3)
+            assert opt_ranger is not None
+
+            opt_adabelief = create_adabelief([p], lr=1e-3)
+            assert opt_adabelief is not None
+        except ModuleNotFoundError:
+            pytest.skip("torch_optimizer not installed")
+
+    def test_one_optimizer_step_reduces_loss(self):
+        model = nn.Linear(4, 1)
+        opt = create_adamw(model.parameters(), lr=0.1)
+        x = torch.randn(8, 4)
+        y = torch.randn(8, 1)
+        
+        # Initial loss
+        loss1 = ((model(x) - y) ** 2).mean()
+        loss1.backward()
+        opt.step()
+        opt.zero_grad()
+
+        # Step 2
+        for _ in range(5):
+            l = ((model(x) - y) ** 2).mean()
+            l.backward()
+            opt.step()
+            opt.zero_grad()
+        loss_final = ((model(x) - y) ** 2).mean()
+        assert loss_final.item() < loss1.item()
 
     def test_muon_optimizer_and_step(self):
         p = nn.Parameter(torch.randn(4, 4))
@@ -70,6 +114,10 @@ class TestOptimizerFactories:
         opt.step()
         err = opt.check_orthogonality_error(w)
         assert err is not None
+
+    def test_invalid_config_raises(self):
+        with pytest.raises(Exception):
+            create_adamw([], lr=-1.0)
 
 
 class TestSchedulerFactories:
@@ -105,4 +153,3 @@ class TestSchedulerFactories:
 
         s_poly = create_poly(opt, total_iters=100)
         assert s_poly is not None
-
