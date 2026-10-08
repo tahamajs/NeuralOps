@@ -249,3 +249,6 @@ class _HGRN2ScanFn(torch.autograd.Function):
 def hgrn2_scan_triton(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
     """Triton HGRN2 selective scan. f, iv: (B, L, D). Returns h: (B, L, D)."""
     return _HGRN2ScanFn.apply(f, iv, res_clip)
+
+
+__all__ = ['hgrn2_scan_triton']

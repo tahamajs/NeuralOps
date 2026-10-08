@@ -161,3 +161,6 @@ def bwd(
     gk = grad_k.view(B, num_kv_heads, n_rep, N, D).sum(dim=2)
     gv = grad_v.view(B, num_kv_heads, n_rep, N, D).sum(dim=2)
     return gk, gv
+
+
+__all__ = ['is_supported', 'fwd', 'bwd']
