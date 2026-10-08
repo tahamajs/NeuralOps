@@ -3,55 +3,103 @@
 from __future__ import annotations
 
 import logging
-import os
-import platform
-import socket
-import sys
 import time
 import traceback
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import torch
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
+from neuralops.benchmarks.adapters.ruler import RulerAdapter
+from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
-from neuralops.benchmarks.result import (
-    BenchmarkResult,
-    DatasetMetadata,
-    EnvironmentInfo,
-    ModelMetadata,
-    ModuleMetadata,
-)
+from neuralops.benchmarks.result import BenchmarkResult
 
 logger = logging.getLogger(__name__)
 
 PERPLEXITY_DATASETS = {"wikitext2", "wikitext103", "ptb", "c4"}
 
 
-def get_environment_info(device: Optional[str] = None) -> EnvironmentInfo:
-    """Capture runtime environment hardware and package versions."""
-    cuda_available = torch.cuda.is_available()
-    cuda_device_name = torch.cuda.get_device_name(0) if cuda_available else None
-    cuda_version = torch.version.cuda if cuda_available else None
-    gpu_memory_gb = (
-        torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        if cuda_available
-        else None
-    )
+def _select_adapter(
+    module_name: str,
+    module_type: str,
+    model: str,
+    dataset: str,
+    rank: int | None,
+    device: str,
+    dtype: str,
+    batch_size: int,
+    max_length: int,
+    epochs: int,
+    lr: float,
+    seed: int,
+    eval_only: bool,
+    **kwargs: Any,
+) -> Any:
+    """Route benchmark to appropriate task adapter based on dataset task type."""
+    ds_lower = dataset.lower()
+    if ds_lower in PERPLEXITY_DATASETS:
+        return PerplexityAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            seed=seed,
+            **kwargs,
+        )
+    elif "ruler" in ds_lower or "niah" in ds_lower:
+        return RulerAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            context_length=max_length if max_length > 512 else 4096,
+            seed=seed,
+            **kwargs,
+        )
+    elif ds_lower in SUPPORTED_ZEROSHOT_DATASETS or any(k in ds_lower for k in ("arc", "hellaswag", "mmlu", "gsm8k")):
+        return ZeroShotAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            seed=seed,
+            **kwargs,
+        )
+    else:
+        # Default task is sequence classification (GLUE tasks)
+        return ClassificationAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            epochs=epochs,
+            lr=lr,
+            seed=seed,
+            eval_only=eval_only,
+            **kwargs,
+        )
 
-    return EnvironmentInfo(
-        hostname=socket.gethostname(),
-        platform=platform.platform(),
-        python_version=platform.python_version(),
-        torch_version=torch.__version__,
-        cuda_available=cuda_available,
-        cuda_version=cuda_version,
-        gpu_name=cuda_device_name,
-        gpu_count=torch.cuda.device_count() if cuda_available else 0,
-        gpu_memory_gb=gpu_memory_gb,
-    )
 
 
 def execute_single(
@@ -72,128 +120,164 @@ def execute_single(
 ) -> BenchmarkResult:
     """Execute a benchmark for a single module on a model and dataset.
 
-    Handles discovery, adapter selection, execution, timing, and error trapping
-    without aborting the parent process.
+    Produces a canonical BenchmarkResult strictly conforming to schema.
+    Captures errors gracefully without raising or terminating execution.
     """
     run_id = str(uuid.uuid4())
     start_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     start_t = time.perf_counter()
 
-    env_info = get_environment_info(device)
-    target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    config_dict = {
+        "rank": rank,
+        "epochs": epochs,
+        "lr": lr,
+        "batch_size": batch_size,
+        "max_length": max_length,
+        "seed": seed,
+        "eval_only": eval_only,
+        **kwargs,
+    }
 
-    # 1. Inspect module metadata from discovery
-    all_modules = discover_modules()
-    mod_info = all_modules.get(module)
+    is_lm_task = dataset.lower() in PERPLEXITY_DATASETS
+    if eval_only:
+        if not is_lm_task:
+            logger.warning(
+                "eval_only=True with a freshly-initialized classification head "
+                "will produce random accuracy. Set eval_only=False to fine-tune."
+            )
+        if module and str(module).lower() not in ("none", "baseline", "full", "dense"):
+            logger.warning("Compression applied but no recovery training.")
 
-    if mod_info is None:
-        duration_s = time.perf_counter() - start_t
-        end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        return BenchmarkResult(
-            run_id=run_id,
-            status="failed",
-            start_time=start_time_iso,
-            end_time=end_time_iso,
-            duration_s=duration_s,
-            module=ModuleMetadata(name=module, type="unknown", rank=rank),
-            model=ModelMetadata(name=model, family="unknown"),
-            dataset=DatasetMetadata(name=dataset, task_type="unknown"),
-            environment=env_info,
-            error_type="ModuleNotFoundError",
-            error_message=f"Module '{module}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY.",
-            error_traceback="",
-            timeout_s=timeout_s,
-            timed_out=False,
-        )
+    # 1. Inspect module metadata from discovery (or handle baseline)
+    is_baseline = module is None or str(module).lower() in ("none", "baseline", "full", "dense")
 
-    module_type = mod_info.type
-    module_meta = ModuleMetadata(
-        name=module,
-        type=module_type,
-        rank=rank,
-        supports_causal=mod_info.supports_causal,
-        supports_gqa=mod_info.supports_gqa,
-        supports_rope=mod_info.supports_rope,
-        requires_cuda=mod_info.requires_cuda,
-        has_custom_injector=mod_info.has_custom_injector,
-        target_architecture=mod_info.target_architecture,
-    )
+    if is_baseline:
+        module_name = "baseline"
+        module_type = "baseline"
+        mod_dict = {
+            "name": "baseline",
+            "type": "baseline",
+            "family": "dense",
+            "supports_causal": True,
+            "supports_gqa": True,
+            "supports_rope": True,
+            "requires_cuda": False,
+            "rank": rank,
+        }
+        effective_timeout = timeout_s or 1800
+    else:
+        module_name = str(module)
+        all_modules = discover_modules()
+        mod_info = all_modules.get(module_name)
+
+        if mod_info is None:
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module={"name": module, "type": "unknown", "rank": rank},
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status="failed",
+                error=f"ModuleNotFoundError: Module '{module}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY.",
+                traceback="",
+                timeout_s=timeout_s or 1800,
+                timed_out=False,
+            )
+
+        module_type = mod_info.type
+        mod_dict = {
+            "name": module_name,
+            "type": module_type,
+            "family": mod_info.family,
+            "supports_causal": mod_info.supports_causal,
+            "supports_gqa": mod_info.supports_gqa,
+            "supports_rope": mod_info.supports_rope,
+            "requires_cuda": mod_info.requires_cuda,
+            "rank": rank,
+        }
+        effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
+
 
     # Check CUDA requirement
-    if mod_info.requires_cuda and not torch.cuda.is_available() and target_device == "cpu":
+    target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    if mod_dict.get("requires_cuda", False) and not torch.cuda.is_available() and target_device == "cpu":
+
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         return BenchmarkResult(
             run_id=run_id,
+            run_name=f"{module}_{model}_{dataset}",
+            timestamp_start=start_time_iso,
+            timestamp_end=end_time_iso,
+            module=mod_dict,
+            model={"name": model},
+            dataset={"name": dataset},
+            config=config_dict,
             status="skipped",
-            start_time=start_time_iso,
-            end_time=end_time_iso,
-            duration_s=duration_s,
-            module=module_meta,
-            model=ModelMetadata(name=model, family="unknown"),
-            dataset=DatasetMetadata(name=dataset, task_type="unknown"),
-            environment=env_info,
-            error_type="HardwareIncompatible",
-            error_message=f"Module '{module}' requires CUDA which is not available in current environment.",
-            timeout_s=timeout_s,
+            error=f"HardwareIncompatible: Module '{module}' requires CUDA which is not available.",
+            timeout_s=effective_timeout,
             timed_out=False,
         )
 
-    # 2. Select Adapter
-    is_lm_task = dataset.lower() in PERPLEXITY_DATASETS
+    # 2. Select and execute Adapter
     adapter = None
     try:
-        if is_lm_task:
-            adapter = PerplexityAdapter(
-                module_name=module,
-                module_type=module_type,
-                model_name=model,
-                dataset_name=dataset,
-                rank=rank,
-                device=target_device,
-                dtype=dtype,
-                batch_size=batch_size,
-                max_length=max_length,
-                seed=seed,
-                **kwargs,
-            )
-        else:
-            adapter = ClassificationAdapter(
-                module_name=module,
-                module_type=module_type,
-                model_name=model,
-                dataset_name=dataset,
-                rank=rank,
-                device=target_device,
-                dtype=dtype,
-                batch_size=batch_size,
-                max_length=max_length,
-                epochs=epochs,
-                lr=lr,
-                seed=seed,
-                eval_only=eval_only,
-                **kwargs,
-            )
+        adapter = _select_adapter(
+            module_name=module_name,
+            module_type=module_type,
+            model=model,
+            dataset=dataset,
+            rank=rank,
+            device=target_device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            epochs=epochs,
+            lr=lr,
+            seed=seed,
+            eval_only=eval_only,
+            **kwargs,
+        )
 
         run_output = adapter.run()
+
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
+        model_meta = run_output.get("model_metadata")
+        dataset_meta = run_output.get("dataset_metadata")
+        eval_metrics = run_output.get("eval_metrics", {})
+        latency_info = run_output.get("latency", {})
+        peak_mem = run_output.get("peak_memory_mb", 0.0)
+
+        resources_dict = {
+            "peak_vram_mb": peak_mem,
+            "latency_ms_per_token": latency_info.get("latency_ms_per_token", 0.0),
+            "throughput_tok_per_sec": latency_info.get("throughput_tok_per_sec", 0.0),
+            "duration_s": round(duration_s, 2),
+            "num_params_after": getattr(model_meta, "num_params", 0) if model_meta else 0,
+        }
+
         return BenchmarkResult(
             run_id=run_id,
-            status="completed",
-            start_time=start_time_iso,
-            end_time=end_time_iso,
-            duration_s=duration_s,
-            module=module_meta,
-            model=run_output.get("model_metadata") or ModelMetadata(name=model, family="unknown"),
-            dataset=run_output.get("dataset_metadata") or DatasetMetadata(name=dataset, task_type="unknown"),
-            environment=env_info,
-            train_metrics=run_output.get("train_metrics", {}),
-            eval_metrics=run_output.get("eval_metrics", {}),
-            latency=run_output.get("latency", {}),
-            peak_memory_mb=run_output.get("peak_memory_mb"),
-            timeout_s=timeout_s,
+            run_name=f"{module}_{model}_{dataset}",
+            timestamp_start=start_time_iso,
+            timestamp_end=end_time_iso,
+            module=mod_dict,
+            model=model_meta.__dict__ if model_meta else {"name": model},
+            dataset=dataset_meta.__dict__ if dataset_meta else {"name": dataset},
+            config=config_dict,
+            metrics=eval_metrics,
+            resources=resources_dict,
+            status="success",
+            error=None,
+            traceback=None,
+            timeout_s=effective_timeout,
             timed_out=False,
         )
 
@@ -201,22 +285,21 @@ def execute_single(
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         err_tb = traceback.format_exc()
-        logger.error(f"Execution failed for module {module}: {e}\n{err_tb}")
+        logger.error("Execution failed for module %s: %s\n%s", module, e, err_tb)
 
         return BenchmarkResult(
             run_id=run_id,
+            run_name=f"{module}_{model}_{dataset}",
+            timestamp_start=start_time_iso,
+            timestamp_end=end_time_iso,
+            module=mod_dict,
+            model={"name": model},
+            dataset={"name": dataset},
+            config=config_dict,
             status="failed",
-            start_time=start_time_iso,
-            end_time=end_time_iso,
-            duration_s=duration_s,
-            module=module_meta,
-            model=ModelMetadata(name=model, family="unknown"),
-            dataset=DatasetMetadata(name=dataset, task_type="unknown"),
-            environment=env_info,
-            error_type=type(e).__name__,
-            error_message=str(e),
-            error_traceback=err_tb,
-            timeout_s=timeout_s,
+            error=f"{type(e).__name__}: {str(e)}",
+            traceback=err_tb,
+            timeout_s=effective_timeout,
             timed_out=False,
         )
     finally:
@@ -224,3 +307,6 @@ def execute_single(
             adapter.cleanup()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+
+
+__all__ = ["execute_single"]

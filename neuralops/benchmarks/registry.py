@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
 
 LOG = logging.getLogger(__name__)
 

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import torch
-from torch.utils.data import DataLoader
 
 from neuralops.benchmarks.core.data_loader import (
     get_dataset_metadata,
@@ -28,7 +27,8 @@ from neuralops.benchmarks.core.model_loader import (
     load_model_and_tokenizer,
 )
 from neuralops.benchmarks.core.training import finetune_classification
-from neuralops.benchmarks.result import BenchmarkResult, DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -80,19 +80,17 @@ class ClassificationAdapter:
         torch.manual_seed(self.seed)
 
         # 1. Determine number of labels for dataset
-        # Temporary load without tokenizer just to inspect labels if needed, or pass dummy
-        raw_train = load_dataset_by_name(self.dataset_name, tokenizer=None, split="train")
-        num_labels = get_num_labels(raw_train)
+        num_labels = get_num_labels(self.dataset_name)
 
         # 2. Load model and tokenizer with sequence classification head
-        self.model, self.tokenizer, _ = load_model_and_tokenizer(
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
             self.model_name,
             device=self.device,
             dtype=self.dtype,
             task="classification",
             num_labels=num_labels,
         )
-        self.model_meta = get_model_metadata(self.model, model_name=self.model_name)
+        self.model_meta = get_model_metadata(self.model, model_cfg)
 
         # 3. Tokenize datasets
         tokenized_train = load_dataset_by_name(
@@ -133,6 +131,11 @@ class ClassificationAdapter:
         if self.model is None:
             raise RuntimeError("Setup must be run before applying module.")
 
+        if self.module_type in ("baseline", "none", "full", "dense"):
+            logger.info("Baseline run: skipping module injection.")
+            return
+
+
         if self.module_type == "attention":
             self.model = apply_attention_module(
                 self.model,
@@ -150,6 +153,7 @@ class ClassificationAdapter:
             )
         else:
             raise ValueError(f"Unknown module type: {self.module_type}")
+
 
         # Update params in metadata
         if self.model_meta is not None:
