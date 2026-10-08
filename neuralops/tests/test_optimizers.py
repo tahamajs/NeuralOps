@@ -70,3 +70,39 @@ class TestOptimizerFactories:
         opt.step()
         err = opt.check_orthogonality_error(w)
         assert err is not None
+
+
+class TestSchedulerFactories:
+    """Test standard learning rate scheduler factory methods."""
+
+    def test_schedulers(self):
+        from neuralops.trainer.schedulers import (
+            create_linear,
+            create_cosine,
+            create_rop,
+            create_onecycle,
+            create_cosine_warmup,
+            create_poly,
+        )
+
+        p = nn.Parameter(torch.randn(2, 2))
+        opt = torch.optim.SGD([p], lr=0.1)
+
+        s_lin = create_linear(opt, num_training_steps=100)
+        assert s_lin is not None
+
+        s_cos = create_cosine(opt, T_max=100)
+        assert s_cos is not None
+
+        s_rop = create_rop(opt)
+        assert s_rop is not None
+
+        s_oc = create_onecycle(opt, max_lr=0.1, steps_per_epoch=10, epochs=2)
+        assert s_oc is not None
+
+        s_cw = create_cosine_warmup(opt, num_warmup_steps=10, num_training_steps=100)
+        assert s_cw is not None
+
+        s_poly = create_poly(opt, total_iters=100)
+        assert s_poly is not None
+
