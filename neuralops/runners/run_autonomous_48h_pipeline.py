@@ -663,7 +663,7 @@ def main():
         for future in as_completed(future_map):
             t_name = future_map[future]
             try:
-                res = future.result()
+                future.result()
             except Exception as e:
                 log(f"[TASK EXCEPTION] {t_name}: {e}")
 
