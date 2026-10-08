@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `modegpt_compressor`
+**Legacy Folder Name:** `modegpt` (standardized in v1.2.0)
+
 # Modegpt: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `modegpt`  
