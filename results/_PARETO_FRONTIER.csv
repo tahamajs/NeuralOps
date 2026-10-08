@@ -1,0 +1,5 @@
+module,compression_ratio,accuracy
+spectron,1.15x,86.93%
+svd_linear_decay,1.20x,84.52%
+swift_svd_class,1.44x,82.45%
+spectral_residual_lora,2.20x,60.67%
