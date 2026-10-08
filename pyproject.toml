@@ -78,6 +78,7 @@ exclude = [
     "neuralops.tests*",
     "neuralops.benchmarks._legacy*",
     "neuralops._archive*",
+    "neuralops.core._archive*",
     "neuralops.attentions._legacy*",
     "neuralops.compression_engine._legacy*",
 ]
