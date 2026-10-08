@@ -11,9 +11,6 @@ import pytest
 import torch
 from transformers import DistilBertConfig, DistilBertModel
 
-_FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _FRAMEWORK_PARENT not in sys.path:
-
 import neuralops.attentions
 from neuralops.core.attention_utils import (available_attention_types,
                                             inject_attention)
