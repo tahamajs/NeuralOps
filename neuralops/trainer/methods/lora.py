@@ -16,33 +16,7 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-class LoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -> None:
-        super().__init__()
-        self.linear = linear
-        self.linear.weight.requires_grad = False
-        if linear.bias is not None:
-            linear.bias.requires_grad = False
-        self.r = r
-        if r > 0:
-            self.lora_A = nn.Linear(linear.in_features, r, bias=False)
-            self.lora_B = nn.Linear(r, linear.out_features, bias=False)
-            kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
-            zeros_(self.lora_B.weight)
-            self.scaling = alpha / r
-            self.dropout = nn.Dropout(dropout)
-        else:
-            self.lora_A = self.lora_B = None
-            self.scaling = 1.0
-            self.dropout = nn.Identity()
-
-    def forward(self, x) -> Any:
-        """Forward pass — compute module output from inputs."""
-        base = self.linear(x)
-        if self.r > 0:
-            lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            return base + lora
-        return base
+from neuralops.utils.lora import LoRALinear
 
 
 class DoRALinear(nn.Module):
