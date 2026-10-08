@@ -409,6 +409,8 @@ class FactorizedLinear(nn.Module):
         return out
 
 
+_FactorizedLinear = FactorizedLinear
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -416,4 +418,6 @@ __all__ = [
     "_apply_rope",
     "LoRALinear",
     "FactorizedLinear",
+    "_FactorizedLinear",
 ]
+

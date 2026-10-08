@@ -16,23 +16,7 @@ from __future__ import annotations
 
 import torch
 
-try:
-    import triton
-    import triton.language as tl
-
-    HAS_TRITON = True
-except ImportError:
-    HAS_TRITON = False
-    triton = type(
-        "triton",
-        (),
-        {
-            "jit": lambda f: f,
-            "heuristics": lambda *a, **kw: lambda f: f,
-            "autotune": lambda *a, **kw: lambda f: f,
-        },
-    )
-    tl = None
+from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
 
 
 @triton.jit
@@ -265,3 +249,6 @@ class _HGRN2ScanFn(torch.autograd.Function):
 def hgrn2_scan_triton(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
     """Triton HGRN2 selective scan. f, iv: (B, L, D). Returns h: (B, L, D)."""
     return _HGRN2ScanFn.apply(f, iv, res_clip)
+
+
+__all__ = ['hgrn2_scan_triton']
