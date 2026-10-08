@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `a3_compressor`
+**Legacy Folder Name:** `a3` (standardized v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract, keywords
