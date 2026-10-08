@@ -1,0 +1,10 @@
+model,dataset,rank,module,accuracy,compression
+distilbert_sst2,sst2,1,spectron,86.93%,1.1523
+distilbert_sst2,sst2,2,svd_linear_decay,84.52%,1.1998
+distilbert_sst2,sst2,3,swift_svd,82.45%,1.441
+distilbert_sst2,sst2,4,svd_projection_attention,81.77%,1.201
+distilbert_sst2,sst2,5,svd_llm_v2_attention,70.99%,1.201
+distilbert_sst2,sst2,6,residual_svd_compressor,60.67%,2.1982
+distilbert_sst2,sst2,7,vspec,50.92%,1.1729
+distilbert_sst2,sst2,8,svd_compressed,0.00%,1.0
+gpt2,piqa,1,none,54.00%,1.00x
