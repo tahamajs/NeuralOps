@@ -42,6 +42,7 @@ from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
@@ -215,17 +216,6 @@ class LowRankSparseLinear(nn.Module):
 # ======================================================================
 # 5. RoPE helpers
 # ======================================================================
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    rotary_dim = 2 * (d // 2)
-    x1 = x[..., : rotary_dim // 2]
-    x2 = x[..., rotary_dim // 2 : rotary_dim]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if rotary_dim < d:
-        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
-    return rotated
-
-
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,
