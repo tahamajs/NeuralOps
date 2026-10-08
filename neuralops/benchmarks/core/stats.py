@@ -1,81 +1,99 @@
+"""Statistical significance testing, bootstrap intervals, and FDR correction for benchmarks."""
+from __future__ import annotations
+
 import numpy as np
-import scipy.stats as stats
+from scipy import stats
 
 
-def compute_t_test_p_value(accs1: list[float], accs2: list[float]) -> float:
-    import numpy as np
+def paired_ttest(accs1: list[float], accs2: list[float]) -> float:
+    """
+    Compute two-tailed Welch's t-test p-value between two distribution samples.
 
+    Args:
+        accs1: First sample observations.
+        accs2: Second sample observations.
+
+    Returns:
+        P-value between 0.0 and 1.0.
+    """
+    arr1, arr2 = np.array(accs1, dtype=np.float64), np.array(accs2, dtype=np.float64)
+    if np.array_equal(arr1, arr2) or (np.var(arr1) == 0 and np.var(arr2) == 0):
+        return 1.0
     try:
-        from scipy import stats
-
-        res = stats.ttest_ind(accs1, accs2, equal_var=False)
+        res = stats.ttest_ind(arr1, arr2, equal_var=False)
         p = float(res.pvalue)
         return 1.0 if np.isnan(p) else p
     except Exception:
-        arr1, arr2 = np.array(accs1), np.array(accs2)
-        if np.array_equal(arr1, arr2) or (np.var(arr1) == 0 and np.var(arr2) == 0):
-            return 1.0
-        diff = np.abs(np.mean(arr1) - np.mean(arr2))
-        return 0.001 if diff > 5.0 else 0.5
+        return 1.0
 
 
-def compute_bh_fdr(raw_p: list[float]) -> list[float]:
-    if not raw_p:
+def bootstrap_ci(
+    accs: list[float],
+    n_boot: int = 1000,
+    ci: float = 0.95,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """
+    Compute non-parametric bootstrap confidence interval for the sample mean.
+
+    Args:
+        accs: Sample observation scores.
+        n_boot: Number of bootstrap resamples.
+        ci: Desired confidence level (default: 0.95).
+        seed: Random seed for bootstrap generator.
+
+    Returns:
+        Tuple of (lower_bound, upper_bound).
+    """
+    arr = np.array(accs, dtype=np.float64)
+    if len(arr) == 0:
+        return 0.0, 0.0
+    if len(arr) == 1 or np.var(arr) == 0:
+        val = float(arr[0])
+        return val, val
+
+    rng = np.random.default_rng(seed)
+    indices = rng.integers(0, len(arr), size=(n_boot, len(arr)))
+    boot_means = np.mean(arr[indices], axis=1)
+
+    alpha = 1.0 - ci
+    lower = float(np.percentile(boot_means, 100 * (alpha / 2.0)))
+    upper = float(np.percentile(boot_means, 100 * (1.0 - alpha / 2.0)))
+    return lower, upper
+
+
+def fdr_correction(raw_p: list[float], alpha: float = 0.05) -> list[float]:
+    """
+    Benjamini-Hochberg False Discovery Rate (FDR) adjusted p-values.
+
+    Args:
+        raw_p: List of unadjusted p-values.
+        alpha: Target false discovery rate threshold.
+
+    Returns:
+        List of monotonic FDR-adjusted p-values matching input order.
+    """
+    n = len(raw_p)
+    if n == 0:
         return []
-    import numpy as np
+    sorted_indices = np.argsort(raw_p)
+    sorted_p = np.array(raw_p)[sorted_indices]
+    adj_p = np.zeros(n)
 
-    p_vals = np.array(raw_p, dtype=float)
-    n = len(p_vals)
-    sorted_indices = np.argsort(p_vals)
-    sorted_p = p_vals[sorted_indices]
-    adjusted_p = np.zeros(n, dtype=float)
-    cum_min = 1.0
+    cummin = 1.0
     for i in range(n - 1, -1, -1):
         rank = i + 1
-        adj = (sorted_p[i] * n) / rank
-        cum_min = min(cum_min, adj)
-        adjusted_p[i] = min(cum_min, 1.0)
-    out = np.zeros(n, dtype=float)
-    out[sorted_indices] = np.maximum(sorted_p, adjusted_p)
-    return out.tolist()
+        p_adj = (sorted_p[i] * n) / rank
+        cummin = min(cummin, p_adj)
+        adj_p[i] = min(cummin, 1.0)
+
+    result = np.zeros(n)
+    result[sorted_indices] = adj_p
+    return result.tolist()
 
 
-def compute_bootstrap_ci(
-    accs: list[float], n_bootstraps: int = 500, ci_level: float = 0.95
-) -> tuple[float, float]:
-    import numpy as np
-
-    if not accs:
-        return (0.0, 0.0)
-    arr = np.array(accs)
-    if len(arr) == 1:
-        return (float(arr[0]), float(arr[0]))
-    boot_means = []
-    np.random.seed(42)
-    for _ in range(n_bootstraps):
-        sample = np.random.choice(arr, size=len(arr), replace=True)
-        boot_means.append(np.mean(sample))
-    alpha = (1.0 - ci_level) / 2.0
-    low = float(np.percentile(boot_means, alpha * 100))
-    high = float(np.percentile(boot_means, (1.0 - alpha) * 100))
-    return (max(0.0, low), min(100.0, high))
-
-
-def compute_confidence_interval_95(accs: list[float]) -> tuple[float, float]:
-    import numpy as np
-
-    if not accs:
-        return (0.0, 0.0)
-    arr = np.array(accs)
-    n = len(arr)
-    if n <= 1:
-        return (float(arr[0]), float(arr[0]))
-    mean = np.mean(arr)
-    se = np.std(arr, ddof=1) / np.sqrt(n)
-    margin = 1.96 * se if n > 30 else 2.57 * se
-    return (float(mean - margin), float(mean + margin))
-
-
-# ============================================================================
-# Module discovery
-# ============================================================================
+__all__ = [
+    "paired_ttest",
+    "bootstrap_ci",
+    "fdr_correction",
+]
