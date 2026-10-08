@@ -1,3 +1,4 @@
+import torch
 import triton
 import triton.language as tl
 
@@ -14,8 +15,8 @@ def _cosformer_global_fwd_kernel(
     BLOCK_N: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
-    pid_bh = tl.program_id(0)      # ترکیب batch و head
-    pid_n = tl.program_id(1)       # بلوک روی محور N
+    pid_bh = tl.program_id(0) 
+    pid_n = tl.program_id(1)
 
     b = pid_bh // H
     h = pid_bh % H
@@ -23,11 +24,9 @@ def _cosformer_global_fwd_kernel(
     offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
     offs_d = tl.arange(0, BLOCK_D)
 
-    # ماسک برای N و D
     mask_n = offs_n < N
     mask_d = offs_d < D
 
-    # بارگذاری Q_cos و Q_sin برای این بلوک
     q_cos_ptrs = Q_cos_ptr + b * stride_qb + h * stride_qh \
                  + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
     q_sin_ptrs = Q_sin_ptr + b * stride_qb + h * stride_qh \
@@ -36,16 +35,13 @@ def _cosformer_global_fwd_kernel(
     q_cos = tl.load(q_cos_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
     q_sin = tl.load(q_sin_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
 
-    # انباشتگرها برای num و denom
     acc_num = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
     acc_denom = tl.zeros((BLOCK_N,), dtype=tl.float32)
 
-    # حلقه روی بلوک‌های K و V
     for start_k in range(0, N, BLOCK_N):
         offs_k = start_k + tl.arange(0, BLOCK_N)
         mask_k = offs_k < N
 
-        # بارگذاری K_cos و K_sin
         k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh \
                      + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
         k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh \
@@ -66,14 +62,11 @@ def _cosformer_global_fwd_kernel(
         causal_mask = offs_n[:, None] >= offs_k[None, :]
         score = tl.where(causal_mask, score, 0.0)
 
-        # انباشت
         acc_num += tl.dot(score.to(tl.float32), v)
         acc_denom += tl.sum(score, axis=1)
 
-    # نرمال‌سازی نهایی
     out = acc_num / tl.maximum(acc_denom[:, None], 1e-4)
 
-    # نوشتن خروجی
     out_ptrs = Out_ptr + b * stride_ob + h * stride_oh \
                + offs_n[:, None] * stride_on + offs_d[None, :] * stride_od
     tl.store(out_ptrs, out, mask=mask_n[:, None] & mask_d[None, :])

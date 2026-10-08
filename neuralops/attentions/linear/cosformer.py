@@ -1,6 +1,5 @@
 """
 Cosformer — Production-Hardened (Hybrid Local Attention + Fixed Math).
-
 """
 
 from __future__ import annotations
@@ -26,9 +25,6 @@ except Exception:
     triton_dispatch = None
 
 
-def _env_flag(name: str, default: bool = False) -> bool:
-    v = os.environ.get(name, "")
-    return v.lower() in ("1", "true", "yes", "on") if v else default
 
 
 _inject_state = threading.local()
