@@ -108,5 +108,40 @@ def apply_rope_after_up_projection(
     return q_embed, k_embed
 
 
-__all__ = ["_rotate_half", "apply_rotary_pos_emb", "apply_rope_after_up_projection"]
+def fused_rope_embedding(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused in-place capable RoPE kernel avoiding intermediate concatenated tensors."""
+    d = q.shape[-1]
+    half = d // 2
+    cos_b = cos[..., :d].to(device=q.device, dtype=q.dtype)
+    sin_b = sin[..., :d].to(device=q.device, dtype=q.dtype)
+
+    # In-place/fused expression: q_rot = q * cos + rotate_half(q) * sin
+    q1, q2 = q[..., :half], q[..., half : 2 * half]
+    q_out = torch.empty_like(q)
+    q_out[..., :half] = q1 * cos_b[..., :half] - q2 * sin_b[..., :half]
+    q_out[..., half : 2 * half] = q2 * cos_b[..., half : 2 * half] + q1 * sin_b[..., half : 2 * half]
+    if 2 * half < d:
+        q_out[..., 2 * half :] = q[..., 2 * half :]
+
+    k1, k2 = k[..., :half], k[..., half : 2 * half]
+    k_out = torch.empty_like(k)
+    k_out[..., :half] = k1 * cos_b[..., :half] - k2 * sin_b[..., :half]
+    k_out[..., half : 2 * half] = k2 * cos_b[..., half : 2 * half] + k1 * sin_b[..., half : 2 * half]
+    if 2 * half < d:
+        k_out[..., 2 * half :] = k[..., 2 * half :]
+
+    return q_out, k_out
+
+
+__all__ = [
+    "_rotate_half",
+    "apply_rotary_pos_emb",
+    "apply_rope_after_up_projection",
+    "fused_rope_embedding",
+]
 
