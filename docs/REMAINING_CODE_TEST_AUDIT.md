@@ -45,22 +45,22 @@
 
 ### Critical Gaps:
 - **`neuralops/evaluation/` (0% covered)**:
-  - [`eval_all_models_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py) (2527 lines)
-  - [`eval_perplexity.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_perplexity.py)
-  - [`run_baseline_comparison.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/run_baseline_comparison.py)
-  - [`retraining_orchestrator.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/retraining_orchestrator.py)
+  - [`eval_all_models_datasets.py`](../neuralops/evaluation/eval_all_models_datasets.py) (2527 lines)
+  - [`eval_perplexity.py`](../neuralops/evaluation/eval_perplexity.py)
+  - [`run_baseline_comparison.py`](../neuralops/evaluation/run_baseline_comparison.py)
+  - [`retraining_orchestrator.py`](../neuralops/evaluation/retraining_orchestrator.py)
 - **`neuralops/runners/` (0% covered)**:
-  - [`unified_orchestrator.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/unified_orchestrator.py)
-  - [`run_monitor_server.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py)
-  - [`run_autonomous_48h_pipeline.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_autonomous_48h_pipeline.py)
+  - [`unified_orchestrator.py`](../neuralops/runners/unified_orchestrator.py)
+  - [`run_monitor_server.py`](../neuralops/runners/run_monitor_server.py)
+  - [`run_autonomous_48h_pipeline.py`](../neuralops/runners/run_autonomous_48h_pipeline.py)
 - **`neuralops/data/` (11.8% covered)**:
-  - [`benchmark_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py) (1052 lines)
-  - [`dataset_loader.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/dataset_loader.py)
-  - [`cached_tensors.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/cached_tensors.py)
+  - [`benchmark_datasets.py`](../neuralops/data/benchmark_datasets.py) (1052 lines)
+  - [`dataset_loader.py`](../neuralops/data/dataset_loader.py)
+  - [`cached_tensors.py`](../neuralops/data/cached_tensors.py)
 - **`neuralops/trainer/` (11.1% covered)**:
-  - [`optimizers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py) (940 lines)
-  - [`train_lra.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/train_lra.py)
-  - [`trainer_svd.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/trainer_svd.py)
+  - [`optimizers.py`](../neuralops/trainer/optimizers.py) (940 lines)
+  - [`train_lra.py`](../neuralops/trainer/train_lra.py)
+  - [`trainer_svd.py`](../neuralops/trainer/trainer_svd.py)
 
 ---
 
@@ -68,12 +68,12 @@
 
 Two identical test patterns across multiple files:
 1. **Group `1e9b102a`** (RoPE & even/odd dimension verification):
-   - [`neuralops/tests/test_vspec_comprehensive.py:78`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_vspec_comprehensive.py#L78)
-   - [`neuralops/tests/test_vig_comprehensive.py:79`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_vig_comprehensive.py#L79)
-   - [`neuralops/tests/test_wgqa_comprehensive.py:95`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_wgqa_comprehensive.py#L95)
+   - [`neuralops/tests/test_vspec_comprehensive.py:78`](../neuralops/tests/test_vspec_comprehensive.py#L78)
+   - [`neuralops/tests/test_vig_comprehensive.py:79`](../neuralops/tests/test_vig_comprehensive.py#L79)
+   - [`neuralops/tests/test_wgqa_comprehensive.py:95`](../neuralops/tests/test_wgqa_comprehensive.py#L95)
 2. **Group `df487aac`** (RoPE half odd dimension rotation):
-   - [`neuralops/tests/test_decay_linear_attention.py:54`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_decay_linear_attention.py#L54)
-   - [`neuralops/tests/test_cosformer.py:37`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_cosformer.py#L37)
+   - [`neuralops/tests/test_decay_linear_attention.py:54`](../neuralops/tests/test_decay_linear_attention.py#L54)
+   - [`neuralops/tests/test_cosformer.py:37`](../neuralops/tests/test_cosformer.py#L37)
 
 ---
 

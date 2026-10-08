@@ -27,36 +27,36 @@
 ### Top 30 Longest Functions
 | File:line | Function Name | Lines | Action |
 | :--- | :--- | :--- | :--- |
-| [`neuralops/evaluation/eval_all_models_datasets.py:1373`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L1373) | `evaluate_single_combination_opt` | **1066** | Extract sub-routines (setup, inference, metric extraction, logging) |
-| [`neuralops/utils/compat.py:278`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/compat.py#L278) | `get_recovery_params` | 374 | Split by architecture type / dictionary dispatch |
-| [`neuralops/analysis/generate_all_modules_analysis.py:812`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/generate_all_modules_analysis.py#L812) | `main` | 361 | Decompose CLI orchestration into pipeline stages |
-| [`neuralops/runners/run_monitor_server.py:186`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py#L186) | `build_aggregated_stats` | 357 | Modularize data processing handlers |
-| [`neuralops/evaluation/eval_all_models_datasets.py:632`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L632) | `apply_module_to_model` | 287 | Dispatch by module replacement strategy |
-| [`neuralops/runners/run_autonomous_48h_pipeline.py:337`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_autonomous_48h_pipeline.py#L337) | `build_all_streams` | 265 | Extract stream builders into dedicated factories |
-| [`neuralops/data/benchmark_datasets.py:489`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py#L489) | `_register_all_benchmarks` | 257 | Refactor into modular benchmark manifest/registry table |
-| [`neuralops/runners/unified_orchestrator.py:34`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/unified_orchestrator.py#L34) | `run_orchestrator` | 215 | Break into initialization, dispatch, and monitoring steps |
-| [`neuralops/trainer/train_lra.py:98`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/train_lra.py#L98) | `train_task` | 202 | Split training loop, validation, and checkpointing |
-| [`scripts/run_kd_reuse_model.py:35`](file:///Users/tahamajs/Documents/uni/Project/scripts/run_kd_reuse_model.py#L35) | `main` | 196 | Script CLI helper (acceptable for script) |
-| [`neuralops/evaluation/full_mnli_validation.py:144`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/full_mnli_validation.py#L144) | `main` | 195 | Break into eval runner and result aggregation |
-| [`neuralops/data/benchmark_datasets.py:846`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py#L846) | `load_benchmark_dataset` | 185 | Delegate to specialized dataset loader strategy |
-| [`neuralops/evaluation/run_lm_eval_harness.py:182`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/run_lm_eval_harness.py#L182) | `main` | 176 | Separate CLI args handling from evaluation run |
-| [`neuralops/trainer/optimizers.py:224`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py#L224) | `__init__` | 172 | Extract hyperparameter validation and state initialization |
-| [`neuralops/main.py:244`](file:///Users/tahamajs/Documents/uni/Project/neuralops/main.py#L244) | `run_train` | 160 | Delegate steps to `neuralops.trainer` |
-| [`scripts/run_kd_all.py:101`](file:///Users/tahamajs/Documents/uni/Project/scripts/run_kd_all.py#L101) | `main` | 153 | Script CLI runner |
-| [`scripts/audit_causal_modules.py:22`](file:///Users/tahamajs/Documents/uni/Project/scripts/audit_causal_modules.py#L22) | `analyze_module_file` | 153 | Script AST analyzer |
-| [`neuralops/utils/replace_attention.py:180`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/replace_attention.py#L180) | `_forward_t5` | 153 | T5 attention wrapper hook |
-| [`neuralops/data/base.py:51`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/base.py#L51) | `preprocess_function` | 153 | Decompose per dataset type |
-| [`neuralops/analysis/plotting.py:285`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/plotting.py#L285) | `create_comprehensive_plots` | 153 | Split plot generators by metric group |
-| [`neuralops/evaluation/eval_all_models_datasets.py:983`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L983) | `get_dataset_batch` | 148 | Delegate batch creation to `neuralops/data/` |
-| [`neuralops/runners/run_monitor_server.py:809`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py#L809) | `do_GET` | 143 | Extract HTTP endpoint routing table |
-| [`neuralops/trainer/utils.py:160`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/utils.py#L160) | `train_model` | 140 | Separate train step, validation, and epoch logging |
-| [`neuralops/tests/test_all_compression_engines.py:63`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_all_compression_engines.py#L63) | `run_single_compressor_test` | 140 | Test helper function |
-| [`neuralops/utils/replace_attention.py:39`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/replace_attention.py#L39) | `forward` | 139 | Modularize attention replacement forward pass |
-| [`neuralops/evaluation/run_baseline_comparison.py:133`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/run_baseline_comparison.py#L133) | `main` | 137 | Script CLI orchestration |
-| [`neuralops/trainer/optimizers.py:451`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py#L451) | `step` | 133 | Break optimizer state update into helper math funcs |
-| [`neuralops/evaluation/eval_perplexity.py:211`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_perplexity.py#L211) | `evaluate_module_ppl` | 130 | Split tokenization, model forward, and loss computation |
-| [`neuralops/utils/replace_attention.py:344`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/replace_attention.py#L344) | `_try_instantiate` | 129 | Class instantiation fallback ladder |
-| [`neuralops/trainer/utils.py:28`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/utils.py#L28) | `clip_grad_norm_factorized` | 129 | Specialized gradient clipping algorithm |
+| [`neuralops/evaluation/eval_all_models_datasets.py:1373`](../neuralops/evaluation/eval_all_models_datasets.py#L1373) | `evaluate_single_combination_opt` | **1066** | Extract sub-routines (setup, inference, metric extraction, logging) |
+| [`neuralops/utils/compat.py:278`](../neuralops/utils/compat.py#L278) | `get_recovery_params` | 374 | Split by architecture type / dictionary dispatch |
+| [`neuralops/analysis/generate_all_modules_analysis.py:812`](../neuralops/analysis/generate_all_modules_analysis.py#L812) | `main` | 361 | Decompose CLI orchestration into pipeline stages |
+| [`neuralops/runners/run_monitor_server.py:186`](../neuralops/runners/run_monitor_server.py#L186) | `build_aggregated_stats` | 357 | Modularize data processing handlers |
+| [`neuralops/evaluation/eval_all_models_datasets.py:632`](../neuralops/evaluation/eval_all_models_datasets.py#L632) | `apply_module_to_model` | 287 | Dispatch by module replacement strategy |
+| [`neuralops/runners/run_autonomous_48h_pipeline.py:337`](../neuralops/runners/run_autonomous_48h_pipeline.py#L337) | `build_all_streams` | 265 | Extract stream builders into dedicated factories |
+| [`neuralops/data/benchmark_datasets.py:489`](../neuralops/data/benchmark_datasets.py#L489) | `_register_all_benchmarks` | 257 | Refactor into modular benchmark manifest/registry table |
+| [`neuralops/runners/unified_orchestrator.py:34`](../neuralops/runners/unified_orchestrator.py#L34) | `run_orchestrator` | 215 | Break into initialization, dispatch, and monitoring steps |
+| [`neuralops/trainer/train_lra.py:98`](../neuralops/trainer/train_lra.py#L98) | `train_task` | 202 | Split training loop, validation, and checkpointing |
+| [`scripts/run_kd_reuse_model.py:35`](../scripts/run_kd_reuse_model.py#L35) | `main` | 196 | Script CLI helper (acceptable for script) |
+| [`neuralops/evaluation/full_mnli_validation.py:144`](../neuralops/evaluation/full_mnli_validation.py#L144) | `main` | 195 | Break into eval runner and result aggregation |
+| [`neuralops/data/benchmark_datasets.py:846`](../neuralops/data/benchmark_datasets.py#L846) | `load_benchmark_dataset` | 185 | Delegate to specialized dataset loader strategy |
+| [`neuralops/evaluation/run_lm_eval_harness.py:182`](../neuralops/evaluation/run_lm_eval_harness.py#L182) | `main` | 176 | Separate CLI args handling from evaluation run |
+| [`neuralops/trainer/optimizers.py:224`](../neuralops/trainer/optimizers.py#L224) | `__init__` | 172 | Extract hyperparameter validation and state initialization |
+| [`neuralops/main.py:244`](../neuralops/main.py#L244) | `run_train` | 160 | Delegate steps to `neuralops.trainer` |
+| [`scripts/run_kd_all.py:101`](../scripts/run_kd_all.py#L101) | `main` | 153 | Script CLI runner |
+| [`scripts/audit_causal_modules.py:22`](../scripts/audit_causal_modules.py#L22) | `analyze_module_file` | 153 | Script AST analyzer |
+| [`neuralops/utils/replace_attention.py:180`](../neuralops/utils/replace_attention.py#L180) | `_forward_t5` | 153 | T5 attention wrapper hook |
+| [`neuralops/data/base.py:51`](../neuralops/data/base.py#L51) | `preprocess_function` | 153 | Decompose per dataset type |
+| [`neuralops/analysis/plotting.py:285`](../neuralops/analysis/plotting.py#L285) | `create_comprehensive_plots` | 153 | Split plot generators by metric group |
+| [`neuralops/evaluation/eval_all_models_datasets.py:983`](../neuralops/evaluation/eval_all_models_datasets.py#L983) | `get_dataset_batch` | 148 | Delegate batch creation to `neuralops/data/` |
+| [`neuralops/runners/run_monitor_server.py:809`](../neuralops/runners/run_monitor_server.py#L809) | `do_GET` | 143 | Extract HTTP endpoint routing table |
+| [`neuralops/trainer/utils.py:160`](../neuralops/trainer/utils.py#L160) | `train_model` | 140 | Separate train step, validation, and epoch logging |
+| [`neuralops/tests/test_all_compression_engines.py:63`](../neuralops/tests/test_all_compression_engines.py#L63) | `run_single_compressor_test` | 140 | Test helper function |
+| [`neuralops/utils/replace_attention.py:39`](../neuralops/utils/replace_attention.py#L39) | `forward` | 139 | Modularize attention replacement forward pass |
+| [`neuralops/evaluation/run_baseline_comparison.py:133`](../neuralops/evaluation/run_baseline_comparison.py#L133) | `main` | 137 | Script CLI orchestration |
+| [`neuralops/trainer/optimizers.py:451`](../neuralops/trainer/optimizers.py#L451) | `step` | 133 | Break optimizer state update into helper math funcs |
+| [`neuralops/evaluation/eval_perplexity.py:211`](../neuralops/evaluation/eval_perplexity.py#L211) | `evaluate_module_ppl` | 130 | Split tokenization, model forward, and loss computation |
+| [`neuralops/utils/replace_attention.py:344`](../neuralops/utils/replace_attention.py#L344) | `_try_instantiate` | 129 | Class instantiation fallback ladder |
+| [`neuralops/trainer/utils.py:28`](../neuralops/trainer/utils.py#L28) | `clip_grad_norm_factorized` | 129 | Specialized gradient clipping algorithm |
 
 ---
 
@@ -64,14 +64,14 @@
 
 | File | Lines | Classes | Functions | Split / Refactoring Plan |
 | :--- | :--- | :--- | :--- | :--- |
-| [`neuralops/evaluation/eval_all_models_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py) | **2527** | 1 | 15 | **Critical Split**: Split into `pipeline.py`, `model_patcher.py`, `data_loader.py`, `evaluator.py` |
-| [`neuralops/analysis/generate_all_modules_analysis.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/generate_all_modules_analysis.py) | **1177** | 0 | 7 | Split aggregation logic from plotting and markdown reporting |
-| [`neuralops/data/benchmark_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py) | **1052** | 3 | 24 | Split into `registry.py`, `synthetic.py`, and `loaders.py` |
-| [`neuralops/runners/run_monitor_server.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py) | **987** | 1 | 13 | Separate HTTP server handlers from HTML rendering and metrics collection |
-| [`neuralops/trainer/optimizers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py) | **940** | 3 | 24 | Move each optimizer class (e.g. `Adafactor`, `CustomAdamW`) into separate files |
-| [`neuralops/utils/compat.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/compat.py) | **864** | 1 | 20 | Split module parameter recovery mappings into static config / registries |
-| [`neuralops/main.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/main.py) | **855** | 1 | 13 | Separate subcommands into dedicated CLI modules (`cli/train.py`, `cli/eval.py`) |
-| [`neuralops/results_saver/saver.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/results_saver/saver.py) | **852** | 1 | 40 | Separate format writers (JSON, CSV, TensorBoard, WandB) |
+| [`neuralops/evaluation/eval_all_models_datasets.py`](../neuralops/evaluation/eval_all_models_datasets.py) | **2527** | 1 | 15 | **Critical Split**: Split into `pipeline.py`, `model_patcher.py`, `data_loader.py`, `evaluator.py` |
+| [`neuralops/analysis/generate_all_modules_analysis.py`](../neuralops/analysis/generate_all_modules_analysis.py) | **1177** | 0 | 7 | Split aggregation logic from plotting and markdown reporting |
+| [`neuralops/data/benchmark_datasets.py`](../neuralops/data/benchmark_datasets.py) | **1052** | 3 | 24 | Split into `registry.py`, `synthetic.py`, and `loaders.py` |
+| [`neuralops/runners/run_monitor_server.py`](../neuralops/runners/run_monitor_server.py) | **987** | 1 | 13 | Separate HTTP server handlers from HTML rendering and metrics collection |
+| [`neuralops/trainer/optimizers.py`](../neuralops/trainer/optimizers.py) | **940** | 3 | 24 | Move each optimizer class (e.g. `Adafactor`, `CustomAdamW`) into separate files |
+| [`neuralops/utils/compat.py`](../neuralops/utils/compat.py) | **864** | 1 | 20 | Split module parameter recovery mappings into static config / registries |
+| [`neuralops/main.py`](../neuralops/main.py) | **855** | 1 | 13 | Separate subcommands into dedicated CLI modules (`cli/train.py`, `cli/eval.py`) |
+| [`neuralops/results_saver/saver.py`](../neuralops/results_saver/saver.py) | **852** | 1 | 40 | Separate format writers (JSON, CSV, TensorBoard, WandB) |
 
 ---
 
@@ -79,20 +79,20 @@
 
 | Depth | File:line | Function Name | Analysis |
 | :--- | :--- | :--- | :--- |
-| **12** | [`neuralops/runners/run_monitor_server.py:809`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py#L809) | `do_GET` | Deeply nested endpoint path/query parsing with try-except blocks |
-| **9** | [`neuralops/evaluation/eval_all_models_datasets.py:1373`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L1373) | `evaluate_single_combination_opt` | Nested model/dataset loops, device contexts, error recovery |
-| **8** | [`neuralops/evaluation/eval_all_models_datasets.py:983`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L983) | `get_dataset_batch` | Nested dictionary unpacking, sequence truncation, tensor conversion |
-| **7** | [`neuralops/data/benchmark_datasets.py:339`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py#L339) | `_generate_synthetic_glue` | Nested task parsing, vocabulary generation, sequence padding |
-| **7** | [`neuralops/data/benchmark_datasets.py:846`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py#L846) | `load_benchmark_dataset` | Nested caching checks, HuggingFace dataset downloads, fallbacks |
-| **7** | [`neuralops/data/base.py:229`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/base.py#L229) | `__call__` | Nested collation and tensor batching |
-| **7** | [`neuralops/trainer/utils.py:28`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/utils.py#L28) | `clip_grad_norm_factorized` | Nested parameter iteration, norm reduction, dimension factorization |
-| **6** | [`neuralops/analysis/generate_all_modules_analysis.py:812`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/generate_all_modules_analysis.py#L812) | `main` | Nested file reading, JSON decoding, result collection |
-| **6** | [`neuralops/utils/compat.py:723`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/compat.py#L723) | `install_projection_aliases` | Nested attribute probing and alias assignment |
-| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:440`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L440) | `build_model_instance` | Nested config parsing and architecture checks |
-| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:632`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L632) | `apply_module_to_model` | Nested module matching and layer replacement logic |
-| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:821`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/eval_all_models_datasets.py#L821) | `_invoke` | Nested error handling and fallback invocation |
-| **6** | [`neuralops/trainer/optimizers.py:224`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py#L224) | `__init__` | Nested parameter group validations |
-| **6** | [`neuralops/trainer/optimizers.py:451`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py#L451) | `step` | Nested state update loops over parameter tensors |
+| **12** | [`neuralops/runners/run_monitor_server.py:809`](../neuralops/runners/run_monitor_server.py#L809) | `do_GET` | Deeply nested endpoint path/query parsing with try-except blocks |
+| **9** | [`neuralops/evaluation/eval_all_models_datasets.py:1373`](../neuralops/evaluation/eval_all_models_datasets.py#L1373) | `evaluate_single_combination_opt` | Nested model/dataset loops, device contexts, error recovery |
+| **8** | [`neuralops/evaluation/eval_all_models_datasets.py:983`](../neuralops/evaluation/eval_all_models_datasets.py#L983) | `get_dataset_batch` | Nested dictionary unpacking, sequence truncation, tensor conversion |
+| **7** | [`neuralops/data/benchmark_datasets.py:339`](../neuralops/data/benchmark_datasets.py#L339) | `_generate_synthetic_glue` | Nested task parsing, vocabulary generation, sequence padding |
+| **7** | [`neuralops/data/benchmark_datasets.py:846`](../neuralops/data/benchmark_datasets.py#L846) | `load_benchmark_dataset` | Nested caching checks, HuggingFace dataset downloads, fallbacks |
+| **7** | [`neuralops/data/base.py:229`](../neuralops/data/base.py#L229) | `__call__` | Nested collation and tensor batching |
+| **7** | [`neuralops/trainer/utils.py:28`](../neuralops/trainer/utils.py#L28) | `clip_grad_norm_factorized` | Nested parameter iteration, norm reduction, dimension factorization |
+| **6** | [`neuralops/analysis/generate_all_modules_analysis.py:812`](../neuralops/analysis/generate_all_modules_analysis.py#L812) | `main` | Nested file reading, JSON decoding, result collection |
+| **6** | [`neuralops/utils/compat.py:723`](../neuralops/utils/compat.py#L723) | `install_projection_aliases` | Nested attribute probing and alias assignment |
+| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:440`](../neuralops/evaluation/eval_all_models_datasets.py#L440) | `build_model_instance` | Nested config parsing and architecture checks |
+| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:632`](../neuralops/evaluation/eval_all_models_datasets.py#L632) | `apply_module_to_model` | Nested module matching and layer replacement logic |
+| **6** | [`neuralops/evaluation/eval_all_models_datasets.py:821`](../neuralops/evaluation/eval_all_models_datasets.py#L821) | `_invoke` | Nested error handling and fallback invocation |
+| **6** | [`neuralops/trainer/optimizers.py:224`](../neuralops/trainer/optimizers.py#L224) | `__init__` | Nested parameter group validations |
+| **6** | [`neuralops/trainer/optimizers.py:451`](../neuralops/trainer/optimizers.py#L451) | `step` | Nested state update loops over parameter tensors |
 
 ---
 
@@ -137,10 +137,10 @@ Across `neuralops/`, 9 circular dependency cycles exist, located in `core/` and 
 
 | File | Lines | Classes | Functions | Problem & Refactoring Strategy |
 | :--- | :---: | :---: | :---: | :--- |
-| [`neuralops/results_saver/saver.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/results_saver/saver.py) | 852 | 1 | 40 | Monolithic `ResultsSaver` handling file I/O, schemas, metadata, formats, and stats. Split by format driver. |
-| [`neuralops/data/benchmark_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py) | 1052 | 3 | 24 | Combines dataset download, synthetic data generator, format mapping, and caching. Split into submodules. |
-| [`neuralops/trainer/optimizers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py) | 940 | 3 | 24 | Houses multiple complex optimizer implementations in one file. Split per optimizer. |
-| [`neuralops/utils/compat.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/compat.py) | 864 | 1 | 20 | Houses parameter extraction, recovery logic, and monkey patches for all HF architectures. Split by family. |
+| [`neuralops/results_saver/saver.py`](../neuralops/results_saver/saver.py) | 852 | 1 | 40 | Monolithic `ResultsSaver` handling file I/O, schemas, metadata, formats, and stats. Split by format driver. |
+| [`neuralops/data/benchmark_datasets.py`](../neuralops/data/benchmark_datasets.py) | 1052 | 3 | 24 | Combines dataset download, synthetic data generator, format mapping, and caching. Split into submodules. |
+| [`neuralops/trainer/optimizers.py`](../neuralops/trainer/optimizers.py) | 940 | 3 | 24 | Houses multiple complex optimizer implementations in one file. Split per optimizer. |
+| [`neuralops/utils/compat.py`](../neuralops/utils/compat.py) | 864 | 1 | 20 | Houses parameter extraction, recovery logic, and monkey patches for all HF architectures. Split by family. |
 
 ---
 

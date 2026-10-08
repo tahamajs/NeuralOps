@@ -76,13 +76,13 @@ Comprehensive dead code, unused import, and unreferenced file analysis across re
 ## 5. Dead Functions Sample (80 Total)
 
 Major categories of unreferenced functions:
-1. **Unused Statistical Corrections** in [`neuralops/analysis/comparison/statistical_tests.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/comparison/statistical_tests.py):
+1. **Unused Statistical Corrections** in [`neuralops/analysis/comparison/statistical_tests.py`](../neuralops/analysis/comparison/statistical_tests.py):
    `holm_correction`, `hochberg_correction`, `finner_correction`, `hommel_correction`, `holland_copenhaver_correction`, `mcnemar_test`, `bayesian_correlated_ttest`.
-2. **Unused Checkpoint Helpers** in [`neuralops/utils/checkpoint.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/checkpoint.py):
+2. **Unused Checkpoint Helpers** in [`neuralops/utils/checkpoint.py`](../neuralops/utils/checkpoint.py):
    `delete_checkpoint`, `get_latest_checkpoint`.
-3. **Unused Profiler Helpers** in [`neuralops/utils/profiler.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/profiler.py):
+3. **Unused Profiler Helpers** in [`neuralops/utils/profiler.py`](../neuralops/utils/profiler.py):
    `save_report`, `measure_memory_usage`.
-4. **Unused Result Saver Backends** in [`neuralops/results_saver/saver.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/results_saver/saver.py):
+4. **Unused Result Saver Backends** in [`neuralops/results_saver/saver.py`](../neuralops/results_saver/saver.py):
    `log_metric_to_sqlite`, `push_to_registries`.
 
 ---

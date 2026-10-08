@@ -23,14 +23,14 @@ Comprehensive audit, artifact reorganization, and formal delivery report for Neu
 
 ## Section 2: Artifact Categorization & Reorganization
 - Reorganized into standard top-level taxonomy (`01_unified_runs`, `02_rank_sweeps`, `03_zeroshot_evals`, `04_baselines`, `05_glue_finetuning`, `06_adhoc_experiments`, `07_misc_tests`, `_archive`, `_tmp`).
-- Documented in [`docs/RESULTS_REORGANIZATION_PLAN.md`](file:///Users/tahamajs/Documents/uni/Project/docs/RESULTS_REORGANIZATION_PLAN.md).
+- Documented in [`docs/RESULTS_REORGANIZATION_PLAN.md`](../docs/RESULTS_REORGANIZATION_PLAN.md).
 
 ---
 
 ## Section 3: Benchmark & Matrix Coverage
-- **Master Summary**: Extracted 7,737 structured benchmark execution rows to [`results/_MASTER_SUMMARY.csv`](file:///Users/tahamajs/Documents/uni/Project/results/_MASTER_SUMMARY.csv).
-- **Canonical Coverage Matrix**: Mapped across all 232 modules, 4 model families, and 4 datasets in [`results/_COVERAGE_MATRIX.csv`](file:///Users/tahamajs/Documents/uni/Project/results/_COVERAGE_MATRIX.csv).
-- **Leaderboards & Pareto Frontier**: Generated [`results/_LEADERBOARDS.csv`](file:///Users/tahamajs/Documents/uni/Project/results/_LEADERBOARDS.csv), [`results/_PARETO_FRONTIER.csv`](file:///Users/tahamajs/Documents/uni/Project/results/_PARETO_FRONTIER.csv), and LaTeX source tables in [`results/_LATEX_TABLES/`](file:///Users/tahamajs/Documents/uni/Project/results/_LATEX_TABLES/).
+- **Master Summary**: Extracted 7,737 structured benchmark execution rows to [`results/_MASTER_SUMMARY.csv`](../results/_MASTER_SUMMARY.csv).
+- **Canonical Coverage Matrix**: Mapped across all 232 modules, 4 model families, and 4 datasets in [`results/_COVERAGE_MATRIX.csv`](../results/_COVERAGE_MATRIX.csv).
+- **Leaderboards & Pareto Frontier**: Generated [`results/_LEADERBOARDS.csv`](../results/_LEADERBOARDS.csv), [`results/_PARETO_FRONTIER.csv`](../results/_PARETO_FRONTIER.csv), and LaTeX source tables in [`results/_LATEX_TABLES/`](../results/_LATEX_TABLES/).
 
 ---
 
@@ -44,19 +44,19 @@ Comprehensive audit, artifact reorganization, and formal delivery report for Neu
 
 ## Section 5: Documentation & References
 - **New Documentation Artifacts Generated**:
-  1. [`docs/RESULTS_DIRECTORY_INVENTORY.md`](file:///Users/tahamajs/Documents/uni/Project/docs/RESULTS_DIRECTORY_INVENTORY.md)
-  2. [`docs/RESULTS_REORGANIZATION_PLAN.md`](file:///Users/tahamajs/Documents/uni/Project/docs/RESULTS_REORGANIZATION_PLAN.md)
-  3. [`docs/MODULE_RESULT_COVERAGE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/MODULE_RESULT_COVERAGE.md)
-  4. [`docs/MODEL_RESULT_COVERAGE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/MODEL_RESULT_COVERAGE.md)
-  5. [`docs/DATASET_RESULT_COVERAGE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/DATASET_RESULT_COVERAGE.md)
-  6. [`docs/FAMILY_LEADERBOARDS.md`](file:///Users/tahamajs/Documents/uni/Project/docs/FAMILY_LEADERBOARDS.md)
-  7. [`docs/CODE_QUALITY_AUDIT.md`](file:///Users/tahamajs/Documents/uni/Project/docs/CODE_QUALITY_AUDIT.md)
-  8. [`docs/MODULE_REFERENCE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/MODULE_REFERENCE.md)
-  9. [`docs/EXAMPLES.md`](file:///Users/tahamajs/Documents/uni/Project/docs/EXAMPLES.md)
-  10. [`docs/TROUBLESHOOTING.md`](file:///Users/tahamajs/Documents/uni/Project/docs/TROUBLESHOOTING.md)
-  11. [`docs/MIGRATION_GUIDE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/MIGRATION_GUIDE.md)
-  12. [`docs/API_REFERENCE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/API_REFERENCE.md)
-  13. [`docs/ARCHITECTURE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/ARCHITECTURE.md)
+  1. [`docs/RESULTS_DIRECTORY_INVENTORY.md`](../docs/RESULTS_DIRECTORY_INVENTORY.md)
+  2. [`docs/RESULTS_REORGANIZATION_PLAN.md`](../docs/RESULTS_REORGANIZATION_PLAN.md)
+  3. [`docs/MODULE_RESULT_COVERAGE.md`](../docs/MODULE_RESULT_COVERAGE.md)
+  4. [`docs/MODEL_RESULT_COVERAGE.md`](../docs/MODEL_RESULT_COVERAGE.md)
+  5. [`docs/DATASET_RESULT_COVERAGE.md`](../docs/DATASET_RESULT_COVERAGE.md)
+  6. [`docs/FAMILY_LEADERBOARDS.md`](../docs/FAMILY_LEADERBOARDS.md)
+  7. [`docs/CODE_QUALITY_AUDIT.md`](../docs/CODE_QUALITY_AUDIT.md)
+  8. [`docs/MODULE_REFERENCE.md`](../docs/MODULE_REFERENCE.md)
+  9. [`docs/EXAMPLES.md`](../docs/EXAMPLES.md)
+  10. [`docs/TROUBLESHOOTING.md`](../docs/TROUBLESHOOTING.md)
+  11. [`docs/MIGRATION_GUIDE.md`](../docs/MIGRATION_GUIDE.md)
+  12. [`docs/API_REFERENCE.md`](../docs/API_REFERENCE.md)
+  13. [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
 
 ---
 
@@ -69,6 +69,6 @@ Comprehensive audit, artifact reorganization, and formal delivery report for Neu
 ## Section 7: Release Readiness
 - **Wheel Package**: Built `dist/neuralops-1.0.0-py3-none-any.whl` (2.3 MB).
 - **Twine Check**: PASSED.
-- **Software Bill of Materials**: Generated [`sbom.json`](file:///Users/tahamajs/Documents/uni/Project/sbom.json).
-- **Citation Metadata**: Updated [`CITATION.cff`](file:///Users/tahamajs/Documents/uni/Project/CITATION.cff).
+- **Software Bill of Materials**: Generated [`sbom.json`](../sbom.json).
+- **Citation Metadata**: Updated [`CITATION.cff`](../CITATION.cff).
 - **Git Version**: Branch `ablation` merged into `main`, tagged `v1.0.0`.
