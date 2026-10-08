@@ -4,7 +4,7 @@ authors:
   - family-names: "Majlesi"
     given-names: "Taha"
 title: "NeuralOps: A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization"
-version: 1.1.1
+version: 1.2.0
 date-released: 2026-10-09
 url: "https://github.com/tahamajs/SVD_linear_Attention"
 license: MIT
