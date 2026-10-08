@@ -1,0 +1,146 @@
+# Result Quality Issues
+
+Audit of result JSON files in the `results/` tree (excluding `_archive/`).
+
+## not_dict (1095)
+
+- `results/01_unified_runs/03_unified_runs/MASTER_UNIFIED_SUMMARY.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_a3/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_ranks/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention_attention/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attn/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adasplash/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adasplash/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_adasvd/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_admm/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_admm_pruner/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_hybrid/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_spectron_fp8/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v1/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v1_module/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v2/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v2/gpt2/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v2/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v3/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v3_module/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v4/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v4_module/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5/gpt2/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5_module/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5_module/gpt2/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v5_module/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v6/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_aegis_v6/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_armor/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_astro/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_asvd/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_asvd/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_bam_umoe/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_bam_umoe/distilbert/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_bam_umoe/gpt2/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_bam_umoe/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_block_transformer_hiba/4models_summary.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_block_transformer_hiba/distilbert/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_block_transformer_hiba/gpt2/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_block_transformer_hiba/roberta/failed_runs.json`: list
+- `results/01_unified_runs/03_unified_runs/unified_cachenotes/4models_summary.json`: list
+
+## missing_fields (16191)
+
+- `results/01_unified_runs/03_unified_runs/unified_a3/distilbert/distilbert_sst2_a3_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_a3/gpt2/a3_stats.json`: ['module', 'model', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_a3/gpt2/gpt2_sst2_a3_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_a3/roberta/roberta_sst2_a3_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/distilbert/aasvd_stats.json`: ['module', 'model', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/distilbert/distilbert_sst2_aasvd_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/gpt2/aasvd_stats.json`: ['module', 'model', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/gpt2/gpt2_sst2_aasvd_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/gpt2/gpt2_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/roberta/roberta_sst2_aasvd_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_aasvd/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/distilbert/distilbert_sst2_adaptive_compressor_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/gpt2/gpt2_sst2_adaptive_compressor_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/gpt2/gpt2_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/roberta/roberta_sst2_adaptive_compressor_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_compressor/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_ranks/distilbert/distilbert_sst2_adaptive_ranks_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_ranks/gpt2/gpt2_sst2_adaptive_ranks_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_ranks/roberta/roberta_sst2_adaptive_ranks_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/distilbert/distilbert_sst2_adaptive_span_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/distilbert/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/gpt2/gpt2_sst2_adaptive_span_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/gpt2/gpt2_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/gpt2/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/roberta/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/roberta/roberta_sst2_adaptive_span_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_span/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse/roberta/roberta_sst2_adaptive_sparse_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/distilbert/distilbert_sst2_adaptive_sparse_attention_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/distilbert/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/gpt2/gpt2_sst2_adaptive_sparse_attention_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/gpt2/gpt2_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/gpt2/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/roberta/roberta_sst2_adaptive_sparse_attention_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_sparse_attention/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/distilbert/distilbert_sst2_adaptive_svd_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/distilbert/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/gpt2/gpt2_sst2_adaptive_svd_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/gpt2/gpt2_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/roberta/hf_export/metrics.json`: ['model', 'dataset']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/roberta/roberta_sst2_adaptive_svd_attention_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attention/roberta/roberta_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attn/distilbert/distilbert_sst2_adaptive_svd_attn_full_metrics.json`: ['module', 'dataset', 'status']
+- `results/01_unified_runs/03_unified_runs/unified_adaptive_svd_attn/distilbert/distilbert_sst2_full_full_metrics.json`: ['module', 'dataset', 'status']
+
+## invalid_json (34)
+
+- `results/01_unified_runs/agnews_unified_adasplash_attention/distilbert/checkpoints/adasplash_attention/hf_export/config.json`: Expecting value: line 46 column 16 (char 1064)
+- `results/01_unified_runs/agnews_unified_adasplash_attention/gpt2/checkpoints/adasplash_attention/hf_export/config.json`: Expecting value: line 59 column 16 (char 1369)
+- `results/01_unified_runs/agnews_unified_adasplash_attention/roberta/checkpoints/adasplash_attention/hf_export/config.json`: Expecting value: line 46 column 16 (char 1091)
+- `results/01_unified_runs/agnews_unified_dobi/distilbert/checkpoints/dobi/hf_export/config.json`: Expecting value: line 46 column 16 (char 1039)
+- `results/01_unified_runs/mnli_unified_aasvd/gpt2/checkpoints/aasvd/hf_export/config.json`: Expecting value: line 57 column 16 (char 1331)
+- `results/01_unified_runs/mnli_unified_dobi/distilbert/checkpoints/dobi/hf_export/config.json`: Expecting value: line 44 column 16 (char 1001)
+- `results/01_unified_runs/mnli_unified_soafusedattention/distilbert/checkpoints/soafusedattention/hf_export/config.json`: Expecting value: line 44 column 16 (char 1026)
+- `results/04_baselines/roberta_mnli_baseline/checkpoints/full/hf_export/config.json`: Expecting value: line 44 column 16 (char 1053)
+- `results/04_baselines/roberta_sst2_lora_baseline/checkpoints/full/hf_export/config.json`: Expecting value: line 42 column 16 (char 1016)
+- `results/05_glue_finetuning/02_glue_sweeps/distilbert/distilbert_sst2_sst2_sweep/distilbert_sst2_delta_kv_class_full_metrics.json`: Extra data: line 95 column 2 (char 5005)
+- `results/05_glue_finetuning/02_glue_sweeps/distilbert/distilbert_sst2_sst2_sweep/distilbert_sst2_dobi_svd_class_full_metrics.json`: Extra data: line 95 column 2 (char 4985)
+- `results/05_glue_finetuning/02_glue_sweeps/distilbert/distilbert_sst2_sst2_sweep/distilbert_sst2_gfws_full_metrics.json`: Extra data: line 95 column 2 (char 4983)
+- `results/05_glue_finetuning/02_glue_sweeps/distilbert/distilbert_sst2_sst2_sweep/distilbert_sst2_griffin_ssd_block_full_metrics.json`: Extra data: line 52 column 2 (char 1795)
+- `results/05_glue_finetuning/02_glue_sweeps/distilbert/distilbert_sst2_sst2_sweep/distilbert_sst2_hybrid_svd_layer_full_metrics.json`: Extra data: line 64 column 2 (char 2881)
+- `results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/aegis_hybrid_attention/hf_export/metrics.json`: Extra data: line 81 column 1 (char 3540)
+- `results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/delta_kv/hf_export/metrics.json`: Extra data: line 50 column 1 (char 1216)
+- `results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/delta_kv_class/hf_export/metrics.json`: Extra data: line 99 column 2 (char 4536)
+- `results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/dobi_svd_class/hf_export/metrics.json`: Extra data: line 99 column 2 (char 4518)
+- `results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/griffin_ssd_block/summary_record.json`: Extra data: line 26 column 2 (char 793)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/distilbert/checkpoints/a3/hf_export/config.json`: Expecting value: line 46 column 16 (char 1065)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/gpt2/checkpoints/a3/hf_export/config.json`: Expecting value: line 59 column 16 (char 1370)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/roberta/checkpoints/a3/hf_export/config.json`: Expecting value: line 46 column 16 (char 1092)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/mnli/distilbert/checkpoints/a3/hf_export/config.json`: Expecting value: line 44 column 16 (char 1027)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/mnli/gpt2/checkpoints/a3/hf_export/config.json`: Expecting value: line 57 column 16 (char 1332)
+- `results/07_misc_tests/09_diagnostics/a3_tests/datasets/mnli/roberta/checkpoints/a3/hf_export/config.json`: Expecting value: line 44 column 16 (char 1054)
+- `results/07_misc_tests/09_diagnostics/test_local/checkpoints/optimal_subspace_projection/hf_export/config.json`: Expecting value: line 40 column 16 (char 922)
+- `results/07_misc_tests/_pilot_compile/distilbert/checkpoints/full/hf_export/config.json`: Expecting value: line 46 column 16 (char 1040)
+- `results/07_misc_tests/archive_unified/unified_performer/distilbert/checkpoints/full/hf_export/config.json`: Expecting value: line 42 column 16 (char 968)
+- `results/07_misc_tests/archive_unified/unified_performer/distilbert/checkpoints/performer/hf_export/config.json`: Expecting value: line 42 column 16 (char 993)
+- `results/07_misc_tests/archive_unified/unified_performer/gpt2/checkpoints/full/hf_export/config.json`: Expecting value: line 55 column 16 (char 1269)
+- `results/07_misc_tests/archive_unified/unified_performer/gpt2/checkpoints/performer/hf_export/config.json`: Expecting value: line 55 column 16 (char 1294)
+- `results/07_misc_tests/archive_unified/unified_performer/roberta/checkpoints/full/hf_export/config.json`: Expecting value: line 42 column 16 (char 991)
+- `results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_svd_proj_attn/hf_export/config.json`: Expecting value: line 262 column 16 (char 7275)
+- `results/07_misc_tests/fixed_aegis/aegis_v5_sst2/checkpoints/aegis_v5/hf_export/config.json`: Expecting value: line 42 column 16 (char 992)
