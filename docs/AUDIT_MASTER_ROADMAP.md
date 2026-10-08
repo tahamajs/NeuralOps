@@ -56,11 +56,11 @@ $$\text{Score} = \frac{\text{Severity (1--5)} \times \text{Impact (1--5)}}{\text
 #### 1. Session 6: Duplicate Code Consolidation (Effort: 3h, Risk: Low)
 - **Goal**: Eliminate identical files and duplicate utility implementations.
 - **Tasks**:
-  1. Convert [`neuralops/experiment_utils/runner.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/experiment_utils/runner.py) into a shim re-exporting [`main.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/experiment_utils/main.py).
-  2. Consolidate `count_parameters` across `neuralops/trainer/` into [`neuralops/utils/helpers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/helpers.py).
-  3. Consolidate `get_logger` into [`neuralops/utils/logger.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/logger.py).
-  4. Consolidate `LoRALinear` into [`neuralops/trainer/methods/lora.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/methods/lora.py).
-  5. Consolidate `ResultsSaver` into [`neuralops/results_saver/saver.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/results_saver/saver.py).
+  1. Convert [`neuralops/experiment_utils/runner.py`](../neuralops/experiment_utils/runner.py) into a shim re-exporting [`main.py`](../neuralops/experiment_utils/main.py).
+  2. Consolidate `count_parameters` across `neuralops/trainer/` into [`neuralops/utils/helpers.py`](../neuralops/utils/helpers.py).
+  3. Consolidate `get_logger` into [`neuralops/utils/logger.py`](../neuralops/utils/logger.py).
+  4. Consolidate `LoRALinear` into [`neuralops/trainer/methods/lora.py`](../neuralops/trainer/methods/lora.py).
+  5. Consolidate `ResultsSaver` into [`neuralops/results_saver/saver.py`](../neuralops/results_saver/saver.py).
 - **Success Criteria**: Zero duplicated AST bodies across utilities, registry intact (159+73).
 
 #### 2. Session 5: Dead Code Elimination (Effort: 4h, Risk: Low)
@@ -74,7 +74,7 @@ $$\text{Score} = \frac{\text{Severity (1--5)} \times \text{Impact (1--5)}}{\text
 #### 3. Session 4: Configuration Unification (Effort: 3h, Risk: Low)
 - **Goal**: Eliminate 16 duplicated dataclasses between monolithic `config.py` and modular config files.
 - **Tasks**:
-  1. Re-export dataclasses in [`neuralops/config/config.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/config/config.py) from modular files (`method_config.py`, `hardware_config.py`, `model_config.py`, `compression_config.py`, etc.).
+  1. Re-export dataclasses in [`neuralops/config/config.py`](../neuralops/config/config.py) from modular files (`method_config.py`, `hardware_config.py`, `model_config.py`, `compression_config.py`, etc.).
   2. Delete duplicate dataclass definitions in `config.py`.
 - **Success Criteria**: Zero duplicate config classes, backward compatibility preserved.
 
@@ -91,11 +91,11 @@ $$\text{Score} = \frac{\text{Severity (1--5)} \times \text{Impact (1--5)}}{\text
 #### 5. Session 3: God Files Modularization (Effort: 8h, Risk: Medium)
 - **Goal**: Split 5 files exceeding 800 lines into cohesive, single-responsibility modules.
 - **Affected Files**:
-  - [`neuralops/data/benchmark_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/data/benchmark_datasets.py) (1052 lines) → `loaders.py`, `synthetic.py`, `manifest.py`.
-  - [`neuralops/runners/run_monitor_server.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/run_monitor_server.py) (987 lines) → `server.py`, `endpoints.py`, `stats.py`.
-  - [`neuralops/trainer/optimizers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/optimizers.py) (940 lines) → `adafactor.py`, `adamw.py`, `base.py`.
-  - [`neuralops/utils/compat.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/utils/compat.py) (864 lines) → `param_recovery.py`, `aliases.py`.
-  - [`neuralops/results_saver/saver.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/results_saver/saver.py) (852 lines) → `saver.py`, `formats/`.
+  - [`neuralops/data/benchmark_datasets.py`](../neuralops/data/benchmark_datasets.py) (1052 lines) → `loaders.py`, `synthetic.py`, `manifest.py`.
+  - [`neuralops/runners/run_monitor_server.py`](../neuralops/runners/run_monitor_server.py) (987 lines) → `server.py`, `endpoints.py`, `stats.py`.
+  - [`neuralops/trainer/optimizers.py`](../neuralops/trainer/optimizers.py) (940 lines) → `adafactor.py`, `adamw.py`, `base.py`.
+  - [`neuralops/utils/compat.py`](../neuralops/utils/compat.py) (864 lines) → `param_recovery.py`, `aliases.py`.
+  - [`neuralops/results_saver/saver.py`](../neuralops/results_saver/saver.py) (852 lines) → `saver.py`, `formats/`.
 - **Success Criteria**: All 5 files broken into sub-500 line modules with preserved public exports.
 
 #### 6. Session 1: Circular Imports & Layer Violations (Effort: 4h, Risk: Medium)

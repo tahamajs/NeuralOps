@@ -40,13 +40,13 @@ Layer 10: scripts/                     (user-facing)
 ### Detected Violations:
 | File:line | Source Layer | Imports From | Violation Description | Severity |
 | :--- | :--- | :--- | :--- | :--- |
-| [`neuralops/core/_attention_injectors.py:26`](file:///Users/tahamajs/Documents/uni/Project/neuralops/core/_attention_injectors.py#L26) | L0 `core` | L1 `utils` | Core imports from utility layer (`neuralops.utils.model_family`) | HIGH |
-| [`neuralops/core/multi_mode_benchmark.py:17`](file:///Users/tahamajs/Documents/uni/Project/neuralops/core/multi_mode_benchmark.py#L17) | L0 `core` | L8 `benchmarks` | Core module imports directly from benchmarks layer | HIGH |
-| [`neuralops/core/registry.py:211`](file:///Users/tahamajs/Documents/uni/Project/neuralops/core/registry.py#L211) | L0 `core` | L4 `attentions` | Core registry imports concrete attention modules eagerly | HIGH |
-| [`neuralops/core/registry.py:193`](file:///Users/tahamajs/Documents/uni/Project/neuralops/core/registry.py#L193) | L0 `core` | L5 `compression_engine`| Core registry imports concrete compressors eagerly | HIGH |
-| [`neuralops/attentions/svd/residual_svd_attention.py:18`](file:///Users/tahamajs/Documents/uni/Project/neuralops/attentions/svd/residual_svd_attention.py#L18) | L4 `attentions` | L5 `compression_engine` | Attention layer imports from compression engine | MEDIUM |
-| [`neuralops/trainer/train_lra.py:30`](file:///Users/tahamajs/Documents/uni/Project/neuralops/trainer/train_lra.py#L30) | L6 `trainer` | L7 `evaluation` | Trainer imports from evaluation module | MEDIUM |
-| [`neuralops/evaluation/run_baseline_comparison.py:43`](file:///Users/tahamajs/Documents/uni/Project/neuralops/evaluation/run_baseline_comparison.py#L43) | L7 `evaluation` | L8 `benchmarks` | Evaluation imports benchmarks | LOW (CLI script) |
+| [`neuralops/core/_attention_injectors.py:26`](../neuralops/core/_attention_injectors.py#L26) | L0 `core` | L1 `utils` | Core imports from utility layer (`neuralops.utils.model_family`) | HIGH |
+| [`neuralops/core/multi_mode_benchmark.py:17`](../neuralops/core/multi_mode_benchmark.py#L17) | L0 `core` | L8 `benchmarks` | Core module imports directly from benchmarks layer | HIGH |
+| [`neuralops/core/registry.py:211`](../neuralops/core/registry.py#L211) | L0 `core` | L4 `attentions` | Core registry imports concrete attention modules eagerly | HIGH |
+| [`neuralops/core/registry.py:193`](../neuralops/core/registry.py#L193) | L0 `core` | L5 `compression_engine`| Core registry imports concrete compressors eagerly | HIGH |
+| [`neuralops/attentions/svd/residual_svd_attention.py:18`](../neuralops/attentions/svd/residual_svd_attention.py#L18) | L4 `attentions` | L5 `compression_engine` | Attention layer imports from compression engine | MEDIUM |
+| [`neuralops/trainer/train_lra.py:30`](../neuralops/trainer/train_lra.py#L30) | L6 `trainer` | L7 `evaluation` | Trainer imports from evaluation module | MEDIUM |
+| [`neuralops/evaluation/run_baseline_comparison.py:43`](../neuralops/evaluation/run_baseline_comparison.py#L43) | L7 `evaluation` | L8 `benchmarks` | Evaluation imports benchmarks | LOW (CLI script) |
 
 ---
 

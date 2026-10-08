@@ -96,5 +96,5 @@ NeuralOps maintains **211 standalone publication packages** corresponding to eac
 ## 6. RECOMMENDATIONS FOR DOCUMENTATION HYGIENE
 
 1. **Update `CITATION.cff`**: Bump declared version from `1.0.0` to `1.1.0` to maintain perfect version parity with `pyproject.toml`.
-2. **Normalize Link Paths**: Convert absolute IDE file URLs (`file:///Users/tahamajs/Documents/uni/Project/...`) in audit markdown reports to relative markdown links.
+2. **Normalize Link Paths**: Convert absolute IDE file URLs (`../...`) in audit markdown reports to relative markdown links.
 3. **Archive Stale Audit Runs**: Consolidate redundant one-off audit logs in `audit/` into a single timestamped `audit/_archive/` directory to improve repository traversal speed.
