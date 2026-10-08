@@ -85,6 +85,19 @@ def is_deterministic_attention() -> bool:
     return _DETERMINISTIC_ATTENTION
 
 
+def safe_softmax(logits: torch.Tensor, dim: int = -1, eps: float = 1e-12) -> torch.Tensor:
+    """Numerically stable softmax preventing underflow/overflow and NaN gradients."""
+    m = torch.amax(logits, dim=dim, keepdim=True)
+    exp = torch.exp(logits - m)
+    denom = torch.sum(exp, dim=dim, keepdim=True).clamp(min=eps)
+    return exp / denom
+
+
+def safe_log(x: torch.Tensor, eps: float = 1e-20) -> torch.Tensor:
+    """Numerically stable logarithm preventing log(0) -inf."""
+    return torch.log(x.clamp(min=eps))
+
+
 __all__ = [
     "inject_attention",
     "available_attention_types",
@@ -98,6 +111,8 @@ __all__ = [
     "softcap",
     "enable_deterministic_attention",
     "is_deterministic_attention",
+    "safe_softmax",
+    "safe_log",
     "apply_rope_after_up_projection",
     "_find_submodule_by_regex",
     "_svd_factorize_weights",
