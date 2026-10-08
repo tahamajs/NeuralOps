@@ -1,21 +1,6 @@
-try:
-    import triton
-    import triton.language as tl
-
-    HAS_TRITON = True
-except ImportError:
-    HAS_TRITON = False
-    triton = type(
-        "triton",
-        (),
-        {
-            "jit": lambda f: f,
-            "heuristics": lambda *a, **kw: lambda f: f,
-            "autotune": lambda *a, **kw: lambda f: f,
-        },
-    )
-    tl = None
 from packaging import version
+from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
+
 
 if HAS_TRITON and hasattr(triton, "__version__"):
     TRITON3 = version.parse(triton.__version__) >= version.parse("3.0.0")
