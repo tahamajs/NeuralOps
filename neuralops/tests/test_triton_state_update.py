@@ -112,7 +112,7 @@ def test_state_carryover(device):
 
     # Split into 2 chunks of 8
     y_part1, state_mid = fwd(u[:, :8], delta[:, :8], A, B_t[:, :8], C_t[:, :8])
-    y_part2, state_end = fwd(u[:, 8:], delta[:, 8:], A, B_t[:, 8:], C_t[:, 8:], initial_state=state_mid)
+    y_part2, state_end = fwd(u[:, 8:], delta[:, 8:], A, B_t[:, 8:], C_t[:, 8:], state=state_mid)
 
     assert torch.allclose(y_full[:, :8], y_part1, atol=1e-4)
     assert torch.allclose(y_full[:, 8:], y_part2, atol=1e-4)

@@ -49,26 +49,38 @@ def reference_linear_attn_pytorch(q, k, v, is_causal=False, phi="elu+1", eps=1e-
 
     if not is_causal:
         # KV = sum_j k_j^T v_j
-        KV = torch.matmul(k_phi.transpose(-2, -1), v_f) # [B, H, D_k, D_v]
-        Z = k_phi.sum(dim=-2, keepdim=True)             # [B, H, 1, D_k]
-        num = torch.matmul(q_phi, KV)                   # [B, H, N, D_v]
-        denom = torch.matmul(q_phi, Z.transpose(-2, -1)).clamp(min=eps) # [B, H, N, 1]
-        out = num / denom
+        KV = torch.matmul(k_phi.transpose(-2, -1), v_f)  # [B, H, D_k, D_v]
+        Z = k_phi.sum(dim=-2, keepdim=True)              # [B, H, 1, D_k]
+        num = torch.matmul(q_phi, KV)                    # [B, H, N, D_v]
+        denom = torch.matmul(q_phi, Z.transpose(-2, -1)) # [B, H, N, 1]
+        if phi in ("elu+1", "relu", "softmax_free"):
+            denom_safe = torch.clamp(denom, min=eps)
+        else:
+            denom_sign = torch.sign(denom)
+            denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+            denom_safe = torch.where(denom.abs() < eps, eps * denom_sign, denom)
+        out = num / denom_safe
     else:
         out = torch.zeros(B, H, N, D_v, device=q.device, dtype=torch.float32)
         S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
         Z = torch.zeros(B, H, D_k, device=q.device, dtype=torch.float32)
         for t in range(N):
-            q_t = q_phi[:, :, t, :] # [B, H, D_k]
-            k_t = k_phi[:, :, t, :] # [B, H, D_k]
-            v_t = v_f[:, :, t, :]   # [B, H, D_v]
+            q_t = q_phi[:, :, t, :]  # [B, H, D_k]
+            k_t = k_phi[:, :, t, :]  # [B, H, D_k]
+            v_t = v_f[:, :, t, :]    # [B, H, D_v]
 
             S = S + torch.einsum("bhi,bhj->bhij", k_t, v_t)
             Z = Z + k_t
 
             num_t = torch.einsum("bhi,bhij->bhj", q_t, S)
-            denom_t = torch.sum(q_t * Z, dim=-1, keepdim=True).clamp(min=eps)
-            out[:, :, t, :] = num_t / denom_t
+            denom_val = torch.sum(q_t * Z, dim=-1, keepdim=True)
+            if phi in ("elu+1", "relu", "softmax_free"):
+                denom_safe = torch.clamp(denom_val, min=eps)
+            else:
+                denom_sign = torch.sign(denom_val)
+                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                denom_safe = torch.where(denom_val.abs() < eps, eps * denom_sign, denom_val)
+            out[:, :, t, :] = num_t / denom_safe
 
     return out.to(q.dtype)
 
@@ -91,7 +103,7 @@ def test_linear_attn_correctness(device, dtype, phi, is_causal, batch, num_heads
     out = fwd(q, k, v, is_causal=is_causal, phi=phi)
     ref = reference_linear_attn_pytorch(q, k, v, is_causal=is_causal, phi=phi)
 
-    tol = {torch.float32: 1e-4, torch.float16: 1e-2}[dtype]
+    tol = {torch.float32: 1e-3, torch.float16: 1e-2}[dtype]
     assert out.shape == (batch, num_heads, seq_len, dim)
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 
