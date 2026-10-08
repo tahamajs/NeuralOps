@@ -1,0 +1,172 @@
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128 tokens.
+
+\subsection{Calibration}
+
+We use the \textbf{default bundled corpus} (5 documents, ~215 tokens). This 
+demonstrates AASVD's out-of-the-box usability. We additionally report 
+results with task-specific calibration in Appendix C.
+
+Calibration:
+\begin{itemize}
+\item Tokenizer: model's own
+\item Max length: 512
+\item Batch size: 1 (single forward pass)
+
+\end{itemize}
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Rank $r$ & 288 \\
+EMA $\beta$ & 0.9 \\
+\texttt{max\_error} $\tau$ & 0.50 \\
+\texttt{fallback\_to\_original} \& True \\
+\texttt{target\_attention\_only} \& True \\
+\texttt{use\_fused\_kernel} \& False \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer \& AdamW \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
+Batch size & 8 \\
+Precision \& FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+
+\begin{itemize}
+\item Accuracy
+\item F1 (binary, macro)
+\item Precision, Recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+
+\begin{itemize}
+\item Total parameters (before / after)
+\item Compression ratio
+\item Peak inference VRAM
+\item Inference time (median of 20 runs)
+
+\end{itemize}
+\subsubsection{Compression}
+
+\begin{itemize}
+\item Compressed layers (count)
+\item Fallback layers (count)
+\item Average reconstruction error
+\item Per-layer error distribution
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+56\% = majority + 3 SE.
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU \& NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+Transformers & 4.44.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_aasvd.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16
+\end{lstlisting}
+
+Runtime: ~20 min.
+
+\subsection{Baselines}

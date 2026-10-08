@@ -1,0 +1,132 @@
+
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+numpy & 1.26.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running AASVD}
+
+\begin{lstlisting}
+python run_all_4_aasvd.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
+\end{lstlisting}
+
+\textbf{Runtime:} ~20 minutes on RTX 4070.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_aasvd/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,aasvd \
+    --rank 288 \
+    --lora_rank 16
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+
+\begin{lstlisting}
+python run_all_4_aasvd.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Rank Ablation)}
+
+\begin{lstlisting}
+for rank in 32 64 128 256; do
+    python run_all_4_aasvd.py --rank $rank --output_suffix r$rank
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (Covariance Ablation)}
+
+\begin{lstlisting}
+python run_all_4_aasvd.py --use_covariance true --output_suffix fullcov
+python run_all_4_aasvd.py --use_covariance false --output_suffix noweight
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (EMA $\beta$ Ablation)}
+
+\begin{lstlisting}
+for beta in 0.5 0.7 0.9 0.95 0.99; do
+    python run_all_4_aasvd.py --ema_beta $beta --output_suffix b$beta
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 85.0\% $\pm$ 1\% & 4.0$\times$ \\
+RoBERTa & 72.0\% $\pm$ 1\% & 3.5$\times$ \\
+GPT-2 & 73.0\% $\pm$ 1\% & 3.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-aasvd}
+\item \textbf{Metrics:} \texttt{results/unified\_aasvd/*/summary.csv}
+\item \textbf{Calibration corpus:} bundled in \texttt{aasvd\_compressor.py}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended
+\item CUDA $\ge$ 11.8 for FP16 SVD
+\item Some baselines may need re-download
+\end{itemize}
