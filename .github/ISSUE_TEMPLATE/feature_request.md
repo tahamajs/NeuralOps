@@ -6,14 +6,18 @@ labels: enhancement
 assignees: ''
 ---
 
-**Is your feature request related to a problem?**
-A clear description of the problem.
+## Problem
 
-**Describe the solution you'd like**
-What you want to happen.
+What problem would this feature solve?
 
-**Describe alternatives you've considered**
-Any alternative solutions.
+## Proposed solution
 
-**Additional context**
-Any other context.
+Your proposed solution.
+
+## Alternatives
+
+Alternative solutions you've considered.
+
+## Additional context
+
+Any other information.
