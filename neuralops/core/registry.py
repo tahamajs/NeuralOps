@@ -26,14 +26,17 @@ else:
 
 def _handle_deprecated(name: str) -> str:
     k = name.lower()
-    if k in _DEPRECATED_ALIASES:
+    visited = set()
+    while k in _DEPRECATED_ALIASES and k not in visited:
+        visited.add(k)
         new_name = _DEPRECATED_ALIASES[k]
         warnings.warn(
             f"'{name}' is deprecated. Use '{new_name}' instead.",
             DeprecationWarning,
             stacklevel=3,
         )
-        return new_name
+        name = new_name
+        k = name.lower()
     return name
 
 _ATTENTION_FILE_MAP: dict[str, str] = {
