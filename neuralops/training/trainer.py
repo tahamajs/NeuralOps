@@ -1,6 +1,6 @@
-"""Training pipelines: DDP helper, MixedPrecisionTrainer, LoRATrainer, and CurriculumScheduler."""
+"""Training pipelines: DDP helper, MixedPrecisionTrainer with grad accumulation, LoRATrainer, and CurriculumScheduler."""
 from __future__ import annotations
-from typing import Callable, Any, Iterator
+from typing import Callable, Any, Iterator, Iterable
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -26,29 +26,32 @@ def setup_ddp_training(
 
 
 class MixedPrecisionTrainer:
-    """Trains PyTorch models with AMP (Automatic Mixed Precision) and GradScaler."""
+    """Full-featured trainer with automatic mixed precision, gradient accumulation, and epoch stepping."""
 
     def __init__(
         self,
         model: nn.Module,
         optimizer: torch.optim.Optimizer,
-        loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+        loss_fn: Callable[..., torch.Tensor],
         device: str | torch.device = "cpu",
+        dtype: torch.dtype = torch.float16,
         enabled: bool = True,
     ) -> None:
         self.model = model
         self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.device = torch.device(device)
+        self.dtype = dtype
         self.enabled = enabled
         self.scaler = torch.amp.GradScaler("cuda", enabled=(enabled and self.device.type == "cuda"))
 
     def train_step(self, x: torch.Tensor, y: torch.Tensor) -> float:
+        """Executes a single forward + backward step with AMP."""
         self.model.train()
         self.optimizer.zero_grad()
 
         device_type = "cuda" if self.device.type == "cuda" else "cpu"
-        with torch.amp.autocast(device_type=device_type, enabled=self.enabled):
+        with torch.amp.autocast(device_type=device_type, dtype=self.dtype, enabled=self.enabled):
             out = self.model(x)
             loss = self.loss_fn(out, y)
 
@@ -62,6 +65,62 @@ class MixedPrecisionTrainer:
 
         return float(loss.item())
 
+    def train_epoch(
+        self,
+        dataloader: Iterable[Any],
+        grad_accum: int = 1,
+        max_steps: int | None = None,
+    ) -> float:
+        """Full training loop with gradient accumulation and step budgeting."""
+        self.model.train()
+        total_loss = 0.0
+        n_batches = 0
+        self.optimizer.zero_grad()
+
+        device_type = "cuda" if self.device.type == "cuda" else "cpu"
+
+        for step, batch in enumerate(dataloader):
+            if isinstance(batch, (tuple, list)):
+                x, y = batch[0], batch[1]
+                with torch.amp.autocast(device_type=device_type, dtype=self.dtype, enabled=self.enabled):
+                    out = self.model(x)
+                    loss = self.loss_fn(out, y) / max(grad_accum, 1)
+            elif isinstance(batch, dict):
+                with torch.amp.autocast(device_type=device_type, dtype=self.dtype, enabled=self.enabled):
+                    out = self.model(**batch)
+                    loss = self.loss_fn(out, batch) / max(grad_accum, 1)
+            else:
+                continue
+
+            if self.scaler.is_enabled():
+                self.scaler.scale(loss).backward()
+            else:
+                loss.backward()
+
+            if (step + 1) % grad_accum == 0:
+                if self.scaler.is_enabled():
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    self.optimizer.step()
+                self.optimizer.zero_grad()
+
+            total_loss += float(loss.item()) * grad_accum
+            n_batches += 1
+            if max_steps is not None and (step + 1) >= max_steps:
+                break
+
+        # Flush any remaining unstepped gradients
+        if n_batches % grad_accum != 0:
+            if self.scaler.is_enabled():
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                self.optimizer.step()
+            self.optimizer.zero_grad()
+
+        return total_loss / max(n_batches, 1)
+
 
 class LoRATrainer:
     """Fine-tuning trainer that freezes base weights and optimizes only adapter parameters."""
@@ -72,7 +131,6 @@ class LoRATrainer:
         lr: float = 1e-4,
     ) -> None:
         self.model = model
-        # Freeze non-lora parameters
         trainable_params = []
         for name, param in model.named_parameters():
             if "lora" in name.lower():
