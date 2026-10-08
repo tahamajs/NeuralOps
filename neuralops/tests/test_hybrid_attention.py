@@ -4,7 +4,6 @@ import sys
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, ".")
 
 from neuralops.attentions.hybrid_attention import (HybridAttention,
                                                    WeightedEnsembleAttention,

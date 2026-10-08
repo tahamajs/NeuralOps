@@ -17,8 +17,6 @@ import sys
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath("."))
 
 from neuralops.attentions.adaptive_span_attention import (
     AdaptiveSpanAttention, get_total_span_loss, inject_adaptive_span)
