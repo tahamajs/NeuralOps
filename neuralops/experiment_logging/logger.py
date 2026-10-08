@@ -191,6 +191,4 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
     return logger
 
 
-def get_logger(name: str = "neuralops") -> logging.Logger:
-    """Return a logger for the given name."""
-    return logging.getLogger(name)
+from neuralops.utils.logger import get_logger  # noqa: F401
