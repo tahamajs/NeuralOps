@@ -22,12 +22,15 @@ from importlib.abc import MetaPathFinder
 
 class _AliasLoader:
     def __init__(self, mod):
+        """Execute __init__ operation."""
         self.mod = mod
 
     def create_module(self, spec):
+        """Execute create_module operation."""
         return self.mod
 
     def exec_module(self, module):
+        """Execute exec_module operation."""
         pass
 
 
@@ -146,6 +149,7 @@ class _ModuleAliasFinder(MetaPathFinder):
     }
 
     def find_spec(self, fullname, path, target=None):
+        """Execute find_spec operation."""
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
             try:
@@ -216,6 +220,7 @@ __all__: list[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))
 
 
 def __getattr__(name: str) -> Any:
+    """Execute __getattr__ operation."""
     if name in _LAZY_EXPORTS:
         module_path, attr_name = _LAZY_EXPORTS[name]
         module = importlib.import_module(module_path)
@@ -226,4 +231,5 @@ def __getattr__(name: str) -> Any:
 
 
 def __dir__() -> list[str]:
+    """Execute __dir__ operation."""
     return sorted(list(globals().keys()) + __all__)

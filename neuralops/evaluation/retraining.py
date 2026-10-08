@@ -86,6 +86,7 @@ class RetrainingOrchestrator:
     """
 
     def __init__(self, policy: RetrainPolicy = None) -> None:
+        """Execute __init__ operation."""
         self.policy = policy or RetrainPolicy()
         self._retrain_count_today: int = 0
         self._last_retrain_date: str = ""
