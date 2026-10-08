@@ -1,12 +1,13 @@
-"""
-Unit tests for BenchmarkDatasetRegistry and load_benchmark_dataset.
+"""Unit tests for BenchmarkDatasetRegistry and load_benchmark_dataset.
 Tests offline synthetic fallback, registered benchmarks, and data formats.
 """
 
 import pytest
-from neuralops.data.benchmark_datasets import (BenchmarkDatasetInfo,
-                                               BenchmarkDatasetRegistry,
-                                               load_benchmark_dataset)
+from neuralops.data.benchmark_datasets import (
+    BenchmarkDatasetInfo,
+    BenchmarkDatasetRegistry,
+    load_benchmark_dataset,
+)
 
 
 def test_registry_contains_standard_benchmarks():
@@ -101,3 +102,18 @@ def test_manifest_and_torch_dataset():
     assert len(ds) == 5
     item = ds[0]
     assert "text" in item
+
+
+class TestBenchmarkRegistryExtended:
+    """Extended test cases for benchmark registry queries and edge cases."""
+
+    def test_registry_contains_glue(self):
+        benchmarks = BenchmarkDatasetRegistry.list_benchmarks()
+        glue_names = [d for d in benchmarks if "glue" in str(d).lower()]
+        assert len(glue_names) > 0
+
+    def test_load_unregistered_fallback(self):
+        # Unregistered dataset safely falls back to synthetic generator
+        res = load_benchmark_dataset("nonexistent_dataset_xyz", use_synthetic=True, max_samples=3, return_dataloader=False)
+        assert len(res) == 3
+        assert "text" in res[0]

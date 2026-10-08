@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-sys.path.insert(0, ".")
 
 from neuralops.attentions.svd_linear_attention import (
     SVDLinear, SVDLinearAttention, inject_svd_linear_attention)

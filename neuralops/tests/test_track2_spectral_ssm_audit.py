@@ -20,7 +20,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Ensure neuralops/ is in path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 class MockMHA(nn.Module):
     """Mock pretrained MHA for weight transfer testing."""
