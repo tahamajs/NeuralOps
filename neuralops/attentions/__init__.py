@@ -4,7 +4,6 @@ Auto-import all attentions modules across subpackages and export their registere
 
 import importlib
 import logging
-import os
 import sys
 
 from neuralops.core.registry import ATTENTION_REGISTRY

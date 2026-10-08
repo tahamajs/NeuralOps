@@ -18,9 +18,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
+from neuralops.attentions.gated_delta_net import GatedDeltaNet
 from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer
-from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 

@@ -1,9 +1,8 @@
 """Training pipelines: DDP helper, MixedPrecisionTrainer with grad accumulation, LoRATrainer, and CurriculumScheduler."""
 from __future__ import annotations
-from typing import Callable, Any, Iterator, Iterable
+from typing import Callable, Any, Iterable
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 
 __all__ = [
     "setup_ddp_training",

@@ -216,7 +216,7 @@ class ExpertChoiceMoE(nn.Module):
         r"""Forward execution using Expert Choice routing."""
         B, L, D = x.shape
         x_flat = x.view(-1, D)
-        T = x_flat.size(0)
+        _T = x_flat.size(0)
 
         if self.d_model == D:
             logits = self.router(self.router_ln(x_flat))
