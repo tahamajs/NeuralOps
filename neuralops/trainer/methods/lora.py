@@ -21,6 +21,7 @@ from neuralops.utils.lora import LoRALinear
 
 class DoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -> None:
+        """Execute __init__ operation."""
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False

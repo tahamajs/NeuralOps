@@ -1,3 +1,5 @@
+"""Module providing model implementations for NeuralOps."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -12,9 +14,11 @@ class _MockObjectsManager:
     """Mock manager for non-Django or standalone usage."""
 
     def filter(self, *args, **kwargs) -> Any:
+        """Execute filter operation."""
         return self
 
     def order_by(self, *args, **kwargs) -> list["TrainingRun"]:
+        """Execute order_by operation."""
         return []
 
 
