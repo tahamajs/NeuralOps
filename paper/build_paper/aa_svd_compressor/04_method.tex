@@ -1,0 +1,434 @@
+
+\section{Method}
+
+\subsection{Overview}
+
+AASVD compresses each targeted \texttt{nn.Linear} (or \texttt{Conv1D}) layer in four phases:
+
+\begin{enumerate}
+\item \textbf{Calibration} ( 4.2): collect $C_X$ per layer via streaming EMA.
+\item \textbf{Weighted SVD} ( 4.3): factorize $W C_X^{1/2}$, then unweight.
+\item \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
+\item \textbf{Replacement} ( 4.5): substitute \texttt{SVDLinear} if error is within threshold.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +-------------------------------------------+
+   |  Phase 1: Streaming EMA Calibration       |
+   |  Input: bundled or user texts             |
+   |  Output: C_X^( ) for each target layer    |
+   +----------------+--------------------------+
+                    |
+                     
+   +-------------------------------------------+
+   |  For each layer  :                        |
+   |    Phase 2: Weighted SVD at rank r        |
+   |    Phase 3: Frobenius validation          |
+   |    Phase 4: Replace or fallback           |
+   +----------------+--------------------------+
+                    |
+                     
+   +-------------------------------------------+
+   |  Compressed model with SVDLinear layers   |
+   |  Ready for LoRA recovery fine-tuning      |
+   +-------------------------------------------+
+\end{lstlisting}
+
+\subsection{Phase 1: Streaming Covariance Calibration}
+
+\subsubsection{Target Statistic}
+
+For each target linear layer $\ell$, we want:
+
+\[
+C_X^{(\ell)} = \mathbb{E}_{x^{(\ell)} \sim \mathcal{D}}\!\left[x^{(\ell)} (x^{(\ell)})^\top\right]
+\tag{4.1}
+\]
+
+where $x^{(\ell)}$ is the layer input during calibration.
+
+\subsubsection{EMA Update}
+
+Given a batch of $B_\text{calib}$ calibration inputs $X \in \mathbb{R}^{B_\text{calib} \times d}$, 
+the batch covariance is:
+
+\[
+C_\text{batch} = \frac{1}{N_\text{valid}} \sum_{i=1}^{N_\text{valid}} x_i x_i^\top
+\tag{4.2}
+\]
+
+where $N_\text{valid} \leq B_\text{calib}$ counts non-padding tokens. We 
+then update the running estimate:
+
+\[
+\hat{C}_X \leftarrow \beta \hat{C}_X + (1 - \beta) C_\text{batch}
+\tag{4.3}
+\]
+
+with $\beta = 0.9$ by default. The running estimate starts as the first 
+batch covariance $\hat{C}_X^{(0)} = C_\text{batch}^{(0)}$.
+
+\subsubsection{Padding Token Filtering}
+
+To avoid bias from padding tokens (which are typically zero):
+
+\[
+\text{valid}(x_i) = \begin{cases} 1 & \text{if } \|x_i\|_1 > 10^{-5} \\ 0 & \text{otherwise} \end{cases}
+\tag{4.4}
+\]
+
+Only valid tokens contribute to $C_\text{batch}$. This is critical for 
+batched calibration, where padding dominates the raw token count.
+
+\subsubsection{Memory Layout}
+
+We compute $C_\text{batch}$ on GPU (fast matmul), then **move it to CPU 
+immediately**:
+
+\begin{lstlisting}
+batch_cov = (torch.matmul(x_active.T, x_active) / max(1, x_active.size(0))).cpu()
+\end{lstlisting}
+
+This prevents GPU memory accumulation over calibration iterations. The total 
+GPU footprint of calibration is one batch's activation, plus the running 
+covariance estimate (kept on CPU).
+
+\subsubsection{Calibration Corpus}
+
+We ship a \textbf{default multi-domain corpus} of 5 documents:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{\#} & \textbf{Domain} & \textbf{Approximate length} \\
+\midrule
+1 \& Technical prose (attention mechanisms) & 45 tokens \\
+2 \& Mathematical prose (SVD, activations) & 38 tokens \\
+3 \& Source code (Python attention) & 42 tokens \\
+4 \& Technical prose (distributed training) & 42 tokens \\
+5 \& Mathematical prose (chain-of-thought) & 48 tokens \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Total: ~215 tokens. The corpus is designed to activate diverse subspaces 
+of the residual stream, providing a broad calibration signal even without 
+access to the target task.
+
+If user-supplied \texttt{calibration\_texts} are provided, they \textbf{replace} the 
+default corpus.
+
+\subsection{Phase 2: Weighted SVD}
+
+\subsubsection{The Weighted Objective}
+
+Standard SVD minimizes $\|W - W_r\|_F^2$, treating all input dimensions 
+equally. We instead minimize the activation-weighted error:
+
+\[
+\mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_{x}\!\left[\|W x - W_r x\|_2^2\right]
+\tag{4.5}
+\]
+
+Under the second-moment assumption $\mathbb{E}[x x^\top] = C_X$:
+
+\[
+\mathcal{L}_\text{weighted}(W_r) = \mathrm{Tr}\!\left[(W - W_r) C_X (W - W_r)^\top\right] = \|(W - W_r) C_X^{1/2}\|_F^2
+\tag{4.6}
+\]
+
+which is exactly an unweighted problem on the transformed matrix:
+
+\[
+W_\text{weighted} = W C_X^{1/2}
+\tag{4.7}
+\]
+
+\subsubsection{The Algorithm}
+
+\begin{enumerate}
+\item Compute $W_\text{weighted} = W C_X^{1/2}$.
+\item Compute the truncated SVD:
+  $$
+  W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+  \tag{4.8}
+  $$
+\item Unweight the right factor:
+  $$
+  V\_r^\text{unweighted} = V\_r^\top C\_X^{-1/2}
+  \tag{4.9}
+  $$
+\item Distribute the singular values symmetrically:
+  $$
+  U = U\_r \Sigma\_r^{1/2}, \qquad
+  V = \Sigma\_r^{1/2} V\_r^\text{unweighted}
+  \tag{4.10}
+  $$
+\item The factorized layer computes:
+  $$
+  y = (x V^\top) U^\top + b
+  \tag{4.11}
+  $$
+
+\end{enumerate}
+\subsubsection{Eigendecomposition with Regularization}
+
+We compute $C_X^{1/2}$ and $C_X^{-1/2}$ via eigendecomposition:
+
+\[
+C_X = Q \Lambda Q^\top, \quad
+C_X^{1/2} = Q \Lambda^{1/2} Q^\top, \quad
+C_X^{-1/2} = Q \Lambda^{-1/2} Q^\top
+\tag{4.12}
+\]
+
+Eigenvalues are regularized:
+
+\[
+\lambda_i \leftarrow \max(\lambda_i, \epsilon_\text{reg}), \qquad
+\epsilon_\text{reg} = 10^{-6} \cdot \max_j \lambda_j + 10^{-8}
+\tag{4.13}
+\]
+
+This ensures $C_X^{-1/2}$ is finite for near-zero eigenvalues.
+
+\subsubsection{Rank Selection}
+
+We use a rank constrained by \textbf{both} the target rank $r$ and a parameter 
+budget constraint:
+
+\[
+r_\text{eff} = \min\!\left(r, \left\lfloor 0.75 \cdot \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor \right)
+\tag{4.14}
+\]
+
+The $0.75$ factor enforces that the factorized layer uses at most 75\% of the 
+original parameters, guaranteeing meaningful compression.
+
+If $r_\text{eff} < r$, the requested rank is reduced; this is common for 
+narrow layers (e.g., $d_\text{in} = d_\text{out} = 128$ at $r = 128$).
+
+\subsection{Phase 3: Frobenius Validation}
+
+After factorization, we compute:
+
+\[
+\text{err}(W, U, V) = \frac{\|W - UV\|_F}{\|W\|_F + 10^{-12}}
+\tag{4.15}
+\]
+
+\textbf{Two possible outcomes:}
+
+\begin{enumerate}
+\item \textbf{err $\leq \tau$.} The factorization is accepted. \texttt{SVDLinear} replaces
+  the original layer.
+\item \textbf{err $> \tau$.} If \texttt{fallback\_to\_original = True}, the original layer
+  is preserved and logged. Otherwise, the factorization is applied anyway
+  with a warning.
+
+\end{enumerate}
+We default to \texttt{fallback\_to\_original = True} and \texttt{max\_error = 0.50}.
+
+\subsection{Phase 4: Structural Replacement}
+
+\subsubsection{The `SVDLinear` Module}
+
+The replacement layer implements:
+
+\[
+y = (x V^\top) U^\top + b + \text{LoRA}(x) \cdot s
+\tag{4.16}
+\]
+
+where:
+
+\begin{itemize}
+\item $V \in \mathbb{R}^{r \times d_\text{in}}$: down-projection
+\item $U \in \mathbb{R}^{d_\text{out} \times r}$: up-projection
+\item $b \in \mathbb{R}^{d_\text{out}}$: bias (if original had one)
+\item $\text{LoRA}(x) = (x A^\top) B^\top$: optional recovery adapter
+
+\end{itemize}
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d_\text{in} d_\text{out}$ \\
+AASVD at rank $r$ & $r(d_\text{in} + d_\text{out})$ \\
+AASVD + LoRA($r_L$) & $r(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For a $768 \times 768$ matrix at $r = 64$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+AASVD r=64 & 98,304 & \textbf{6.0$\times$} \\
+AASVD r=64 + LoRA r=16 & 122,880 & \textbf{4.8$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{LoRA-Freeze Semantics}
+
+When LoRA is enabled, the base factors $U, V$ are \textbf{frozen} and only LoRA 
+adapters $A, B$ are trainable. This ensures that:
+
+\begin{enumerate}
+\item The compression is not undone during recovery.
+\item The parameter reduction persists after fine-tuning.
+\item Gradient flow through $U, V$ is blocked to avoid drift.
+
+\end{enumerate}
+The freeze is implemented via \texttt{requires\_grad = False} on $U, V$.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} AASVD compression
+\begin{lstlisting}
+Input:  model M, rank r, threshold $\tau$, $\beta$=0.9
+        calibration texts D_calib
+Output: compressed model M', statistics
+
+1:  for   in target_layers(M) do
+2:      register_forward_hook( , accumulate_C_X)
+3:  end for
+4:
+5:  # Phase 1: Calibration
+6:  inputs $\leftarrow$ tokenize(D_calib)
+7:  forward(M, inputs)
+8:  remove_hooks()
+9:
+10: # Cache eigendecomposition per layer
+11: for   in target_layers(M) do
+12:     Q,   $\leftarrow$ eigh(C_X^( ))
+13:     C_sqrt[ ] $\leftarrow$ Q @ diag($\sqrt{}$ ) @ Q.T
+14:     C_inv_sqrt[ ] $\leftarrow$ Q @ diag(1/$\sqrt{}$ ) @ Q.T
+15: end for
+16:
+17: # Phase 2-4: Weighted SVD + validation
+18: for   in target_layers(M) do
+19:     W $\leftarrow$ weight( )
+20:     W_weighted $\leftarrow$ W @ C_sqrt[ ]
+21:     U,  , V $\leftarrow$ svd(W_weighted)
+22:     U_r, V_r $\leftarrow$ truncate(U,  , V, r)
+23:     V_r $\leftarrow$ V_r @ C_inv_sqrt[ ]
+24:     W_rec $\leftarrow$ U_r @ V_r
+25:     err $\leftarrow$  W - W_rec _F / ( W _F + $\epsilon$)
+26:
+27:     if err $\le$ $\tau$:
+28:         replace( , SVDLinear(U_r, V_r))
+29:     elif fallback_to_original:
+30:         log_warning( , err)
+31:         mark_fallback( )
+32:     else:
+33:         log_warning( , err)
+34:         replace( , SVDLinear(U_r, V_r))
+35: end for
+36:
+37: return M'
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{GPU Memory} \\
+\midrule
+Calibration & $\mathcal{O}(N B d^2)$ & $\mathcal{O}(B d)$ \\
+Eigendecomposition & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+Weighted SVD & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+Validation & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
+\textbf{Total} & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(N_l d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+CPU memory for storing all covariances: $\mathcal{O}(N_l d^2)$. For 
+DistilBERT ($N_l = 6$, $d = 768$): ~14M values, ~56 MB at FP32.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Optimality of Weighted SVD}
+
+\textbf{Proposition.} $W C_X^{1/2}$ truncated at rank $r$ minimizes $\|(W - W_r) C_X^{1/2}\|_F$ 
+over all rank-$r$ matrices $W_r$.
+
+\textbf{Proof.} This is a direct application of Eckart--Young to the matrix 
+$W C_X^{1/2}$. $\square$
+
+\subsubsection{Relation to Standard SVD}
+
+If $C_X = I$ (identity, uncorrelated unit-variance inputs), then 
+$W C_X^{1/2} = W$ and AASVD reduces to standard SVD.
+
+If $C_X = \mathrm{diag}(F)$ (independent but non-uniform variance), then 
+$W C_X^{1/2} = W \mathrm{diag}(\sqrt{F})$ and AASVD reduces to A3's 
+diagonal weighting.
+
+\textbf{AASVD is strictly more general} than both standard SVD and diagonal 
+weighting.
+
+\subsubsection{Error Bound}
+
+\textbf{Proposition.} For AASVD with rank $r$:
+
+\[
+\|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2}}{\sqrt{\lambda_\text{min}(C_X)}}
+\tag{4.17}
+\]
+
+where $\sigma_i$ are the singular values of $W C_X^{1/2}$ and $\lambda_\text{min}$ 
+is the smallest eigenvalue of $C_X$ (before regularization).
+
+\textbf{Proof.} We have:
+
+\[
+\|W - U_r V_r\|_F \cdot \sqrt{\lambda_\text{min}(C_X)}
+\leq \|(W - U_r V_r) C_X^{1/2}\|_F
+\leq \sqrt{\sum_{i > r} \sigma_i^2}
+\tag{4.18}
+\]
+
+Dividing gives (4.17). $\square$
+
+\subsubsection{EMA Convergence}
+
+\textbf{Proposition.} The EMA estimate $\hat{C}_X^{(k)}$ converges to the true 
+$\mathbb{E}[C_\text{batch}]$ as $k \to \infty$ with rate $\mathcal{O}(\beta^k)$.
+
+\textbf{Proof sketch.} The EMA recursion $\hat{C}^{(k)} = \beta \hat{C}^{(k-1)} + (1-\beta) C_k$ 
+has the closed form:
+
+\[
+\hat{C}^{(k)} = \beta^{k-1} C_1 + (1 - \beta) \sum_{j=2}^{k} \beta^{k-j} C_j
+\tag{4.19}
+\]
+
+Taking expectations (assuming $\mathbb{E}[C_k] = \bar{C}$):
+
+\[
+\mathbb{E}[\hat{C}^{(k)}] = \bar{C} + \beta^{k-1} (C_1 - \bar{C})
+\tag{4.20}
+\]
+
+so the bias decays as $\beta^{k-1}$. $\square$

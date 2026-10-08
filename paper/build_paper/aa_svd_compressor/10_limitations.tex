@@ -1,0 +1,104 @@
+
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. AASVD may behave differently on:
+\begin{itemize}
+\item Generation tasks
+\item Multi-class classification
+\item Token-level tasks
+\item Long-context tasks
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M parameters \& Tested \\
+>1B parameters \& Not tested \\
+>24 layers \& Not tested \\
+Mixture-of-Experts \& Not tested \\
+Vision transformers \& Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware Coverage}
+
+All experiments on RTX 4070 Laptop. Not tested on:
+\begin{itemize}
+\item A100/H100
+\item CPU inference
+\item Edge devices (Jetson, mobile)
+
+\end{itemize}
+\subsection{Inference Latency}
+
+Factorized layers are slower:
+\begin{itemize}
+\item Two matmuls instead of one
+\item Intermediate $r$-dim tensor materialized
+\item ~1.3$\times$ slower on GPU
+
+\end{itemize}
+\subsection{Calibration Dependency}
+
+AASVD requires calibration. Without it:
+\begin{itemize}
+\item Covariance weighting degrades to unweighted SVD
+\item Accuracy drops by up to 8\%
+
+\end{itemize}
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%. Differences below 3.4\% 
+may be noise.
+
+\subsection{No Formal Bound on Downstream Accuracy}
+
+We provide a bound on \textbf{reconstruction} error (Proposition 4.8.3), but 
+no bound on \textbf{downstream task} error. The gap between reconstruction and 
+task accuracy is not characterized.
+
+\subsection{EMA Bias}
+
+EMA with $\beta$=0.9 has a bias toward recent batches. For a 5-batch calibration 
+run, the first batch contributes $\beta$  $\approx$ 0.66 weight (via $C_1 \cdot \beta^{K-1}$). 
+This is a limitation for very small calibration sets.
+
+\subsection{Regularization Choice}
+
+Our regularization $\epsilon_\text{reg} = 10^{-6} \max \lambda + 10^{-8}$ is 
+a heuristic. Different values may work better for different models.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not directly compare with:
+\begin{itemize}
+\item DistilBERT / TinyBERT (distillation)
+\item Performer / Linformer (attention replacement)
+\item SparseGPT / Wanda (pruning)
+
+\end{itemize}
+\subsection{High-Rank Diminishing Returns}
+
+At $r=256$, plain SVD (DRONE) matches AASVD (90.71\% vs.\ 90.02\%), suggesting the advantage of full covariance is most pronounced at low ranks where representational budget is scarce and directional energy concentration matters most. At higher ranks, the subspace capacity is sufficiently large that even unweighted truncation captures the dominant variance.
+
+\subsection{Code Quality}
+
+Research-grade implementation:
+\begin{itemize}
+\item Broad exception handling in some paths
+\item No unit tests for edge cases
+\item Numerical stability could be improved
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Compression is dual-use. See Appendix E.
