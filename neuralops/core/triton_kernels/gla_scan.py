@@ -18,23 +18,7 @@ from __future__ import annotations
 
 import torch
 
-try:
-    import triton
-    import triton.language as tl
-
-    HAS_TRITON = True
-except ImportError:
-    HAS_TRITON = False
-    triton = type(
-        "triton",
-        (),
-        {
-            "jit": lambda f: f,
-            "heuristics": lambda *a, **kw: lambda f: f,
-            "autotune": lambda *a, **kw: lambda f: f,
-        },
-    )
-    tl = None
+from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
 
 MAX_REGISTER_DIM = 64
 
@@ -493,3 +477,6 @@ def gla_scan_triton(
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
     return _GLAScanFn.apply(q, k, v, lambdas)
+
+
+__all__ = ['gla_scan_triton']

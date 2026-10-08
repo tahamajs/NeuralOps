@@ -15,23 +15,7 @@ from __future__ import annotations
 
 import torch
 
-try:
-    import triton
-    import triton.language as tl
-
-    HAS_TRITON = True
-except ImportError:
-    HAS_TRITON = False
-    triton = type(
-        "triton",
-        (),
-        {
-            "jit": lambda f: f,
-            "heuristics": lambda *a, **kw: lambda f: f,
-            "autotune": lambda *a, **kw: lambda f: f,
-        },
-    )
-    tl = None
+from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
 from neuralops.core.triton_kernels.softplus import softplus
 
 
@@ -448,3 +432,6 @@ def selective_scan_fn(
         D:     (D,) optional
     """
     return TritonSelectiveScanFunction.apply(u, delta, A, B, C, D, delta_softplus)
+
+
+__all__ = ['TritonSelectiveScanFunction', 'selective_scan_fn']

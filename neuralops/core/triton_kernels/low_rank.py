@@ -256,3 +256,6 @@ def bwd(
             diff_vars.append(b_req)
         grads = torch.autograd.grad(out, diff_vars, grad_out)
     return grads[0], grads[1], grads[2], (grads[3] if b_req is not None else None)
+
+
+__all__ = ['is_supported', 'fwd', 'bwd']
