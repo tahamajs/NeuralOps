@@ -56,8 +56,19 @@ def execute_single(
         **kwargs,
     }
 
+    is_lm_task = dataset.lower() in PERPLEXITY_DATASETS
+    if eval_only:
+        if not is_lm_task:
+            logger.warning(
+                "eval_only=True with a freshly-initialized classification head "
+                "will produce random accuracy. Set eval_only=False to fine-tune."
+            )
+        if module and str(module).lower() not in ("none", "baseline", "full", "dense"):
+            logger.warning("Compression applied but no recovery training.")
+
     # 1. Inspect module metadata from discovery (or handle baseline)
     is_baseline = module is None or str(module).lower() in ("none", "baseline", "full", "dense")
+
     if is_baseline:
         module_name = "baseline"
         module_type = "baseline"
