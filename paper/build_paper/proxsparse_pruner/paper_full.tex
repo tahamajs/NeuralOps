@@ -418,7 +418,7 @@ The \texttt{ProxSparsePrunedLoRALinear} architecture decouples frozen compressed
 \end{figure}
 
 \subsection{Submodule Specification Matrix}
-Table~\ref{tab:submodules_proxsparse\_pruner} details the structural parameter buffers comprising \texttt{ProxSparsePrunedLoRALinear}:
+Table~\ref{tab:submodules_proxsparse_pruner} details the structural parameter buffers comprising \texttt{ProxSparsePrunedLoRALinear}:
 
 \begin{table}[H]
 \centering
@@ -436,7 +436,7 @@ Table~\ref{tab:submodules_proxsparse\_pruner} details the structural parameter b
 \bottomrule
 \end{tabularx}
 \caption{Submodule specifications for \texttt{ProxSparsePrunedLoRALinear}.}
-\label{tab:submodules_proxsparse\_pruner}
+\label{tab:submodules_proxsparse_pruner}
 \end{table}
 
 \subsection{Cross-Backbone Tensor Interfaces}
@@ -525,7 +525,7 @@ Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_proxsparse\_pruner} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_proxsparse_pruner} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -549,11 +549,11 @@ Table~\ref{tab:results_acc_proxsparse\_pruner} details empirical evaluation metr
 \bottomrule
 \end{tabularx}
 \caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{proxsparse\_pruner}.}
-\label{tab:results_acc_proxsparse\_pruner}
+\label{tab:results_acc_proxsparse_pruner}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_proxsparse\_pruner} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_proxsparse_pruner} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -577,11 +577,11 @@ Table~\ref{tab:results_params_proxsparse\_pruner} documents parameter compressio
 \bottomrule
 \end{tabularx}
 \caption{Parameter scaling and recovery parameter counts for \texttt{proxsparse\_pruner}.}
-\label{tab:results_params_proxsparse\_pruner}
+\label{tab:results_params_proxsparse_pruner}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_proxsparse\_pruner} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_proxsparse_pruner} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -605,7 +605,7 @@ Table~\ref{tab:results_vram_proxsparse\_pruner} presents memory profiling and ex
 \bottomrule
 \end{tabularx}
 \caption{Inference throughput and VRAM footprint for \texttt{proxsparse\_pruner}.}
-\label{tab:results_vram_proxsparse\_pruner}
+\label{tab:results_vram_proxsparse_pruner}
 \end{table*}
 
 

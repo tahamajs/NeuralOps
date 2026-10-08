@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_vigattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_vigattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Vig} & \textbf{61.35\%} & +3.44\% & PASS & 0.7185 & 0 & \textbf{
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_vigattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_vigattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results\_params\_vigattention} documents parameter compression fa
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{vigattention}.}
-\label{tab:results\_params\_vigattention}
+\label{tab:results_params_vigattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_vigattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_vigattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,7 +63,7 @@ Table~\ref{tab:results\_vram\_vigattention} presents memory profiling and execut
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{vigattention}.}
-\label{tab:results\_vram\_vigattention}
+\label{tab:results_vram_vigattention}
 \end{table*}
 
 
@@ -71,5 +71,5 @@ Table~\ref{tab:results\_vram\_vigattention} presents memory profiling and execut
 \centering
 \includegraphics[width=0.85\linewidth]{figures/vig\_roberta\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{vig\_attention}.}
-\label{fig:results\_vig\_attention}
+\label{fig:results_vig_attention}
 \end{figure}

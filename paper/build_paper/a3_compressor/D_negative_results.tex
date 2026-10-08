@@ -86,7 +86,7 @@ $1\times 10^{-3}$ & FAIL (diverged) & Loss divergence \\
 \bottomrule
 \end{tabular}
 \caption{LoRA recovery optimization behavior under various learning rates on DistilBERT.}
-\label{tab:failed\_lr}
+\label{tab:failed_lr}
 \end{table}
 
 \subsubsection{Target Compression Rank}
@@ -107,7 +107,7 @@ $1\times 10^{-3}$ & FAIL (diverged) & Loss divergence \\
 \bottomrule
 \end{tabular}
 \caption{Impact of target rank constraint on DistilBERT classification accuracy.}
-\label{tab:rank\_fidelity}
+\label{tab:rank_fidelity}
 \end{table}
 
 \subsection{D.4 Architectural Adjustments Evaluated}
@@ -126,7 +126,7 @@ Dynamic per-step batch Fisher & Non-stationary token variance & Negligible impro
 \bottomrule
 \end{tabular}
 \caption{Ablated algorithmic variants and empirical observations.}
-\label{tab:negative\_variants}
+\label{tab:negative_variants}
 \end{table}
 
 \subsection{D.5 Sink Preservation (Not Applicable)}
@@ -135,9 +135,9 @@ Attention sink preservation (H2O, StreamingLLM) is not applicable to A3
 because A3 compresses weights, not activations.
 
 \subsection{D.6 Multi-Seed Evaluation}
-\label{sec:app\_multiseed}
+\label{sec:app_multiseed}
 
-To evaluate empirical variance across stochastic initialization and mini-batch ordering, we evaluated A3 compression across 3 random seeds (42, 123, 456) under fixed budget constraints. Table~\ref{tab:app\_multiseed\_eval} records the empirical downstream performance.
+To evaluate empirical variance across stochastic initialization and mini-batch ordering, we evaluated A3 compression across 3 random seeds (42, 123, 456) under fixed budget constraints. Table~\ref{tab:app_multiseed_eval} records the empirical downstream performance.
 
 \begin{table}[H]
 \centering
@@ -154,7 +154,7 @@ Seed 456 & 77.50\% & 0.7732 & 652.52 & 5.23 \\
 \bottomrule
 \end{tabular}
 \caption{Multi-seed evaluation of A3 factorized compression across random seeds on DistilBERT. Source files: \texttt{results/multiseed/\{42,123,456\}/a3.json}.}
-\label{tab:app\_multiseed\_eval}
+\label{tab:app_multiseed_eval}
 \end{table}
 
 \subsection{D.7 Lessons Learned}
@@ -177,9 +177,9 @@ Seed 456 & 77.50\% & 0.7732 & 652.52 & 5.23 \\
 \end{enumerate}
 
 \subsection{D.9 Detailed Layer-by-Layer Failure Taxonomy and Diagnostics}
-\label{sec:app\_failure\_taxonomy}
+\label{sec:app_failure_taxonomy}
 
-Table~\ref{tab:app\_failure\_cases} details the specific attention projection layers in DistilBERT that exceeded the $\tau=0.40$ reconstruction error threshold at the rank ceiling $r_{\mathrm{ceiling}}=256$ and safely triggered deterministic fallback to preserve downstream task fidelity.
+Table~\ref{tab:app_failure_cases} details the specific attention projection layers in DistilBERT that exceeded the $\tau=0.40$ reconstruction error threshold at the rank ceiling $r_{\mathrm{ceiling}}=256$ and safely triggered deterministic fallback to preserve downstream task fidelity.
 
 \begin{table}[H]
 \centering
@@ -207,5 +207,5 @@ Table~\ref{tab:app\_failure\_cases} details the specific attention projection la
 \bottomrule
 \end{tabular}
 \caption{Exhaustive breakdown of DistilBERT projection layers exceeding the error threshold ($\tau = 0.40$) at rank ceiling $r_{\mathrm{ceiling}}=256$. All 18 exceeding layers safely fell back to original dense weights without corrupting representations. Source: \texttt{results/a3\_tests/fixed\_v4/a3\_stats.json}, line 12.}
-\label{tab:app\_failure\_cases}
+\label{tab:app_failure_cases}
 \end{table}

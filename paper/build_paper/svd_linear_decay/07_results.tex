@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_svdlineardecay} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_svdlineardecay} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -57.91\% & SKIP\_GPT\_ARCH
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_svdlineardecay} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_svdlineardecay} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results\_params\_svdlineardecay} documents parameter compression 
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{svdlineardecay}.}
-\label{tab:results\_params\_svdlineardecay}
+\label{tab:results_params_svdlineardecay}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_svdlineardecay} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_svdlineardecay} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,7 +63,7 @@ Table~\ref{tab:results\_vram\_svdlineardecay} presents memory profiling and exec
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{svdlineardecay}.}
-\label{tab:results\_vram\_svdlineardecay}
+\label{tab:results_vram_svdlineardecay}
 \end{table*}
 
 
@@ -71,5 +71,5 @@ Table~\ref{tab:results\_vram\_svdlineardecay} presents memory profiling and exec
 \centering
 \includegraphics[width=0.85\linewidth]{figures/svd\_linear\_decay\_dissection\_profile.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd\_linear\_decay}.}
-\label{fig:results\_svd\_linear\_decay}
+\label{fig:results_svd_linear_decay}
 \end{figure}

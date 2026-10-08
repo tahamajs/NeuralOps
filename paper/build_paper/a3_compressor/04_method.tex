@@ -3,7 +3,7 @@
 
 \subsection{Overview}
 
-A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming\_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher\_weighted\_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius\_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm\_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
+A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher_weighted_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
 
 \begin{figure}[H]
 \centering
@@ -13,7 +13,7 @@ A3 compresses a pretrained transformer in five sequential phases. The first phas
 \end{figure}
 
 \subsection{Phase 1: Streaming Calibration}
-\label{sec:streaming\_calibration}
+\label{sec:streaming_calibration}
 
 \subsubsection{Problem}
 
@@ -49,10 +49,10 @@ C\_X^{(\ell)} = \frac{\sum\_k C^{(k)}}{\sum\_k N^{(k)}}
 
 \subsubsection{Calibration Data Sources}
 
-A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app\_defensive\_handling}).
+A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app_defensive_handling}).
 
 \subsection{Phase 2: Weighted SVD}
-\label{sec:fisher\_weighted\_svd}
+\label{sec:fisher_weighted_svd}
 
 \subsubsection{The Weighting Idea}
 
@@ -113,7 +113,7 @@ and the weighted weight matrix is constructed via $W_{\mathrm{weighted}} = W \cd
 If factorization fails validation at the rank ceiling, the layer safely retains its original dense parameters $W$.
 
 \subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
-\label{sec:frobenius\_validation}
+\label{sec:frobenius_validation}
 
 \subsubsection{Frobenius Error Formulation}
 
@@ -139,7 +139,7 @@ r\_{k+1} = \min\!\left(r\_{\mathrm{ceiling}},\, r\_k + \max\!\left(16,\, \left\l
 where $K$ denotes the maximum retry count (default $K=5$). Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
 
 \subsection{Phase 5: LayerNorm Recalibration}
-\label{sec:layernorm\_recalibration}
+\label{sec:layernorm_recalibration}
 
 \subsubsection{Motivation}
 
@@ -161,11 +161,11 @@ When target standard deviations are not pre-cached, the update adopts a dampened
 
 \subsection{Algorithm and Complexity Summary}
 
-The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app\_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app\_complexity} (Table~\ref{tab:complexity\_analysis}).
+The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app_complexity} (Table~\ref{tab:complexity_analysis}).
 
 \subsection{Parameter Reduction and Break-Even Bounds}
 
-For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app\_parameter\_counting} (Table~\ref{tab:parameter\_counting\_formulation}).
+For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app_parameter_counting} (Table~\ref{tab:parameter_counting_formulation}).
 
 \subsection{Theoretical Notes}
 

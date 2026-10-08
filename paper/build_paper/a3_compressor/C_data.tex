@@ -30,7 +30,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
 \caption{Comprehensive experimental metrics for DistilBERT under A3 factorized compression on SST-2.}
-\label{tab:distilbert\_full\_metrics}
+\label{tab:distilbert_full_metrics}
 \end{table}
 \% \textless{}!-- source: results/a3\_tests/fixed\_v4/distilbert\_sst2\_a3\_full\_metrics.json line 1 --\textgreater{}
 
@@ -64,7 +64,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
 \caption{Comprehensive experimental metrics for RoBERTa-base under A3 factorized compression on SST-2.}
-\label{tab:roberta\_full\_metrics}
+\label{tab:roberta_full_metrics}
 \end{table}
 \% \textless{}!-- source: results/unified\_a3/roberta/roberta-base\_a3\_full\_metrics.json line 1 --\textgreater{}
 
@@ -98,7 +98,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
 \caption{Comprehensive experimental metrics for GPT-2 under A3 factorized compression on SST-2.}
-\label{tab:gpt2\_full\_metrics}
+\label{tab:gpt2_full_metrics}
 \end{table}
 \% \textless{}!-- source: results/unified\_a3/gpt2/gpt2\_a3\_full\_metrics.json line 1 --\textgreater{}
 
@@ -128,7 +128,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
 \caption{Detailed layer-by-layer factorization decisions and relative Frobenius reconstruction errors for DistilBERT attention layers.}
-\label{tab:distilbert\_layer\_detail}
+\label{tab:distilbert_layer_detail}
 \end{table}
 \% \textless{}!-- source: results/a3\_tests/fixed\_v4/a3\_stats.json line 27 --\textgreater{}
 
@@ -153,12 +153,12 @@ GPT-2      & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 335.8 MB \\
 \bottomrule
 \end{tabular}
 \caption{Cross-task performance matrix showing accuracy, macro F1, and peak VRAM across all 9 model-dataset combinations.}
-\label{tab:c\_multitask\_matrix}
+\label{tab:c_multitask_matrix}
 \end{table}
 \% \textless{}!-- source: results/a3\_tests/multidataset\_summary.csv line 1 --\textgreater{}
 
 \subsection{C.6 Reproduction Commands and Execution Scripts}
-\label{sec:app\_reproduction}
+\label{sec:app_reproduction}
 
 All experiments are executed via the reproducible unified runner pipeline:
 
@@ -189,7 +189,7 @@ python Codes/framework/run\_quality\_sweep.py \
 \end{lstlisting}
 
 \subsection{C.7 Detailed Parameter Reductions and Layer Allocations}
-\label{sec:app\_full\_parameters}
+\label{sec:app_full_parameters}
 
 \begin{table}[H]
 \centering
@@ -204,11 +204,11 @@ GPT-2 Small     & 124,441,344 & 123,916,032 & +525,312 & \textbf{0.42\%} (1.004$
 \bottomrule
 \end{tabular}
 \caption{Exact full-model parameter tallies before and after A3 factorized compression across evaluated architectures.}
-\label{tab:app\_full\_param\_counts}
+\label{tab:app_full_param_counts}
 \end{table}
 
 \subsection{C.8 Comprehensive Inference Latency and Hardware Profiling}
-\label{sec:app\_inference\_profiling}
+\label{sec:app_inference_profiling}
 
 \begin{table}[H]
 \centering
@@ -226,11 +226,11 @@ GPT-2      & A3 Compressed & 4.50 s (5.16 ms/sample) & 572.1 MB & 12,412 \\
 \bottomrule
 \end{tabular}
 \caption{Exhaustive inference efficiency metrics evaluated on an NVIDIA RTX 4070 Laptop GPU across standard batching regimes.}
-\label{tab:app\_inference\_efficiency}
+\label{tab:app_inference_efficiency}
 \end{table}
 
 \subsection{C.9 Ablation: Rank Constraints ($r_{\mathrm{ceiling}}$)}
-\label{sec:app\_rank\_ablation}
+\label{sec:app_rank_ablation}
 
 \begin{table}[H]
 \centering
@@ -247,13 +247,13 @@ $r = 256$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\ti
 \bottomrule
 \end{tabular}
 \caption{Downstream validation accuracy and whole-model parameter compression ratio as a function of target rank constraints.}
-\label{tab:app\_rank\_ablation}
+\label{tab:app_rank_ablation}
 \end{table}
 
 \subsection{C.9.1 Comprehensive 48-Configuration Hyperparameter Sweep}
-\label{sec:app\_sweep\_data}
+\label{sec:app_sweep_data}
 
-To determine the global Pareto frontier across operational configurations, an exhaustive grid of 48 hyperparameter combinations was evaluated on DistilBERT/SST-2 across threshold $\tau \in \{0.30, 0.40, 0.50, 0.60\}$, initial rank $r \in \{64, 128, 192, 256\}$, layer scope (attention-only vs.\ full 24-layer), and auxiliary modules (Fisher weighting, LayerNorm recalibration). Table~\ref{tab:app\_sweep\_top} reports the salient Pareto configurations.
+To determine the global Pareto frontier across operational configurations, an exhaustive grid of 48 hyperparameter combinations was evaluated on DistilBERT/SST-2 across threshold $\tau \in \{0.30, 0.40, 0.50, 0.60\}$, initial rank $r \in \{64, 128, 192, 256\}$, layer scope (attention-only vs.\ full 24-layer), and auxiliary modules (Fisher weighting, LayerNorm recalibration). Table~\ref{tab:app_sweep_top} reports the salient Pareto configurations.
 
 \begin{table}[H]
 \centering
@@ -271,12 +271,12 @@ Config 44 & 0.60 & 192 & Attn-only & 24/24 & \textbf{0.8943$\times$} & 89.68\% &
 \bottomrule
 \end{tabular}
 \caption{Representative Pareto-optimal configurations from the 48-run hyperparameter optimization sweep on DistilBERT/SST-2. Baseline accuracy: 90.71\%. Source: \texttt{results/a3\_optimization/config\_sweep.csv}.}
-\label{tab:app\_sweep\_top}
+\label{tab:app_sweep_top}
 \end{table}
 
 
 \subsection{C.10 Ablations on Weighting and Calibration Hyperparameters}
-\label{sec:app\_hyperparam\_ablations}
+\label{sec:app_hyperparam_ablations}
 
 \begin{table}[H]
 \centering
@@ -292,7 +292,7 @@ Standard Deviation ($\sigma_x$)   & 88.75\% & 80.12\% & 61.40\% \\
 \bottomrule
 \end{tabular}
 \caption{Ablation of alternative subspace weighting metrics evaluated at uniform rank $r=128$.}
-\label{tab:app\_weighting\_ablation}
+\label{tab:app_weighting_ablation}
 \end{table}
 
 \begin{table}[H]
@@ -309,11 +309,11 @@ With Scale Normalization ($s / \mathrm{RMS}(s)$) & \textbf{90.02\%} & \textbf{83
 \bottomrule
 \end{tabular}
 \caption{Ablation of LayerNorm recalibration and RMS scale normalization across target models.}
-\label{tab:app\_stabilization\_ablation}
+\label{tab:app_stabilization_ablation}
 \end{table}
 
 \subsection{C.11 Recovery Fine-Tuning Step Dynamics}
-\label{sec:app\_recovery\_steps}
+\label{sec:app_recovery_steps}
 
 \begin{table}[H]
 \centering
@@ -330,11 +330,11 @@ Step 100 (Diminishing Return) & 0.0007 & 0.0011 & 0.0028 \\
 \bottomrule
 \end{tabular}
 \caption{Cross-entropy loss convergence across parameter-efficient LoRA adapter recovery steps (analytical estimate based on representative validation loss trajectories; final step 50 accuracy is verified from GPU evaluation logs).}
-\label{tab:app\_loss\_trajectory}
+\label{tab:app_loss_trajectory}
 \end{table}
 
 \subsection{C.12 Compound Post-Training Quantization Benchmarks}
-\label{sec:app\_compound\_ptq}
+\label{sec:app_compound_ptq}
 
 \begin{table}[H]
 \centering
@@ -354,5 +354,5 @@ RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$\times$} & \te
 \bottomrule
 \end{tabular}
 \caption{Compound compression performance evaluating A3 factorized checkpoints under post-training INT8 quantization (analytical estimate: disk footprints and compression ratios are mathematically derived from INT8 bit-width; downstream accuracy is an analytical projection from first-order roundoff perturbation bounds).}
-\label{tab:app\_compound\_quantization}
+\label{tab:app_compound_quantization}
 \end{table}
