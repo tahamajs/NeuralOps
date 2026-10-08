@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `zerokv_neo_compressor`
+**Legacy Folder Name:** `zerokv_neo` (standardized in v1.2.0)
+
 # Zerokv Neo: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `zerokv_neo`  
