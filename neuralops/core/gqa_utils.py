@@ -11,6 +11,14 @@ from typing import Any
 import torch
 
 
+__all__ = [
+    "repeat_kv",
+    "repeat_kv_optimized",
+    "get_qkv_projection_dims",
+    "reshape_for_attention",
+]
+
+
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """
     Expands key/value heads from num_key_value_heads to num_attention_heads.
@@ -25,6 +33,21 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
         batch, num_key_value_heads, n_rep, slen, head_dim
     )
     return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
+
+
+def repeat_kv_optimized(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    Optimized repeat_kv utilizing view + expand + reshape with contiguous guarantees.
+    Zero-copy when n_rep == 1.
+    """
+    if n_rep == 1:
+        return hidden_states
+    B, H_kv, N, D = hidden_states.shape
+    return (
+        hidden_states[:, :, None, :, :]
+        .expand(B, H_kv, n_rep, N, D)
+        .reshape(B, H_kv * n_rep, N, D)
+    )
 
 
 def get_qkv_projection_dims(adapter: Any) -> tuple[int, int, int, int]:
