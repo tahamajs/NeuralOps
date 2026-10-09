@@ -185,15 +185,29 @@ class SpectralMamba(nn.Module):
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
-        out = self.mamba(x, **kwargs)
+        is_2d = (x.dim() == 2)
+        x_in = x.unsqueeze(1) if is_2d else x
+
+        out = self.mamba(x_in, **kwargs)
+        present_state = None
         if isinstance(out, tuple):
+            if len(out) > 1:
+                present_state = out[1]
             out = out[0]
+
+        if is_2d and out.dim() == 3:
+            out = out.squeeze(1)
 
         # SM3-FIX-02: cast gate to out.dtype
         gate = torch.sigmoid(self.dt_scale).to(out.dtype)
-        gate = gate.view(1, 1, -1) if out.dim() == 3 else gate
+        if out.dim() == 3:
+            gate = gate.view(1, 1, -1)
+        elif out.dim() == 2:
+            gate = gate.view(1, -1)
+        else:
+            gate = gate.view(*([1] * (out.dim() - 1)), -1)
         out = out * gate
-        return out, None
+        return out, present_state
 
 
 @ATTENTION_REGISTRY.register("samba_m3", supports_causal=True, supports_gqa=True)
@@ -603,13 +617,13 @@ class SAMBAM3Block(nn.Module):
                     pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
-                    scores = scores + attention_mask[:, start:end, k_abs_start:k_abs_end].unsqueeze(
-                        1
-                    ).to(scores.dtype)
+                    scores = scores + attention_mask[
+                        :, q_abs_start:q_abs_end, k_abs_start:k_abs_end
+                    ].unsqueeze(1).to(scores.dtype)
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask[:, :, start:end, k_abs_start:k_abs_end].to(
-                        scores.dtype
-                    )
+                    scores = scores + attention_mask[
+                        :, :, q_abs_start:q_abs_end, k_abs_start:k_abs_end
+                    ].to(scores.dtype)
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
@@ -654,16 +668,23 @@ class SAMBAM3Block(nn.Module):
         target_dtype = hidden_states.dtype
 
         # ---- SM3-FIX-05: read cache ----
-        past_k = past_v = None
+        past_k = past_v = past_mamba = None
         past_len = 0
         if past_key_value is not None:
-            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-                past_k, past_v = past_key_value[0], past_key_value[1]
-                past_len = past_k.shape[-2]
+            if isinstance(past_key_value, (tuple, list)):
+                if len(past_key_value) >= 3:
+                    past_k, past_v, past_mamba = past_key_value[0], past_key_value[1], past_key_value[2]
+                elif len(past_key_value) >= 2:
+                    past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None:
+                    past_len = past_k.shape[-2]
             elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                 past_k = past_key_value.key_cache[0]
                 past_v = past_key_value.value_cache[0]
-                past_len = past_k.shape[-2]
+                if past_k is not None:
+                    past_len = past_k.shape[-2]
+                if hasattr(past_key_value, "mamba_state") and past_key_value.mamba_state:
+                    past_mamba = past_key_value.mamba_state[0]
 
         # ---- QKV ----
         q = (
@@ -699,8 +720,6 @@ class SAMBAM3Block(nn.Module):
             k = torch.cat([past_k.to(k.dtype), k], dim=-2)
             v = torch.cat([past_v.to(v.dtype), v], dim=-2)
 
-        present_key_value = (k, v)
-
         # ---- GQA expand ----
         if self.num_kv_heads != self.n_heads:
             k_exp = repeat_kv(k, self.num_key_value_groups)
@@ -721,8 +740,22 @@ class SAMBAM3Block(nn.Module):
         attn_out = attn_out.to(target_dtype)
 
         # ---- Mamba branch ----
-        mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
+        past_mamba = kwargs.get("past_state", past_mamba)
+        m_res = self.mamba(
+            hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs
+        )
+        if isinstance(m_res, tuple):
+            mamba_out = m_res[0]
+            present_mamba = m_res[1] if len(m_res) > 1 else None
+        else:
+            mamba_out = m_res
+            present_mamba = None
         mamba_out = mamba_out.to(target_dtype)
+
+        if present_mamba is not None:
+            present_key_value = (k, v, present_mamba)
+        else:
+            present_key_value = (k, v)
 
         # ---- Fusion (SM3-FIX-04: alpha cast) ----
         alpha = torch.sigmoid(self.alpha).to(target_dtype)
@@ -739,7 +772,16 @@ class SAMBAM3Block(nn.Module):
         if out.shape[-1] != D:
             raise RuntimeError(f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}")
 
-        return out, (present_key_value if output_attentions is False else (out, present_key_value))
+        if self.is_decoder:
+            if output_attentions:
+                return out, present_key_value, None
+            else:
+                return out, present_key_value
+        else:
+            if output_attentions:
+                return out, None
+            else:
+                return (out,) if self.is_nested_encoder else (out, None)
 
 
 def inject_samba_m3(

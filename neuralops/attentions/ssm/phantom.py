@@ -667,13 +667,48 @@ class PHANTOMAttention(BaseAttention):
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
+        # Autoregressive KV-cache for causal decoders
+        past_len = 0
+        if past_key_value is not None:
+            past_k, past_v = past_key_value[0], past_key_value[1]
+            past_len = past_k.shape[-2]
+            K = torch.cat([past_k, K], dim=2)
+            V = torch.cat([past_v, V], dim=2)
+        present_key_value = (K, V) if self.is_decoder else None
+
         # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        token_valid = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
+        # Robust Float / Multi-dim Attention Mask Handling
+        token_valid = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                if attention_mask.dtype == torch.bool:
+                    token_valid = attention_mask
+                elif attention_mask.is_floating_point():
+                    token_valid = attention_mask > -1e4
+                else:
+                    token_valid = attention_mask > 0
+            elif attention_mask.dim() == 3:
+                if attention_mask.dtype == torch.bool:
+                    token_valid = attention_mask.any(dim=1)
+                elif attention_mask.is_floating_point():
+                    token_valid = (attention_mask > -1e4).any(dim=1)
+                else:
+                    token_valid = (attention_mask > 0).any(dim=1)
+            elif attention_mask.dim() == 4:
+                if attention_mask.dtype == torch.bool:
+                    token_valid = attention_mask.any(dim=1).any(dim=1)
+                elif attention_mask.is_floating_point():
+                    token_valid = (attention_mask > -1e4).any(dim=1).any(dim=1)
+                else:
+                    token_valid = (attention_mask > 0).any(dim=1).any(dim=1)
+            else:
+                token_valid = get_token_valid_mask(attention_mask, B, K.shape[2], hidden_states.device)
+
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         context = lsh_attention(
@@ -686,6 +721,7 @@ class PHANTOMAttention(BaseAttention):
             dropout=self.dropout if self.cfg.softpick_enabled else None,
             token_valid=token_valid,
             is_causal=is_causal,
+            past_len=past_len,
         )
 
         # head_mask handling
@@ -705,7 +741,13 @@ class PHANTOMAttention(BaseAttention):
             return context, None
 
         output = self.out_proj(context)
-        return output, None
+        if self.is_decoder:
+            if output_attentions:
+                return output, present_key_value, None
+            else:
+                return output, present_key_value
+        else:
+            return output, None
 
 
 def inject_phantom(
