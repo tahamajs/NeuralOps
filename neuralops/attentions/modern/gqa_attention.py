@@ -251,11 +251,12 @@ class GroupedQueryAttention(BaseAttention):
                 resolved_kv_heads = int(kwargs_kv)
 
         # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
-        if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
-            resolved_kv_heads = max(1, self.num_heads // 4)
+        if resolved_kv_heads is None:
+            resolved_kv_heads = self.num_heads
 
         self.num_kv_heads = int(resolved_kv_heads)
-        self._num_kv_heads_source = "gqa_compressed"
+        self._num_kv_heads_source = "explicit_or_full"
+
 
         # ---- sizes ----
         self.all_head_size = self.num_heads * self.head_dim
