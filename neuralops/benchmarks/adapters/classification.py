@@ -178,7 +178,9 @@ class ClassificationAdapter:
         self.apply_module()
 
         train_metrics = {}
+        train_duration_s = 0.0
         if not self.eval_only and self.epochs > 0:
+            train_t_start = time.perf_counter()
             train_metrics = finetune_classification(
                 model=self.model,
                 train_loader=self.train_loader,
@@ -187,6 +189,7 @@ class ClassificationAdapter:
                 lr=self.lr,
                 device=self.device,
             )
+            train_duration_s = round(time.perf_counter() - train_t_start, 2)
 
         # Baseline evaluation
         eval_metrics = evaluate_classification(
@@ -212,6 +215,7 @@ class ClassificationAdapter:
             "eval_metrics": eval_metrics,
             "latency": latency_stats,
             "peak_memory_mb": peak_mem,
+            "train_duration_s": train_duration_s,
         }
 
     def cleanup(self) -> None:
