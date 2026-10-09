@@ -246,13 +246,15 @@ def _apply_attention_module(
     ):
         custom_injector = resolved_mod
     if custom_injector is None:
-        custom_injector = (
+        cand = (
             ATTENTION_REGISTRY.get(f"inject_{module_name}")
             or ATTENTION_REGISTRY.get(f"{module_name}_inject")
             or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
         )
+        if cand is not None and not isinstance(cand, type):
+            custom_injector = cand
 
-    if custom_injector is not None and callable(custom_injector):
+    if custom_injector is not None and callable(custom_injector) and not isinstance(custom_injector, type):
         try:
             res = custom_injector(model=model, rank=rank, copy_weights=True)
             is_single_layer = isinstance(res, (BaseAttention, nn.Linear)) or (
