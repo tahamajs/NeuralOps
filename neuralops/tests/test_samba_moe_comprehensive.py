@@ -86,3 +86,59 @@ def test_samba_moe_inject():
 
     empty_layer = nn.Module()
     assert inject_samba_moe(empty_layer, model_config=cfg, old_attn=None) is None
+
+
+# ===========================================================================
+# Targeted Tests for Samba-MoE Bug Fixes
+# ===========================================================================
+
+def test_samba_moe_decoder_return_signature_and_kv():
+    """Verify return signature and past_state propagation for decoders and encoders."""
+    cfg = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=True, model_type="gpt2")
+    block = SambaMoEBlock(cfg, d_model=64, n_heads=4, is_decoder=True)
+
+    x = torch.randn(2, 4, 64)
+    # Decoder output_attentions=False -> (out, past_state)
+    res = block(x, output_attentions=False)
+    assert len(res) == 2, f"Expected 2-tuple, got {len(res)}"
+    out, past_state = res
+    assert out.shape == (2, 4, 64)
+    assert past_state is not None
+
+    # Decoder output_attentions=True -> (out, past_state, None)
+    res_attn = block(x, output_attentions=True)
+    assert len(res_attn) == 3, f"Expected 3-tuple, got {len(res_attn)}"
+    out_a, past_a, attn_w = res_attn
+    assert out_a.shape == (2, 4, 64)
+    assert attn_w is None
+
+    # Encoder -> (out, None)
+    cfg_enc = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert")
+    block_enc = SambaMoEBlock(cfg_enc, d_model=64, n_heads=4, is_decoder=False)
+    res_enc = block_enc(x)
+    assert len(res_enc) == 2
+    out_e, state_e = res_enc
+    assert state_e is None
+
+
+def test_samba_moe_minimal_fallback_aux_loss():
+    """Verify functional load-balancing auxiliary loss in MinimalMoEFallback."""
+    from neuralops.attentions.ssm.samba_moe import MinimalMoEFallback
+    moe = MinimalMoEFallback(d_model=64, n_experts=4)
+    x = torch.randn(2, 8, 64, requires_grad=True)
+    out, weights = moe(x)
+    assert out.shape == (2, 8, 64)
+    assert weights.shape == (2, 8, 4)
+    assert moe.aux_loss.item() > 0.0, "aux_loss should be positive functional loss"
+    moe.aux_loss.backward()
+    assert moe.router.weight.grad is not None
+
+
+def test_samba_moe_norm_dtype_consistency():
+    """Verify LayerNorm dtype matches target_dtype."""
+    cfg = make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False)
+    block = SambaMoEBlock(cfg, d_model=64, n_heads=4)
+    x = torch.randn(2, 4, 64, dtype=torch.float32)
+    out, _ = block(x)
+    assert out.dtype == torch.float32
+
