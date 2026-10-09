@@ -1,0 +1,28 @@
+{
+  "run_id": "b4ef808f-6e8d-424d-b15b-a9d91a50f4d3",
+  "completed": [
+    [
+      "svd_linear_attention",
+      "distilbert-base-uncased",
+      "sst2",
+      32
+    ],
+    [
+      "cosformer",
+      "distilbert-base-uncased",
+      "sst2",
+      32
+    ],
+    [
+      "gqa_attention",
+      "distilbert-base-uncased",
+      "sst2",
+      32
+    ]
+  ],
+  "failed": [],
+  "skipped": [],
+  "total_runs": 10,
+  "status": "running",
+  "start_time": 1791561158.7260854
+}

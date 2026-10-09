@@ -1,0 +1,16 @@
+{
+  "run_id": "83b3004b-4331-4fb8-a68b-8bc9d0921267",
+  "completed": [
+    [
+      "baseline",
+      "distilbert-base-uncased",
+      "sst2",
+      64
+    ]
+  ],
+  "failed": [],
+  "skipped": [],
+  "total_runs": 1,
+  "status": "running",
+  "start_time": 1791545458.3696327
+}
