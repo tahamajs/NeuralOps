@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.chela_slay import (ChelaSlayAttention, LoRALinear,
+from neuralops.attentions.chela_slay import (ChelaSlayAttention,
                                              _rotate_half, inject_chela_slay)
 from neuralops.core.registry import ATTENTION_REGISTRY
 
