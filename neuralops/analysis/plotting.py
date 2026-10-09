@@ -491,8 +491,8 @@ def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accur
     plt.close()
 
 
-def plot_rank_allocation(recommended_ranks, output_dir) -> None:
-    """Plot rank allocation."""
+def plot_recommended_rank_allocation(recommended_ranks, output_dir) -> None:
+    """Plot recommended rank allocation."""
     set_style()
     fig, ax = plt.subplots(figsize=(12, 6))
     layers = list(range(len(recommended_ranks)))
@@ -535,4 +535,3 @@ def plot_training_history(history: dict, save_path: str) -> None:
 
 plot_loss_curves = plot_loss_curve
 plot_accuracy_curves = plot_accuracy_curve
-plot_gradient_flow = plot_training_time
