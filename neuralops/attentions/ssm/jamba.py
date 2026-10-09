@@ -499,11 +499,29 @@ class Jamba2Block(BaseAttention):
     def _norm_dtype(self, norm: nn.LayerNorm, fallback: torch.dtype) -> torch.dtype:
         return norm.weight.dtype if getattr(norm, "weight", None) is not None else fallback
 
-    def _format_output(self, out: torch.Tensor, attn_weights: torch.Tensor | None, present: Any | None) -> tuple:
-        fmt = self._return_format
-        if fmt == "bert": return (out, attn_weights) if attn_weights is not None else (out,)
-        if fmt == "gpt2": return (out, present, attn_weights) if attn_weights is not None else (out, present)
-        return (out, attn_weights, present) if attn_weights is not None else (out, present)
+    def _format_output(
+        self,
+        out: torch.Tensor,
+        attn_weights: torch.Tensor | None,
+        present: Any | None,
+        output_attentions: bool | None = False,
+    ) -> tuple:
+        fmt = getattr(self, "_return_format", "gpt2")
+        if fmt == "bert" or getattr(self, "is_nested_encoder", False):
+            if attn_weights is not None:
+                return (out, attn_weights)
+            return (out,)
+        if fmt == "gpt2":
+            if bool(output_attentions) and attn_weights is not None:
+                return (out, present, attn_weights)
+            return (out, present)
+        if fmt == "llama":
+            if bool(output_attentions) and attn_weights is not None:
+                return (out, attn_weights, present)
+            return (out, attn_weights, present) if attn_weights is not None else (out, present)
+        if bool(output_attentions) and attn_weights is not None:
+            return (out, present, attn_weights)
+        return (out, present)
 
     def _normalize_head_mask(self, head_mask: torch.Tensor, attn: torch.Tensor) -> torch.Tensor:
         hm = head_mask.to(attn.dtype)
@@ -544,9 +562,9 @@ class Jamba2Block(BaseAttention):
             n1d = self._norm_dtype(self.norm1, target_dtype)
             x_norm1 = self.norm1(hidden_states.to(n1d)).to(target_dtype)
 
-            if self.training:
+            if self.training and _is_checkpoint_enabled():
                 from torch.utils.checkpoint import checkpoint
-                # FIX 3: capture present_mamba out of closure via a list cell
+                # Capture present_mamba out of closure via a list cell
                 _present_cell: list[Any] = [None]
                 def _run_mamba(x):
                     out_pair = self.mamba(x, attention_mask=attention_mask, past_state=past_mamba)
@@ -557,11 +575,12 @@ class Jamba2Block(BaseAttention):
                 m_out = checkpoint(_run_mamba, x_norm1, use_reentrant=False)
                 present_mamba = _present_cell[0]
             else:
+                # Fast direct execution
                 m_out, present_mamba = self.mamba(
                     x_norm1, attention_mask=attention_mask, past_state=past_mamba
                 )
 
-            # FIX 5: Use lora_mamba_scale
+            # Use lora_mamba_scale
             mamba_out = m_out.to(target_dtype) * self.lora_mamba_scale
 
         # ---- Branch 2: Attention ----
