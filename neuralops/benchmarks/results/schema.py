@@ -352,6 +352,14 @@ class BenchmarkResult:
     # 15. push_info
     push_info: PushInfo = field(default_factory=PushInfo)
 
+    # First-class training regime & configuration blocks
+    training_type: str = "finetune"  # "finetune" | "kd" | "recovery" | "lora" | "none"
+    kd_config: Dict[str, Any] = field(default_factory=dict)
+    recovery_config: Dict[str, Any] = field(default_factory=dict)
+    baseline_metrics: Dict[str, Any] = field(default_factory=dict)
+    delta_metrics: Dict[str, Any] = field(default_factory=dict)
+    checksum: str = ""
+
     # Flat backward-compatibility fields expected by legacy consumers
     run_id: str = ""
     run_name: str = ""
@@ -360,12 +368,23 @@ class BenchmarkResult:
     git_commit: str = ""
     git_dirty: bool = False
 
+    def compute_checksum(self) -> str:
+        """Calculate SHA256 checksum of run output to detect corruption."""
+        core_repr = f"{self.run_id}_{self.compute_run_key()}_{self.status}_{json.dumps(self.metrics, sort_keys=True, default=str)}"
+        return hashlib.sha256(core_repr.encode("utf-8")).hexdigest()[:16]
+
     def __post_init__(self) -> None:
         """Synchronize top-level legacy fields with structured metadata."""
         if not self.run_id:
             self.run_id = self.run_metadata.run_id
         else:
             self.run_metadata.run_id = self.run_id
+
+        if not self.training_type and isinstance(self.config, dict):
+            self.training_type = self.config.get("training_type", "finetune")
+
+        if not self.checksum:
+            self.checksum = self.compute_checksum()
 
         if not self.run_name:
             self.run_name = self.run_metadata.run_name
@@ -470,6 +489,12 @@ class BenchmarkResult:
             reproducibility=reproducibility,
             artifacts=artifacts,
             push_info=push_info,
+            training_type=data_copy.get("training_type") or data_copy.get("config", {}).get("training_type", "finetune"),
+            kd_config=data_copy.get("kd_config", {}),
+            recovery_config=data_copy.get("recovery_config", {}),
+            baseline_metrics=data_copy.get("baseline_metrics", {}),
+            delta_metrics=data_copy.get("delta_metrics", {}),
+            checksum=data_copy.get("checksum", ""),
             run_id=data_copy.get("run_id", run_metadata.run_id),
             run_name=data_copy.get("run_name", run_metadata.run_name),
             timestamp_start=data_copy.get("timestamp_start", run_metadata.timestamp_start),

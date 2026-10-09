@@ -5,8 +5,10 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import uuid
 import pandas as pd
 
 from neuralops.benchmarks.results.schema import BenchmarkResult
@@ -56,16 +58,18 @@ def compute_result_path(result: BenchmarkResult, base_dir: Path | str = "results
 
 
 def save_json(result: BenchmarkResult, target_path: Path | str) -> Path:
-    """Save canonical pretty-printed self-contained JSON."""
+    """Save canonical pretty-printed self-contained JSON with atomic write."""
     p = Path(target_path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w", encoding="utf-8") as fp:
+    tmp_path = p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with open(tmp_path, "w", encoding="utf-8") as fp:
         json.dump(result.to_dict(), fp, indent=2, default=str)
+    tmp_path.replace(p)
     return p
 
 
 def save_jsonl_index(result: BenchmarkResult, index_path: Path | str) -> Path:
-    """Append key summary row to rolling JSONL index."""
+    """Append key summary row to rolling JSONL index concurrently and safely."""
     p = Path(index_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     summary_entry = {
@@ -78,11 +82,16 @@ def save_jsonl_index(result: BenchmarkResult, index_path: Path | str) -> Path:
         "model": result.model.get("name", "") if isinstance(result.model, dict) else str(result.model),
         "dataset": result.dataset.get("name", "") if isinstance(result.dataset, dict) else str(result.dataset),
         "rank": result.config.get("rank", 0) if isinstance(result.config, dict) else 0,
+        "training_type": getattr(result, "training_type", "finetune"),
         "accuracy": (result.metrics or {}).get("accuracy"),
         "f1": (result.metrics or {}).get("f1"),
         "loss": (result.metrics or {}).get("loss"),
+        "perplexity": (result.metrics or {}).get("post_ppl") or (result.metrics or {}).get("perplexity"),
+        "kd_gain": (result.metrics or {}).get("kd_gain"),
+        "recovery_pct": (result.metrics or {}).get("recovery_pct"),
         "duration_s": (result.resources or {}).get("duration_s", 0.0),
         "peak_vram_mb": (result.resources or {}).get("peak_vram_mb", 0.0),
+        "checksum": getattr(result, "checksum", ""),
     }
     with open(p, "a", encoding="utf-8") as fp:
         fp.write(json.dumps(summary_entry) + "\n")
@@ -105,11 +114,16 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
         "model": result.model.get("name", "") if isinstance(result.model, dict) else str(result.model),
         "dataset": result.dataset.get("name", "") if isinstance(result.dataset, dict) else str(result.dataset),
         "rank": result.config.get("rank", 0) if isinstance(result.config, dict) else 0,
+        "training_type": getattr(result, "training_type", "finetune"),
         "accuracy": (result.metrics or {}).get("accuracy", ""),
         "f1": (result.metrics or {}).get("f1", ""),
         "loss": (result.metrics or {}).get("loss", ""),
+        "perplexity": (result.metrics or {}).get("post_ppl") or (result.metrics or {}).get("perplexity", ""),
+        "kd_gain": (result.metrics or {}).get("kd_gain", ""),
+        "recovery_pct": (result.metrics or {}).get("recovery_pct", ""),
         "duration_s": (result.resources or {}).get("duration_s", ""),
         "peak_vram_mb": (result.resources or {}).get("peak_vram_mb", ""),
+        "checksum": getattr(result, "checksum", ""),
     }
 
     with open(p, "a", newline="", encoding="utf-8") as fp:
