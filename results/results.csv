@@ -4,3 +4,4 @@ kd_mla_C_20261010_013556,mla__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T2
 kd_mqa_C_20261010_014240,mqa__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T22:18:04.519155+00:00,success,mqa,attention,gpt2,wikitext2,64,finetune,,,,193.5,1254.04,89.59,,3969.73,6cdf5dff3a3c934a
 kd_nha_C_20261010_021101,nha__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:48:35.487282+00:00,success,nha,attention,gpt2,wikitext2,32,finetune,,,,39.81,3400.61,99.89,,3379.77,ab9e07629bf2494d
 kd_qcqa_C_20261010_022350,qcqa__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:59:08.033113+00:00,success,qcqa,attention,gpt2,wikitext2,32,finetune,,,,29.18,5.3,100.0,,3378.86,3a834e9cd458354c
+kd_dynamic_conv_attention_C_20261010_023805,dynamic_conv_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T23:13:19.573164+00:00,success,dynamic_conv_attention,attention,gpt2,wikitext2,32,finetune,,,,254.64,55361.07,99.61,,3382.08,5e6a3582f7024c26
