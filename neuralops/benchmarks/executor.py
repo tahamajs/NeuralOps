@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 import traceback
 import uuid
@@ -15,6 +16,7 @@ from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
 from neuralops.benchmarks.adapters.ruler import RulerAdapter
 from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
+from neuralops.benchmarks.logging import setup_run_logger
 from neuralops.benchmarks.result import BenchmarkResult
 
 logger = logging.getLogger(__name__)
@@ -126,6 +128,13 @@ def execute_single(
     run_id = str(uuid.uuid4())
     start_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     start_t = time.perf_counter()
+
+    out_dir = kwargs.get("output_dir", "results")
+    run_logger, log_file, jsonl_file = setup_run_logger(out_dir, run_id, str(module))
+    run_logger.info(
+        "Beginning execution of run %s: module=%s, model=%s, dataset=%s, rank=%s, epochs=%s, batch_size=%s",
+        run_id, module, model, dataset, rank, epochs, batch_size
+    )
 
     config_dict = {
         "rank": rank,
