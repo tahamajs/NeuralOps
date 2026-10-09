@@ -58,11 +58,11 @@ class BaseAttention(nn.Module):
     @abstractmethod
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
     ) -> tuple[Any, Any | None]:
         """Must return (output, attention_weights_or_None)."""
         raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
