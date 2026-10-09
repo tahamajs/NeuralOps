@@ -116,9 +116,15 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
-            past_layer_kv = (
-                past_key_values[idx] if past_key_values is not None and idx < len(past_key_values) else None
-            )
+            past_layer_kv = None
+            if past_key_values is not None:
+                if hasattr(past_key_values, "layers") and idx < len(past_key_values.layers):
+                    past_layer_kv = past_key_values.layers[idx]
+                elif hasattr(past_key_values, "__getitem__"):
+                    try:
+                        past_layer_kv = past_key_values[idx]
+                    except (IndexError, TypeError):
+                        past_layer_kv = None
 
             layer_outputs = decoder_layer(
                 hidden_states,
