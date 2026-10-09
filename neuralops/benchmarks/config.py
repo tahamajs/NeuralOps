@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 import logging
@@ -30,6 +30,15 @@ class BenchmarkConfig:
     verbose: bool = False
     dry_run: bool = False
     timeout_s: int = 1800
+    task: Optional[str] = None
+    max_samples: Optional[int] = None
+    trust_remote_code: bool = True
+    hf_token: Optional[str] = None
+    language: Optional[str] = None
+    text_column: Optional[str] = None
+    label_column: Optional[str] = None
+    id_column: Optional[str] = None
+    preprocess_script: Optional[str] = None
     # Results management settings
     auto_commit: bool = False
     commit_interval: int = 1
