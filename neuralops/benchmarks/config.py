@@ -30,6 +30,15 @@ class BenchmarkConfig:
     verbose: bool = False
     dry_run: bool = False
     timeout_s: int = 1800
+    # Results management settings
+    auto_commit: bool = False
+    commit_interval: int = 1
+    push_to_hf: Optional[str] = None
+    hf_private: bool = False
+    deduplicate: bool = True
+    force_rerun: bool = False
+    rerun_after_days: int = 30
+    regenerate_summaries_every: int = 1
     extra: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
