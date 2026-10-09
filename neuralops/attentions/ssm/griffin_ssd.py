@@ -331,6 +331,12 @@ class GriffinSSDBlock(BaseAttention):
                     self.ssd_proj.weight.copy_(w_q * 0.5)
                 elif w_q.t().contiguous().shape == self.ssd_proj.weight.shape:
                     self.ssd_proj.weight.copy_(w_q.t().contiguous() * 0.5)
+                else:
+                    target_w = self.ssd_proj.weight
+                    min_r = min(target_w.shape[0], w_q.shape[0])
+                    min_c = min(target_w.shape[1], w_q.shape[1])
+                    target_w.data.zero_()
+                    target_w.data[:min_r, :min_c].copy_(w_q[:min_r, :min_c] * 0.5)
 
         if self.freeze_base:
             for mod in [self.W_q, self.W_k, self.W_v, self.ssd_proj, self.out_proj]:
@@ -429,8 +435,7 @@ class GriffinSSDBlock(BaseAttention):
         kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)  # (B,H,nc,d,d)
 
         # Now parallel scan over chunks with chunk_decay = decay^chunk_size
-        chunk_decay = torch.exp((log_decay_5d.squeeze(-1).squeeze(-1) * chunk_size).clamp(min=-40.0, max=0.0))  # (1,H,1,1)
-        chunk_decay = chunk_decay.squeeze(-1).squeeze(-1).view(1, H, 1, 1)  # (1,H,1,1)
+        chunk_decay = torch.exp((log_decay.view(1, H, 1, 1) * chunk_size).clamp(min=-40.0, max=0.0))
 
         # states_before[c] = state before processing chunk c
         # states_before[0] = 0
@@ -568,27 +573,45 @@ class GriffinSSDBlock(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
+        # Autoregressive KV Cache for decoders
+        if self.is_decoder and past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None and past_v is not None:
+                    k = torch.cat([past_k, k], dim=2)
+                    v = torch.cat([past_v, v], dim=2)
+        present_key_value = (k, v) if self.is_decoder else None
+
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
-            k = repeat_kv(k, repeats)
-            v = repeat_kv(v, repeats)
+            k_exp = repeat_kv(k, repeats)
+            v_exp = repeat_kv(v, repeats)
+        else:
+            k_exp = k
+            v_exp = v
 
         # Local sliding window
-        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(d)
-        idx = torch.arange(L, device=hidden_states.device)
-        dist = torch.abs(idx.unsqueeze(1) - idx.unsqueeze(0))
+        scores = torch.matmul(q, k_exp.transpose(-1, -2).contiguous()) / math.sqrt(d)
+        L_kv = k_exp.shape[-2]
+        idx_q = torch.arange(L, device=hidden_states.device).unsqueeze(1)
+        idx_k = torch.arange(L_kv, device=hidden_states.device).unsqueeze(0)
+        dist = torch.abs(idx_q - idx_k)
         window_mask = dist > self.window_size
         scores = scores.masked_fill(window_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
         if self.is_decoder:
-            causal = torch.triu(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool), diagonal=1)
-            scores = scores.masked_fill(causal.unsqueeze(0).unsqueeze(0), -10000.0)
+            past_len = L_kv - L
+            causal = torch.tril(torch.ones(L, L_kv, device=hidden_states.device, dtype=torch.bool), diagonal=past_len)
+            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -10000.0)
 
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                mask_bool = attention_mask.bool()
-                pad_mask = (attention_mask == 0).view(B, 1, 1, L)
+                if attention_mask.dtype.is_floating_point:
+                    mask_bool = attention_mask > -1e4
+                else:
+                    mask_bool = attention_mask.bool()
+                pad_mask = (~mask_bool).view(B, 1, 1, L)
                 scores = scores.masked_fill(pad_mask, -10000.0)
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.to(scores.dtype)
@@ -596,17 +619,22 @@ class GriffinSSDBlock(BaseAttention):
         scores = torch.nan_to_num(scores, nan=-10000.0, posinf=10000.0, neginf=-10000.0)
         local_attn = F.softmax(scores, dim=-1).to(target_dtype)
         local_attn = torch.nan_to_num(local_attn, nan=0.0)
-        local_out = torch.matmul(local_attn, v).to(target_dtype)
+        local_out = torch.matmul(local_attn, v_exp).to(target_dtype)
 
         # Global SSD
         if _env_flag("GRIFFIN_DISABLE_SSD", False):
             global_out = torch.zeros_like(local_out)
         else:
             decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
+            k_ssd = k[:, :, -L:, :] if k.shape[-2] > L else k
+            v_ssd = v[:, :, -L:, :] if v.shape[-2] > L else v
+            if self.num_heads != self.num_kv_heads:
+                k_ssd = repeat_kv(k_ssd, repeats)
+                v_ssd = repeat_kv(v_ssd, repeats)
             if self.is_decoder:
-                global_out = self._ssd_scan_chunked(q_ssd, k, v, decay, mask_bool, chunk_size=32)
+                global_out = self._ssd_scan_chunked(q_ssd, k_ssd, v_ssd, decay, mask_bool, chunk_size=32)
             else:
-                global_out = self._ssd_symmetric(q_ssd, k, v, decay, mask_bool)
+                global_out = self._ssd_symmetric(q_ssd, k_ssd, v_ssd, decay, mask_bool)
 
         # Fusion gate
         gate = torch.sigmoid(self.fusion_gate).view(1, H, 1, 1).to(target_dtype)
@@ -624,10 +652,13 @@ class GriffinSSDBlock(BaseAttention):
             else:
                 out = out[..., : hidden_states.shape[-1]]
 
-        if attention_mask is not None and mask_bool is not None:
+        if attention_mask is not None and mask_bool is not None and mask_bool.shape[-1] == L:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out.to(target_dtype), None
+        if self.is_decoder:
+            return (out.to(target_dtype), present_key_value)
+        else:
+            return (out.to(target_dtype), None)
 
 
 def inject_griffin_ssd(

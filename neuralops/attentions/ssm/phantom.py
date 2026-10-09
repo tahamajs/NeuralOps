@@ -202,13 +202,12 @@ class FactorisedLinear_CUR(nn.Module):
                     self.up.weight.data[:out_dim, :rank].copy_(
                         C_Uint.to(dtype=self.up.weight.dtype)
                     )
-            except Exception:
-                # SVD fallback
+            except Exception as e:
+                logger.warning(f"CUR decomposition failed, using Kaiming init: {e}")
                 nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
                 nn.init.kaiming_uniform_(self.up.weight, a=math.sqrt(5))
-
-            if bias is not None and self.up.bias is not None:
-                self.up.bias.data.copy_(bias.to(dtype=self.up.bias.dtype))
+                if bias is not None and self.up.bias is not None:
+                    self.up.bias.data.copy_(bias.to(dtype=self.up.bias.dtype, device=self.up.bias.device))
 
         if self.freeze_base:
             self.freeze_base_weights()
@@ -239,39 +238,56 @@ def lsh_attention(
     dropout: nn.Module | None = None,
     token_valid: torch.Tensor | None = None,
     is_causal: bool = False,
+    past_len: int = 0,
 ) -> torch.Tensor:
-    B, H, N, D = Q.shape
+    B, H, N_q, D = Q.shape
+    _, _, N_k, _ = K.shape
     scale = D**-0.5
-    n_bits = max(1, min(bucket_size, 8))
 
-    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
-    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
+    # Direct vectorized SDPA fallback when rounds <= 1 or for short contexts without custom mask/dropout
+    if (rounds <= 1 or N_q <= 128) and token_valid is None and dropout is None:
+        if is_causal and past_len == 0 and N_q == N_k:
+            return F.scaled_dot_product_attention(Q, K, V, is_causal=True)
+        elif not is_causal and N_q == N_k:
+            return F.scaled_dot_product_attention(Q, K, V, is_causal=False)
 
-    bit_shifts = torch.tensor([2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32)
+    q_idx = torch.arange(past_len, past_len + N_q, device=Q.device).unsqueeze(1)
+    k_idx = torch.arange(N_k, device=Q.device).unsqueeze(0)
+    causal_mask = (k_idx > q_idx) if is_causal else None
 
     scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     if token_valid is not None:
-        val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
+        val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N_k]
         scores_base = scores_base.masked_fill(~val_mask, -1e4)
 
-    if is_causal:
-        causal_mask = torch.triu(torch.full((N, N), True, device=Q.device), diagonal=1)
+    if causal_mask is not None:
         scores_base = scores_base.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
-    accum_out = torch.zeros_like(V)
+    if rounds <= 1:
+        attn_w = softpick(scores_base, dim=-1, temperature=softpick_temp).to(Q.dtype)
+        if dropout is not None:
+            attn_w = dropout(attn_w)
+        return torch.matmul(attn_w, V)
+
+    accum_out = torch.zeros((B, H, N_q, D), dtype=V.dtype, device=V.device)
+    n_bits = max(1, min(bucket_size, 8))
+    bit_shifts = torch.tensor([2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32)
+
+    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
+    eye = (q_idx == k_idx).unsqueeze(0).unsqueeze(0)
 
     for _ in range(rounds):
         hash_proj = torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype)
         hash_proj = F.normalize(hash_proj, p=2, dim=0, eps=1e-5)
 
-        hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
-        hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
+        hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N_q]
+        hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N_k]
 
-        match = hq.unsqueeze(-1) == hk.unsqueeze(-2)  # [B, H, N, N]
-        eye = torch.eye(N, device=Q.device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
+        match = hq.unsqueeze(-1) == hk.unsqueeze(-2)  # [B, H, N_q, N_k]
         match = match | eye
 
-        if is_causal:
+        if causal_mask is not None:
             match = match & (~causal_mask.unsqueeze(0).unsqueeze(0)) | eye
 
         scores_round = scores_base.masked_fill(~match, -1e4)
