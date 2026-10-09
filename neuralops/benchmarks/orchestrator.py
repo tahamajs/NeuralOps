@@ -18,8 +18,14 @@ from tqdm import tqdm
 from neuralops.benchmarks.config import BenchmarkConfig
 from neuralops.benchmarks.discovery import discover_modules
 from neuralops.benchmarks.executor import execute_single
-from neuralops.benchmarks.result import BenchmarkResult
-from neuralops.benchmarks.writers import append_result_jsonl, save_result_json
+from neuralops.benchmarks.results import (
+    BenchmarkResult,
+    Deduplicator,
+    GitCommitter,
+    HFHubPusher,
+    SummaryGenerator,
+    save_all_formats,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -55,6 +61,22 @@ class BenchmarkOrchestrator:
         self.extra_kwargs = kwargs
 
         self._state: dict[str, Any] = self._load_state()
+
+        # Initialize results management system
+        self.deduplicator = Deduplicator(
+            output_dir=self.output_dir,
+            rerun_after_days=getattr(self.config, "rerun_after_days", 30),
+        )
+        self.git_committer = GitCommitter(
+            output_dir=self.output_dir,
+            auto_commit=getattr(self.config, "auto_commit", False),
+            commit_interval=getattr(self.config, "commit_interval", 1),
+        )
+        self.hf_pusher = HFHubPusher(
+            repo_id=getattr(self.config, "push_to_hf", None),
+            private=getattr(self.config, "hf_private", False),
+        )
+        self.summarizer = SummaryGenerator(output_dir=self.output_dir)
 
     def _resolve_modules(self, mods: str | list[str]) -> list[str]:
         all_mods = discover_modules()
@@ -147,6 +169,17 @@ class BenchmarkOrchestrator:
                     LOG.info("Skipping completed task: %s", task_key)
                     continue
 
+                # Intelligent deduplication check
+                dedup_key = f"{mod}__{mdl}__{ds}__rank{rk}"
+                if getattr(self.config, "deduplicate", True):
+                    should_skip, reason = self.deduplicator.should_skip(
+                        dedup_key,
+                        force_rerun=getattr(self.config, "force_rerun", False),
+                    )
+                    if should_skip:
+                        LOG.info("Deduplication: Skipping run %s (%s)", dedup_key, reason)
+                        continue
+
                 # Execute run
                 kwargs_to_pass = {
                     k: v
@@ -186,10 +219,25 @@ class BenchmarkOrchestrator:
                     **kwargs_to_pass,
                 )
 
-                # Persist individual result
-                run_file = self.output_dir / f"{res.run_id}.json"
-                save_result_json(res, run_file)
-                append_result_jsonl(res, self.jsonl_file)
+                # Persist across all 5 formats (JSON, JSONL, CSV, Markdown, Parquet)
+                saved_paths = save_all_formats(res, output_dir=self.output_dir)
+
+                # Record in deduplication index
+                self.deduplicator.record_run(res, saved_paths["json"])
+
+                # Trigger Git commit if configured
+                self.git_committer.register_run(res, saved_paths)
+
+                # Push to Hugging Face Hub if configured
+                if self.hf_pusher.is_enabled():
+                    self.hf_pusher.push_result(res, saved_paths)
+
+                # Regenerate rolling summaries periodically
+                if getattr(self.config, "regenerate_summaries_every", 1) > 0:
+                    try:
+                        self.summarizer.generate_all()
+                    except Exception as e:
+                        LOG.debug("Summary generation notice: %s", e)
 
                 # Update state
                 if res.status == "success":

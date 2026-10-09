@@ -43,6 +43,13 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
     run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
     run_p.add_argument("--eval-only", action="store_true", help="Skip fine-tuning")
+    # Results management flags
+    run_p.add_argument("--auto-commit", action="store_true", help="Auto-commit benchmark results to git")
+    run_p.add_argument("--no-auto-commit", action="store_true", help="Disable git auto-commit")
+    run_p.add_argument("--commit-interval", type=int, default=1, help="Interval of runs between git commits")
+    run_p.add_argument("--push-to-hf", type=str, default=None, help="Hugging Face Hub repository ID to upload results")
+    run_p.add_argument("--no-deduplicate", action="store_true", help="Disable run deduplication check")
+    run_p.add_argument("--force-rerun", action="store_true", help="Force rerun even if identical run exists")
 
     # 2. resume
     res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
@@ -189,6 +196,11 @@ def handle_run(args: argparse.Namespace) -> None:
         device=args.device,
         timeout_s=args.timeout_s,
         eval_only=args.eval_only,
+        auto_commit=args.auto_commit and not args.no_auto_commit,
+        commit_interval=args.commit_interval,
+        push_to_hf=args.push_to_hf,
+        deduplicate=not args.no_deduplicate,
+        force_rerun=args.force_rerun,
     )
     for res in runner.stream():
         status_symbol = "[+]" if res.status == "success" else "[-]"
