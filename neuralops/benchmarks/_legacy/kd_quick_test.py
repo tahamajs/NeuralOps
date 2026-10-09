@@ -1173,8 +1173,48 @@ def run_kd_method(
     student.to(device)
 
     calib_slice = train_chunks[:4, :128].to(device)
-    student, comp_stats = apply_module_to_model(student, module_name, "auto", rank=args.rank, device=device, calibration_data=calib_slice, tokenizer=tokenizer)
+    
+    # -------------------------------------------------------------------------
+    # Safe Module Injection with Exception Handling & Cleanup
+    # -------------------------------------------------------------------------
+    try:
+        calib_slice = train_chunks[:4, :128].to(device)
+        student, comp_stats = apply_module_to_model(
+            student,
+            module_name,
+            "auto",
+            rank=args.rank,
+            device=device,
+            calibration_data=calib_slice,
+            tokenizer=tokenizer,
+        )
+    except Exception as e:
+        LOG.error(f"[INJECTION FAILED] Module '{module_name}' failed to inject: {e}")
+        del student
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
+        # ساخت آبجکت خروجی استاندارد با وضعیت خطا برای ذخیره در JSON/CSV
+        return {
+            "method": method_name,
+            "error": f"Injection failed: {str(e)}",
+            "pre_ppl": float("nan"),
+            "post_ppl": float("nan"),
+            "post_ppl_stage1": float("nan"),
+            "post_ppl_stage2": float("nan"),
+            "recovery_pct": float("nan"),
+            "train_time_s": 0.0,
+            "peak_vram_mb": 0.0,
+            "cached": bool(use_cache),
+            "teacher_params": sum(p.numel() for p in _teacher_ref.parameters()),
+            "student_params": 0,
+            "trainable_params": 0,
+            "batch_size": args.batch_size,
+            "seq_len": args.seq_len,
+            "learning_rate": args.learning_rate,
+            "recovery_steps": args.recovery_steps,
+        }
     # CRITICAL FIX: Re-move ENTIRE student to device after injection.
     # apply_module_to_model creates new submodules that start on CPU.
     # Without this second .to(device), those injected layers stay on CPU
