@@ -1,0 +1,61 @@
+{
+  "run_id": "093f9b34-6c02-4fce-aa2b-71298501d6fa",
+  "run_name": "cosformer_distilbert-base-uncased_sst2",
+  "timestamp_start": "2026-10-09T16:01:19Z",
+  "timestamp_end": "2026-10-09T16:11:55Z",
+  "git_commit": "6207c8cef6",
+  "module": {
+    "name": "cosformer",
+    "type": "attention",
+    "family": "cosformer",
+    "supports_causal": false,
+    "supports_gqa": false,
+    "supports_rope": false,
+    "requires_cuda": false,
+    "rank": 32
+  },
+  "model": {
+    "name": "distilbert-base-uncased",
+    "family": "distilbert",
+    "num_params": 71240456,
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 6
+  },
+  "dataset": {
+    "name": "sst2",
+    "task": "classification",
+    "num_labels": 2,
+    "num_train": 67349,
+    "num_eval": 67349
+  },
+  "config": {
+    "rank": 32,
+    "epochs": 1,
+    "lr": 2e-05,
+    "batch_size": 16,
+    "max_length": 128,
+    "seed": 42,
+    "eval_only": false
+  },
+  "metrics": {
+    "accuracy": 0.7993119266055045,
+    "f1": 0.771838331160365,
+    "precision": 0.9164086687306502,
+    "recall": 0.6666666666666666,
+    "loss": 0.470389794964682
+  },
+  "resources": {
+    "peak_vram_mb": 625.76171875,
+    "latency_ms_per_token": 0.02043519531227389,
+    "throughput_tok_per_sec": 48935.181911345615,
+    "duration_s": 635.46,
+    "num_params_after": 71240456
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timeout_s": 1800,
+  "timed_out": false
+}

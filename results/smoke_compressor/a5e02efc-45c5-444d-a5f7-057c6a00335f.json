@@ -1,0 +1,61 @@
+{
+  "run_id": "a5e02efc-45c5-444d-a5f7-057c6a00335f",
+  "run_name": "direct_svd_distilbert-base-uncased_sst2",
+  "timestamp_start": "2026-10-09T15:45:53Z",
+  "timestamp_end": "2026-10-09T15:50:46Z",
+  "git_commit": "6207c8cef6",
+  "module": {
+    "name": "direct_svd",
+    "type": "compressor",
+    "family": "direct",
+    "supports_causal": true,
+    "supports_gqa": false,
+    "supports_rope": false,
+    "requires_cuda": false,
+    "rank": 64
+  },
+  "model": {
+    "name": "distilbert-base-uncased",
+    "family": "distilbert",
+    "num_params": 66955010,
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 6
+  },
+  "dataset": {
+    "name": "sst2",
+    "task": "classification",
+    "num_labels": 2,
+    "num_train": 67349,
+    "num_eval": 67349
+  },
+  "config": {
+    "rank": 64,
+    "epochs": 1,
+    "lr": 2e-05,
+    "batch_size": 32,
+    "max_length": 128,
+    "seed": 42,
+    "eval_only": false
+  },
+  "metrics": {
+    "accuracy": 0.8600917431192661,
+    "f1": 0.8638392857142857,
+    "precision": 0.8561946902654868,
+    "recall": 0.8716216216216216,
+    "loss": 0.31779307818838526
+  },
+  "resources": {
+    "peak_vram_mb": 499.2705078125,
+    "latency_ms_per_token": 0.01134103759756755,
+    "throughput_tok_per_sec": 88175.35356857315,
+    "duration_s": 292.88,
+    "num_params_after": 66955010
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timeout_s": 1800,
+  "timed_out": false
+}
