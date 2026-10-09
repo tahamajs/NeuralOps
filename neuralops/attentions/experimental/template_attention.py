@@ -792,6 +792,11 @@ def inject_custom_attn(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    if old_attn is None and isinstance(target, nn.Module) and not any(
+        hasattr(target, a) for a in ("attention", "self_attn", "attn", "self")
+    ) and len(list(target.children())) == 0:
+        return None
+
     try:
         src = old_attn
         if src is None:
