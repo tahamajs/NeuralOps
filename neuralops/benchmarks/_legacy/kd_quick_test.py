@@ -1219,26 +1219,61 @@ def run_kd_method(
             "learning_rate": args.learning_rate,
             "recovery_steps": args.recovery_steps,
         }
-    if args.fp16 and device.startswith("cuda"):
-        student = student.half().to(device)
-    else:
-        student = student.to(device)
+    # ═══════════════════════════════════════════════════════════
+    # DIAGNOSTIC: Check if weights were copied correctly
+    # ═══════════════════════════════════════════════════════════
+    with torch.no_grad():
+        _check_batch = train_chunks[:2, :32].to(device)
+        _student_dtype = next(student.parameters()).dtype
+        _check_batch_student = _check_batch.to(_student_dtype)
         
+        # Teacher check (from cache or live)
+        try:
+            if use_cache and teacher_cache is not None and teacher_cache.get("logits") is not None:
+                _teacher_logits = teacher_cache["logits"][:2, :32, :].to(device).float()
+            else:
+                _teacher_logits = _teacher_ref(_check_batch.to(next(_teacher_ref.parameters()).dtype)).logits.float()
+            
+            _student_logits = student(_check_batch_student).logits.float()
+            _diff = (_teacher_logits - _student_logits).abs().max().item()
+            LOG.info(f"[DIAG] Max logit diff (student vs teacher) BEFORE training: {_diff:.4f}")
+            
+            if _diff > 1.0:
+                LOG.error(f"[DIAG] ⚠️ CRITICAL: Weights were NOT copied properly! diff={_diff}")
+                LOG.error("[DIAG] Check if copy_weights was called and succeeded.")
+                
+                # Check lora_B init
+                for name, mod in student.named_modules():
+                    if hasattr(mod, "lora_B") and mod.lora_B is not None:
+                        lb_max = mod.lora_B.abs().max().item()
+                        LOG.error(f"[DIAG] {name}.lora_B max = {lb_max:.6f} (should be 0)")
+                        break
+                
+                # Check if weights are random (compare with original)
+                for name, mod in student.named_modules():
+                    if hasattr(mod, "weight") and mod.weight is not None and "query" in name.lower():
+                        w_norm = mod.weight.float().norm().item()
+                        LOG.error(f"[DIAG] {name}.weight norm = {w_norm:.4f}")
+                        break
+            else:
+                LOG.info(f"[DIAG] ✅ Weights copied correctly (diff={_diff:.4f})")
+        except Exception as _e:
+            LOG.warning(f"[DIAG] Diagnostic failed: {_e}")
+    # ═══════════════════════════════════════════════════════════        
     # --- بهینه‌سازی ۳: Gradient Checkpointing (کاهش ۶۰ درصدی مصرف VRAM) ---
     if hasattr(student, "gradient_checkpointing_enable"):
         student.gradient_checkpointing_enable()
 
-    # --- بهینه‌سازی ۲: Compile با حداکثر قدرت ---
-    student = torch.compile(student, mode="max-autotune", fullgraph=False)
+    # --- بهینه‌سازی ۲: torch.compile ---
+    # DISABLED: torch.compile با Triton ناسازگار است (AttrsDescriptor ImportError)
+    # student = torch.compile(student, mode="max-autotune", fullgraph=False)
+
     # CRITICAL FIX: Re-move ENTIRE student to device after injection.
-    # apply_module_to_model creates new submodules that start on CPU.
-    # Without this second .to(device), those injected layers stay on CPU
-    # causing "Expected all tensors to be on the same device" crashes.
     if args.fp16 and device.startswith("cuda"):
         student = student.half().to(device)
     else:
         student = student.to(device)
-        student = torch.compile(student)
+        # student = torch.compile(student)   # ← این را هم کامنت کن
 
     pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
     delta_pre = pre_ppl - baseline_ppl
@@ -1401,12 +1436,14 @@ def run_kd_method(
                 elif method_name == "D":
                     loss = compute_method_d_loss(student_out, teacher_out, batch_ids, device, kl_temperature=kl_temp, kl_weight=phase_kl_weight * warmup_factor, hidden_weight=phase_hidden_weight, ce_weight=0.1, projection_adapter=projection_adapter)
 
+                loss_scaled = loss / args.grad_accum_steps   # ← این خط را اضافه کن
                 current_loss_detached = loss.detach() 
 
                 if step % 50 == 0 or step == total_steps or step <= 5:
                     final_loss = float(current_loss_detached.item())  
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f}...")
             if use_scaler: scaler.scale(loss_scaled).backward()
+
             else: loss_scaled.backward()
             accum_count += 1
 
