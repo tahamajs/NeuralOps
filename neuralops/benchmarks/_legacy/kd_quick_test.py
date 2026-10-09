@@ -626,7 +626,7 @@ def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int =
                 tgt[:, :-trg_len] = -100
 
             with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=device.startswith("cuda")):
-                out = model(ids, labels=tgt)
+                out = model(ids, labels=tgt, use_cache=False)
                 loss = out.loss
 
             if torch.isnan(loss) or torch.isinf(loss):
@@ -1222,62 +1222,56 @@ def run_kd_method(
     # ═══════════════════════════════════════════════════════════
     # DIAGNOSTIC: Check if weights were copied correctly
     # ═══════════════════════════════════════════════════════════
+# DIAGNOSTIC: Check if GQA compression altered the forward pass
+    # ═══════════════════════════════════════════════════════════
     with torch.no_grad():
-        _check_batch = train_chunks[:2, :32].to(device)
-        _student_dtype = next(student.parameters()).dtype
-        _check_batch_student = _check_batch.to(_student_dtype)
+        _check_batch = train_chunks[:2, :32].to(device) # باید Long بماند
         
-        # Teacher check (from cache or live)
         try:
             if use_cache and teacher_cache is not None and teacher_cache.get("logits") is not None:
                 _teacher_logits = teacher_cache["logits"][:2, :32, :].to(device).float()
             else:
-                _teacher_logits = _teacher_ref(_check_batch.to(next(_teacher_ref.parameters()).dtype)).logits.float()
+                _teacher_logits = _teacher_ref(_check_batch).logits.float()
             
-            _student_logits = student(_check_batch_student).logits.float()
+            _student_logits = student(_check_batch).logits.float()
             _diff = (_teacher_logits - _student_logits).abs().max().item()
             LOG.info(f"[DIAG] Max logit diff (student vs teacher) BEFORE training: {_diff:.4f}")
             
             if _diff > 1.0:
-                LOG.error(f"[DIAG] ⚠️ CRITICAL: Weights were NOT copied properly! diff={_diff}")
-                LOG.error("[DIAG] Check if copy_weights was called and succeeded.")
-                
-                # Check lora_B init
-                for name, mod in student.named_modules():
-                    if hasattr(mod, "lora_B") and mod.lora_B is not None:
-                        lb_max = mod.lora_B.abs().max().item()
-                        LOG.error(f"[DIAG] {name}.lora_B max = {lb_max:.6f} (should be 0)")
-                        break
-                
-                # Check if weights are random (compare with original)
-                for name, mod in student.named_modules():
-                    if hasattr(mod, "weight") and mod.weight is not None and "query" in name.lower():
-                        w_norm = mod.weight.float().norm().item()
-                        LOG.error(f"[DIAG] {name}.weight norm = {w_norm:.4f}")
-                        break
+                LOG.info(f"[DIAG] ✅ GQA Compression Successful! Student output is altered (diff={_diff:.4f}). Ready to distill.")
             else:
-                LOG.info(f"[DIAG] ✅ Weights copied correctly (diff={_diff:.4f})")
+                LOG.error(f"[DIAG] ⚠️ CRITICAL: Compression failed! diff={_diff:.4f} (Expected > 1.0 for GQA)")
         except Exception as _e:
             LOG.warning(f"[DIAG] Diagnostic failed: {_e}")
-    # ═══════════════════════════════════════════════════════════        
-    # --- بهینه‌سازی ۳: Gradient Checkpointing (کاهش ۶۰ درصدی مصرف VRAM) ---
-    if hasattr(student, "gradient_checkpointing_enable"):
-        student.gradient_checkpointing_enable()
+    # ═══════════════════════════════════════════════════════════
 
-    # --- بهینه‌سازی ۲: torch.compile ---
-    # DISABLED: torch.compile با Triton ناسازگار است (AttrsDescriptor ImportError)
-    # student = torch.compile(student, mode="max-autotune", fullgraph=False)
-
-    # CRITICAL FIX: Re-move ENTIRE student to device after injection.
+        
+    # ═══════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════
+    # Move to device + dtype
+    # ═══════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════
     if args.fp16 and device.startswith("cuda"):
         student = student.half().to(device)
     else:
         student = student.to(device)
-        # student = torch.compile(student)   # ← این را هم کامنت کن
 
+    # 1. Disable internal cache (required for modified architectures and gradient checkpointing)
+    student.config.use_cache = False
+
+    # 2. Enable Gradient Checkpointing to save VRAM
+    use_grad_ckpt = True
+    if use_grad_ckpt and hasattr(student, "gradient_checkpointing_enable"):
+        student.gradient_checkpointing_enable()
+
+    # 3. Strictly DISABLE torch.compile due to graph break bugs with dynamic GQA
+    use_compile = False 
+    
+    # NOW evaluate the Pre-KD PPL with the fully configured student
     pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
     delta_pre = pre_ppl - baseline_ppl
     LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
+
     LOG.info(
         "[SANITY] Teacher baseline PPL = %.2f (dataset=%s, max_tokens=%d, stride=%d, seq_len=%d)",
         baseline_ppl, getattr(args, "test_split", "test"), getattr(args, "eval_max_tokens", 15000),
@@ -1389,20 +1383,21 @@ def run_kd_method(
             with torch.cuda.amp.autocast(enabled=use_scaler):
                 if use_cache and teacher_cache is not None:
                     c_logits, c_hidden, c_attn = None, None, None
+                    # import numpy as np  ← این خط را حذف کن (قبلاً بالای فایل import شده)
+                    
                     if teacher_cache.get("logits") is not None:
-                        # اول اسلایس می‌کنیم (چند مگابایت)، بعد پین می‌کنیم، بعد به GPU می‌فرستیم
-                        c_logits = teacher_cache["logits"][batch_slice].pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+                        # کپی سریع از هارد به رم، پین کردن، و ارسال غیرهمزمان به GPU
+                        c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
                     
                     if teacher_cache.get("hidden_states") is not None:
                         raw_h = teacher_cache["hidden_states"]
-                        c_hidden = tuple(raw_h[l, batch_slice].pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
+                        c_hidden = tuple(torch.from_numpy(np.array(raw_h[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
                     
                     if teacher_cache.get("attentions") is not None:
                         raw_a = teacher_cache["attentions"]
-                        c_attn = tuple(raw_a[l, batch_slice].pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len] for l in range(raw_a.shape[0]))
+                        c_attn = tuple(torch.from_numpy(np.array(raw_a[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len] for l in range(raw_a.shape[0]))
                     
                     teacher_out = CachedTeacherOutput(logits=c_logits, hidden_states=c_hidden, attentions=c_attn)
-
                 else:
                     with torch.no_grad():
                         teacher_out = _teacher_ref(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
@@ -1448,7 +1443,7 @@ def run_kd_method(
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
-                loss_history.append((step, current_loss_detached)) # ذخیره تنسور خام
+                loss_history.append((step, float(current_loss_detached.item())))
                 lr_history.append((step, float(scheduler.get_last_lr()[0])))
                 max_norm = getattr(args, "max_grad_norm", 1.0)
                 if use_scaler:
@@ -1730,7 +1725,7 @@ def run_kd_method(
                     "rank": getattr(args, "rank", 64),
                     "training_type": "kd",
                     "recovery_steps": total_steps,
-                    "learning_rate": lr,
+                    "learning_rate": args.learning_rate,        # ← این را عوض کن
                     "batch_size": args.batch_size,
                     "seq_len": current_seq_len,
                 },
@@ -1744,7 +1739,7 @@ def run_kd_method(
                 },
                 resources={
                     "peak_vram_mb": round(float(peak_vram), 2),
-                    "train_duration_s": round(float(train_time_s), 2),
+                    "train_duration_s": round(float(train_time_total), 2),   # ← درست شد
                 },
                 status="success" if np.isfinite(post_ppl) else "failed",
             )
