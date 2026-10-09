@@ -118,6 +118,26 @@ class BenchmarkOrchestrator:
                 continue
 
             # Execute run
+            kwargs_to_pass = {
+                k: v
+                for k, v in self.extra_kwargs.items()
+                if k
+                not in {
+                    "module",
+                    "model",
+                    "dataset",
+                    "rank",
+                    "device",
+                    "dtype",
+                    "batch_size",
+                    "max_length",
+                    "epochs",
+                    "lr",
+                    "seed",
+                    "eval_only",
+                    "timeout_s",
+                }
+            }
             res = execute_single(
                 module=mod,
                 model=mdl,
@@ -132,7 +152,7 @@ class BenchmarkOrchestrator:
                 seed=self.config.seed,
                 eval_only=self.config.eval_only,
                 timeout_s=self.config.timeout_s,
-                **self.extra_kwargs,
+                **kwargs_to_pass,
             )
 
             # Persist individual result
