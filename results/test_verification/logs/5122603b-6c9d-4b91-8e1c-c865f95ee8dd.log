@@ -1,0 +1,2 @@
+[2026-10-09 20:08:10] [INFO] [executor.py:134] Beginning execution of run 5122603b-6c9d-4b91-8e1c-c865f95ee8dd: module=svd_linear_attention, model=distilbert-base-uncased, dataset=sst2, rank=32, epochs=1, batch_size=32
+[2026-10-09 20:14:08] [INFO] [executor.py:354] Run 5122603b-6c9d-4b91-8e1c-c865f95ee8dd completed successfully in 358.49s (training: 295.49s). Metrics: {'accuracy': 0.8589449541284404, 'f1': 0.8634850166481687, 'precision': 0.8512035010940919, 'recall': 0.8761261261261262, 'loss': 0.4021677744707891}
