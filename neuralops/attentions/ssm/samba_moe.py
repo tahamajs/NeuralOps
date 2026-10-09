@@ -162,6 +162,7 @@ class SambaMoEBlock(BaseAttention):
             is_decoder=is_decoder,
             **kwargs,
         )
+        self.is_decoder = getattr(self.swa_mamba, "is_decoder", bool(is_decoder))
 
         if REAPMoE is not None:
             try:
