@@ -14,7 +14,6 @@ Underlying implementations are factored into:
 from __future__ import annotations
 
 import logging
-
 import torch
 
 # Re-export data models and constants
@@ -127,13 +126,30 @@ def run_track(
                 logger.info(
                     "--> %s: status=%s  acc=%.2f  ppl=%.2f  comp=%.3fx",
                     module_name,
-                    r.status,
-                    r.accuracy_pct,
-                    r.perplexity,
-                    r.compression_ratio,
+                    getattr(r, "status", "unknown"),
+                    getattr(r, "accuracy_pct", 0.0),
+                    getattr(r, "perplexity", 0.0),
+                    getattr(r, "compression_ratio", 1.0),
                 )
             except Exception as e:
                 logger.exception("Run crashed for %s: %s", module_name, e)
+                # ساخت یک آبجکت نتیجه شکست‌خورده استاندارد برای جلوگیری از گم شدن ماژول در گزارش نهایی
+                try:
+                    crashed_r = BenchmarkResult(
+                        run_id=f"{track}_{module_name}_{model_family}",
+                        run_name=f"{module_name}_{model_family}",
+                        module={"name": module_name, "type": module_type, "rank": rank},
+                        model={"name": model_family},
+                        dataset={"name": dataset},
+                        config={"track": track, "rank": rank, "seq_len": seq_len},
+                        metrics={},
+                        resources={},
+                        status="crashed",
+                        error_message=str(e),
+                    )
+                    results.append(crashed_r)
+                except Exception:
+                    pass
 
     return results
 
@@ -163,6 +179,10 @@ def main() -> None:
         results_dir=args.results_dir,
         allow_synthetic=args.allow_synthetic,
     )
+
+
+if __name__ == "__main__":
+    main()
 
 
 __all__ = [
