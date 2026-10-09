@@ -113,7 +113,7 @@ python -m neuralops.benchmarks verify
 
 ### Recipe 1: 3-Line Attention Surgery
 
-Replace quadratic attention in HuggingFace models with subquadratic SVD Linear Attention:
+Replace quadratic attention in existing HuggingFace models with subquadratic SVD Linear Attention:
 
 ```python
 import torch
@@ -126,6 +126,55 @@ model = replace_attention(model, "svd_linear_attention", svd_rank=128)
 inputs = torch.randint(0, 1000, (2, 64))
 outputs = model(inputs)
 print("Logits shape:", outputs.logits.shape)
+```
+
+### Recipe 2: Native HuggingFace Transformers AutoModel & Generation
+
+Construct, train, and generate text with native `AutoModelForCausalLM` and `AutoConfig` using any of the 159 attention mechanisms:
+
+```python
+import torch
+from transformers import AutoConfig, AutoModelForCausalLM
+import neuralops.models  # Registers 'neuralops' model_type with Hugging Face
+
+# 1. Initialize custom subquadratic or hybrid causal LM
+config = AutoConfig.for_model(
+    "neuralops",
+    vocab_size=32000,
+    hidden_size=768,
+    num_hidden_layers=12,
+    num_attention_heads=12,
+    attention_type="cosformer",  # Or 'rpc_attention', 'galerkin_attention', etc.
+)
+model = AutoModelForCausalLM.from_config(config)
+
+# 2. Autoregressive generation with KV caching
+input_ids = torch.randint(0, 32000, (1, 16))
+output_ids = model.generate(input_ids, max_new_tokens=32, do_sample=True, top_k=50)
+print("Generated shape:", output_ids.shape)
+
+# 3. Save and reload with native Hugging Face serialization
+model.save_pretrained("./my_neuralops_model")
+reloaded = AutoModelForCausalLM.from_pretrained("./my_neuralops_model")
+```
+
+### Recipe 3: Config-Driven Hybrid Attention Layer Stacks
+
+Interleave attention mechanisms layer-by-layer (e.g., SVD low-rank, Linear, and SSM):
+
+```python
+from neuralops.models import NeuralOpsConfig, NeuralOpsForCausalLM
+
+config = NeuralOpsConfig(
+    num_hidden_layers=6,
+    attention_type="cosformer",  # Default fallback attention
+    attn=[
+        {"layers": [0, 2], "type": "rpc_attention", "svd_rank": 32},
+        {"layers": [1, 3], "type": "galerkin_attention"},
+        {"layers": [4, 5], "type": "cosformer"},
+    ]
+)
+hybrid_model = NeuralOpsForCausalLM(config)
 ```
 
 ---
@@ -452,6 +501,7 @@ print(len(COMPRESSOR_REGISTRY))  # 73
 ```
 
 Detailed guides:
+- [HuggingFace Transformers Integration](docs/MODELS.md) — Native AutoModel, AutoConfig & generation
 - [Quick Start Guide](docs/QUICKSTART.md) — 5-minute setup and examples
 - [API Reference](docs/API_REFERENCE.md) — Core API interfaces
 - [Architecture Details](docs/ARCHITECTURE.md) — Package design & internals
