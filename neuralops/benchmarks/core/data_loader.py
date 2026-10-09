@@ -12,15 +12,19 @@ from neuralops.benchmarks.result import DatasetMetadata
 LOG = logging.getLogger(__name__)
 
 GLUE_TASKS: dict[str, dict[str, Any]] = {
-    "sst2": {"cols": ("sentence", None), "num_labels": 2, "task": "classification"},
-    "mrpc": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification"},
-    "qqp": {"cols": ("question1", "question2"), "num_labels": 2, "task": "classification"},
-    "mnli": {"cols": ("premise", "hypothesis"), "num_labels": 3, "task": "classification"},
-    "qnli": {"cols": ("question", "sentence"), "num_labels": 2, "task": "classification"},
-    "rte": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification"},
-    "cola": {"cols": ("sentence", None), "num_labels": 2, "task": "classification"},
-    "stsb": {"cols": ("sentence1", "sentence2"), "num_labels": 1, "task": "regression"},
-    "wnli": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification"},
+    "sst2": {"cols": ("sentence", None), "num_labels": 2, "task": "classification", "val_size": 872},
+    "mrpc": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification", "val_size": 408},
+    "qqp": {"cols": ("question1", "question2"), "num_labels": 2, "task": "classification", "val_size": 40430},
+    "mnli": {"cols": ("premise", "hypothesis"), "num_labels": 3, "task": "classification", "val_size": 9815},
+    "qnli": {"cols": ("question", "sentence"), "num_labels": 2, "task": "classification", "val_size": 5463},
+    "rte": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification", "val_size": 277},
+    "cola": {"cols": ("sentence", None), "num_labels": 2, "task": "classification", "val_size": 1043},
+    "stsb": {"cols": ("sentence1", "sentence2"), "num_labels": 1, "task": "regression", "val_size": 1500},
+    "wnli": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification", "val_size": 71},
+}
+
+GLUE_VALIDATION_SIZES: dict[str, int] = {
+    task: info["val_size"] for task, info in GLUE_TASKS.items()
 }
 
 
@@ -43,12 +47,20 @@ def get_dataset_metadata(
     name_clean = name.lower().replace("glue_", "")
     info = GLUE_TASKS.get(name_clean, {"num_labels": 2, "task": "classification"})
     total_samples = len(dataset) if hasattr(dataset, "__len__") else 0
+    
+    # Resolve eval size: explicit > GLUE standard validation size > total_samples
+    expected_eval = num_eval
+    if expected_eval is None and name_clean in GLUE_VALIDATION_SIZES:
+        expected_eval = GLUE_VALIDATION_SIZES[name_clean]
+    elif expected_eval is None:
+        expected_eval = total_samples
+
     return DatasetMetadata(
         name=name,
         task=info.get("task", "classification"),
         num_labels=info.get("num_labels", 2),
         num_train=num_train if num_train is not None else total_samples,
-        num_eval=num_eval if num_eval is not None else total_samples,
+        num_eval=expected_eval,
     )
 
 
