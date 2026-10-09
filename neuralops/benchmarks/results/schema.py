@@ -111,6 +111,7 @@ class RunMetadata:
 class ModuleMetadata:
     """Metadata describing candidate attention or compression module."""
     name: str = "baseline"
+    type: str = "baseline"  # Backward-compatible alias for module_type
     class_name: str = "BaselineModule"
     file_path: str = ""
     module_type: str = "baseline"  # "attention" | "compressor" | "baseline"
@@ -124,6 +125,12 @@ class ModuleMetadata:
     paper_reference: Dict[str, Any] = field(default_factory=dict)
     timeout_s: int = 1800
     rank: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        if self.type != "baseline" and self.module_type == "baseline":
+            self.module_type = self.type
+        elif self.module_type != "baseline":
+            self.type = self.module_type
 
 
 @dataclass
