@@ -99,6 +99,11 @@ def test_dual_format_logging_to_disk():
         assert entry["module"] == "test_module"
         assert entry["message"] == "Test log line 1"
 
+        # Explicitly close and clear handlers so Windows releases file handles before tmpdir cleanup
+        for h in list(logger.handlers):
+            h.close()
+            logger.removeHandler(h)
+
 
 def test_executor_timeout_enforcement():
     """Bug 2: Verify executor handles timeouts properly."""
