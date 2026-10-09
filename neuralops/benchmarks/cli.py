@@ -43,6 +43,17 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
     run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
     run_p.add_argument("--eval-only", action="store_true", help="Skip fine-tuning")
+    # Universal engine flags
+    run_p.add_argument("--task", type=str, default=None, help="Target task type (e.g., classification, summarization, qa, lm)")
+    run_p.add_argument("--max-samples", type=int, default=None, help="Limit number of dataset samples")
+    run_p.add_argument("--no-trust-remote-code", action="store_true", help="Disable trust_remote_code for HF models")
+    run_p.add_argument("--hf-token", type=str, default=None, help="Hugging Face API token for gated/private models")
+    run_p.add_argument("--language", type=str, default=None, help="Language code for multilingual datasets/metrics")
+    run_p.add_argument("--text-column", type=str, default=None, help="Custom column name for text inputs")
+    run_p.add_argument("--label-column", type=str, default=None, help="Custom column name for target labels")
+    run_p.add_argument("--id-column", type=str, default=None, help="Custom column name for sample IDs")
+    run_p.add_argument("--preprocess-script", type=str, default=None, help="Path to custom preprocessing python script")
+    run_p.add_argument("--config", type=str, default=None, help="Path to YAML benchmark configuration file")
     # Results management flags
     run_p.add_argument("--auto-commit", action="store_true", help="Auto-commit benchmark results to git")
     run_p.add_argument("--no-auto-commit", action="store_true", help="Disable git auto-commit")
@@ -196,6 +207,15 @@ def handle_run(args: argparse.Namespace) -> None:
         device=args.device,
         timeout_s=args.timeout_s,
         eval_only=args.eval_only,
+        task=args.task,
+        max_samples=args.max_samples,
+        trust_remote_code=not args.no_trust_remote_code,
+        hf_token=args.hf_token,
+        language=args.language,
+        text_column=args.text_column,
+        label_column=args.label_column,
+        id_column=args.id_column,
+        preprocess_script=args.preprocess_script,
         auto_commit=args.auto_commit and not args.no_auto_commit,
         commit_interval=args.commit_interval,
         push_to_hf=args.push_to_hf,

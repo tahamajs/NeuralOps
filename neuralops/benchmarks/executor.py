@@ -38,9 +38,31 @@ def _select_adapter(
     lr: float,
     seed: int,
     eval_only: bool,
+    task: str | None = None,
     **kwargs: Any,
 ) -> Any:
-    """Route benchmark to appropriate task adapter based on dataset task type."""
+    """Route benchmark to appropriate task adapter based on task or dataset task type."""
+    if task:
+        from neuralops.benchmarks.tasks.adapter import select_universal_task_adapter
+        adapter_cls = select_universal_task_adapter(task)
+        return adapter_cls(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            epochs=epochs,
+            lr=lr,
+            seed=seed,
+            eval_only=eval_only,
+            task=task,
+            **kwargs,
+        )
+
     ds_lower = dataset.lower()
     if ds_lower in PERPLEXITY_DATASETS:
         return PerplexityAdapter(
@@ -118,6 +140,7 @@ def execute_single(
     seed: int = 42,
     eval_only: bool = False,
     timeout_s: Optional[int] = 1800,
+    task: Optional[str] = None,
     **kwargs: Any,
 ) -> BenchmarkResult:
     """Execute a benchmark for a single module on a model and dataset.
@@ -132,8 +155,8 @@ def execute_single(
     out_dir = kwargs.get("output_dir", "results")
     run_logger, log_file, jsonl_file = setup_run_logger(out_dir, run_id, str(module))
     run_logger.info(
-        "Beginning execution of run %s: module=%s, model=%s, dataset=%s, rank=%s, epochs=%s, batch_size=%s",
-        run_id, module, model, dataset, rank, epochs, batch_size
+        "Beginning execution of run %s: module=%s, model=%s, dataset=%s, rank=%s, epochs=%s, batch_size=%s, task=%s",
+        run_id, module, model, dataset, rank, epochs, batch_size, task
     )
 
     config_dict = {
@@ -144,6 +167,7 @@ def execute_single(
         "max_length": max_length,
         "seed": seed,
         "eval_only": eval_only,
+        "task": task,
         **kwargs,
     }
 
@@ -287,6 +311,7 @@ def execute_single(
             lr=lr,
             seed=seed,
             eval_only=eval_only,
+            task=task,
             **kwargs,
         )
 
