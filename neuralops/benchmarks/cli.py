@@ -191,8 +191,11 @@ def handle_run(args: argparse.Namespace) -> None:
         eval_only=args.eval_only,
     )
     for res in runner.stream():
-        status_symbol = "✓" if res.status == "success" else "✗"
-        print(f"{status_symbol} [{res.status.upper()}] {res.module.get('name')} on {res.model.get('name')}/{res.dataset.get('name')}")
+        status_symbol = "[+]" if res.status == "success" else "[-]"
+        mod_name = res.module.get("name") if isinstance(res.module, dict) else res.module
+        mdl_name = res.model.get("name") if isinstance(res.model, dict) else res.model
+        ds_name = res.dataset.get("name") if isinstance(res.dataset, dict) else res.dataset
+        print(f"{status_symbol} [{res.status.upper()}] {mod_name} on {mdl_name}/{ds_name}")
 
 
 def main(argv: list[str] | None = None) -> int:
