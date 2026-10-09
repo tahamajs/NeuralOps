@@ -33,7 +33,7 @@ def _run_attention_test(module, name):
     (PerformerAttention, "PerformerAttention"),
 ])
 def test_all_attentions(attn_cls, name):
-    config = MockConfig()
+    config = MockConfig(hidden_size=768)
     module = attn_cls(config)
     _run_attention_test(module, name)
 
