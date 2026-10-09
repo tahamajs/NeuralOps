@@ -128,42 +128,92 @@ class ReplaceAttention(BaseAttention):
     # Aliases (RE-12)
     @property
     def query(self) -> nn.Module:
+        """Alias for query projection layer.
+
+        Returns:
+            nn.Module: The query projection module.
+        """
         return self.q_proj
 
     @property
     def key(self) -> nn.Module:
+        """Alias for key projection layer.
+
+        Returns:
+            nn.Module: The key projection module.
+        """
         return self.k_proj
 
     @property
     def value(self) -> nn.Module:
+        """Alias for value projection layer.
+
+        Returns:
+            nn.Module: The value projection module.
+        """
         return self.v_proj
 
     @property
     def q_lin(self) -> nn.Module:
+        """Alias for linear query projection.
+
+        Returns:
+            nn.Module: The query linear module.
+        """
         return self.q_proj
 
     @property
     def k_lin(self) -> nn.Module:
+        """Alias for linear key projection.
+
+        Returns:
+            nn.Module: The key linear module.
+        """
         return self.k_proj
 
     @property
     def v_lin(self) -> nn.Module:
+        """Alias for linear value projection.
+
+        Returns:
+            nn.Module: The value linear module.
+        """
         return self.v_proj
 
     @property
     def out_lin(self) -> nn.Module:
+        """Alias for linear output projection.
+
+        Returns:
+            nn.Module: The output projection module.
+        """
         return self.out_proj
 
     @property
     def o_proj(self) -> nn.Module:
+        """Alias for output projection layer.
+
+        Returns:
+            nn.Module: The output projection module.
+        """
         return self.out_proj
 
     @property
     def dense(self) -> nn.Module:
+        """Alias for dense projection layer.
+
+        Returns:
+            nn.Module: The dense projection module.
+        """
         return self.out_proj
 
     @property
     def c_proj(self) -> nn.Module:
+        """Alias for context projection layer.
+
+        Returns:
+            nn.Module: The projection module.
+        """
         return self.out_proj
 
     # ------------------------------------------------------------------

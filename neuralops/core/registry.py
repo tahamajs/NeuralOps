@@ -127,6 +127,14 @@ class Registry:
         """
 
         def decorator(obj: Callable) -> Callable:
+            """Inner registration decorator wrapping target callable.
+
+            Args:
+                obj: The class or callable to register.
+
+            Returns:
+                Callable: The registered object unmodified.
+            """
             final_key = key if key is not None else obj.__name__
             k = final_key.lower()
             # If key already exists and maps to a class, do not let a plain function overwrite it
