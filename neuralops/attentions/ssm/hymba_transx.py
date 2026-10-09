@@ -955,7 +955,18 @@ class HymbaTransXBlock(BaseAttention):
             out = self.out_proj(combined)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
-        return out, (diff_attn if output_attentions else None)
+
+        # Build present KV-cache for autoregressive decoding
+        present_key_value = (k1_cat, v_cat, k2_cat) if self.is_decoder else None
+
+        if self.is_decoder:
+            if output_attentions:
+                return out, present_key_value, diff_attn
+            return out, present_key_value
+        else:
+            if output_attentions:
+                return out, diff_attn
+            return out, None
 
 
 # ===========================================================================
