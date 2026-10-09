@@ -30,10 +30,24 @@ def finetune_classification(
 
     step = 0
     epoch_losses = []
+    import sys
+    try:
+        from tqdm import tqdm
+        has_tqdm = True
+    except ImportError:
+        has_tqdm = False
+
     for epoch in range(epochs):
         running_loss = 0.0
         count = 0
-        for batch in train_loader:
+        pbar = tqdm(
+            train_loader,
+            desc=f"Epoch {epoch + 1}/{epochs}",
+            file=sys.stderr,
+            leave=False,
+        ) if has_tqdm else train_loader
+
+        for batch in pbar:
             input_ids = batch[0].to(device)
             attention_mask = batch[1].to(device)
             labels = batch[2].to(device)
@@ -50,9 +64,13 @@ def finetune_classification(
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
-            running_loss += float(loss.item())
+            cur_loss = float(loss.item())
+            running_loss += cur_loss
             count += 1
             step += 1
+
+            if has_tqdm and hasattr(pbar, "set_postfix"):
+                pbar.set_postfix({"loss": f"{cur_loss:.4f}", "avg_loss": f"{running_loss / count:.4f}"})
 
             if max_steps is not None and step >= max_steps:
                 break
