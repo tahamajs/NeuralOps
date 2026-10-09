@@ -5,6 +5,7 @@ from collections.abc import Generator
 import json
 import logging
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import time
@@ -12,6 +13,7 @@ from typing import Any
 import uuid
 
 import pandas as pd
+from tqdm import tqdm
 
 from neuralops.benchmarks.config import BenchmarkConfig
 from neuralops.benchmarks.discovery import discover_modules
@@ -109,70 +111,109 @@ class BenchmarkOrchestrator:
         self._state["status"] = "running"
         self._save_state()
 
+        # Register graceful termination handlers to save state on SIGINT / SIGTERM
+        def _handle_interrupt(signum: int, frame: Any) -> None:
+            LOG.warning("Received signal %s, saving benchmark state before exit...", signum)
+            self._state["status"] = "interrupted"
+            self._save_state()
+            sys.exit(128 + signum)
+
+        prev_sigint = None
+        prev_sigterm = None
+        try:
+            prev_sigint = signal.signal(signal.SIGINT, _handle_interrupt)
+            if hasattr(signal, "SIGTERM"):
+                prev_sigterm = signal.signal(signal.SIGTERM, _handle_interrupt)
+        except (ValueError, AttributeError):
+            # Not in main thread or platform does not support signal modification
+            pass
+
         completed_set = set(tuple(x) for x in self._state.get("completed", []))
 
-        for mod, mdl, ds, rk in grid:
-            task_key = (mod, mdl, ds, rk)
-            if self.resume_mode and task_key in completed_set:
-                LOG.info("Skipping completed task: %s", task_key)
-                continue
+        progress_bar = tqdm(
+            grid,
+            desc="Benchmarking",
+            unit="run",
+            file=sys.stderr,
+            dynamic_ncols=True,
+        )
 
-            # Execute run
-            kwargs_to_pass = {
-                k: v
-                for k, v in self.extra_kwargs.items()
-                if k
-                not in {
-                    "module",
-                    "model",
-                    "dataset",
-                    "rank",
-                    "device",
-                    "dtype",
-                    "batch_size",
-                    "max_length",
-                    "epochs",
-                    "lr",
-                    "seed",
-                    "eval_only",
-                    "timeout_s",
+        try:
+            for mod, mdl, ds, rk in progress_bar:
+                task_key = (mod, mdl, ds, rk)
+                progress_bar.set_postfix_str(f"{mod} ({rk})")
+
+                if self.resume_mode and task_key in completed_set:
+                    LOG.info("Skipping completed task: %s", task_key)
+                    continue
+
+                # Execute run
+                kwargs_to_pass = {
+                    k: v
+                    for k, v in self.extra_kwargs.items()
+                    if k
+                    not in {
+                        "module",
+                        "model",
+                        "dataset",
+                        "rank",
+                        "device",
+                        "dtype",
+                        "batch_size",
+                        "max_length",
+                        "epochs",
+                        "lr",
+                        "seed",
+                        "eval_only",
+                        "timeout_s",
+                    }
                 }
-            }
-            res = execute_single(
-                module=mod,
-                model=mdl,
-                dataset=ds,
-                rank=rk,
-                device=self.config.device,
-                dtype=self.config.precision,
-                batch_size=self.config.batch_size,
-                max_length=self.config.max_length,
-                epochs=self.config.epochs,
-                lr=self.config.lr,
-                seed=self.config.seed,
-                eval_only=self.config.eval_only,
-                timeout_s=self.config.timeout_s,
-                **kwargs_to_pass,
-            )
+                res = execute_single(
+                    module=mod,
+                    model=mdl,
+                    dataset=ds,
+                    rank=rk,
+                    device=self.config.device,
+                    dtype=self.config.precision,
+                    batch_size=self.config.batch_size,
+                    max_length=self.config.max_length,
+                    epochs=self.config.epochs,
+                    lr=self.config.lr,
+                    seed=self.config.seed,
+                    eval_only=self.config.eval_only,
+                    timeout_s=self.config.timeout_s,
+                    output_dir=str(self.output_dir),
+                    **kwargs_to_pass,
+                )
 
-            # Persist individual result
-            run_file = self.output_dir / f"{res.run_id}.json"
-            save_result_json(res, run_file)
-            append_result_jsonl(res, self.jsonl_file)
+                # Persist individual result
+                run_file = self.output_dir / f"{res.run_id}.json"
+                save_result_json(res, run_file)
+                append_result_jsonl(res, self.jsonl_file)
 
-            # Update state
-            if res.status == "success":
-                self._state["completed"].append(list(task_key))
-            elif res.status == "skipped":
-                self._state["skipped"].append(list(task_key))
-            else:
-                self._state["failed"].append(list(task_key))
+                # Update state
+                if res.status == "success":
+                    self._state["completed"].append(list(task_key))
+                elif res.status == "skipped":
+                    self._state["skipped"].append(list(task_key))
+                else:
+                    self._state["failed"].append(list(task_key))
+                self._save_state()
+
+                yield res
+
+            self._state["status"] = "finished"
             self._save_state()
-
-            yield res
-
-        self._state["status"] = "finished"
-        self._save_state()
+        finally:
+            progress_bar.close()
+            # Restore previous signal handlers
+            try:
+                if prev_sigint is not None:
+                    signal.signal(signal.SIGINT, prev_sigint)
+                if prev_sigterm is not None and hasattr(signal, "SIGTERM"):
+                    signal.signal(signal.SIGTERM, prev_sigterm)
+            except (ValueError, AttributeError):
+                pass
 
     def run(self) -> list[BenchmarkResult]:
         """Execute all benchmarks synchronously."""
