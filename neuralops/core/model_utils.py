@@ -152,3 +152,69 @@ def activation_hooks(
     finally:
         for hook in hooks:
             hook.remove()
+
+
+# ------------------------------------------------------------------ #
+# Decoder and return format detection helpers
+# ------------------------------------------------------------------ #
+def detect_decoder(
+    config: Any = None,
+    is_decoder: bool | None = None,
+    source_attn: nn.Module | None = None,
+    kwargs: dict[str, Any] | None = None,
+) -> bool:
+    """Detect whether the attention layer is being used as a causal decoder."""
+    if is_decoder is not None:
+        return bool(is_decoder)
+    if kwargs:
+        if kwargs.get("is_decoder") or kwargs.get("is_causal"):
+            return True
+    if config is not None:
+        if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
+            return True
+        mt = str(getattr(config, "model_type", "") or "").lower()
+        if any(
+            mt.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
+            return True
+    if source_attn is not None:
+        if (
+            getattr(source_attn, "is_decoder", False)
+            or hasattr(source_attn, "c_attn")
+            or "gpt" in source_attn.__class__.__name__.lower()
+        ):
+            return True
+    return False
+
+
+def detect_return_format(source_attn: nn.Module | None, is_nested_encoder: bool) -> str:
+    """Detect the expected output tuple format (bert, gpt2, or llama)."""
+    if is_nested_encoder:
+        return "bert"
+    if source_attn is None:
+        return "llama"
+    cls = source_attn.__class__.__name__.lower()
+    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gptneo", "gpt_neo", "gpt_j")) or hasattr(
+        source_attn, "c_attn"
+    ):
+        return "gpt2"
+    return "llama"
+
+
+# Backward compatibility aliases
+_detect_decoder = detect_decoder
+_detect_return_format = detect_return_format

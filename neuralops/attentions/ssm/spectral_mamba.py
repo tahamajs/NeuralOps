@@ -61,11 +61,13 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (
+        is_conv1d = (
             (module.__class__.__name__ == "Conv1D")
             or (base.__class__.__name__ == "Conv1D")
-            or (w.ndim == 2 and w.shape[0] < w.shape[1])
-        ):
+            or hasattr(module, "nf")
+            or hasattr(base, "nf")
+        )
+        if is_conv1d:
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -208,34 +210,52 @@ class SpectralMamba(nn.Module):
         self.lora_down = nn.Parameter(torch.randn(d_model, d_state) * 0.01)
         self.lora_up = nn.Parameter(torch.zeros(d_state, d_model))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Causal depthwise 1D conv for causal decoders where FFT violates causality
+        self.d_conv = 4
+        self.causal_conv = nn.Conv1d(
+            d_model,
+            d_model,
+            kernel_size=self.d_conv,
+            groups=d_model,
+            padding=0,
+            bias=True,
+        )
+
+    def forward(self, x: torch.Tensor, is_causal: bool = False) -> torch.Tensor:
         """
-        Spectral modulation with actual frequency filtering.
+        Spectral modulation with actual frequency filtering (or causal 1D conv if is_causal).
         """
         B, L, D = x.shape
         dtype = x.dtype
 
-        # FFT along sequence axis
-        x_float = x.float()
-        x_fft = torch.fft.rfft(x_float, dim=1)  # (B, L//2+1, D)
+        if is_causal:
+            # Causal depthwise 1D conv with explicit left-padding
+            x_t = x.transpose(1, 2).contiguous()
+            x_padded = F.pad(x_t, (self.d_conv - 1, 0))
+            x_filtered = self.causal_conv(x_padded).transpose(1, 2).contiguous()
+            x_filtered = F.silu(x_filtered).to(dtype)
+        else:
+            # FFT along sequence axis
+            x_float = x.float()
+            x_fft = torch.fft.rfft(x_float, dim=1)  # (B, L//2+1, D)
 
-        freq_weights = self.freq_weights
-        if freq_weights.shape[0] != x_fft.shape[1]:
-            freq_weights = (
-                F.interpolate(
-                    freq_weights.transpose(0, 1).unsqueeze(0),
-                    size=x_fft.shape[1],
-                    mode="linear",
-                    align_corners=False,
+            freq_weights = self.freq_weights
+            if freq_weights.shape[0] != x_fft.shape[1]:
+                freq_weights = (
+                    F.interpolate(
+                        freq_weights.transpose(0, 1).unsqueeze(0),
+                        size=x_fft.shape[1],
+                        mode="linear",
+                        align_corners=False,
+                    )
+                    .squeeze(0)
+                    .transpose(0, 1)
                 )
-                .squeeze(0)
-                .transpose(0, 1)
-            )
 
-        x_fft_filtered = x_fft * freq_weights.unsqueeze(0)
+            x_fft_filtered = x_fft * freq_weights.unsqueeze(0)
 
-        # Back to time domain
-        x_filtered = torch.fft.irfft(x_fft_filtered, n=L, dim=1).to(dtype)
+            # Back to time domain
+            x_filtered = torch.fft.irfft(x_fft_filtered, n=L, dim=1).to(dtype)
 
         # Low-rank state projection
         state_act = F.linear(
@@ -698,6 +718,17 @@ class SpectralMambaAttention(BaseAttention):
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
+        attn_weights = None
+
+        # Autoregressive KV-cache for causal decoders
+        if self.is_decoder and past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None and past_v is not None:
+                    k = torch.cat([past_k, k], dim=2)
+                    v = torch.cat([past_v, v], dim=2)
+        present_key_value = (k, v) if self.is_decoder else None
+
         # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
@@ -705,10 +736,9 @@ class SpectralMambaAttention(BaseAttention):
             v = repeat_kv(v, repeats)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA when attention weights are not requested
         attn_out = None
-        attn_weights = None
 
+        # Memory-efficient: use SDPA only when attention weights are NOT requested
         if not output_attentions and head_mask is None:
             try:
                 _qs = q.half() if q.dtype == torch.float32 else q
@@ -743,8 +773,10 @@ class SpectralMambaAttention(BaseAttention):
             # Causal masking
             is_causal = self.is_decoder or kwargs.get("is_causal", False)
             if is_causal:
-                causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
-                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+                L_kv = k.shape[2]
+                past_len = L_kv - N
+                causal_mask = torch.tril(torch.ones(N, L_kv, device=scores.device), diagonal=past_len)
+                scores = scores.masked_fill(~causal_mask.bool().unsqueeze(0).unsqueeze(0), -1e4)
 
             # Attention mask
             if attention_mask is not None:
@@ -779,14 +811,10 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 attn_out = self.out_lin(attn_ctx)
 
-        # Spectral Mamba stream
-        # FIXED: FFT violates causality; bypass Spectral Mamba stream for decoders
-        if self.is_decoder:
-            mamba_out = torch.zeros_like(attn_out)
-        else:
-            mamba_out = self.spectral_mamba(hidden_states)
-            while isinstance(mamba_out, (tuple, list)):
-                mamba_out = mamba_out[0]
+        # Spectral Mamba stream with causal fallback for decoders
+        mamba_out = self.spectral_mamba(hidden_states, is_causal=self.is_decoder)
+        while isinstance(mamba_out, (tuple, list)):
+            mamba_out = mamba_out[0]
 
         if mamba_out.shape[-1] != attn_out.shape[-1]:
             if mamba_out.shape[-1] < attn_out.shape[-1]:
@@ -809,10 +837,13 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 out = out[..., : hidden_states.shape[-1]]
 
-        weights_to_return = None
-        if output_attentions:
-            weights_to_return = locals().get("attn_weights", None)
-        return out, weights_to_return
+        if self.is_decoder:
+            if output_attentions:
+                return out, present_key_value, attn_weights
+            else:
+                return out, present_key_value
+        else:
+            return out, attn_weights
 
 
 def inject_spectral_mamba(
