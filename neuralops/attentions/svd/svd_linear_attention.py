@@ -63,10 +63,10 @@ except Exception:
     fast_linear_attention = None
 
 try:
-    from neuralops.attentions.fused_svd_kernel import FusedSVDLinear  # noqa: F401, fused_svd_linear
+    from neuralops.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
 
     HAS_FUSED_KERNEL = True
-except ImportError:
+except (ImportError, AttributeError):
     HAS_FUSED_KERNEL = False
 
 
