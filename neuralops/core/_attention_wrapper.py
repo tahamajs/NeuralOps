@@ -127,43 +127,43 @@ class ReplaceAttention(BaseAttention):
 
     # Aliases (RE-12)
     @property
-    def query(self):
+    def query(self) -> nn.Module:
         return self.q_proj
 
     @property
-    def key(self):
+    def key(self) -> nn.Module:
         return self.k_proj
 
     @property
-    def value(self):
+    def value(self) -> nn.Module:
         return self.v_proj
 
     @property
-    def q_lin(self):
+    def q_lin(self) -> nn.Module:
         return self.q_proj
 
     @property
-    def k_lin(self):
+    def k_lin(self) -> nn.Module:
         return self.k_proj
 
     @property
-    def v_lin(self):
+    def v_lin(self) -> nn.Module:
         return self.v_proj
 
     @property
-    def out_lin(self):
+    def out_lin(self) -> nn.Module:
         return self.out_proj
 
     @property
-    def o_proj(self):
+    def o_proj(self) -> nn.Module:
         return self.out_proj
 
     @property
-    def dense(self):
+    def dense(self) -> nn.Module:
         return self.out_proj
 
     @property
-    def c_proj(self):
+    def c_proj(self) -> nn.Module:
         return self.out_proj
 
     # ------------------------------------------------------------------

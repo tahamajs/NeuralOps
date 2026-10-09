@@ -36,7 +36,7 @@ def sanitize_json_value(value: Any) -> Any:
 
 
 @contextlib.contextmanager
-def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0):
+def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0) -> Any:
     """Acquire an exclusive cross-process / multi-GPU file lock to serialize SQLite writes.
 
     Args:

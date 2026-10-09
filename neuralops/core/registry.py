@@ -282,11 +282,11 @@ class Registry:
         """Return a list of all registered keys."""
         return self.keys()
 
-    def items(self):
+    def items(self) -> Any:
         """Return registered key-value pairs."""
         return self._dict.items()
 
-    def values(self):
+    def values(self) -> Any:
         """Return registered values."""
         return self._dict.values()
 

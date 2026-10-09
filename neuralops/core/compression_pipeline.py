@@ -56,7 +56,7 @@ class CompressionPipeline:
 def compress_model(
     model: nn.Module,
     config: dict[str, Any],
-    tokenizer=None,
+    tokenizer: Any = None,
 ) -> nn.Module:
     """Convenience function to compress a model with a configuration dict."""
     pipeline = CompressionPipeline(model, config, tokenizer)
