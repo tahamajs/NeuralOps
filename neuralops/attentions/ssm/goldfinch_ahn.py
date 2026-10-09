@@ -228,26 +228,17 @@ class GatedRecurrentMemory(nn.Module):
         # chunk_out[c] = h_local[c, -1]  (final state of chunk c)
         chunk_out = h_local[:, :, -1, :]  # (B, n_chunks, D)
 
-        # Compute carry-in state for each chunk:
-        # h_in[c] = sum_{c' < c} [prod_{c' < j < c} (1-g_chunk_j)] * chunk_out[c']
-        # where g_chunk_j = g of last position in chunk j (approximation)
-        g_chunk = g_c[:, :, -1, :]  # (B, n_chunks, D) -- last gate of each chunk
+        # True product of decays across the entire chunk:
+        # chunk_decay = prod_{t=0}^{chunk_size-1} (1 - g_c[:, :, t, :])
+        # In log space for numerical stability:
+        chunk_decay = torch.exp(torch.sum(torch.log((1.0 - g_c).clamp(min=1e-6, max=1.0)), dim=2))  # (B, n_chunks, D)
 
-        # log-space cumprod for stability
-        # one_minus_g[c] = 1 - g_chunk[c]
-        omg = (1.0 - g_chunk).clamp(min=1e-6, max=1.0)  # (B, n_chunks, D)
-        log_omg = torch.log(omg)
-
-        # cum_log_omg[c] = sum_{j<=c} log(1-g_j)
-        _cum_log_omg = torch.cumsum(log_omg, dim=1)  # (B, n_chunks, D)
-
-        # h_carry_in[c] = sum_{c' < c} exp(cum_log_omg[c] - cum_log_omg[c']) * chunk_out[c']
-        # We use a sequential scan over chunks only (n_chunks ~ 8 for L=128, chunk=16)
+        # Inter-chunk recurrence scan
         h_carry = torch.zeros(B, n_chunks, D, device=x.device, dtype=target_dtype)
         carry = torch.zeros(B, D, device=x.device, dtype=target_dtype)
         for c in range(n_chunks):
             h_carry[:, c] = carry
-            carry = (1.0 - g_chunk[:, c]) * carry + chunk_out[:, c]
+            carry = chunk_decay[:, c] * carry + chunk_out[:, c]
 
         # ---- Combine ----
         # Full output: h_full[b, c, t] = h_carry[b, c] * prod_{t' <= t}(1-g) + h_local[b, c, t]
@@ -741,8 +732,11 @@ class GoldFinchAHNBlock(BaseAttention):
                 return m
         elif attention_mask.dim() == 4:
             m = _to_bool(attention_mask)
-            m = m.any(dim=-2)  # (B, H, L)
-            m = m.any(dim=1)   # (B, L)
+            # Extract token-level validity along the key sequence dimension
+            if m.shape[-2] == 1:
+                m = m.squeeze(1).squeeze(1)  # (B, L)
+            else:
+                m = m[:, 0].any(dim=-2)      # (B, L)
             if m.shape == (B, L):
                 return m
 
@@ -806,6 +800,15 @@ class GoldFinchAHNBlock(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
+        # ---- Autoregressive KV cache for decoders ----
+        if self.is_decoder and past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None and past_v is not None:
+                    k = torch.cat([past_k, k], dim=2)
+                    v = torch.cat([past_v, v], dim=2)
+        present_key_value = (k, v) if self.is_decoder else None
+
         # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
@@ -813,38 +816,36 @@ class GoldFinchAHNBlock(BaseAttention):
 
         # ---- Sliding-window attention (FIX 2: SDPA fast-path) ----
         # Build additive bool mask
-        idx = torch.arange(L, device=device)
+        L_kv = k.shape[-2]
+        idx_q = torch.arange(L, device=device).unsqueeze(1)
+        idx_k = torch.arange(L_kv, device=device).unsqueeze(0)
         if self.window_radius is None:
-            # Full context
-            band = torch.ones(L, L, device=device, dtype=torch.bool)
+            band = torch.ones(L, L_kv, device=device, dtype=torch.bool)
         else:
-            diff = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
+            diff = (idx_q - idx_k).abs()
             band = diff <= self.window_radius
 
         if self.is_causal:
-            causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
+            past_len = L_kv - L
+            causal = torch.tril(torch.ones(L, L_kv, device=device, dtype=torch.bool), diagonal=past_len)
             valid_local = causal & band
         else:
             valid_local = band
 
         valid_mask = self._normalize_valid_mask(attention_mask, B, L, device)
         if valid_mask is not None:
-            # combine padding mask: (B, 1, 1, L)
             pad_mask = valid_mask[:, None, None, :]
             valid_local_4d = valid_local.unsqueeze(0).unsqueeze(0) & pad_mask
         else:
             valid_local_4d = valid_local.unsqueeze(0).unsqueeze(0)
 
         # SDPA fast-path: use additive bool mask
-        # SDPA requires attn_mask of shape (L, L) or (B, H, L, L) with bool or float
         try:
-            # Try SDPA with bool mask (True = keep, False = mask)
             if valid_local_4d.dtype == torch.bool:
-                # Expand to (B, H, L, L) for SDPA
                 if valid_local_4d.shape[0] == 1 and B > 1:
-                    attn_mask = valid_local_4d.expand(B, H, L, L)
+                    attn_mask = valid_local_4d.expand(B, H, L, L_kv)
                 elif valid_local_4d.shape[0] == B and valid_local_4d.shape[1] == 1:
-                    attn_mask = valid_local_4d.expand(B, H, L, L)
+                    attn_mask = valid_local_4d.expand(B, H, L, L_kv)
                 else:
                     attn_mask = valid_local_4d
                 short_out = F.scaled_dot_product_attention(
@@ -857,10 +858,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 raise RuntimeError("mask not bool")
         except Exception as e:
             logger.debug("Goldfinch SDPA failed (%s); using manual path.", e)
-            # Fallback: manual matmul with additive mask
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (d ** -0.5)
             scores = scores.masked_fill(~valid_local_4d, -1e4)
-            # FIX 5: head_mask BEFORE softmax
             if head_mask is not None:
                 hm = head_mask
                 if hm.dim() == 1:
@@ -905,7 +904,10 @@ class GoldFinchAHNBlock(BaseAttention):
             out = self.out_proj(fused)
             out = (out * self.output_scale.to(out.dtype)).to(out.dtype)
 
-        return out.to(dtype_in), None  # attentions not returned (SDPA doesn't expose)
+        if self.is_decoder:
+            return out.to(dtype_in), present_key_value
+        else:
+            return out.to(dtype_in), None
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
