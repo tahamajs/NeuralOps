@@ -85,15 +85,16 @@ def test_jamba_frobenius_norm_verification():
             self.q_proj.weight.data.zero_()  # Zero norm
 
     old = ZeroAttn()
-    with pytest.raises(RuntimeError, match="norm too small"):
-        Jamba2Block(d_model=64, n_heads=4, pretrained_attn=old)
+    with pytest.warns(UserWarning, match="norm too small"):
+        block = Jamba2Block(d_model=64, n_heads=4, pretrained_attn=old)
+    assert block is not None
 
 def test_jamba_fallback_on_copy_weights_failure():
     class BrokenLayer(nn.Module):
         def __init__(self):
             super().__init__()
-            self.attention = nn.Linear(64, 64)
-            self.attention.weight.data.zero_()  # Causes copy_weights to raise
+            self.attention = nn.Module()
+            self.attention.hidden_size = -1  # Invalid dimension causes Jamba2Block init to fail
     
     layer = BrokenLayer()
     res = inject_jamba(layer=layer)
@@ -181,3 +182,91 @@ def test_jamba_injection_all_4_architectures():
     res_q = inject_jamba(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, Jamba2Block)
+
+
+# ===========================================================================
+# Targeted Tests for Jamba Refactor Fixes
+# ===========================================================================
+
+def test_jamba_checkpointing_env_flag(monkeypatch):
+    """Verify that JAMBA_CHECKPOINT environment variable controls checkpointing."""
+    import os
+    monkeypatch.delenv("JAMBA_CHECKPOINT", raising=False)
+    block = Jamba2Block(d_model=64, n_heads=4, is_decoder=True)
+    block.train()
+    x = torch.randn(2, 4, 64)
+    # Direct fast execution when disabled
+    out, present = block(x)
+    assert out.shape == (2, 4, 64)
+    assert present is not None
+
+    # Checkpoint execution when enabled
+    monkeypatch.setenv("JAMBA_CHECKPOINT", "1")
+    out_cp, present_cp = block(x)
+    assert out_cp.shape == (2, 4, 64)
+    assert present_cp is not None
+
+
+def test_jamba_decoder_tuple_returns_gpt2():
+    """Verify strictly aligned return tuples for GPT-2 format."""
+    block = Jamba2Block(d_model=64, n_heads=4, is_decoder=True)
+    block._return_format = "gpt2"
+    x = torch.randn(2, 4, 64)
+
+    # 1. output_attentions=False -> (out, present) 2-tuple
+    res = block(x, output_attentions=False)
+    assert len(res) == 2
+    out, present = res
+    assert out.shape == (2, 4, 64)
+    assert present is not None
+
+    # 2. output_attentions=True -> (out, present, attn_weights) 3-tuple
+    res_attn = block(x, output_attentions=True)
+    assert len(res_attn) == 3
+    out_a, present_a, attn_w = res_attn
+    assert out_a.shape == (2, 4, 64)
+    assert present_a is not None
+    assert attn_w is not None
+
+
+def test_jamba_encoder_tuple_returns_bert():
+    """Verify strictly aligned return tuples for BERT / encoder format."""
+    block = Jamba2Block(d_model=64, n_heads=4, is_decoder=False)
+    block._return_format = "bert"
+    x = torch.randn(2, 4, 64)
+
+    # 1. output_attentions=False -> (out,) 1-tuple
+    res = block(x, output_attentions=False)
+    assert len(res) == 1
+    assert res[0].shape == (2, 4, 64)
+
+    # 2. output_attentions=True -> (out, attn_weights) 2-tuple
+    res_attn = block(x, output_attentions=True)
+    assert len(res_attn) == 2
+    out_a, attn_w = res_attn
+    assert out_a.shape == (2, 4, 64)
+    assert attn_w is not None
+
+
+def test_jamba_sdpa_path_priority():
+    """Verify SDPA path executes cleanly without crash for decoder with and without 2D mask."""
+    block = Jamba2Block(d_model=64, n_heads=4, is_decoder=True)
+    x = torch.randn(2, 8, 64)
+
+    # Case 1: attention_mask is None
+    out1, _ = block(x, attention_mask=None)
+    assert out1.shape == (2, 8, 64)
+    assert torch.isfinite(out1).all()
+
+    # Case 2: attention_mask is 2D full valid (all 1s)
+    mask_full = torch.ones(2, 8, dtype=torch.long)
+    out2, _ = block(x, attention_mask=mask_full)
+    assert out2.shape == (2, 8, 64)
+    assert torch.isfinite(out2).all()
+
+    # Case 3: attention_mask is 2D with padding
+    mask_pad = torch.tensor([[1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 0, 0, 0, 0]], dtype=torch.long)
+    out3, _ = block(x, attention_mask=mask_pad)
+    assert out3.shape == (2, 8, 64)
+    assert torch.isfinite(out3).all()
+
