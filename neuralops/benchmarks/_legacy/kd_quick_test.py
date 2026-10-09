@@ -1615,6 +1615,42 @@ def run_kd_method(
         except Exception as e:
             LOG.warning("Failed to save run details: %s", e)
 
+        # Standard Canonical 5-Format Persistence (JSON, JSONL, CSV, Markdown, Parquet)
+        try:
+            from neuralops.benchmarks.results import BenchmarkResult, save_all_formats
+            bench_res = BenchmarkResult(
+                run_id=f"kd_{module_name}_{method_name}_{getattr(args, 'timestamp', 'now')}",
+                run_name=f"kd_{module_name}_{args.model_name}_{method_name}",
+                module={"name": module_name, "type": "attention", "rank": getattr(args, "rank", 64)},
+                model={"name": args.model_name},
+                dataset={"name": "wikitext2", "task_type": "language_modeling"},
+                config={
+                    "method": method_name,
+                    "rank": getattr(args, "rank", 64),
+                    "training_type": "kd",
+                    "recovery_steps": total_steps,
+                    "learning_rate": lr,
+                    "batch_size": args.batch_size,
+                    "seq_len": current_seq_len,
+                },
+                metrics={
+                    "pre_ppl": round(float(pre_ppl), 2) if np.isfinite(pre_ppl) else None,
+                    "post_ppl": round(float(post_ppl), 2) if np.isfinite(post_ppl) else None,
+                    "post_ppl_stage1": round(float(post_ppl_stage1), 2) if np.isfinite(post_ppl_stage1) else None,
+                    "post_ppl_stage2": round(float(post_ppl_stage2), 2) if np.isfinite(post_ppl_stage2) else None,
+                    "kd_gain": round(float(pre_ppl - post_ppl_stage1), 2) if np.isfinite(pre_ppl) and np.isfinite(post_ppl_stage1) else 0.0,
+                    "recovery_pct": round(float(recovery_pct), 2) if recovery_pct is not None and np.isfinite(recovery_pct) else 0.0,
+                },
+                resources={
+                    "peak_vram_mb": round(float(peak_vram), 2),
+                    "train_duration_s": round(float(train_time_s), 2),
+                },
+                status="success" if np.isfinite(post_ppl) else "failed",
+            )
+            save_all_formats(bench_res, output_dir=Path("results"))
+        except Exception as err:
+            LOG.debug("Standard result persistence failed: %s", err)
+
     # Thorough VRAM cleanup before next module/method
     del student
     if projection_adapter is not None: del projection_adapter
