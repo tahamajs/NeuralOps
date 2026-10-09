@@ -186,7 +186,7 @@ class DynamicLowRankProjector(nn.Module):
 
     def __init__(
         self,
-        rank: int = 32,
+        rank: int = 64,
         in_dim: int = 768,
         out_dim: int = 768,
         bias: bool = True,
@@ -499,6 +499,7 @@ class VSpecAttention(BaseAttention):
         self.sg_q = VariationalSpectralGate(self.hidden_size, self.rank)
         self.sg_k = VariationalSpectralGate(self.hidden_size, self.rank)
         self.sg_v = VariationalSpectralGate(self.hidden_size, self.rank)
+        self.sg_o = VariationalSpectralGate(self.all_head_size, self.rank)
 
         self.head_gate = HeadGate(self.hidden_size, self.num_heads)
         self.router = TokenRouter(self.hidden_size, keep_ratio=0.75)
@@ -784,18 +785,21 @@ class VSpecAttention(BaseAttention):
             )
         )
 
-        # Token routing: Skip for nested encoders (RoBERTa/BERT) to preserve context
-        if self.is_nested_encoder:
+        # Token routing:
+        # 1. Causal decoders: MUST completely bypass token router to preserve autoregressive sequence integrity.
+        # 2. Nested encoders (RoBERTa/BERT): bypass router to preserve bidirectional full context.
+        # 3. Only bidirectional non-nested encoders perform token routing.
+        if is_decoder or self.is_nested_encoder:
             routed = hidden_states
             idx = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
             k_len = N
             valid_routed = valid
         else:
-            routed, idx = self.router(hidden_states, valid, is_decoder=is_decoder)
+            routed, idx = self.router(hidden_states, valid, is_decoder=False)
             k_len = routed.shape[1]
             valid_routed = torch.gather(valid, 1, idx) if valid is not None else None
 
-        # Variational spectral gates using masked mean over routed tokens
+        # Variational spectral gates using masked mean over tokens
         gq, _, _ = self.sg_q(routed, valid_routed)
         gk, _, _ = self.sg_k(routed, valid_routed)
         gv, _, _ = self.sg_v(routed, valid_routed)
@@ -858,16 +862,16 @@ class VSpecAttention(BaseAttention):
         )
 
         if can_use_sdpa:
-            # Build mask if padding is present; otherwise is_causal handles causal ordering
-            combined_mask = None
-            is_causal_sdpa = bool(is_decoder and k_len > 1)
-            if valid_routed is not None:
-                # pad_mask: True for valid tokens, False for masked tokens
+            # When running a causal decoder without explicit padding mask, use native is_causal=True
+            if valid_routed is None:
+                combined_mask = None
+                is_causal_sdpa = bool(is_decoder and k_len > 1)
+            else:
+                is_causal_sdpa = False
                 combined_mask = valid_routed.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
-                if is_causal_sdpa:
+                if is_decoder and k_len > 1:
                     causal_bool = torch.tril(torch.ones(k_len, k_len, device=device, dtype=torch.bool))
                     combined_mask = combined_mask & causal_bool.unsqueeze(0).unsqueeze(1)
-                    is_causal_sdpa = False  # passed via attn_mask instead
 
             context = F.scaled_dot_product_attention(
                 Q,
@@ -928,7 +932,9 @@ class VSpecAttention(BaseAttention):
         if self.is_nested_encoder:
             return (context, (attn_weights if output_attentions else None))
 
-        out = self.Po(context, gq)
+        # Compute dedicated gate for output projection
+        go, _, _ = self.sg_o(context, valid_routed)
+        out = self.Po(context, go)
 
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
@@ -1091,7 +1097,7 @@ def inject_vspec_attn(
 
         rank = kwargs.pop(
             "rank",
-            _cfg_get(comp_config, "vspec_rank", _cfg_get(comp_config, "rank", 32)),
+            _cfg_get(comp_config, "vspec_rank", _cfg_get(comp_config, "rank", 64)),
         )
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
 
