@@ -152,6 +152,7 @@ except ImportError:  # pragma: no cover — fallback for isolated import
     supports_gqa=True,
     supports_rope=True,
 )
+
 class GroupedQueryAttention(BaseAttention):
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -949,6 +950,7 @@ class GroupedQueryAttention(BaseAttention):
 # Injection
 # =============================================================================
 
+@ATTENTION_REGISTRY.register("gqa")
 
 def inject_gqa(
     layer: Any = None,
