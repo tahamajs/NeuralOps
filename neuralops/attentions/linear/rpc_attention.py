@@ -159,7 +159,7 @@ class FactorizedLoRALinear(nn.Module):
         if not self.training:
             self._cached_weight = w
             self._cached_versions = self._current_versions()
-        return w
+        return w.detach()
 
     @property
     def bias(self) -> torch.Tensor | None:
@@ -266,7 +266,8 @@ class RPCAttention(BaseAttention):
                 _cfg_get(config, "rank", rank if rank is not None else 64),
             ),
         )
-        self.sketch_rank = max(1, min(int(raw_rank), self.dim))
+        self.sketch_rank = max(1, min(int(raw_rank), self.head_dim))
+        self.rank = self.sketch_rank
 
         # ---- projection rank for FactorizedLoRALinear ----
         raw_proj_rank = int(
@@ -440,6 +441,10 @@ class RPCAttention(BaseAttention):
     @property
     def out_lin(self):
         return self.out_proj
+
+    @property
+    def proj(self) -> torch.Tensor:
+        return self.proj_q
 
     # ------------------------------------------------------------------
     # SVD init
@@ -936,6 +941,14 @@ def inject_rpc(
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
+
+    if old_attn is None and isinstance(target, nn.Module) and not any(
+        hasattr(target, a) for a in ("attention", "self_attn", "attn", "self")
+    ) and len(list(target.children())) == 0:
+        return None
+
+    if cfg is None and hasattr(target, "hidden_size"):
+        cfg = target
 
     # ---- Single-layer injection ----
     try:
