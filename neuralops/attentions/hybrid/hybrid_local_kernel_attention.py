@@ -831,7 +831,7 @@ class HybridLocalKernelAttention(BaseAttention):
     @classmethod
     def from_distilbert_pretrained(
         cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
-    ) -> "AegisAttentionV2":
+    ) -> "HybridLocalKernelAttention":
         if model_config is None:
             out_mod = getattr(old_attn, "out_lin", None) or getattr(old_attn, "dense", None)
             if out_mod is None or not hasattr(out_mod, "out_features"):
@@ -1096,7 +1096,7 @@ def inject_hybrid_local_kernel(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_aegis_v2(
+            res = inject_hybrid_local_kernel(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=comp_config,
@@ -1185,7 +1185,7 @@ def inject_hybrid_local_kernel(
             gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8),
             is_decoder=is_dec,
         )
-        new_attn = AegisAttentionV2(config=cfg)
+        new_attn = HybridLocalKernelAttention(config=cfg)
         if src_attn is not None:
             try:
                 new_attn.copy_weights(src_attn)

@@ -18,6 +18,11 @@ from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
+try:
+    from neuralops.attentions.adaptive.progressive_token_pruning import ProgressiveTokenPruning
+except ImportError:
+    ProgressiveTokenPruning = None
+
 logger = logging.getLogger(__name__)
 
 

@@ -526,7 +526,7 @@ class SplitHeadHybridAttention(BaseAttention):
         self,
         model_config: Any = None,
         config: Any = None,
-        aegis_cfg: AegisConfigV5 | None = None,
+        aegis_cfg: SplitHeadHybridConfig | None = None,
         pretrained_attn: nn.Module | None = None,
         is_decoder: bool | None = None,
         **kwargs: Any,
