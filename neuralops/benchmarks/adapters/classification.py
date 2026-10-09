@@ -121,6 +121,8 @@ class ClassificationAdapter:
             tokenized_train,
             name=self.dataset_name,
             split=f"train+{eval_split}",
+            num_train=len(tokenized_train) if hasattr(tokenized_train, "__len__") else None,
+            num_eval=len(tokenized_eval) if hasattr(tokenized_eval, "__len__") else None,
         )
 
         self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
