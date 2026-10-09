@@ -50,9 +50,13 @@ class NeuralOpsConfig(PretrainedConfig):
         mlp_type: str = "swiglu",
         dropout: float = 0.0,
         fuse_linear_cross_entropy: bool = False,
+        is_decoder: bool = True,
+        is_causal: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize NeuralOpsConfig with full architectural parameters."""
+        self.is_decoder = is_decoder
+        self.is_causal = is_causal
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
