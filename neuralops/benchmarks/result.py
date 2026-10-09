@@ -23,6 +23,21 @@ def _get_git_commit() -> str:
         return "unknown"
 
 
+def _is_git_dirty() -> bool:
+    """Check if git working tree has uncommitted changes."""
+    try:
+        res = subprocess.run(
+            ["git", "status", "--porcelain"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        return bool(res.stdout.strip())
+    except Exception:
+        return False
+
+
 @dataclass
 class ModuleMetadata:
     """Metadata describing candidate attention or compression module."""
@@ -44,6 +59,7 @@ class ModelMetadata:
     name: str
     family: str = "unknown"
     num_params: int = 0
+    num_params_after: int | None = None
     hidden_size: int = 0
     num_heads: int = 0
     num_layers: int = 0
@@ -73,6 +89,7 @@ class BenchmarkResult:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     git_commit: str = field(default_factory=_get_git_commit)
+    git_dirty: bool = field(default_factory=_is_git_dirty)
 
     module: dict[str, Any] = field(default_factory=dict)
     model: dict[str, Any] = field(default_factory=dict)

@@ -76,7 +76,7 @@ class DirectSVDCompressor(BaseCompressor):
         min_rank: int = 16,
         rank_ratio: float | None = None,
         max_error: float = 0.35,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         protect_critical: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -439,6 +439,12 @@ class DirectSVDCompressor(BaseCompressor):
             replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
             total_comp_decomp_params += r * (in_f + out_f)
+
+        if not self.compressed_layers:
+            raise RuntimeError(
+                f"DirectSVD failed to replace any modules. All {len(target_layers)} candidate layers "
+                f"either exceeded error threshold {self.max_error} with fallback enabled, or failed decomposition."
+            )
 
         # Post-compression forward sanity check
         forward_check_success = False
