@@ -1,7 +1,7 @@
 """Unit tests for sliding window attention."""
 import torch
 import pytest
-from neuralops.attentions.modern.sliding_window import SlidingWindowAttention
+from neuralops.attentions.modern.dynamic_conv_attention import SlidingWindowAttention
 
 
 def test_sliding_window_forward_shape():
