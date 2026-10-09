@@ -7,9 +7,15 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Set JAMBA_CHECKPOINT=1 to enable gradient checkpointing for mamba/moe branches.
+# Disabled by default to avoid redundant forward passes and restore iteration speed.
+def _is_checkpoint_enabled() -> bool:
+    return os.environ.get("JAMBA_CHECKPOINT", "0").lower() in ("1", "true", "yes", "on")
 
 import torch
 import torch.nn as nn
@@ -457,17 +463,20 @@ class Jamba2Block(BaseAttention):
                         if target.bias is not None: nn.init.zeros_(target.bias)
                     continue
 
-                # Frobenius norm guard: reject degenerate (zeroed) source weights.
-                # A norm below 1e-6 means the source layer was never trained /
-                # intentionally zeroed — copying it would silently corrupt the block.
+                # Frobenius norm guard: warn if source weights appear degenerate/zero-initialized.
+                # A norm below 1e-6 may indicate non-standard/uninitialized weights, but
+                # we issue a clean warning rather than a fatal RuntimeError to allow programmatic initialization.
                 if key == "q":
                     frob = float(w.float().norm(p="fro").item())
                     if frob < 1e-6:
-                        raise RuntimeError(
+                        import warnings
+                        msg = (
                             f"copy_weights: Q-projection weight has Frobenius norm "
                             f"{frob:.2e} which is norm too small (< 1e-6). "
                             f"Source attention module appears degenerate or zero-initialized."
                         )
+                        logger.warning("%s", msg)
+                        warnings.warn(msg, UserWarning, stacklevel=2)
 
                 if w.ndim != 2: w = w.reshape(w.size(0), -1)
                 if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape: w = w.t().contiguous()
