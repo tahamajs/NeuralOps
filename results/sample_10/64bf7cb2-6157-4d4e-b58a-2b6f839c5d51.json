@@ -1,0 +1,61 @@
+{
+  "run_id": "64bf7cb2-6157-4d4e-b58a-2b6f839c5d51",
+  "run_name": "mamba_block_distilbert-base-uncased_sst2",
+  "timestamp_start": "2026-10-09T16:20:08Z",
+  "timestamp_end": "2026-10-09T16:34:42Z",
+  "git_commit": "9c56970d95",
+  "module": {
+    "name": "mamba_block",
+    "type": "attention",
+    "family": "mamba",
+    "supports_causal": true,
+    "supports_gqa": false,
+    "supports_rope": false,
+    "requires_cuda": false,
+    "rank": 32
+  },
+  "model": {
+    "name": "distilbert-base-uncased",
+    "family": "distilbert",
+    "num_params": 75406082,
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 6
+  },
+  "dataset": {
+    "name": "sst2",
+    "task": "classification",
+    "num_labels": 2,
+    "num_train": 67349,
+    "num_eval": 67349
+  },
+  "config": {
+    "rank": 32,
+    "epochs": 1,
+    "lr": 2e-05,
+    "batch_size": 16,
+    "max_length": 128,
+    "seed": 42,
+    "eval_only": false
+  },
+  "metrics": {
+    "accuracy": 0.5091743119266054,
+    "f1": 0.6747720364741641,
+    "precision": 0.5091743119266054,
+    "recall": 1.0,
+    "loss": 0.704668868671764
+  },
+  "resources": {
+    "peak_vram_mb": 896.1552734375,
+    "latency_ms_per_token": 0.03168783203122416,
+    "throughput_tok_per_sec": 31557.854731577485,
+    "duration_s": 874.3,
+    "num_params_after": 75406082
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timeout_s": 1800,
+  "timed_out": false
+}

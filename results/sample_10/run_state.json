@@ -18,6 +18,12 @@
       "distilbert-base-uncased",
       "sst2",
       32
+    ],
+    [
+      "mamba_block",
+      "distilbert-base-uncased",
+      "sst2",
+      32
     ]
   ],
   "failed": [],
