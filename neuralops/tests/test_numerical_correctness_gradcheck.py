@@ -1,7 +1,7 @@
 """Comprehensive numerical correctness and autograd gradient tests."""
 import pytest
 import torch
-from neuralops.attentions.modern.sliding_window import SlidingWindowAttention
+from neuralops.attentions.modern.dynamic_conv_attention import SlidingWindowAttention
 from neuralops.attentions.modern.cross_attention import CrossAttention
 from neuralops.attentions.modern.mqa import MultiQueryAttention
 from neuralops.core.autograd.flash_attention import flash_attention_forward_backward

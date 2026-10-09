@@ -111,8 +111,9 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.zeros_(self.lora_B)
+            nn.init.zeros_(self.lora_B) # CRITICAL: This must be zeros_
             self.lora_B.requires_grad = True
+
 
     def freeze_base_weights(self) -> None:
         self.weight.requires_grad = False
@@ -237,7 +238,6 @@ class GroupedQueryAttention(BaseAttention):
         # ==================================================================
         resolved_kv_heads = None
 
-        # 1. اگر کاربر مستقیماً num_kv_heads داده باشد
         if num_kv_heads is not None:
             resolved_kv_heads = int(num_kv_heads)
         elif config is not None:
@@ -250,8 +250,7 @@ class GroupedQueryAttention(BaseAttention):
             if kwargs_kv is not None:
                 resolved_kv_heads = int(kwargs_kv)
 
-        # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
-        # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
+        # اگر مشخص نشده بود یا برابر با کل هدها بود، به نسبت ۴ برابر فشرده شود
         if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
             resolved_kv_heads = max(1, self.num_heads // 4)
 
@@ -318,7 +317,6 @@ class GroupedQueryAttention(BaseAttention):
             )
         )
         self.freeze_base = self.lora_rank > 0
-
         # ---- projections ----
         self.query = LoRALinear(
             self.hidden_size,
@@ -519,7 +517,7 @@ class GroupedQueryAttention(BaseAttention):
 
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group_size = src_heads // target_heads
-                # به جای میانگین‌گیری، هد اول هر گروه را دست‌نخورده برمی‌داریم
+                # میانگین‌گیری روی هدهای هر گروه
                 w_pooled = w_reshaped.view(target_heads, group_size, head_dim, in_feat).mean(dim=1)
             elif src_heads > target_heads:
                 indices = torch.linspace(0, src_heads - 1, target_heads).long()
