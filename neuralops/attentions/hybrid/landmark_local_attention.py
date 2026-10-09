@@ -1015,7 +1015,7 @@ def inject_landmark_local(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_leka_v2(
+            res = inject_landmark_local(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=comp_config,
