@@ -251,12 +251,12 @@ class GroupedQueryAttention(BaseAttention):
                 resolved_kv_heads = int(kwargs_kv)
 
         # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
-        if resolved_kv_heads is None:
-            resolved_kv_heads = self.num_heads
+        # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
+        if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
+            resolved_kv_heads = max(1, self.num_heads // 4)
 
         self.num_kv_heads = int(resolved_kv_heads)
-        self._num_kv_heads_source = "explicit_or_full"
-
+        self._num_kv_heads_source = "gqa_compressed"
 
         # ---- sizes ----
         self.all_head_size = self.num_heads * self.head_dim
@@ -520,7 +520,7 @@ class GroupedQueryAttention(BaseAttention):
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group_size = src_heads // target_heads
                 # به جای میانگین‌گیری، هد اول هر گروه را دست‌نخورده برمی‌داریم
-                w_pooled = w_reshaped.view(target_heads, group_size, head_dim, in_feat)[:, 0, :, :]
+                w_pooled = w_reshaped.view(target_heads, group_size, head_dim, in_feat).mean(dim=1)
             elif src_heads > target_heads:
                 indices = torch.linspace(0, src_heads - 1, target_heads).long()
                 w_pooled = w_reshaped.index_select(0, indices)
