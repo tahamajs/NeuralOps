@@ -949,7 +949,7 @@ def inject_positive_kernel_linear(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_leka_v1(
+            res = inject_positive_kernel_linear(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=comp_config,
@@ -972,10 +972,10 @@ def inject_positive_kernel_linear(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-        if isinstance(src_attn, LEKAV1Attention) or "LEKA" in src_attn.__class__.__name__:
+        if isinstance(src_attn, PositiveKernelLinearAttention) or "PositiveKernelLinear" in src_attn.__class__.__name__:
             return None
 
-        new_attn = LEKAV1Attention(
+        new_attn = PositiveKernelLinearAttention(
             config=cfg,
             comp_config=comp_config,
             layer_idx=layer_idx,
