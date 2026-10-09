@@ -617,16 +617,60 @@ class Jamba2Block(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
         is_causal = bool(self.is_decoder and L > 1)
-        use_sdpa = (head_mask is None and not output_attentions and attention_mask is None and past_len == 0)
 
+        # Prioritize SDPA for all decoder paths whenever head_mask is None and past_len == 0
+        can_use_sdpa = (head_mask is None and past_len == 0 and not output_attentions)
+        if not self.is_decoder:
+            can_use_sdpa = can_use_sdpa and (attention_mask is None)
+
+        use_sdpa = False
         attn_weights = None
-        if use_sdpa:
+        if can_use_sdpa:
             try:
-                _qs = q.half() if q.dtype == torch.float32 else q
-                _ks = k_exp.half() if k_exp.dtype == torch.float32 else k_exp
-                _vs = v_exp.half() if v_exp.dtype == torch.float32 else v_exp
-                _sdpa_out = F.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=is_causal, dropout_p=self.dropout.p if self.training else 0.0)
-                attn_out = _sdpa_out.to(target_dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                dropout_p = self.dropout.p if self.training else 0.0
+                if attention_mask is None:
+                    _sdpa_out = F.scaled_dot_product_attention(
+                        q, k_exp, v_exp,
+                        attn_mask=None,
+                        is_causal=is_causal,
+                        dropout_p=dropout_p,
+                    )
+                    use_sdpa = True
+                elif self.is_decoder:
+                    if attention_mask.dim() == 2 and (attention_mask.bool().all() or (attention_mask > 0).all()):
+                        # No padding tokens in batch; native causal masking suffices
+                        _sdpa_out = F.scaled_dot_product_attention(
+                            q, k_exp, v_exp,
+                            attn_mask=None,
+                            is_causal=is_causal,
+                            dropout_p=dropout_p,
+                        )
+                        use_sdpa = True
+                    elif attention_mask.dim() == 2:
+                        valid = get_token_valid_mask(attention_mask, B, k_exp.shape[-2], hidden_states.device)
+                        if valid is not None:
+                            combined_mask = valid.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, L, L)
+                            if is_causal:
+                                causal_bool = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool))
+                                combined_mask = combined_mask & causal_bool.unsqueeze(0).unsqueeze(1)
+                            _sdpa_out = F.scaled_dot_product_attention(
+                                q, k_exp, v_exp,
+                                attn_mask=combined_mask,
+                                is_causal=False,
+                                dropout_p=dropout_p,
+                            )
+                            use_sdpa = True
+                    elif attention_mask.dim() in (3, 4):
+                        _sdpa_out = F.scaled_dot_product_attention(
+                            q, k_exp, v_exp,
+                            attn_mask=attention_mask,
+                            is_causal=False,
+                            dropout_p=dropout_p,
+                        )
+                        use_sdpa = True
+
+                if use_sdpa:
+                    attn_out = _sdpa_out.to(target_dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             except Exception as e:
                 logger.debug("Jamba2 SDPA path failed: %s", e)
                 use_sdpa = False
@@ -655,25 +699,24 @@ class Jamba2Block(BaseAttention):
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
         attn_delta = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
 
-        # ---- Branch 3: MoE (Pre-LN with FIX 4: Checkpointing) ----
-        # FIX 2: Initialize with zero tensor (not int 0) for type-safe addition.
+        # ---- Branch 3: MoE ----
         moe_out = torch.zeros_like(hidden_states)
         if self.moe is not None:
             n3d = self._norm_dtype(self.norm3, target_dtype)
             x_norm3 = self.norm3(hidden_states.to(n3d)).to(target_dtype)
 
-            if self.training:
+            if self.training and _is_checkpoint_enabled():
                 from torch.utils.checkpoint import checkpoint
                 def _run_moe(x):
                     res = self.moe(x)
                     return res[0] if isinstance(res, (tuple, list)) else res
                 m_out = checkpoint(_run_moe, x_norm3, use_reentrant=False)
             else:
+                # Fast direct execution
                 m_out = self.moe(x_norm3)
                 if isinstance(m_out, (tuple, list)):
                     m_out = m_out[0]
 
-            # FIX 5: Use lora_moe_scale
             moe_out = m_out.to(target_dtype) * self.lora_moe_scale
 
             if not self.training:
@@ -681,7 +724,7 @@ class Jamba2Block(BaseAttention):
 
         final_delta = mamba_out + attn_delta + moe_out
         
-        return self._format_output(final_delta, attn_weights, present_key_value)
+        return self._format_output(final_delta, attn_weights, present_key_value, output_attentions=output_attentions)
 
 def inject_jamba(layer: Any = None, model: Any = None, model_config: Any = None, comp_config: Any = None, layer_idx: int = 0, total_layers: int = 12, old_attn: nn.Module | None = None, _depth: int = 0, **kwargs: Any) -> Jamba2Block | nn.Module | None:
     if _depth > 8: return None
