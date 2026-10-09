@@ -740,9 +740,10 @@ class SAMBAM3Block(nn.Module):
         attn_out = attn_out.to(target_dtype)
 
         # ---- Mamba branch ----
-        past_mamba = kwargs.get("past_state", past_mamba)
+        kwargs_mamba = dict(kwargs)
+        past_mamba = kwargs_mamba.pop("past_state", past_mamba)
         m_res = self.mamba(
-            hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs
+            hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba
         )
         if isinstance(m_res, tuple):
             mamba_out = m_res[0]
