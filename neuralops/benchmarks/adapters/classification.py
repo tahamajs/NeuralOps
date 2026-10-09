@@ -133,10 +133,13 @@ class ClassificationAdapter:
         if self.model is None:
             raise RuntimeError("Setup must be run before applying module.")
 
+        params_before = count_parameters(self.model)
+        if self.model_meta is not None:
+            self.model_meta.num_params = params_before
+
         if self.module_type in ("baseline", "none", "full", "dense"):
             logger.info("Baseline run: skipping module injection.")
             return
-
 
         if self.module_type == "attention":
             self.model = apply_attention_module(
@@ -156,10 +159,18 @@ class ClassificationAdapter:
         else:
             raise ValueError(f"Unknown module type: {self.module_type}")
 
-
         # Update params in metadata
+        params_after = count_parameters(self.model)
+        if self.module_type == "compressor" and params_after >= params_before:
+            logger.warning(
+                "Suspicious compression: params_after (%d) >= params_before (%d) for compressor '%s'",
+                params_after,
+                params_before,
+                self.module_name,
+            )
         if self.model_meta is not None:
-            self.model_meta.num_params = count_parameters(self.model)
+            self.model_meta.num_params = params_before
+            self.model_meta.num_params_after = params_after
 
     def run(self) -> Dict[str, Any]:
         """Execute setup, module injection, training (if applicable), and evaluation."""
