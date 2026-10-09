@@ -12,20 +12,23 @@ from typing import Any
 class JSONLHandler(logging.Handler):
     """Logging handler that outputs structured JSON Lines."""
 
-    def __init__(self, filepath: Path | str) -> None:
+    def __init__(self, filepath: Path | str, run_id: str = "", module_name: str = "") -> None:
         super().__init__()
         self.filepath = Path(filepath)
         self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        self.run_id = run_id
+        self.module_name = module_name
         self._file = open(self.filepath, "a", encoding="utf-8")
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
             log_entry = {
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)),
+                "run_id": getattr(record, "run_id", self.run_id),
+                "module": getattr(record, "benchmark_module", getattr(record, "module_name", self.module_name)),
                 "level": record.levelname,
                 "logger": record.name,
                 "message": record.getMessage(),
-                "module": getattr(record, "benchmark_module", record.module),
                 "line": record.lineno,
             }
             if record.exc_info:
@@ -83,7 +86,7 @@ def setup_run_logger(
     logger.addHandler(file_handler)
 
     # 3. JSONL Handler (.jsonl)
-    jsonl_handler = JSONLHandler(jsonl_path)
+    jsonl_handler = JSONLHandler(jsonl_path, run_id=run_id, module_name=module_name)
     jsonl_handler.setLevel(logging.DEBUG)
     logger.addHandler(jsonl_handler)
 
