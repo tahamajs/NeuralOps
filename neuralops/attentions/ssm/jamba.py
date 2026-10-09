@@ -457,6 +457,18 @@ class Jamba2Block(BaseAttention):
                         if target.bias is not None: nn.init.zeros_(target.bias)
                     continue
 
+                # Frobenius norm guard: reject degenerate (zeroed) source weights.
+                # A norm below 1e-6 means the source layer was never trained /
+                # intentionally zeroed — copying it would silently corrupt the block.
+                if key == "q":
+                    frob = float(w.float().norm(p="fro").item())
+                    if frob < 1e-6:
+                        raise RuntimeError(
+                            f"copy_weights: Q-projection weight has Frobenius norm "
+                            f"{frob:.2e} which is norm too small (< 1e-6). "
+                            f"Source attention module appears degenerate or zero-initialized."
+                        )
+
                 if w.ndim != 2: w = w.reshape(w.size(0), -1)
                 if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape: w = w.t().contiguous()
 
