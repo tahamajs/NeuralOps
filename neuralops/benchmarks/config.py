@@ -31,6 +31,11 @@ class BenchmarkConfig:
     dry_run: bool = False
     timeout_s: int = 1800
     task: Optional[str] = None
+    training_type: str = "finetune"  # finetune, kd, recovery, lora, none
+    kd_teacher: Optional[str] = None
+    kd_temperature: float = 2.0
+    kd_alpha: float = 0.5
+    recovery_steps: int = 50
     max_samples: Optional[int] = None
     trust_remote_code: bool = True
     hf_token: Optional[str] = None
