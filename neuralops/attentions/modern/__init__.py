@@ -76,11 +76,10 @@ try:
 except Exception:
     pass
 try:
-    _m = importlib.import_module(f".dynamic_conv", __package__)
+    _m = importlib.import_module(f".dynamic_conv_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)
-            # با اضافه کردن callable، توابع inject هم به درستی export می‌شوند
             if isinstance(_val, type) or callable(_val):
                 globals()[_attr] = _val
                 if _attr not in __all__:

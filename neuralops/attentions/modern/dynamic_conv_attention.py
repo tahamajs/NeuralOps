@@ -756,20 +756,26 @@ def inject_dynamic_conv(
     # ---------------- Single layer ----------------
     try:
         def _already_injected(m: Any) -> bool:
+            """Detect if m is already a custom attention (DynamicConv, WGQA, etc)."""
             if m is None:
                 return False
             if isinstance(m, DynamicConvAttention):
                 return True
-            if "DynamicConv" in m.__class__.__name__:
+            cls_name = m.__class__.__name__
+            if any(k in cls_name for k in (
+                "DynamicConv", "WeightedGrouped", "WGQA", "ALiBi",
+                "CrossAttention", "SlidingWindow", "AdaptiveSpan",
+                "GatedDelta", "Mamba",
+            )):
                 return True
-            inner = getattr(m, "inner", None)
-            if isinstance(inner, DynamicConvAttention):
+            if hasattr(m, "inner") and isinstance(m.inner, DynamicConvAttention):
                 return True
-            wrapped = getattr(m, "_wrapped_attention", None)
-            if isinstance(wrapped, DynamicConvAttention):
-                return True
+            if hasattr(m, "_wrapped_attention"):
+                wrapped = getattr(m, "_wrapped_attention")
+                if wrapped is not None and not isinstance(wrapped, type):
+                    return True
             return False
-
+        
         if _already_injected(old_attn):
             return None
 
@@ -797,12 +803,17 @@ def inject_dynamic_conv(
             **kwargs,
         )
 
-        try:
+        ref = None
+        for p in src.parameters():
+            if p.device.type != "cpu":
+                ref = p
+                break
+        if ref is None:
             ref = next(src.parameters(), None)
-            if ref is not None:
-                new_attn.to(device=ref.device, dtype=ref.dtype)
-        except Exception:
-            pass
+        if ref is None:
+            ref = next(target.parameters(), None)
+        if ref is not None:
+            new_attn.to(device=ref.device, dtype=ref.dtype)
 
         spliced = False
         
@@ -847,7 +858,7 @@ def inject_dynamic_conv(
         return new_attn
     except Exception as e:
         logger.exception("inject_dynamic_conv failed: %s", e)
-        raise e  # این خط را اضافه کنید تا خطا در ترمینال دیده شود
+        return None
 
 __all__ = [
     "DynamicConvAttention",
