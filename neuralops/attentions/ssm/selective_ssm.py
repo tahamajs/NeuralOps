@@ -281,15 +281,16 @@ class SelectiveSSM(BaseAttention):
             )  # (B, d_inner, L)
             y = y.transpose(1, 2).contiguous()  # (B, L, d_inner)
 
-            # Approximate final recurrent state for caching if requested
-            delta_a_last = torch.exp(dt[:, -1:, :].transpose(1, 2) * A.unsqueeze(0).unsqueeze(-1))
-            delta_b_u_last = dt[:, -1:, :].transpose(1, 2) * (
-                x_conv[:, -1:, :].transpose(1, 2) * B_ssm[:, -1:, :].transpose(1, 2).permute(0, 2, 1)
-            )
+            # Approximate final recurrent state for caching if requested: (B, d_inner, d_state)
+            dt_last = dt[:, -1, :].unsqueeze(-1)  # (B, d_inner, 1)
+            delta_a_last = torch.exp(dt_last * A.unsqueeze(0))  # (B, d_inner, d_state)
+            u_last = x_conv[:, -1, :].unsqueeze(-1)  # (B, d_inner, 1)
+            b_last = B_ssm[:, -1, :].unsqueeze(1)    # (B, 1, d_state)
+            delta_b_u_last = dt_last * (u_last * b_last)  # (B, d_inner, d_state)
             if past_h is not None:
-                h_next = delta_a_last.squeeze(-1) * past_h.to(target_dtype) + delta_b_u_last.squeeze(-1)
+                h_next = delta_a_last * past_h.to(target_dtype) + delta_b_u_last
             else:
-                h_next = delta_b_u_last.squeeze(-1)
+                h_next = delta_b_u_last
 
         # 4. Gating
         y = (y.to(target_dtype) * F.silu(z.to(target_dtype)))
