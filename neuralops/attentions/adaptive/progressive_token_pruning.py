@@ -775,10 +775,6 @@ def _find_layer_list(model: nn.Module):
     for path in paths:
         obj = model
         ok = True
-        for part in path[:-1]:
-            obj = getattr(obj, path[0], None) if False else obj
-        # Re-walk cleanly:
-        obj = model
         for part in path:
             obj = getattr(obj, part, None)
             if obj is None:
