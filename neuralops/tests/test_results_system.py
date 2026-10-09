@@ -173,7 +173,9 @@ def test_git_commit_message_format():
     assert "1 failures" in msg
 
 
-def test_hf_push_requires_token():
+def test_hf_push_requires_token(monkeypatch):
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.delenv("HUGGINGFACE_HUB_TOKEN", raising=False)
     pusher = HFHubPusher(repo_id="test/repo", token=None)
     assert not pusher.is_enabled()
 
