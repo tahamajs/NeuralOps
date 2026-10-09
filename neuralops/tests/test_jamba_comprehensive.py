@@ -270,3 +270,44 @@ def test_jamba_sdpa_path_priority():
     assert out3.shape == (2, 8, 64)
     assert torch.isfinite(out3).all()
 
+
+def test_jamba_aux_loss_training_accumulation():
+    """Verify aux_loss accumulates during training and not during eval."""
+    block = Jamba2Block(d_model=64, n_heads=4, n_experts=4)
+    x = torch.randn(2, 4, 64)
+
+    # Eval mode: aux_loss should remain 0
+    block.eval()
+    block.reset_aux_loss()
+    block(x)
+    assert block.aux_loss == 0.0
+
+    # Train mode: aux_loss should be accumulated
+    block.train()
+    block.reset_aux_loss()
+    block(x)
+    assert block._aux_loss_count == 1
+    assert block.aux_loss >= 0.0
+
+
+def test_jamba_scale_parameter_dtype_device():
+    """Verify lora_mamba_scale and lora_moe_scale match source_attn parameters."""
+    class MockLinear(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.weight = nn.Parameter(torch.randn(64, 64, dtype=torch.float32))
+            self.bias = nn.Parameter(torch.zeros(64, dtype=torch.float32))
+
+    class MockAttnWithDtype(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = MockLinear()
+            self.k_proj = MockLinear()
+            self.v_proj = MockLinear()
+            self.out_proj = MockLinear()
+
+    old = MockAttnWithDtype()
+    block = Jamba2Block(d_model=64, n_heads=4, pretrained_attn=old)
+    assert block.lora_mamba_scale.dtype == old.q_proj.weight.dtype
+    assert block.lora_moe_scale.dtype == old.q_proj.weight.dtype
+
