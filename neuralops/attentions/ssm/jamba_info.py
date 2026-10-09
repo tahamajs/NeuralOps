@@ -10,6 +10,20 @@ FIX 4: Correct mask reversal in encoder bidirectional SSM.
 FIX 5: position_ids fallback via rotary_emb when position_embeddings is None.
 FIX 6: Robust cache dtype handling (no per-step .to() calls).
 FIX 7: dtype-consistent sigmoid on alpha_raw.
+
+=== FIXES APPLIED (2026-10-09) ===
+FIX 8: Per-head alpha blending shape mismatch resolved. ssm_adapter linear
+       layer projects ssm_branch (B,L,dim) → (B,L,all_head_size) when dim !=
+       all_head_size, preventing unsafe .view() calls in forward().
+FIX 9: copy_weights symmetry breaking for W_q2 / W_k2. Tiny Gaussian noise
+       (σ=1e-4) added to the second differential projection copies so that
+       Attn1 != Attn2 at step 0 and gradients flow from the start.
+FIX 10: 4D attention mask reversal for bidirectional SSM corrected. Square
+        (B,1,L,L) masks are now flipped on both sequence axes [-2,-1]; only
+        non-square 4D masks use dim=[-1] fallback.
+FIX 11: _format_output returns correct 2-tuple when attn_weights is None,
+        preventing "too many values to unpack" errors for callers that do
+        `out, _ = attn(x)` without output_attentions=True.
 """
 
 from __future__ import annotations
@@ -427,6 +441,21 @@ class JambaInfoBlock(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        # FIX 1 (shape mismatch): If dim != all_head_size we need to project
+        # ssm_branch from (B,L,dim) into (B,L,all_head_size) before per-head
+        # alpha blending.  When dim == all_head_size no extra params are added.
+        if self.per_head_alpha and self.dim != self.all_head_size:
+            self.ssm_adapter: nn.Linear | None = nn.Linear(
+                self.dim, self.all_head_size, bias=False
+            )
+            nn.init.zeros_(self.ssm_adapter.weight)
+            # Approximate identity: copy min(dim, all_head_size) diagonal entries
+            with torch.no_grad():
+                m = min(self.dim, self.all_head_size)
+                self.ssm_adapter.weight[:m, :m] = torch.eye(m)
+        else:
+            self.ssm_adapter = None
+
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -542,10 +571,17 @@ class JambaInfoBlock(BaseAttention):
     ) -> tuple:
         fmt = self._return_format
         if fmt == "bert":
+            # Always 2-tuple for BERT-style: (hidden, weights_or_None)
             return (out, attn_weights)
         if fmt == "gpt2":
-            return (out, present, attn_weights)
-        return (out, attn_weights, present)
+            # 3-tuple when weights requested, else 2-tuple
+            if attn_weights is not None:
+                return (out, present, attn_weights)
+            return (out, present)
+        # "llama" default: 2-tuple when no weights, 3-tuple when weights requested
+        if attn_weights is not None:
+            return (out, attn_weights, present)
+        return (out, present)
 
     def _normalize_head_mask(
         self, head_mask: torch.Tensor, attn: torch.Tensor
@@ -747,10 +783,15 @@ class JambaInfoBlock(BaseAttention):
 
             if w_q is not None:
                 _copy_into(self.W_q1, _orient(w_q, self.hidden_size), None)
-                _copy_into(self.W_q2, _orient(w_q, self.hidden_size), None)
+                # FIX 2: break symmetry — tiny Gaussian noise so Attn1 != Attn2 at step 0
+                w_q_oriented = _orient(w_q, self.hidden_size)
+                noise_q = torch.randn_like(w_q_oriented) * 1e-4
+                _copy_into(self.W_q2, w_q_oriented + noise_q, None)
             if w_k is not None:
                 _copy_into(self.W_k1, _orient(w_k, self.hidden_size), None)
-                _copy_into(self.W_k2, _orient(w_k, self.hidden_size), None)
+                w_k_oriented = _orient(w_k, self.hidden_size)
+                noise_k = torch.randn_like(w_k_oriented) * 1e-4
+                _copy_into(self.W_k2, w_k_oriented + noise_k, None)
             if w_v is not None:
                 _copy_into(self.W_v, _orient(w_v, self.hidden_size), None)
             if w_o is not None:
@@ -943,7 +984,15 @@ class JambaInfoBlock(BaseAttention):
                     elif attention_mask.dim() == 3:
                         rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
                     elif attention_mask.dim() == 4:
-                        rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
+                        # FIX 3: (B,1,L,L) square spatial masks must be flipped on
+                        # both sequence axes to preserve the bidirectional structure.
+                        # Flipping only dim=-1 corrupts causal / bidirectional 2D masks.
+                        if attention_mask.shape[-2] == attention_mask.shape[-1]:
+                            rev_mask = torch.flip(
+                                attention_mask, dims=[-2, -1]
+                            ).contiguous()
+                        else:
+                            rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
                     else:
                         rev_mask = attention_mask
                 else:
@@ -969,11 +1018,23 @@ class JambaInfoBlock(BaseAttention):
                 1, 1, self.num_heads, 1
             )
             attn_out_h = attn_out.view(B, L, self.num_heads, self.head_dim)
-            ssm_branch_h = ssm_branch.view(B, L, self.num_heads, self.head_dim)
+            # FIX 1: project ssm_branch into head-size space if needed
+            if self.ssm_adapter is not None:
+                ssm_for_blend = self.ssm_adapter(ssm_branch.to(target_dtype))
+            else:
+                ssm_for_blend = ssm_branch
+            ssm_branch_h = ssm_for_blend.view(B, L, self.num_heads, self.head_dim)
             combined = (1.0 - alpha) * attn_out_h + alpha * ssm_branch_h
             combined = combined.view(B, L, self.all_head_size)
         else:
             alpha = torch.sigmoid(self.alpha_raw.to(target_dtype))
+            # ssm_branch is (B,L,dim); attn_out is (B,L,all_head_size).
+            # When dim == all_head_size blending is safe; otherwise we project.
+            if ssm_branch.shape[-1] != attn_out.shape[-1]:
+                if self.ssm_adapter is not None:
+                    ssm_branch = self.ssm_adapter(ssm_branch.to(target_dtype))
+                else:
+                    ssm_branch = ssm_branch[..., :attn_out.shape[-1]]
             combined = (1.0 - alpha) * attn_out + alpha * ssm_branch
 
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)

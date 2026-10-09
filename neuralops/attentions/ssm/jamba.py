@@ -1,9 +1,6 @@
 """
-Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).
+Jamba Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).
 
-FIXES in v4:
-  - FIX 4: Gradient Checkpointing added to MoE and Mamba branches to prevent CUDA OOM.
-  - FIX 5: Renamed ReZero scales to include "lora_" prefix so KD scripts pick them up for training.
 """
 
 from __future__ import annotations
@@ -360,6 +357,15 @@ class Jamba2Block(BaseAttention):
         self._aux_loss_sum = 0.0
         self._aux_loss_count = 0
 
+    def _accumulate_aux_loss(self) -> None:
+        """Extract load-balancing aux_loss from self.moe and accumulate it."""
+        if self.moe is None:
+            return
+        loss = getattr(self.moe, "aux_loss", 0.0)
+        val = loss.item() if isinstance(loss, torch.Tensor) else float(loss)
+        self._aux_loss_sum += val
+        self._aux_loss_count += 1
+
     def freeze_base_weights(self) -> None:
         for mod in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
             if hasattr(mod, "freeze_base_weights"): mod.freeze_base_weights()
@@ -509,24 +515,33 @@ class Jamba2Block(BaseAttention):
         past_k, past_v, past_len, past_mamba = _read_cache(past_key_value, layer_idx)
 
         # ---- Branch 1: Mamba (Pre-LN with FIX 4: Checkpointing) ----
-        mamba_out = 0
+        # FIX 2: Initialize with zero tensors (not int 0) to avoid type-promotion
+        # and NoneType crashes when branches are disabled.
+        mamba_out = torch.zeros_like(hidden_states)
         present_mamba = None
         if self.mamba is not None:
             n1d = self._norm_dtype(self.norm1, target_dtype)
             x_norm1 = self.norm1(hidden_states.to(n1d)).to(target_dtype)
-            
+
             if self.training:
                 from torch.utils.checkpoint import checkpoint
+                # FIX 3: capture present_mamba out of closure via a list cell
+                _present_cell: list[Any] = [None]
                 def _run_mamba(x):
-                    return self.mamba(x, attention_mask=attention_mask, past_state=past_mamba)[0]
+                    out_pair = self.mamba(x, attention_mask=attention_mask, past_state=past_mamba)
+                    if isinstance(out_pair, (tuple, list)) and len(out_pair) >= 2:
+                        _present_cell[0] = out_pair[1]
+                        return out_pair[0]
+                    return out_pair
                 m_out = checkpoint(_run_mamba, x_norm1, use_reentrant=False)
+                present_mamba = _present_cell[0]
             else:
                 m_out, present_mamba = self.mamba(
                     x_norm1, attention_mask=attention_mask, past_state=past_mamba
                 )
-            
-            # FIX 5: Use lora_mamba_scale    
-            mamba_out = m_out.to(target_dtype) * self.lora_mamba_scale 
+
+            # FIX 5: Use lora_mamba_scale
+            mamba_out = m_out.to(target_dtype) * self.lora_mamba_scale
 
         # ---- Branch 2: Attention ----
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -601,11 +616,12 @@ class Jamba2Block(BaseAttention):
         attn_delta = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
 
         # ---- Branch 3: MoE (Pre-LN with FIX 4: Checkpointing) ----
-        moe_out = 0
+        # FIX 2: Initialize with zero tensor (not int 0) for type-safe addition.
+        moe_out = torch.zeros_like(hidden_states)
         if self.moe is not None:
             n3d = self._norm_dtype(self.norm3, target_dtype)
             x_norm3 = self.norm3(hidden_states.to(n3d)).to(target_dtype)
-            
+
             if self.training:
                 from torch.utils.checkpoint import checkpoint
                 def _run_moe(x):
@@ -616,10 +632,10 @@ class Jamba2Block(BaseAttention):
                 m_out = self.moe(x_norm3)
                 if isinstance(m_out, (tuple, list)):
                     m_out = m_out[0]
-                    
+
             # FIX 5: Use lora_moe_scale
-            moe_out = m_out.to(target_dtype) * self.lora_moe_scale 
-            
+            moe_out = m_out.to(target_dtype) * self.lora_moe_scale
+
             if not self.training:
                 self._accumulate_aux_loss()
 

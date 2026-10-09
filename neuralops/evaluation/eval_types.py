@@ -140,7 +140,7 @@ DEPRECATED_MODULES: set[str] = {
     "eat",
     "eat_attention",
     "granite_hybrid",
-    "jamba_info",
+    # jamba_info: removed from deprecated list (bugs fixed 2026-10-09)
     "tpa",
     "tpa_attention",
     "tp_attention",
