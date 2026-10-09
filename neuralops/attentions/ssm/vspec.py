@@ -295,15 +295,30 @@ class DynamicLowRankProjector(nn.Module):
                 self.scaling = sub.lora_scaling
 
     def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
-        v = self.V.to(x.dtype)
-        s = self.S.to(x.dtype)
-        u = self.U.to(x.dtype)
-        g = gate.to(x.dtype)
-        z = torch.matmul(x, v)
-        z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
-        out = torch.matmul(z, u.t().contiguous())
-        if self.bias is not None:
-            out = out + self.bias.to(x.dtype)
+        if x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import low_rank_forward
+                out = low_rank_forward(x, self.V, self.S, self.U, gate, self.bias)
+            except Exception:
+                v = self.V.to(x.dtype)
+                s = self.S.to(x.dtype)
+                u = self.U.to(x.dtype)
+                g = gate.to(x.dtype)
+                z = torch.matmul(x, v)
+                z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
+                out = torch.matmul(z, u.t().contiguous())
+                if self.bias is not None:
+                    out = out + self.bias.to(x.dtype)
+        else:
+            v = self.V.to(x.dtype)
+            s = self.S.to(x.dtype)
+            u = self.U.to(x.dtype)
+            g = gate.to(x.dtype)
+            z = torch.matmul(x, v)
+            z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
+            out = torch.matmul(z, u.t().contiguous())
+            if self.bias is not None:
+                out = out + self.bias.to(x.dtype)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             la = self.lora_A.to(x.dtype)
@@ -498,6 +513,7 @@ class VSpecAttention(BaseAttention):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.use_sdpa = kwargs.get("use_sdpa", _cfg_get(config, "use_sdpa", True))
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
 
         if src_attn is not None:
@@ -826,47 +842,87 @@ class VSpecAttention(BaseAttention):
 
         hg = self.head_gate(routed, valid_routed).unsqueeze(-1).unsqueeze(-1)
 
-        scale = 1.0 / math.sqrt(Dh)
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
+        # SDPA condition check:
+        # 1. device is CUDA
+        # 2. head_dim <= 256
+        # 3. dtype is fp16 or bf16
+        # 4. self.use_sdpa is True
+        # 5. head_mask is None and not output_attentions
+        can_use_sdpa = (
+            getattr(self, "use_sdpa", True)
+            and device.type == "cuda"
+            and Dh <= 256
+            and dtype in (torch.float16, torch.bfloat16)
+            and head_mask is None
+            and not output_attentions
         )
 
-        # Check causal decoder
-        if is_decoder and k_len > 1:
-            causal_mask = torch.triu(
-                torch.full((k_len, k_len), float("-inf"), device=device, dtype=scores.dtype),
-                diagonal=1,
+        if can_use_sdpa:
+            # Build mask if padding is present; otherwise is_causal handles causal ordering
+            combined_mask = None
+            is_causal_sdpa = bool(is_decoder and k_len > 1)
+            if valid_routed is not None:
+                # pad_mask: True for valid tokens, False for masked tokens
+                combined_mask = valid_routed.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
+                if is_causal_sdpa:
+                    causal_bool = torch.tril(torch.ones(k_len, k_len, device=device, dtype=torch.bool))
+                    combined_mask = combined_mask & causal_bool.unsqueeze(0).unsqueeze(1)
+                    is_causal_sdpa = False  # passed via attn_mask instead
+
+            context = F.scaled_dot_product_attention(
+                Q,
+                K,
+                V,
+                attn_mask=combined_mask,
+                is_causal=is_causal_sdpa,
+                dropout_p=self.dropout.p if self.training else 0.0,
+                scale=1.0 / math.sqrt(Dh),
             )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-
-        # Apply padding mask to attention scores over routed tokens
-        if valid_routed is not None:
-            pad_mask = (
-                (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
+            context = context * hg.to(context.dtype)
+            attn_weights = None
+        else:
+            scale = 1.0 / math.sqrt(Dh)
+            scores = (
+                torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
             )
-            scores = scores.masked_fill(pad_mask, float("-inf"))
 
-        attn_weights = torch.softmax(scores, dim=-1)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0).to(dtype)
-        attn_weights = self.dropout(attn_weights)
+            # Check causal decoder
+            if is_decoder and k_len > 1:
+                causal_mask = torch.triu(
+                    torch.full((k_len, k_len), float("-inf"), device=device, dtype=scores.dtype),
+                    diagonal=1,
+                )
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # Head mask broadcasting
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            elif head_mask.dim() == 4:
-                if (
-                    head_mask.shape[-1] == head_mask.shape[-2]
-                    and head_mask.shape[-1] != attn_weights.shape[-1]
-                ):
-                    head_mask = head_mask.mean(dim=-1, keepdim=True)
-            attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+            # Apply padding mask to attention scores over routed tokens
+            if valid_routed is not None:
+                pad_mask = (
+                    (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
+                )
+                scores = scores.masked_fill(pad_mask, float("-inf"))
 
-        context = torch.matmul(attn_weights, V)
+            attn_weights = torch.softmax(scores, dim=-1)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0).to(dtype)
+            attn_weights = self.dropout(attn_weights)
+
+            # Head mask broadcasting
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                elif head_mask.dim() == 4:
+                    if (
+                        head_mask.shape[-1] == head_mask.shape[-2]
+                        and head_mask.shape[-1] != attn_weights.shape[-1]
+                    ):
+                        head_mask = head_mask.mean(dim=-1, keepdim=True)
+                attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+
+            context = torch.matmul(attn_weights, V)
+
         context = context.transpose(1, 2).contiguous().view(B, k_len, self.all_head_size)
 
         if self.is_nested_encoder:

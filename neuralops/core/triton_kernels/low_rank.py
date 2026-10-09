@@ -258,4 +258,40 @@ def bwd(
     return grads[0], grads[1], grads[2], (grads[3] if b_req is not None else None)
 
 
-__all__ = ['is_supported', 'fwd', 'bwd']
+def low_rank_forward(
+    x: torch.Tensor,
+    V: torch.Tensor,
+    S: torch.Tensor,
+    U: torch.Tensor,
+    gate: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Forward entrypoint for low-rank bottleneck with singular values and optional dynamic gate.
+
+    Computes:
+      z = (x @ V)
+      z = z * (S * gate)
+      out = z @ U.T + bias
+    """
+    if x.is_cuda and HAS_TRITON and is_supported(x, U, V, bias=bias) and gate is None:
+        # Fused un-gated path when gate is not provided
+        v_eff = V * S.unsqueeze(0)
+        return fwd(x, U, v_eff, bias=bias)
+
+    # Standard / gated forward (efficient batched tensor operations)
+    v = V.to(x.dtype)
+    s = S.to(x.dtype)
+    u = U.to(x.dtype)
+    z = torch.matmul(x, v)
+    if gate is not None:
+        g = gate.to(x.dtype)
+        z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
+    else:
+        z = z * s.unsqueeze(0).unsqueeze(0)
+    out = torch.matmul(z, u.t().contiguous())
+    if bias is not None:
+        out = out + bias.to(x.dtype)
+    return out
+
+
+__all__ = ['is_supported', 'fwd', 'bwd', 'low_rank_forward']
