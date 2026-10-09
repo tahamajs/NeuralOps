@@ -24,6 +24,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+torch.backends.cudnn.benchmark = True
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -833,13 +836,14 @@ class HiddenProjectionAdapter(nn.Module):
         idx = min(layer_idx, len(self.projections) - 1)
         return self.projections[idx](student_h)
 
-
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
-    p_s = F.log_softmax(student_logits.view(-1, student_logits.size(-1)) / temperature, dim=-1)
-    p_t = F.softmax(teacher_logits.view(-1, teacher_logits.size(-1)) / temperature, dim=-1)
-    return F.kl_div(p_s, p_t, reduction="batchmean") * (temperature * temperature)
-
-
+    # تغییر به CrossEntropy با تارگت‌های Soft (بسیار سریع‌تر و کم‌مصرف‌تر از kl_div)
+    s_logits = student_logits.view(-1, student_logits.size(-1)) / temperature
+    t_logits = teacher_logits.view(-1, teacher_logits.size(-1)) / temperature
+    
+    t_probs = F.softmax(t_logits, dim=-1)
+    loss = F.cross_entropy(s_logits, t_probs)
+    return loss * (temperature * temperature)
 def compute_hidden_mse(student_hidden_states: tuple[torch.Tensor, ...], teacher_hidden_states: tuple[torch.Tensor, ...], projection_adapter: HiddenProjectionAdapter | None = None) -> torch.Tensor:
     losses = []
     for idx, (s_h, t_h) in enumerate(zip(student_hidden_states[1:], teacher_hidden_states[1:])):
@@ -1120,6 +1124,7 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
                 if fpath.suffix == '.dat':
                     shape = tuple(manifest[f"{key}_shape"])
                     np_memmap = np.memmap(fpath, dtype='float16', mode='r', shape=shape)
+                    # خواندن مستقیم از هارد/مم‌مپ بدون کپی کردن در رم اصلی
                     cache[key] = torch.from_numpy(np_memmap)
                 else:
                     try:
@@ -1131,7 +1136,6 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
     _load_tensor("hidden_states")
     _load_tensor("attentions")
     return cache
-
 
 def can_use_cache_for_method(cache: dict[str, Any] | None, method_name: str, include_attn: bool = False) -> bool:
     if cache is None: return False
@@ -1215,6 +1219,17 @@ def run_kd_method(
             "learning_rate": args.learning_rate,
             "recovery_steps": args.recovery_steps,
         }
+    if args.fp16 and device.startswith("cuda"):
+        student = student.half().to(device)
+    else:
+        student = student.to(device)
+        
+    # --- بهینه‌سازی ۳: Gradient Checkpointing (کاهش ۶۰ درصدی مصرف VRAM) ---
+    if hasattr(student, "gradient_checkpointing_enable"):
+        student.gradient_checkpointing_enable()
+
+    # --- بهینه‌سازی ۲: Compile با حداکثر قدرت ---
+    student = torch.compile(student, mode="max-autotune", fullgraph=False)
     # CRITICAL FIX: Re-move ENTIRE student to device after injection.
     # apply_module_to_model creates new submodules that start on CPU.
     # Without this second .to(device), those injected layers stay on CPU
@@ -1223,6 +1238,7 @@ def run_kd_method(
         student = student.half().to(device)
     else:
         student = student.to(device)
+        student = torch.compile(student)
 
     pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
     delta_pre = pre_ppl - baseline_ppl
@@ -1294,7 +1310,7 @@ def run_kd_method(
             p.data = p.data.float()
         param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": args.learning_rate}]
 
-    optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01)
+    optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01,fused=True)
     all_trainable_params = [p for group in param_groups for p in group["params"]]
 
     total_steps = args.recovery_steps
@@ -1339,14 +1355,19 @@ def run_kd_method(
                 if use_cache and teacher_cache is not None:
                     c_logits, c_hidden, c_attn = None, None, None
                     if teacher_cache.get("logits") is not None:
-                        c_logits = teacher_cache["logits"][batch_slice].to(device, non_blocking=True)[:, :current_seq_len, :]
+                        # اول اسلایس می‌کنیم (چند مگابایت)، بعد پین می‌کنیم، بعد به GPU می‌فرستیم
+                        c_logits = teacher_cache["logits"][batch_slice].pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+                    
                     if teacher_cache.get("hidden_states") is not None:
                         raw_h = teacher_cache["hidden_states"]
-                        c_hidden = tuple(raw_h[l, batch_slice][:, :current_seq_len, :].to(device, non_blocking=True) for l in range(raw_h.shape[0]))
+                        c_hidden = tuple(raw_h[l, batch_slice].pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
+                    
                     if teacher_cache.get("attentions") is not None:
                         raw_a = teacher_cache["attentions"]
-                        c_attn = tuple(raw_a[l, batch_slice][:, :, :current_seq_len, :current_seq_len].to(device, non_blocking=True) for l in range(raw_a.shape[0]))
+                        c_attn = tuple(raw_a[l, batch_slice].pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len] for l in range(raw_a.shape[0]))
+                    
                     teacher_out = CachedTeacherOutput(logits=c_logits, hidden_states=c_hidden, attentions=c_attn)
+
                 else:
                     with torch.no_grad():
                         teacher_out = _teacher_ref(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
@@ -1380,15 +1401,17 @@ def run_kd_method(
                 elif method_name == "D":
                     loss = compute_method_d_loss(student_out, teacher_out, batch_ids, device, kl_temperature=kl_temp, kl_weight=phase_kl_weight * warmup_factor, hidden_weight=phase_hidden_weight, ce_weight=0.1, projection_adapter=projection_adapter)
 
-                loss_scaled = loss / args.grad_accum_steps
-                final_loss = float(loss.item())
+                current_loss_detached = loss.detach() 
 
+                if step % 50 == 0 or step == total_steps or step <= 5:
+                    final_loss = float(current_loss_detached.item())  
+                    LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f}...")
             if use_scaler: scaler.scale(loss_scaled).backward()
             else: loss_scaled.backward()
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
-                loss_history.append((step, final_loss))
+                loss_history.append((step, current_loss_detached)) # ذخیره تنسور خام
                 lr_history.append((step, float(scheduler.get_last_lr()[0])))
                 max_norm = getattr(args, "max_grad_norm", 1.0)
                 if use_scaler:
@@ -1446,6 +1469,7 @@ def run_kd_method(
             stage2_params,
             lr=s2_lr,
             weight_decay=0.01,
+            fused=True
         )
         stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             stage2_optimizer,
@@ -1625,7 +1649,7 @@ def run_kd_method(
     }
 
     full_history = {
-        "loss": [{"step": s, "loss": round(float(l), 4)} for s, l in loss_history],
+        "loss": [{"step": s, "loss": round(float(l.item() if isinstance(l, torch.Tensor) else l), 4)} for s, l in loss_history],
         "lr": [{"step": s, "lr": float(lr)} for s, lr in lr_history],
         "ppl": {str(s): round(float(p), 4) for s, p in ppl_history.items() if np.isfinite(p)},
     }
