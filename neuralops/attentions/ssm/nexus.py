@@ -10,14 +10,6 @@ Hybrid sparse attention architecture combining multi-scale sparsity mechanisms:
  5. Spectraformer random Fourier feature rectification (2025) - global linear fallback
  6. Softpick rectified softmax (2025) - natural ~47% activation sparsity
 
-=== FIX (2026-10-04) ===
-CHUNKED CAUSAL NEXUS:
-  - For decoder (causal) sequences, NEXUS was falling back to dense softmax
-    (use_dense = is_causal → True → all sparse mechanisms bypassed).
-  - Now implements a chunked causal sparse attention:
-      * Intra-chunk: XAttention sparse block selection + softpick
-      * Inter-chunk: Nyström-style landmark summary of previous chunks
-  - This makes the sparse path actually run on GPT-2 / LLaMA / Qwen.
 """
 
 import logging
@@ -166,9 +158,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# Configuration
-# ===========================================================================
 @dataclass
 class NEXUSConfig:
     block_size: int = 16
@@ -709,6 +698,13 @@ class NEXUSAttention(BaseAttention):
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+            if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
+                bs = max(1, self.cfg.block_size)
+                nb = (N + bs - 1) // bs
+                if nb > 1:
+                    seer_mask = self.seer_gate(Q, K, nb, training=self.training)
+                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+                    scores = scores + (expanded_seer - 1.0) * 10000.0
             if token_valid is not None:
                 scores = scores.masked_fill(
                     (~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4
@@ -742,6 +738,13 @@ class NEXUSAttention(BaseAttention):
             scores_intra = scores_intra.masked_fill(
                 ~causal_intra.unsqueeze(0).unsqueeze(0), -1e4
             )
+            if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
+                bs = max(1, self.cfg.block_size)
+                nb_intra = (C_len + bs - 1) // bs
+                if nb_intra > 1:
+                    seer_mask = self.seer_gate(Q_c, K_c, nb_intra, training=self.training)
+                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :C_len, :C_len]
+                    scores_intra = scores_intra + (expanded_seer - 1.0) * 10000.0
             if mask_c is not None:
                 scores_intra = scores_intra.masked_fill(
                     (~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4
@@ -784,23 +787,22 @@ class NEXUSAttention(BaseAttention):
                 )
 
             K_landmarks = _pool(K_prev, m_prev)
-            Q_landmarks = _pool(Q_c, min(m, C_len))
 
-            # F1: (B, H, C, m_prev)
+            # F1 (queries to landmarks): (B, H, C, m_prev)
             scores1 = torch.matmul(
                 Q_c, K_landmarks.transpose(-2, -1).contiguous()
             ) * scale
             F1 = F.softmax(scores1, dim=-1)
 
-            # F2: (B, H, m_c, m_prev)
+            # F2 (landmarks self-interaction): (B, H, m_prev, m_prev)
             scores2 = torch.matmul(
-                Q_landmarks, K_landmarks.transpose(-2, -1).contiguous()
+                K_landmarks, K_landmarks.transpose(-2, -1).contiguous()
             ) * scale
             F2 = F.softmax(scores2, dim=-1)
 
-            # F3: (B, H, m_c, prev_len)
+            # F3 (landmarks to full prev keys): (B, H, m_prev, prev_len)
             scores3 = torch.matmul(
-                Q_landmarks, K_prev.transpose(-2, -1).contiguous()
+                K_landmarks, K_prev.transpose(-2, -1).contiguous()
             ) * scale
             if mask_prev is not None:
                 scores3 = scores3.masked_fill(
@@ -808,17 +810,17 @@ class NEXUSAttention(BaseAttention):
                 )
             F3 = F.softmax(scores3, dim=-1)
 
-            # Stable pseudoinverse via Newton-Schulz
+            # Stable pseudoinverse via Newton-Schulz / torch.linalg.pinv
             try:
                 F2_pinv = torch.linalg.pinv(F2)
             except Exception:
                 # Fallback: Tikhonov-regularized inverse
-                Bx, Hx, mx, mx2 = F2.shape
+                mx = F2.shape[-1]
                 F2_reg = F2 + 1e-3 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
                 F2_pinv = torch.linalg.inv(F2_reg)
 
             # Cross-chunk output
-            step1 = torch.matmul(F3, V_prev)          # (B, H, m_c, D)
+            step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
             step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
             out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
             out_cross = torch.nan_to_num(out_cross, nan=0.0)
@@ -1114,7 +1116,13 @@ class NEXUSAttention(BaseAttention):
         return (output, None)
 
     def get_ortho_loss(self) -> torch.Tensor:
-        return torch.tensor(0.0, device=self.query.weight.device)
+        loss = torch.tensor(0.0, device=self.query.weight.device, dtype=self.query.weight.dtype)
+        for proj in (self.query, self.key):
+            if hasattr(proj, "weight") and proj.weight is not None:
+                W = proj.weight
+                diff = torch.matmul(W, W.t()) - torch.eye(W.size(0), device=W.device, dtype=W.dtype)
+                loss = loss + torch.norm(diff, p="fro") / (W.size(0) ** 2)
+        return loss
 
 
 # ===========================================================================
