@@ -755,6 +755,12 @@ class HymbaTransXBlock(BaseAttention):
             if attention_mask.dtype.is_floating_point:
                 return attention_mask > -1e4
             return attention_mask > 0
+        if attention_mask.dim() == 3:
+            if attention_mask.dtype == torch.bool:
+                return attention_mask.any(dim=1)
+            elif attention_mask.dtype.is_floating_point:
+                return (attention_mask > -1e4).any(dim=1)
+            return (attention_mask > 0).any(dim=1)
         if attention_mask.dim() == 4:
             if attention_mask.dtype == torch.bool:
                 v = attention_mask
@@ -887,7 +893,8 @@ class HymbaTransXBlock(BaseAttention):
         lam = torch.sigmoid(self.diff_lambda)
         diff_attn = F.relu(attn1 - lam * attn2)
         denom = diff_attn.sum(dim=-1, keepdim=True)
-        diff_attn = diff_attn / (denom + 1e-6)
+        zero_mask = denom <= 1e-7
+        diff_attn = torch.where(zero_mask, attn1, diff_attn / (denom + 1e-7))
         diff_attn = self.dropout(diff_attn).to(v_cat.dtype)
 
         # head_mask broadcasting
