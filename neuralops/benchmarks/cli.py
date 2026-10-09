@@ -133,6 +133,8 @@ def handle_plan(args: argparse.Namespace) -> None:
 
 def handle_verify(args: argparse.Namespace) -> None:
     import torch
+    import neuralops.attentions
+    import neuralops.compression_engine
     print("System Environment Verification:")
     print(f"  Platform:         {platform.platform()}")
     print(f"  Python Version:   {platform.python_version()}")
