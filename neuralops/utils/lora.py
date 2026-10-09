@@ -263,3 +263,15 @@ def load_lora_weights(model: nn.Module, load_path: str, strict: bool = False) ->
         "unexpected_keys": unexpected,
         "metadata": payload.get("metadata", {}) if isinstance(payload, dict) else {},
     }
+
+def make_lora_linear(
+    in_features: int,
+    out_features: int,
+    bias: bool = True,
+    lora_rank: int = 16,
+    lora_alpha: float = 32.0,
+    **kwargs,
+) -> LoRALinear:
+    """Factory for creating LoRALinear from dimensions (int-based API)."""
+    base = nn.Linear(in_features, out_features, bias=bias)
+    return LoRALinear(base, r=lora_rank, alpha=lora_alpha, dropout=0.0)
