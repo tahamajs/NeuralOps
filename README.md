@@ -10,6 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/SVD_linear_Attention/)
+[![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
 [![PyPI - Wheel](https://img.shields.io/pypi/wheel/neuralops.svg)](https://pypi.org/project/neuralops/)
 
 ---
@@ -448,10 +449,17 @@ print(len(COMPRESSOR_REGISTRY))  # 73
 ```
 
 Detailed guides:
-- [API Reference](docs/API_REFERENCE.md)
-- [Architecture Details](docs/ARCHITECTURE.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Migration Guide](docs/MIGRATION_GUIDE.md)
+- [Quick Start Guide](docs/QUICKSTART.md) — 5-minute setup and examples
+- [API Reference](docs/API_REFERENCE.md) — Core API interfaces
+- [Architecture Details](docs/ARCHITECTURE.md) — Package design & internals
+- [Library Comparison](docs/COMPARISON.md) — NeuralOps vs FlashAttention, FLA, xformers, vLLM
+- [Comparative Results](docs/COMPARISON_RESULTS.md) — Empirical execution benchmarks
+- [Memory Profile](docs/MEMORY_PROFILE.md) — Memory allocation profiles
+- [Module Index](docs/MODULES/README.md) — Per-family module references
+- [Rename Map](docs/RENAME_MAP.md) — 657 deprecated alias mappings
+- [Roadmap](docs/ROADMAP.md) — Development milestones toward v2.0
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — Common error resolutions
+- [Migration Guide](docs/MIGRATION_GUIDE.md) — Migration from v0.x
 
 ---
 
@@ -496,7 +504,7 @@ If you use NeuralOps in your research, please cite:
   author = {Majlesi, Taha},
   year = {2026},
   url = {https://github.com/tahamajs/SVD_linear_Attention},
-  version = {1.1.1}
+  version = {1.2.0}
 }
 ```
 
