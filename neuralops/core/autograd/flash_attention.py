@@ -12,7 +12,7 @@ class FlashAttentionFunction(Function):
 
     @staticmethod
     def forward(
-        ctx,
+        ctx: Any,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
@@ -40,7 +40,7 @@ class FlashAttentionFunction(Function):
         return out
 
     @staticmethod
-    def backward(ctx, grad_out: torch.Tensor):
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None]:
         q, k, v, out, lse = ctx.saved_tensors
         softmax_scale = ctx.softmax_scale
         causal = ctx.causal
