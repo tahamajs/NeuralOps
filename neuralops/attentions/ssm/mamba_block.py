@@ -370,13 +370,17 @@ class MambaBlock(nn.Module):
             if r > core.size(0):
                 rem_r = r - core.size(0)
                 reps_r = (rem_r + core.size(0) - 1) // core.size(0)
-                tiled_r = core.repeat(reps_r, 1)[:rem_r, :]
+                scale_r = 1.0 / math.sqrt(reps_r + 1)
+                out[: core.size(0), :] *= scale_r
+                tiled_r = (core * scale_r).repeat(reps_r, 1)[:rem_r, :]
                 out[core.size(0) :, : core.size(1)] = tiled_r
 
             if c > core.size(1):
                 rem_c = c - core.size(1)
                 reps_c = (rem_c + core.size(1) - 1) // core.size(1)
-                tiled_c = out[:, : core.size(1)].repeat(1, reps_c)[:, :rem_c]
+                scale_c = 1.0 / math.sqrt(reps_c + 1)
+                out[:, : core.size(1)] *= scale_c
+                tiled_c = (out[:, : core.size(1)]).repeat(1, reps_c)[:, :rem_c]
                 out[:, core.size(1) :] = tiled_c
 
             return out.to(device=device, dtype=dtype)
@@ -665,9 +669,8 @@ class MambaBlock(nn.Module):
         if conv_prev is not None:
             # conv_prev: (B, d_inner, d_conv - 1)
             # Concatenate along time axis
-            x_cat = torch.cat(
-                [conv_prev.transpose(1, 2), x_ssm], dim=1
-            )  # (B, L + d_conv - 1, d_inner)
+            conv_buf = conv_prev.transpose(1, 2).contiguous()
+            x_cat = torch.cat([conv_buf, x_ssm], dim=1)  # (B, L + d_conv - 1, d_inner)
         else:
             # FIXED: Explicit left-padding to prevent future token leakage
             x_cat = F.pad(x_ssm.transpose(1, 2), (self.d_conv - 1, 0)).transpose(1, 2)
@@ -747,31 +750,45 @@ class MambaBlock(nn.Module):
 
         # ---- 8. attention_mask (MB-03, MB-09) ----
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                out = out * attention_mask.unsqueeze(-1).to(out.dtype)
-            elif attention_mask.dim() == 3:
+            m = attention_mask
+            if m.dtype.is_floating_point:
+                m = (m > -1e4).to(out.dtype)
+            else:
+                m = m.to(out.dtype)
+            if m.dim() == 2:
+                out = out * m.unsqueeze(-1)
+            elif m.dim() == 3:
                 # (B, Lq, Lk) — take the last column (query's validity) or diagonal
-                m = (
-                    attention_mask.diagonal(dim1=-2, dim2=-1)
-                    if attention_mask.size(-1) == L
-                    else attention_mask[..., -1]
+                m_red = (
+                    m.diagonal(dim1=-2, dim2=-1)
+                    if m.size(-1) == L
+                    else m[..., -1]
                 )
-                out = out * m.unsqueeze(-1).to(out.dtype)
-            elif attention_mask.dim() == 4:
+                out = out * m_red.unsqueeze(-1)
+            elif m.dim() == 4:
                 # (B, 1, Lq, Lk) — same reduction
-                m = attention_mask.squeeze(1)
-                m = m.diagonal(dim1=-2, dim2=-1) if m.size(-1) == L else m[..., -1]
-                out = out * m.unsqueeze(-1).to(out.dtype)
+                m_sq = m.squeeze(1)
+                m_red = m_sq.diagonal(dim1=-2, dim2=-1) if m_sq.size(-1) == L else m_sq[..., -1]
+                out = out * m_red.unsqueeze(-1)
 
         # ---- 9. Output tuple (MB-12) ----
         present_state = (h_next, conv_next)
         attn_weights = None
 
         fmt = self._return_format
-        if fmt in ("bert", "gpt2"):
+        if fmt == "bert":
             return (out, attn_weights)
-        # llama
-        return (out, attn_weights, present_state)
+        if fmt == "gpt2":
+            if output_attentions:
+                return (out, present_state, attn_weights)
+            return (out, present_state)
+        # llama or other decoders
+        if self.is_decoder:
+            if output_attentions:
+                return (out, attn_weights, present_state)
+            return (out, present_state)
+        # default encoder fallback
+        return (out, attn_weights)
 
 
 # Convenience alias
