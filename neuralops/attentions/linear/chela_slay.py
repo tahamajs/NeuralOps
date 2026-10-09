@@ -717,6 +717,8 @@ class ChelaSlayAttention(BaseAttention):
         if source_attn is not None:
             try:
                 self._copy_pretrained(source_attn)
+            except RuntimeError:
+                raise
             except Exception as e:
                 logger.warning(
                     "ChelaSlayAttention._copy_pretrained failed: %s. Using init.", e
@@ -887,9 +889,8 @@ class ChelaSlayAttention(BaseAttention):
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
-            logger.warning(
-                "ChelaSlay: could not extract weights for %s from %s. Using default init.",
-                missing_after, cls_name,
+            raise RuntimeError(
+                f"ChelaSlay: could not extract required projection weights for {missing_after} from {cls_name}."
             )
 
         mapping = {
