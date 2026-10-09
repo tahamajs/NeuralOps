@@ -1052,7 +1052,7 @@ def inject_refined_landmark(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_leka_v3(
+            res = inject_refined_landmark(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=comp_config,
