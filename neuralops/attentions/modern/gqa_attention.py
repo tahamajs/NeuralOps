@@ -232,45 +232,37 @@ class GroupedQueryAttention(BaseAttention):
             kwargs.get("head_dim", getattr(config, "head_dim", None) if config else None)
             or (self.hidden_size // max(1, self.num_heads))
         )
-
-        # ---- num_kv_heads ----
+# ==================================================================
+        # تفکیک دقیق: rank مال LoRA است، num_kv_heads فشرده‌سازی GQA است
+        # ==================================================================
         resolved_kv_heads = None
-        source = "default"
 
+        # 1. اگر کاربر مستقیماً num_kv_heads داده باشد
         if num_kv_heads is not None:
             resolved_kv_heads = int(num_kv_heads)
-            source = "explicit_arg"
         elif config is not None:
-            cfg_kv = _cfg_get(config, "num_key_value_heads", None) or _cfg_get(
-                config, "num_kv_heads", None
-            )
+            cfg_kv = _cfg_get(config, "num_key_value_heads", None) or _cfg_get(config, "num_kv_heads", None)
             if cfg_kv is not None:
                 resolved_kv_heads = int(cfg_kv)
-                source = "config"
-        if resolved_kv_heads is None and src_attn is not None:
-            src_kv = getattr(
-                src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None)
-            )
-            if src_kv is not None:
-                resolved_kv_heads = int(src_kv)
-                source = "src_attn"
-
+        
         if resolved_kv_heads is None:
             kwargs_kv = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
             if kwargs_kv is not None:
                 resolved_kv_heads = int(kwargs_kv)
-                source = "kwargs"
-            else:
-                resolved_kv_heads = max(1, self.num_heads // 4)
-                source = "default"
 
-        self.num_kv_heads = int(min(self.num_heads, max(1, resolved_kv_heads)))
-        self._num_kv_heads_source = source
+        # 2. اگر تعیین نشده بود یا برابر با کل هدها بود، فشرده‌سازی GQA اعمال شود (پیش‌فرض 4 برابر کمتر)
+        if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
+            resolved_kv_heads = max(1, self.num_heads // 4)
+
+        self.num_kv_heads = int(resolved_kv_heads)
+        self._num_kv_heads_source = "gqa_compressed"
 
         # ---- sizes ----
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+
 
         # ---- decoder detection ----
         if is_decoder is not None:
@@ -513,20 +505,29 @@ class GroupedQueryAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        def _pool_gqa(w: torch.Tensor, target_out: int) -> torch.Tensor:
-            src_out = w.shape[0]
-            if src_out == target_out:
+        # GQA-aware head selection / pooling (Head-Dimension Safe)
+# GQA-aware head selection (Variance-Preserving)
+        def _pool_gqa(w: torch.Tensor, target_heads: int, head_dim: int) -> torch.Tensor:
+            in_feat = w.shape[1] if w.dim() == 2 else 1
+            src_heads = w.shape[0] // head_dim
+
+            if src_heads == target_heads:
                 return w
-            if src_out > target_out:
-                idx = torch.linspace(0, src_out - 1, target_out).long()
-                return w.index_select(0, idx)
-            if target_out % src_out == 0:
-                rep = target_out // src_out
-                return w.repeat_interleave(rep, dim=0)
-            out = torch.zeros(target_out, w.shape[1], dtype=w.dtype, device=w.device)
-            m = min(target_out, src_out)
-            out[:m].copy_(w[:m])
-            return out
+
+            w_reshaped = w.view(src_heads, head_dim, in_feat)
+
+            if src_heads > target_heads and src_heads % target_heads == 0:
+                group_size = src_heads // target_heads
+                # به جای میانگین‌گیری، هد اول هر گروه را دست‌نخورده برمی‌داریم
+                w_pooled = w_reshaped.view(target_heads, group_size, head_dim, in_feat)[:, 0, :, :]
+            elif src_heads > target_heads:
+                indices = torch.linspace(0, src_heads - 1, target_heads).long()
+                w_pooled = w_reshaped.index_select(0, indices)
+            else:
+                rep = target_heads // src_heads
+                w_pooled = w_reshaped.repeat_interleave(rep, dim=0)
+
+            return w_pooled.reshape(target_heads * head_dim, in_feat)
 
         with torch.no_grad():
             for key, target in (
@@ -547,9 +548,9 @@ class GroupedQueryAttention(BaseAttention):
                     continue
 
                 if key in ("k", "v"):
-                    w = _pool_gqa(w, target.weight.shape[0])
+                    w = _pool_gqa(w, self.num_kv_heads, self.head_dim)
                     if b is not None:
-                        b = _pool_gqa(b.unsqueeze(-1), target.weight.shape[0]).squeeze(-1)
+                        b = _pool_gqa(b.unsqueeze(-1), self.num_kv_heads, self.head_dim).squeeze(-1)
 
                 w = _orient(w, target.weight.shape)
                 out_d = min(target.weight.size(0), w.size(0))
