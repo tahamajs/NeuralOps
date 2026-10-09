@@ -180,17 +180,39 @@ class ClassificationAdapter:
 
         train_metrics = {}
         train_duration_s = 0.0
-        if not self.eval_only and self.epochs > 0:
+        training_type = self.extra_kwargs.get("training_type", "eval_only" if self.eval_only else "finetune")
+
+        if not self.eval_only and self.epochs > 0 and training_type != "none":
             train_t_start = time.perf_counter()
-            train_metrics = finetune_classification(
+            from neuralops.benchmarks.core.training import train_with_training_type
+            
+            teacher_model = None
+            if training_type in ("kd", "distillation"):
+                teacher_name = self.extra_kwargs.get("kd_teacher", self.model_name)
+                from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
+                teacher_model, _, _ = load_model_and_tokenizer(
+                    model_name=teacher_name,
+                    device=self.device,
+                    dtype=self.dtype,
+                    num_labels=getattr(self.dataset_meta, "num_labels", 2) or 2,
+                )
+                teacher_model.eval()
+
+            train_metrics = train_with_training_type(
                 model=self.model,
                 train_loader=self.train_loader,
-                eval_loader=self.eval_loader,
+                training_type=training_type,
                 epochs=self.epochs,
                 lr=self.lr,
                 device=self.device,
+                teacher=teacher_model,
+                kd_temperature=self.extra_kwargs.get("kd_temperature", 2.0),
+                kd_alpha=self.extra_kwargs.get("kd_alpha", 0.5),
+                recovery_steps=self.extra_kwargs.get("recovery_steps", 50),
             )
             train_duration_s = round(time.perf_counter() - train_t_start, 2)
+            if teacher_model is not None:
+                del teacher_model
 
         # Baseline evaluation
         eval_metrics = evaluate_classification(
