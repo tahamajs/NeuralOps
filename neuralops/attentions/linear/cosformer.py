@@ -50,7 +50,13 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor | None,
+    sin: torch.Tensor | None,
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -79,8 +85,17 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
 
 
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, lora_rank=16,
-                 lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Any = None,
+        dtype: Any = None,
+    ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
         self.in_features = in_features
@@ -107,7 +122,7 @@ class LoRALinear(nn.Module):
         if freeze_base:
             self.freeze_base_weights()
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
@@ -120,7 +135,7 @@ class LoRALinear(nn.Module):
             nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
 
-    def freeze_base_weights(self):
+    def freeze_base_weights(self) -> None:
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
@@ -130,7 +145,7 @@ class LoRALinear(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.dtype != self.weight.dtype:
             x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
