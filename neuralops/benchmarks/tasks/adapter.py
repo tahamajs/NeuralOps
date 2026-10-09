@@ -209,12 +209,39 @@ class TaskAdapter:
         self.apply_module()
 
         train_duration_s = 0.0
-        if not self.eval_only and self.epochs > 0:
+        train_metrics = {}
+        training_type = self.extra_kwargs.get("training_type", "eval_only" if self.eval_only else "finetune")
+
+        if not self.eval_only and self.epochs > 0 and training_type != "none":
             t_start = time.perf_counter()
-            opt = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
-            for _ in range(self.epochs):
-                self.train_epoch(opt)
+            from neuralops.benchmarks.core.training import train_with_training_type
+            teacher_model = None
+            if training_type in ("kd", "distillation"):
+                teacher_name = self.extra_kwargs.get("kd_teacher", self.model_name)
+                from neuralops.benchmarks.models.loader import load_universal_model
+                teacher_model, _, _ = load_universal_model(
+                    model_name=teacher_name,
+                    task=self.task,
+                    device=self.device,
+                    dtype=self.dtype,
+                )
+                teacher_model.eval()
+
+            train_metrics = train_with_training_type(
+                model=self.model,
+                train_loader=self.train_loader,
+                training_type=training_type,
+                epochs=self.epochs,
+                lr=self.lr,
+                device=self.device,
+                teacher=teacher_model,
+                kd_temperature=self.extra_kwargs.get("kd_temperature", 2.0),
+                kd_alpha=self.extra_kwargs.get("kd_alpha", 0.5),
+                recovery_steps=self.extra_kwargs.get("recovery_steps", 50),
+            )
             train_duration_s = round(time.perf_counter() - t_start, 2)
+            if teacher_model is not None:
+                del teacher_model
 
         eval_metrics = self.evaluate()
         latency_info = measure_latency_and_throughput(self.model, self.eval_loader, self.device)

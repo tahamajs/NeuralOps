@@ -134,3 +134,43 @@ def test_compute_task_metrics() -> None:
     reg_metrics = compute_task_metrics("regression", reg_preds, reg_targets)
     assert "mse" in reg_metrics
     assert reg_metrics["mse"] >= 0.0
+
+
+def test_train_with_training_types() -> None:
+    """Verify training regimes: none, recovery, kd, and finetune."""
+    from neuralops.benchmarks.core.training import train_with_training_type
+    import torch.nn as nn
+
+    class SimpleModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = nn.Linear(16, 2)
+        def forward(self, input_ids, attention_mask=None, labels=None):
+            x = input_ids.float()
+            logits = self.linear(x)
+            loss = nn.functional.cross_entropy(logits, labels) if labels is not None else None
+            from collections import namedtuple
+            Output = namedtuple("Output", ["loss", "logits"])
+            return Output(loss=loss, logits=logits)
+
+    student = SimpleModel()
+    teacher = SimpleModel()
+    inputs = torch.randn(4, 16)
+    labels = torch.randint(0, 2, (4,))
+    loader = [(inputs, inputs, labels)]
+
+    # Test training_type="none"
+    res_none = train_with_training_type(student, loader, training_type="none")
+    assert res_none["status"] == "skipped"
+
+    # Test training_type="recovery"
+    res_rec = train_with_training_type(student, loader, training_type="recovery", recovery_steps=2)
+    assert res_rec["status"] == "success"
+
+    # Test training_type="kd"
+    res_kd = train_with_training_type(
+        student, loader, training_type="kd", teacher=teacher, epochs=1, max_steps=2
+    )
+    assert res_kd["training_type"] == "kd"
+    assert res_kd["status"] == "success"
+
