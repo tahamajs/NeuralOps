@@ -684,6 +684,8 @@ class GroupedQueryAttention(BaseAttention):
     ) -> tuple[Any, ...]:
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
+        if encoder_hidden_states is not None:
+            return hidden_states, None
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
