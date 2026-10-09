@@ -78,7 +78,10 @@ class MinimalMoEFallback(nn.Module):
                 if out.shape[-1] < x.shape[-1]
                 else out[..., : x.shape[-1]]
             )
-        self.aux_loss = torch.tensor(0.0, device=x.device)
+        # Router aux loss: n_experts * sum(f_i * P_i)
+        density_1 = weights.view(-1, self.n_experts).mean(dim=0)  # [n_experts]
+        density_1_proxy = logits.softmax(dim=-1).view(-1, self.n_experts).mean(dim=0)
+        self.aux_loss = self.n_experts * torch.sum(density_1 * density_1_proxy)
         return out, weights
 
 
@@ -242,7 +245,7 @@ class SambaMoEBlock(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("SambaMoEBlock does not support cross-attention")
 
-        x, attn_w = self.swa_mamba(
+        swa_res = self.swa_mamba(
             hidden_states,
             attention_mask=attention_mask,
             head_mask=head_mask,
@@ -254,6 +257,12 @@ class SambaMoEBlock(BaseAttention):
             return_dict=return_dict,
             **kwargs,
         )
+        if isinstance(swa_res, tuple):
+            x = swa_res[0]
+            past_state = swa_res[1] if len(swa_res) > 1 else None
+        else:
+            x = swa_res
+            past_state = None
 
         router_in = getattr(self.moe, "d_model", self.d_model)
         if hasattr(self.moe, "router") and hasattr(self.moe.router, "in_features"):
@@ -286,7 +295,8 @@ class SambaMoEBlock(BaseAttention):
             # Nested encoder: bypass outer LayerNorm (self.norm) and double residual
             out = x + moe_out
         else:
-            out = self.norm(x + moe_out).to(target_dtype)
+            norm_dtype = self.norm.weight.dtype if self.norm.weight is not None else target_dtype
+            out = self.norm((x + moe_out).to(norm_dtype)).to(target_dtype)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             out = (
@@ -294,7 +304,14 @@ class SambaMoEBlock(BaseAttention):
                 if out.shape[-1] < hidden_states.shape[-1]
                 else out[..., : hidden_states.shape[-1]]
             )
-        return (out.to(target_dtype), attn_w)
+
+        if self.is_decoder:
+            if output_attentions:
+                return out.to(target_dtype), past_state, None
+            else:
+                return out.to(target_dtype), past_state
+        else:
+            return (out.to(target_dtype), None)
 
 
 def inject_samba_moe(
