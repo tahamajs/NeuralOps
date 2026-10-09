@@ -189,7 +189,7 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
 # ---------------------------------------------------------------------------
 
 
-def load_data(cfg, tokenizer):
+def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
     """Load, tokenise, and return a HuggingFace DatasetDict."""
     try:
         from neuralops.data.glue_loader import (
@@ -231,17 +231,24 @@ from transformers import TrainerCallback
 
 
 class LiveHistoryCallback(TrainerCallback):
-    def __init__(self, out_dir):
+    def __init__(self, out_dir: str | Path) -> None:
         self.history_file = Path(out_dir) / "history" / "log_history.json"
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(
+        self,
+        args: Any,
+        state: Any,
+        control: Any,
+        logs: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
         if state.log_history:
             with open(self.history_file, "w", encoding="utf-8") as f:
                 json.dump(state.log_history, f, indent=2, default=str)
 
 
-def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
+def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Full training pipeline: data → model → train → eval → save."""
     torch = fw["torch"]
     fw["set_seed"](cfg.seed)
@@ -409,7 +416,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
+def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
     """Load a saved checkpoint and evaluate it on the validation split."""
     fw["set_seed"](cfg.seed)
     device = fw["get_device"]()
@@ -456,7 +463,7 @@ def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> dict[str
 # ---------------------------------------------------------------------------
 
 
-def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
+def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Apply a registered compressor to the base model and report size reduction."""
     from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -579,7 +586,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
+def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     """Run a grid sweep: attn_types × seeds, save aggregated results."""
     import numpy as np
 

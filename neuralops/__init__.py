@@ -21,15 +21,15 @@ from importlib.abc import MetaPathFinder
 
 
 class _AliasLoader:
-    def __init__(self, mod):
+    def __init__(self, mod: Any) -> None:
         """Execute __init__ operation."""
         self.mod = mod
 
-    def create_module(self, _spec):
+    def create_module(self, _spec: Any) -> Any:
         """Execute create_module operation."""
         return self.mod
 
-    def exec_module(self, module):
+    def exec_module(self, module: Any) -> None:
         """Execute exec_module operation."""
         pass
 
@@ -148,7 +148,9 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.generate_all_modules_analysis": "neuralops.analysis.generate_all_modules_analysis",
     }
 
-    def find_spec(self, fullname, path, target=None):
+    def find_spec(
+        self, fullname: str, path: Any, target: Any = None
+    ) -> Any | None:
         """Execute find_spec operation."""
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]

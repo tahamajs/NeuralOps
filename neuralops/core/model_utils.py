@@ -12,7 +12,7 @@ import torch.nn as nn
 
 def run_calibration_forward(
     model: nn.Module,
-    tokenizer,
+    tokenizer: Any,
     texts: list[str],
     device: torch.device | None = None,
     max_length: int = 128,
@@ -127,10 +127,10 @@ def activation_hooks(
     activations: dict[str, Any] = {}
     hooks = []
 
-    def make_hook(name) -> Any:
+    def make_hook(name: str) -> Any:
         """Make hook."""
 
-        def hook(module, input, output) -> None:
+        def hook(module: nn.Module, input: tuple[Any, ...], output: Any) -> None:
             """Hook."""
             data = {}
             if collect_input:

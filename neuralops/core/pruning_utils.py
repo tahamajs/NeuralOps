@@ -399,8 +399,8 @@ def recalibrate_layernorms(
     scales: dict[nn.Module, float] = {}
     hooks = []
 
-    def make_hook(mod: nn.Module):
-        def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any):
+    def make_hook(mod: nn.Module) -> Any:
+        def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any) -> None:
             if inp and isinstance(inp[0], torch.Tensor):
                 x = inp[0].detach().float()
                 std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
