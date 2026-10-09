@@ -1,10 +1,9 @@
 """
-Grouped-Query Attention (GQA) — rank-aware.
+Grouped-Query Attention (GQA) — rank-aware, KV-cache aware, SDPA-accelerated.
 
 Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA)
 by dividing H_Q query heads into G groups, where each group shares a single
 Key-Value head pair (H_KV = G ≤ H_Q).
-
 """
 
 from __future__ import annotations
@@ -20,9 +19,14 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half
+from neuralops.core.rope import _rotate_half, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Helpers
+# =============================================================================
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -52,131 +56,95 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
-
-    rotary_dim = min(cos.shape[-1], q.shape[-1], k.shape[-1])
-    rotary_dim = (rotary_dim // 2) * 2
-    if rotary_dim <= 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-    cos_cut = cos[..., :rotary_dim].to(q_rot.dtype)
-    sin_cut = sin[..., :rotary_dim].to(q_rot.dtype)
-
-    q_rot_emb = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_emb = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
-
-    q = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_emb
-    k = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_emb
-    return q, k
+# =============================================================================
+# LoRALinear (canonical, re-exported from utils.lora)
+# =============================================================================
 
 
-class LoRALinear(nn.Module):
-    def __init__(
-        self,
-        in_features,
-        out_features,
-        bias=True,
-        lora_rank=16,
-        lora_alpha=32.0,
-        freeze_base=False,
-        device=None,
-        dtype=None,
-    ):
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
+try:
+    from neuralops.utils.lora import LoRALinear  # noqa: F401
+except ImportError:  # pragma: no cover — fallback for isolated import
+    class LoRALinear(nn.Module):
+        def __init__(
+            self,
+            in_features: int,
+            out_features: int,
+            bias: bool = True,
+            lora_rank: int = 16,
+            lora_alpha: float = 32.0,
+            freeze_base: bool = False,
+            device: torch.device | None = None,
+            dtype: torch.dtype | None = None,
+        ) -> None:
+            super().__init__()
+            fk = {"device": device, "dtype": dtype}
+            self.in_features = int(in_features)
+            self.out_features = int(out_features)
+            self.lora_rank = int(lora_rank)
+            self.lora_alpha = float(lora_alpha)
+            self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+            self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
+            self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
+            if bias:
+                self.bias = nn.Parameter(torch.empty(out_features, **fk))
+            else:
+                self.register_parameter("bias", None)
 
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            if self.lora_rank > 0:
+                self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
+                self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
+            else:
+                self.register_parameter("lora_A", None)
+                self.register_parameter("lora_B", None)
 
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+            self.reset_parameters()
+            if freeze_base:
+                self.freeze_base_weights()
 
-    def reset_parameters(self):
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.zeros_(self.lora_B)
-            self.lora_B.requires_grad = True
-
-    def freeze_base_weights(self):
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
+        def reset_parameters(self) -> None:
+            nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+            if self.bias is not None:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+                bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+                nn.init.uniform_(self.bias, -bound, bound)
+            if self.lora_rank > 0 and self.lora_A is not None:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 self.lora_A.requires_grad = True
-            if self.lora_B is not None:
+            if self.lora_rank > 0 and self.lora_B is not None:
+                nn.init.zeros_(self.lora_B)
                 self.lora_B.requires_grad = True
 
-    def forward(self, x):
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
-        return out
+        def freeze_base_weights(self) -> None:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+            if self.lora_rank > 0:
+                if self.lora_A is not None:
+                    self.lora_A.requires_grad = True
+                if self.lora_B is not None:
+                    self.lora_B.requires_grad = True
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+            b = (
+                self.bias.to(x.dtype)
+                if (self.bias is not None and self.bias.dtype != x.dtype)
+                else self.bias
+            )
+            out = F.linear(x, w, b)
+            if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+                bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+                out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
+            return out
 
 
-@ATTENTION_REGISTRY.register(
-    "grouped_query_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
+# =============================================================================
+# Grouped-Query Attention
+# =============================================================================
+
+
 @ATTENTION_REGISTRY.register(
     "gqa_attention",
     supports_causal=True,
@@ -256,12 +224,12 @@ class GroupedQueryAttention(BaseAttention):
         )
 
         # ==================================================================
-        # GQA-FIX-16: derive num_kv_heads from `rank` when not explicitly given
-        # ==================================================================
-        # Priority:
+        # Resolve num_kv_heads (GQA / MQA / MHA).
+        #
+        # Priority (explicit only — `rank` is reserved for LoRA):
         #   1. explicit `num_kv_heads` argument
         #   2. config's num_key_value_heads
-        #   3. `rank` argument (1 <= rank <= num_heads)
+        #   3. source attention's num_key_value_heads
         #   4. kwargs' num_kv_heads
         #   5. default = num_heads // 4
         # ==================================================================
@@ -278,6 +246,7 @@ class GroupedQueryAttention(BaseAttention):
             if cfg_kv is not None:
                 resolved_kv_heads = int(cfg_kv)
                 source = "config"
+
         if resolved_kv_heads is None and src_attn is not None:
             src_kv = getattr(
                 src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None)
@@ -286,12 +255,14 @@ class GroupedQueryAttention(BaseAttention):
                 resolved_kv_heads = int(src_kv)
                 source = "src_attn"
 
-        # GQA-FIX-16: if `rank` is given and looks like a head count (1..num_heads),
-        # use it as num_kv_heads. This makes the rank sweep actually produce
-        # different compression levels.
-        if rank is not None and 1 <= int(rank) <= self.num_heads:
-            resolved_kv_heads = int(rank)
-            source = "rank"
+        # NOTE: `rank` is NOT used to derive num_kv_heads.
+        # `rank` is reserved for LoRA bottleneck only.
+        if resolved_kv_heads is None and rank is not None:
+            logger.debug(
+                "GQA: ignoring `rank=%s` for KV head resolution "
+                "(use `num_kv_heads` to control GQA grouping).",
+                rank,
+            )
 
         if resolved_kv_heads is None:
             kwargs_kv = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
@@ -418,7 +389,6 @@ class GroupedQueryAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-        # Log the resolved head config
         logger.debug(
             "GQA: hidden=%d num_heads=%d num_kv_heads=%d (source=%s) kv_repeat=%d head_dim=%d",
             self.hidden_size,
@@ -431,45 +401,47 @@ class GroupedQueryAttention(BaseAttention):
 
     # ---- aliases ----
     @property
-    def q_proj(self):
+    def q_proj(self) -> LoRALinear:
         return self.query
 
     @property
-    def k_proj(self):
+    def k_proj(self) -> LoRALinear:
         return self.key
 
     @property
-    def v_proj(self):
+    def v_proj(self) -> LoRALinear:
         return self.value
 
     @property
-    def q_lin(self):
+    def q_lin(self) -> LoRALinear:
         return self.query
 
     @property
-    def k_lin(self):
+    def k_lin(self) -> LoRALinear:
         return self.key
 
     @property
-    def v_lin(self):
+    def v_lin(self) -> LoRALinear:
         return self.value
 
     @property
-    def out_lin(self):
+    def out_lin(self) -> LoRALinear:
         return self.out_proj
 
     @property
-    def dense(self):
+    def dense(self) -> LoRALinear:
         return self.out_proj
 
     @property
-    def o_proj(self):
+    def o_proj(self) -> LoRALinear:
         return self.out_proj
 
     @property
-    def c_proj(self):
+    def c_proj(self) -> LoRALinear:
         return self.out_proj
 
+    # ------------------------------------------------------------------
+    # Weight transfer
     # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
@@ -575,7 +547,7 @@ class GroupedQueryAttention(BaseAttention):
         if missing:
             logger.warning("GQA copy_weights: missing %s", missing)
 
-        def _orient(w, target_shape):
+        def _orient(w: torch.Tensor, target_shape: tuple[int, int]) -> torch.Tensor:
             if w.dim() != 2:
                 return w
             if w.shape == target_shape:
@@ -584,23 +556,23 @@ class GroupedQueryAttention(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        # GQA-aware pooling for K/V
-        def _pool_gqa(w, target_out):
-            """
-            Map source K/V of shape (src_out, in) to (target_out, in).
-            If src has more heads, mean-pool groups.
-            If src has fewer heads, repeat each head.
+        # GQA-aware head selection (NOT mean-pool) for K/V
+        def _pool_gqa(w: torch.Tensor, target_out: int) -> torch.Tensor:
+            """Reduce/expand KV heads to `target_out`.
+
+            Shrinking: select evenly-spaced source heads (preserves diversity).
+            Expanding: repeat_interleave.
+            Fallback: zero-pad.
             """
             src_out = w.shape[0]
             if src_out == target_out:
                 return w
-            if src_out > target_out and src_out % target_out == 0:
-                rep = src_out // target_out
-                return w.view(target_out, rep, -1).mean(dim=1)
-            if src_out < target_out and target_out % src_out == 0:
+            if src_out > target_out:
+                idx = torch.linspace(0, src_out - 1, target_out).long()
+                return w.index_select(0, idx)
+            if target_out % src_out == 0:
                 rep = target_out // src_out
                 return w.repeat_interleave(rep, dim=0)
-            # Fallback: principal slice
             out = torch.zeros(target_out, w.shape[1], dtype=w.dtype, device=w.device)
             m = min(target_out, src_out)
             out[:m].copy_(w[:m])
@@ -658,12 +630,19 @@ class GroupedQueryAttention(BaseAttention):
             pass
 
     # ------------------------------------------------------------------
+    # Mask utilities
+    # ------------------------------------------------------------------
     @staticmethod
-    def _prepare_valid_mask(attention_mask, B, L, device):
+    def _prepare_valid_mask(
+        attention_mask: torch.Tensor | None,
+        B: int,
+        L: int,
+        device: torch.device,
+    ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
 
-        def _to_bool(t):
+        def _to_bool(t: torch.Tensor) -> torch.Tensor:
             if t.dtype == torch.bool:
                 return t
             if t.dtype.is_floating_point:
@@ -688,6 +667,83 @@ class GroupedQueryAttention(BaseAttention):
         return None
 
     # ------------------------------------------------------------------
+    # KV cache helpers
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _read_cache(
+        past_key_value: Any,
+        layer_idx: int,
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+        """Read (past_k, past_v, past_len) from any cache layout.
+
+        Supports:
+          - None
+          - tuple/list (k, v)
+          - tuple/list of layer entries: [(k, v), (k, v), ...]
+          - DynamicCache-like objects with .key_cache / .value_cache
+        """
+        if past_key_value is None:
+            return None, None, 0
+
+        if isinstance(past_key_value, (tuple, list)):
+            if len(past_key_value) == 0:
+                return None, None, 0
+
+            first = past_key_value[0]
+            # Per-layer list of (k, v) tuples
+            if isinstance(first, (tuple, list)):
+                if layer_idx < len(past_key_value):
+                    entry = past_key_value[layer_idx]
+                    if len(entry) < 2 or entry[0] is None:
+                        return None, None, 0
+                    k, v = entry[0], entry[1]
+                    return k, v, k.shape[-2]
+                return None, None, 0
+
+            # Flat (k, v)
+            k, v = past_key_value[0], past_key_value[1] if len(past_key_value) > 1 else None
+            if k is None:
+                return None, None, 0
+            return k, v, k.shape[-2]
+
+        # DynamicCache-like
+        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+            if layer_idx < len(past_key_value.key_cache):
+                k = past_key_value.key_cache[layer_idx]
+                if k is None:
+                    return None, None, 0
+                v = None
+                if hasattr(past_key_value, "value_cache"):
+                    if layer_idx < len(past_key_value.value_cache):
+                        v = past_key_value.value_cache[layer_idx]
+                return k, v, k.shape[-2]
+
+        return None, None, 0
+
+    @staticmethod
+    def _write_cache(
+        k: torch.Tensor,
+        v: torch.Tensor,
+        past_key_value: Any,
+        layer_idx: int,
+    ) -> Any:
+        """Return the updated cache. Preserves input cache type where possible."""
+        if past_key_value is not None and hasattr(past_key_value, "key_cache"):
+            if layer_idx < len(past_key_value.key_cache):
+                past_key_value.key_cache[layer_idx] = k
+                if hasattr(past_key_value, "value_cache"):
+                    past_key_value.value_cache[layer_idx] = v
+            else:
+                past_key_value.key_cache.append(k)
+                if hasattr(past_key_value, "value_cache"):
+                    past_key_value.value_cache.append(v)
+            return past_key_value
+
+        return (k, v)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -702,11 +758,14 @@ class GroupedQueryAttention(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    ) -> tuple[Any, ...]:
+        # Defensive unwrap
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
+
+        layer_idx = int(kwargs.get("layer_idx", 0))
 
         key_value_states = kwargs.get("key_value_states")
         is_cross = key_value_states is not None or encoder_hidden_states is not None
@@ -717,72 +776,131 @@ class GroupedQueryAttention(BaseAttention):
         )
 
         B, N_q, D = hidden_states.shape
-        N_k = kv_input.shape[1]
+        N_k_new = kv_input.shape[1]
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
         dtype = hidden_states.dtype
 
+        # ---- Read past cache (self-attention only) ----
+        past_k, past_v, past_len = (None, None, 0)
+        if not is_cross and past_key_value is not None:
+            past_k, past_v, past_len = self._read_cache(past_key_value, layer_idx)
+
+        # ---- Projections ----
         Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K = (
+            self.key(kv_input)
+            .view(B, N_k_new, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.value(kv_input)
+            .view(B, N_k_new, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
-            Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+            position_ids = kwargs.get("position_ids")
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
+
+        # ---- KV cache: concat past with new ----
+        present_key_value: Any | None = None
+        if not is_cross:
+            if past_k is not None and past_v is not None:
+                K = torch.cat([past_k.to(K.dtype), K], dim=-2)
+                V = torch.cat([past_v.to(V.dtype), V], dim=-2)
+            if past_key_value is not None or kwargs.get("use_cache", False):
+                present_key_value = self._write_cache(K, V, past_key_value, layer_idx)
+        else:
+            present_key_value = past_key_value
+
+        N_k = K.shape[-2]
 
         # ---- GQA expand ----
         if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K_full = repeat_kv(K, self.kv_repeat)
+            V_full = repeat_kv(V, self.kv_repeat)
+        else:
+            K_full, V_full = K, V
 
-        # ---- Attention scores ----
-        scale = d**-0.5
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        is_causal = bool(self.is_decoder and not is_cross and N_q > 1)
+        attn_weights: torch.Tensor | None = None
 
-        # ---- Causal mask ----
-        is_causal = bool(self.is_decoder and not is_cross)
-        if is_causal:
-            past_len = max(0, N_k - N_q)
-            causal_diag = 1 + past_len
-            causal = (
-                torch.triu(
-                    torch.full((N_q, N_k), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=causal_diag,
+        # =================================================================
+        # Fast path: SDPA (no head_mask, no output_attentions, no padding)
+        # =================================================================
+        use_sdpa = (
+            head_mask is None
+            and not output_attentions
+            and attention_mask is None
+            and encoder_attention_mask is None
+        )
+
+        if use_sdpa:
+            try:
+                context = F.scaled_dot_product_attention(
+                    Q,
+                    K_full,
+                    V_full,
+                    attn_mask=None,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    is_causal=is_causal,
                 )
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
-            scores = scores + causal
+            except Exception as e:
+                logger.debug("GQA SDPA fast-path failed, falling back: %s", e)
+                use_sdpa = False
 
-        # ---- Padding mask ----
-        eff_mask = encoder_attention_mask if is_cross else attention_mask
-        if eff_mask is None:
-            eff_mask = kwargs.get("mask")
-        valid_mask = self._prepare_valid_mask(eff_mask, B, N_k, device)
-        if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
+        # =================================================================
+        # Slow path: explicit scores + masks
+        # =================================================================
+        if not use_sdpa:
+            scale = d**-0.5
+            scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
-        # FIXED: Removed destructive torch.nan_to_num(..., nan=-1e4) before softmax
-        attn = F.softmax(scores, dim=-1).to(dtype)
-        attn = torch.nan_to_num(attn, nan=0.0)
-        attn = self.dropout(attn)
+            # Offset-aware causal mask
+            if is_causal:
+                q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
+                k_idx = torch.arange(N_k, device=device).unsqueeze(0)
+                causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(causal_mask, -1e4)
 
-        # ---- head_mask ----
-        if head_mask is not None:
-            hm = head_mask.to(attn.dtype)
-            if hm.dim() == 1:
-                hm = hm.view(1, H, 1, 1)
-            elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], H, 1, 1)
-            elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
-            attn = attn * hm
+            # Padding mask
+            eff_mask = encoder_attention_mask if is_cross else attention_mask
+            if eff_mask is None:
+                eff_mask = kwargs.get("mask")
+            valid_mask = self._prepare_valid_mask(eff_mask, B, N_k, device)
+            if valid_mask is not None:
+                scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
 
-        # ---- Context ----
-        context = torch.matmul(attn, V)
+            attn = F.softmax(scores, dim=-1).to(dtype)
+            attn = torch.nan_to_num(attn, nan=0.0)
+            attn = self.dropout(attn)
+
+            if head_mask is not None:
+                hm = head_mask.to(attn.dtype)
+                if hm.dim() == 1:
+                    hm = hm.view(1, H, 1, 1)
+                elif hm.dim() == 2:
+                    if hm.shape[-1] != H:
+                        raise ValueError(
+                            f"head_mask last dim {hm.shape[-1]} != num_heads {H}"
+                        )
+                    hm = hm.view(hm.shape[0], H, 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(1)
+                attn = attn * hm
+
+            context = torch.matmul(attn, V_full)
+            if output_attentions:
+                attn_weights = attn
+
+        # ---- Output projection ----
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -790,21 +908,32 @@ class GroupedQueryAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
+            output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+        # =================================================================
+        # Return tuple layout — standard decoder convention
+        # =================================================================
+        if self.is_decoder and not is_cross:
+            if output_attentions:
+                return output, present_key_value, attn_weights
+            return output, present_key_value
 
-        return output, (attn if output_attentions else None)
+        # Non-decoder (encoder / cross-attn): BERT-style 2-tuple
+        if output_attentions:
+            return output, attn_weights
+        return output, None
 
-    def get_ortho_loss(self):
+    # ------------------------------------------------------------------
+    def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.query.weight.device)
 
     def storage_bytes(self) -> dict[str, int]:
-        def _sz(p):
+        def _sz(p: Any) -> int:
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
             return 0
 
-        out = {}
+        out: dict[str, int] = {}
         for name, m in (
             ("query", self.query),
             ("key", self.key),
@@ -816,9 +945,11 @@ class GroupedQueryAttention(BaseAttention):
         return out
 
 
-# ===========================================================================
-# Injection (GQA-FIX-16: propagate rank → num_kv_heads)
-# ===========================================================================
+# =============================================================================
+# Injection
+# =============================================================================
+
+
 def inject_gqa(
     layer: Any = None,
     model: Any = None,
@@ -940,10 +1071,16 @@ def inject_gqa(
         logger.error("GQA construction failed: %s", e)
         return None
 
-    p = next(src_attn.parameters(), None) if src_attn is not target else None
-    if p is not None:
-        new_attn.to(device=p.device, dtype=p.dtype)
+    # ---- Safe device/dtype placement ----
+    ref_param = None
+    if src_attn is not None and src_attn is not target:
+        ref_param = next(src_attn.parameters(), None)
+    if ref_param is None:
+        ref_param = next(target.parameters(), None)
+    if ref_param is not None:
+        new_attn.to(device=ref_param.device, dtype=ref_param.dtype)
 
+    # ---- Splice into the parent module ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):
