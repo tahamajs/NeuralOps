@@ -63,8 +63,11 @@
 ### Choose your backend
 
 ```bash
-# NVIDIA GPU (recommended for training)
+# NVIDIA GPU (recommended for training, includes optional Triton kernels)
 pip install neuralops[cuda]
+
+# NVIDIA GPU with Triton optimization
+pip install neuralops[triton]
 
 # AMD GPU
 pip install --index-url https://download.pytorch.org/whl/rocm6.0 torch
@@ -73,7 +76,7 @@ pip install neuralops[rocm]
 # Apple Silicon (MPS)
 pip install neuralops[mps]
 
-# CPU only
+# CPU only (pure PyTorch fallback, no GPU/Triton needed)
 pip install neuralops[cpu]
 
 # Everything (dev + eval + benchmark + docs)
@@ -84,10 +87,10 @@ pip install neuralops[all]
 
 | Backend | GPU | Status | Notes |
 |:---|:---|:---:|:---|
-| **CUDA** | H100, H200, A100, A800, RTX 30/40 | ✅ | Full Triton support |
+| **CUDA** | H100, H200, A100, A800, RTX 30/40 | ✅ | Full Triton support (optional) |
 | **ROCm** | MI250, MI300 | ✅ | Via Triton AMD |
 | **MPS** | Apple M1/M2/M3/M4 | ✅ | PyTorch fallback |
-| **CPU** | any x86_64 / ARM | ✅ | PyTorch fallback |
+| **CPU** | any x86_64 / ARM | ✅ | PyTorch fallback (zero Triton required) |
 | **XPU** | Intel Arc | ⚠️ | Experimental |
 
 ### Minimal install (library only)
@@ -96,7 +99,7 @@ pip install neuralops[all]
 pip install neuralops
 ```
 
-This installs only the core library without torch. You must install torch separately depending on your backend.
+This installs the core library. Standard PyTorch and optional acceleration tools (like Triton) can be installed as desired.
 
 Verify your installation:
 ```bash
