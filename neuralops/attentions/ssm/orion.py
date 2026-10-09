@@ -835,6 +835,7 @@ class ORIONAttention(BaseAttention):
         K: torch.Tensor,
         V: torch.Tensor,
         token_valid: torch.Tensor | None = None,
+        past_len: int = 0,
     ) -> torch.Tensor:
         """
         Full softmax attention for the "full" heads.
@@ -844,16 +845,17 @@ class ORIONAttention(BaseAttention):
         head groups.
         """
         B, Hf, N, D = Q.shape
+        N_kv = K.shape[2]
         if Hf == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
 
         scale = self.head_dim**-0.5
-        is_causal = bool(self.is_decoder) and N > 1
+        is_causal = bool(self.is_decoder) and (N > 1 or past_len > 0)
 
         # Build additive attention bias for padding
         attn_bias = None
         if token_valid is not None:
-            valid_bias = ((1.0 - token_valid.float()) * -1e4).view(B, 1, 1, N)
+            valid_bias = ((1.0 - token_valid.float()) * -1e4).view(B, 1, 1, N_kv)
             attn_bias = valid_bias.to(Q.dtype)
 
         # Try SDPA
@@ -865,13 +867,22 @@ class ORIONAttention(BaseAttention):
             if attn_bias is not None:
                 bias_sdp = attn_bias.to(q_sdp.dtype)
 
+            # Note: when past_len > 0, is_causal in standard SDPA assumes N == N_kv, so use explicit bias/fallback
+            use_sdpa_causal = is_causal and past_len == 0 and N == N_kv and bias_sdp is None
+            if past_len > 0 and is_causal:
+                # Custom causal mask with past_len offset
+                causal_mask = torch.tril(torch.ones(N, N_kv, device=Q.device, dtype=torch.bool), diagonal=past_len)
+                c_bias = (~causal_mask).unsqueeze(0).unsqueeze(0).to(q_sdp.dtype) * -1e4
+                bias_sdp = c_bias if bias_sdp is None else bias_sdp + c_bias
+                use_sdpa_causal = False
+
             out = F.scaled_dot_product_attention(
                 q_sdp,
                 k_sdp,
                 v_sdp,
                 attn_mask=bias_sdp,
                 dropout_p=self.dropout.p if self.training else 0.0,
-                is_causal=is_causal and bias_sdp is None,
+                is_causal=use_sdpa_causal,
             )
             out = out.to(Q.dtype)
             return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -882,7 +893,7 @@ class ORIONAttention(BaseAttention):
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
-            causal_mask = torch.tril(torch.ones(N, N, device=Q.device, dtype=torch.bool))
+            causal_mask = torch.tril(torch.ones(N, N_kv, device=Q.device, dtype=torch.bool), diagonal=past_len)
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
         if token_valid is not None:
@@ -952,6 +963,17 @@ class ORIONAttention(BaseAttention):
             cos, sin = position_embeddings
             Q_all, K_all = apply_rotary_pos_emb(Q_all, K_all, cos, sin)
 
+        # Autoregressive KV-Caching for causal decoders
+        past_len = 0
+        if self.is_decoder and past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                if past_k is not None and past_v is not None:
+                    past_len = past_k.shape[2]
+                    K_all = torch.cat([past_k, K_all], dim=2)
+                    V_all = torch.cat([past_v, V_all], dim=2)
+        present_key_value = (K_all, V_all) if self.is_decoder else None
+
         # GQA expansion
         if self.kv_repeat > 1:
             K_all = repeat_kv(K_all, self.kv_repeat)
@@ -961,7 +983,7 @@ class ORIONAttention(BaseAttention):
         token_valid = None
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
-            token_valid = get_token_valid_mask(eff_mask, B, N_kv, device)
+            token_valid = get_token_valid_mask(eff_mask, B, K_all.shape[2], device)
 
         ctx_list = []
 
@@ -977,7 +999,7 @@ class ORIONAttention(BaseAttention):
             Q_full = Q_all[:, Hk:]
             K_full = K_all[:, Hk:]
             V_full = V_all[:, Hk:]
-            ctx_full = self._full_softpick_attention(Q_full, K_full, V_full, token_valid)
+            ctx_full = self._full_softpick_attention(Q_full, K_full, V_full, token_valid, past_len=past_len)
             ctx_list.append(ctx_full)
 
         if len(ctx_list) == 1:
@@ -1008,10 +1030,17 @@ class ORIONAttention(BaseAttention):
             output = self.out_proj(context)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        return output, None
+        if self.is_decoder:
+            if output_attentions:
+                return output, present_key_value, None
+            return output, present_key_value
+        else:
+            return output, None
 
     def get_ortho_loss(self) -> torch.Tensor:
-        return torch.zeros((), device=self.out_proj.up.weight.device)
+        W = self.q_proj.down.weight
+        diff = torch.matmul(W, W.t()) - torch.eye(W.size(0), device=W.device, dtype=W.dtype)
+        return torch.norm(diff, p="fro") / (W.size(0) ** 2)
 
 
 # ============================================================================
