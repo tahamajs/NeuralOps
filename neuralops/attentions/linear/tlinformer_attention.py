@@ -45,7 +45,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg, key, default=None):
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
     if isinstance(cfg, dict):
@@ -56,7 +56,13 @@ def _cfg_get(cfg, key, default=None):
 # ===========================================================================
 # RoPE helpers
 # ===========================================================================
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor | None,
+    sin: torch.Tensor | None,
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
     if cos.dim() == 2:
