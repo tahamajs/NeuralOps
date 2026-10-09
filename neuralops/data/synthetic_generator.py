@@ -76,7 +76,7 @@ def generate_zipfian_markov_tokens(
     seq_len: int,
     vocab_size: int = 32000,
     zipf_param: float = 1.15,
-    transition_temp: float = 0.8,
+    _transition_temp: float = 0.8,
     seed: int = 42,
     min_token_id: int = 1,
 ) -> torch.Tensor:
