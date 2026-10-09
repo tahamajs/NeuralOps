@@ -1,0 +1,6 @@
+run_id,run_key,timestamp,status,module,module_type,model,dataset,rank,training_type,accuracy,f1,loss,perplexity,kd_gain,recovery_pct,duration_s,peak_vram_mb,checksum
+kd_mla_C_20261010_013033,mla__gpt2__wikitext2__rank32__61b7b96d0ca8,2026-10-09T22:04:57.512416+00:00,success,mla,attention,gpt2,wikitext2,32,finetune,,,,160.18,1024.72,89.98,,3965.64,0db2c05ba32ef61d
+kd_mla_C_20261010_013556,mla__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T22:10:31.782937+00:00,success,mla,attention,gpt2,wikitext2,64,finetune,,,,94.74,744.32,93.08,,3967.32,4e72d2355c822d96
+kd_mqa_C_20261010_014240,mqa__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T22:18:04.519155+00:00,success,mqa,attention,gpt2,wikitext2,64,finetune,,,,193.5,1254.04,89.59,,3969.73,6cdf5dff3a3c934a
+kd_nha_C_20261010_021101,nha__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:48:35.487282+00:00,success,nha,attention,gpt2,wikitext2,32,finetune,,,,39.81,3400.61,99.89,,3379.77,ab9e07629bf2494d
+kd_qcqa_C_20261010_022350,qcqa__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:59:08.033113+00:00,success,qcqa,attention,gpt2,wikitext2,32,finetune,,,,29.18,5.3,100.0,,3378.86,3a834e9cd458354c
