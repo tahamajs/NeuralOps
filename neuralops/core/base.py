@@ -2,10 +2,13 @@
 Base classes for attention modules and compressors.
 """
 
+from __future__ import annotations
+
 import logging
 from abc import abstractmethod
 from typing import Any
 
+import torch
 import torch.nn as nn
 
 logger = logging.getLogger(__name__)
