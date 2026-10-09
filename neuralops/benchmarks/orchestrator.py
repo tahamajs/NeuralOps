@@ -216,6 +216,7 @@ class BenchmarkOrchestrator:
                     eval_only=self.config.eval_only,
                     timeout_s=self.config.timeout_s,
                     output_dir=str(self.output_dir),
+                    task=self.config.task,
                     **kwargs_to_pass,
                 )
 
