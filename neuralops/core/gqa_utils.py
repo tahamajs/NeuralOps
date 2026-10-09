@@ -26,14 +26,12 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     Shape: (batch, num_key_value_heads, seq_len, head_dim) -> (batch, num_attention_heads, seq_len, head_dim)
     For standard MHA where n_rep <= 1, returns hidden_states directly (zero-copy).
     """
-    if n_rep <= 1:
+    if n_rep == 1:
         return hidden_states
-    batch, num_key_value_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        batch, num_key_value_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
-
+    batch, num_kv_heads, slen, head_dim = hidden_states.shape
+    # استفاده از expand برای ایجاد ویو (View) مجازی بدون اشغال VRAM
+    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 def repeat_kv_optimized(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """
