@@ -29,8 +29,22 @@ def evaluate_classification(
     all_preds = []
     all_labels = []
 
+    import sys
+    try:
+        from tqdm import tqdm
+        has_tqdm = True
+    except ImportError:
+        has_tqdm = False
+
+    pbar = tqdm(
+        eval_loader,
+        desc="Evaluating",
+        file=sys.stderr,
+        leave=False,
+    ) if has_tqdm else eval_loader
+
     with torch.no_grad():
-        for b_idx, batch in enumerate(eval_loader):
+        for b_idx, batch in enumerate(pbar):
             input_ids = batch[0].to(device)
             attention_mask = batch[1].to(device)
             labels = batch[2].to(device)
