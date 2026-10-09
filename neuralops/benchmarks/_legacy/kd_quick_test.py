@@ -886,7 +886,8 @@ def set_train_scope(model, train_scope="all"):
     elif train_scope == "module":
         MODULE_TRAINABLE_ATTRS = (
             "forget_gate", "input_gate", "fusion_gate", "g_proj",
-            "lora", "adapter", "state_norm", "output_scale"
+            "lora", "adapter", "state_norm", "output_scale",
+            "weight_generator", "dyn_conv", "dyn_w", "kernel"
         )
         n_matched = 0
         for name, p in model.named_parameters():
@@ -1237,10 +1238,16 @@ def run_kd_method(
             _diff = (_teacher_logits - _student_logits).abs().max().item()
             LOG.info(f"[DIAG] Max logit diff (student vs teacher) BEFORE training: {_diff:.4f}")
             
-            if _diff > 1.0:
-                LOG.info(f"[DIAG] ✅ GQA Compression Successful! Student output is altered (diff={_diff:.4f}). Ready to distill.")
+            if "gqa" in module_name.lower():
+                if _diff > 1.0:
+                    LOG.info(f"[DIAG] ✅ GQA Compression Successful! Student output is altered (diff={_diff:.4f}). Ready to distill.")
+                else:
+                    LOG.error(f"[DIAG] ⚠️ CRITICAL: Compression failed! diff={_diff:.4f} (Expected > 1.0 for GQA)")
             else:
-                LOG.error(f"[DIAG] ⚠️ CRITICAL: Compression failed! diff={_diff:.4f} (Expected > 1.0 for GQA)")
+                if _diff > 10.0:
+                    LOG.warning(f"[DIAG] ⚠️ Large pre-training diff: {_diff:.4f}")
+                else:
+                    LOG.info(f"[DIAG] ✅ Initial student state verified (diff={_diff:.4f})")
         except Exception as _e:
             LOG.warning(f"[DIAG] Diagnostic failed: {_e}")
     # ═══════════════════════════════════════════════════════════
