@@ -75,6 +75,13 @@ def load_dataset_by_name(
     Load dataset by name from local cache or HuggingFace hub.
     Supports GLUE tasks and language modeling (Wikitext).
     """
+    import os
+    # Prefer local cached dataset files and suppress internet warning if HF cache exists
+    hf_cache_dir = os.environ.get("HF_DATASETS_CACHE") or os.path.expanduser("~/.cache/huggingface/datasets")
+    if os.path.isdir(hf_cache_dir):
+        # We allow datasets library to check cache first without verbose network timeout spam
+        os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
     name_clean = name.lower().replace("glue_", "")
     from datasets import load_dataset
 
