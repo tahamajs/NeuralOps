@@ -217,6 +217,11 @@ class BenchmarkOrchestrator:
                     timeout_s=self.config.timeout_s,
                     output_dir=str(self.output_dir),
                     task=self.config.task,
+                    training_type=getattr(self.config, "training_type", "finetune"),
+                    kd_teacher=getattr(self.config, "kd_teacher", None),
+                    kd_temperature=getattr(self.config, "kd_temperature", 2.0),
+                    kd_alpha=getattr(self.config, "kd_alpha", 0.5),
+                    recovery_steps=getattr(self.config, "recovery_steps", 50),
                     **kwargs_to_pass,
                 )
 

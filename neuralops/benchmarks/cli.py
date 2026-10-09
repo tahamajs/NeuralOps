@@ -42,8 +42,12 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--parallel", type=int, default=1, help="Parallel worker count")
     run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
     run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
-    run_p.add_argument("--eval-only", action="store_true", help="Skip fine-tuning")
-    # Universal engine flags
+    # Universal engine & training type flags
+    run_p.add_argument("--training-type", type=str, default="finetune", choices=["finetune", "kd", "recovery", "lora", "none"], help="Training regime: finetune, kd, recovery, lora, or none")
+    run_p.add_argument("--kd-teacher", type=str, default=None, help="Teacher model name for knowledge distillation")
+    run_p.add_argument("--kd-temperature", type=float, default=2.0, help="Softmax temperature for KD")
+    run_p.add_argument("--kd-alpha", type=float, default=0.5, help="Balance between task loss and distillation loss")
+    run_p.add_argument("--recovery-steps", type=int, default=50, help="Number of recovery steps after compression")
     run_p.add_argument("--task", type=str, default=None, help="Target task type (e.g., classification, summarization, qa, lm)")
     run_p.add_argument("--max-samples", type=int, default=None, help="Limit number of dataset samples")
     run_p.add_argument("--no-trust-remote-code", action="store_true", help="Disable trust_remote_code for HF models")
@@ -206,7 +210,12 @@ def handle_run(args: argparse.Namespace) -> None:
         seq_len=args.seq_len,
         device=args.device,
         timeout_s=args.timeout_s,
-        eval_only=args.eval_only,
+        eval_only=(args.training_type == "none"),
+        training_type=args.training_type,
+        kd_teacher=args.kd_teacher,
+        kd_temperature=args.kd_temperature,
+        kd_alpha=args.kd_alpha,
+        recovery_steps=args.recovery_steps,
         task=args.task,
         max_samples=args.max_samples,
         trust_remote_code=not args.no_trust_remote_code,

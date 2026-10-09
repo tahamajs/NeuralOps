@@ -90,6 +90,58 @@ def finetune_classification(
     }
 
 
+def train_kd(
+    student: nn.Module,
+    teacher: nn.Module,
+    train_loader: Any,
+    epochs: int = 1,
+    lr: float = 5e-5,
+    device: str | torch.device = "cpu",
+    temperature: float = 2.0,
+    alpha: float = 0.5,
+    max_steps: int | None = None,
+) -> dict[str, Any]:
+    """Execute Knowledge Distillation training loop from teacher to student."""
+    from neuralops.benchmarks.core.kd import KDLoss, kd_train_step
+
+    kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
+    optimizer = AdamW(student.parameters(), lr=lr, weight_decay=0.01)
+
+    step = 0
+    epoch_losses = []
+
+    for epoch in range(epochs):
+        running_loss = 0.0
+        count = 0
+        for batch in train_loader:
+            step_loss = kd_train_step(
+                student=student,
+                teacher=teacher,
+                batch=batch,
+                optimizer=optimizer,
+                kd_loss_fn=kd_loss_fn,
+                device=device,
+            )
+            running_loss += step_loss
+            count += 1
+            step += 1
+            if max_steps is not None and step >= max_steps:
+                break
+        avg_loss = running_loss / max(count, 1)
+        epoch_losses.append(avg_loss)
+        LOG.info("KD Epoch %d/%d completed. Loss: %.4f", epoch + 1, epochs, avg_loss)
+        if max_steps is not None and step >= max_steps:
+            break
+
+    student.eval()
+    return {
+        "final_loss": epoch_losses[-1] if epoch_losses else 0.0,
+        "epochs_completed": len(epoch_losses),
+        "steps_completed": step,
+        "training_type": "kd",
+        "status": "success",
+    }
+
 def recovery_finetune(
     model: nn.Module,
     train_loader: Any,
@@ -108,7 +160,73 @@ def recovery_finetune(
     )
 
 
+def train_with_training_type(
+    model: nn.Module,
+    train_loader: Any,
+    training_type: str = "finetune",
+    epochs: int = 1,
+    lr: float = 5e-5,
+    device: str | torch.device = "cpu",
+    max_steps: int | None = None,
+    teacher: nn.Module | None = None,
+    kd_temperature: float = 2.0,
+    kd_alpha: float = 0.5,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Execute training according to configured training_type ('none', 'finetune', 'kd', 'recovery', 'lora')."""
+    t_type = (training_type or "finetune").lower()
+
+    if t_type in ("none", "eval_only", "zero_shot"):
+        return {"status": "skipped", "training_type": "none", "final_loss": 0.0}
+
+    elif t_type in ("kd", "distillation", "knowledge_distillation"):
+        if teacher is None:
+            LOG.warning("KD requested but no teacher provided. Falling back to standard fine-tuning.")
+            return finetune_classification(
+                model=model,
+                train_loader=train_loader,
+                epochs=epochs,
+                lr=lr,
+                device=device,
+                max_steps=max_steps,
+            )
+        return train_kd(
+            student=model,
+            teacher=teacher,
+            train_loader=train_loader,
+            epochs=epochs,
+            lr=lr,
+            device=device,
+            temperature=kd_temperature,
+            alpha=kd_alpha,
+            max_steps=max_steps,
+        )
+
+    elif t_type in ("recovery", "fast_recovery"):
+        steps = max_steps or kwargs.get("recovery_steps", 50)
+        return recovery_finetune(
+            model=model,
+            train_loader=train_loader,
+            steps=steps,
+            lr=lr,
+            device=device,
+        )
+
+    else:
+        # Standard full or fine-tuning
+        return finetune_classification(
+            model=model,
+            train_loader=train_loader,
+            epochs=epochs,
+            lr=lr,
+            device=device,
+            max_steps=max_steps,
+        )
+
+
 __all__ = [
     "finetune_classification",
     "recovery_finetune",
+    "train_kd",
+    "train_with_training_type",
 ]
