@@ -212,12 +212,36 @@ def execute_single(
         effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
 
 
-    # Check CUDA requirement
+    # Pre-run Health Checks
+    if not is_baseline:
+        all_modules = discover_modules()
+        if module_name not in all_modules:
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            err_msg = f"ModuleNotFoundError: Module '{module}' not found in registry."
+            run_logger.error(err_msg)
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module={"name": module, "type": "unknown", "rank": rank},
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status="failed",
+                error=err_msg,
+                traceback="",
+                timeout_s=timeout_s or 1800,
+                timed_out=False,
+            )
+
     target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     if mod_dict.get("requires_cuda", False) and not torch.cuda.is_available() and target_device == "cpu":
-
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        skip_msg = f"HardwareIncompatible: Module '{module}' requires CUDA which is not available."
+        run_logger.warning(skip_msg)
         return BenchmarkResult(
             run_id=run_id,
             run_name=f"{module}_{model}_{dataset}",
@@ -228,12 +252,25 @@ def execute_single(
             dataset={"name": dataset},
             config=config_dict,
             status="skipped",
-            error=f"HardwareIncompatible: Module '{module}' requires CUDA which is not available.",
+            error=skip_msg,
             timeout_s=effective_timeout,
             timed_out=False,
         )
 
-    # 2. Select and execute Adapter
+    # Free VRAM check if using CUDA
+    if target_device.startswith("cuda") and torch.cuda.is_available():
+        try:
+            free_bytes, total_bytes = torch.cuda.mem_get_info()
+            free_mb = free_bytes / (1024 * 1024)
+            if free_mb < 500:
+                run_logger.warning(
+                    "Low VRAM warning before run %s: only %.1f MB free out of %.1f MB",
+                    run_id, free_mb, total_bytes / (1024 * 1024)
+                )
+        except Exception as e:
+            run_logger.debug("Could not query GPU memory: %s", e)
+
+    # 2. Select and execute Adapter with timeout enforcement
     adapter = None
     try:
         adapter = _select_adapter(
@@ -253,7 +290,47 @@ def execute_single(
             **kwargs,
         )
 
-        run_output = adapter.run()
+        run_output: dict[str, Any] = {}
+        exec_error: list[BaseException] = []
+
+        def target_worker():
+            try:
+                nonlocal run_output
+                run_output = adapter.run()
+            except BaseException as ex:
+                exec_error.append(ex)
+
+        worker_thread = threading.Thread(target=target_worker, daemon=True)
+        worker_thread.start()
+        worker_thread.join(timeout=effective_timeout)
+
+        if worker_thread.is_alive():
+            # Hard timeout occurred
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            timeout_msg = (
+                f"TimeoutError: Execution timed out after {effective_timeout}s for module '{module}' "
+                f"on {model}/{dataset}."
+            )
+            run_logger.error(timeout_msg)
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module=mod_dict,
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status="failed",
+                error=timeout_msg,
+                traceback=f"TimeoutError: Execution exceeded {effective_timeout} seconds limit.",
+                timeout_s=effective_timeout,
+                timed_out=True,
+            )
+
+        if exec_error:
+            raise exec_error[0]
 
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -263,14 +340,21 @@ def execute_single(
         eval_metrics = run_output.get("eval_metrics", {})
         latency_info = run_output.get("latency", {})
         peak_mem = run_output.get("peak_memory_mb", 0.0)
+        train_duration_s = run_output.get("train_duration_s", 0.0)
 
         resources_dict = {
             "peak_vram_mb": peak_mem,
             "latency_ms_per_token": latency_info.get("latency_ms_per_token", 0.0),
             "throughput_tok_per_sec": latency_info.get("throughput_tok_per_sec", 0.0),
             "duration_s": round(duration_s, 2),
+            "training_duration_s": train_duration_s,
             "num_params_after": getattr(model_meta, "num_params", 0) if model_meta else 0,
         }
+
+        run_logger.info(
+            "Run %s completed successfully in %.2fs (training: %.2fs). Metrics: %s",
+            run_id, duration_s, train_duration_s, eval_metrics
+        )
 
         return BenchmarkResult(
             run_id=run_id,
@@ -294,7 +378,7 @@ def execute_single(
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         err_tb = traceback.format_exc()
-        logger.error("Execution failed for module %s: %s\n%s", module, e, err_tb)
+        run_logger.error("Execution failed for module %s: %s\n%s", module, e, err_tb)
 
         return BenchmarkResult(
             run_id=run_id,
@@ -313,7 +397,10 @@ def execute_single(
         )
     finally:
         if adapter is not None:
-            adapter.cleanup()
+            try:
+                adapter.cleanup()
+            except Exception:
+                pass
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
