@@ -188,12 +188,6 @@ class LoRALinear(nn.Module):
     supports_gqa=True,
     supports_rope=True,
 )
-@ATTENTION_REGISTRY.register(
-    "qcqa",
-    supports_causal=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
 class QCQAAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -818,8 +812,6 @@ class QCQAAttention(BaseAttention):
 # ===========================================================================
 # Injector (FIX-5: registered in ATTENTION_REGISTRY)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("qcqa_inject")
-@ATTENTION_REGISTRY.register("inject_qcqa")
 def inject_qcqa(
     layer: Any = None,
     model: Any = None,

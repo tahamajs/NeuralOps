@@ -216,12 +216,6 @@ class LoRALinear(nn.Module):
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "decay_linear_attn",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class DecayLinearAttention(BaseAttention):
     r"""Decay Linear Attention with Data-Dependent Exponential Decay Gating."""
 

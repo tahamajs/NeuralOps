@@ -1138,7 +1138,6 @@ class AdaptiveSpanAttention(BaseAttention):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("adaptive_span_inject")
 def inject_adaptive_span(
     layer: Any = None,
     model: Any = None,

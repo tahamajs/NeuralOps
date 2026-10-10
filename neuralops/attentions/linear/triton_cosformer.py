@@ -858,8 +858,6 @@ class TritonCosformerAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("inject_triton_cosformer")
-@ATTENTION_REGISTRY.register("triton_cosformer_inject")
 def inject_triton_cosformer(
     model: nn.Module = None,
     rank: int = 64,

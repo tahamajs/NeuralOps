@@ -207,12 +207,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "vig",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "vig_attention",
     supports_causal=True,
     supports_bidirectional=True,
@@ -867,8 +861,6 @@ class ViGAttention(BaseAttention):
 # ═══════════════════════════════════════════════════════════════════
 
 
-@ATTENTION_REGISTRY.register("vig_inject")
-@ATTENTION_REGISTRY.register("inject_vig")
 def inject_vig(
     layer: Any = None,
     model: Any = None,

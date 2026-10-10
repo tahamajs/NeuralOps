@@ -70,12 +70,6 @@ def apply_rotary_pos_emb(
 
 
 @ATTENTION_REGISTRY.register(
-    "compressed_attention_layer",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "compressed_attention",
     supports_causal=True,
     supports_bidirectional=True,
@@ -591,7 +585,6 @@ class CompressedAttentionLayer(BaseAttention):
         return out, (probs if output_attentions and probs is not None else None)
 
 
-@ATTENTION_REGISTRY.register("compressed_attention_layer_energy")
 class CompressedAttentionLayer2(CompressedAttentionLayer):
     pass
 

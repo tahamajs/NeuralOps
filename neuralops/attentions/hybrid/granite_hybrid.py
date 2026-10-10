@@ -383,7 +383,6 @@ class MixtureOfExperts(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("granite_hybrid_block", supports_causal=True, supports_gqa=True)
 class GraniteHybridBlock(BaseAttention):
     r"""Granite Hybrid: Attention + Mamba-2 + MoE with LoRA.
 
@@ -968,8 +967,6 @@ GraniteHybridAttention = GraniteHybridBlock
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("inject_granite_hybrid")
-@ATTENTION_REGISTRY.register("granite_hybrid_inject")
 def inject_granite_hybrid(
     layer: Any = None,
     model: Any = None,
