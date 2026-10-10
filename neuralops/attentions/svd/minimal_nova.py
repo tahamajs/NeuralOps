@@ -90,7 +90,7 @@ class FactorisedLinear(nn.Module):
                 torch.randn(lora_rank, in_features, device=device, dtype=dtype) * 0.01
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(out_features, lora_rank, device=device, dtype=dtype)
+                torch.randn(out_features, lora_rank, device=device, dtype=dtype) * 1e-4
             )
         else:
             self.register_parameter("lora_A", None)

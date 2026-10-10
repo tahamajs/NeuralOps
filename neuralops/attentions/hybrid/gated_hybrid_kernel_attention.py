@@ -221,7 +221,7 @@ class FactorisedLinear(nn.Module):
                 torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(self.out_features, self.lora_rank, **factory_kwargs)
+                torch.randn(self.out_features, self.lora_rank, **factory_kwargs) * 1e-4
             )
             # Same init as original: kaiming on (r, in), zeros on (out, r)
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
