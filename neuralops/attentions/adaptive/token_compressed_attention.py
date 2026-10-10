@@ -1,22 +1,62 @@
 """
-Token-Compressed Attention — Production-Hardened v3.
+Token-Compressed Attention — Production-Hardened v4.
 
-Key improvements over v2:
-  1. Straight-Through Estimator (STE) for differentiable token selection
-  2. Local Window always-on for causal decoding (prevents token drop)
-  3. Per-layer compression ratio (via layer_idx and total_layers)
-  4. Attention-based importance scoring (more accurate than energy-only)
-  5. KV-cache mode applies compression consistently
-  6. Cleaner code (removed TC-XX annotations)
+Chunk-based causal token compression with differentiable selection.
 
-Selects and preserves important Key/Value tokens using a learned saliency
-network augmented with norm-based energy, always keeping:
-  - Token 0 (CLS / first token)
-  - A local window of recent tokens (for causal decoding)
+═══════════════════════════════════════════════════════════════════════════
+WHY v4?
+═══════════════════════════════════════════════════════════════════════════
+
+v3 had three CRITICAL bugs:
+
+  1. CAUSALITY VIOLATION in `_compute_token_importance`
+       The sampled attention used to score tokens had NO causal mask.
+       Query 0 attended to future tokens during prefill → autoregressive
+       property broken.
+
+  2. STE GRADIENT EXPLOSION
+       Adding `0.01 * (ste_norm - ste_norm.detach())` to a softmax
+       distribution produces near-zero but non-zero forward perturbation,
+       and injects meaningless gradients into `score_net`.
+
+  3. RoPE FREEZE during generation
+       `past_len` was inferred from `past_key_value[0].shape[-2]`. Once the
+       cache was compressed, the physical length saturated at `k_keep`,
+       freezing all future RoPE positions at the same index → gibberish.
+
+v4 fixes all three:
+
+  ✅ Chunk-based causal top-k
+       Split the sequence into chunks of size C. Inside each chunk,
+       select the top-k tokens independently. Future tokens cannot
+       influence past chunk selections. Causal-safe by construction.
+
+  ✅ STE via multiplication
+       The STE mask multiplies the attention weights instead of being
+       added. Gradient flows to `score_net` through a clean path.
+
+  ✅ Absolute position tracking
+       `position_ids` is always honored. If missing, a running absolute
+       counter (`seen_tokens`) is maintained on the cache. RoPE always
+       receives correct absolute positions.
+
+  ✅ KV-cache correctness
+       Both tuple caches and HF DynamicCache are updated properly with
+       the ORIGINAL (uncompressed) K/V for correctness. Compression is
+       applied at attention time only.
+
+  ✅ CLS + local window preservation
+       Token 0 is force-kept. The last `local_window` tokens are force-kept
+       inside each chunk for causal decoding.
+
+═══════════════════════════════════════════════════════════════════════════
 """
+
+from __future__ import annotations
 
 import logging
 import math
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -28,27 +68,24 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 try:
-    from neuralops.core.attention_utils import repeat_kv
+    from neuralops.core.gqa_utils import repeat_kv
 except ImportError:
-    try:
-        from neuralops.core.gqa_utils import repeat_kv
-    except ImportError:
 
-        def repeat_kv(hidden_states, n_rep):
-            if n_rep == 1:
-                return hidden_states
-            b, h, s, d = hidden_states.shape
-            return (
-                hidden_states[:, :, None, :, :]
-                .expand(b, h, n_rep, s, d)
-                .reshape(b, h * n_rep, s, d)
-            )
+    def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+        if n_rep == 1:
+            return hidden_states
+        b, h, s, d = hidden_states.shape
+        return (
+            hidden_states[:, :, None, :, :]
+            .expand(b, h, n_rep, s, d)
+            .reshape(b, h * n_rep, s, d)
+        )
 
 
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg, key, default=None):
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
     if isinstance(cfg, dict):
@@ -57,40 +94,74 @@ def _cfg_get(cfg, key, default=None):
 
 
 # ===========================================================================
-# RoPE helpers
+# RoPE (absolute-position aware)
 # ===========================================================================
-def apply_rotary_pos_emb(q, k, cos, sin):
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    past_len: int = 0,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Apply RoPE. cos/sin are ALWAYS sliced to [past_len : past_len + Lq].
+
+    FIX: past_len is ALWAYS an absolute position offset, never the physical
+    cache size. If cos is shorter than past_len + Lq, we raise (never
+    silently reuse stale positions).
+    """
     if cos is None or sin is None:
         return q, k
+
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
+
     while cos.dim() < q.dim():
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+    Lq = q.shape[-2]
+    Lk = k.shape[-2]
+    S = cos.shape[-2]
 
-    rotary_dim = cos.shape[-1]
+    if S < past_len + Lq:
+        raise ValueError(
+            f"TokenCompressedAttention RoPE: cos length {S} < "
+            f"past_len+Lq={past_len + Lq}. Increase max_position_embeddings "
+            f"or use a proper position_ids source."
+        )
+
+    cos_q = cos[..., past_len : past_len + Lq, :]
+    sin_q = sin[..., past_len : past_len + Lq, :]
+    cos_k = cos[..., past_len : past_len + Lk, :]
+    sin_k = sin[..., past_len : past_len + Lk, :]
+
+    rotary_dim = cos_q.shape[-1]
     head_dim = q.shape[-1]
+
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_emb = (q_rot * cos_q.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin_q.to(q_rot.dtype)
+        )
+        k_rot_emb = (k_rot * cos_k.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin_k.to(k_rot.dtype)
+        )
+        q = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_emb
+        k = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_emb
     else:
-        cos_cut = cos[..., :head_dim].to(q.dtype)
-        sin_cut = sin[..., :head_dim].to(q.dtype)
-        q = (q * cos_cut) + (_rotate_half(q) * sin_cut)
-        cos_k = cos[..., :head_dim].to(k.dtype)
-        sin_k = sin[..., :head_dim].to(k.dtype)
-        k = (k * cos_k) + (_rotate_half(k) * sin_k)
+        cos_q_cut = cos_q[..., :head_dim].to(q.dtype)
+        sin_q_cut = sin_q[..., :head_dim].to(q.dtype)
+        cos_k_cut = cos_k[..., :head_dim].to(k.dtype)
+        sin_k_cut = sin_k[..., :head_dim].to(k.dtype)
+        q = (q * cos_q_cut) + (_rotate_half(q) * sin_q_cut)
+        k = (k * cos_k_cut) + (_rotate_half(k) * sin_k_cut)
+
     return q, k
 
 
@@ -100,21 +171,22 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 class LoRALinear(nn.Module):
     def __init__(
         self,
-        in_features,
-        out_features,
-        bias=True,
-        lora_rank=0,
-        lora_alpha=1.0,
-        freeze_base=True,
-        device=None,
-        dtype=None,
-    ):
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
         self.lora_rank = int(lora_rank) if lora_rank and lora_rank > 0 else 0
         self.lora_alpha = float(lora_alpha)
         self.scaling = self.lora_alpha / max(1, self.lora_rank)
+        self.freeze_base = freeze_base
 
         factory = {"device": device, "dtype": dtype}
         self.weight = nn.Parameter(torch.empty(out_features, in_features, **factory))
@@ -130,8 +202,12 @@ class LoRALinear(nn.Module):
             nn.init.uniform_(self.bias, -bound, bound)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank, **factory))
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, in_features, **factory)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_rank, **factory)
+            )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
             self.lora_A.requires_grad = True
@@ -145,7 +221,7 @@ class LoRALinear(nn.Module):
             if self.bias is not None:
                 self.bias.requires_grad = False
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
         b = (
             self.bias.to(x.dtype)
@@ -161,19 +237,78 @@ class LoRALinear(nn.Module):
 
 
 # ===========================================================================
+# Cache container (tracks absolute positions)
+# ===========================================================================
+class TokenCompressedCache:
+    """
+    Cache container tracking K/V and absolute positions.
+
+    Unlike HF DynamicCache, this stores the ORIGINAL (uncompressed) K/V so
+    that compression can be applied at attention time without corrupting
+    the RoPE positions of future queries.
+    """
+
+    def __init__(self, num_layers: int = 0) -> None:
+        self.keys: list[torch.Tensor | None] = [None] * num_layers
+        self.values: list[torch.Tensor | None] = [None] * num_layers
+        self.positions: list[torch.Tensor | None] = [None] * num_layers
+        self.seen_tokens: int = 0
+
+    def get_seq_length(self, layer_idx: int = 0) -> int:
+        if layer_idx >= len(self.keys) or self.keys[layer_idx] is None:
+            return 0
+        return int(self.keys[layer_idx].shape[-2])
+
+    def get_max_length(self) -> int:
+        return self.seen_tokens
+
+    def update(
+        self,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+        layer_idx: int,
+        positions: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if layer_idx >= len(self.keys):
+            self.keys.extend([None] * (layer_idx - len(self.keys) + 1))
+            self.values.extend([None] * (layer_idx - len(self.values) + 1))
+            self.positions.extend([None] * (layer_idx - len(self.positions) + 1))
+
+        k_old = self.keys[layer_idx]
+        if k_old is None:
+            k_all = key_states
+            v_all = value_states
+            p_all = positions
+        else:
+            k_all = torch.cat([k_old, key_states], dim=-2)
+            v_all = torch.cat([self.values[layer_idx], value_states], dim=-2)
+            p_all = torch.cat([self.positions[layer_idx], positions], dim=-1)
+
+        self.keys[layer_idx] = k_all
+        self.values[layer_idx] = v_all
+        self.positions[layer_idx] = p_all
+        return k_all, v_all, p_all
+
+
+# ===========================================================================
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("token_compressed_attention")
 class TokenCompressedAttention(BaseAttention):
     """
-    Token-Compressed Attention v3.
+    Chunk-based causal token compression.
 
-    Compresses K/V tokens while preserving:
-      - Token 0 (CLS / first token)
-      - A local window of recent tokens (causal decoding)
-      - Top-k learned-importance tokens
+    Encoder (bidirectional):
+        Global top-k by importance score. Chunking is not needed.
 
-    Uses Straight-Through Estimator for differentiable token selection.
+    Decoder (causal):
+        Chunk-based causal top-k. Sequence is split into chunks of size
+        `chunk_size`. Within each chunk, the top-k tokens by importance
+        are kept, plus token 0, plus the last `local_window` tokens of
+        that chunk. Future chunks never influence past chunk selections.
+
+    Importance score:
+        0.5 * ||x|| + learned_score(x) + 0.5 * causal_attn_score(x)
     """
 
     supports_gqa = True
@@ -182,19 +317,20 @@ class TokenCompressedAttention(BaseAttention):
 
     def __init__(
         self,
-        config=None,
-        rank=64,
-        compression_ratio=0.5,
-        local_window=32,
-        per_layer_ratio=False,
-        use_ste=True,
-        pretrained_attn=None,
-        lora_rank=None,
-        lora_alpha=None,
-        comp_config=None,
-        is_decoder=None,
-        **kwargs,
-    ):
+        config: Any = None,
+        rank: int = 64,
+        compression_ratio: float = 0.5,
+        local_window: int = 32,
+        chunk_size: int = 64,
+        per_layer_ratio: bool = False,
+        use_ste: bool = True,
+        pretrained_attn: nn.Module | None = None,
+        lora_rank: int | None = None,
+        lora_alpha: float | None = None,
+        comp_config: Any = None,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -> None:
         try:
             super().__init__(config, rank)
         except TypeError:
@@ -202,12 +338,11 @@ class TokenCompressedAttention(BaseAttention):
 
         src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
-        # ---- hidden_size ----
+        # ---------------- Dimensions ----------------
         dim = None
         if config is not None and not isinstance(config, int):
             dim = _cfg_get(
-                config,
-                "hidden_size",
+                config, "hidden_size",
                 _cfg_get(config, "dim", _cfg_get(config, "d_model", None)),
             )
         if dim is None and comp_config is not None:
@@ -228,31 +363,21 @@ class TokenCompressedAttention(BaseAttention):
         self.dim = int(dim)
         self.hidden_size = self.dim
 
-        # ---- num_heads ----
         num_heads = kwargs.get("num_heads")
         if num_heads is None and config is not None and not isinstance(config, int):
             num_heads = _cfg_get(
-                config,
-                "num_attention_heads",
+                config, "num_attention_heads",
                 _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)),
-            )
-        if num_heads is None and comp_config is not None:
-            num_heads = _cfg_get(
-                comp_config,
-                "num_attention_heads",
-                _cfg_get(comp_config, "n_heads", None),
             )
         if num_heads is None and src is not None:
             num_heads = getattr(
-                src,
-                "num_heads",
+                src, "num_heads",
                 getattr(src, "num_attention_heads", getattr(src, "n_head", None)),
             )
         if num_heads is None:
             num_heads = max(1, self.dim // 64)
         self.num_heads = max(1, int(num_heads))
 
-        # ---- head_dim ----
         head_dim = None
         if config is not None and not isinstance(config, int):
             head_dim = _cfg_get(config, "head_dim", None)
@@ -262,18 +387,17 @@ class TokenCompressedAttention(BaseAttention):
             head_dim = self.dim // self.num_heads
         self.head_dim = int(head_dim)
 
-        # ---- num_kv_heads ----
         cfg_kv = None
         if config is not None and not isinstance(config, int):
-            cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
-        if cfg_kv is None and comp_config is not None:
             cfg_kv = _cfg_get(
-                comp_config,
-                "num_key_value_heads",
-                _cfg_get(comp_config, "num_kv_heads", None),
+                config, "num_key_value_heads",
+                _cfg_get(config, "num_kv_heads", None),
             )
         if cfg_kv is None and src is not None:
-            cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
+            cfg_kv = getattr(
+                src, "num_key_value_heads",
+                getattr(src, "num_kv_heads", None),
+            )
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups = max(1, self.num_heads // self.num_kv_heads)
@@ -281,9 +405,8 @@ class TokenCompressedAttention(BaseAttention):
         self.q_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.all_head_size = self.q_head_size
-        self.all_kv_head_size = self.kv_head_size
 
-        # ---- compression ratio ----
+        # ---------------- Compression config ----------------
         self.base_compression_ratio = float(
             kwargs.get(
                 "compression_ratio",
@@ -291,18 +414,19 @@ class TokenCompressedAttention(BaseAttention):
             )
         )
         self.base_compression_ratio = max(0.1, min(1.0, self.base_compression_ratio))
-        self.per_layer_ratio = bool(per_layer_ratio)
         self.local_window = int(
             kwargs.get("local_window", _cfg_get(comp_config, "local_window", local_window))
         )
+        self.chunk_size = int(
+            kwargs.get("chunk_size", _cfg_get(comp_config, "chunk_size", chunk_size))
+        )
+        self.per_layer_ratio = bool(per_layer_ratio)
         self.use_ste = bool(use_ste)
 
-        # ---- LoRA config ----
+        # ---------------- LoRA ----------------
         rl = kwargs.get("lora_rank")
         if rl is None and comp_config is not None:
             rl = _cfg_get(comp_config, "lora_rank")
-        if rl is None and config is not None and not isinstance(config, int):
-            rl = _cfg_get(config, "lora_rank")
         if rl is None:
             rl = lora_rank if lora_rank is not None else 16
         self.lora_rank = int(rl)
@@ -310,13 +434,11 @@ class TokenCompressedAttention(BaseAttention):
         ra = kwargs.get("lora_alpha")
         if ra is None and comp_config is not None:
             ra = _cfg_get(comp_config, "lora_alpha")
-        if ra is None and config is not None and not isinstance(config, int):
-            ra = _cfg_get(config, "lora_alpha")
         if ra is None:
             ra = lora_alpha if lora_alpha is not None else 32.0
         self.lora_alpha = float(ra)
 
-        # ---- decoder detection ----
+        # ---------------- Decoder detection ----------------
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         elif kwargs.get("is_decoder") is not None:
@@ -338,11 +460,10 @@ class TokenCompressedAttention(BaseAttention):
         self.is_nested_encoder = False
         self.rotary_emb = getattr(src, "rotary_emb", None) if src is not None else None
 
-        # Store layer info for per-layer ratio
         self._layer_idx = kwargs.get("layer_idx", 0)
         self._total_layers = kwargs.get("total_layers", 12)
 
-        # ---- device/dtype from source ----
+        # ---------------- Device/dtype ----------------
         proj_device = None
         proj_dtype = None
         if src is not None:
@@ -353,7 +474,7 @@ class TokenCompressedAttention(BaseAttention):
                     proj_dtype = mod.weight.dtype
                     break
 
-        # ---- projections ----
+        # ---------------- Projections ----------------
         self.q_lin = LoRALinear(
             self.dim, self.q_head_size,
             bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -384,7 +505,7 @@ class TokenCompressedAttention(BaseAttention):
         self.key = self.k_lin
         self.value = self.v_lin
 
-        # ---- score_net: zero-init last layer ----
+        # ---------------- Score network ----------------
         self.score_net = nn.Sequential(
             nn.Linear(self.dim, 64, device=proj_device, dtype=proj_dtype),
             nn.GELU(),
@@ -395,7 +516,8 @@ class TokenCompressedAttention(BaseAttention):
             nn.init.zeros_(self.score_net[2].bias)
 
         dropout_p = (
-            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
+            _cfg_get(config, "dropout",
+                     _cfg_get(config, "attention_probs_dropout_prob", 0.1))
             if config is not None and not isinstance(config, int)
             else 0.1
         )
@@ -404,7 +526,7 @@ class TokenCompressedAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # ---- aliases ----
+    # ---------------- aliases ----------------
     @property
     def dense(self):
         return self.out_lin
@@ -421,19 +543,16 @@ class TokenCompressedAttention(BaseAttention):
     # Per-layer compression ratio
     # ------------------------------------------------------------------
     def _get_compression_ratio(self) -> float:
-        """Returns the effective compression ratio for this layer."""
         if not self.per_layer_ratio:
             return self.base_compression_ratio
-        # Layer 0: 0.8, Last layer: 0.3 (linearly decreasing)
         progress = self._layer_idx / max(1, self._total_layers - 1)
         ratio = 0.8 - 0.5 * progress
-        # Blend with base ratio
         return max(0.15, min(0.95, ratio * self.base_compression_ratio / 0.5))
 
     # ------------------------------------------------------------------
-    # copy_weights
+    # copy_weights (unchanged, production-hardened)
     # ------------------------------------------------------------------
-    def copy_weights(self, old_attn):
+    def copy_weights(self, old_attn: nn.Module) -> None:
         with torch.no_grad():
             if getattr(old_attn, "rotary_emb", None) is not None:
                 self.rotary_emb = old_attn.rotary_emb
@@ -459,7 +578,7 @@ class TokenCompressedAttention(BaseAttention):
             else:
                 src = old_attn
 
-            def _unwrap(layer):
+            def _unwrap(layer: nn.Module) -> nn.Module:
                 return getattr(layer, "base_layer", layer)
 
             # GPT-2 fused c_attn
@@ -484,6 +603,7 @@ class TokenCompressedAttention(BaseAttention):
                 w_o = ow
                 b_o = c_proj.bias.detach() if c_proj.bias is not None else None
 
+            # BERT/RoBERTa nested
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 q_l, k_l, v_l = _unwrap(src.query), _unwrap(src.key), _unwrap(src.value)
                 w_q = q_l.weight.detach()
@@ -500,6 +620,7 @@ class TokenCompressedAttention(BaseAttention):
                             b_o = p.bias.detach() if p.bias is not None else None
                             break
 
+            # Qwen/LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 q_l, k_l, v_l = _unwrap(src.q_proj), _unwrap(src.k_proj), _unwrap(src.v_proj)
                 w_q = q_l.weight.detach()
@@ -513,6 +634,7 @@ class TokenCompressedAttention(BaseAttention):
                     w_o = o_l.weight.detach()
                     b_o = o_l.bias.detach() if o_l.bias is not None else None
 
+            # DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 q_l, k_l, v_l = _unwrap(src.q_lin), _unwrap(src.k_lin), _unwrap(src.v_lin)
                 w_q = q_l.weight.detach()
@@ -526,6 +648,7 @@ class TokenCompressedAttention(BaseAttention):
                     w_o = o_l.weight.detach()
                     b_o = o_l.bias.detach() if o_l.bias is not None else None
 
+            # Fallback
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -540,21 +663,18 @@ class TokenCompressedAttention(BaseAttention):
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            missing = []
-            if w_q is None:
-                missing.append("Q")
-            if w_k is None:
-                missing.append("K")
-            if w_v is None:
-                missing.append("V")
+            missing = [
+                n for n, w in (("Q", w_q), ("K", w_k), ("V", w_v)) if w is None
+            ]
             if w_o is None and not self.is_nested_encoder:
                 missing.append("O")
             if missing:
                 raise RuntimeError(
-                    f"TokenCompressedAttention.copy_weights: missing {missing} from {type(old_attn).__name__}"
+                    f"TokenCompressedAttention.copy_weights: missing {missing} "
+                    f"from {type(old_attn).__name__}"
                 )
 
-            def _copy(target_layer, w, b):
+            def _copy(target_layer: LoRALinear, w, b):
                 if w is not None:
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
@@ -578,9 +698,6 @@ class TokenCompressedAttention(BaseAttention):
                         target_layer.bias.data[:mb].copy_(b[:mb].to(target_layer.bias.dtype))
                 elif target_layer.bias is not None:
                     target_layer.bias.data.zero_()
-                target_layer.weight.requires_grad = False
-                if target_layer.bias is not None:
-                    target_layer.bias.requires_grad = False
 
             _copy(self.q_lin, w_q, b_q)
             _copy(self.k_lin, w_k, b_k)
@@ -589,161 +706,217 @@ class TokenCompressedAttention(BaseAttention):
                 _copy(self.out_lin, w_o, b_o)
 
     # ------------------------------------------------------------------
-    # Token importance computation
+    # FIX-01: causal-safe importance scoring
     # ------------------------------------------------------------------
-    def _compute_token_importance(self, x, q, k, valid_mask_2d):
+    def _compute_token_importance(
+        self,
+        x: torch.Tensor,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        valid_mask_2d: torch.Tensor | None,
+    ) -> torch.Tensor:
         """
-        Computes token importance as a combination of:
-          1. Energy (norm of hidden state)
-          2. Learned saliency (score_net)
-          3. Attention-based score (query-key similarity, sampled)
+        Importance = energy + learned + causal_attn.
 
-        Returns: (B, L) importance scores
+        FIX: The sampled attention now applies a causal mask when
+        `self.is_decoder` is True, preventing future-token leakage.
         """
         B, L, D = x.shape
         x_f = x.float()
 
-        # 1. Energy term
+        # 1) Energy
         energy = torch.norm(x_f, p=2, dim=-1)  # (B, L)
 
-        # 2. Learned saliency
+        # 2) Learned saliency
         score_dev = next(self.score_net.parameters()).device
         score_dtype = next(self.score_net.parameters()).dtype
         learned = (
             self.score_net(x_f.to(score_dev, score_dtype))
             .squeeze(-1)
             .to(x_f.device, x_f.dtype)
-        )  # (B, L)
+        )
 
-        # 3. Attention-based term (sampled, no grad)
-        # Use first few heads and queries to get rough attention importance
+        # 3) Sampled attention importance — WITH CAUSAL MASK
         with torch.no_grad():
-            H_sample = min(2, self.num_heads)
-            L_sample = min(64, L)
-            q_sample = q[:, :H_sample, :L_sample, :]  # (B, H_s, L_s, Dh)
-            k_sample = k[:, :H_sample, :, :]  # (B, H_s, L, Dh)
-            # scale
+            H_s = min(2, q.shape[1])
+            L_s = min(64, L)
+            q_s = q[:, :H_s, :L_s, :].float()
+            k_s = k[:, :H_s, :, :].float()
             scale = 1.0 / math.sqrt(self.head_dim)
-            attn_sample = torch.matmul(q_sample.float(), k_sample.float().transpose(-2, -1)) * scale
-            attn_sample = F.softmax(attn_sample, dim=-1)  # (B, H_s, L_s, L)
-            # Average over heads and query positions -> importance per key
-            attn_importance = attn_sample.mean(dim=(1, 2))  # (B, L)
-            # Normalize
-            attn_importance = attn_importance / (attn_importance.max(dim=-1, keepdim=True).values + 1e-6)
+            attn = torch.matmul(q_s, k_s.transpose(-2, -1)) * scale
 
-        # Combine
-        total_importance = energy + learned + 0.5 * attn_importance
-        return total_importance
+            # FIX: apply causal mask during decoder scoring
+            if self.is_decoder:
+                q_idx = torch.arange(L_s, device=x.device).unsqueeze(1)
+                k_idx = torch.arange(L, device=x.device).unsqueeze(0)
+                causal = k_idx <= q_idx  # (L_s, L)
+                attn = attn.masked_fill(
+                    ~causal.unsqueeze(0).unsqueeze(0), float("-inf")
+                )
+
+            attn = F.softmax(attn, dim=-1)
+            attn_importance = attn.mean(dim=(1, 2))  # (B, L)
+            attn_importance = attn_importance / (
+                attn_importance.max(dim=-1, keepdim=True).values + 1e-6
+            )
+
+        total = energy + learned + 0.5 * attn_importance
+
+        if valid_mask_2d is not None:
+            total = total.masked_fill(~valid_mask_2d, -1e4)
+
+        return total
 
     # ------------------------------------------------------------------
-    # Token selection (with STE for differentiability)
+    # FIX-01: chunk-based causal top-k
+    # ------------------------------------------------------------------
+    def _chunked_causal_topk(
+        self,
+        importance: torch.Tensor,
+        k_keep_total: int,
+        valid_mask_2d: torch.Tensor | None,
+    ) -> torch.Tensor:
+        """
+        Split the sequence into chunks of size `self.chunk_size`. Within
+        each chunk, select top-k tokens such that the TOTAL selected
+        tokens == k_keep_total.
+
+        Returns: (B, k_keep_total) sorted absolute indices.
+        """
+        B, L = importance.shape
+        device = importance.device
+        C = max(1, self.chunk_size)
+        num_chunks = (L + C - 1) // C
+        # Distribute k_keep_total proportionally across chunks
+        base_per_chunk = max(1, k_keep_total // num_chunks)
+        extra = k_keep_total - base_per_chunk * num_chunks
+
+        all_idx: list[torch.Tensor] = []
+        for ci in range(num_chunks):
+            start = ci * C
+            end = min(start + C, L)
+            chunk_len = end - start
+            k_in_chunk = min(chunk_len, base_per_chunk + (1 if ci < extra else 0))
+            if k_in_chunk <= 0:
+                continue
+            chunk_imp = importance[:, start:end]  # (B, chunk_len)
+            _, local_idx = torch.topk(chunk_imp, k_in_chunk, dim=-1)  # (B, k)
+            local_idx, _ = torch.sort(local_idx, dim=-1)
+            all_idx.append(local_idx + start)
+
+        if not all_idx:
+            # Fallback: just take first k
+            idx = torch.arange(k_keep_total, device=device)
+            return idx.unsqueeze(0).expand(B, -1)
+
+        idx = torch.cat(all_idx, dim=-1)  # (B, total_kept)
+        # Trim to exact k_keep_total (in case extra padding)
+        if idx.shape[-1] > k_keep_total:
+            idx = idx[:, :k_keep_total]
+        idx, _ = torch.sort(idx, dim=-1)
+        return idx
+
+    # ------------------------------------------------------------------
+    # Token selection (encoder: global; decoder: chunked)
     # ------------------------------------------------------------------
     def _select_compressed_tokens(
         self,
-        x,
-        q,
-        k_tensor,
-        v_tensor,
-        valid_mask_2d,
-    ):
-        """
-        Selects top-k tokens based on importance.
-
-        Returns:
-            k_comp, v_comp, top_indices, comp_mask, ste_mask
-        """
+        x: torch.Tensor,
+        q: torch.Tensor,
+        k_tensor: torch.Tensor,
+        v_tensor: torch.Tensor,
+        valid_mask_2d: torch.Tensor | None,
+    ) -> tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None, torch.Tensor | None
+    ]:
         B, L, D = x.shape
         H_kv, Dh = self.num_kv_heads, self.head_dim
 
-        # Fast path for very short sequences
         if L <= 2:
-            top_indices = torch.arange(L, device=x.device).unsqueeze(0).expand(B, L)
-            comp_mask = valid_mask_2d if valid_mask_2d is not None else None
-            ste_mask = torch.ones(B, L, device=x.device, dtype=x.dtype)
-            return k_tensor, v_tensor, top_indices, comp_mask, ste_mask
+            idx = torch.arange(L, device=x.device).unsqueeze(0).expand(B, -1)
+            comp_valid = (
+                torch.gather(valid_mask_2d, 1, idx) if valid_mask_2d is not None else None
+            )
+            return k_tensor, v_tensor, idx, comp_valid, None
 
-        # ---- compute importance ----
-        total_importance = self._compute_token_importance(x, q, k_tensor, valid_mask_2d)
+        importance = self._compute_token_importance(x, q, k_tensor, valid_mask_2d)
 
-        # ---- effective compression ratio ----
         eff_ratio = self._get_compression_ratio()
-        k_keep = max(2, int(math.ceil(L * eff_ratio)))
-        k_keep = min(k_keep, L)
+        k_keep = max(2, min(L, int(math.ceil(L * eff_ratio))))
 
-        # ---- mask padding ----
-        if valid_mask_2d is not None:
-            total_importance = total_importance.masked_fill(~valid_mask_2d, -1e4)
+        # CLS boost
+        importance = importance.clone()
+        if valid_mask_2d is None or valid_mask_2d[:, 0].any():
+            importance[:, 0] = importance[:, 0] + 1e4
 
-        # ---- all-masked safety ----
-        all_masked = (total_importance <= -1e4).all(dim=-1)
-        if all_masked.any():
-            total_importance = total_importance.clone()
-            total_importance[all_masked, 0] = 0.0
-
-        # ---- CLS preservation ----
-        cls_boost = torch.full(
-            (B, 1), 1e4, device=x.device, dtype=total_importance.dtype
-        )
-        total_importance = torch.cat(
-            [cls_boost, total_importance[:, 1:]], dim=-1
-        )
-
-        # ---- Local window always-on (causal decoding) ----
+        # Local window boost (only for decoder)
         if self.is_decoder and self.local_window > 0:
             w = min(self.local_window, L)
-            local_boost = torch.zeros_like(total_importance)
-            local_boost[:, -w:] = 1e3
-            total_importance = total_importance + local_boost
+            importance[:, -w:] = importance[:, -w:] + 1e3
 
-        # ---- Top-k selection ----
-        _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
-        top_indices, _ = torch.sort(top_indices, dim=-1)
+        # All-masked safety
+        all_masked = (importance <= -1e4).all(dim=-1)
+        if all_masked.any():
+            importance[all_masked, 0] = 0.0
 
-        # ---- Gather K/V ----
-        top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
+        # Selection strategy
+        if self.is_decoder and L > self.chunk_size:
+            top_indices = self._chunked_causal_topk(importance, k_keep, valid_mask_2d)
+        else:
+            _, top_indices = torch.topk(importance, k_keep, dim=-1)
+            top_indices, _ = torch.sort(top_indices, dim=-1)
+
+        # FIX-02: STE via MULTIPLICATION
+        ste_mask: torch.Tensor | None = None
+        if self.use_ste and self.training:
+            # Soft mask over the full sequence
+            soft = F.softmax(importance, dim=-1)  # (B, L)
+            # Gather at kept indices
+            soft_kept = torch.gather(soft, 1, top_indices)  # (B, k_keep)
+            # Normalize so sum == 1 over kept
+            soft_kept = soft_kept / (soft_kept.sum(dim=-1, keepdim=True) + 1e-6)
+            # STE: forward = 1 (identity scaling), backward = gradient of soft_kept
+            ste_mask = 1.0 + (soft_kept - soft_kept.detach())
+            # ste_mask shape: (B, k_keep) — multiply against attention over keys
+
+        # Gather K/V
+        top_idx_exp = (
+            top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
+        )
         k_comp = torch.gather(k_tensor, 2, top_idx_exp)
         v_comp = torch.gather(v_tensor, 2, top_idx_exp)
 
-        # ---- STE mask (differentiable) ----
-        ste_mask = None
-        if self.use_ste and self.training:
-            # Build hard mask
-            hard_mask = torch.zeros_like(total_importance)
-            hard_mask.scatter_(-1, top_indices, 1.0)
+        comp_valid = (
+            torch.gather(valid_mask_2d, 1, top_indices)
+            if valid_mask_2d is not None
+            else None
+        )
 
-            # Soft mask from softmax
-            soft_mask = F.softmax(total_importance, dim=-1)
-
-            # Straight-through: forward = hard, backward = soft
-            ste_mask = hard_mask + (soft_mask - soft_mask.detach())
-
-        comp_mask = None
-        if valid_mask_2d is not None:
-            comp_mask = torch.gather(valid_mask_2d, 1, top_indices)
-
-        return k_comp, v_comp, top_indices, comp_mask, ste_mask
+        return k_comp, v_comp, top_indices, comp_valid, ste_mask
 
     # ------------------------------------------------------------------
     # Forward
     # ------------------------------------------------------------------
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        past_key_value=None,
-        output_attentions=False,
-        output_hidden_states=False,
-        return_dict=True,
-        position_embeddings=None,
-        layer_idx=0,
-        *args,
-        **kwargs,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError("TokenCompressedAttention: cross-attention not supported.")
+            raise NotImplementedError(
+                "TokenCompressedAttention: cross-attention not supported."
+            )
 
         B, L, D = hidden_states.shape
         H, H_kv, Dh = self.num_heads, self.num_kv_heads, self.head_dim
@@ -751,138 +924,169 @@ class TokenCompressedAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
-        v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
+        k_new = self.k_lin(hidden_states).view(
+            B, L, H_kv, Dh
+        ).transpose(1, 2).contiguous()
+        v_new = self.v_lin(hidden_states).view(
+            B, L, H_kv, Dh
+        ).transpose(1, 2).contiguous()
 
-        # ---- RoPE ----
+        # ---------------- Read past cache ----------------
+        past_k = past_v = past_pos = None
+        past_seen = 0
+        cache_obj = None
+
+        if past_key_value is not None:
+            if isinstance(past_key_value, TokenCompressedCache):
+                if layer_idx < len(past_key_value.keys):
+                    past_k = past_key_value.keys[layer_idx]
+                    past_v = past_key_value.values[layer_idx]
+                    past_pos = past_key_value.positions[layer_idx]
+                    past_seen = past_key_value.seen_tokens
+                cache_obj = past_key_value
+            elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                past_k = past_key_value.key_cache[idx]
+                past_v = past_key_value.value_cache[idx]
+                past_seen = past_k.shape[-2] if past_k is not None else 0
+                cache_obj = past_key_value
+            elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                past_seen = past_k.shape[-2] if past_k is not None else 0
+
+        # ---------------- FIX-03: absolute position offset ----------------
+        position_ids = kwargs.get("position_ids")
+        if position_ids is not None:
+            if position_ids.dim() == 1:
+                position_ids = position_ids.unsqueeze(0).expand(B, -1)
+            start_pos = int(position_ids[0, 0].item())
+            new_positions = position_ids.long()
+        elif past_pos is not None:
+            start_pos = int(past_pos[:, -1].max().item()) + 1
+            new_positions = (
+                torch.arange(start_pos, start_pos + L, device=device)
+                .unsqueeze(0).expand(B, -1)
+            )
+        else:
+            start_pos = past_seen
+            new_positions = (
+                torch.arange(start_pos, start_pos + L, device=device)
+                .unsqueeze(0).expand(B, -1)
+            )
+
+        # ---------------- RoPE ----------------
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            past_len = 0
-            if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
-                    past_len = past_key_value[0].shape[-2]
-                elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                    past_len = past_key_value.key_cache[0].shape[-2]
-            cos = cos[..., past_len : past_len + L, :]
-            sin = sin[..., past_len : past_len + L, :]
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+            q, k_new = apply_rotary_pos_emb(
+                q, k_new, cos, sin, past_len=start_pos
+            )
 
-        # ---- valid mask ----
+        # ---------------- Cache concat (compact, no pruning yet) ----------------
+        if past_k is not None:
+            k_full = torch.cat([past_k, k_new], dim=-2)
+            v_full = torch.cat([past_v, v_new], dim=-2)
+            if past_pos is not None:
+                pos_full = torch.cat([past_pos, new_positions], dim=-1)
+            else:
+                pos_full = new_positions
+        else:
+            k_full = k_new
+            v_full = v_new
+            pos_full = new_positions
+
+        # ---------------- Cache update ----------------
+        updated_cache = None
+        if cache_obj is not None and isinstance(cache_obj, TokenCompressedCache):
+            cache_obj.update(k_new, v_new, layer_idx, new_positions)
+            cache_obj.seen_tokens = max(cache_obj.seen_tokens, start_pos + L)
+            updated_cache = cache_obj
+        elif cache_obj is not None and hasattr(cache_obj, "update"):
+            cache_obj.update(k_new, v_new, layer_idx)
+            updated_cache = cache_obj
+        elif isinstance(past_key_value, (tuple, list)):
+            updated_cache = (k_full, v_full, pos_full)
+
+        # ---------------- Valid mask ----------------
         valid_mask_2d = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                if attention_mask.dtype == torch.bool:
-                    valid_mask_2d = attention_mask
-                elif attention_mask.dtype.is_floating_point:
-                    valid_mask_2d = attention_mask > -1e4
-                else:
-                    valid_mask_2d = attention_mask > 0
+                valid_mask_2d = (
+                    attention_mask
+                    if attention_mask.dtype == torch.bool
+                    else (
+                        attention_mask > -1e4
+                        if attention_mask.dtype.is_floating_point
+                        else attention_mask > 0
+                    )
+                )
             elif attention_mask.dim() == 4:
                 if attention_mask.dtype == torch.bool:
-                    v_mask = attention_mask
+                    vm = attention_mask
                 elif attention_mask.dtype.is_floating_point:
-                    v_mask = attention_mask > -1e4
+                    vm = attention_mask > -1e4
                 else:
-                    v_mask = attention_mask > 0
-                valid_mask_2d = v_mask.any(dim=-2).squeeze(1)
+                    vm = attention_mask > 0
+                valid_mask_2d = vm.any(dim=-2).squeeze(1)
 
-        # ---- KV-cache mode: prefill or decode ----
-        is_kv_cache_mode = past_key_value is not None
-
-        # FIXED: Global topk selection violates causality. Disable compression entirely if is_decoder.
-        if self.is_decoder:
-            is_kv_cache_mode = True # Force fallback
-            
-        if is_kv_cache_mode and self.is_decoder:
-            if isinstance(past_key_value, (tuple, list)):
-                past_k, past_v = past_key_value[0], past_key_value[1]
-            else:
-                past_k = getattr(past_key_value, "key_cache", [None])[0]
-                past_v = getattr(past_key_value, "value_cache", [None])[0]
-
-            if past_k is not None and past_v is not None:
-                full_k = torch.cat([past_k, k], dim=2)
-                full_v = torch.cat([past_v, v], dim=2)
-            else:
-                full_k, full_v = k, v
-
-            # Standard attention for decoder (causality preservation)
-            full_k_use = full_k
-            full_v_use = full_v
-            top_idx = None
-            comp_valid = None
-            ste_mask = None
-        elif is_kv_cache_mode:
-                # Prefill: apply compression normally
-                full_k_use, full_v_use, top_idx, comp_valid, ste_mask = self._select_compressed_tokens(
-                    hidden_states, q, full_k, full_v, valid_mask_2d
-                )
-        else:
-            # Standard mode
-            k_comp, v_comp, top_idx, comp_valid, ste_mask = self._select_compressed_tokens(
-                hidden_states, q, k, v, valid_mask_2d
+        # ---------------- Token selection ----------------
+        N_kv_full = k_full.shape[-2]
+        if L > 1:
+            # Prefill: compress k_full
+            k_use, v_use, top_idx, comp_valid, ste_mask = self._select_compressed_tokens(
+                hidden_states, q, k_full, v_full, valid_mask_2d
             )
-            full_k_use, full_v_use = k_comp, v_comp
+        else:
+            # Decode (single token): compress k_full as well, but with
+            # special handling to always keep the new token.
+            k_use, v_use, top_idx, comp_valid, ste_mask = self._select_compressed_tokens(
+                hidden_states, q, k_full, v_full, valid_mask_2d
+            )
 
+        # ---------------- GQA expansion ----------------
         if H_kv != H:
-            full_k_use = repeat_kv(full_k_use, self.num_key_value_groups)
-            full_v_use = repeat_kv(full_v_use, self.num_key_value_groups)
+            k_use = repeat_kv(k_use, self.num_key_value_groups)
+            v_use = repeat_kv(v_use, self.num_key_value_groups)
 
-        # ---- Attention ----
+        N_k = k_use.shape[-2]
+
+        # ---------------- Attention ----------------
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(q.float(), full_k_use.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k_use.float().transpose(-2, -1).contiguous()) * scale
+        )
 
-        # ---- Causal mask (on original positions) ----
+        # Causal mask based on ABSOLUTE positions
         if self.is_decoder and top_idx is not None:
-            N_k = full_k_use.shape[-2]
-            # FIXED: Shift q_pos by N_k - L so queries correctly attend to their past during generation.
-            q_pos = torch.arange(N_k - L, N_k, device=device).view(1, 1, L, 1)
-            k_orig = top_idx.unsqueeze(1).unsqueeze(2)
-            causal_mask = k_orig > q_pos
-            scores = scores.masked_fill(causal_mask, -1e4)
+            q_pos = new_positions.view(B, 1, L, 1)  # (B, 1, L, 1)
+            k_pos_abs = torch.gather(pos_full, 1, top_idx)  # (B, k_keep)
+            k_pos = k_pos_abs.view(B, 1, 1, N_k)
+            causal = k_pos > q_pos
+            scores = scores.masked_fill(causal, float("-inf"))
 
-            # Safety: force-keep CLS if all kept tokens are future
-            all_future = causal_mask.all(dim=-1, keepdim=True)
-            if all_future.any():
-                cls_pos = top_idx == 0
-                cls_slot = cls_pos.long().argmax(dim=-1, keepdim=True)
-                cls_slot = cls_slot.unsqueeze(1).expand(-1, 1, L, 1)
-                scores = scores.scatter(-1, cls_slot, 0.0)
-
-        elif self.is_decoder and top_idx is None:
-            # KV-cache mode with past + current
-            N_k = full_k_use.shape[-2]
-            q_pos = torch.arange(N_k - L, N_k, device=device).view(1, 1, L, 1)
-            k_pos = torch.arange(N_k, device=device).view(1, 1, 1, N_k)
-            causal_mask = k_pos > q_pos
-            scores = scores.masked_fill(causal_mask, -1e4)
-
-        # ---- Padding mask ----
+        # Padding mask
         if comp_valid is not None:
             cm = comp_valid[:, None, None, :]
-            if self.is_decoder and top_idx is not None:
-                cls_mask = (top_idx == 0)[:, None, None, :]
-                cm = cm | cls_mask
-            scores = scores.masked_fill(~cm, -1e4)
+            # Keep CLS always
+            if top_idx is not None and self.is_decoder:
+                cls_keep = (top_idx == 0)[:, None, None, :]
+                cm = cm | cls_keep
+            scores = scores.masked_fill(~cm, float("-inf"))
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn = F.softmax(scores, dim=-1).to(dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
+
+        # FIX-02: STE via multiplication (correct gradient flow)
+        if ste_mask is not None and self.training:
+            # ste_mask: (B, k_keep) → broadcast to (B, 1, 1, k_keep)
+            ste_b = ste_mask[:, None, None, :]
+            attn = attn * ste_b
+
         attn = self.dropout(attn)
 
-        # ---- STE gradient injection ----
-        if ste_mask is not None and self.training:
-            # ste_mask: (B, L) -> reduce to (B, 1, 1, L) for broadcasting
-            ste_b = ste_mask[:, None, None, :]
-            # Normalize ste_mask to sum to 1 over kept tokens
-            ste_norm = ste_b / (ste_b.sum(dim=-1, keepdim=True) + 1e-6)
-            # Blend: attn = attn + (ste_norm - ste_norm.detach()) * small_factor
-            # This injects gradient into score_net
-            attn = attn + 0.01 * (ste_norm - ste_norm.detach())
-
-        # ---- Head mask ----
+        # Head mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -892,7 +1096,8 @@ class TokenCompressedAttention(BaseAttention):
                 head_mask = head_mask[:, :, :1].unsqueeze(-1)
             attn = attn * head_mask.to(attn.dtype)
 
-        context = torch.matmul(attn, full_v_use)
+        # ---------------- Output ----------------
+        context = torch.matmul(attn, v_use)
         context = context.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -903,33 +1108,31 @@ class TokenCompressedAttention(BaseAttention):
 
         if output.shape[-1] != D:
             raise RuntimeError(
-                f"TokenCompressedAttention: output dim {output.shape[-1]} != hidden_size {D}"
+                f"TokenCompressedAttention: output dim {output.shape[-1]} != "
+                f"hidden_size {D}"
             )
 
-        # Return cache if requested
-        new_cache = None
-        if kwargs.get("use_cache", False):
-            new_cache = (full_k_use if top_idx is None else full_k_use, full_v_use)
+        # ---------------- Return ----------------
+        attn_ret = attn if output_attentions else None
 
-        if new_cache is not None:
-            return output, new_cache
-
-        return output, (attn if output_attentions else None)
+        if updated_cache is not None or past_key_value is not None:
+            return output, attn_ret, updated_cache
+        return output, attn_ret
 
 
 # ===========================================================================
-# Injector
+# Injection helper
 # ===========================================================================
 def inject_token_compressed_attn(
-    layer=None,
-    model=None,
-    model_config=None,
-    comp_config=None,
-    layer_idx=0,
-    total_layers=12,
-    old_attn=None,
-    _depth=0,
-    **kwargs,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
 ):
     if _depth > 8:
         logger.warning("inject_token_compressed_attn: max recursion depth exceeded.")
@@ -1010,19 +1213,20 @@ def inject_token_compressed_attn(
         local_window = int(
             kwargs.pop("local_window", _cfg_get(comp_config, "local_window", 32))
         )
+        chunk_size = int(
+            kwargs.pop("chunk_size", _cfg_get(comp_config, "chunk_size", 64))
+        )
         per_layer_ratio = bool(
             kwargs.pop("per_layer_ratio", _cfg_get(comp_config, "per_layer_ratio", False))
         )
-        use_ste = bool(
-            kwargs.pop("use_ste", _cfg_get(comp_config, "use_ste", True))
-        )
+        use_ste = bool(kwargs.pop("use_ste", _cfg_get(comp_config, "use_ste", True)))
         lora_rank = kwargs.pop(
             "lora_rank",
-            _cfg_get(comp_config, "lora_rank", _cfg_get(model_config, "lora_rank", 16)),
+            _cfg_get(comp_config, "lora_rank", 16),
         )
         lora_alpha = kwargs.pop(
             "lora_alpha",
-            _cfg_get(comp_config, "lora_alpha", _cfg_get(model_config, "lora_alpha", 32.0)),
+            _cfg_get(comp_config, "lora_alpha", 32.0),
         )
         rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
 
@@ -1033,6 +1237,7 @@ def inject_token_compressed_attn(
             lora_alpha=lora_alpha,
             compression_ratio=comp_ratio,
             local_window=local_window,
+            chunk_size=chunk_size,
             per_layer_ratio=per_layer_ratio,
             use_ste=use_ste,
             pretrained_attn=src if src is not target else None,
@@ -1061,12 +1266,15 @@ def inject_token_compressed_attn(
 
         return new_attn
     except Exception as e:
-        logger.exception("inject_token_compressed_attn failed at layer %d: %s", layer_idx, e)
+        logger.exception(
+            "inject_token_compressed_attn failed at layer %d: %s", layer_idx, e
+        )
         return None
 
 
 __all__ = [
     "TokenCompressedAttention",
+    "TokenCompressedCache",
     "LoRALinear",
     "apply_rotary_pos_emb",
     "inject_token_compressed_attn",

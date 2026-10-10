@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: mixattention_moska_inject / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.2200
+  Post-KD PPL:       29.2400
+  Stage 1 (KD) PPL:  34.0000
+  Stage 2 (Self) PPL:29.2400
+  KD Gain:           +2.22
+  Self Gain:         +4.76
+  Total Gain:        +6.98
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.8073
+  Recovery:          nan%
+  Peak VRAM:         2234.24 MB
+  Train time:        252.85 s (Stage 1: 154.2s, Stage 2: 98.6s)
+  s/step:            0.5057
+  Loss (final):      23.3874
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0612
+  Repetition-3:      0.9323
+  Train PPL:         29.8600
+  Test PPL:          29.2400
+  Overfit Gap:       -0.62
+  Latency (mean):    4221.42 ms
+  Latency (std):     144.31 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        3e5c8ecdb3bb
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.4844 | lr=1.74e-04
+  step   420 | loss=3.9091 | lr=1.50e-04
+  step   430 | loss=3.0598 | lr=1.27e-04
+  step   440 | loss=3.7459 | lr=1.04e-04
+  step   450 | loss=3.6518 | lr=8.20e-05
+  step   460 | loss=3.5652 | lr=6.19e-05
+  step   470 | loss=3.6330 | lr=4.40e-05
+  step   480 | loss=3.4567 | lr=2.87e-05
+  step   490 | loss=4.0029 | lr=1.64e-05
+  step   500 | loss=3.5543 | lr=7.44e-06

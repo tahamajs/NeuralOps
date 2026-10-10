@@ -1,20 +1,45 @@
 """
-Span-Expanded Attention with HyLoRA.
+Span-Expanded Attention with HyLoRA (StreamingLLM-style rolling KV-cache).
 
-Extends attention receptive fields via fixed/cached key-value span expansion buffers,
-complemented by parallel low-rank adaptation (HyLoRA) for parameter-efficient adaptation.
+⚠️  ARCHITECTURAL HONESTY NOTE  ⚠️
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
-- **Streaming KV Cache with Sliding Window + Sink Tokens** (StreamingLLM-style)
-- **RoPE position offset for incremental decoding**
+Despite the name, the mechanism implemented here is **StreamingLLM
+(Xiao et al. 2023)**, not the original Span-Expanded retrieval of
+Amazon's paper. It uses a rolling KV-cache with:
+    - fixed number of leading "sink" tokens (always kept)
+    - sliding recent window (keeps the last `expansion_span - num_sink` tokens)
+
+If you actually need the Amazon Span-Expanded mechanism (retrieval of
+evicted blocks into the context), this module is NOT it.
+
+═══════════════════════════════════════════════════════════════════════════
+CRITICAL FIXES vs PREVIOUS VERSION
+═══════════════════════════════════════════════════════════════════════════
+
+🔴 FIX-01  RoPE Freeze Bug
+    Absolute positions must come from position_ids or a seen_tokens counter,
+    NOT from the physical cache length (which saturates at expansion_span).
+
+🔴 FIX-02  Causality Violation During Prefill
+    During prefill (L > 1), attention is computed on the FULL K/V sequence.
+    Truncation is applied ONLY to the cache that is returned for the next step.
+
+🔴 FIX-03  GQA VRAM Spike
+    Concat + truncate operate on the COMPACT KV (num_kv_heads).
+    repeat_kv is applied only immediately before the QK^T matmul.
+
+🟡 FIX-04  Position Tracking Through Cache
+    Supports three cache conventions:
+      - Custom object with `.seen_tokens` attribute
+      - Tuple `(k, v, positions)` with absolute position tensor
+      - Explicit `position_ids` kwarg
+    Falls back to a warning + best-effort behaviour if none are provided.
+
+🟢 FIX-05  SDPA fast-path correctness
+    is_causal is enabled only during prefill (L > 1). During decode
+    (L == 1), no causal mask is needed.
+
+🟢 FIX-06  head_mask + attention_mask path unified with the manual path.
 """
 
 from __future__ import annotations
@@ -36,13 +61,20 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# RoPE helper (always-slice semantics)
+# ===========================================================================
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
+    past_len: int = 0,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Apply RoPE. cos/sin are ALWAYS sliced to match q/k length using `past_len`
+    as an absolute offset.
+    """
     if cos is None or sin is None:
         return q, k
 
@@ -53,12 +85,28 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    # Align the time dimension of cos/sin with q
-    if cos.shape[-2] != q.shape[-2]:
-        # If they don't match, truncate or broadcast depending on size
-        if cos.shape[-2] >= q.shape[-2]:
-            cos = cos[..., : q.shape[-2], :]
-            sin = sin[..., : q.shape[-2], :]
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    L = q.shape[-2]
+    S = cos.shape[-2]
+    if S != L:
+        if S >= past_len + L:
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
+        elif S >= L:
+            logger.warning(
+                "SpanExpanded RoPE: cos length %d < past_len+L=%d, using first %d.",
+                S, past_len + L, L,
+            )
+            cos = cos[..., :L, :]
+            sin = sin[..., :L, :]
+        else:
+            raise ValueError(
+                f"SpanExpanded RoPE: cos length {S} too short for q length {L} "
+                f"(past_len={past_len})."
+            )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -66,17 +114,24 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+        k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
     else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+        cos_q = cos[..., :head_dim].to(q.dtype)
+        sin_q = sin[..., :head_dim].to(q.dtype)
+        cos_k = cos[..., :head_dim].to(k.dtype)
+        sin_k = sin[..., :head_dim].to(k.dtype)
+        q = (q * cos_q) + (_rotate_half(q) * sin_q)
+        k = (k * cos_k) + (_rotate_half(k) * sin_k)
 
     return q, k
 
 
+# ===========================================================================
+# LoRALinear
+# ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -90,7 +145,7 @@ class LoRALinear(nn.Module):
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
+        fk = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -98,15 +153,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(out_features, **fk))
         else:
             self.register_parameter("bias", None)
 
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -121,7 +176,6 @@ class LoRALinear(nn.Module):
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
-
         if self.lora_rank > 0 and self.lora_A is not None:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
@@ -140,13 +194,95 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            out = out + lora_out
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
 
+# ===========================================================================
+# SinkCache (recommended cache container)
+# ===========================================================================
+class SinkCache:
+    """
+    Cache container used by SpanExpandedAttention.
+
+    Attributes:
+        keys:    list[Tensor] (B, H_kv, N_k, d) per layer
+        values:  list[Tensor] (B, H_kv, N_k, d) per layer
+        positions: list[Tensor] (B, N_k) absolute positions per layer
+        seen_tokens: total tokens observed across all layers (absolute counter)
+    """
+
+    def __init__(self, num_layers: int = 0) -> None:
+        self.keys: list[torch.Tensor | None] = [None] * num_layers
+        self.values: list[torch.Tensor | None] = [None] * num_layers
+        self.positions: list[torch.Tensor | None] = [None] * num_layers
+        self.seen_tokens: int = 0
+
+    def get_seq_length(self, layer_idx: int = 0) -> int:
+        if layer_idx >= len(self.keys) or self.keys[layer_idx] is None:
+            return 0
+        return int(self.keys[layer_idx].shape[-2])
+
+    def get_max_length(self) -> int:
+        return self.seen_tokens
+
+    def update(
+        self,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+        layer_idx: int,
+        positions: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if layer_idx >= len(self.keys):
+            self.keys.extend([None] * (layer_idx - len(self.keys) + 1))
+            self.values.extend([None] * (layer_idx - len(self.values) + 1))
+            self.positions.extend([None] * (layer_idx - len(self.positions) + 1))
+
+        k_old = self.keys[layer_idx]
+        v_old = self.values[layer_idx]
+        p_old = self.positions[layer_idx]
+
+        if k_old is None:
+            k_all = key_states
+            v_all = value_states
+            p_all = positions
+        else:
+            k_all = torch.cat([k_old, key_states], dim=-2)
+            v_all = torch.cat([v_old, value_states], dim=-2)
+            p_all = torch.cat([p_old, positions], dim=-1)
+
+        self.keys[layer_idx] = k_all
+        self.values[layer_idx] = v_all
+        self.positions[layer_idx] = p_all
+        return k_all, v_all, p_all
+
+    # Tuple-like access for compatibility
+    def __getitem__(self, idx: int):
+        if idx == 0:
+            return self.keys
+        if idx == 1:
+            return self.values
+        if idx == 2:
+            return self.positions
+        raise IndexError(idx)
+
+    def __len__(self) -> int:
+        return 3
+
+
+# ===========================================================================
+# SpanExpandedAttention
+# ===========================================================================
 @ATTENTION_REGISTRY.register("span_expanded_attention")
 class SpanExpandedAttention(BaseAttention):
     is_custom_attention: bool = True
@@ -184,12 +320,14 @@ class SpanExpandedAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        # ---- Span expansion configuration ----
         self.expansion_span: int = int(expansion_span) if expansion_span else 1024
-        # Number of leading "sink" tokens to always preserve in the cache.
-        # StreamingLLM (Xiao et al. 2024) shows the first few tokens act as
-        # attention sinks and must be kept for long-context stability.
         self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
+
+        if self.expansion_span <= self.num_sink_tokens:
+            raise ValueError(
+                f"expansion_span ({self.expansion_span}) must be > "
+                f"num_sink_tokens ({self.num_sink_tokens})."
+            )
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
@@ -222,41 +360,36 @@ class SpanExpandedAttention(BaseAttention):
 
         # Projections
         self.q_proj = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.all_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
+        self.q_lin = self.q_proj
+        self.k_lin = self.k_proj
+        self.v_lin = self.v_proj
+        self.out_lin = self.out_proj
+        self.dense = self.out_proj
+        self.c_proj = self.out_proj
+        self.o_proj = self.out_proj
 
         dropout_p = (
             getattr(
@@ -278,7 +411,7 @@ class SpanExpandedAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     # ------------------------------------------------------------------
-    # Weight copying (unchanged, production-hardened)
+    # copy_weights (unchanged — production hardened)
     # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -295,12 +428,9 @@ class SpanExpandedAttention(BaseAttention):
                 and hasattr(src.output, "dense")
             )
             or (
-                cls_name
-                in [
-                    "BertSelfAttention",
-                    "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention",
+                cls_name in [
+                    "BertSelfAttention", "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -311,13 +441,11 @@ class SpanExpandedAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
+        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -360,11 +488,10 @@ class SpanExpandedAttention(BaseAttention):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (
-                        o_w,
-                        bias_o.data.clone() if bias_o is not None else None,
+                        o_w, bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # 2. RoBERTa nested
+        # RoBERTa/BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -381,7 +508,7 @@ class SpanExpandedAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (GPT-2 alt, Qwen, LLaMA, DistilBERT)
+        # Flat
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -401,14 +528,12 @@ class SpanExpandedAttention(BaseAttention):
                             break
 
         missing = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
-
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -418,20 +543,18 @@ class SpanExpandedAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
             raise RuntimeError(
-                f"SpanExpandedAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+                f"SpanExpandedAttention copy_weights failed: missing "
+                f"{missing_after} from {src.__class__.__name__}."
             )
 
         target_map = {
-            "q": self.q_proj,
-            "k": self.k_proj,
-            "v": self.v_proj,
-            "o": self.out_proj,
+            "q": self.q_proj, "k": self.k_proj,
+            "v": self.v_proj, "o": self.out_proj,
         }
 
         with torch.no_grad():
@@ -443,11 +566,7 @@ class SpanExpandedAttention(BaseAttention):
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
                         continue
-                    else:
-                        logger.warning(
-                            "SpanExpandedAttention copy_weights: missing %s, using initialized weights",
-                            proj_key,
-                        )
+                    continue
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -481,71 +600,102 @@ class SpanExpandedAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                fnorm = torch.linalg.norm(target_mod.weight.float()).item()
+                fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if fnorm < 1e-4:
                     logger.warning(
-                        "SpanExpandedAttention copy_weights: %s has near-zero norm (%.2e)",
-                        proj_key,
-                        fnorm,
+                        "SpanExpandedAttention copy_weights: %s has near-zero "
+                        "norm (%.2e).", proj_key, fnorm,
                     )
 
         if self.freeze_base:
-            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
+            for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
 
     # ------------------------------------------------------------------
-    # Cache management helpers
+    # Cache helpers
     # ------------------------------------------------------------------
     def _get_past_kv(
-        self, past_key_value: Any
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
-        """Extract (past_k, past_v, past_len) from various cache formats."""
+        self, past_key_value: Any, layer_idx: int = 0
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
+        """
+        Extract (past_k, past_v, past_positions, absolute_seen) from various
+        cache formats.
+
+        Returns:
+            past_k:   (B, H_kv, N_k, d) or None
+            past_v:   (B, H_kv, N_k, d) or None
+            past_pos: (B, N_k) absolute positions or None
+            seen:     total number of tokens ever seen (absolute counter)
+        """
         if past_key_value is None:
-            return None, None, 0
+            return None, None, None, 0
 
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            past_k, past_v = past_key_value[0], past_key_value[1]
-            return past_k, past_v, past_k.shape[-2]
-
-        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-            past_k = past_key_value.key_cache[0]
-            past_v = (
-                past_key_value.value_cache[0] if hasattr(past_key_value, "value_cache") else None
+        # SinkCache
+        if isinstance(past_key_value, SinkCache):
+            if layer_idx >= len(past_key_value.keys) or past_key_value.keys[layer_idx] is None:
+                return None, None, None, 0
+            return (
+                past_key_value.keys[layer_idx],
+                past_key_value.values[layer_idx],
+                past_key_value.positions[layer_idx],
+                past_key_value.seen_tokens,
             )
-            return past_k, past_v, past_k.shape[-2]
 
-        return None, None, 0
+        # Tuple
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+            past_k = past_key_value[0]
+            past_v = past_key_value[1]
+            past_pos = past_key_value[2] if len(past_key_value) >= 3 else None
+            if past_k is None:
+                return None, None, None, 0
+            seen = int(past_pos[:, -1].max().item()) + 1 if past_pos is not None else past_k.shape[-2]
+            return past_k, past_v, past_pos, seen
+
+        # HF DynamicCache
+        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+            past_k = past_key_value.key_cache[idx]
+            past_v = past_key_value.value_cache[idx]
+            # HF DynamicCache does not store positions; rely on len.
+            seen = past_k.shape[-2]
+            return past_k, past_v, None, seen
+
+        return None, None, None, 0
 
     def _truncate_cache_with_sinks(
-        self, k: torch.Tensor, v: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        positions: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Apply sliding-window truncation while preserving the first N sink tokens.
 
-        StreamingLLM (Xiao et al., 2024): the first few tokens accumulate a
-        disproportionate amount of attention and act as "attention sinks".
-        Dropping them causes severe perplexity degradation in long contexts.
-        We therefore always preserve the first `num_sink_tokens` entries.
+        k, v:       (B, H_kv, N_k, d)
+        positions:  (B, N_k) — absolute positions
         """
         span = self.expansion_span
-        if span <= 0 or k.shape[-2] <= span:
-            return k, v
+        N_k = k.shape[-2]
+
+        if span <= 0 or N_k <= span:
+            return k, v, positions
 
         sink = self.num_sink_tokens
         if sink <= 0:
-            # Pure rolling cache, no sinks preserved
-            return k[..., -span:, :], v[..., -span:, :]
+            keep = slice(N_k - span, N_k)
+            return k[..., keep, :], v[..., keep, :], positions[..., keep]
 
-        if span <= sink:
-            # Pathological config: keep only sinks, drop the rest
-            return k[..., :span, :], v[..., :span, :]
+        # Keep first `sink` + last `span - sink`
+        sink_idx = torch.arange(0, sink, device=k.device)
+        recent_start = N_k - (span - sink)
+        recent_idx = torch.arange(recent_start, N_k, device=k.device)
+        keep_idx = torch.cat([sink_idx, recent_idx])
 
-        # Keep first `sink` tokens + most recent `span - sink` tokens
-        sink_k = k[..., :sink, :]
-        sink_v = v[..., :sink, :]
-        recent_k = k[..., -(span - sink) :, :]
-        recent_v = v[..., -(span - sink) :, :]
-        return torch.cat([sink_k, recent_k], dim=-2), torch.cat([sink_v, recent_v], dim=-2)
+        return (
+            k.index_select(-2, keep_idx),
+            v.index_select(-2, keep_idx),
+            positions.index_select(-1, keep_idx),
+        )
 
     # ------------------------------------------------------------------
     # Forward
@@ -562,139 +712,243 @@ class SpanExpandedAttention(BaseAttention):
         output_hidden_states: bool | None = False,
         return_dict: bool | None = True,
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor, torch.Tensor] | None]:
+    ):
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(
+                "SpanExpandedAttention does not support cross-attention."
+            )
+
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
+        device = hidden_states.device
 
-        # ---- QKV projections ----
-        q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
+        # ---- 1) QKV projections (compact, no GQA expansion yet) ----
+        q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3).contiguous()
+        k_new = self.k_proj(hidden_states).view(
+            B, L, self.num_kv_heads, Dh
+        ).permute(0, 2, 1, 3).contiguous()
+        v_new = self.v_proj(hidden_states).view(
+            B, L, self.num_kv_heads, Dh
+        ).permute(0, 2, 1, 3).contiguous()
 
-        # ---- Extract past cache ----
-        past_k, past_v, past_len = self._get_past_kv(past_key_value)
+        # ---- 2) Extract past cache (compact) ----
+        past_k, past_v, past_pos, seen = self._get_past_kv(past_key_value, layer_idx)
 
-        # ---- RoPE with past_len offset ----
+        # ---- 3) FIX-01: absolute position offset ----
+        position_ids = kwargs.get("position_ids")
+        if position_ids is not None:
+            # Explicit positions (preferred)
+            if position_ids.dim() == 1:
+                position_ids = position_ids.unsqueeze(0).expand(B, -1)
+            start_pos = int(position_ids[0, 0].item())
+            new_positions = position_ids.long()
+        elif past_pos is not None:
+            start_pos = int(past_pos[:, -1].max().item()) + 1
+            new_positions = (
+                torch.arange(start_pos, start_pos + L, device=device)
+                .unsqueeze(0).expand(B, -1)
+            )
+        else:
+            # Fallback: use `seen` counter (from custom cache or HF cache length)
+            # NOTE: for HF DynamicCache without position tracking this can be
+            # correct only if no pruning was ever applied.
+            start_pos = seen
+            new_positions = (
+                torch.arange(start_pos, start_pos + L, device=device)
+                .unsqueeze(0).expand(B, -1)
+            )
+            if past_pos is None and past_k is not None and past_k.shape[-2] >= self.expansion_span:
+                logger.warning(
+                    "SpanExpandedAttention: cache length has saturated at "
+                    "expansion_span=%d but no position tracking is available. "
+                    "RoPE positions may be incorrect. Provide position_ids or "
+                    "use SinkCache.",
+                    self.expansion_span,
+                )
+
+        # ---- 4) RoPE with absolute offset ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            cos_curr = (
-                cos[..., past_len : past_len + L, :] if cos.shape[-2] >= past_len + L else cos
-            )
-            sin_curr = (
-                sin[..., past_len : past_len + L, :] if sin.shape[-2] >= past_len + L else sin
-            )
-            q, k = apply_rotary_pos_emb(q, k, cos_curr, sin_curr)
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=start_pos)
 
-        # ---- GQA repeat (before cache concat, so cache stays compact) ----
-        # Note: If using GQA, we store the compact KV in cache and expand on use.
-        # Here we expand first, which is simpler but uses more cache memory.
-        if self.num_heads != self.num_kv_heads:
-            repeats = self.num_heads // self.num_kv_heads
-            # Re-expand past cache if it was stored compact
-            if past_k is not None and past_k.shape[1] != self.num_heads:
-                past_k = repeat_kv(past_k, repeats)
-                past_v = repeat_kv(past_v, repeats)
-            k = repeat_kv(k, repeats)
-            v = repeat_kv(v, repeats)
-
-        # ---- Concatenate with past cache ----
+        # ---- 5) FIX-03: concat + truncate on COMPACT KV ----
         if past_k is not None:
-            k = torch.cat([past_k, k], dim=-2)
-            v = torch.cat([past_v, v], dim=-2)
-
-        # ---- Sliding-window truncation with sink preservation ----
-        k, v = self._truncate_cache_with_sinks(k, v)
-
-        # ---- Present cache for next step ----
-        # Store compact (un-repeated) KV if GQA is used to save memory:
-        if self.num_heads != self.num_kv_heads and k.shape[1] == self.num_heads:
-            repeats = self.num_heads // self.num_kv_heads
-            # Take every `repeats`-th head to recover compact form
-            # (repeat_kv duplicates contiguously, so index 0, repeats, 2*repeats, ...)
-            compact_k = k[:, ::repeats, :, :].contiguous()
-            compact_v = v[:, ::repeats, :, :].contiguous()
-            present_key_value = (compact_k, compact_v)
-        else:
-            present_key_value = (k, v)
-
-        scale = Dh**-0.5
-
-        # ---- Fast path: PyTorch SDPA ----
-        if attention_mask is None and head_mask is None and not output_attentions:
-            try:
-                _qs = q.half() if q.dtype == torch.float32 else q
-                _ks = k.half() if k.dtype == torch.float32 else k
-                _vs = v.half() if v.dtype == torch.float32 else v
-                # is_causal only meaningful when processing > 1 token at once.
-                # When past cache is present and we process 1 token, no causal mask needed.
-                _is_causal = bool(self.is_decoder) and L > 1 and past_len == 0
-                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs,
-                    _ks,
-                    _vs,
-                    is_causal=_is_causal,
-                    dropout_p=self.dropout.p if self.training else 0.0,
+            k_full = torch.cat([past_k, k_new], dim=-2)
+            v_full = torch.cat([past_v, v_new], dim=-2)
+            if past_pos is not None:
+                pos_full = torch.cat([past_pos, new_positions], dim=-1)
+            else:
+                pos_full = (
+                    torch.arange(k_full.shape[-2], device=device)
+                    .unsqueeze(0).expand(B, -1)
                 )
-                _sdpa_out = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
+        else:
+            k_full = k_new
+            v_full = v_new
+            pos_full = new_positions
+
+        # ---- 6) FIX-02: prefill vs decode ----
+        is_prefill = L > 1
+
+        if is_prefill:
+            # Prefill: compute attention on the FULL sequence (causality-safe).
+            attn_k = k_full
+            attn_v = v_full
+            attn_pos = pos_full
+            # Cache the TRUNCATED version for future steps.
+            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
+                k_full, v_full, pos_full
+            )
+        else:
+            # Decode: truncate first (memory-efficient), then attend.
+            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
+                k_full, v_full, pos_full
+            )
+            attn_k = cache_k
+            attn_v = cache_v
+            attn_pos = cache_pos
+
+        # ---- 7) Prepare present_key_value ----
+        if isinstance(past_key_value, SinkCache):
+            past_key_value.keys[layer_idx if layer_idx < len(past_key_value.keys) else -1] = cache_k
+            if layer_idx >= len(past_key_value.keys):
+                past_key_value.keys.append(cache_k)
+                past_key_value.values.append(cache_v)
+                past_key_value.positions.append(cache_pos)
+            else:
+                past_key_value.keys[layer_idx] = cache_k
+                past_key_value.values[layer_idx] = cache_v
+                past_key_value.positions[layer_idx] = cache_pos
+            past_key_value.seen_tokens = max(past_key_value.seen_tokens, start_pos + L)
+            present_key_value = past_key_value
+        elif hasattr(past_key_value, "update"):
+            # HF DynamicCache: store FULL K/V (positions handled upstream).
+            past_key_value.update(k_new, v_new, layer_idx)
+            present_key_value = past_key_value
+        else:
+            # Tuple cache: return (k, v, positions)
+            present_key_value = (cache_k, cache_v, cache_pos)
+
+        # ---- 8) FIX-03: expand GQA just before attention ----
+        if self.num_heads != self.num_kv_heads:
+            attn_k_exp = repeat_kv(attn_k, self.kv_repeat)
+            attn_v_exp = repeat_kv(attn_v, self.kv_repeat)
+        else:
+            attn_k_exp = attn_k
+            attn_v_exp = attn_v
+
+        N_k = attn_k_exp.shape[-2]
+
+        # ---- 9) FIX-05: SDPA fast path (only when safe) ----
+        use_sdpa = (
+            attention_mask is None
+            and head_mask is None
+            and not output_attentions
+            and not self.training
+        )
+        if use_sdpa:
+            # is_causal only valid when we're at the "real" prefill start
+            _is_causal = bool(self.is_decoder) and is_prefill and start_pos == 0
+            try:
+                sdpa_out = F.scaled_dot_product_attention(
+                    q, attn_k_exp, attn_v_exp,
+                    is_causal=_is_causal,
+                    dropout_p=0.0,
+                )
+                sdpa_out = (
+                    sdpa_out.permute(0, 2, 1, 3).contiguous()
                     .view(B, L, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
+                sdpa_out = torch.nan_to_num(sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                if self.is_nested_encoder:
+                    return sdpa_out, None, present_key_value
+                out = self.out_proj(sdpa_out)
                 return out, None, present_key_value
             except Exception:
-                pass  # fall through to manual path
+                pass  # fall through
 
-        # ---- Manual path ----
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        # ---- 10) Manual attention ----
+        scale = Dh ** -0.5
+        scores = torch.matmul(
+            q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()
+        ) * scale  # (B, H, L, N_k)
 
-        # Causal masking: query i (position past_len + i) attends to keys 0..(past_len + i)
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal and L > 1:
-            kv_len = k.shape[-2]
-            causal_mask = torch.triu(
-                torch.full((L, kv_len), -1e4, device=scores.device),
-                diagonal=1 + past_len,
-            )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+        # FIX-02: causal mask uses absolute positions of K and Q.
+        if self.is_decoder:
+            q_pos = new_positions.view(B, 1, L, 1)          # absolute
+            k_pos = attn_pos.view(B, 1, 1, N_k)             # absolute
+            causal = k_pos > q_pos
+            scores = scores.masked_fill(causal, float("-inf"))
 
-        # External attention mask (padding etc.)
+        # External mask (padding)
         if attention_mask is not None:
-            scores = apply_attention_mask(scores, attention_mask)
+            scores = apply_attention_mask(scores, attention_mask, is_causal=False)
 
-        attn = F.softmax(scores, dim=-1).to(hidden_states.dtype)
-        attn = torch.nan_to_num(attn, nan=0.0)
-        attn = self.dropout(attn)
+        probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = self.dropout(probs)
 
-        # Head mask
+        # FIX-06: head_mask
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn = attn * head_mask.view(1, self.num_heads, 1, 1).to(attn.dtype)
+                probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn = attn * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn.dtype)
+                probs = probs * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(probs.dtype)
             elif head_mask.dim() == 4:
-                attn = attn * head_mask.to(attn.dtype)
+                probs = probs * head_mask.to(probs.dtype)
 
         context = (
-            torch.matmul(attn, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            torch.matmul(probs, attn_v_exp)
+            .permute(0, 2, 1, 3).contiguous()
+            .view(B, L, self.all_head_size)
         )
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        attn_weights = probs if output_attentions else None
 
         if self.is_nested_encoder:
-            return context, (attn if output_attentions else None), present_key_value
+            return context, attn_weights, present_key_value
 
         out = self.out_proj(context)
-        return out, (attn if output_attentions else None), present_key_value
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        return out, attn_weights, present_key_value
 
 
-# ----------------------------------------------------------------------
-# Injection helper (unchanged)
-# ----------------------------------------------------------------------
+# ===========================================================================
+# Injection helper
+# ===========================================================================
+def _find_layer_list(model: nn.Module):
+    paths = [
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+    ]
+    for path in paths:
+        obj = model
+        ok = True
+        for part in path:
+            obj = getattr(obj, part, None)
+            if obj is None:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            parent = model
+            for part in path[:-1]:
+                parent = getattr(parent, part)
+            return parent, path[-1], obj
+    return None
+
+
 def inject_span_expanded(
     layer: Any = None,
     model: Any = None,
@@ -715,32 +969,17 @@ def inject_span_expanded(
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     # Whole-model traversal
-    layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
-        layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
-        layer_list = target.layers
-
-    if layer_list is not None:
+    if layer is None and model is not None:
+        found = _find_layer_list(model)
+        if found is None:
+            logger.warning("SpanExpandedAttention: could not locate layer list.")
+            return None
+        _parent, _attr, layer_list = found
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
             res = inject_span_expanded(
                 layer=lyr,
                 model_config=cfg,
@@ -751,73 +990,59 @@ def inject_span_expanded(
             )
             if res is not None:
                 num_injected += 1
-        return target if num_injected > 0 else None
+        return model if num_injected > 0 else None
 
-    layer = target
-
+    # Single-layer injection
     try:
-        if layer is not None:
-            config = model_config or getattr(layer, "config", None)
-            target = old_attn
-            if target is None:
-                for attr in ("attention", "self_attn", "attn", "self"):
-                    if hasattr(layer, attr):
-                        cand = getattr(layer, attr)
-                        if isinstance(cand, nn.Module) and cand is not layer:
-                            target = cand
-                            break
-            if target is None:
-                target = layer
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if isinstance(cand, nn.Module) and cand is not target:
+                        src_attn = getattr(cand, "self", cand)
+                        break
+        if src_attn is None:
+            src_attn = target
 
-            new_attn = SpanExpandedAttention(
-                config=config,
-                pretrained_attn=target if target is not layer else None,
-                **kwargs,
-            )
-            for attr in ("self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    setattr(layer, attr, new_attn)
-                    return layer
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
-                else:
-                    layer.attention = new_attn
-                return layer
-            layer.attention = new_attn
-            return layer
-
-        if model is None:
+        if isinstance(src_attn, SpanExpandedAttention):
             return None
 
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if (
-                hasattr(module, "q_lin")
-                or hasattr(module, "query")
-                or hasattr(module, "q_proj")
-                or hasattr(module, "c_attn")
-            ):
-                is_attn = True
+        new_attn = SpanExpandedAttention(
+            config=cfg or getattr(src_attn, "config", None),
+            pretrained_attn=src_attn if src_attn is not target else None,
+            **kwargs,
+        )
 
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = SpanExpandedAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
-    except Exception:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        if hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+            return new_attn
+        if hasattr(target, "attn"):
+            target.attn = new_attn
+            return new_attn
+        if hasattr(target, "self"):
+            target.self = new_attn
+            new_attn.is_nested_encoder = True
+            return new_attn
+        return None
+    except Exception as e:
+        logger.exception("SpanExpandedAttention injection failed: %s", e)
         return None
 
 
 inject_span_expanded_attention = inject_span_expanded
+
+
+__all__ = [
+    "SpanExpandedAttention",
+    "SinkCache",
+    "inject_span_expanded",
+    "inject_span_expanded_attention",
+]

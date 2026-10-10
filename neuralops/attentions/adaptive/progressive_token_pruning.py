@@ -1,10 +1,10 @@
 """
-Progressive Token Pruning (PTP) – Production-Hardened.
+Progressive Token Pruning (PTP) — Production-Hardened v2.0.
 
-Learnable Progressive Token Pruning module with guaranteed [CLS] retention,
-multi-head attention capabilities, and full multi-architecture support.
+Learnable Progressive Token Pruning module with guaranteed [CLS]/BOS retention,
+causal-safe decoder pruning, SDPA fast-path, and full multi-architecture support.
 
-⚠️  IMPORTANT — WHAT PTP ACTUALLY DOES  ⚠️
+⚠️  WHAT PTP ACTUALLY DOES  ⚠️
 
 PTP is a **compute optimization**, not a parameter compressor. It prunes
 tokens at *inference time* by keeping the top-k highest-scoring tokens per
@@ -19,11 +19,31 @@ Consequences:
   - FLOPs during attention ARE reduced (≈ keep_ratio × L²).
   - Long-context inference is significantly faster.
 
-If your goal is parameter compression, use SVD/MLA/quantization instead
-(or apply them *after* PTP). If your goal is inference speedup, PTP is
-appropriate, but the pipeline should label it as a *compute optimizer*,
-not a *compressor*.
+For parameter compression, use SVD/MLA/quantization instead (or apply them
+*after* PTP).
 
+═══════════════════════════════════════════════════════════════════════════
+FIX SUMMARY (v2.0):
+═══════════════════════════════════════════════════════════════════════════
+
+🔴 CRITICAL FIXES
+  FIX-01  RoPE crash at step 0 — cos/sin always sliced to [past_len : past_len + L]
+  FIX-02  Tuple KV-cache return — return (out, attn_weights, updated_cache)
+  FIX-03  Causal pruning for decoders — keep first + last (k-1) tokens
+           (replaces the previous "k_tokens = L" which disabled pruning entirely)
+
+🟡 PERFORMANCE FIXES
+  FIX-04  SDPA fast-path when k_tokens == L (no pruning → use native SDPA)
+  FIX-05  masked_fill instead of torch.where for [CLS] force-keep
+  FIX-06  Removed redundant score masking (single assignment)
+
+🟢 ARCHITECTURAL FIXES
+  FIX-07  Per-layer scorer by default (shared scorer requires explicit opt-in
+           with `share_scorer=True` and a clear warning about gradient interference)
+  FIX-08  Cache handling for both tuple and DynamicCache
+  FIX-09  Cleaner injection helper (find_layer_list unified)
+
+═══════════════════════════════════════════════════════════════════════════
 """
 
 from __future__ import annotations
@@ -46,22 +66,31 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# RoPE
+# FIX-01: RoPE with always-slice semantics
 # ===========================================================================
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
+    past_len: int = 0,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Apply RoPE. cos/sin are ALWAYS sliced to match q's sequence length.
+
+    FIX-01: previous code skipped slicing when past_len == 0, which caused
+    a shape mismatch crash in prefill. Now we always slice, and prefer the
+    window [past_len : past_len + L]; if cos is too short, we fall back to
+    the first L positions (with a warning).
+    """
     if cos is None or sin is None:
         return q, k
 
-    if cos.dim() == 2:
+    # ---- Dimension alignment ----
+    if cos.dim() == 2:                     # (S, d) → (1, 1, S, d)
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
+    elif cos.dim() == 3:                   # (B, S, d) → (B, 1, S, d)
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
@@ -69,8 +98,28 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+    # ---- FIX-01: ALWAYS slice to L ----
+    L = q.shape[-2]
+    S = cos.shape[-2]
+    if S != L:
+        if S >= past_len + L:
+            # Preferred window
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
+        elif S >= L:
+            # Fallback: first L positions
+            logger.warning(
+                "PTP RoPE: cos length %d < past_len+L=%d; "
+                "falling back to first %d positions.",
+                S, past_len + L, L,
+            )
+            cos = cos[..., :L, :]
+            sin = sin[..., :L, :]
+        else:
+            raise ValueError(
+                f"PTP RoPE: cos length {S} is too short for q length {L} "
+                f"(past_len={past_len})."
+            )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -89,11 +138,12 @@ def apply_rotary_pos_emb(
         sin_k = sin[..., :head_dim].to(k.dtype)
         q = (q * cos_q) + (_rotate_half(q) * sin_q)
         k = (k * cos_k) + (_rotate_half(k) * sin_k)
+
     return q, k
 
 
 # ===========================================================================
-# LoRALinear
+# LoRALinear (as before — no changes needed)
 # ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(
@@ -172,13 +222,24 @@ class LoRALinear(nn.Module):
 
 
 # ===========================================================================
-# Optional shared scorer (PTP-FIX-04)
+# SharedTokenScorer (FIX-07)
 # ===========================================================================
 class SharedTokenScorer(nn.Module):
     """
-    Optional token scorer that is shared across all PTP layers to reduce
-    parameter overhead. When `share_scorer=True` is passed to all PTP
-    instances, they reference the same scorer module.
+    Token scorer shared across layers.
+
+    ⚠️  WARNING (FIX-07)  ⚠️
+    Sharing a scorer across ALL layers causes GRADIENT INTERFERENCE: layer 1
+    (character/grammar features) and layer 24 (abstract/semantic features)
+    have very different feature distributions. A single MLP cannot absorb
+    both, and accuracy typically degrades.
+
+    Use ONLY when:
+      - you have extremely tight parameter budgets
+      - you have empirically validated that sharing does not hurt accuracy
+      - you accept potential accuracy loss
+
+    Default behaviour: per-layer scorer (share_scorer=False).
     """
 
     def __init__(self, dim: int, hidden: int = 64) -> None:
@@ -190,25 +251,27 @@ class SharedTokenScorer(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.sigmoid(self.net(x)).squeeze(-1)  # (B, L)
+        return torch.sigmoid(self.net(x)).squeeze(-1)   # (B, L)
 
 
 # ===========================================================================
-# PTP Attention
+# ProgressiveTokenPruning
 # ===========================================================================
 @ATTENTION_REGISTRY.register("progressive_token_pruning")
 class ProgressiveTokenPruning(BaseAttention):
     """
-    Progressive Token Pruning attention.
+    Progressive Token Pruning attention (PTP v2).
 
     Forward:
-      1. Score each token (score_network or shared scorer).
-      2. Force-keep the first token ([CLS]).
-      3. Keep the top-k tokens (k = ceil(L · keep_ratio)).
+      1. Score each token (per-layer score_network; shared scorer optional).
+      2. Force-keep the first token ([CLS]/BOS) if it is valid.
+      3. Choose k = ceil(L · keep_ratio) tokens:
+           - Encoder (bidirectional): top-k by score.
+           - Decoder (causal): first token + last (k-1) tokens
+             → CAUSAL-SAFE (no future leakage, no key loss at step 0).
       4. Compute attention over the reduced set of keys/values.
-      5. Return output with the original (B, L, D) shape.
-
-    KV-cache: supported for decoder inference.
+      5. If no pruning occurred (k == L) and no cache, use SDPA fast-path.
+      6. Return the original (B, L, D) shape.
     """
 
     is_custom_attention: bool = True
@@ -230,9 +293,10 @@ class ProgressiveTokenPruning(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        # PTP-FIX-12: dimension resolution.
+        # ---- Dimensions ----
         self.d_model = int(
-            getattr(config, "hidden_size", None) or d_model or kwargs.get("hidden_size") or 768
+            getattr(config, "hidden_size", None) or d_model
+            or kwargs.get("hidden_size") or 768
         )
         self.dim = self.d_model
         self.num_heads = int(
@@ -240,15 +304,13 @@ class ProgressiveTokenPruning(BaseAttention):
         )
         self.num_kv_heads = int(
             getattr(
-                config,
-                "num_key_value_heads",
+                config, "num_key_value_heads",
                 kwargs.get("num_key_value_heads", self.num_heads),
             )
         )
         self.head_dim = int(
             getattr(
-                config,
-                "head_dim",
+                config, "head_dim",
                 kwargs.get("head_dim", self.dim // max(1, self.num_heads)),
             )
         )
@@ -266,62 +328,42 @@ class ProgressiveTokenPruning(BaseAttention):
         self.is_nested_encoder = False
 
         self.lora_rank = int(
-            getattr(
-                config,
-                "lora_rank",
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
-            )
-            if config
-            else 16
+            getattr(config, "lora_rank",
+                    getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            if config else 16
         )
         self.lora_alpha = float(
-            getattr(
-                config,
-                "lora_alpha",
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
-            )
-            if config
-            else 32.0
+            getattr(config, "lora_alpha",
+                    getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            if config else 32.0
         )
         self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # Projections
+        # ---- Projections ----
         self.q_lin = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_lin = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_lin = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_lin = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.all_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
-        # Aliases
+        # Aliases for HF compatibility
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
         self.v_proj = self.v_lin
@@ -329,12 +371,17 @@ class ProgressiveTokenPruning(BaseAttention):
         self.query = self.q_lin
         self.key = self.k_lin
         self.value = self.v_lin
-        self.dense = self.out_lin  # PTP-FIX-10
-        self.c_proj = self.out_lin  # PTP-FIX-10
-        self.o_proj = self.out_lin  # PTP-FIX-10
+        self.dense = self.out_lin
+        self.c_proj = self.out_lin
+        self.o_proj = self.out_lin
 
-        # PTP-FIX-04: optional shared scorer.
+        # ---- FIX-07: per-layer scorer by default ----
         if shared_scorer is not None:
+            logger.warning(
+                "PTP: shared_scorer is used. This may cause gradient "
+                "interference across layers and reduce accuracy. "
+                "Prefer per-layer scorers unless you've validated sharing."
+            )
             self.score_network = shared_scorer
             self._uses_shared_scorer = True
         else:
@@ -342,13 +389,9 @@ class ProgressiveTokenPruning(BaseAttention):
             self._uses_shared_scorer = False
 
         dropout_p = (
-            getattr(
-                config,
-                "dropout",
-                getattr(config, "attention_probs_dropout_prob", 0.1),
-            )
-            if config
-            else 0.1
+            getattr(config, "dropout",
+                    getattr(config, "attention_probs_dropout_prob", 0.1))
+            if config else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -370,27 +413,26 @@ class ProgressiveTokenPruning(BaseAttention):
         return None
 
     # ------------------------------------------------------------------
+    # copy_weights (unchanged — kept from original for HF compatibility)
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
             (
-                hasattr(src, "self")
-                and hasattr(src.self, "query")
-                and hasattr(src, "output")
-                and hasattr(src.output, "dense")
+                hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")
             )
             or (
-                cls_name
-                in (
-                    "BertSelfAttention",
-                    "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention",
+                cls_name in (
+                    "BertSelfAttention", "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -401,13 +443,11 @@ class ProgressiveTokenPruning(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused
+        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -424,17 +464,14 @@ class ProgressiveTokenPruning(BaseAttention):
                 split = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (
-                    c_w[:split, :],
-                    c_b[:split] if c_b is not None else None,
-                )
+                extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
                 extracted["k"] = (
-                    c_w[split : 2 * split, :],
-                    c_b[split : 2 * split] if c_b is not None else None,
+                    c_w[split:2*split, :],
+                    c_b[split:2*split] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2 * split :, :],
-                    c_b[2 * split :] if c_b is not None else None,
+                    c_w[2*split:, :],
+                    c_b[2*split:] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -452,11 +489,10 @@ class ProgressiveTokenPruning(BaseAttention):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (
-                        o_w,
-                        bias_o.data.clone() if bias_o is not None else None,
+                        o_w, bias_o.data.clone() if bias_o is not None else None
                     )
 
-        # 2. RoBERTa nested
+        # 2. BERT/RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -493,14 +529,12 @@ class ProgressiveTokenPruning(BaseAttention):
                             break
 
         missing = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
-
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -510,8 +544,7 @@ class ProgressiveTokenPruning(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
@@ -521,10 +554,8 @@ class ProgressiveTokenPruning(BaseAttention):
             )
 
         target_map = {
-            "q": self.q_lin,
-            "k": self.k_lin,
-            "v": self.v_lin,
-            "o": self.out_lin,
+            "q": self.q_lin, "k": self.k_lin,
+            "v": self.v_lin, "o": self.out_lin,
         }
 
         with torch.no_grad():
@@ -535,17 +566,14 @@ class ProgressiveTokenPruning(BaseAttention):
                         nn.init.eye_(target_mod.weight)
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
-                        continue
                     continue
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif (w.shape[0] < target_mod.weight.shape[0]
+                      and target_mod.weight.shape[0] % w.shape[0] == 0):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -567,14 +595,36 @@ class ProgressiveTokenPruning(BaseAttention):
                 fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if fnorm < 1e-4:
                     logger.warning(
-                        "PTP: '%s' weight has near-zero norm (%.2e).",
-                        key,
-                        fnorm,
+                        "PTP: '%s' weight has near-zero norm (%.2e).", key, fnorm
                     )
 
         if self.freeze_base:
             for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
                 m.freeze_base_weights()
+
+    # ------------------------------------------------------------------
+    # FIX-03: causal-safe token selection
+    # ------------------------------------------------------------------
+    def _select_causal_indices(
+        self, L: int, k_tokens: int, B: int, device: torch.device
+    ) -> torch.Tensor:
+        """
+        Causal-safe selection: keep first token + last (k_tokens - 1) tokens.
+
+        This preserves:
+          - The [CLS]/BOS token (often semantically important).
+          - The local context window (most relevant for next-token prediction).
+
+        It also avoids future-token leakage.
+        """
+        if k_tokens >= L:
+            return torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
+
+        first = torch.zeros(B, 1, dtype=torch.long, device=device)
+        last_start = L - (k_tokens - 1)
+        last = torch.arange(last_start, L, device=device).unsqueeze(0).expand(B, -1)
+        idx = torch.cat([first, last], dim=-1)
+        return idx
 
     # ------------------------------------------------------------------
     # Forward
@@ -594,150 +644,182 @@ class ProgressiveTokenPruning(BaseAttention):
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    ):
         if encoder_hidden_states is not None:
             raise NotImplementedError("PTP does not support cross-attention.")
 
         x = hidden_states
         B, L, D = x.shape
+        device = x.device
 
-        valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+        valid_mask = get_token_valid_mask(attention_mask, B, L, device)
 
-        # PTP-FIX-03: single assignment.
-        scores = self.score_network(x)  # (B, L)
-        # PTP-FIX-11: only force [CLS] if position 0 is valid.
-        first_valid = valid_mask[:, 0].unsqueeze(-1)  # (B, 1)
-        scores = torch.where(first_valid, scores, scores)
-        # Force first token to top priority (only if valid).
-        scores = scores.masked_fill(~valid_mask, -1e4)
-        if first_valid.any():
-            scores[:, 0] = torch.where(
-                first_valid.squeeze(-1),
-                torch.full_like(scores[:, 0], 1e4),
-                scores[:, 0],
-            )
-
-        # FIXED: Global top-k pruning over the sequence axis violates causality.
-        # Disable pruning for auto-regressive generation/causal models.
-        if getattr(self, "is_decoder", False):
-            k_tokens = L
-        else:
-            k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
-            
-        top_scores, top_indices = torch.topk(scores, k_tokens, dim=-1)
-        top_indices, _ = torch.sort(top_indices, dim=-1)
-
-        # Projections
-        q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k_new = self.k_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v_new = self.v_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-
-        # ---------------- KV-cache (PTP-FIX-01) ----------------
+        # ---------- Read past cache ----------
         past_k = past_v = None
         past_len = 0
-        if past_key_value is not None and self.is_decoder is not False:
-            # Tuple cache
+        cache_obj = None
+        if past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                 past_k, past_v = past_key_value[0], past_key_value[1]
-                past_len = past_k.shape[-2]
-            # HF DynamicCache
+                if past_k is not None:
+                    past_len = past_k.shape[-2]
             elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                 idx = min(layer_idx, len(past_key_value.key_cache) - 1)
                 past_k = past_key_value.key_cache[idx]
                 past_v = past_key_value.value_cache[idx]
                 past_len = past_k.shape[-2]
+                cache_obj = past_key_value
 
-        # ---------------- RoPE with past_len offset (PTP-FIX-02) ----------------
+        # ---------- FIX-03: causal-safe or score-based selection ----------
+        k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
+
+        if self.is_decoder:
+            # CAUSAL: no topk — use positional indices directly.
+            top_indices = self._select_causal_indices(L, k_tokens, B, device)
+        else:
+            # Bidirectional: use scores.
+            scores = self.score_network(x)               # (B, L)
+            scores = scores.masked_fill(~valid_mask, -1e4)
+            # FIX-05: masked_fill instead of torch.where
+            first_valid = valid_mask[:, 0]               # (B,)
+            if first_valid.any():
+                cls_scores = scores[:, 0].masked_fill(first_valid, 1e4)
+                scores = torch.cat([cls_scores.unsqueeze(1), scores[:, 1:]], dim=1)
+            _, top_indices = torch.topk(scores, k_tokens, dim=-1)
+            top_indices, _ = torch.sort(top_indices, dim=-1)
+
+        # ---------- Projections ----------
+        q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k_new = self.k_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v_new = self.v_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+
+        # ---------- RoPE (FIX-01) ----------
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            if past_len > 0 and cos.shape[-2] >= past_len + L:
-                cos = cos[..., past_len : past_len + L, :]
-                sin = sin[..., past_len : past_len + L, :]
-            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=past_len)
 
-        # ---------------- Gather pruned K/V ----------------
-        # Note: PTP prunes tokens ONLY for the current chunk (new tokens).
-        # With KV-cache, past tokens are always used in full.
+        # ---------- FIX-04: SDPA fast-path (no pruning + no cache) ----------
+        if k_tokens == L and past_k is None and not self.training:
+            # No pruning happened — fall back to native SDPA.
+            k_full = k_new
+            v_full = v_new
+            if self.num_heads != self.num_kv_heads:
+                k_full = repeat_kv(k_full, self.kv_repeat)
+                v_full = repeat_kv(v_full, self.kv_repeat)
+
+            if self.is_decoder:
+                # Causal SDPA
+                attn_out = F.scaled_dot_product_attention(
+                    q, k_full, v_full,
+                    is_causal=True,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+            else:
+                # Bidirectional SDPA (with padding mask)
+                attn_bias = None
+                if attention_mask is not None:
+                    attn_bias = torch.zeros(B, 1, L, L, device=device, dtype=q.dtype)
+                    attn_bias = attn_bias.masked_fill(
+                        ~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf")
+                    )
+                attn_out = F.scaled_dot_product_attention(
+                    q, k_full, v_full,
+                    attn_mask=attn_bias,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+
+            attn_out = (
+                attn_out.permute(0, 2, 1, 3).contiguous()
+                .view(B, L, self.all_head_size)
+            )
+
+            # Update cache even on fast path
+            if cache_obj is not None:
+                cache_obj.update(k_new, v_new, layer_idx)
+            elif past_key_value is not None and isinstance(past_key_value, (tuple, list)):
+                pass  # no update on tuple caches without explicit management
+
+            if self.is_nested_encoder:
+                return attn_out, None
+            out = self.out_lin(attn_out)
+            return out, None
+
+        # ---------- Standard path: gather pruned K/V ----------
         top_idx_exp = (
-            top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_kv_heads, -1, self.head_dim)
+            top_indices.unsqueeze(1).unsqueeze(-1)
+            .expand(-1, self.num_kv_heads, -1, self.head_dim)
         )
-        k_pruned = torch.gather(k_new, 2, top_idx_exp)  # (B, H_kv, k_tokens, d)
+        k_pruned = torch.gather(k_new, 2, top_idx_exp)     # (B, H_kv, k_tokens, d)
         v_pruned = torch.gather(v_new, 2, top_idx_exp)
 
+        # ---------- FIX-08: build full K/V ----------
         if past_k is not None and past_v is not None:
-            # Concatenate past (full) with current (pruned).
             k_all = torch.cat([past_k, k_pruned], dim=-2)
             v_all = torch.cat([past_v, v_pruned], dim=-2)
-            # Keep track of original positions for causal masking.
-            past_positions = torch.arange(past_len, device=x.device).view(1, 1, -1)
+
+            past_positions = torch.arange(past_len, device=device).view(1, 1, -1)
             past_positions = past_positions.expand(B, 1, -1)
-            current_positions = (
-                torch.gather(
-                    top_indices,
-                    1,
-                    torch.arange(k_tokens, device=x.device).unsqueeze(0).expand(B, -1),
-                )
-                + past_len
-            )  # positions in the full sequence
+            # Position of each current token in the full sequence
+            current_positions = top_indices + past_len          # (B, k_tokens)
             k_positions = torch.cat(
-                [past_positions, current_positions.unsqueeze(1)],
-                dim=-1,
+                [past_positions, current_positions.unsqueeze(1)], dim=-1
             )  # (B, 1, past_len + k_tokens)
         else:
             k_all = k_pruned
             v_all = v_pruned
-            k_positions = top_indices.unsqueeze(1)  # (B, 1, k_tokens)
+            k_positions = top_indices.unsqueeze(1)              # (B, 1, k_tokens)
 
-        # ---------------- GQA repeat ----------------
+        # ---------- GQA expansion ----------
         if self.num_heads != self.num_kv_heads:
             k_all = repeat_kv(k_all, self.kv_repeat)
             v_all = repeat_kv(v_all, self.kv_repeat)
 
-        # ---------------- Attention scores ----------------
+        # ---------- Attention ----------
         scale = 1.0 / math.sqrt(self.head_dim)
-        attn_scores = (
-            torch.matmul(q.float(), k_all.float().transpose(-2, -1).contiguous()) * scale
-        )  # (B, H, L, past_len + k_tokens)
+        attn_scores = torch.matmul(
+            q.float(), k_all.float().transpose(-2, -1).contiguous()
+        ) * scale                                       # (B, H, L, N_k)
 
-        # ---------------- Causal mask ----------------
+        # ---------- Causal mask (FIX: uses absolute positions) ----------
         if self.is_decoder:
-            q_pos = (past_len + torch.arange(L, device=x.device)).view(1, 1, L, 1)
+            q_pos = (past_len + torch.arange(L, device=device)).view(1, 1, L, 1)
             causal = k_positions.unsqueeze(2) > q_pos
             attn_scores = attn_scores.masked_fill(causal, -1e4)
 
-        # ---------------- Valid-key mask for current chunk ----------------
-        # Past keys are always valid (they were valid when cached).
-        current_valid = torch.gather(valid_mask, 1, top_indices)  # (B, k_tokens)
+        # ---------- Validity mask for current chunk ----------
+        current_valid = torch.gather(valid_mask, 1, top_indices)     # (B, k_tokens)
         if past_k is not None:
-            # Assume past keys are all valid (they were cached after masking).
             all_valid = torch.cat(
                 [
-                    torch.ones(B, past_len, device=x.device, dtype=torch.bool),
+                    torch.ones(B, past_len, device=device, dtype=torch.bool),
                     current_valid,
                 ],
                 dim=1,
-            )  # (B, past_len + k_tokens)
+            )
         else:
             all_valid = current_valid
-        attn_scores = attn_scores.masked_fill(~all_valid.unsqueeze(1).unsqueeze(2), -1e4)
+        attn_scores = attn_scores.masked_fill(
+            ~all_valid.unsqueeze(1).unsqueeze(2), -1e4
+        )
 
         probs = F.softmax(attn_scores, dim=-1).to(x.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # head_mask handling
+        # ---------- head_mask ----------
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
-                    probs.dtype
-                )
+                probs = probs * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(probs.dtype)
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
+        # ---------- Output ----------
         attn_out = (
             torch.matmul(probs, v_all)
             .permute(0, 2, 1, 3)
@@ -745,22 +827,34 @@ class ProgressiveTokenPruning(BaseAttention):
             .view(B, L, self.all_head_size)
         )
 
-        # ---------------- Update KV-cache ----------------
-        if past_key_value is not None:
-            if hasattr(past_key_value, "update"):
-                # HF DynamicCache: store the FULL k_new, v_new (not pruned),
-                # so that future queries can access them.
-                past_key_value.update(k_new, v_new, layer_idx)
+        # ---------- Update cache ----------
+        updated_cache = None
+        if cache_obj is not None:
+            cache_obj.update(k_new, v_new, layer_idx)
+            updated_cache = cache_obj
+        elif isinstance(past_key_value, (tuple, list)) and past_key_value:
+            # FIX-02: return updated tuple cache
+            new_k = torch.cat([past_k, k_new], dim=-2) if past_k is not None else k_new
+            new_v = torch.cat([past_v, v_new], dim=-2) if past_v is not None else v_new
+            updated_cache = (new_k, new_v)
+
+        # ---------- Return ----------
+        attn_weights = probs if output_attentions else None
 
         if self.is_nested_encoder:
-            return attn_out, (probs if output_attentions else None)
+            # Nested encoder (BERT): (output, attn_weights)
+            return attn_out, attn_weights
 
         out = self.out_lin(attn_out)
-        return out, (probs if output_attentions else None)
+
+        # FIX-02: include cache when present (HF convention for decoders)
+        if updated_cache is not None or past_key_value is not None:
+            return out, attn_weights, updated_cache
+        return out, attn_weights
 
 
 # ===========================================================================
-# Injection (PTP-FIX-07)
+# Injection helper
 # ===========================================================================
 def _find_layer_list(model: nn.Module):
     """Return (parent, attr_name, layer_list) or None."""
@@ -781,7 +875,6 @@ def _find_layer_list(model: nn.Module):
                 ok = False
                 break
         if ok and isinstance(obj, (nn.ModuleList, list)):
-            # Find parent + attr
             parent = model
             for part in path[:-1]:
                 parent = getattr(parent, part)
@@ -801,7 +894,6 @@ def inject_progressive_token_pruning(
     shared_scorer: SharedTokenScorer | None = None,
     **kwargs: Any,
 ):
-    # PTP-FIX-07: cleaner injection.
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer"))
@@ -810,7 +902,7 @@ def inject_progressive_token_pruning(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # ---------------- Whole-model traversal ----------------
+    # ---------- Whole-model traversal ----------
     if layer is None and model is not None:
         found = _find_layer_list(model)
         if found is None:
@@ -819,12 +911,18 @@ def inject_progressive_token_pruning(
         parent, attr, layer_list = found
         num_injected = 0
         tot = len(layer_list)
-        # If shared_scorer requested, create it once.
-        if shared_scorer is None and kwargs.get("share_scorer", False):
-            dim = getattr(getattr(model, "config", None), "hidden_size", None) or kwargs.get(
-                "hidden_size", 768
+
+        share = kwargs.get("share_scorer", False)
+        if share and shared_scorer is None:
+            dim = (
+                getattr(getattr(model, "config", None), "hidden_size", None)
+                or kwargs.get("hidden_size", 768)
             )
             shared_scorer = SharedTokenScorer(int(dim), hidden=64)
+            logger.warning(
+                "PTP: share_scorer=True — using a single shared scorer across "
+                "all layers. This may hurt accuracy due to gradient interference."
+            )
 
         for idx, lyr in enumerate(layer_list):
             if target_layer_idx is not None and idx != target_layer_idx:
@@ -842,7 +940,7 @@ def inject_progressive_token_pruning(
                 num_injected += 1
         return model if num_injected > 0 else None
 
-    # ---------------- Single-layer injection ----------------
+    # ---------- Single-layer injection ----------
     try:
         src_attn = old_attn
         if src_attn is None:
@@ -865,7 +963,6 @@ def inject_progressive_token_pruning(
             **kwargs,
         )
 
-        # Attach
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn
