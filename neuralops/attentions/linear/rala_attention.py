@@ -185,7 +185,6 @@ class RALALinearAttention(BaseAttention):
             config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
         )
         self.num_kv_heads = getattr(
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             config,
             "num_key_value_heads",
             kwargs.get("num_key_value_heads", self.num_heads),

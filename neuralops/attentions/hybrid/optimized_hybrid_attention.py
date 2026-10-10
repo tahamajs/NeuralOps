@@ -219,7 +219,6 @@ class OptimizedHybridAttention(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
         self.num_kv_heads = int(num_kv_heads)
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim

@@ -316,7 +316,6 @@ class EATBlock(BaseAttention):
         if cfg_kv is None:
             cfg_kv = max(1, self.num_heads // 4)   # ← فشرده‌سازی ۴ برابر
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
 
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)

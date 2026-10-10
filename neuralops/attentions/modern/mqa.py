@@ -263,7 +263,6 @@ class MultiQueryAttention(BaseAttention):
         # Default: exactly 1 (true MQA).
         if num_kv_heads is not None:
             self.num_kv_heads = max(1, int(num_kv_heads))
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         else:
             self.num_kv_heads = 1  # ← MQA
 
