@@ -973,7 +973,7 @@ class LoLAAttention(BaseAttention):
 
         # ---- Padding mask ----
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        mask_val = _safe_mask_value(dtype)
+        mask_val = -1e4 if dtype in (torch.float16, torch.bfloat16) or scores_lr.dtype in (torch.float16, torch.bfloat16) else -1e9
         if mask is not None:
             if mask.dim() == 4:
                 if mask.dtype == torch.bool:

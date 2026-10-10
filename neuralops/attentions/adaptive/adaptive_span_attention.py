@@ -1094,7 +1094,7 @@ class AdaptiveSpanAttention(BaseAttention):
             attn = attn * head_mask.to(attn.dtype)
 
         # ---- Context ----
-        context = torch.matmul(attn, V_full.float()).to(dtype)
+        context = torch.matmul(attn, V_full.to(attn.dtype)).to(dtype)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         if self.is_nested_encoder:
