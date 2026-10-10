@@ -1144,6 +1144,11 @@ class FUSIONATTN(BaseAttention):
         else:
             out = self.out_proj(context)
 
+        # Return past_key_value for autoregressive decoders
+        if self.is_decoder and not is_cross_attention:
+            new_past_kv = (k_cat, v_cat) if (past_key_value is not None or not hasattr(past_key_value, "update")) else past_key_value
+            return out, new_past_kv
+
         return out, (attn_weights if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:
