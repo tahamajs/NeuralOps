@@ -1081,7 +1081,7 @@ class TokenCompressedAttention(BaseAttention):
         # FIX-02: STE via multiplication (correct gradient flow)
         if ste_mask is not None and self.training:
             # ste_mask: (B, k_keep) → broadcast to (B, 1, 1, k_keep)
-            ste_b = ste_mask[:, None, None, :]
+            ste_b = ste_mask[:, None, None, :].to(attn.dtype)
             attn = attn * ste_b
 
         attn = self.dropout(attn)

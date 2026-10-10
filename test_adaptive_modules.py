@@ -34,7 +34,10 @@ eval_args = SimpleNamespace(
     eval_max_tokens=200,
 )
 eval_dataset = Dataset.from_dict({"text": [
-    "Antigravity is testing language model perplexity and attention dynamics with knowledge distillation."
+    "The quick brown fox jumps over the lazy dog. Scientific reasoning requires rigorous mathematical proof and empirical testing.",
+    "Machine learning models, particularly autoregressive transformers, rely on scaled dot-product self-attention mechanisms to capture long-range token dependencies.",
+    "In physics, quantum electrodynamics describes how light and matter interact with remarkable precision across microscopic spatial scales.",
+    "Adaptive attention methods modify sequence representation through dynamic spans, token pruning, and head squeezing."
 ]})
 
 results = {}
