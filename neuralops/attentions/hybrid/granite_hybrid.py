@@ -801,8 +801,7 @@ class GraniteHybridBlock(BaseAttention):
 
         # ---- [FIX] Per-head gated fusion using lora_gate ----
         gate_out = self.lora_gate(hidden_states.float())          # (B, N, H)
-        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)  # (B, H, N, 1)
-        g = g.to(attn_out.dtype)
+        g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)  # (B, N, 1)
         x = g * attn_out + (1.0 - g) * mamba_out
 
         # ---- MoE branch ----
