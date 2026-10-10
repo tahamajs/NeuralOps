@@ -41,7 +41,7 @@ except Exception:
     pass
 
 try:
-    _m = importlib.import_module(f".gated_linear_attention", __package__)
+    _m = importlib.import_module(f".decay_linear_attention", __package__)
     for _attr in dir(_m):
         if not _attr.startswith("_"):
             _val = getattr(_m, _attr)

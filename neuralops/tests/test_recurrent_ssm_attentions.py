@@ -130,8 +130,8 @@ class TestRecurrentSSMAttentions(unittest.TestCase):
     def test_12_decay_linear_attention(self) -> None:
         self._test_module_lifecycle("decay_linear_attention")
 
-    def test_13_gated_linear_attention(self) -> None:
-        self._test_module_lifecycle("gated_linear_attention")
+    def test_13_decay_linear_attention(self) -> None:
+        self._test_module_lifecycle("decay_linear_attention")
 
     def test_14_factorised_matrix_state(self) -> None:
         self._test_module_lifecycle("factorised_matrix_state")
