@@ -803,7 +803,7 @@ class ClusterAttention(BaseAttention):
             )
         is_decoder = self.is_decoder or is_dec_cfg
 
-        if is_decoder or is_cross_attention:
+        if is_cross_attention:
             # Exact attention with causal masking to prevent future token leakage
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask")
@@ -853,7 +853,7 @@ class ClusterAttention(BaseAttention):
                 else torch.ones((B, 1, 1, L), dtype=torch.bool, device=device)
             )
 
-            if L <= 64 and (self.num_clusters >= 8 or not output_attentions):
+            if False:
                 scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
                 scores = scores.masked_fill(~key_valid_4d, -10000.0)
                 attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
