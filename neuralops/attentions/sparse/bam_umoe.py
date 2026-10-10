@@ -339,6 +339,7 @@ class BAMUMoEBlock(BaseAttention):
             )
         )
         self.num_kv_heads = int(
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             getattr(
                 config,
                 "num_key_value_heads",

@@ -351,6 +351,7 @@ class GoldFinchAHNBlock(BaseAttention):
         # ---- num_kv_heads ----
         if config is not None:
             self.num_kv_heads = getattr(
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
                 config, "num_key_value_heads",
                 getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))
             )

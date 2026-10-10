@@ -448,6 +448,7 @@ class SOAAttention(BaseAttention):
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.num_key_value_groups: int = max(
             1, self.num_heads // max(1, self.num_kv_heads)
         )

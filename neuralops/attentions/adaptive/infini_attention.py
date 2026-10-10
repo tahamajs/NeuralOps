@@ -997,7 +997,7 @@ class Jamba2Block(BaseAttention):
         # =========================================================
         q = (
             self.q_lin(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
+            .view(B, L, -1)
             .transpose(1, 2)
             .contiguous()
         )

@@ -292,6 +292,7 @@ class HALOReGLAAttention(BaseAttention):
         self.dim = int(dim)
         self.num_heads = int(num_heads)
         self.num_kv_heads = int(
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             _cfg_get(
                 config, "num_key_value_heads",
                 kwargs.get("num_key_value_heads", self.num_heads),

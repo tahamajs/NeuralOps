@@ -159,6 +159,7 @@ class Mamba2(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        self.lora_gate = None
         self.d_model: int = d_model
         self.d_state: int = d_state
         self.expand: int = expand
