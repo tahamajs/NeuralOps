@@ -708,5 +708,11 @@
     "zerokv_neo_compressor_factory": "zerokv_neo_compressor",
     "zerokv_neo_factory": "zerokv_neo_compressor",
     "zeros": "zeros_attention",
-    "zeros_inject": "zeros"
+    "zeros_inject": "zeros",
+    "spectra_v2": "mha_sdpa",
+    "spectral_mamba": "simple_ssm",
+    "squeezing_heads_distill": "gqa_attention",
+    "tlinformer_attention": "linformer_attention",
+    "tpa_attention": "cross_attention",
+    "span_expanded_attention": "adaptive_span_attention"
 }
