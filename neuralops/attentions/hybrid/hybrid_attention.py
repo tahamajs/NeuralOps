@@ -242,6 +242,14 @@ class HybridAttention(BaseAttention):
         self.out_proj = nn.Linear(self.all_head_size, self.hidden_size, bias=True)
         self.dropout = nn.Dropout(drop_rate)
 
+        # Rank-reduced compression bottleneck
+        bottleneck = max(16, self.all_head_size // 2)
+        self.compress_proj = nn.Linear(self.all_head_size, bottleneck, bias=False)
+        self.decompress_proj = nn.Linear(bottleneck, self.all_head_size, bias=False)
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.compress_proj.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.decompress_proj.weight, a=math.sqrt(5))
+
         # Per-head gate
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
 
@@ -589,6 +597,7 @@ class HybridAttention(BaseAttention):
 
         fused = fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
+        fused = self.decompress_proj(self.compress_proj(fused))
 
         # HA-FIX-01: out_proj ALWAYS executed.
         if self.is_nested_encoder:
