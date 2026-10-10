@@ -108,7 +108,7 @@ if __name__ == "__main__":
             cls = ATTENTION_REGISTRY.get(key)
             if not inspect.isclass(cls): continue
             mod = inspect.getmodule(cls)
-            p = (getattr(mod, "__file__", "") or "").replace("\\\\","/")
+            p = (getattr(mod, "__file__", "") or "").replace("\\","/")
             if any(d in p for d in HEAVY_DIRS):
                 gpu_modules.append(key)
             else:
