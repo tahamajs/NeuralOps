@@ -800,9 +800,9 @@ class HymbaTransXBlock(BaseAttention):
         device = x.device
 
         # Projections
-        q1 = self.W_q1(x).view(B, L, -1).transpose(1, 2).contiguous()
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        q2 = self.W_q2(x).view(B, L, -1).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
