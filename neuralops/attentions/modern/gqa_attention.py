@@ -249,7 +249,6 @@ class GroupedQueryAttention(BaseAttention):
             resolved_kv_heads = max(1, self.num_heads // 4)
 
         self.num_kv_heads = int(resolved_kv_heads)
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self._num_kv_heads_source = "gqa_compressed"
 
         # ---- sizes ----

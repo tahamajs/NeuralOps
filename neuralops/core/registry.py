@@ -305,8 +305,9 @@ class Registry:
         return self.resolve(key)
 
     def __contains__(self, key: str) -> bool:
-        self._try_lazy_load(key)
-        return key.lower() in self._dict
+        k = _handle_deprecated(key)
+        self._try_lazy_load(k)
+        return k.lower() in self._dict
 
     def __len__(self) -> int:
         return len(self._dict)

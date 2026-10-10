@@ -232,7 +232,6 @@ class AdaptiveSVDAttention(BaseAttention):
             or self.num_heads
         )
         self.num_kv_heads = max(1, min(int(num_kv_heads), self.num_heads))
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
 
         # head_dim
         head_dim = kwargs.get("head_dim") or _first_attr(config, ("head_dim", "d_kv"))

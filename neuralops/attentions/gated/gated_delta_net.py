@@ -508,7 +508,6 @@ class GatedDeltaNet(BaseAttention):
         if cfg_kv is None:
             cfg_kv = kwargs.get("num_kv_heads", self.num_heads)
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
         # ---- Resolve head_dim ----

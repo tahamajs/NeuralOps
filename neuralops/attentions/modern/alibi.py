@@ -221,7 +221,6 @@ class ALiBiAttention(BaseAttention):
         self.hidden_size = int(hidden_size)
         self.num_heads = int(num_heads)
         self.num_kv_heads = int(num_kv_heads)
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.head_dim = int(head_dim or (self.hidden_size // max(1, self.num_heads)))
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
