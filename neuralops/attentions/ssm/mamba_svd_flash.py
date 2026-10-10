@@ -107,7 +107,7 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self):

@@ -209,7 +209,7 @@ class LoRALinear(nn.Module):
                 torch.empty(out_features, self.lora_rank, **factory)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             self.lora_A.requires_grad = True
             self.lora_B.requires_grad = True
         else:

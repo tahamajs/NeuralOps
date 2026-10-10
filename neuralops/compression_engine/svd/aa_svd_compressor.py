@@ -141,7 +141,7 @@ class SVDLinear(nn.Module):
 
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
-            self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_rank, **fk))
+            self.lora_B = nn.Parameter(torch.randn(self.out_features, self.lora_rank, **fk) * 1e-4)
             with torch.no_grad():
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -193,7 +193,7 @@ class SVDLinear(nn.Module):
                 nn.init.zeros_(self.bias)
             if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self._input_mean is not None:
