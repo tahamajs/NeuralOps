@@ -107,3 +107,18 @@ def compressor_registry():
     from neuralops.core.registry import COMPRESSOR_REGISTRY
     import neuralops.compression_engine  # noqa: F401
     return COMPRESSOR_REGISTRY
+
+# Skip the entire module on CPU for Triton kernels
+requires_cuda = pytest.mark.skipif(
+    not torch.cuda.is_available(),
+    reason="Requires CUDA"
+)
+
+requires_fp16_cuda = pytest.mark.skipif(
+    not (torch.cuda.is_available() and torch.cuda.is_bf16_supported()),
+    reason="Requires CUDA with fp16/bf16 support"
+)
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "requires_cuda: skip if no CUDA")
+    config.addinivalue_line("markers", "requires_fp16_cuda: skip if no fp16 CUDA")

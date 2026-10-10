@@ -188,7 +188,6 @@ class ZeroSAttention(BaseAttention):
             self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim

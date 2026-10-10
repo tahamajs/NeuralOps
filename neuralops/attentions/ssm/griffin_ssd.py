@@ -180,7 +180,6 @@ class GriffinSSDBlock(BaseAttention):
                     and hasattr(old_attn.k_proj, "out_features") and self.head_dim > 0):
                 kv_heads = old_attn.k_proj.out_features // self.head_dim
         self.num_kv_heads = int(kv_heads if kv_heads is not None else self.num_heads)
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
 
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim

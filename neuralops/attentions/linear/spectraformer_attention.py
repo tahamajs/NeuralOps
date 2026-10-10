@@ -183,7 +183,6 @@ class SpectraformerAttention(BaseAttention):
             or _cfg_get(config, "num_heads", 12)
         )
         self.num_kv_heads = (
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             kwargs.get("num_key_value_heads")
             or kwargs.get("num_kv_heads")
             or _cfg_get(
