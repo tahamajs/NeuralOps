@@ -5,22 +5,6 @@ Valid attention REPLACEMENT (not a compressor).
 Adds a small number of parameters (the gate) but reduces attention
 computation at long sequence lengths by routing some heads to linear attention.
 
-NOVELTY STATEMENT:
-    Hybrid softmax + linear attention is NOT novel by itself
-    (cf. MEGA 2023, BiGS 2024, Zipformer 2024). Our specific
-    formulation differs in:
-
-    1. PER-HEAD learned gate:
-         gate_h = sigmoid(W_h · hidden_states)
-       This allows different heads to prefer different attention types,
-       in contrast to MEGA's single-head gate.
-
-    2. Gate initialization to softmax-dominant (bias=10.0):
-       Ensures the model starts IDENTICAL to the original softmax attention.
-       The gate learns to route some heads to linear attention during training.
-
-    3. No extra parameters beyond the gate:
-       768 * 12 + 12 = 9,228 params (+0.014% on DistilBERT).
 
 """
 

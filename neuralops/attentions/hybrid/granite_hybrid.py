@@ -8,11 +8,12 @@ weight transfer. Hardened across DistilBERT, RoBERTa, GPT-2, Qwen3.5.
 Fixes applied:
   [FIX-1]  Mamba2 forward: vectorized parallel scan (no Python loop) — O(L) memory
   [FIX-2]  Mamba2 forward: chunked scan for long sequences (bounded memory)
+  [FIX-2b] Mamba2: full cache support (past_state → next_state) for step-by-step inference
   [FIX-3]  MoE: fp32 accumulation buffer, cast back to x.dtype at end
   [FIX-4]  MoE: auxiliary load-balancing loss (Switch Transformer style)
-  [FIX-5]  All trainable gates prefixed with `lora_` for KD optimizer detection
-  [FIX-6]  `alpha`/`moe_scale` initialized so Mamba+MoE start at zero contribution
-  [FIX-7]  Full KV-cache support (read + write + return present_key_value)
+  [FIX-5]  MoE experts + router prefixed with `lora_` for KD optimizer detection
+  [FIX-6]  `lora_alpha`/`lora_moe_scale` initialized so Mamba+MoE start at zero contribution
+  [FIX-7]  Full KV-cache support (read + write + return present_key_value), including Mamba state
   [FIX-8]  Final dropout after out_proj (matches GPT-2/teacher behavior)
   [FIX-9]  `copy_weights` handles LoRA-wrapped projections properly
   [FIX-10] Robust decoder detection
@@ -77,7 +78,7 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
 
 
 def _safe_mask_value(dtype: torch.dtype) -> float:
-    """[FIX-11] Use finfo.min for fp16/bf16 instead of -1e4 (which is -inf)."""
+    """[FIX-11] Use finfo.min for fp16/bf16 instead of -1e4."""
     if dtype in (torch.float16, torch.bfloat16):
         return torch.finfo(dtype).min
     return -1e9
@@ -128,19 +129,16 @@ def apply_rotary_pos_emb(
 
 
 # =============================================================================
-# Mamba-2 (parallel scan)
+# Mamba-2 (parallel scan) with full cache support
 # =============================================================================
 
 
 class Mamba2(nn.Module):
     r"""Simplified Mamba-2 State Space Model with parallel scan.
 
-    [FIX-1] The forward pass uses a vectorized parallel scan instead of a
-    Python `for` loop over sequence length. This eliminates the massive
-    computational graph that was causing OOM during backward.
-
-    [FIX-2] For very long sequences (L > threshold), we chunk into blocks
-    of `chunk_size` to bound peak memory.
+    [FIX-1] Vectorized parallel scan (no Python for-loop over sequence length).
+    [FIX-2] Chunked scan for long sequences (bounded memory).
+    [FIX-2b] Supports step-by-step inference via `past_state` / `next_state`.
 
     Recurrence:
         h_t = dA_t * h_{t-1} + dBx_t
@@ -180,155 +178,114 @@ class Mamba2(nn.Module):
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
 
     @staticmethod
-    def _parallel_scan(
-        dA: torch.Tensor,     # (B, L, inner, state)
-        dBx: torch.Tensor,    # (B, L, inner, state)
-    ) -> torch.Tensor:
-        """Associative parallel scan for the linear recurrence.
-
-        h_t = dA_t * h_{t-1} + dBx_t
-
-        We use a chunked scan: within each chunk, compute via cumprod trick.
-        Across chunks, propagate the final state sequentially.
+    def _vectorized_scan_with_chunks(
+        dA: torch.Tensor,
+        dBx: torch.Tensor,
+        initial_state: torch.Tensor | None = None,
+        chunk_size: int = 256,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Chunked parallel scan for the linear recurrence with initial state.
 
         Returns:
             h: (B, L, inner, state)
-        """
-        B, L, inner, state = dA.shape
-        h = torch.empty_like(dBx)
-
-        # Initialize running state
-        running_h = torch.zeros(B, inner, state, device=dA.device, dtype=dA.dtype)
-
-        # Process in chunks
-        for start in range(0, L, 1):
-            # Single-timestep update (vectorized over B, inner, state)
-            running_h = dA[:, start] * running_h + dBx[:, start]
-            h[:, start] = running_h
-
-        return h
-
-    @staticmethod
-    def _vectorized_scan_with_chunks(
-        dA: torch.Tensor,     # (B, L, inner, state)
-        dBx: torch.Tensor,    # (B, L, inner, state)
-        chunk_size: int = 256,
-    ) -> torch.Tensor:
-        """Chunked parallel scan for the linear recurrence.
-
-        For L <= chunk_size, uses a fully-vectorized intra-chunk scan based
-        on cumulative products. For L > chunk_size, propagates the state
-        across chunk boundaries sequentially.
-
-        Complexity: O(L * inner * state) time, O(L * inner * state) memory
-        for the output (h), plus O(chunk_size * inner * state) temporary.
+            final_state: (B, inner, state)
         """
         B, L, inner, state = dA.shape
         device, dtype = dA.device, dA.dtype
 
-        # Output buffer
         h = torch.empty(B, L, inner, state, device=device, dtype=dtype)
 
-        # Running state across chunks
-        running_h = torch.zeros(B, inner, state, device=device, dtype=dtype)
+        # [FIX-2b] Read initial state
+        running_h = (
+            initial_state
+            if initial_state is not None
+            else torch.zeros(B, inner, state, device=device, dtype=dtype)
+        )
+
+        # Fast path for single-token (step-by-step decode)
+        if L == 1:
+            running_h = dA[:, 0] * running_h + dBx[:, 0]
+            h[:, 0] = running_h
+            return h, running_h
 
         num_chunks = (L + chunk_size - 1) // chunk_size
         for chunk_idx in range(num_chunks):
             start = chunk_idx * chunk_size
             end = min(start + chunk_size, L)
-            chunk_len = end - start
 
-            # Slice chunk
-            dA_chunk = dA[:, start:end]     # (B, cl, inner, state)
-            dBx_chunk = dBx[:, start:end]   # (B, cl, inner, state)
+            dA_chunk = dA[:, start:end]
+            dBx_chunk = dBx[:, start:end]
 
-            # ---- Intra-chunk parallel scan ----
-            # We compute cumulative products of dA along the time dim.
-            # To avoid numerical issues, we work in log space for cumprod.
-            # log_dA = log(dA_chunk)   (dA_chunk > 0 since A < 0 and exp)
-            # cumsum of log_dA gives log of cumprod
-            #
-            # h_t = sum_{s<=t} (prod_{u=s+1..t} dA_u) * dBx_s
-            #     = cumprod_t * sum_{s<=t} dBx_s / cumprod_s
-            #
-            # We use a numerically-stable formulation via cumsum in log space.
+            log_dA = torch.log(dA_chunk.clamp(min=1e-20))
+            cum_log_dA = torch.cumsum(log_dA, dim=1)
 
-            log_dA = torch.log(dA_chunk.clamp(min=1e-20))   # (B, cl, inner, state)
-            cum_log_dA = torch.cumsum(log_dA, dim=1)        # (B, cl, inner, state)
+            dBx_scaled = dBx_chunk * torch.exp(-cum_log_dA)
+            cum_dBx = torch.cumsum(dBx_scaled, dim=1)
 
-            # Safe dBx_scaled = dBx_s / cumprod_s = dBx_s * exp(-cum_log_dA_s)
-            dBx_scaled = dBx_chunk * torch.exp(-cum_log_dA)  # (B, cl, inner, state)
-
-            # cumsum of dBx_scaled
-            cum_dBx = torch.cumsum(dBx_scaled, dim=1)       # (B, cl, inner, state)
-
-            # h_intra_t = cumprod_t * cum_dBx_t
-            h_intra = torch.exp(cum_log_dA) * cum_dBx        # (B, cl, inner, state)
-
-            # ---- Add propagation from previous chunk ----
-            # h_t also includes: (prod_{u=1..t} dA_u) * running_h
-            # = exp(cum_log_dA_t) * running_h
+            h_intra = torch.exp(cum_log_dA) * cum_dBx
             h_chunk = h_intra + torch.exp(cum_log_dA) * running_h.unsqueeze(1)
 
-            # Store output
             h[:, start:end] = h_chunk
-
-            # Update running state for next chunk
             running_h = h_chunk[:, -1]
 
-        return h
+        return h, running_h
 
-    def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        past_state: torch.Tensor | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Forward pass.
+
+        Args:
+            x: (B, L, d_model) input
+            past_state: (B, inner, state) optional recurrent state
+
+        Returns:
+            y: (B, L, d_model) output
+            next_state: (B, inner, state) final state for cache
+        """
         B, L, D = x.shape
         inner_dim = self.inner_dim
 
-        # ---- 1. Input projection + split ----
-        x_proj = self.in_proj(x)                        # (B, L, 2*inner)
-        x_ssm, z = x_proj.chunk(2, dim=-1)              # (B, L, inner) each
+        # 1. Input projection + split
+        x_proj = self.in_proj(x)
+        x_ssm, z = x_proj.chunk(2, dim=-1)
 
-        # ---- 2. Depthwise conv (causal) ----
+        # 2. Depthwise conv (causal)
         x_ssm = (
             self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L]
             .transpose(1, 2)
             .contiguous()
         )
 
-        # ---- 3. Discretization ----
-        dt = F.softplus(self.dt_proj(x_ssm))            # (B, L, inner), > 0
-
-        # A: (inner, state), stable in [-inf, 0)
+        # 3. Discretization
+        dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
-        # dA_t = exp(dt_t * A)  — (B, L, inner, state)
-        # Clamp the exponent to avoid overflow
-        dA_log = torch.einsum("bli,in->blin", dt, A)     # (B, L, inner, state)
+        dA_log = torch.einsum("bli,in->blin", dt, A)
         dA_log = torch.clamp(dA_log, min=-20.0, max=0.0)
         dA = torch.exp(dA_log)
 
-        # dBx_t = dt_t * x_t broadcast over state
         dBx = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
-        # Equivalent: dBx = x_ssm.unsqueeze(-1) * dt.unsqueeze(-1)
-        # (both x and dt broadcast over state)
 
-        # ---- 4. Parallel scan ----
-        if L <= self.chunk_size:
-            # Fast path: direct vectorized scan for short sequences
-            h = self._vectorized_scan_with_chunks(dA, dBx, chunk_size=L)
-        else:
-            # Chunked scan for long sequences
-            h = self._vectorized_scan_with_chunks(dA, dBx, chunk_size=self.chunk_size)
+        # 4. Parallel scan (with optional cached state)
+        chunk = min(L, self.chunk_size) if L > 0 else 1
+        h, next_state = self._vectorized_scan_with_chunks(
+            dA, dBx, initial_state=past_state, chunk_size=chunk
+        )
 
-        # ---- 5. Output readout ----
-        # y_t = sum_state(h_t * D_broadcast)
-        y = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1)   # (B, L, inner)
+        # 5. Output readout
+        y = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1)
 
-        # ---- 6. Gating + output projection ----
+        # 6. Gating + output projection
         y = y * F.silu(z)
-        return self.out_proj(y)
+        return self.out_proj(y), next_state
 
 
 # =============================================================================
-# Mixture of Experts
+# Mixture of Experts — with lora_ prefixes for KD optimizer
 # =============================================================================
 
 
@@ -337,6 +294,7 @@ class MixtureOfExperts(nn.Module):
 
     [FIX-3] Accumulates in fp32, casts back at the end.
     [FIX-4] Returns auxiliary load-balancing loss.
+    [FIX-5] Experts + router prefixed with `lora_` for KD optimizer detection.
     """
 
     def __init__(
@@ -351,10 +309,9 @@ class MixtureOfExperts(nn.Module):
         self.dim = dim
         self.num_experts = num_experts
         self.top_k = top_k
-        # Trainable output scale, prefixed with lora_ for KD optimizer
-        self.lora_output_scale = nn.Parameter(torch.ones(1))
 
-        self.experts: nn.ModuleList = nn.ModuleList(
+        # [FIX-5] lora_ prefix ensures KD optimizer picks these up
+        self.lora_experts: nn.ModuleList = nn.ModuleList(
             [
                 nn.Sequential(
                     nn.Linear(dim, ff_dim),
@@ -364,7 +321,17 @@ class MixtureOfExperts(nn.Module):
                 for _ in range(num_experts)
             ]
         )
-        self.router: nn.Linear = nn.Linear(dim, num_experts)
+        self.lora_router: nn.Linear = nn.Linear(dim, num_experts)
+        self.lora_output_scale = nn.Parameter(torch.ones(1))
+
+    # ---- Backward-compat aliases ----
+    @property
+    def experts(self) -> nn.ModuleList:
+        return self.lora_experts
+
+    @property
+    def router(self) -> nn.Linear:
+        return self.lora_router
 
     def forward(
         self, x: torch.Tensor, **kwargs: Any
@@ -372,53 +339,40 @@ class MixtureOfExperts(nn.Module):
         """Forward pass.
 
         Returns:
-            out: (B, L, dim) — MoE output
-            aux_loss: scalar — load-balancing loss
+            out: (B, L, dim) MoE output
+            aux_loss: scalar load-balancing loss
         """
         B, L, D = x.shape
         orig_dtype = x.dtype
         E = self.num_experts
 
         # ---- Routing ----
-        scores = self.router(x)                              # (B, L, E)
+        scores = self.lora_router(x)
         k = min(self.top_k, E)
-        topk_weights, topk_indices = torch.topk(scores, k, dim=-1)  # (B, L, k)
-        topk_weights = F.softmax(topk_weights, dim=-1)               # (B, L, k)
+        topk_weights, topk_indices = torch.topk(scores, k, dim=-1)
+        topk_weights = F.softmax(topk_weights, dim=-1)
 
-        # ---- [FIX-3] Accumulate in fp32 to avoid fp16 overflow ----
+        # ---- [FIX-3] fp32 accumulation ----
         out = torch.zeros(B, L, D, device=x.device, dtype=torch.float32)
 
-        # ---- Per-expert dispatch ----
-        # We dispatch all tokens to each expert, then mask.
-        # This is simpler than scatter/gather and works for small E.
         for e in range(E):
-            # mask[b, l] = 1 if expert e is in top-k for this token
-            mask = (topk_indices == e).any(dim=-1)               # (B, L)
+            mask = (topk_indices == e).any(dim=-1)
             if not mask.any():
                 continue
 
-            # Weight for expert e on this token (0 if not selected)
             weight_e = (topk_weights * (topk_indices == e).float()).sum(dim=-1, keepdim=True)
-            # (B, L, 1)
-
-            # Apply expert to ALL tokens, mask afterwards
-            expert_out = self.experts[e](x)                      # (B, L, D)
+            expert_out = self.lora_experts[e](x)
             out = out + (mask.unsqueeze(-1) * weight_e * expert_out).float()
 
-        # ---- Output scale ----
         out = out * self.lora_output_scale.float()
 
-        # ---- [FIX-4] Load-balancing auxiliary loss ----
-        # aux_loss = E * sum_e (f_e * P_e)
-        # where f_e = fraction of tokens routed to expert e
-        #       P_e = mean router probability for expert e
+        # ---- [FIX-4] Load-balancing loss ----
         with torch.no_grad():
-            one_hot = F.one_hot(topk_indices, num_classes=E).float()  # (B, L, k, E)
-            f_e = one_hot.sum(dim=(0, 1, 2)) / (B * L * k)            # (E,)
-        P_e = F.softmax(scores, dim=-1).mean(dim=(0, 1))              # (E,)
+            one_hot = F.one_hot(topk_indices, num_classes=E).float()
+            f_e = one_hot.sum(dim=(0, 1, 2)) / (B * L * k)
+        P_e = F.softmax(scores, dim=-1).mean(dim=(0, 1))
         aux_loss = (E * (f_e * P_e).sum()).to(orig_dtype)
 
-        # Cast back to original dtype
         out = out.to(orig_dtype)
         return out, aux_loss
 
@@ -428,27 +382,19 @@ class MixtureOfExperts(nn.Module):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register(
-    "granite_hybrid",
-    supports_causal=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
-    "granite_hybrid_block",
-    supports_causal=True,
-    supports_gqa=True,
-)
+@ATTENTION_REGISTRY.register("granite_hybrid", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("granite_hybrid_block", supports_causal=True, supports_gqa=True)
 class GraniteHybridBlock(BaseAttention):
     r"""Granite Hybrid: Attention + Mamba-2 + MoE with LoRA.
 
     Architecture:
         x_in → [Attention; Mamba-2] → gated fusion → MoE FFN → x_out
 
-    The fusion gate `sigmoid(alpha)` is initialized so that at step 0 the
-    Mamba branch contributes ~0 and the model starts as pure attention
+    The fusion gate `sigmoid(lora_alpha)` is initialized so that at step 0
+    the Mamba branch contributes ~0 and the model starts as pure attention
     (matching the pretrained teacher).
 
-    [FIX-6] `alpha` init to +6.0 → sigmoid ≈ 0.9975 → attention dominant.
+    [FIX-6] `lora_alpha` init to +6.0 → sigmoid ≈ 0.9975 → attention dominant.
     """
 
     is_custom_attention: bool = True
@@ -589,9 +535,9 @@ class GraniteHybridBlock(BaseAttention):
         tk = int(_get("top_k", kwargs.get("top_k", top_k)))
         self.moe = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
 
-        # ---- [FIX-5, FIX-6] Trainable fusion gates with `lora_` prefix ----
-        # Initialized so Mamba contribution ≈ 0 and MoE contribution = 0
-        # at step 0 → model starts as pure attention.
+        # ---- [FIX-5, FIX-6] Trainable fusion gates ----
+        # Note: `lora_alpha` here overrides the float set above (intentional:
+        # we want a trainable tensor for fusion).
         self.lora_alpha = nn.Parameter(torch.tensor(6.0))
         self.lora_moe_scale = nn.Parameter(torch.zeros(1))
 
@@ -629,169 +575,100 @@ class GraniteHybridBlock(BaseAttention):
     def c_proj(self): return self.out_proj
 
     # ------------------------------------------------------------------
-    # KV-cache helpers  — [FIX-7]
+    # KV-cache helpers  — [FIX-7] includes Mamba state
     # ------------------------------------------------------------------
     @staticmethod
     def _read_past_kv(
         past_key_value: Any, layer_idx: int
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int, torch.Tensor | None]:
+        """Return (past_k, past_v, past_len, past_mamba_state)."""
         if past_key_value is None or past_key_value is False:
-            return None, None, 0
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            kc, vc = past_key_value.key_cache, past_key_value.value_cache
-            if len(kc) == 0 or layer_idx >= len(kc):
-                return None, None, 0
-            k = kc[layer_idx]
-            v = vc[layer_idx] if layer_idx < len(vc) else None
+            return None, None, 0, None
+
+        # Hybrid tuple: (k, v, mamba_state)
+        if isinstance(past_key_value, (tuple, list)):
+            if len(past_key_value) == 0:
+                return None, None, 0, None
+            first = past_key_value[0]
+            # Nested per-layer cache
+            if isinstance(first, (tuple, list)):
+                if layer_idx < len(past_key_value):
+                    entry = past_key_value[layer_idx]
+                    if not isinstance(entry, (tuple, list)) or len(entry) < 2 or entry[0] is None:
+                        return None, None, 0, None
+                    k, v = entry[0], entry[1]
+                    m_state = entry[2] if len(entry) >= 3 else None
+                    return k, v, k.shape[-2], m_state
+                return None, None, 0, None
+            # Flat tuple (k, v) or (k, v, mamba_state)
+            k = past_key_value[0]
+            v = past_key_value[1] if len(past_key_value) > 1 else None
+            m_state = past_key_value[2] if len(past_key_value) >= 3 else None
             if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
-        return None, None, 0
+                return None, None, 0, m_state
+            return k, v, k.shape[-2], m_state
+
+        # DynamicCache-like object
+        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+            if layer_idx < len(past_key_value.key_cache):
+                k = past_key_value.key_cache[layer_idx]
+                if k is None:
+                    return None, None, 0, None
+                v = None
+                if hasattr(past_key_value, "value_cache") and layer_idx < len(past_key_value.value_cache):
+                    v = past_key_value.value_cache[layer_idx]
+                m_state = getattr(past_key_value, "_mamba_states", None)
+                if isinstance(m_state, list) and layer_idx < len(m_state):
+                    m_state = m_state[layer_idx]
+                else:
+                    m_state = None
+                return k, v, k.shape[-2], m_state
+
+        return None, None, 0, None
 
     @staticmethod
     def _write_past_kv(
         k: torch.Tensor,
         v: torch.Tensor,
+        mamba_state: torch.Tensor | None,
         past_key_value: Any,
         layer_idx: int,
     ) -> Any:
+        """Write to cache. Returns updated past_key_value."""
+        # DynamicCache with update()
         if past_key_value is not None and hasattr(past_key_value, "update"):
             try:
                 past_key_value.update(k, v, layer_idx)
+                if mamba_state is not None:
+                    if not hasattr(past_key_value, "_mamba_states"):
+                        past_key_value._mamba_states = []
+                    while len(past_key_value._mamba_states) <= layer_idx:
+                        past_key_value._mamba_states.append(None)
+                    past_key_value._mamba_states[layer_idx] = mamba_state
                 return past_key_value
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("DynamicCache.update failed: %s", e)
+
+        # DynamicCache-like append
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
                 past_key_value.key_cache[layer_idx] = k
-                if layer_idx < len(past_key_value.value_cache):
+                if hasattr(past_key_value, "value_cache") and layer_idx < len(past_key_value.value_cache):
                     past_key_value.value_cache[layer_idx] = v
             else:
                 past_key_value.key_cache.append(k)
-                past_key_value.value_cache.append(v)
+                if hasattr(past_key_value, "value_cache"):
+                    past_key_value.value_cache.append(v)
+            if mamba_state is not None:
+                if not hasattr(past_key_value, "_mamba_states"):
+                    past_key_value._mamba_states = []
+                while len(past_key_value._mamba_states) <= layer_idx:
+                    past_key_value._mamba_states.append(None)
+                past_key_value._mamba_states[layer_idx] = mamba_state
             return past_key_value
-        return (k, v)
 
-    # ------------------------------------------------------------------
-    # Attention forward
-    # ------------------------------------------------------------------
-    def _attn_forward(
-        self,
-        q_in: torch.Tensor,
-        k_in: torch.Tensor,
-        v_in: torch.Tensor,
-        attention_mask: torch.Tensor | None = None,
-        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
-        past_key_value: Any | None = None,
-        **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None, Any]:
-        B, L_q, _ = q_in.shape
-        L_kv_new = k_in.shape[1]
-        H = self.num_heads
-        H_kv = self.num_kv_heads
-        Dh = self.head_dim
-        device = q_in.device
-
-        # ---- Projections ----
-        q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
-        k_new = self.k_proj(k_in).view(B, L_kv_new, H_kv, Dh).transpose(1, 2).contiguous()
-        v_new = self.v_proj(v_in).view(B, L_kv_new, H_kv, Dh).transpose(1, 2).contiguous()
-
-        # ---- [FIX-7] Read past KV-cache ----
-        past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
-
-        # ---- RoPE with past offset ----
-        pos_emb = (
-            position_embeddings if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
-        pos_ids = kwargs.get("position_ids")
-        if pos_ids is None and past_len > 0:
-            pos_ids = torch.arange(
-                past_len, past_len + L_kv_new, device=device
-            ).unsqueeze(0).expand(B, -1)
-
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
-            cos, sin = pos_emb[0], pos_emb[1]
-            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, pos_ids)
-        elif self.rotary_emb is not None:
-            try:
-                if pos_ids is not None:
-                    cos, sin = self.rotary_emb(k_new, position_ids=pos_ids)
-                else:
-                    cos, sin = self.rotary_emb(k_new)
-                q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, pos_ids)
-            except Exception as e:
-                logger.debug("rotary_emb failed: %s", e)
-
-        # ---- Concat KV-cache ----
-        if past_k is not None:
-            K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
-            V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
-        else:
-            K, V = k_new, v_new
-
-        # ---- [FIX-7] Write back to cache ----
-        present_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
-        if use_cache:
-            present_kv = self._write_past_kv(K, V, past_key_value, self.layer_idx)
-        else:
-            present_kv = past_key_value
-
-        L_kv = K.shape[-2]
-
-        # ---- GQA repeat ----
-        if self.kv_repeat > 1:
-            K_full = repeat_kv(K, self.kv_repeat)
-            V_full = repeat_kv(V, self.kv_repeat)
-        else:
-            K_full, V_full = K, V
-
-        # ---- Scores ----
-        scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
-
-        # ---- Causal mask ----
-        if self.is_decoder:
-            # Bottom-right aligned
-            q_idx = torch.arange(past_len, past_len + L_q, device=device).unsqueeze(1)
-            k_idx = torch.arange(L_kv, device=device).unsqueeze(0)
-            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)  # (1, 1, L_q, L_kv)
-            mask_val = _safe_mask_value(scores.dtype)
-            scores = scores.masked_fill(~causal, mask_val)
-
-        # ---- Padding mask ----
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                pad_mask = (attention_mask == 0).view(B, 1, 1, L_kv)
-                mask_val = _safe_mask_value(scores.dtype)
-                scores = scores.masked_fill(pad_mask, mask_val)
-            elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.to(scores.dtype)
-
-        # ---- Softmax ----
-        scores = torch.nan_to_num(scores, nan=-1e9, posinf=1e9, neginf=-1e9)
-        attn_weights = F.softmax(scores.float(), dim=-1).to(q_in.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-
-        context = torch.matmul(attn_weights, V_full)
-        context = context.transpose(1, 2).contiguous().view(B, L_q, self.all_head_size)
-
-        if self.is_nested_encoder:
-            out = context
-        else:
-            out = self.out_proj(context)
-        # ---- [FIX-8] Final dropout ----
-        out = self.dropout(out)
-        return out, attn_weights, present_kv
+        # Plain tuple
+        return (k, v, mamba_state)
 
     # ------------------------------------------------------------------
     # Forward
@@ -811,42 +688,126 @@ class GraniteHybridBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple input
+        # Unwrap tuple input (HF compatibility)
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        if encoder_hidden_states is not None:
-            # Cross-attention is not supported; pass through
+        is_cross = encoder_hidden_states is not None
+        if is_cross:
+            # Cross-attention not supported here — pass through
             return hidden_states, None
 
-        # ---- Attention branch ----
-        attn_out, attn_weights, present_kv = self._attn_forward(
-            hidden_states, hidden_states, hidden_states,
-            attention_mask=attention_mask,
-            position_embeddings=position_embeddings,
-            past_key_value=past_key_value,
-            **kwargs,
+        B, L, D = hidden_states.shape
+        device = hidden_states.device
+        H, Dh = self.num_heads, self.head_dim
+        H_kv = self.num_kv_heads
+
+        # ---- Read past KV + Mamba state ----
+        past_k, past_v, past_len, past_mamba_state = self._read_past_kv(
+            past_key_value, self.layer_idx
         )
 
-        # ---- Mamba branch ----
-        mamba_out = self.mamba(hidden_states)
+        # ---- Q/K/V projections ----
+        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k_new = self.k_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
+        v_new = self.v_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
 
-        # ---- Gated fusion ----
-        # [FIX-6] sigmoid(6.0) ≈ 0.9975 → attention dominant at init
-        gate = torch.sigmoid(self.lora_alpha)
-        x = gate * attn_out + (1.0 - gate) * mamba_out
+        # ---- RoPE with past offset ----
+        pos_emb = (
+            position_embeddings if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
+        pos_ids = kwargs.get("position_ids")
+        if pos_ids is None and past_len > 0:
+            pos_ids = torch.arange(
+                past_len, past_len + L, device=device
+            ).unsqueeze(0).expand(B, -1)
+
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, pos_ids)
+        elif self.rotary_emb is not None:
+            try:
+                if pos_ids is not None:
+                    cos, sin = self.rotary_emb(k_new, position_ids=pos_ids)
+                else:
+                    cos, sin = self.rotary_emb(k_new)
+                q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, pos_ids)
+            except Exception as e:
+                logger.debug("rotary_emb failed: %s", e)
+
+        # ---- Concat KV-cache ----
+        if past_k is not None and past_v is not None:
+            K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
+            V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
+        else:
+            K, V = k_new, v_new
+
+        N_kv = K.shape[-2]
+
+        # ---- GQA repeat ----
+        if self.kv_repeat > 1:
+            K_full = repeat_kv(K, self.kv_repeat)
+            V_full = repeat_kv(V, self.kv_repeat)
+        else:
+            K_full, V_full = K, V
+
+        # ---- Attention scores ----
+        scale = 1.0 / math.sqrt(Dh)
+        scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+        mask_val = _safe_mask_value(scores.dtype)
+
+        # ---- Causal mask (bottom-right aligned) ----
+        if self.is_decoder:
+            q_idx = torch.arange(past_len, past_len + L, device=device).unsqueeze(1)
+            k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
+            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+            scores = scores.masked_fill(~causal, mask_val)
+
+        # ---- Padding mask ----
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = (attention_mask == 0).view(B, 1, 1, N_kv)
+                scores = scores.masked_fill(pad_mask, mask_val)
+            elif attention_mask.dim() == 3:
+                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask.to(scores.dtype)
+
+        # ---- Softmax + context ----
+        scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e9, neginf=mask_val)
+        attn_weights = F.softmax(scores.float(), dim=-1).to(hidden_states.dtype)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+
+        context = torch.matmul(attn_weights, V_full)
+        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+
+        if self.is_nested_encoder:
+            attn_out = context
+        else:
+            attn_out = self.out_proj(context)
+        attn_out = self.dropout(attn_out)
+
+        # ---- Mamba-2 branch (with cache) ----
+        mamba_out, next_mamba_state = self.mamba(
+            hidden_states, past_state=past_mamba_state
+        )
+
+        # ---- [FIX] Per-head gated fusion using lora_gate ----
+        gate_out = self.lora_gate(hidden_states.float())          # (B, N, H)
+        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)  # (B, H, N, 1)
+        g = g.to(attn_out.dtype)
+        x = g * attn_out + (1.0 - g) * mamba_out
 
         # ---- MoE branch ----
-        # [FIX-6] moe_scale starts at 0 → MoE contributes nothing at init
         moe_out, moe_aux_loss = self.moe(x)
         x = x + self.lora_moe_scale * moe_out
 
-        # ---- Store aux loss for training (accessible via attribute) ----
         self._last_moe_aux_loss = moe_aux_loss
 
-        # ---- Pad/trim if shapes mismatch (should not happen) ----
+        # ---- Safety: shape alignment (should not happen) ----
         if x.shape[-1] != hidden_states.shape[-1]:
             if x.shape[-1] < hidden_states.shape[-1]:
                 x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1]))
@@ -855,12 +816,28 @@ class GraniteHybridBlock(BaseAttention):
 
         x = torch.nan_to_num(x, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        # ---- Write back to cache ----
+        use_cache = kwargs.get("use_cache", False) or (
+            past_key_value is not None and past_key_value is not False
+        )
+        present_kv: Any = None
+        if use_cache:
+            present_kv = self._write_past_kv(
+                K, V, next_mamba_state, past_key_value, self.layer_idx
+            )
+        else:
+            present_kv = past_key_value
+
         attn_ret = attn_weights if output_attentions else None
 
-        # ---- Return format: match HF expectations ----
+        # ---- HF return format ----
         if self.is_decoder:
+            if output_attentions:
+                return x, present_kv, attn_ret
             return x, present_kv
-        return x, attn_ret
+        if output_attentions:
+            return x, attn_ret
+        return x, None
 
     # ------------------------------------------------------------------
     # Copy weights  — [FIX-9]
@@ -950,12 +927,11 @@ class GraniteHybridBlock(BaseAttention):
                 target_weight = base.weight
                 tw_shape = target_weight.shape
 
-                # Orientation / shape alignment
                 if w.shape == tw_shape:
                     pass
                 elif w.t().contiguous().shape == tw_shape:
                     w = w.t().contiguous()
-                elif (w.shape[0] < tw_shape[0] and tw_shape[0] % w.shape[0] == 0):
+                elif w.shape[0] < tw_shape[0] and tw_shape[0] % w.shape[0] == 0:
                     repeats = tw_shape[0] // w.shape[0]
                     w = w.repeat(repeats, 1)
                 else:
@@ -979,7 +955,6 @@ class GraniteHybridBlock(BaseAttention):
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
 
-        # ---- Update decoder flag from src ----
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
 
@@ -1006,10 +981,7 @@ def inject_granite_hybrid(
     lora_rank: int = 16,
     **kwargs: Any,
 ) -> Any | None:
-    """Inject GraniteHybridBlock into supported transformer layers.
-
-    Handles whole-model traversal + single-layer injection.
-    """
+    """Inject GraniteHybridBlock into supported transformer layers."""
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer"))
@@ -1075,7 +1047,6 @@ def inject_granite_hybrid(
     if src is None and cfg is None:
         return None
 
-    # Skip if already injected
     if isinstance(src, GraniteHybridBlock) or "GraniteHybrid" in src.__class__.__name__:
         return None
 
@@ -1092,7 +1063,6 @@ def inject_granite_hybrid(
         logger.exception("Failed to construct GraniteHybridBlock: %s", e)
         return None
 
-    # Move to same device/dtype as source
     try:
         p = next(src.parameters(), None)
         if p is not None:
@@ -1100,7 +1070,6 @@ def inject_granite_hybrid(
     except StopIteration:
         pass
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):
