@@ -245,10 +245,10 @@ class HybridAttention(BaseAttention):
         # Per-head gate
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
 
-        # Initialize gate to prefer softmax (sigmoid(10.0) ≈ 0.99995)
+        # Initialize gate to balanced 50/50 mixture (bias=0.0) so linear compression branch is active
         with torch.no_grad():
-            self.ensemble_gate.weight.zero_()
-            self.ensemble_gate.bias.fill_(10.0)
+            self.ensemble_gate.weight.normal_(mean=0.0, std=0.02)
+            self.ensemble_gate.bias.zero_()
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
