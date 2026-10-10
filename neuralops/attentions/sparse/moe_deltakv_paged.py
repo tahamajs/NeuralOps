@@ -872,7 +872,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         # ---- Per-expert attention ----
         q_exp = q_blocks.unsqueeze(3)  # (B,H,num_pages,1,page_size,d)
         attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
-        attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -1e4)
+        attn_scores = attn_scores.masked_fill(~k_valid.bool().unsqueeze(-2), -1e4)
         attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         attn_probs = F.softmax(attn_scores, dim=-1)
@@ -1008,7 +1008,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 )
                 scores = scores + causal
 
-            scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
+            scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
             attn_probs = F.softmax(scores, dim=-1).to(dtype)

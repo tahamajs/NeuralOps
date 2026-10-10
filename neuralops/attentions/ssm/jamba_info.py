@@ -859,9 +859,11 @@ class JambaInfoBlock(BaseAttention):
         )
 
         # ---- RoPE ----
-        position_embeddings = position_embeddings or kwargs.get("position_embeddings")
         if position_embeddings is None:
-            position_ids = position_ids or kwargs.get("position_ids")
+            position_embeddings = kwargs.get("position_embeddings")
+        if position_embeddings is None:
+            if position_ids is None:
+                position_ids = kwargs.get("position_ids")
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
