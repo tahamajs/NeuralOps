@@ -914,11 +914,14 @@ class SpanExpandedAttention(BaseAttention):
         attn_weights = probs if output_attentions else None
 
         if self.is_nested_encoder:
-            return context, attn_weights, present_key_value
+            out = context
+        else:
+            out = self.out_proj(context)
+            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        out = self.out_proj(context)
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
-        return out, attn_weights, present_key_value
+        if output_attentions:
+            return out, attn_weights, present_key_value
+        return out, present_key_value
 
 
 # ===========================================================================

@@ -633,7 +633,7 @@ class DynamicConvAttention(BaseAttention):
         out = self._chunked_windowed_conv(v_full, dyn_w, chunk=self._CONV_CHUNK)
 
         # ---------------- Reshape, dropout, head_mask ----------------
-        out = out.permute(0, 2, 1, 3).contiguous().view(B, N, D)
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         out = self.dropout(out)
 
@@ -647,7 +647,7 @@ class DynamicConvAttention(BaseAttention):
                 hm = hm.expand(B, H, N) if hm.shape[0] != B else hm
             out_h = out.view(B, N, H, d).permute(0, 2, 1, 3)  # (B, H, N, d)
             out_h = out_h * hm.unsqueeze(-1)
-            out = out_h.permute(0, 2, 1, 3).contiguous().view(B, N, D)
+            out = out_h.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         # ---------------- Output projection ----------------
         if self.is_nested_encoder:

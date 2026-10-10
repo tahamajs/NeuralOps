@@ -1172,8 +1172,10 @@ class MambaSVDFlash(BaseAttention):
             "seq_len": past_len + L,
         }
 
-        attn_weights = probs if output_attentions else None
-        return out, attn_weights, present_key_value
+        if output_attentions:
+            attn_weights = probs if probs is not None else None
+            return out, attn_weights, present_key_value
+        return out, present_key_value
 
     def _apply_head_mask(self, head_mask: torch.Tensor, probs: torch.Tensor) -> torch.Tensor:
         """MSF-FIX-11: unified head_mask broadcast. probs: (B, H, Lq, Lk)."""
