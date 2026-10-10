@@ -1072,9 +1072,13 @@ class XAttention(BaseAttention):
             v_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
             output = output * v_m.unsqueeze(-1).to(output.dtype)
 
+        if output_attentions:
+            return output.to(dtype), (
+                new_past_key_value if self.is_decoder else None
+            ), attn
         return output.to(dtype), (
             new_past_key_value if self.is_decoder else None
-        ), (attn if output_attentions else None)
+        )
 
 
 # ===========================================================================
