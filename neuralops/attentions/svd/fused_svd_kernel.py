@@ -564,7 +564,8 @@ class FusedSVDKernelAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        self.rank: int = actual_rank
+        max_rank = min(self.hidden_size, self.all_head_size) // 2
+        self.rank: int = min(actual_rank, max_rank)
         self.use_fused_kernel: bool = use_fused_kernel
         self.use_rms_norm: bool = use_rms_norm
 
