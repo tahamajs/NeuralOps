@@ -140,7 +140,7 @@ class SimpleSSM(BaseAttention):
         )
 
         # Recurrence decay gate
-        self.decay_param = nn.Parameter(torch.zeros(self.num_heads, 1, 1))
+        self.decay_param = nn.Parameter(torch.randn(self.num_heads, 1, 1) * 0.05 - 1.0)
 
         # Architecture detection
         model_type = str(_get("model_type", "")).lower()
