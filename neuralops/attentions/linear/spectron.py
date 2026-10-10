@@ -425,13 +425,13 @@ class SpectronAttention(BaseAttention):
         # ---- LoRA adapters ----
         if self.lora_rank > 0:
             self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
-            self.q_lora_B = nn.Parameter(torch.zeros(self.q_head_size, self.lora_rank))
+            self.q_lora_B = nn.Parameter(torch.randn(self.q_head_size, self.lora_rank) * 1e-4)
             self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
-            self.k_lora_B = nn.Parameter(torch.zeros(self.kv_head_size, self.lora_rank))
+            self.k_lora_B = nn.Parameter(torch.randn(self.kv_head_size, self.lora_rank) * 1e-4)
             self.v_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
-            self.v_lora_B = nn.Parameter(torch.zeros(self.kv_head_size, self.lora_rank))
+            self.v_lora_B = nn.Parameter(torch.randn(self.kv_head_size, self.lora_rank) * 1e-4)
             self.o_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.q_head_size))
-            self.o_lora_B = nn.Parameter(torch.zeros(self.hidden_size, self.lora_rank))
+            self.o_lora_B = nn.Parameter(torch.randn(self.hidden_size, self.lora_rank) * 1e-4)
             for p_a in (self.q_lora_A, self.k_lora_A, self.v_lora_A, self.o_lora_A):
                 nn.init.kaiming_uniform_(p_a, a=math.sqrt(5))
         else:

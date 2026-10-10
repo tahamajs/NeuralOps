@@ -284,9 +284,9 @@ class HGRN2Layer(BaseAttention):
         # ---- LoRA adapters ----
         if self.lora_rank > 0:
             self.v_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
-            self.v_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
+            self.v_lora_B = nn.Parameter(torch.randn(self.d_model, self.lora_rank) * 1e-4)
             self.out_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
-            self.out_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
+            self.out_lora_B = nn.Parameter(torch.randn(self.d_model, self.lora_rank) * 1e-4)
         else:
             self.register_parameter("v_lora_A", None)
             self.register_parameter("v_lora_B", None)

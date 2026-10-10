@@ -159,7 +159,7 @@ class HashedLinear(nn.Module):
                 torch.empty(self.lora_rank, self.in_features, dtype=dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(self.out_features, self.lora_rank, dtype=dtype, device=device)
+                torch.randn(self.out_features, self.lora_rank, dtype=dtype, device=device) * 1e-4
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:

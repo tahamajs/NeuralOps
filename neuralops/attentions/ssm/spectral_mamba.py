@@ -420,7 +420,7 @@ class SpectralMambaAttention(BaseAttention):
         self.register_buffer("gate_weight", torch.zeros(1, self.hidden_size))
         self.register_buffer("gate_bias", torch.tensor([10.0]))
         self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
-        self.gate_lora_B = nn.Parameter(torch.zeros(1, 4))
+        self.gate_lora_B = nn.Parameter(torch.randn(1, 4) * 1e-4)
 
         dropout_p = _cfg_get(
             config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
