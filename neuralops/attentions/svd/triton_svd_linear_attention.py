@@ -1163,8 +1163,6 @@ class TritonSVDLinearAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("inject_triton_svd_linear_attention")
-@ATTENTION_REGISTRY.register("triton_svd_linear_attention_inject")
 def inject_triton_svd_linear_attention(
     model: nn.Module = None,
     rank: int = 64,

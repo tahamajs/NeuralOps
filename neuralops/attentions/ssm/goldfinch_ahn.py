@@ -270,9 +270,6 @@ class GatedRecurrentMemory(nn.Module):
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "goldfinch", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
 class GoldFinchAHNBlock(BaseAttention):
     """
     GoldFinch-AHN: hybrid sliding-window attention + gated recurrent memory.

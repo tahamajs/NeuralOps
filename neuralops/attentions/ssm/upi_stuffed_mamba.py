@@ -124,10 +124,6 @@ class LoRALinear(nn.Module):
         return out.to(target_dtype)
 
 
-@ATTENTION_REGISTRY.register("selective_mamba", supports_causal=True, supports_bidirectional=True)
-@ATTENTION_REGISTRY.register(
-    "upi_mamba", supports_causal=True, supports_bidirectional=True
-)  # DEPRECATED alias
 @ATTENTION_REGISTRY.register(
     "upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True
 )  # DEPRECATED alias

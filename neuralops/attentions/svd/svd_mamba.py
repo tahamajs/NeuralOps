@@ -187,7 +187,6 @@ class SVDLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
-@ATTENTION_REGISTRY.register("SVD_Mamba")
 class SVDMamba(BaseAttention):
     r"""SVD-Mamba module with SVD-factorized projections, causal convolution, and selective SSM."""
 

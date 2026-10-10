@@ -262,9 +262,6 @@ class LoRALinear(nn.Module):
 # HymbaTransX block
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
-    "hymba_transx_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class HymbaTransXBlock(BaseAttention):

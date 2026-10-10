@@ -151,12 +151,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "alibi_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "alibi",
     supports_causal=True,
     supports_bidirectional=True,
@@ -791,9 +785,6 @@ class ALiBiAttention(BaseAttention):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("inject_alibi")
-@ATTENTION_REGISTRY.register("alibi_inject")
-@ATTENTION_REGISTRY.register("alibi_attention_inject")
 def inject_alibi(
     layer: Any = None,
     model: Any = None,
