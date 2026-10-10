@@ -216,7 +216,7 @@ class FactorisedLinear(nn.Module):
                 )
                 # V5-FIX-12: consistent init with int path
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             else:
                 self.register_parameter("lora_A", None)
                 self.register_parameter("lora_B", None)
@@ -239,7 +239,7 @@ class FactorisedLinear(nn.Module):
             self.up = nn.Linear(self.rank, out_dim, bias=bias)
             if self.lora_rank > 0:
                 self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_dim))
-                self.lora_B = nn.Parameter(torch.zeros(out_dim, self.lora_rank))
+                self.lora_B = nn.Parameter(torch.randn(out_dim, self.lora_rank) * 1e-4)
             else:
                 self.register_parameter("lora_A", None)
                 self.register_parameter("lora_B", None)
@@ -253,7 +253,7 @@ class FactorisedLinear(nn.Module):
             nn.init.zeros_(self.up.bias)
         if self.lora_rank > 0:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     def decompose_from_weight(
         self,

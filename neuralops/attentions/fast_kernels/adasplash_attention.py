@@ -559,7 +559,7 @@ class AdaSplashAttention(BaseAttention):
                         nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
                         target.lora_A.requires_grad = True
                     if getattr(target, "lora_B", None) is not None:
-                        nn.init.zeros_(target.lora_B)
+                        nn.init.normal_(target.lora_B, mean=0.0, std=1e-4)
                         target.lora_B.requires_grad = True
             elif proj == "o" and is_nested_encoder:
                 with torch.no_grad():
@@ -575,7 +575,7 @@ class AdaSplashAttention(BaseAttention):
                         nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
                         target.lora_A.requires_grad = True
                     if getattr(target, "lora_B", None) is not None:
-                        nn.init.zeros_(target.lora_B)
+                        nn.init.normal_(target.lora_B, mean=0.0, std=1e-4)
                         target.lora_B.requires_grad = True
 
             target.weight.requires_grad = False

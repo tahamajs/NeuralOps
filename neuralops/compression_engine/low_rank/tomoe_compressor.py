@@ -269,7 +269,7 @@ class ToMoELinear(nn.Module):
                 torch.zeros(self.num_experts, self.lora_r, device=device, dtype=torch.float32)
             )
             nn.init.kaiming_uniform_(self.lora_A_router, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B_router)
+            nn.init.normal_(self.lora_B_router, mean=0.0, std=1e-4)
 
     @property
     def masks(self) -> list[torch.Tensor]:

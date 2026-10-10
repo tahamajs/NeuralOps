@@ -174,7 +174,7 @@ class KroneckerTTLoRALayer(nn.Module):
             torch.zeros((self.out_features, self.lora_r), dtype=dtype, device=device)
         )
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-        nn.init.zeros_(self.lora_B)
+        nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     # ------------------------------------------------------------------
     @classmethod
