@@ -108,7 +108,7 @@ class ResSVDLinear(nn.Module):
 
         if self.residual_rank > 0:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
         if self.bias is not None:
             fan_in = self.in_features

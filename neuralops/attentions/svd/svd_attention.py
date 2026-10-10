@@ -133,7 +133,7 @@ class LoRALinear(nn.Module):
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)

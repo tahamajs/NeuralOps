@@ -194,9 +194,9 @@ class CompressedDistilBertAttention(BaseAttention):
     def reset_lora_parameters(self) -> None:
         if self.lora_rank > 0:
             nn.init.kaiming_uniform_(self.lora_A_qkv, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B_qkv)
+            nn.init.normal_(self.lora_B_qkv, mean=0.0, std=1e-4)
             nn.init.kaiming_uniform_(self.lora_A_out, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B_out)
+            nn.init.normal_(self.lora_B_out, mean=0.0, std=1e-4)
             self.lora_A_qkv.requires_grad = True
             self.lora_B_qkv.requires_grad = True
             self.lora_A_out.requires_grad = True

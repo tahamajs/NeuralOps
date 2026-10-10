@@ -89,7 +89,7 @@ class QLoRALinear(nn.Module):
 
         # Trainable LoRA
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
-        self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
+        self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         base_out = self.base(x)
@@ -120,7 +120,7 @@ class DoRALinear(nn.Module):
         # Magnitude parameter m = ||W_0||_c
         self.magnitude = nn.Parameter(self.base.weight.norm(dim=1, keepdim=True).clone())
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
-        self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
+        self.lora_B = nn.Parameter(torch.randn(out_features, rank) * 1e-4)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Effective directional weight: V = W + scaling * (B @ A)
