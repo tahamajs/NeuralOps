@@ -27,7 +27,7 @@ _LEGACY_MAP = {
     'hgrn2_gated_outer': 'gated.hgrn2_gated_outer', 'hgrn2_gated_deltanet': 'gated.hgrn2_gated_deltanet',
     'hgrn2_gated_layer': 'gated.hgrn2_gated_layer', 'gated_delta_net': 'gated.gated_delta_net',
     'hla_attention': 'gated.hla_attention', 'decay_linear_attention': 'gated.decay_linear_attention',
-    'gated_linear_attention': 'gated.gated_linear_attention', 'regla_attention': 'hybrid.regla_attention',
+    'regla_attention': 'hybrid.regla_attention',
     'gated_hybrid_kernel_attention': 'hybrid.gated_hybrid_kernel_attention', 'spectron_fp8_attention': 'hybrid.spectron_fp8_attention',
     'optimized_hybrid_attention': 'hybrid.optimized_hybrid_attention', 'mixattention_moska': 'hybrid.mixattention_moska',
     'granite_hybrid': 'hybrid.granite_hybrid', 'landmark_local_attention': 'hybrid.landmark_local_attention',

@@ -11,7 +11,7 @@ import neuralops.compression_engine
 
 SMOKE_ATTENTIONS = [
     "cosformer",
-    "gated_linear_attention",
+    "decay_linear_attention",
     "gated_delta_net",
     "galerkin_attention",
     "rpc_attention",

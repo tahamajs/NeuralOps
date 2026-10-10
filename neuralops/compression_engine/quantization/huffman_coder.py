@@ -593,7 +593,6 @@ class HuffmanCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("huffman_coder")
 def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""
     bits = kwargs.pop(

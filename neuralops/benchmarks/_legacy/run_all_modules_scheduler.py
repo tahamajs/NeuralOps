@@ -97,7 +97,7 @@ ALL_ATTENTIONS = PRIORITY_ATTENTIONS + [
         "galerkin_attention",
         "gated_delta_net",
         "gated_deltanet_block",
-        "gated_linear_attention",
+        "decay_linear_attention",
         "goldfinch_ahn",
         "gqa_attention",
         "granite_hybrid",

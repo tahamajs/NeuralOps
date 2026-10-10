@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.attentions.svd_linear_decay import (
-    DecayGatedLinearAttention, inject_svd_linear_decay,
+    DecayDecayLinearAttention, inject_svd_linear_decay,
     inject_svd_linear_decay_attention)
 
 class DummyRobertaSelfAttention(nn.Module):
@@ -36,7 +36,7 @@ class DummyQwenAttention(nn.Module):
 
 def test_svd_linear_decay_basic():
     cfg = MockConfig()
-    attn = DecayGatedLinearAttention(config=cfg, rank=8)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8)
     assert attn.use_decay_gating is True
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -44,7 +44,7 @@ def test_svd_linear_decay_basic():
 
 def test_svd_linear_decay_trainable_lora_weights():
     cfg = MockConfig(lora_rank=8)
-    attn = DecayGatedLinearAttention(config=cfg, rank=8, freeze_svd=True)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8, freeze_svd=True)
     assert attn.q_proj.V.requires_grad is False
     assert attn.q_proj.U.requires_grad is False
     assert attn.q_proj.lora_A.requires_grad is True
@@ -53,7 +53,7 @@ def test_svd_linear_decay_trainable_lora_weights():
 def test_svd_linear_decay_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
-    attn = DecayGatedLinearAttention(config=cfg, rank=8, old_attn=old_attn)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8, old_attn=old_attn)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -61,7 +61,7 @@ def test_svd_linear_decay_distilbert_weight_copy():
 def test_svd_linear_decay_roberta_weight_copy():
     cfg = MockConfig()
     old_attn = DummyRobertaAttention(64)
-    attn = DecayGatedLinearAttention(config=cfg, rank=8, old_attn=old_attn)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8, old_attn=old_attn)
     assert attn.is_nested_encoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -70,7 +70,7 @@ def test_svd_linear_decay_roberta_weight_copy():
 def test_svd_linear_decay_gpt2_weight_copy():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     old_attn = DummyGPT2Attention(64)
-    attn = DecayGatedLinearAttention(config=cfg, rank=8, old_attn=old_attn)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8, old_attn=old_attn)
     assert attn.is_decoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -79,7 +79,7 @@ def test_svd_linear_decay_gpt2_weight_copy():
 def test_svd_linear_decay_qwen_gqa_and_rope():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, num_key_value_heads=2, head_dim=16, is_decoder=True, model_type="qwen2")
     old_attn = DummyQwenAttention(dim=64, num_kv_heads=2, head_dim=16)
-    attn = DecayGatedLinearAttention(config=cfg, rank=8, old_attn=old_attn)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8, old_attn=old_attn)
     assert attn.kv_repeat == 2
     x = torch.randn(2, 8, 64)
     cos = torch.randn(2, 8, 16)

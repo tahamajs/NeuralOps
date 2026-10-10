@@ -1209,7 +1209,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
 AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 
 
-@COMPRESSOR_REGISTRY.register("adaptive_ranks")
 def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Adaptive ranks factory function with robust None/dict/object config handling."""
     energy_threshold = kwargs.pop(
