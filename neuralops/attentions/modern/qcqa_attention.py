@@ -242,6 +242,7 @@ class QCQAAttention(BaseAttention):
         cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if num_kv_heads is not None:
             self.num_kv_heads = int(num_kv_heads)
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         elif cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         else:

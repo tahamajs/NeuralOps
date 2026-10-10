@@ -521,6 +521,7 @@ class LoLAAttention(BaseAttention):
                 cfg, "num_attention_heads", 12
             )
             self.num_kv_heads = self.adapter.num_key_value_heads or getattr(
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
                 cfg, "num_key_value_heads", self.num_heads
             )
             self.hidden_size = self.adapter.hidden_size or getattr(
