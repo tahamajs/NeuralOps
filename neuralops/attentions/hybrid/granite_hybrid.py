@@ -543,7 +543,7 @@ class GraniteHybridBlock(BaseAttention):
 
         # ---- [FIX] lora_gate: per-head gating Linear ----
         self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=False)
-        nn.init.zeros_(self.lora_gate.weight)
+        nn.init.normal_(self.lora_gate.weight, mean=0.0, std=1e-4)
 
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
@@ -800,7 +800,7 @@ class GraniteHybridBlock(BaseAttention):
         )
 
         # ---- [FIX] Per-head gated fusion using lora_gate ----
-        gate_out = self.lora_gate(hidden_states.float())          # (B, N, H)
+        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))  # (B, N, H)
         g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)  # (B, N, 1)
         x = g * attn_out + (1.0 - g) * mamba_out
 
