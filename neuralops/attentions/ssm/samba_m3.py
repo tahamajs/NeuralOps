@@ -689,7 +689,7 @@ class SAMBAM3Block(nn.Module):
         # ---- QKV ----
         q = (
             self.q_lin(hidden_states)
-            .view(B, L, -1)
+            .view(B, L, self.n_heads, self.head_dim)
             .transpose(1, 2)
             .contiguous()
         )
