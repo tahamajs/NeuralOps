@@ -210,7 +210,7 @@ class FactorizedLinear(nn.Module):
                 nn.init.uniform_(self.lin2.bias, -bound, bound)
             if self.lora_A is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -657,7 +657,7 @@ class SpectronFP8Attention(BaseAttention):
                 proj.lin2.bias.requires_grad = False
             if proj.lora_A is not None:
                 nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(proj.lora_B)
+                nn.init.normal_(proj.lora_B, mean=0.0, std=1e-4)
 
     # ------------------------------------------------------------------
     # Weight extraction (universal across architectures)

@@ -147,9 +147,9 @@ class SVDLLMLinear(nn.Module):
         with torch.no_grad():
             if self.lora_rank > 0:
                 nn.init.kaiming_uniform_(self.lora_A_u, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B_u)
+                nn.init.normal_(self.lora_B_u, mean=0.0, std=1e-4)
                 nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B_v)
+                nn.init.normal_(self.lora_B_v, mean=0.0, std=1e-4)
 
     def set_factors(
         self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None

@@ -327,7 +327,7 @@ class SVDLinear(nn.Module):
             nn.init.ones_(self.norm_weight)
         if self.lora_A is not None and self.lora_B is not None:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 

@@ -104,7 +104,7 @@ class AdaptiveSVDLinear(nn.Module):
                     nn.init.orthogonal_(p)
             if self.lora_A is not None and self.lora_B is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
@@ -118,7 +118,7 @@ class AdaptiveSVDLinear(nn.Module):
             self.U[:out_d, :r].copy_(U[:out_d, :r].to(self.U.dtype))
             self.V[:r, :in_d].copy_(V[:r, :in_d].to(self.V.dtype))
             if self.lora_B is not None:
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     # ---- aliases for framework compatibility ----
     @property

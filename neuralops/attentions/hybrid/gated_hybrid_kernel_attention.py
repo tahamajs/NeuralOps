@@ -225,7 +225,7 @@ class FactorisedLinear(nn.Module):
             )
             # Same init as original: kaiming on (r, in), zeros on (out, r)
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
