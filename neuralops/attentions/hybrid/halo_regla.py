@@ -388,7 +388,7 @@ class HALOReGLAAttention(BaseAttention):
         # ---- Fusion gate ----
         self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         with torch.no_grad():
-            nn.init.zeros_(self.lora_gate.weight)
+            nn.init.normal_(self.lora_gate.weight, mean=0.0, std=1e-4)
             self.lora_gate.bias.data.fill_(gate_init_bias)
 
         # ---- Dropout ----
@@ -940,7 +940,7 @@ class HALOReGLAAttention(BaseAttention):
         # ============================================================
         # Fusion Gate
         # ============================================================
-        gate_out = self.lora_gate(hidden_states.float())
+        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))
         g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1).to(dtype)
         fused = (g * dense_out + (1.0 - g) * linear_out).to(dtype)
 

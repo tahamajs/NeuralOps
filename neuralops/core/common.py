@@ -224,7 +224,7 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self) -> None:
@@ -397,7 +397,7 @@ class FactorizedLinear(nn.Module):
                 nn.init.uniform_(self.lin2.bias, -bound, bound)
             if self.lora_A is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
+                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
     def freeze_base_weights(self) -> None:
         self.lin1.weight.requires_grad = False
@@ -560,7 +560,7 @@ class ResSVDLinear(nn.Module):
 
         if self.residual_rank > 0:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
 
         if self.bias is not None:
             fan_in = self.in_features

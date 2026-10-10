@@ -11,7 +11,7 @@ from collections.abc import Iterable
 
 import torch
 import torch.nn as nn
-from torch.nn.init import kaiming_uniform_, zeros_
+from torch.nn.init import kaiming_uniform_, normal_, zeros_
 
 
 class LoRALinear(nn.Module):
@@ -69,7 +69,7 @@ class LoRALinear(nn.Module):
         """Initialize lora_A with Kaiming uniform and lora_B with zeros."""
         if self.r > 0 and self.lora_A is not None and self.lora_B is not None:
             kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
-            zeros_(self.lora_B.weight)
+            normal_(self.lora_B.weight, mean=0.0, std=1e-4)
 
     @property
     def weight(self) -> torch.Tensor:
