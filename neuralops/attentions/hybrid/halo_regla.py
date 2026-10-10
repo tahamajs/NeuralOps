@@ -1,26 +1,26 @@
 """
 HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention.
-Production-Hardened v3 — Full KV-Cache + Numerical Stability.
+Production-Hardened v4 — True O(1) Linear State + Full KV-Cache.
 
 Architecture: Hybrid Dense Softmax + Linear Attention with adaptive per-head gate.
 
 Fixes applied:
-  [FIX-1]  Full KV-cache support (read + concat + write + return present)
-  [FIX-2]  `gate` (fusion) prefixed with `lora_` for KD optimizer detection
-  [FIX-3]  Vectorized `_causal_linear_attention` (no Python loop, correct decode)
+  [FIX-1]  Full KV-cache support (dense K/V + linear state)
+  [FIX-2]  `lora_gate` prefixed with `lora_` for KD optimizer detection
+  [FIX-3]  True O(1) linear attention with recurrent state (no recompute)
   [FIX-4]  Mask dtype/device safety in both streams
   [FIX-5]  `_rotate_half` imported from core.rope
   [FIX-6]  `repeat_kv` imported from core.gqa_utils
-  [FIX-7]  Robust decoder detection (kwargs + config + src_attn.c_attn)
+  [FIX-7]  Robust decoder detection
   [FIX-8]  Safe mask value using finfo.min for fp16/bf16
   [FIX-9]  Injector registered in ATTENTION_REGISTRY
   [FIX-10] Idempotency check in injector
-  [FIX-11] FP32 math in linear branch (no overflow in cumsum)
-  [FIX-12] Denom clamp at 1e-5 (safer than 1e-6)
+  [FIX-11] FP32 math in linear branch
+  [FIX-12] Denom clamp at 1e-5
   [FIX-13] Dropout applied in both streams
   [FIX-14] Output projection dtype-safe
   [FIX-15] `__all__` exports
-  [FIX-16] Past KV handled in dense branch too
+  [FIX-16] Linear state passed through cache (K, V, linear_state)
 """
 
 from __future__ import annotations
@@ -46,7 +46,12 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ============================================================================
 
-
+def _safe_mask_value(dtype: torch.dtype) -> float:
+    if dtype == torch.float16:
+        return -65504.0 / 2.0  # -32752.0 (safe head room in FP16)
+    elif dtype == torch.bfloat16:
+        return -1e4
+    return -1e9
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -74,12 +79,6 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def _safe_mask_value(dtype: torch.dtype) -> float:
-    """[FIX-8] finfo.min for fp16/bf16 to avoid -inf softmax issues."""
-    if dtype in (torch.float16, torch.bfloat16):
-        return torch.finfo(dtype).min
-    return -1e9
-
 
 def apply_rotary_pos_emb(
     q: torch.Tensor,
@@ -88,7 +87,6 @@ def apply_rotary_pos_emb(
     sin: torch.Tensor,
     position_ids: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Apply RoPE with strict shape checking. Uses canonical core.rope."""
     if cos is None or sin is None:
         return q, k
 
@@ -230,11 +228,11 @@ class HALOReGLAAttention(BaseAttention):
     """Hybrid Dense Softmax + Rectified Gated Linear Attention.
 
     Two parallel streams fused by a learned per-head gate:
-      1. Dense softmax attention (with causal + padding mask + KV-cache).
-      2. Linear attention with ELU+1 rectification (O(N) memory).
+      1. Dense softmax attention (causal + padding + KV-cache).
+      2. Linear attention with ELU+1 rectification (O(N) prefill, O(1) decode).
 
-    Gate initialization: `sigmoid(1.8) ≈ 0.86` → dense-dominant at step 0,
-    so the model starts close to the pretrained teacher.
+    Cache structure: (K_dense, V_dense, linear_state) where linear_state
+    is a tuple (S_mat, Z_vec) for the recurrent linear attention.
     """
 
     is_custom_attention: bool = True
@@ -316,7 +314,7 @@ class HALOReGLAAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.hybrid_ratio = hybrid_ratio
 
-        # ---- [FIX-7] Robust decoder detection ----
+        # ---- Robust decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -340,7 +338,7 @@ class HALOReGLAAttention(BaseAttention):
                 ):
                     is_dec = True
             if config is None and src_attn is None:
-                is_dec = True  # safe default
+                is_dec = True
             self.is_decoder = bool(is_dec)
 
         self.is_causal = self.is_decoder
@@ -381,7 +379,7 @@ class HALOReGLAAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases for state-dict compatibility
+        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -393,8 +391,7 @@ class HALOReGLAAttention(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        # ---- [FIX-2] Fusion gate with lora_ prefix ----
-        # Output: (B, L, num_heads) → sigmoid → per-head gating
+        # ---- Fusion gate ----
         self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.lora_gate.weight)
@@ -415,48 +412,67 @@ class HALOReGLAAttention(BaseAttention):
             self.copy_weights(src_attn)
 
     # ------------------------------------------------------------------
-    # [FIX-1] KV-cache helpers
+    # KV-cache helpers  — [FIX-1, FIX-16]
+    # Returns: (k, v, past_len, linear_state)
     # ------------------------------------------------------------------
     @staticmethod
     def _read_past_kv(
         past_key_value: Any, layer_idx: int
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any]:
         if past_key_value is None or past_key_value is False:
-            return None, None, 0
+            return None, None, 0, None
 
         # HF DynamicCache
         if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
             kc, vc = past_key_value.key_cache, past_key_value.value_cache
             if len(kc) == 0 or layer_idx >= len(kc):
-                return None, None, 0
+                return None, None, 0, None
             k = kc[layer_idx]
             v = vc[layer_idx] if layer_idx < len(vc) else None
             if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
+                return None, None, 0, None
+            lin_state = getattr(past_key_value, "_linear_states", None)
+            if isinstance(lin_state, list) and layer_idx < len(lin_state):
+                lin_state = lin_state[layer_idx]
+            else:
+                lin_state = None
+            return k, v, k.shape[-2], lin_state
 
-        # (k, v) tuple
+        # (k, v) or (k, v, linear_state) tuple
         if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
             k, v = past_key_value[0], past_key_value[1]
+            lin_state = past_key_value[2] if len(past_key_value) >= 3 else None
             if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
+                return None, None, 0, lin_state
+            return k, v, k.shape[-2], lin_state
 
-        return None, None, 0
+        return None, None, 0, None
 
     @staticmethod
     def _write_past_kv(
         k: torch.Tensor,
         v: torch.Tensor,
+        linear_state: Any,
         past_key_value: Any,
         layer_idx: int,
     ) -> Any:
+        """[FIX-16] Write (k, v, linear_state) to cache."""
+
+        # DynamicCache.update()
         if past_key_value is not None and hasattr(past_key_value, "update"):
             try:
                 past_key_value.update(k, v, layer_idx)
+                if linear_state is not None:
+                    if not hasattr(past_key_value, "_linear_states"):
+                        past_key_value._linear_states = []
+                    while len(past_key_value._linear_states) <= layer_idx:
+                        past_key_value._linear_states.append(None)
+                    past_key_value._linear_states[layer_idx] = linear_state
                 return past_key_value
             except Exception:
                 pass
+
+        # DynamicCache-like manual write
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
                 past_key_value.key_cache[layer_idx] = k
@@ -465,11 +481,19 @@ class HALOReGLAAttention(BaseAttention):
             else:
                 past_key_value.key_cache.append(k)
                 past_key_value.value_cache.append(v)
+            if linear_state is not None:
+                if not hasattr(past_key_value, "_linear_states"):
+                    past_key_value._linear_states = []
+                while len(past_key_value._linear_states) <= layer_idx:
+                    past_key_value._linear_states.append(None)
+                past_key_value._linear_states[layer_idx] = linear_state
             return past_key_value
-        return (k, v)
+
+        # Plain tuple (k, v, linear_state)
+        return (k, v, linear_state)
 
     # ------------------------------------------------------------------
-    # Weight transfer (unchanged, robust)
+    # Weight transfer
     # ------------------------------------------------------------------
     def copy_weights(self, src: nn.Module) -> None:
         if src is None:
@@ -574,7 +598,6 @@ class HALOReGLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # ---- Copy into LoRALinear.base_layer ----
         target_map = {
             "q": self.q_proj, "k": self.k_proj,
             "v": self.v_proj, "o": self.out_proj,
@@ -626,9 +649,16 @@ class HALOReGLAAttention(BaseAttention):
 
         if self.freeze_base:
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
-                mod.freeze_base_weights()
+                if hasattr(mod, "freeze_base_weights"):
+                    mod.freeze_base_weights()
+            
+            # [FIX-2] Ensure fusion gate is trainable
+            if hasattr(self, "lora_gate"):
+                self.lora_gate.weight.requires_grad = True
+                if self.lora_gate.bias is not None:
+                    self.lora_gate.bias.requires_grad = True
 
-        # ---- Inherit decoder flag ----
+
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
             self.is_causal = self.is_decoder
@@ -642,80 +672,113 @@ class HALOReGLAAttention(BaseAttention):
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     # ------------------------------------------------------------------
-    # [FIX-3] Vectorized causal linear attention
+    # [FIX-3, FIX-16] TRUE O(1) causal linear attention with recurrent state
+    # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+    # [FIX-3] Vectorized causal linear attention with True O(1) State
+    # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+    # [FIX-3] Vectorized causal linear attention with True O(1) State
     # ------------------------------------------------------------------
     def _causal_linear_attention(
         self,
         q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
+        k_new: torch.Tensor,
+        v_new: torch.Tensor,
         past_len: int,
         valid_mask: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        """Vectorized causal linear attention with KV-cache support.
+        linear_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+        chunk_size: int = 64,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        """Chunked causal linear attention — O(N·d²) memory instead of O(N²·d²).
 
-        Handles both training (N == N_k) and decode (N == 1) correctly.
-
-        Formula:
-            For query at absolute position p, output =
-                (Σ_{j<=p} φ(q_p) · φ(k_j) · v_j) / (Σ_{j<=p} φ(q_p) · φ(k_j))
-
-        Uses a single vectorized cumsum over key positions, then slices
-        at query positions via `past_len`.
+        Key optimization: never materialize the full (B, H, N, d, d) tensor.
+        Process in chunks of `chunk_size` tokens, keeping running state
+        of shape (B, H, d, d) between chunks.
         """
-        B, H, N, d = q.shape
-        N_k = k.shape[2]
+        B, H, N_q, d = q.shape
+        N_k = k_new.shape[2]
         device = q.device
 
-        # [FIX-11] Pre-scale + ELU+1 in FP32
+        # Feature maps (FP32 for stability)
         lin_scale = d ** -0.25
-        q_lin = F.elu(q.float() * lin_scale) + 1.0   # (B, H, N, d)
-        k_lin = F.elu(k.float() * lin_scale) + 1.0   # (B, H, N_k, d)
-        v_f = v.float()
+        q_lin = F.elu(q.float() * lin_scale) + 1.0        # (B, H, N_q, d)
+        k_lin = F.elu(k_new.float() * lin_scale) + 1.0    # (B, H, N_k, d)
+        v_f = v_new.float()                                # (B, H, N_k, d)
 
-        # Apply KV padding mask
         if valid_mask is not None:
-            valid_kv = valid_mask.to(dtype=k_lin.dtype)  # (B, H, N_k, 1)
+            valid_kv = valid_mask.to(dtype=k_lin.dtype)
             k_lin = k_lin * valid_kv
             v_f = v_f * valid_kv
 
-        # ---- [FIX-3] Vectorized cumsum ----
-        # Outer products: (B, H, N_k, d, d) — memory = B*H*N_k*d*d*4 bytes
-        kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)
-        cum_kv = torch.cumsum(kv_outer, dim=2)       # inclusive cumsum
-        cum_k = torch.cumsum(k_lin, dim=2)
+        # Load or init state — state stays (B, H, d, d) and (B, H, d) — never expands
+        if linear_state is not None:
+            S_state, Z_state = linear_state
+            S_state = S_state.to(device=device, dtype=torch.float32)
+            Z_state = Z_state.to(device=device, dtype=torch.float32)
+        else:
+            S_state = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+            Z_state = torch.zeros(B, H, d, device=device, dtype=torch.float32)
 
-        # Slice for current query positions
-        # past_len = N_k - N for causal decode (or 0 for prefill)
-        kv_at_q = cum_kv[:, :, past_len:past_len + N, :, :]  # (B, H, N, d, d)
-        k_at_q = cum_k[:, :, past_len:past_len + N, :]       # (B, H, N, d)
+        # ─── Decode mode (single query token) ───
+        if N_q == 1 and N_k == 1:
+            S_next = S_state + torch.einsum("bhd,bhe->bhde", k_lin[:, :, 0], v_f[:, :, 0])
+            Z_next = Z_state + k_lin[:, :, 0]
+            num = torch.einsum("bhd,bhde->bhe", q_lin[:, :, 0], S_next)
+            den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-5)
+            out = (num / den.unsqueeze(-1)).unsqueeze(2).to(q.dtype)
+            return out, (S_next, Z_next)
 
-        # num = φ(q) · kv_at_q  → (B, H, N, d)
-        num = torch.matmul(q_lin.unsqueeze(-2), kv_at_q).squeeze(-2)
-        # den = φ(q) · k_at_q  → (B, H, N, 1)
-        den = torch.matmul(q_lin.unsqueeze(-2), k_at_q.unsqueeze(-1)).squeeze(-1)
-        den = den.clamp(min=1e-5)
+        # ─── Prefill mode: chunked cumsum ───
+        # Memory: O(chunk_size · d²) per iteration — no full N² materialization
+        outs = torch.empty(B, H, N_q, d, device=device, dtype=torch.float32)
+        S_cur = S_state
+        Z_cur = Z_state
 
-        return (num / den.unsqueeze(-1)).to(q.dtype)
+        for start in range(0, N_q, chunk_size):
+            end = min(start + chunk_size, N_q)
+            q_c = q_lin[:, :, start:end]         # (B, H, C, d)
+            k_c = k_lin[:, :, start:end]         # (B, H, C, d)
+            v_c = v_f[:, :, start:end]           # (B, H, C, d)
+
+            # Local cumsum within chunk — C×d×d is small (e.g. 64×64×64)
+            kv_local = torch.einsum("bhcd,bhce->bhcde", k_c, v_c).cumsum(dim=2)
+            k_local = k_c.cumsum(dim=2)
+
+            # Add state from previous chunks
+            kv_total = kv_local + S_cur.unsqueeze(2)     # (B, H, C, d, d)
+            k_total = k_local + Z_cur.unsqueeze(2)       # (B, H, C, d)
+
+            num = torch.einsum("bhcd,bhcde->bhce", q_c, kv_total)
+            den = torch.einsum("bhcd,bhcd->bhc", q_c, k_total).clamp(min=1e-5)
+
+            outs[:, :, start:end] = num / den.unsqueeze(-1)
+
+            # Update state — only (B, H, d, d) held between chunks
+            S_cur = kv_total[:, :, -1]
+            Z_cur = k_total[:, :, -1]
+
+        return outs.to(q.dtype), (S_cur, Z_cur)
+
 
     def _global_linear_attention(
-        self,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-    ) -> torch.Tensor:
-        """Bidirectional linear attention: Q · (K^T V)."""
-        B, H, N, d = q.shape
-        lin_scale = d ** -0.25
-        q_lin = F.elu(q.float() * lin_scale) + 1.0
-        k_lin = F.elu(k.float() * lin_scale) + 1.0
-        v_f = v.float()
+            self,
+            q: torch.Tensor,
+            k: torch.Tensor,
+            v: torch.Tensor,
+        ) -> torch.Tensor:
+            """Bidirectional linear attention: Q · (K^T V)."""
+            B, H, N, d = q.shape
+            lin_scale = d ** -0.25
+            q_lin = F.elu(q.float() * lin_scale) + 1.0
+            k_lin = F.elu(k.float() * lin_scale) + 1.0
+            v_f = v.float()
 
-        kv = torch.matmul(k_lin.transpose(-2, -1).contiguous(), v_f)   # (B, H, d, d)
-        z = k_lin.sum(dim=2, keepdim=True)                              # (B, H, 1, d)
-        num = torch.matmul(q_lin, kv)                                   # (B, H, N, d)
-        den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-5)
-        return (num / den).to(q.dtype)
+            kv = torch.matmul(k_lin.transpose(-2, -1).contiguous(), v_f)
+            z = k_lin.sum(dim=2, keepdim=True)
+            num = torch.matmul(q_lin, kv)
+            den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-5)
+            return (num / den).to(q.dtype)
 
     # ------------------------------------------------------------------
     # Forward
@@ -735,13 +798,11 @@ class HALOReGLAAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        # Unwrap tuple input
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        # Cross-attention: pass through (not supported in this simple impl)
         if encoder_hidden_states is not None:
             return hidden_states, None
 
@@ -749,15 +810,17 @@ class HALOReGLAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # ---- Projections ----
+        # ---- Projections (only NEW tokens) ----
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k_new = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         v_new = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # ---- [FIX-1] Read past KV ----
-        past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
+        # ---- Read past KV + linear state ----
+        past_k, past_v, past_len, linear_state = self._read_past_kv(
+            past_key_value, self.layer_idx
+        )
 
-        # ---- RoPE with past offset ----
+        # ---- RoPE ----
         pos_emb = (
             position_embeddings if position_embeddings is not None
             else kwargs.get("position_embeddings")
@@ -781,109 +844,113 @@ class HALOReGLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("rotary_emb failed: %s", e)
 
-        # ---- Concat KV cache ----
+        # ============================================================
+        # DENSE STREAM: uses concatenated (past + new) KV
+        # ============================================================
         if past_k is not None:
-            K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
-            V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
+            K_dense = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
+            V_dense = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
         else:
-            K, V = k_new, v_new
+            K_dense, V_dense = k_new, v_new
 
-        # ---- [FIX-1] Write back cache ----
-        present_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
-        if use_cache:
-            present_kv = self._write_past_kv(K, V, past_key_value, self.layer_idx)
-        else:
-            present_kv = past_key_value
+        N_kv = K_dense.shape[-2]
 
-        N_kv = K.shape[-2]
-
-        # ---- GQA expand ----
+        # GQA repeat for dense
         if self.kv_repeat > 1:
-            K_full = repeat_kv(K, self.kv_repeat)
-            V_full = repeat_kv(V, self.kv_repeat)
+            K_full_dense = repeat_kv(K_dense, self.kv_repeat)
+            V_full_dense = repeat_kv(V_dense, self.kv_repeat)
+            # Also prepare new-only K/V for linear branch (GQA-expanded)
+            k_new_lin = repeat_kv(k_new, self.kv_repeat)
+            v_new_lin = repeat_kv(v_new, self.kv_repeat)
         else:
-            K_full, V_full = K, V
+            K_full_dense, V_full_dense = K_dense, V_dense
+            k_new_lin, v_new_lin = k_new, v_new
 
         # ---- Attention mask ----
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         mask_val = _safe_mask_value(dtype)
 
-        # Precompute valid mask (B, H, N_kv, 1) for linear stream
+        # Valid mask for linear stream (only for NEW tokens)
         valid_kv_for_linear: torch.Tensor | None = None
         if eff_mask is not None:
-            valid_kv = get_token_valid_mask(eff_mask, B, N_kv, device)  # (B, N_kv) bool
-            if valid_kv is not None:
+            valid_kv_new = get_token_valid_mask(eff_mask, B, N, device)
+            if valid_kv_new is not None:
                 valid_kv_for_linear = (
-                    valid_kv[:, None, :, None].to(dtype=torch.float32)
-                )  # (B, 1, N_kv, 1)
+                    valid_kv_new[:, None, :, None].to(dtype=torch.float32)
+                )
 
         # ============================================================
         # Stream 1: Dense Softmax Attention
         # ============================================================
+# ============================================================
+        # Stream 1: Dense Softmax Attention
+        # ============================================================
+        # ============================================================
+        # Stream 1: Dense Softmax Attention
+        # ============================================================
         scale = 1.0 / math.sqrt(self.head_dim)
+
+        # Concatenate in the input dtype directly (avoid extra .float())
+        K_dense_f = K_full_dense.to(dtype=torch.float32)
+        V_dense_f = V_full_dense.to(dtype=torch.float32)
+        q_f = q.to(dtype=torch.float32)
+
         dense_scores = torch.matmul(
-            q.float(), K_full.float().transpose(-2, -1).contiguous()
+            q_f, K_dense_f.transpose(-2, -1).contiguous()
         ) * scale
 
-        # ---- [FIX-1, FIX-4] Causal mask (bottom-right aligned) ----
+# Use dense_scores.dtype so the mask value is strictly compatible
+        mask_val = _safe_mask_value(dense_scores.dtype)
+
         if self.is_causal:
             q_idx = torch.arange(past_len, past_len + N, device=device).unsqueeze(1)
             k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
-            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)  # (1, 1, N, N_kv)
-            dense_scores = dense_scores.masked_fill(
-                ~causal.to(device=dense_scores.device),
-                mask_val,
-            )
+            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+            dense_scores = dense_scores.masked_fill(~causal, mask_val)
 
-        # ---- Padding mask ----
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 pad_mask = (eff_mask == 0).view(B, 1, 1, N_kv)
-                dense_scores = dense_scores.masked_fill(
-                    pad_mask.to(device=dense_scores.device),
-                    mask_val,
-                )
+                dense_scores = dense_scores.masked_fill(pad_mask, mask_val)
             elif eff_mask.dim() == 4:
                 dense_scores = dense_scores + eff_mask.to(dense_scores.dtype)
 
         dense_scores = torch.nan_to_num(
             dense_scores, nan=mask_val, posinf=1e4, neginf=mask_val
         )
-        dense_attn = F.softmax(dense_scores.float(), dim=-1).to(dtype)
+
+        dense_attn = F.softmax(dense_scores, dim=-1).to(dtype)
         dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
         dense_attn = self.dropout(dense_attn)
-        dense_out = torch.matmul(dense_attn, V_full.float()).to(dtype)
+
+        # matmul in FP32 then cast back — better precision, same memory
+        dense_out = torch.matmul(dense_attn.float(), V_dense_f).to(dtype)
         dense_out = torch.nan_to_num(dense_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ============================================================
-        # Stream 2: Linear Attention (Rectified Gated)
-        # ============================================================
+        # Stream 2: Linear Attention (with recurrent state)
+        next_linear_state = None
         if self.is_causal:
-            linear_out = self._causal_linear_attention(
-                q, K_full, V_full,
+            # Pass ONLY new K, V to linear branch to update state efficiently
+            linear_out, next_linear_state = self._causal_linear_attention(
+                q, k_new_lin, v_new_lin,  # <--- MUST BE NEW TOKENS ONLY
                 past_len=past_len,
                 valid_mask=valid_kv_for_linear,
+                linear_state=linear_state
             )
         else:
-            linear_out = self._global_linear_attention(q, K_full, V_full)
+            linear_out = self._global_linear_attention(q, K_full_dense, V_full_dense)
 
         linear_out = torch.nan_to_num(linear_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ============================================================
-        # Fusion Gate  — [FIX-2]
+        # Fusion Gate
         # ============================================================
-        gate_out = self.lora_gate(hidden_states.float())  # (B, N, num_heads)
-        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)  # (B, H, N, 1)
-        g = g.to(dtype)
-
+        gate_out = self.lora_gate(hidden_states.float())
+        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1).to(dtype)
         fused = (g * dense_out + (1.0 - g) * linear_out).to(dtype)
 
-        # ============================================================
-        # Head mask
-        # ============================================================
+        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 fused = fused * head_mask.view(1, self.num_heads, 1, 1).to(fused.dtype)
@@ -894,9 +961,7 @@ class HALOReGLAAttention(BaseAttention):
             elif head_mask.dim() == 4:
                 fused = fused * head_mask.to(fused.dtype)
 
-        # ============================================================
-        # Output projection
-        # ============================================================
+        # ---- Output projection ----
         out = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
@@ -916,7 +981,21 @@ class HALOReGLAAttention(BaseAttention):
         out_final = torch.nan_to_num(out_final, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ============================================================
-        # Return format: decoder → (out, present_kv), encoder → (out, attn)
+        # Write cache: (K_dense, V_dense, next_linear_state)
+        # ============================================================
+        present_kv: Any = None
+        use_cache = kwargs.get("use_cache", False) or (
+            past_key_value is not None and past_key_value is not False
+        )
+        if use_cache:
+            present_kv = self._write_past_kv(
+                K_dense, V_dense, next_linear_state, past_key_value, self.layer_idx
+            )
+        else:
+            present_kv = past_key_value
+
+        # ============================================================
+        # Return format
         # ============================================================
         if self.is_decoder:
             if output_attentions:
@@ -927,7 +1006,7 @@ class HALOReGLAAttention(BaseAttention):
 
 
 # ============================================================================
-# [FIX-9, FIX-10] Injection
+# Injection
 # ============================================================================
 
 
@@ -954,7 +1033,6 @@ def inject_halo_regla(
 
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -995,7 +1073,6 @@ def inject_halo_regla(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # ---- Single-layer injection ----
     src = old_attn
     if src is None:
         for attr in ("attention", "self_attn", "attn", "self"):
@@ -1011,7 +1088,6 @@ def inject_halo_regla(
     if src is None and cfg is None:
         return None
 
-    # [FIX-10] Idempotency
     if isinstance(src, HALOReGLAAttention) or "HALO" in src.__class__.__name__:
         return None
 
@@ -1031,7 +1107,6 @@ def inject_halo_regla(
         logger.exception("HALO-ReGLA injection failed: %s", e)
         return None
 
-    # ---- Splice ----
     spliced = False
     if hasattr(target, "attention"):
         if hasattr(target.attention, "self"):
@@ -1052,7 +1127,10 @@ def inject_halo_regla(
         spliced = True
 
     if not spliced:
-        logger.error("inject_halo_regla: no writable attention attribute on %s", type(target).__name__)
+        logger.error(
+            "inject_halo_regla: no writable attention attribute on %s",
+            type(target).__name__,
+        )
         return None
 
     return new_layer
