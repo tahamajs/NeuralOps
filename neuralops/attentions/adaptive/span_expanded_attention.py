@@ -320,7 +320,8 @@ class SpanExpandedAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.expansion_span: int = int(expansion_span) if expansion_span else 1024
+        default_span = 64
+        self.expansion_span: int = int(kwargs.get("expansion_span", default_span if (not expansion_span or expansion_span == 1024) else expansion_span))
         self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
 
         if self.expansion_span <= self.num_sink_tokens:

@@ -212,7 +212,7 @@ class FactorisedLinear(nn.Module):
                     torch.empty(self.lora_rank, in_dim, device=device, dtype=dtype)
                 )
                 self.lora_B = nn.Parameter(
-                    torch.zeros(out_dim, self.lora_rank, device=device, dtype=dtype)
+                    torch.randn(out_dim, self.lora_rank, device=device, dtype=dtype) * 1e-4
                 )
                 # V5-FIX-12: consistent init with int path
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
