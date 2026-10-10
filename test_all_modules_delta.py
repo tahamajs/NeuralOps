@@ -1,4 +1,9 @@
 import sys
+import io
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 import json
 import time
 import inspect
@@ -127,7 +132,7 @@ def main():
             if delta < 1.0:
                 res_entry["status"] = "BUG_DELTA_ZERO"
                 bugs.append(res_entry)
-                print(f"FAIL [DELTA≈0: {delta:+.2f}] (Student: {student_ppl:.2f}) ({dur:.1f}s)", flush=True)
+                print(f"FAIL [DELTA~=0: {delta:+.2f}] (Student: {student_ppl:.2f}) ({dur:.1f}s)", flush=True)
             else:
                 res_entry["status"] = "PASS"
                 print(f"PASS [DELTA: {delta:+.2f}] (Student: {student_ppl:.2f}) ({dur:.1f}s)", flush=True)
