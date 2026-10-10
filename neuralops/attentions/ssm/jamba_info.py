@@ -463,7 +463,13 @@ class JambaInfoBlock(BaseAttention):
         if SimpleSSM is None:
             return None
         try:
-            return SimpleSSM(d_model=d_model, config=config, is_decoder=self.is_decoder)
+            # Pick a num_heads that divides d_model evenly (e.g. 4 or 8)
+            num_heads = 4
+            for cand in (8, 4, 2, 1):
+                if d_model % cand == 0:
+                    num_heads = cand
+                    break
+            return SimpleSSM(d_model=d_model, num_heads=num_heads, config=config, is_decoder=self.is_decoder)
         except Exception as e:
             logger.warning("SimpleSSM instantiation failed: %s", e)
             return None
