@@ -156,9 +156,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("nha", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("nha_class", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("native_hybrid_attention", supports_causal=True, supports_gqa=True)
 class NativeHybridAttention(BaseAttention):
     is_custom_attention: bool = True
     supports_causal: bool = True
@@ -665,9 +662,6 @@ class NativeHybridAttention(BaseAttention):
         return (out, present_key_value)
 
 
-@ATTENTION_REGISTRY.register("nha")
-@ATTENTION_REGISTRY.register("nha_inject")
-@ATTENTION_REGISTRY.register("inject_nha")
 @ATTENTION_REGISTRY.register("inject_native_hybrid_attention")
 def inject_nha(
     layer: Any = None,

@@ -151,12 +151,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "grouped_query_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "gqa_attention",
     supports_causal=True,
     supports_bidirectional=True,
@@ -855,7 +849,6 @@ class GroupedQueryAttention(BaseAttention):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("gqa")
 def inject_gqa(
     layer: Any = None,
     model: Any = None,

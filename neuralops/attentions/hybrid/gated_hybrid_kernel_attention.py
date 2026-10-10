@@ -478,7 +478,6 @@ class ContextFusionGate(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("gated_hybrid_kernel", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("aegis_v6", supports_causal=True, supports_gqa=True)
 class GatedHybridKernelAttention(BaseAttention):
     """Hybrid attention: local sliding window + global FAVOR+ linear."""
@@ -1148,10 +1147,6 @@ class GatedHybridKernelAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_gated_hybrid_kernel")
-@ATTENTION_REGISTRY.register("inject_aegis_v6")
-@ATTENTION_REGISTRY.register("aegis_v6_inject")
-@ATTENTION_REGISTRY.register("gated_hybrid_kernel_inject")
 def inject_gated_hybrid_kernel(
     layer: Any = None,
     model: Any = None,

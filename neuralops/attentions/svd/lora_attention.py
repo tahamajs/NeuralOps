@@ -181,9 +181,6 @@ class LoRALinear(nn.Module):
 # Main Attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
-    "lora_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "lora_attention",
     supports_causal=True,
     supports_bidirectional=True,

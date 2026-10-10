@@ -218,12 +218,6 @@ class LoRALinear(nn.Module):
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "halo_regla_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class HALOReGLAAttention(BaseAttention):
     """Hybrid Dense Softmax + Rectified Gated Linear Attention.
 
@@ -1010,9 +1004,6 @@ class HALOReGLAAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("inject_halo_regla")
-@ATTENTION_REGISTRY.register("halo_regla_inject")
-@ATTENTION_REGISTRY.register("halo_regla_attention_inject")
 def inject_halo_regla(
     layer: Any = None,
     model: Any = None,

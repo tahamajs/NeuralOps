@@ -160,7 +160,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("mqa", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("mqa_attention", supports_causal=True, supports_gqa=True)
 class MultiQueryAttention(BaseAttention):
     """
     Multi-Query Attention (MQA) — Shazeer 2019.
@@ -860,9 +859,6 @@ def _safe_mask_val(dtype: torch.dtype) -> float:
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("mqa_inject")
-@ATTENTION_REGISTRY.register("inject_mqa")
-@ATTENTION_REGISTRY.register("inject_mqa_attention")
 def inject_mqa(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

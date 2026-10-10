@@ -248,12 +248,6 @@ class LoRALinear(nn.Module):
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "kda",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class KDAAttention(BaseAttention):
     """
     Kernelized Decay Attention (KDA) — recurrent linear attention.

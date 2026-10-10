@@ -176,12 +176,6 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register(
     "fusion_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
-@ATTENTION_REGISTRY.register(
-    "fusion_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class FUSIONATTN(BaseAttention):
     """
     Hybrid sparse attention with block gating.

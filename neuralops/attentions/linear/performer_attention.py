@@ -231,12 +231,6 @@ class LoRALinear(nn.Module):
 # Performer Attention
 # ============================================================
 @ATTENTION_REGISTRY.register(
-    "performer",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "performer_attention",
     supports_causal=True,
     supports_bidirectional=True,

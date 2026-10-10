@@ -209,21 +209,6 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 # Main LEKAv1
 # ===========================================================================
-@ATTENTION_REGISTRY.register(
-    "positive_kernel_linear",
-    supports_causal=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
-    "leka_v1",
-    supports_causal=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
-    "leka_v1_attention",
-    supports_causal=True,
-    supports_gqa=True,
-)
 class PositiveKernelLinearAttention(BaseAttention):
     """Linear-time attention via ELU+1 kernel feature map.
 
@@ -1012,10 +997,7 @@ LEKAV1Attention = PositiveKernelLinearAttention
 # ===========================================================================
 # [FIX-9, FIX-10] Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_positive_kernel_linear")
-@ATTENTION_REGISTRY.register("positive_kernel_linear_inject")
 @ATTENTION_REGISTRY.register("inject_leka_v1")
-@ATTENTION_REGISTRY.register("leka_v1_inject")
 def inject_positive_kernel_linear(
     layer: Any = None,
     model: Any = None,

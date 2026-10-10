@@ -178,9 +178,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "flash3", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "flash_attention3",
     supports_causal=True,
     supports_bidirectional=True,
