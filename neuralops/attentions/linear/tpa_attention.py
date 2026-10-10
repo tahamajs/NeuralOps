@@ -350,6 +350,7 @@ class TPAttention(BaseAttention):
 
         self.dim = int(dim)
         self.num_heads = max(1, int(num_heads))
+        self._use_tensor_product = False  # default; set properly below
 
         # ---- head_dim ----
         cfg_hd = _cfg_get(config, "head_dim", None) if config is not None else None

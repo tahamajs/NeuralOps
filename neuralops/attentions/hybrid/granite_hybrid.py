@@ -541,6 +541,10 @@ class GraniteHybridBlock(BaseAttention):
         self.lora_alpha = nn.Parameter(torch.tensor(6.0))
         self.lora_moe_scale = nn.Parameter(torch.zeros(1))
 
+        # ---- [FIX] lora_gate: per-head gating Linear ----
+        self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=False)
+        nn.init.zeros_(self.lora_gate.weight)
+
         self.is_nested_encoder: bool = False
         self.layer_idx: int = int(kwargs.get("layer_idx", 0))
 
