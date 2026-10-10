@@ -111,7 +111,10 @@ class SimpleSSM(BaseAttention):
             num_kv_heads or _get("num_key_value_heads") or _get("num_kv_heads") or self.num_heads
         )
         self.num_kv_heads = int(kv_heads)
-        self.head_dim = int(_get("head_dim", self.dim // max(1, self.num_heads)))
+        if d_model is not None:
+            self.head_dim = max(1, self.dim // max(1, self.num_heads))
+        else:
+            self.head_dim = int(_get("head_dim", self.dim // max(1, self.num_heads)))
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.lora_rank = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
