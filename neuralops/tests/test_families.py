@@ -11,7 +11,7 @@ FAMILIES = {
     "ssm": ["mamba_block", "selective_ssm", "simple_ssm"],
     "hybrid": ["hybrid_attention", "fusion_attn"],
     "sparse": ["adaptive_sparse_attention", "cluster_attention"],
-    "gated": ["gated_delta_net", "gated_linear_attention"],
+    "gated": ["gated_delta_net", "decay_linear_attention"],
     "adaptive": ["adaptive_span_attention", "token_compressed_attention"],
     "modern": ["gqa_attention", "mla_attention"],
 }

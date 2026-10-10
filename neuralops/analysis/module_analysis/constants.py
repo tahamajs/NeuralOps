@@ -294,7 +294,7 @@ KNOWN_LIT = {
         "2020",
         "arXiv",
     ),
-    "gated_linear_attention": (
+    "decay_linear_attention": (
         "Gated Linear Attention Transformers with Hardware-Efficient Training",
         "2312.06635",
         "2024",

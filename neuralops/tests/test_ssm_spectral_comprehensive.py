@@ -7,7 +7,7 @@ import pytest
 
 MODULES_TO_TEST = [
     "mamba", "mamba_svd_flash", "spectral_mamba", "upi_stuffed_mamba",
-    "simple_ssm", "decay_linear_attention", "gated_linear_attention",
+    "simple_ssm", "decay_linear_attention", "decay_linear_attention",
     "factorised_matrix_state", "soa_fused_attention", "soa_attn",
     "leka_v1", "leka_v2", "leka_v3"
 ]
@@ -37,7 +37,7 @@ def test_module(module_name):
 def main():
     modules_to_test = [
         "mamba", "mamba_svd_flash", "spectral_mamba", "upi_stuffed_mamba",
-        "simple_ssm", "decay_linear_attention", "gated_linear_attention",
+        "simple_ssm", "decay_linear_attention", "decay_linear_attention",
         "factorised_matrix_state", "soa_fused_attention", "soa_attn",
         "leka_v1", "leka_v2", "leka_v3"
     ]

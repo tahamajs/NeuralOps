@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("svd_linear_decay")
-class DecayGatedLinearAttention(SVDLinearAttention):
+class DecayDecayLinearAttention(SVDLinearAttention):
     r"""Decay Gated SVD Linear Attention."""
 
     is_custom_attention: bool = True
@@ -186,7 +186,7 @@ def inject_svd_linear_decay(
 inject_svd_linear_decay_attention = inject_svd_linear_decay
 
 __all__ = [
-    "DecayGatedLinearAttention",
+    "DecayDecayLinearAttention",
     "SVDLinearAttention",
     "SVDLinear",
     "inject_svd_linear_decay",
