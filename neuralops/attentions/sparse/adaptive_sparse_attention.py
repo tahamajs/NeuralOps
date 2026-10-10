@@ -862,12 +862,23 @@ class AdaptiveSparseAttention(BaseAttention):
 
             # Vectorized Top-K Thresholding on chunk with differentiable soft sigmoid threshold
             if not is_cross_attention:
-                sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
-                k_idx_f = k_indices_floor.expand(B, H, C_q, 1)
-                k_idx_c = k_indices_ceil.expand(B, H, C_q, 1)
-                thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
-                thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
-                topk_thresh = thresh_f * (1.0 - alpha_k) + thresh_c * alpha_k
+                if is_decoder:
+                    valid_counts = (q_idx + 1).clamp(min=1, max=N_k).float()  # [1, 1, C_q, 1]
+                    eff_k = torch.clamp((1.0 - sparsity_per_head.view(1, H, 1, 1)) * valid_counts, min=1.0)
+                    eff_k_floor = (eff_k.floor().long() - 1).clamp(min=0, max=N_k - 1)
+                    eff_k_ceil = (eff_k_floor + 1).clamp(min=0, max=N_k - 1)
+                    eff_alpha = eff_k - eff_k.floor()
+                    sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+                    thresh_f = torch.gather(sorted_scores, dim=-1, index=eff_k_floor.expand(B, H, C_q, 1))
+                    thresh_c = torch.gather(sorted_scores, dim=-1, index=eff_k_ceil.expand(B, H, C_q, 1))
+                    topk_thresh = thresh_f * (1.0 - eff_alpha) + thresh_c * eff_alpha
+                else:
+                    sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+                    k_idx_f = k_indices_floor.expand(B, H, C_q, 1)
+                    k_idx_c = k_indices_ceil.expand(B, H, C_q, 1)
+                    thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
+                    thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
+                    topk_thresh = thresh_f * (1.0 - alpha_k) + thresh_c * alpha_k
                 temperature = 0.1
                 soft_mask = torch.sigmoid((scores_chunk - topk_thresh) / temperature)
                 scores_chunk = scores_chunk + torch.log(soft_mask + 1e-8)
