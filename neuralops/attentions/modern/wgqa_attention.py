@@ -871,13 +871,35 @@ def inject_wgqa(
 
     layer = target
 
+    def _already_injected(m):
+        if m is None:
+            return False
+        if isinstance(m, WeightedGroupedQueryAttention):
+            return True
+        if "WeightedGroupedQueryAttention" in m.__class__.__name__:
+            return True
+        inner = getattr(m, "inner", None)
+        if isinstance(inner, WeightedGroupedQueryAttention):
+            return True
+        wrapped = getattr(m, "_wrapped_attention", None)
+        if isinstance(wrapped, WeightedGroupedQueryAttention):
+            return True
+        return False
+
+    if _already_injected(old_attn):
+        return None
+
     # Find src_attn if not provided
     if old_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 cand = getattr(layer, attr)
-                old_attn = getattr(cand, "self", cand)
-                break
+                if isinstance(cand, nn.Module) and cand is not target:
+                    old_attn = getattr(cand, "self", cand)
+                    break
+
+    if old_attn is None or _already_injected(old_attn):
+        return None
 
     if model_config is None and hasattr(layer, "config"):
         model_config = layer.config
