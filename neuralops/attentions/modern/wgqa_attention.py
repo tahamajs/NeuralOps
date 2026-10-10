@@ -669,6 +669,11 @@ class WeightedGroupedQueryAttention(BaseAttention):
         V_new = self.v_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # -------- Learnable per-KV-head importance weights --------
+        if not hasattr(self, "k_weights") or self.k_weights is None:
+            self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1, device=device, dtype=dtype))
+        if not hasattr(self, "v_weights") or self.v_weights is None:
+            self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1, device=device, dtype=dtype))
+
         K_new = K_new * self.k_weights.view(1, self.num_kv_heads, 1, 1).to(K_new.dtype)
         V_new = V_new * self.v_weights.view(1, self.num_kv_heads, 1, 1).to(V_new.dtype)
 

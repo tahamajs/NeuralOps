@@ -887,7 +887,8 @@ def set_train_scope(model, train_scope="all"):
         MODULE_TRAINABLE_ATTRS = (
             "forget_gate", "input_gate", "fusion_gate", "g_proj",
             "lora", "adapter", "state_norm", "output_scale",
-            "weight_generator", "dyn_conv", "dyn_w", "kernel"
+            "weight_generator", "dyn_conv", "dyn_w", "kernel",
+            "k_weights", "v_weights"
         )
         n_matched = 0
         for name, p in model.named_parameters():
