@@ -304,6 +304,8 @@ class SALTAttention(BaseAttention):
                 )
             )
         )
+        max_rank = min(self.hidden_size, self.all_head_size) // 2
+        self.rank = min(self.rank, max_rank)
 
         # Adaptive rank & Fisher flags
         if adaptive_rank is not None:
