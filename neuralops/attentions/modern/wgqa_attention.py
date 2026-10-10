@@ -246,10 +246,29 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
+        # ==================================================================
+        # KV head resolution: compress KV heads when converting MHA -> WGQA
+        # ==================================================================
+        resolved_kv_heads = None
         if num_kv_heads is not None:
-            self.num_kv_heads = int(num_kv_heads)
-            self.kv_head_size = self.num_kv_heads * self.head_dim
-            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            resolved_kv_heads = int(num_kv_heads)
+        elif config is not None:
+            cfg_kv = _cfg_get(config, "num_key_value_heads", None) or _cfg_get(config, "num_kv_heads", None)
+            if cfg_kv is not None:
+                resolved_kv_heads = int(cfg_kv)
+
+        if resolved_kv_heads is None:
+            kwargs_kv = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
+            if kwargs_kv is not None:
+                resolved_kv_heads = int(kwargs_kv)
+
+        # Default GQA compression: compress KV heads (max(1, num_heads // 4)) if not specified or equals full heads
+        if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
+            resolved_kv_heads = max(1, self.num_heads // 4)
+
+        self.num_kv_heads = int(resolved_kv_heads)
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
