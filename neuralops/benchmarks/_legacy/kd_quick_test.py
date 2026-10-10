@@ -1241,14 +1241,14 @@ def run_kd_method(
             
             if "gqa" in module_name.lower():
                 if _diff > 1.0:
-                    LOG.info(f"[DIAG] ✅ GQA Compression Successful! Student output is altered (diff={_diff:.4f}). Ready to distill.")
+                    LOG.info(f"[DIAG] [OK] GQA Compression Successful! Student output is altered (diff={_diff:.4f}). Ready to distill.")
                 else:
-                    LOG.error(f"[DIAG] ⚠️ CRITICAL: Compression failed! diff={_diff:.4f} (Expected > 1.0 for GQA)")
+                    LOG.error(f"[DIAG] [FAIL] CRITICAL: Compression failed! diff={_diff:.4f} (Expected > 1.0 for GQA)")
             else:
                 if _diff > 10.0:
-                    LOG.warning(f"[DIAG] ⚠️ Large pre-training diff: {_diff:.4f}")
+                    LOG.warning(f"[DIAG] [WARN] Large pre-training diff: {_diff:.4f}")
                 else:
-                    LOG.info(f"[DIAG] ✅ Initial student state verified (diff={_diff:.4f})")
+                    LOG.info(f"[DIAG] [OK] Initial student state verified (diff={_diff:.4f})")
         except Exception as _e:
             LOG.warning(f"[DIAG] Diagnostic failed: {_e}")
     # ═══════════════════════════════════════════════════════════
