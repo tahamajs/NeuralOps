@@ -12,7 +12,6 @@ Hybrid sparse attention with:
   - Strict causal masking across both paths
   - Padding masking across both paths
   - KV-cache support
-
 """
 
 from __future__ import annotations
@@ -62,7 +61,6 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    # align sequence length if needed (KV-cache case)
     if cos.shape[-2] != q.shape[-2]:
         if cos.shape[-2] > q.shape[-2]:
             cos = cos[..., : q.shape[-2], :]
@@ -215,7 +213,6 @@ class FUSIONATTN(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # ---- resolve hidden_size / num_heads ----
         if config is not None:
             hidden_size = int(
                 getattr(
@@ -265,7 +262,6 @@ class FUSIONATTN(BaseAttention):
         self.hidden_size = int(hidden_size)
         self.num_heads = max(1, int(num_heads))
 
-        # FA-FIX-13: num_kv_heads fallback chain
         if config is not None:
             self.num_kv_heads = int(
                 getattr(
@@ -300,7 +296,6 @@ class FUSIONATTN(BaseAttention):
         )
         self.layer_idx = int(resolved_layer_id)
 
-        # ---- LoRA ----
         self.lora_rank = int(
             getattr(
                 config,
@@ -321,7 +316,6 @@ class FUSIONATTN(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # ---- decoder detection ----
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
@@ -357,7 +351,6 @@ class FUSIONATTN(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- projections ----
         self.q_proj = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -391,15 +384,14 @@ class FUSIONATTN(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # FA-FIX-15: per-head gate MLP (head_id embedding + centroid features)
-        self.attn_gate = nn.Sequential(
+        # KD-FIX: lora_ prefix so KD optimizer tracks these params
+        self.lora_attn_gate = nn.Sequential(
             nn.Linear(self.head_dim * 2, 4 * self.head_dim),
             nn.GELU(),
             nn.Linear(4 * self.head_dim, 1),
         )
-        # learnable per-head bias so heads can diverge
-        self.gate_head_bias = nn.Parameter(torch.zeros(self.num_heads))
-        self.gate_temp = nn.Parameter(torch.ones(1))
+        self.lora_gate_head_bias = nn.Parameter(torch.zeros(self.num_heads))
+        self.lora_gate_temp = nn.Parameter(torch.ones(1))
 
         dropout_p = (
             float(
@@ -476,7 +468,7 @@ class FUSIONATTN(BaseAttention):
         return self.out_proj
 
     # ------------------------------------------------------------------
-    # copy_weights
+    # copy_weights — unchanged from original (working correctly)
     # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
@@ -518,7 +510,6 @@ class FUSIONATTN(BaseAttention):
             "o": (None, None),
         }
 
-        # GPT-2 fused c_attn
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
             if (
@@ -581,7 +572,6 @@ class FUSIONATTN(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        # RoBERTa / BERT nested
         elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -600,7 +590,6 @@ class FUSIONATTN(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
-        # Flat modules
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -620,7 +609,6 @@ class FUSIONATTN(BaseAttention):
                             )
                             break
 
-        # UniversalAdapter fallback
         missing = [
             k
             for k, (w, _) in extracted.items()
@@ -714,12 +702,8 @@ class FUSIONATTN(BaseAttention):
                 return k, v
         return None, None
 
-    # ------------------------------------------------------------------
-    # Mask preparation
-    # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(mask, B: int, N: int, device: torch.device) -> torch.Tensor | None:
-        """Return (B, N) bool mask where True = valid token."""
         if mask is None:
             return None
 
@@ -758,12 +742,11 @@ class FUSIONATTN(BaseAttention):
         N_kv = k.shape[2]
         scale = D**-0.5
 
-        # FA-FIX-02: only use SDPA when no extra features are needed
         use_sdpa = (
             not output_attentions
             and head_mask is None
             and (valid_mask is None or valid_mask.all())
-            and not self.training  # training dropout in SDPA is fine, but keep manual for safety
+            and not self.training
         )
 
         if use_sdpa:
@@ -784,10 +767,8 @@ class FUSIONATTN(BaseAttention):
             except Exception as e:
                 logger.debug("SDPA failed, falling back to manual: %s", e)
 
-        # ---- Manual path ----
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # FA-FIX-03 / decoder: causal mask with past_len offset
         if is_causal and N > 1:
             past_len = max(0, N_kv - N)
             causal = (
@@ -822,7 +803,7 @@ class FUSIONATTN(BaseAttention):
         return context, (probs if output_attentions else None)
 
     # ------------------------------------------------------------------
-    # Block-gated sparse attention
+    # Block-gated sparse attention (CLEANED)
     # ------------------------------------------------------------------
     def _block_sparse_attention(
         self,
@@ -834,163 +815,107 @@ class FUSIONATTN(BaseAttention):
         is_causal: bool,
         output_attentions: bool,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """
-        FA-FIX-03 / FA-FIX-04 / FA-FIX-05 / FA-FIX-15 / FA-FIX-16 /
-        FA-FIX-17 / FA-FIX-18 rewritten block-gated attention.
-        """
         B, H, N, D = q.shape
-        k.shape[2]
+        N_kv = k.shape[2]
         bs = self.block_size
         device = q.device
 
-        # Pad to multiple of block_size
+        # --- Pad to multiple of block_size ---
         pad_len = (bs - (N % bs)) % bs
         if pad_len > 0:
             q_pad = F.pad(q, (0, 0, 0, pad_len))
             k_pad = F.pad(k, (0, 0, 0, pad_len))
             v_pad = F.pad(v, (0, 0, 0, pad_len))
-            if valid_mask is not None:
-                valid_pad = F.pad(valid_mask, (0, pad_len), value=False)
-            else:
-                valid_pad = None
+            valid_pad = (
+                F.pad(valid_mask, (0, pad_len), value=False) if valid_mask is not None else None
+            )
         else:
-            q_pad, k_pad, v_pad = q, k, v
-            valid_pad = valid_mask
+            q_pad, k_pad, v_pad, valid_pad = q, k, v, valid_mask
 
         N_pad = q_pad.size(2)
         num_blocks = N_pad // bs
         top_k = min(self.top_k_blocks, num_blocks)
 
-        # ---- block centroids ----
+        # --- Block centroids ---
         q_blocks = q_pad.reshape(B, H, num_blocks, bs, D)
         k_blocks = k_pad.reshape(B, H, num_blocks, bs, D)
-        q_centroid = q_blocks.mean(dim=3)  # (B, H, nb, D)
-        k_centroid = k_blocks.mean(dim=3)  # (B, H, nb, D)
-
-        # FA-FIX-15 / FA-FIX-16: per-head gating with centroid features
-        q_feat = torch.cat([q_centroid, torch.zeros_like(q_centroid)], dim=-1)  # (B,H,nb,2D)
-        k_feat = torch.cat([torch.zeros_like(k_centroid), k_centroid], dim=-1)  # (B,H,nb,2D)
-        q_gate = self.attn_gate(q_feat).squeeze(-1)  # (B, H, nb)
-        k_gate = self.attn_gate(k_feat).squeeze(-1)  # (B, H, nb)
-
-        # per-head learnable bias
-        head_bias = self.gate_head_bias.view(1, H, 1)
-        gate_scores = (
-            torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)).squeeze(-1).squeeze(-1)
-            + head_bias
-        ) / (self.gate_temp.abs() + 1e-5)
-        # gate_scores: (B, H, nb)
-
-        # FA-FIX-18: causal-aware top-k for decoder self-attention
-        # A query in block i cannot attend to any key in block j > i.
-        if is_causal:
-            blk_idx = torch.arange(num_blocks, device=device)
-            causal_blocks = blk_idx.unsqueeze(0) <= blk_idx.unsqueeze(1)  # (nb, nb)
-            # mask future blocks with -inf so top-k never picks them
-            gate_scores.unsqueeze(-1).expand(-1, -1, -1, num_blocks)  # not needed; use simpler form
-            # compute per-query-block mask and apply to logits
-            # gate_scores is (B, H, nb). We need (B, H, nb) * causal_mask_per_qblock
-            # A more direct approach: for each query block i, only keep scores over j <= i
-            # which is a triangular mask per (B,H,i).
-            # We expand gate_scores to (B, H, nb, nb) with broadcast, then mask.
-            gs2 = gate_scores.unsqueeze(-1).expand(
-                -1, -1, -1, num_blocks
-            )  # (B,H,nb,nb) where last dim = key block
-            causal_blocks_b = causal_blocks.view(1, 1, num_blocks, num_blocks)
-            gs2 = gs2.masked_fill(~causal_blocks_b, float("-inf"))
-            # Top-k over key-block dim
-            _, top_indices = torch.topk(gs2, top_k, dim=-1)  # (B, H, nb, top_k)
-        else:
-            # bidir: broadcast scores over query-block dim
-            gs2 = gate_scores.unsqueeze(-1).expand(-1, -1, num_blocks, num_blocks)
-            _, top_indices = torch.topk(gs2, top_k, dim=-1)
-
-        # FA-FIX-05: guarantee block 0 is kept by constructing top-k differently
-        # For each query block, force slot 0 to be block 0 (sink), fill rest with top-(k-1)
-        with torch.no_grad():
-            if top_k > 1:
-                # take top-(k-1) from scores excluding block 0
-                gs2_others = gs2.clone()
-                gs2_others[..., 0] = float("-inf")
-                _, top_others = torch.topk(gs2_others, top_k - 1, dim=-1)
-                sink = torch.zeros_like(top_others[..., :1])  # block 0
-                top_indices = torch.cat([sink, top_others], dim=-1)
-            else:
-                top_indices = torch.zeros(B, H, num_blocks, top_k, device=device, dtype=torch.long)
-
-        # ---- gather K/V per query block ----
-        # k_blocks: (B, H, nb, bs, D), v_blocks same
         v_blocks = v_pad.reshape(B, H, num_blocks, bs, D)
 
-        # For padding mask of K, pad to full length then reshape to blocks
-        if valid_pad is not None:
-            valid_blocks = valid_pad.view(B, 1, num_blocks, bs)  # (B, 1, nb, bs)
-        else:
-            valid_blocks = torch.ones(B, 1, num_blocks, bs, device=device, dtype=torch.bool)
+        q_cent = q_blocks.mean(dim=3)  # (B, H, nb, D)
+        k_cent = k_blocks.mean(dim=3)  # (B, H, nb, D)
 
-        # gather: (B, H, nb, top_k, bs, D) → reshape to (B, H, nb, top_k*bs, D)
-        (top_indices.unsqueeze(-1).unsqueeze(-1).expand(B, H, num_blocks, top_k, bs, D))
-        k_sel = torch.gather(
-            k_blocks.unsqueeze(3).expand(-1, -1, -1, top_k, -1, -1),
-            2,
-            top_indices.reshape(B, H, num_blocks, top_k, 1, 1).expand(
-                B, H, num_blocks, top_k, bs, D
-            ),
+        # --- Gate features ---
+        q_feat = torch.cat([q_cent, torch.zeros_like(q_cent)], dim=-1)
+        k_feat = torch.cat([torch.zeros_like(k_cent), k_cent], dim=-1)
+
+        q_gate = self.lora_attn_gate(q_feat).squeeze(-1)  # (B, H, nb)
+        k_gate = self.lora_attn_gate(k_feat).squeeze(-1)  # (B, H, nb)
+
+        # --- Gate scores (B, H, nb_q, nb_k) ---
+        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
+        gate_scores = (gate_scores + self.lora_gate_head_bias.view(1, H, 1, 1)) / (
+            self.lora_gate_temp.abs() + 1e-5
         )
-        # Above gather is awkward; use index_select-free approach:
-        # reshape k_blocks to (B,H,nb,bs*D) and gather along dim=2 with flattened indices
-        k_flat = k_blocks.reshape(B, H, num_blocks, bs * D)
-        v_blocks.reshape(B, H, num_blocks, bs * D)
 
-        # Build absolute gather indices
-        idx_flat = top_indices.reshape(B, H, num_blocks, top_k, 1).expand(-1, -1, -1, -1, bs)
-        idx_flat = idx_flat * bs + torch.arange(bs, device=device).view(1, 1, 1, 1, bs)
-        idx_flat = idx_flat.reshape(B, H, num_blocks, top_k * bs)
-
-        k_sel = torch.gather(
-            k_flat.unsqueeze(3).expand(-1, -1, -1, top_k, -1),
-            -1,
-            idx_flat.unsqueeze(-1).expand(-1, -1, -1, -1, D),
-        )  # (B,H,nb,top_k,D)
-        # Actually this is getting confusing. Simpler:
-        # flatten indices to a per-(B,H,qblock) gather along last dim of (B,H,nb,bs*D).
-        k_sel = torch.empty(B, H, num_blocks, top_k * bs, D, device=device, dtype=k_blocks.dtype)
-        v_sel = torch.empty_like(k_sel)
-        valid_sel = torch.empty(B, H, num_blocks, top_k * bs, device=device, dtype=torch.bool)
-
-        for j in range(top_k):
-            bj = top_indices[..., j]  # (B, H, nb)
-            bj_flat_idx = bj.view(B, H, num_blocks, 1, 1).expand(-1, -1, -1, bs, D)
-            k_sel[:, :, :, j * bs : (j + 1) * bs, :] = torch.gather(k_blocks, 2, bj_flat_idx)
-            v_sel[:, :, :, j * bs : (j + 1) * bs, :] = torch.gather(v_blocks, 2, bj_flat_idx)
-            bj_flat_idx_v = bj.view(B, H, num_blocks, 1).expand(-1, -1, -1, bs)
-            valid_sel[:, :, :, j * bs : (j + 1) * bs] = torch.gather(valid_blocks, 2, bj_flat_idx_v)
-
-        # ---- attention within selected blocks ----
-        q_all = q_pad.reshape(B, H, num_blocks, bs, D)
-        scale = D**-0.5
-        scores = torch.matmul(q_all.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
-
-        # FA-FIX-03: causal mask via ABSOLUTE positions (per-query position vs per-key absolute position)
+        # --- Causal mask at block level ---
         if is_causal:
-            q_abs = torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs + torch.arange(
-                bs, device=device
-            ).view(1, bs)  # (nb, bs)
-            q_abs = q_abs.view(1, 1, num_blocks, bs)  # (1, 1, nb, bs)
-            # Absolute key positions for each query block's selected keys
-            k_abs = idx_flat  # (B, H, nb, top_k*bs) — already absolute
-            causal_b = k_abs.unsqueeze(-2) <= q_abs.unsqueeze(-1)  # (B, H, nb, bs, top_k*bs)
-            scores = scores.masked_fill(~causal_b, float("-inf"))
+            q_blk = torch.arange(num_blocks, device=device).unsqueeze(1)
+            k_blk = torch.arange(num_blocks, device=device).unsqueeze(0)
+            past_blocks = 0  # N == N_kv in this path
+            causal_blocks = k_blk <= (q_blk + past_blocks)
+            gate_scores = gate_scores.masked_fill(
+                ~causal_blocks.unsqueeze(0).unsqueeze(0), float("-inf")
+            )
 
-        # FA-FIX-04: padding mask on the gathered keys
-        scores = scores.masked_fill(~valid_sel.unsqueeze(-2), float("-inf"))
+        # --- Top-k block selection ---
+        _, top_idx = torch.topk(gate_scores, top_k, dim=-1)  # (B, H, nb_q, top_k)
+
+        # --- Gather K / V / valid ---
+        top_idx_exp = top_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)
+        k_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
+        v_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
+
+        k_sel = torch.gather(k_exp, 3, top_idx_exp).reshape(B, H, num_blocks, top_k * bs, D)
+        v_sel = torch.gather(v_exp, 3, top_idx_exp).reshape(B, H, num_blocks, top_k * bs, D)
+
+        if valid_pad is not None:
+            valid_blocks = valid_pad.reshape(B, 1, num_blocks, bs)
+            valid_exp = valid_blocks.unsqueeze(2).expand(-1, H, num_blocks, -1, -1)
+            top_idx_m = top_idx.unsqueeze(-1).expand(-1, -1, -1, -1, bs)
+            valid_sel = torch.gather(valid_exp, 3, top_idx_m).reshape(
+                B, H, num_blocks, top_k * bs
+            )
+        else:
+            valid_sel = None
+
+        # --- Attention ---
+        scale = D**-0.5
+        scores = (
+            torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
+        )
+
+        if is_causal:
+            q_pos = (
+                torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs
+                + torch.arange(bs, device=device).view(1, bs)
+            )
+            q_pos = q_pos.view(1, 1, num_blocks, bs, 1)
+
+            k_base = top_idx.unsqueeze(-1) * bs
+            k_off = torch.arange(bs, device=device).view(1, 1, 1, 1, bs)
+            k_pos = (k_base + k_off).view(B, H, num_blocks, 1, top_k * bs)
+
+            causal_tok = k_pos <= q_pos
+            scores = scores.masked_fill(~causal_tok, float("-inf"))
+
+        if valid_sel is not None:
+            scores = scores.masked_fill(~valid_sel.unsqueeze(-2), float("-inf"))
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         probs = F.softmax(scores, dim=-1).to(v_sel.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # FA-FIX-09: head_mask applied here
         if head_mask is not None:
             hm = head_mask.to(probs.dtype)
             if hm.dim() == 1:
@@ -1002,14 +927,11 @@ class FUSIONATTN(BaseAttention):
             probs = probs * hm
 
         out_blocks = torch.matmul(probs, v_sel)  # (B, H, nb, bs, D)
-
-        # FA-FIX-08: NaN guard
         out_blocks = torch.nan_to_num(out_blocks, nan=0.0, posinf=1e4, neginf=-1e4)
 
         context = out_blocks.reshape(B, H, N_pad, D)[:, :, :N, :]
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        # FA-FIX-10: return block attention weights when requested
         if output_attentions:
             return context, probs
         return context, None
@@ -1039,7 +961,6 @@ class FUSIONATTN(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len_new = kv_input.shape[1]
 
-        # ---- Q / K / V projections ----
         q = (
             self.q_proj(hidden_states)
             .view(B, N, self.num_heads, self.head_dim)
@@ -1059,7 +980,6 @@ class FUSIONATTN(BaseAttention):
             .contiguous()
         )
 
-        # ---- RoPE with past_len offset ----
         if not is_cross_attention:
             past_k_probe, _ = self._read_past_kv(past_key_value, self.layer_idx)
             past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
@@ -1071,7 +991,6 @@ class FUSIONATTN(BaseAttention):
                     sin = sin[..., past_len : past_len + N, :]
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
             elif self.rotary_emb is not None:
-                # FA-FIX-07: use hidden_states for shape probing (was `v`)
                 try:
                     cos, sin = self.rotary_emb(hidden_states, seq_len=past_len + N)
                 except TypeError:
@@ -1085,8 +1004,6 @@ class FUSIONATTN(BaseAttention):
                         sin = sin[..., past_len : past_len + N, :]
                     q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
 
-        # ---- KV-cache concat + update ----
-        # FA-FIX-06: honor past_key_value
         past_k, past_v = self._read_past_kv(past_key_value, self.layer_idx)
         if past_k is not None and not is_cross_attention:
             k_cat = torch.cat([past_k, k_new], dim=-2)
@@ -1101,21 +1018,17 @@ class FUSIONATTN(BaseAttention):
         ):
             past_key_value.update(k_new, v_new, self.layer_idx)
 
-        # ---- GQA ----
         if self.num_kv_heads < self.num_heads:
             k_cat = repeat_kv(k_cat, self.kv_repeat)
             v_cat = repeat_kv(v_cat, self.kv_repeat)
 
         N_kv = k_cat.shape[2]
 
-        # ---- masks ----
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         valid_mask = self._normalize_valid_mask(eff_mask, B, N_kv, device)
 
-        # FA-FIX-03 / FA-FIX-18: causality condition
         is_causal = self.is_decoder and not is_cross_attention and N > 1
 
-        # ---- dispatch ----
         if N <= 128 or is_cross_attention:
             context, attn_weights = self._dense_attention(
                 q,
@@ -1144,9 +1057,11 @@ class FUSIONATTN(BaseAttention):
         else:
             out = self.out_proj(context)
 
-        # Return past_key_value for autoregressive decoders
         if self.is_decoder and not is_cross_attention:
-            new_past_kv = (k_cat, v_cat) if (past_key_value is not None or not hasattr(past_key_value, "update")) else past_key_value
+            if past_key_value is not None and hasattr(past_key_value, "update"):
+                new_past_kv = past_key_value
+            else:
+                new_past_kv = (k_cat, v_cat)
             return out, new_past_kv
 
         return out, (attn_weights if output_attentions else None)
@@ -1181,7 +1096,6 @@ def inject_fusion_attn(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -1222,7 +1136,6 @@ def inject_fusion_attn(
                 n_inj += 1
         return target if n_inj > 0 else None
 
-    # Single-layer injection
     src_attn = old_attn
     if src_attn is None:
         for attr in ("attention", "attn", "self_attn", "self"):
@@ -1232,7 +1145,6 @@ def inject_fusion_attn(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    # FA-FIX-12: idempotency guard
     if src_attn is not None and (
         isinstance(src_attn, FUSIONATTN) or "FUSIONATTN" in src_attn.__class__.__name__
     ):
@@ -1251,7 +1163,6 @@ def inject_fusion_attn(
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-        # Splice
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
@@ -1277,7 +1188,6 @@ def inject_fusion_attn(
 
         return new_attn
     except Exception as e:
-        # FA-FIX-11: log full traceback
         logger.exception("inject_fusion_attn failed at layer %d: %s", layer_idx, e)
         return None
 

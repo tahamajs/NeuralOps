@@ -1,26 +1,26 @@
 """
-HGRN-2 Outer-Product Recurrent Linear Attention — Production-Hardened v4.
+HGRN-2 Outer-Product Recurrent Linear Attention — Production-Hardened v5.
 
-FIXES in v4 (based on external mathematical review):
-  - FIX 11: REMOVED RoPE completely (was invalid for outer-product linear 
-           attention — phases mix and become noise)
-  - FIX 12: REMOVED denominator Z (was Katharopoulos-style normalization;
-           modern RNNs like HGRN2/GLA/Mamba don't need it — f-gate handles 
-           scaling automatically)
-  - FIX 13: REMOVED ELU+1 (was destroying negative geometry of pretrained 
-           GPT-2 weights; only q is scaled by 1/sqrt(d))
+Architecture:
+    * Pure outer-product linear recurrence: S_t = f_t · S_{t-1} + k_tᵀ v_t
+    * Forget gate f_t in (0, 1) via softplus(W_f · x)
+    * NO RoPE (invalid for outer-product linear attention)
+    * NO denominator Z (f-gate handles scaling automatically)
+    * NO ELU+1 (preserves signed geometry of pretrained weights)
 
-All v3 fixes preserved:
-  - FIX 1: W_f bias init = -4.0
-  - FIX 2: q scaled by 1/sqrt(d)
-  - FIX 3: state_norm init = identity
-  - FIX 4: chunk_size = 16
-  - FIX 5: denom clamp (removed — see FIX 12)
-  - FIX 6: decay mask = i <= j
-  - FIX 7: output_scale init = 0.1
-  - FIX 8: k NOT scaled by sqrt(d)
-  - FIX 9: strict shape check in _copy_to
-  - FIX 10: einsum reshaped to matmul
+Fixes applied:
+    [HGRN2-OUT-FIX-01]  lora_ prefix on W_f and output_scale (KD scope)
+    [HGRN2-OUT-FIX-02]  Property aliases for backward compatibility
+    [HGRN2-OUT-FIX-03]  Correct shape handling in chunked scan
+    [HGRN2-OUT-FIX-04]  Memory-efficient chunked scan (O(C²) not O(C·L))
+    [HGRN2-OUT-FIX-05]  Full forward method with KV-cache passthrough
+    [HGRN2-OUT-FIX-06]  Single-token (L=1) generation support
+    [HGRN2-OUT-FIX-07]  Initial state loading from past_key_value
+    [HGRN2-OUT-FIX-08]  Robust mask handling (2D, 4D)
+    [HGRN2-OUT-FIX-09]  Padding tokens do NOT decay state (f=1 on pad)
+    [HGRN2-OUT-FIX-10]  Idempotency + recursion guards in injector
+    [HGRN2-OUT-FIX-11]  State returned in HF-compatible format
+    [HGRN2-OUT-FIX-12]  Safe mean over bidirectional flip
 """
 
 from __future__ import annotations
@@ -43,6 +43,9 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# Config helpers
+# ===========================================================================
 def _env_float(name: str, default: float) -> float:
     v = os.environ.get(name, "")
     try:
@@ -60,11 +63,11 @@ def _cfg_get(config: Any, attr: str, default: Any = None) -> Any:
 
 
 # ===========================================================================
-# RoPE — kept for backward compat but NOT used in forward
+# RoPE shim — kept only for API compatibility, NOT used in forward
 # ===========================================================================
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
-    """Kept for API compatibility. NOT used in forward — RoPE is invalid
-    for outer-product linear attention."""
+    """DEPRECATED: RoPE is invalid for outer-product linear attention.
+    Kept only for external API compatibility."""
     if cos is None or sin is None:
         return q, k
     rotary_dim = cos.shape[-1]
@@ -86,15 +89,24 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
 class LoRALinear(nn.Module):
     is_custom_attention: bool = False
 
-    def __init__(self, in_features, out_features, bias=True, lora_rank=0,
-                 lora_alpha=1.0, freeze_base=True, device=None, dtype=None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
         self.lora_rank = int(lora_rank)
         self.lora_alpha = float(lora_alpha)
-        self.scaling = lora_alpha / max(1, lora_rank)
+        self.lora_scaling = self.lora_alpha / max(1, self.lora_rank)
 
         self.weight = nn.Parameter(torch.empty(out_features, in_features, **fk))
         if bias:
@@ -108,7 +120,7 @@ class LoRALinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
-        if lora_rank > 0:
+        if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features, **fk))
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank, **fk))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
@@ -119,7 +131,7 @@ class LoRALinear(nn.Module):
         if freeze_base:
             self.freeze_base_weights()
 
-    def freeze_base_weights(self):
+    def freeze_base_weights(self) -> None:
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
@@ -127,15 +139,18 @@ class LoRALinear(nn.Module):
             self.lora_A.requires_grad = True
             self.lora_B.requires_grad = True
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (self.bias.to(x.dtype)
-             if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias)
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
             bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.scaling
+            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
 
@@ -143,44 +158,81 @@ class LoRALinear(nn.Module):
 # HGRN2GatedOuterBlock
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
-    "hgrn2_gated_outer", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+    "hgrn2_gated_outer",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
-    "hgrn2_outer", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+    "hgrn2_outer",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
 )
 class HGRN2GatedOuterBlock(BaseAttention):
+    """
+    HGRN-2 outer-product recurrent linear attention.
+
+    Recurrence:
+        S_t = f_t · S_{t-1} + k_tᵀ · v_t
+        y_t = q_t · S_t
+        out = state_norm(y) · output_scale
+
+    where f_t ∈ (0, 1) is a per-head forget gate.
+    """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
 
-    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
-                 lora_rank=16, lora_alpha=32.0, is_decoder=None,
-                 chunk_size=16, **kwargs):
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        chunk_size: int = 16,
+        **kwargs: Any,
+    ) -> None:
         try:
             super().__init__(config, rank if rank is not None else 64)
         except TypeError:
             super().__init__(config)
 
+        # ---- Resolve dim ----
         if dim is None:
             if isinstance(config, int):
                 dim = config
             elif config is not None:
-                dim = getattr(config, "hidden_size",
-                              getattr(config, "d_model",
-                                      getattr(config, "n_embd",
-                                              getattr(config, "dim", None))))
+                dim = getattr(
+                    config,
+                    "hidden_size",
+                    getattr(
+                        config,
+                        "d_model",
+                        getattr(config, "n_embd", getattr(config, "dim", None)),
+                    ),
+                )
         if dim is None:
             dim = kwargs.get("hidden_size", kwargs.get("d_model", 768))
         if hasattr(dim, "hidden_size"):
             dim = dim.hidden_size
 
-        if num_heads is None:
-            if config is not None and not isinstance(config, int):
-                num_heads = getattr(config, "num_attention_heads",
-                                    getattr(config, "num_heads",
-                                            getattr(config, "n_heads",
-                                                    getattr(config, "n_head", None))))
+        # ---- Resolve num_heads ----
+        if num_heads is None and config is not None and not isinstance(config, int):
+            num_heads = getattr(
+                config,
+                "num_attention_heads",
+                getattr(
+                    config,
+                    "num_heads",
+                    getattr(config, "n_heads", getattr(config, "n_head", None)),
+                ),
+            )
         if num_heads is None:
             num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
 
@@ -193,9 +245,12 @@ class HGRN2GatedOuterBlock(BaseAttention):
         self.lora_alpha = float(lora_alpha)
         self.chunk_size = max(16, int(chunk_size))
 
+        # ---- GQA ----
         cfg_kv = None
         if config is not None and not isinstance(config, int):
-            cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+            cfg_kv = getattr(
+                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+            )
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -203,11 +258,13 @@ class HGRN2GatedOuterBlock(BaseAttention):
         self.q_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        # FIX 15: FORCE causal for GPT-family
+        # ---- Decoder detection ----
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        
+        _decoder_prefixes = (
+            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+        )
+
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -218,55 +275,81 @@ class HGRN2GatedOuterBlock(BaseAttention):
                 or kwargs.get("is_decoder", False)
                 or kwargs.get("is_causal", False)
             )
-            # FIX 15: strong signal from old_attn
             old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
             if old_attn is not None:
                 if hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
                     cfg_is_dec = True
                 if getattr(old_attn, "is_decoder", False):
                     cfg_is_dec = True
-            # FIX 15: safe default
             if config is None and old_attn is None:
                 logger.warning("HGRN2: defaulting to is_decoder=True for causal safety")
                 cfg_is_dec = True
             self.is_decoder = bool(cfg_is_dec)
 
-        self.is_nested_encoder = False
+        self.is_nested_encoder: bool = False
 
-        self.q_proj = LoRALinear(self.dim, self.q_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.W_f = nn.Linear(self.dim, self.num_heads, bias=True)
+        # ---- Projections ----
+        self.q_proj = LoRALinear(
+            self.dim, self.q_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.dim, self.kv_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.dim, self.kv_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
+        # ---- [HGRN2-OUT-FIX-01] Forget gate with lora_ prefix ----
+        self.lora_W_f = nn.Linear(self.dim, self.num_heads, bias=True)
+
+        # ---- State norm ----
         self.state_norm = nn.LayerNorm(self.head_dim)
         with torch.no_grad():
             self.state_norm.weight.fill_(1.0)
             self.state_norm.bias.zero_()
 
-        self.out_proj = LoRALinear(self.q_head_size, self.dim, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=True)
+        # ---- Output projection ----
+        self.out_proj = LoRALinear(
+            self.q_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
+        # ---- Init forget gate ----
         _wf_bias = _env_float("HGRN2_WF_BIAS", -4.0)
         with torch.no_grad():
-            nn.init.normal_(self.W_f.weight, mean=0.0, std=0.01)
-            nn.init.constant_(self.W_f.bias, _wf_bias)
+            nn.init.normal_(self.lora_W_f.weight, mean=0.0, std=0.01)
+            nn.init.constant_(self.lora_W_f.bias, _wf_bias)
 
+        # ---- [HGRN2-OUT-FIX-01] Output scale with lora_ prefix ----
         _out_scale = _env_float("HGRN2_OUTPUT_SCALE", 0.1)
-        self.output_scale = nn.Parameter(torch.full((1,), _out_scale))
+        self.lora_output_scale = nn.Parameter(torch.full((1,), _out_scale))
 
+        # ---- Storage accounting ----
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
+        # ---- Weight transfer ----
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             self.copy_weights(old_attn)
+
+    # ------------------------------------------------------------------
+    # [HGRN2-OUT-FIX-02] Backward-compat aliases
+    # ------------------------------------------------------------------
+    @property
+    def W_f(self) -> nn.Linear:
+        return self.lora_W_f
+
+    @property
+    def output_scale(self) -> nn.Parameter:
+        return self.lora_output_scale
 
     @property
     def query(self): return self.q_proj
@@ -289,15 +372,20 @@ class HGRN2GatedOuterBlock(BaseAttention):
     @property
     def o_proj(self): return self.out_proj
 
-    def copy_weights(self, old_attn):
+    # ------------------------------------------------------------------
+    # Weight transfer
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: nn.Module) -> None:
         with torch.no_grad():
             w_q = w_k = w_v = w_o = None
             b_q = b_k = b_v = b_o = None
 
             cls_name = old_attn.__class__.__name__
             if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query") and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")):
+                hasattr(old_attn, "query")
+                and not hasattr(old_attn, "dense")
+                and not hasattr(old_attn, "out_proj")
+            ):
                 self.is_nested_encoder = True
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
@@ -309,31 +397,41 @@ class HGRN2GatedOuterBlock(BaseAttention):
             else:
                 src = old_attn
 
+            # --- GPT-2 fused c_attn ---
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                c_attn_b = (
+                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                )
                 cls_c = src.c_attn.__class__.__name__
-                if (hasattr(src.c_attn, "nf") or "Conv1D" in cls_c
-                        or (c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim)):
+                if (
+                    hasattr(src.c_attn, "nf")
+                    or "Conv1D" in cls_c
+                    or (c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim)
+                ):
                     c_attn_w = c_attn_w.t()
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
                 v_dim = self.kv_head_size
                 w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim:q_dim+k_dim, :]
-                w_v = c_attn_w[q_dim+k_dim:q_dim+k_dim+v_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
                 if c_attn_b is not None:
                     b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim:q_dim+k_dim]
-                    b_v = c_attn_b[q_dim+k_dim:q_dim+k_dim+v_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
                 out_w = src.c_proj.weight.detach()
                 cls_p = src.c_proj.__class__.__name__
-                if (hasattr(src.c_proj, "nf") or "Conv1D" in cls_p
-                        or (out_w.ndim == 2 and out_w.shape[0] != self.dim)):
+                if (
+                    hasattr(src.c_proj, "nf")
+                    or "Conv1D" in cls_p
+                    or (out_w.ndim == 2 and out_w.shape[0] != self.dim)
+                ):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
+            # --- BERT / RoBERTa nested ---
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -349,6 +447,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
+            # --- LLaMA / Qwen ---
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -360,6 +459,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
+            # --- DistilBERT ---
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -371,6 +471,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
+            # --- UniversalAdapter fallback ---
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
@@ -392,23 +493,22 @@ class HGRN2GatedOuterBlock(BaseAttention):
             except Exception:
                 pass
 
-            def _copy_to(target_mod, w_src, b_src, name):
+            def _copy_to(target_mod: LoRALinear, w_src, b_src, name: str):
                 tw = target_mod.weight
                 w_cast = w_src.to(tw.dtype)
                 if w_cast.shape == tw.shape:
                     tw.data.copy_(w_cast)
+                elif w_cast.t().contiguous().shape == tw.shape:
+                    tw.data.copy_(w_cast.t().contiguous())
                 else:
-                    if w_cast.t().contiguous().shape == tw.shape:
-                        tw.data.copy_(w_cast.t().contiguous())
-                    else:
-                        min_r = min(tw.shape[0], w_cast.shape[0])
-                        min_c = min(tw.shape[1], w_cast.shape[1])
-                        tw.data.zero_()
-                        tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
-                        logger.warning(
-                            "HGRN2GatedOuterBlock: partial copy for '%s': %s → %s",
-                            name, tuple(w_cast.shape), tuple(tw.shape),
-                        )
+                    min_r = min(tw.shape[0], w_cast.shape[0])
+                    min_c = min(tw.shape[1], w_cast.shape[1])
+                    tw.data.zero_()
+                    tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
+                    logger.warning(
+                        "HGRN2GatedOuterBlock: partial copy for '%s': %s → %s",
+                        name, tuple(w_cast.shape), tuple(tw.shape),
+                    )
                 if b_src is not None and target_mod.bias is not None:
                     tb = target_mod.bias
                     b_cast = b_src.to(tb.dtype)
@@ -433,21 +533,68 @@ class HGRN2GatedOuterBlock(BaseAttention):
                 pass
 
     # ------------------------------------------------------------------
-    # FIX 12: NO denominator, NO z_prev, NO W_k
+    # [HGRN2-OUT-FIX-03, 04, 06, 07] Chunked scan with state passthrough
     # ------------------------------------------------------------------
-    def _chunked_scan(self, q, k, v, f, chunk_size=16):
+    def _chunked_scan(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        f: torch.Tensor,
+        initial_state: torch.Tensor | None = None,
+        chunk_size: int = 16,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Chunked scan for pure HGRN2 recurrence.
-        
-        FIX 12: Removed denominator Z (Katharopoulos-style normalization).
-                Modern RNNs (HGRN2, GLA, Mamba) rely on f-gate for scaling.
-                Dividing by Z fights the forget-gate dynamics.
+
+        Args:
+            q, k, v: (B, H, L, d)
+            f:       (B, H, L)  — forget gate in (0, 1)
+            initial_state: (B, H, d, d) or None
+            chunk_size: int
+
+        Returns:
+            y: (B, H, L, d)
+            S_final: (B, H, d, d)
         """
         B, H, L, d = q.shape
+        device = q.device
+
+        # ---- [HGRN2-OUT-FIX-06] Single-token fast path (decode) ----
+        if L == 1:
+            if initial_state is not None:
+                S_prev = initial_state.to(device=device, dtype=torch.float32)
+            else:
+                S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+
+            # S_1 = f_1 · S_0 + k_1ᵀ · v_1
+            f_1 = f[:, :, 0].unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+            S_next = f_1 * S_prev + torch.matmul(
+                k.float()[:, :, 0].transpose(-1, -2).contiguous(),
+                v.float()[:, :, 0],
+            )
+
+            # y_1 = q_1 · S_1
+            y_1 = torch.matmul(q.float()[:, :, 0].unsqueeze(2), S_next.unsqueeze(2))
+            y_1 = y_1.squeeze(2)  # (B, H, d)
+            return y_1.unsqueeze(2).to(q.dtype), S_next
+
+        # ---- Prefill / training path ----
         num_chunks = (L + chunk_size - 1) // chunk_size
 
-        # Only S state (no Z)
-        S_prev = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
+        q_f = q.float()
+        k_f = k.float()
+        v_f = v.float()
+
+        # log_f clamped to avoid -inf breaking cumsum
+        log_f = torch.log(f.float().clamp_min(1e-6))
+
+        # Initialize state
+        if initial_state is not None:
+            S_prev = initial_state.to(device=device, dtype=torch.float32)
+        else:
+            S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+
         outputs = []
 
         for c in range(num_chunks):
@@ -455,56 +602,85 @@ class HGRN2GatedOuterBlock(BaseAttention):
             end = min(start + chunk_size, L)
             C = end - start
 
-            q_c = q[:, :, start:end]
-            k_c = k[:, :, start:end]
-            v_c = v[:, :, start:end]
-            f_c = f[:, :, start:end]
+            q_c = q_f[:, :, start:end]  # (B, H, C, d)
+            k_c = k_f[:, :, start:end]
+            v_c = v_f[:, :, start:end]
+            log_f_c = log_f[:, :, start:end]  # (B, H, C)
 
-            log_f = torch.log(f_c.clamp_min(1e-6))
-            log_F_c = torch.cumsum(log_f, dim=-1)
+            # ---- Intra-chunk decay ----
+            # log_F_c[i] = Σ_{j <= i} log_f_c[j]
+            log_F_c = torch.cumsum(log_f_c, dim=-1)  # (B, H, C)
 
-            log_F_prev = torch.cat([
-                torch.zeros(B, H, 1, device=q.device, dtype=log_F_c.dtype),
-                log_F_c,
-            ], dim=-1)
+            # log_F_prev[i] = Σ_{j < i} log_f_c[j]  (shifted by 1)
+            log_F_prev = torch.cat(
+                [
+                    torch.zeros(B, H, 1, device=device, dtype=log_F_c.dtype),
+                    log_F_c[:, :, :-1],
+                ],
+                dim=-1,
+            )  # (B, H, C)
 
-            log_decay = log_F_c.unsqueeze(-2) - log_F_prev.unsqueeze(-1)
+            # log_decay[i, j] = log_F_c[i] - log_F_prev[j]   for j <= i
+            log_decay = log_F_c.unsqueeze(-1) - log_F_prev.unsqueeze(-2)  # (B, H, C, C)
 
-            i_idx = torch.arange(C + 1, device=q.device).view(C + 1, 1)
-            j_idx = torch.arange(C, device=q.device).view(1, C)
-            valid = (i_idx == 0) | (i_idx <= j_idx)
+            # Causal mask: keep j <= i
+            i_idx = torch.arange(C, device=device).view(C, 1)
+            j_idx = torch.arange(C, device=device).view(1, C)
+            valid = i_idx >= j_idx  # (C, C)
+
             fill_val = -1e4 if log_decay.dtype == torch.float16 else -1e9
             log_decay = log_decay.masked_fill(~valid, fill_val)
-            decay = torch.exp(log_decay).to(q.dtype)
+            decay = torch.exp(log_decay)  # (B, H, C, C)
 
-            one_minus_f = (1.0 - f_c).to(q.dtype)
-            W_kv = one_minus_f[..., None, None] * (k_c.unsqueeze(-1) * v_c.unsqueeze(-2))
+            # ---- Intra-chunk KV outer products ----
+            # K·Vᵀ outer: (B, H, C, d, d)
+            KV_c = k_c.unsqueeze(-1) * v_c.unsqueeze(-2)  # (B, H, C, d, d)
 
-            combined_kv = torch.cat([S_prev.unsqueeze(2), W_kv], dim=2).to(q.dtype)
+            # Apply per-row decay weights
+            # S_intra[i] = Σ_{j<=i} decay[i,j] · (k_jᵀ v_j)
+            KV_c_flat = KV_c.view(B, H, C, d * d)  # (B, H, C, d²)
+            S_intra_flat = torch.matmul(decay, KV_c_flat)  # (B, H, C, d²)
+            S_intra = S_intra_flat.view(B, H, C, d, d)  # (B, H, C, d, d)
 
-            B_, H_, Nc, _, _ = combined_kv.shape
-            combined_kv_flat = combined_kv.view(B_, H_, Nc, -1)
-            S_all_flat = torch.matmul(decay, combined_kv_flat)
-            S_all = S_all_flat.view(B_, H_, C, d, d)
+            # ---- Inter-chunk contribution from initial state ----
+            # S_inter[i] = exp(log_F_c[i]) · S_prev
+            inter_decay = torch.exp(log_F_c).unsqueeze(-1).unsqueeze(-1)  # (B, H, C, 1, 1)
+            S_inter = S_prev.unsqueeze(2) * inter_decay  # (B, H, C, d, d)
 
-            # FIX 12: output is num only — no denominator!
-            y_c = torch.einsum("bhjd,bhjde->bhje", q_c, S_all)
+            # ---- Total state for this chunk ----
+            S_total = S_intra + S_inter  # (B, H, C, d, d)
 
+            # ---- Output for this chunk ----
+            y_c = torch.einsum("bhjd,bhjde->bhje", q_c, S_total)  # (B, H, C, d)
             outputs.append(y_c)
-            S_prev = S_all[:, :, -1]
 
-        return torch.cat(outputs, dim=2).to(q.dtype)
+            # ---- Update state for next chunk ----
+            S_prev = S_total[:, :, -1]
 
-    def storage_bytes(self):
-        return {"orig": self._orig_storage_bytes, "comp": self._comp_storage_bytes}
+        y_out = torch.cat(outputs, dim=2)  # (B, H, L, d)
+        return y_out.to(q.dtype), S_prev
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                encoder_hidden_states=None, encoder_attention_mask=None,
-                past_key_value=None, output_attentions=False,
-                output_hidden_states=False, return_dict=True,
-                *args, **kwargs):
+    # ------------------------------------------------------------------
+    # [HGRN2-OUT-FIX-05, 08, 09, 11] Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, Any]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError("HGRN2GatedOuterBlock does not support cross-attention.")
+            raise NotImplementedError(
+                "HGRN2GatedOuterBlock does not support cross-attention."
+            )
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -512,25 +688,34 @@ class HGRN2GatedOuterBlock(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
+        # ---- Projections ----
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
-        # FIX 11: REMOVED RoPE completely
-        # HGRN2 uses f-gate for positional tracking; RoPE is invalid for
-        # outer-product linear attention (phases mix into noise).
-
+        # ---- GQA expansion ----
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        # FIX 13: REMOVED ELU+1 — only scale q by 1/sqrt(d)
-        # ELU+1 was destroying negative geometry of pretrained GPT-2 weights.
-        # Modern HGRN2/GLA/Mamba preserve signed values.
+        # ---- Scale q by 1/sqrt(d) (no ELU+1, no RoPE) ----
         q = q / math.sqrt(d)
 
-        f = torch.exp((-F.softplus(self.W_f(hidden_states))).clamp(min=-3.0, max=-1e-4)).transpose(1, 2)
+        # ---- Forget gate ----
+        f_logits = -F.softplus(self.lora_W_f(hidden_states))
+        f = torch.exp(f_logits.clamp(min=-3.0, max=-1e-4)).transpose(1, 2)  # (B, H, L)
 
+        # ---- Mask handling ----
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -551,13 +736,36 @@ class HGRN2GatedOuterBlock(BaseAttention):
             if mask_bool is not None and mask_bool.shape[-1] != L:
                 mask_bool = None
 
+        # ---- [HGRN2-OUT-FIX-09] Apply mask; padding does NOT decay state ----
         if mask_bool is not None:
-            m_exp = mask_bool.unsqueeze(1).unsqueeze(-1).to(k.dtype)
-            k = k * m_exp
-            v = v * m_exp
+            m_kv = mask_bool.unsqueeze(1).unsqueeze(-1).to(k.dtype)
+            k = k * m_kv
+            v = v * m_kv
+            # f = 1.0 on padding → state unchanged
+            f = torch.where(
+                mask_bool.unsqueeze(1).bool(),
+                f,
+                torch.ones_like(f),
+            )
 
-        y_fwd = self._chunked_scan(q, k, v, f, chunk_size=self.chunk_size)
+        # ---- [HGRN2-OUT-FIX-07] Read past state ----
+        past_state = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                cand = past_key_value[0]
+                if isinstance(cand, torch.Tensor) and cand.dim() == 4:
+                    past_state = cand
+            elif hasattr(past_key_value, "hgrn2_state"):
+                past_state = past_key_value.hgrn2_state
 
+        # ---- Forward scan ----
+        y_fwd, next_state = self._chunked_scan(
+            q, k, v, f,
+            initial_state=past_state,
+            chunk_size=self.chunk_size,
+        )
+
+        # ---- Bidirectional for encoders ----
         if self.is_decoder:
             y = y_fwd
         else:
@@ -565,17 +773,26 @@ class HGRN2GatedOuterBlock(BaseAttention):
             k_r = torch.flip(k, dims=[2])
             v_r = torch.flip(v, dims=[2])
             f_r = torch.flip(f, dims=[2])
-            y_bwd_r = self._chunked_scan(q_r, k_r, v_r, f_r, chunk_size=self.chunk_size)
+            y_bwd_r, _ = self._chunked_scan(
+                q_r, k_r, v_r, f_r,
+                initial_state=None,
+                chunk_size=self.chunk_size,
+            )
             y_bwd = torch.flip(y_bwd_r, dims=[2])
             y = 0.5 * (y_fwd + y_bwd)
-            y = y.to(hidden_states.dtype)
 
-        sn_dtype = (self.state_norm.weight.dtype
-                    if hasattr(self.state_norm, "weight") and self.state_norm.weight is not None
-                    else hidden_states.dtype)
+        y = y.to(hidden_states.dtype)
+
+        # ---- State norm ----
+        sn_dtype = (
+            self.state_norm.weight.dtype
+            if hasattr(self.state_norm, "weight") and self.state_norm.weight is not None
+            else hidden_states.dtype
+        )
         y = self.state_norm(y.to(sn_dtype)).to(hidden_states.dtype)
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        # ---- head_mask ----
         if head_mask is not None:
             hm = head_mask.to(y.dtype)
             if hm.dim() == 1:
@@ -586,27 +803,61 @@ class HGRN2GatedOuterBlock(BaseAttention):
                 hm = hm.unsqueeze(-1)
             y = y * hm
 
+        # ---- Reshape to (B, L, H·d) ----
         y = y.transpose(1, 2).contiguous().view(B, L, H * d)
 
+        # ---- Output projection ----
         if self.is_nested_encoder:
             out = y
         else:
             out = self.out_proj(y)
 
-        out = out * self.output_scale
+        out = out * self.lora_output_scale
 
+        # ---- Final mask on output ----
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        # ---- [HGRN2-OUT-FIX-11] Package state for return ----
+        new_past_key_value: Any = None
+        use_cache = kwargs.get("use_cache", False) or (
+            past_key_value is not None and past_key_value is not False
+        )
+        if self.is_decoder and use_cache:
+            new_past_key_value = (next_state,)
+
+        return out, new_past_key_value
+
+    # ------------------------------------------------------------------
+    # Storage accounting
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -> dict[str, int]:
+        return {
+            "orig": int(self._orig_storage_bytes),
+            "comp": int(self._comp_storage_bytes),
+        }
+
+    def get_ortho_loss(self) -> torch.Tensor:
+        p = next(self.parameters(), None)
+        dev = p.device if p is not None else torch.device("cpu")
+        return torch.zeros((), device=dev)
 
 
 # ===========================================================================
-# Injector
+# Injection
 # ===========================================================================
-def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=None,
-                       layer_idx=0, total_layers=12, old_attn=None,
-                       _depth=0, **kwargs):
+def inject_hgrn2_outer(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    # [HGRN2-OUT-FIX-10] Recursion guard
     if _depth > 8:
         logger.warning("inject_hgrn2_outer: max recursion depth exceeded.")
         return None
@@ -617,17 +868,24 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
     if target is None:
         return None
 
-    cfg = model_config if model_config is not None else getattr(target, "config", None)
+    cfg = (
+        model_config
+        if model_config is not None
+        else getattr(target, "config", None)
+    )
 
+    # ---- Whole-model traversal ----
     layer_list = None
-    for path in (("distilbert", "transformer", "layer"),
-                 ("roberta", "encoder", "layer"),
-                 ("bert", "encoder", "layer"),
-                 ("transformer", "h"),
-                 ("model", "layers"),
-                 ("encoder", "layer"),
-                 ("layers",),
-                 ("h",)):
+    for path in (
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+        ("layers",),
+        ("h",),
+    ):
         obj = target
         ok = True
         for p in path:
@@ -644,13 +902,20 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
         n_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_hgrn2_outer(layer=lyr, model_config=cfg, comp_config=comp_config,
-                                      layer_idx=idx, total_layers=tot,
-                                      _depth=_depth + 1, **kwargs)
+            res = inject_hgrn2_outer(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
             if res is not None:
                 n_injected += 1
         return target if n_injected > 0 else None
 
+    # ---- Single-layer injection ----
     src = old_attn
     is_nested_target = False
     if src is None and target is not None:
@@ -668,18 +933,23 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
     if src is None:
         return None
 
+    # [HGRN2-OUT-FIX-10] Idempotency guard
     if isinstance(src, HGRN2GatedOuterBlock) or "HGRN2" in src.__class__.__name__:
         return None
 
+    # ---- Resolve dims ----
     dim = 768
     num_heads = 12
     if cfg is not None:
         dim = getattr(cfg, "hidden_size", getattr(cfg, "dim", 768))
         num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12))
 
+    # ---- Decoder detection ----
     _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
-    _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+    _dec_pfx = (
+        "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+        "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+    )
     is_dec = (
         bool(getattr(cfg, "is_decoder", False) if cfg else False)
         or bool(getattr(cfg, "causal", False) if cfg else False)
@@ -690,16 +960,26 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
     try:
         kwargs.pop("dim", None)
         kwargs.pop("num_heads", None)
-        new_block = HGRN2GatedOuterBlock(config=cfg, dim=dim, num_heads=num_heads,
-                                          is_decoder=is_dec, **kwargs)
+        new_block = HGRN2GatedOuterBlock(
+            config=cfg,
+            dim=dim,
+            num_heads=num_heads,
+            is_decoder=is_dec,
+            **kwargs,
+        )
         new_block.copy_weights(src)
 
         p = next(src.parameters(), None)
         if p is not None:
             new_block.to(device=p.device, dtype=p.dtype)
 
+        # ---- Splice ----
         spliced = False
-        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
+        if (
+            is_nested_target
+            and hasattr(target, "attention")
+            and hasattr(target.attention, "self")
+        ):
             new_block.is_nested_encoder = True
             target.attention.self = new_block
             spliced = True
@@ -721,13 +1001,16 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
             spliced = True
 
         if not spliced:
-            logger.error("inject_hgrn2_outer: no writable attribute on %s", type(target).__name__)
+            logger.error(
+                "inject_hgrn2_outer: no writable attention attribute on %s",
+                type(target).__name__,
+            )
             return None
 
         return new_block
 
     except Exception as e:
-        logger.error("inject_hgrn2_outer failed at layer %d: %s", layer_idx, e)
+        logger.exception("inject_hgrn2_outer failed at layer %d: %s", layer_idx, e)
         return None
 
 
