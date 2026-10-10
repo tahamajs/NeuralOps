@@ -544,7 +544,6 @@ class GatedHybridKernelAttention(BaseAttention):
         self.h = config.num_heads
         self.num_heads = config.num_heads
         self.num_kv_heads = getattr(config, "num_key_value_heads", self.h) or self.h
-        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         if self.h % self.num_kv_heads != 0:
             raise ValueError(
                 f"num_heads {self.h} not divisible by num_kv_heads {self.num_kv_heads}"
