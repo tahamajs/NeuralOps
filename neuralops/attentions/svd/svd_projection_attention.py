@@ -260,6 +260,7 @@ class SVDProjectionAttention(BaseAttention):
         cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         elif kwargs.get("num_kv_heads") is not None:
             self.num_kv_heads = int(kwargs["num_kv_heads"])
         else:

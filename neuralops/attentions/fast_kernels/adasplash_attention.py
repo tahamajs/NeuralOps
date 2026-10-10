@@ -269,6 +269,7 @@ class AdaSplashAttention(BaseAttention):
             self.lora_alpha = float(lora_alpha_cfg)
             self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
             self.num_kv_heads = kwargs.get(
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
                 "num_kv_heads", self.adapter.num_key_value_heads or self.num_heads
             )
             self.hidden_size = kwargs.get("hidden_size", self.adapter.hidden_size or 768)

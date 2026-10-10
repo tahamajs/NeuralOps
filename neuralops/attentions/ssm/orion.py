@@ -356,6 +356,7 @@ class ORIONAttention(BaseAttention):
 
         self.num_heads = max(1, int(num_heads))
         self.num_kv_heads = max(1, int(num_kv_heads))
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.hidden_size = int(hidden_size)
         if self.hidden_size % self.num_heads != 0:
             raise ValueError(

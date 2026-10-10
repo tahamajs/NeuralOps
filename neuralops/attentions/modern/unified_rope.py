@@ -266,6 +266,7 @@ class UnifiedRoPE(BaseAttention):
         if cfg_kv is None and src is not None:
             cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups = max(1, self.num_heads // self.num_kv_heads)
 

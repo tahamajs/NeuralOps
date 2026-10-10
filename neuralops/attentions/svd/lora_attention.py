@@ -226,6 +226,7 @@ class LoRAAttention(BaseAttention):
         self.adapter = ModelAdapter(cfg)
         self.num_heads = int(self.adapter.num_heads)
         self.num_kv_heads = int(self.adapter.num_key_value_heads)
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.hidden_size = int(self.adapter.hidden_size)
         self.head_dim = int(self.adapter.head_dim)
         self.all_head_size = self.num_heads * self.head_dim
