@@ -344,9 +344,10 @@ class SinkAttention(BaseAttention):
                     kwargs.get("num_sink_tokens", num_sink_tokens))
             if comp_config else num_sink_tokens
         )
+        default_win = 64
         self.window_size = int(
-            getattr(comp_config, "window_size", kwargs.get("window_size", window_size))
-            if comp_config else window_size
+            getattr(comp_config, "window_size", kwargs.get("window_size", default_win if window_size == 4096 else window_size))
+            if comp_config else (default_win if window_size == 4096 else window_size)
         )
         if self.num_sink_tokens < 1:
             raise ValueError("num_sink_tokens must be >= 1.")
