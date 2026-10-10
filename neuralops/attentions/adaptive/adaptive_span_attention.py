@@ -477,13 +477,16 @@ class AdaptiveSpanAttention(BaseAttention):
         source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
         cfg_model_type = getattr(config, "model_type", "").lower() if config else ""
         is_nested = (
-            source_cls in ("BertSelfAttention", "RobertaSelfAttention")
-            or cfg_model_type in ("roberta", "bert")
-            or (
-                source_cls.endswith(("SelfAttention", "SelfAttn"))
-                and "distil" not in source_cls.lower()
-                and "gpt" not in source_cls.lower()
-                and "qwen" not in source_cls.lower()
+            not is_dec
+            and (
+                source_cls in ("BertSelfAttention", "RobertaSelfAttention")
+                or cfg_model_type in ("roberta", "bert")
+                or (
+                    source_cls.endswith(("SelfAttention", "SelfAttn"))
+                    and "distil" not in source_cls.lower()
+                    and "gpt" not in source_cls.lower()
+                    and "qwen" not in source_cls.lower()
+                )
             )
         )
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", is_nested))
@@ -569,8 +572,8 @@ class AdaptiveSpanAttention(BaseAttention):
             )
 
         # ---------------- Span logits ----------------
-        # Init at sigmoid^-1(0.9) ≈ 2.2 → span ≈ 0.9 * max_span initially
-        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.2, dtype=torch.float32))
+        # Init at -1.5 (span ≈ 0.18 * max_span ≈ 23 tokens) so compression takes active effect
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), -1.5, dtype=torch.float32))
 
         # ---------------- Dropout ----------------
         dropout_p = (

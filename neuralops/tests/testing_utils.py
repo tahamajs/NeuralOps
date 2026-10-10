@@ -7,8 +7,8 @@ class MockConfig:
         self.embed_dim = self.hidden_size
         self.num_attention_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 4))
         self.num_heads = self.num_attention_heads
-        self.num_key_value_heads = kwargs.get("num_key_value_heads", 4)
-        self.head_dim = kwargs.get("head_dim", 16)
+        self.num_key_value_heads = kwargs.get("num_key_value_heads", self.num_attention_heads)
+        self.head_dim = kwargs.get("head_dim", self.hidden_size // self.num_attention_heads if self.num_attention_heads else 16)
         self.dropout = kwargs.get("dropout", kwargs.get("attention_dropout", 0.0))
         self.attention_dropout = self.dropout
         self.is_decoder = kwargs.get("is_decoder", False)
