@@ -1200,27 +1200,26 @@ def run_kd_method(
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        raise RuntimeError(f"CRITICAL: Failed to inject module '{module_name}' into model: {e}") from e
 
-        # ساخت آبجکت خروجی استاندارد با وضعیت خطا برای ذخیره در JSON/CSV
-        return {
-            "method": method_name,
-            "error": f"Injection failed: {str(e)}",
-            "pre_ppl": float("nan"),
-            "post_ppl": float("nan"),
-            "post_ppl_stage1": float("nan"),
-            "post_ppl_stage2": float("nan"),
-            "recovery_pct": float("nan"),
-            "train_time_s": 0.0,
-            "peak_vram_mb": 0.0,
-            "cached": bool(use_cache),
-            "teacher_params": sum(p.numel() for p in _teacher_ref.parameters()),
-            "student_params": 0,
-            "trainable_params": 0,
-            "batch_size": args.batch_size,
-            "seq_len": args.seq_len,
-            "learning_rate": args.learning_rate,
-            "recovery_steps": args.recovery_steps,
-        }
+    if student is None:
+        raise RuntimeError(f"CRITICAL: Injection returned None for module '{module_name}'.")
+
+    # Verify that target module was actually injected into student
+    def _is_injected(model, mod_name):
+        mod_tokens = set(mod_name.lower().replace("_", " ").split())
+        for m in model.modules():
+            cname = m.__class__.__name__.lower()
+            lname = getattr(m, "layer_name", "").lower()
+            if any(t in cname for t in mod_tokens if len(t) > 3) or mod_name.lower() in lname:
+                return True
+            # Also check if it's no longer the baseline GPT2Attention
+            if "attention" in cname and cname != "gpt2attention":
+                return True
+        return False
+
+    if not _is_injected(student, module_name):
+        raise RuntimeError(f"CRITICAL: Module '{module_name}' was not detected in any layer of student. Aborting.")
     # ═══════════════════════════════════════════════════════════
     # DIAGNOSTIC: Check if weights were copied correctly
     # ═══════════════════════════════════════════════════════════
