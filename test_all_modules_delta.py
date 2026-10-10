@@ -4,6 +4,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import json
 import time
 import inspect
@@ -18,15 +19,16 @@ from neuralops.benchmarks._legacy.kd_quick_test import apply_module_to_model, ev
 
 def get_target_modules():
     target = []
-    # Collect all modules under adaptive/, hybrid/, modern/
+    subdirs = ('adaptive/','dense/','experimental/','fast_kernels/','gated/',
+               'hybrid/','linear/','modern/','sparse/','ssm/','svd/')
     for key in sorted(ATTENTION_REGISTRY.keys()):
         try:
             cls = ATTENTION_REGISTRY.get(key)
             if not inspect.isclass(cls):
                 continue
             mod = inspect.getmodule(cls)
-            p = getattr(mod, '__file__', '').replace('\\', '/')
-            if any(d in p for d in ('adaptive/', 'hybrid/', 'modern/')):
+            p = (getattr(mod, '__file__', '') or '').replace('\\', '/')
+            if any(d in p for d in subdirs) or ('/attentions/' in p and p.count('/') == p.rfind('/attentions/') + 13):
                 target.append((key, cls.__name__, p))
         except Exception:
             pass
@@ -66,7 +68,7 @@ def main():
     print(f"Baseline GPT-2 PPL: {baseline_ppl:.4f}\n", flush=True)
 
     all_modules = get_target_modules()
-    print(f"Discovered {len(all_modules)} modules in registry matching adaptive/hybrid/modern.", flush=True)
+    print(f"Discovered {len(all_modules)} modules in registry across all attention subdirectories.", flush=True)
 
     # De-duplicate to canonical keys per implementation class
     seen_classes = set()
