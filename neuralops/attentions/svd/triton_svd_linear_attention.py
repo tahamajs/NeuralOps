@@ -898,6 +898,7 @@ class TritonSVDLinearAttention(BaseAttention):
         )
         # BUG 4 FIX: Support GQA
         self.num_kv_heads = (
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             num_kv_heads
             or kwargs.get("num_kv_heads")
             or getattr(config, "num_key_value_heads", self.num_heads)

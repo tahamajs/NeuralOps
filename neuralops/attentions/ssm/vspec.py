@@ -412,6 +412,7 @@ class VSpecAttention(BaseAttention):
             self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
             self.head_dim = (
                 int(cfg_head_dim)
                 if cfg_head_dim is not None

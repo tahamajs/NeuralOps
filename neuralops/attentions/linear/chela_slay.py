@@ -596,6 +596,7 @@ class ChelaSlayAttention(BaseAttention):
             or _resolve_attr(config, "num_key_value_heads", "num_kv_heads")
         )
         self.num_kv_heads = _safe_int(kv_heads_raw, self.num_heads)
+        self.num_kv_heads = max(1, self.num_kv_heads // 4)
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
         head_dim_raw = kwargs.get("head_dim") or _safe_getattr(config, "head_dim", None)
