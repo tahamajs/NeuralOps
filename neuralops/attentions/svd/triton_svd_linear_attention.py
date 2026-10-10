@@ -904,6 +904,8 @@ class TritonSVDLinearAttention(BaseAttention):
         )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
         self.rank = rank or 64
+        max_rank = self.embed_dim // 2
+        self.rank = min(self.rank, max_rank)
         self.kv_dim = self.num_kv_heads * self.head_dim
 
         # Genuine SVD Low-Rank Linear Projections
