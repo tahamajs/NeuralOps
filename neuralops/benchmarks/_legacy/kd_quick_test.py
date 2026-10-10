@@ -1852,6 +1852,15 @@ def main():
     
     args = parser.parse_args()
     
+    # Flatten/split comma-separated module names if provided (e.g. --modules mod1,mod2)
+    resolved_modules = []
+    for mod in args.modules:
+        for m in mod.split(","):
+            m = m.strip()
+            if m and m not in resolved_modules:
+                resolved_modules.append(m)
+    args.modules = resolved_modules
+
     if args.timestamp is None:
         args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = args.log_file or f"logs/kd_sweep_{args.timestamp}.log"
