@@ -646,7 +646,7 @@ class HLAAttention(BaseAttention):
                 k_f.transpose(-1, -2).contiguous(), v_f
             )
             # Z_1 = γ · Z_0 + k_1ᵀ
-            Z_curr = gamma.squeeze(-1) * Z_prev + k_f.transpose(-1, -2).contiguous()
+            Z_curr = gamma * Z_prev + k_f.transpose(-1, -2).contiguous()
 
             y_num = torch.matmul(q_f, S_curr)  # (B, H, 1, d)
             y_den = torch.matmul(q_f, Z_curr).clamp(min=1e-5)  # (B, H, 1, 1)
@@ -736,7 +736,7 @@ class HLAAttention(BaseAttention):
             Z_update = k_weighted.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
 
             S_prev = block_decay * S_prev + S_update
-            Z_prev = block_decay.squeeze(-1) * Z_prev + Z_update
+            Z_prev = block_decay * Z_prev + Z_update
 
         y_out = torch.cat(outputs, dim=2)  # (B, H, L_pad, d)
         if pad_len > 0:
