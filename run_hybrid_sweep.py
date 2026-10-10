@@ -19,6 +19,7 @@ modules = [
     "spectron_fp8",
     "split_head_hybrid",
     "tri_branch_hybrid",
+    "fusion_attn",  # Re-run with past_key_value autoregressive fix
 ]
 
 log_dir = Path("logs")
