@@ -1138,7 +1138,6 @@ class A3Compressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("a3_compressor")
 def a3_compressor_factory(
     model: nn.Module,
     comp_config: Any = None,

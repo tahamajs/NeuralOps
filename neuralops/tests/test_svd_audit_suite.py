@@ -203,7 +203,7 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
             self.assertFalse(torch.isnan(x.grad).any())
 
     def test_svd_linear_decay_step_recurrent(self):
-        """Audit step_recurrent streaming generation vs sequential forward in DecayGatedLinearAttention."""
+        """Audit step_recurrent streaming generation vs sequential forward in DecayDecayLinearAttention."""
         attn = SVDLinearAttention(
             self.config,
             rank=64,
