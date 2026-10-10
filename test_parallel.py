@@ -148,7 +148,7 @@ if __name__ == "__main__":
             r = result_queue.get(timeout=300)
             results.append(r)
             done = len(results)
-            status_icon = "✅" if r.get("delta", 0) > 1.0 else ("❌" if r["status"] == "success" else "🔴")
+            status_icon = "[PASS]" if r.get("delta", 0) > 1.0 else ("[BUG ]" if r["status"] == "success" else "[ERR ]")
             delta_str = f"{r.get('delta', 0):.4f}" if r["status"] == "success" else "ERR"
             print(f"[{done}/{total}] {r['module']:35s} [{r['device']:4s}] {status_icon} "
                   f"{delta_str:>10} ({time.time()-t0:.0f}s)")
@@ -166,5 +166,5 @@ if __name__ == "__main__":
     ok = [r for r in results if r.get("delta", 0) > 1.0]
     bug = [r for r in results if r["status"] == "success" and r.get("is_bug")]
     err = [r for r in results if r["status"] == "failed"]
-    print(f"\nTotal: {total}  ✅: {len(ok)}  ❌ delta≈0: {len(bug)}  🔴 error: {len(err)}")
+    print(f"\\nTotal: {total}  PASS: {len(ok)}  BUG: {len(bug)}  ERR: {len(err)}")
     print(f"Elapsed: {time.time()-t0:.1f}s")
