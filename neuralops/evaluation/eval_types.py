@@ -137,9 +137,9 @@ KV_CACHE_OPTIMIZERS: set[str] = {
 }
 
 DEPRECATED_MODULES: set[str] = {
-    "eat",
-    "eat_attention",
-    "granite_hybrid",
+    # "eat",
+    # "eat_attention",
+    # "granite_hybrid",
     # jamba_info: removed from deprecated list (bugs fixed 2026-10-09)
     "tpa",
     "tpa_attention",
