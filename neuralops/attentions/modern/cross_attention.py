@@ -124,11 +124,6 @@ class LoRALinear(nn.Module):
     supports_causal=False,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "cross_attention_attention",
-    supports_causal=False,
-    supports_gqa=True,
-)
 class CrossAttention(BaseAttention):
     r"""
     Multi-Head Cross-Attention with LoRA.
@@ -617,8 +612,6 @@ class CrossAttention(BaseAttention):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("cross_attention_inject")
-@ATTENTION_REGISTRY.register("inject_cross_attention")
 def inject_cross_attention(
     layer: Any = None,
     model: Any = None,

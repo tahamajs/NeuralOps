@@ -723,8 +723,6 @@ class UnifiedRoPE(BaseAttention):
 # ═══════════════════════════════════════════════════════════════════
 # FIX-2: Injector registered in ATTENTION_REGISTRY
 # ═══════════════════════════════════════════════════════════════════
-@ATTENTION_REGISTRY.register("unified_rope_inject")
-@ATTENTION_REGISTRY.register("inject_unified_rope")
 def inject_unified_rope(
     layer: Any = None,
     model: Any = None,

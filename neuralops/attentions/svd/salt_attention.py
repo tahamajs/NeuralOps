@@ -805,7 +805,6 @@ class SALTAttention(BaseAttention):
         return out, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("salt_attention")
 def inject_salt_attention(
     model: nn.Module | None = None,
     layer: Any | None = None,

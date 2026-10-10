@@ -296,12 +296,6 @@ class ExpertChoiceMoE(nn.Module):
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "expert_choice_moe_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class ExpertChoiceMoEAttention(BaseAttention):
     r"""Expert Choice MoE Multi-Head Attention Module."""
 

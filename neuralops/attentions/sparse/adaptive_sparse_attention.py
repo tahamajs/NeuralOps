@@ -152,12 +152,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "adaptive_sparse_attn",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "adaptive_sparse_attention",
     supports_causal=True,
     supports_bidirectional=True,

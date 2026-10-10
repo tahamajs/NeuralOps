@@ -175,12 +175,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "wgqa",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "wgqa_attention",
     supports_causal=True,
     supports_bidirectional=True,
@@ -841,10 +835,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
 # Injection  (FIX 1: registered in ATTENTION_REGISTRY)
 # =============================================================================
 
-@ATTENTION_REGISTRY.register("wgqa")
-@ATTENTION_REGISTRY.register("wgqa_attention")
-@ATTENTION_REGISTRY.register("inject_wgqa")
-@ATTENTION_REGISTRY.register("wgqa_inject")
 def inject_wgqa(
     layer: Any = None,
     model: Any = None,

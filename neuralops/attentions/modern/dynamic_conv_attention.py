@@ -173,12 +173,6 @@ class LoRALinear(nn.Module):
     supports_gqa=False,
     supports_rope=False,
 )
-@ATTENTION_REGISTRY.register(
-    "dynamic_conv",
-    supports_causal=True,
-    supports_gqa=False,
-    supports_rope=False,
-)
 class DynamicConvAttention(BaseAttention):
     r"""
     Dynamic Causal Depthwise Convolution as a drop-in attention replacement.
@@ -685,8 +679,6 @@ class DynamicConvAttention(BaseAttention):
 # =============================================================================
 
 
-@ATTENTION_REGISTRY.register("dynamic_conv_inject")
-@ATTENTION_REGISTRY.register("inject_dynamic_conv")
 def inject_dynamic_conv(
     layer: Any = None,
     model: Any = None,

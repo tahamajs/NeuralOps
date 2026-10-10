@@ -485,12 +485,6 @@ from neuralops.core.rope import _rotate_half
     supports_bidirectional=True,
     supports_gqa=True,
 )
-@ATTENTION_REGISTRY.register(
-    "fused_svd_kernel_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class FusedSVDKernelAttention(BaseAttention):
     r"""Fused SVD-Kernel Linear Attention Module.
     Production-hardened across DistilBERT, RoBERTa/BERT nested, GPT-2 Conv1D, and Qwen/LLaMA.

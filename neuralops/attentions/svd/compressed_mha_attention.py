@@ -70,12 +70,6 @@ def apply_rotary_pos_emb(
 
 
 @ATTENTION_REGISTRY.register(
-    "compressed_mha",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
     "compressed_mha_attention",
     supports_causal=True,
     supports_bidirectional=True,

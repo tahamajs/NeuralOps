@@ -210,13 +210,6 @@ class AdaSplashLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "adasplash",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
-@ATTENTION_REGISTRY.register(
     "adasplash_attention",
     supports_causal=True,
     supports_bidirectional=True,

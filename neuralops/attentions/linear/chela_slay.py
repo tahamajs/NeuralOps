@@ -486,12 +486,6 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
 @ATTENTION_REGISTRY.register(
     "chela_slay", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
-@ATTENTION_REGISTRY.register(
-    "chela_slay_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class ChelaSlayAttention(BaseAttention):
     r"""
     CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.
