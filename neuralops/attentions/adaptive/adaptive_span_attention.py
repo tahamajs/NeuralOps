@@ -1133,7 +1133,9 @@ class AdaptiveSpanAttention(BaseAttention):
             if output_attentions:
                 return output, position_bias, attn
             return output, position_bias
-        return output, attn, past_kv
+        if output_attentions:
+            return output, attn, past_kv
+        return output, past_kv
 
 
 # =============================================================================
