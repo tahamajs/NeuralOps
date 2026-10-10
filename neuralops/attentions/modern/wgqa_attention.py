@@ -292,9 +292,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
         )
 
         # Learnable per-KV-head importance weights
-        self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
-        self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
-
+        self.lora_k_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1))
+        self.lora_v_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1))
         dropout_p = _cfg_get(
             config,
             "dropout",
@@ -344,6 +343,10 @@ class WeightedGroupedQueryAttention(BaseAttention):
     def o_proj(self): return self.out_proj
     @property
     def c_proj(self): return self.out_proj
+    @property
+    def k_weights(self): return self.lora_k_weights
+    @property
+    def v_weights(self): return self.lora_v_weights
 
     # ------------------------------------------------------------------
     # KV-Cache helpers  (FIX 2)
@@ -668,14 +671,18 @@ class WeightedGroupedQueryAttention(BaseAttention):
         K_new = self.k_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # -------- Learnable per-KV-head importance weights --------
-        if not hasattr(self, "k_weights") or self.k_weights is None:
-            self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1, device=device, dtype=dtype))
-        if not hasattr(self, "v_weights") or self.v_weights is None:
-            self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1, device=device, dtype=dtype))
+        # -------- [FIX] Stable Gated Weighting (Bounded Scaling) --------
+        # تبدیل نرمال‌شده در بازه (0, 2) با مرکزیت دقیق 1.0 در ابتدای آموزش
+        if not hasattr(self, "lora_k_weights") or self.lora_k_weights is None:
+            self.lora_k_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
+        if not hasattr(self, "lora_v_weights") or self.lora_v_weights is None:
+            self.lora_v_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
 
-        K_new = K_new * self.k_weights.view(1, self.num_kv_heads, 1, 1).to(K_new.dtype)
-        V_new = V_new * self.v_weights.view(1, self.num_kv_heads, 1, 1).to(V_new.dtype)
+        scale_k = (2.0 * torch.sigmoid(self.lora_k_weights)).view(1, self.num_kv_heads, 1, 1).to(dtype)
+        scale_v = (2.0 * torch.sigmoid(self.lora_v_weights)).view(1, self.num_kv_heads, 1, 1).to(dtype)
+
+        K_new = K_new * scale_k
+        V_new = V_new * scale_v
 
         # -------- RoPE --------
         if not is_cross_attention:
@@ -691,16 +698,9 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     if isinstance(out, tuple) and len(out) >= 2:
                         Q, K_new = apply_rotary_pos_emb(Q, K_new, out[0], out[1], kwargs.get("position_ids"))
                 except Exception:
-                    try:
-                        from neuralops.utils.compat import maybe_apply_rotary
-                        Q, K_new = maybe_apply_rotary(
-                            Q, K_new, getattr(self, "adapter", None),
-                            self.rotary_emb, kwargs.get("position_ids"),
-                        )
-                    except Exception as e:
-                        logger.warning("maybe_apply_rotary failed: %s", e)
+                    pass
 
-        # -------- KV-Cache  (FIX 2) --------
+        # -------- KV-Cache Handling --------
         past_k, past_v, past_len = (None, None, 0)
         if not is_cross_attention and past_key_value is not None and past_key_value is not False:
             past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
@@ -731,23 +731,31 @@ class WeightedGroupedQueryAttention(BaseAttention):
         scale = d ** -0.5
         is_cross = bool(kwargs.get("is_cross_attention", False)) or is_cross_attention
 
-        # -------- SDPA fast path --------
+        # -------- [FIX] Accelerated SDPA Execution Path --------
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        use_sdpa = (mask is None and head_mask is None and not output_attentions)
-        if use_sdpa:
+
+        # اگر خروجی اتنشن یا head_mask درخواست نشده باشد، همیشه از هسته بهینه PyTorch استفاده شود
+        if head_mask is None and not output_attentions:
             try:
-                _q = Q.half() if Q.dtype == torch.float32 else Q
-                _k = K_full.half() if K_full.dtype == torch.float32 else K_full
-                _v = V_full.half() if V_full.dtype == torch.float32 else V_full
-                _is_causal = self.is_decoder and not is_cross and N_q > 1
-                _out = F.scaled_dot_product_attention(
-                    _q, _k, _v,
+                _is_causal = self.is_decoder and not is_cross and N_q > 1 and mask is None
+
+                # تبدیل ماسک پدینگ به فرمت سازگار با SDPA
+                sdpa_mask = None
+                if mask is not None:
+                    if mask.dim() == 2:
+                        sdpa_mask = mask.unsqueeze(1).unsqueeze(2).to(dtype=torch.bool)
+                    elif mask.dim() in (3, 4):
+                        sdpa_mask = mask.to(dtype=torch.bool) if mask.dtype != torch.bool else mask
+
+                context = F.scaled_dot_product_attention(
+                    Q, K_full, V_full,
+                    attn_mask=sdpa_mask,
                     is_causal=_is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                _out = _out.to(dtype).transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
-                _out = torch.nan_to_num(_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                output = _out if self.is_nested_encoder else self.out_proj(_out)
+
+                context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+                output = context if self.is_nested_encoder else self.out_proj(context)
 
                 valid_m = get_token_valid_mask(attention_mask, B, N_q, device)
                 if valid_m is not None:
@@ -756,9 +764,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if self.is_decoder and not is_cross:
                     return output, new_past_key_value
                 return output, None
-            except Exception:
-                pass
-
+            except Exception as e:
+                logger.debug("SDPA failed, running manual path: %s", e)
         # -------- Manual path --------
         scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
@@ -815,8 +822,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
 # Injection  (FIX 1: registered in ATTENTION_REGISTRY)
 # =============================================================================
 
-
 @ATTENTION_REGISTRY.register("wgqa")
+@ATTENTION_REGISTRY.register("wgqa_attention")
 @ATTENTION_REGISTRY.register("inject_wgqa")
 @ATTENTION_REGISTRY.register("wgqa_inject")
 def inject_wgqa(

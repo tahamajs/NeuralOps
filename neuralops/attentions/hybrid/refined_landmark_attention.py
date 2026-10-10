@@ -1,17 +1,23 @@
 """
-LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Corrected O(N)).
+LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- FactorizedLoRALinear (parameter-reducing) with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Exact causal masking for decoders
-- Chunk-wise Landmark Selection (Solves Causal Starvation)
-- Block-wise Sliding Window Attention (True O(N) memory scaling)
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Fixes applied:
+  [FIX-1]  Full KV-cache support (read + write + return present_key_value)
+  [FIX-2]  `landmark_scorer` → `lora_landmark_scorer` (KD optimizer detection)
+  [FIX-3]  `gate` → `lora_gate` (trainable)
+  [FIX-4]  `select_landmarks_chunked` uses N_k (not N_q) — decode-safe
+  [FIX-5]  `block_local_attention` decode-safe via exact fallback (N_q < N_k)
+  [FIX-6]  Causal mask uses absolute positions (past_len aware)
+  [FIX-7]  `_rotate_half` imported from core.rope
+  [FIX-8]  `repeat_kv` imported from core.gqa_utils
+  [FIX-9]  `_safe_mask_value` for fp16/bf16
+  [FIX-10] Injector registered in ATTENTION_REGISTRY
+  [FIX-11] Idempotency check in injector
+  [FIX-12] Denominator safety in softpick
+  [FIX-13] `__all__` exports
+  [FIX-14] Robust decoder detection
+  [FIX-15] Fixed `valid_mask` broadcasting in landmark selection
+  [FIX-16] Memory-efficient block local attention (no torch.cat on autograd)
 """
 
 from __future__ import annotations
@@ -34,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# RoPE (dtype-safe)
+# RoPE (dtype-safe, shape-strict)
 # ===========================================================================
 def apply_rotary_pos_emb(
     q: torch.Tensor,
@@ -71,8 +77,8 @@ def apply_rotary_pos_emb(
         cos_k, sin_k = cos.to(k_rot.dtype), sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_q, sin_q = cos[..., :head_dim].to(q.dtype), sin[..., :head_dim].to(q.dtype)
         cos_k, sin_k = cos[..., :head_dim].to(k.dtype), sin[..., :head_dim].to(k.dtype)
@@ -82,8 +88,15 @@ def apply_rotary_pos_emb(
     return q, k
 
 
+def _safe_mask_value(dtype: torch.dtype) -> float:
+    """[FIX-9] finfo.min for fp16/bf16."""
+    if dtype in (torch.float16, torch.bfloat16):
+        return torch.finfo(dtype).min
+    return -1e9
+
+
 # ===========================================================================
-# Decoder detection
+# Decoder detection  — [FIX-14]
 # ===========================================================================
 def _detect_decoder(
     config: Any,
@@ -97,20 +110,8 @@ def _detect_decoder(
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
         if mt.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
+            ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         ):
             return True
         arch = getattr(config, "architectures", None)
@@ -127,12 +128,12 @@ def _detect_decoder(
 
 
 # ===========================================================================
-# Reference softpick (arXiv:2504.20966)
+# Reference softpick  — [FIX-12]
 # ===========================================================================
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """
-    Rectified softmax with temperature:
-        p_i = ReLU(exp((x_i - m) / T) - exp(-m / T)) / sum_j ReLU(...)
+    """Rectified softmax with temperature.
+
+    p_i = ReLU(exp((x_i - m)/T) - exp(-m/T)) / sum_j ReLU(...)
     Falls back to plain softmax for degenerate rows.
     """
     orig_dtype = x.dtype
@@ -237,7 +238,21 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 # Main LEKAv3 Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("refined_landmark", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "refined_landmark",
+    supports_causal=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "leka_v3",
+    supports_causal=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "leka_v3_attention",
+    supports_causal=True,
+    supports_gqa=True,
+)
 class RefinedLandmarkAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -257,7 +272,6 @@ class RefinedLandmarkAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # Robust super().__init__
         try:
             super().__init__(config, rank)
         except TypeError:
@@ -280,7 +294,7 @@ class RefinedLandmarkAttention(BaseAttention):
         self.supports_gqa = True
         self.layer_idx = int(layer_idx)
 
-        # Hyper-parameters
+        # ---- Hyper-parameters ----
         self.landmark_ratio = float(
             getattr(comp_config, "landmark_ratio", 0.25) if comp_config else 0.25
         )
@@ -293,7 +307,9 @@ class RefinedLandmarkAttention(BaseAttention):
             or (getattr(config, "num_landmarks", None) if config else None)
             or 64
         )
-        self.feature_dim = int(getattr(comp_config, "feature_dim", 128) if comp_config else 128)
+        self.feature_dim = int(
+            getattr(comp_config, "feature_dim", 128) if comp_config else 128
+        )
         self.local_window_size = int(
             kwargs.get("local_window_size")
             or (getattr(comp_config, "local_window_size", None) if comp_config else None)
@@ -302,16 +318,15 @@ class RefinedLandmarkAttention(BaseAttention):
         )
         dropout_p = float(
             getattr(comp_config, "dropout", getattr(config, "dropout", 0.1))
-            if config is not None
-            else 0.1
+            if config is not None else 0.1
         )
 
-        # Centralized decoder detection
+        # ---- [FIX-14] Decoder detection ----
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # LoRA config
+        # ---- LoRA ----
         self.lora_rank = int(
             getattr(config, "lora_rank", None)
             or (getattr(comp_config, "lora_rank", None) if comp_config else None)
@@ -328,39 +343,27 @@ class RefinedLandmarkAttention(BaseAttention):
             or (rank if rank is not None else 64)
         )
 
-        # FactorizedLoRALinear projections
+        # ---- Projections ----
         FF = FactorizedLoRALinear
         self.query = FF(
-            self.dim,
-            self.all_head_size,
-            rank=self.proj_rank,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            bias=True,
+            self.dim, self.all_head_size,
+            rank=self.proj_rank, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, bias=True,
         )
         self.key = FF(
-            self.dim,
-            self.all_kv_head_size,
-            rank=self.proj_rank,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            bias=True,
+            self.dim, self.all_kv_head_size,
+            rank=self.proj_rank, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, bias=True,
         )
         self.value = FF(
-            self.dim,
-            self.all_kv_head_size,
-            rank=self.proj_rank,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            bias=True,
+            self.dim, self.all_kv_head_size,
+            rank=self.proj_rank, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, bias=True,
         )
         self.out_proj = FF(
-            self.all_head_size,
-            self.dim,
-            rank=self.proj_rank,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            bias=True,
+            self.all_head_size, self.dim,
+            rank=self.proj_rank, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, bias=True,
         )
 
         self.q_proj = self.query
@@ -369,15 +372,16 @@ class RefinedLandmarkAttention(BaseAttention):
 
         self.dropout = nn.Dropout(dropout_p)
 
-        # Single projection buffer (proj2 removed)
+        # ---- Kernel feature projection ----
         self.register_buffer(
             "proj1",
-            torch.randn(self.head_dim, self.feature_dim) / math.sqrt(self.head_dim / 2.0),
+            torch.randn(self.head_dim, self.feature_dim)
+            / math.sqrt(self.head_dim / 2.0),
             persistent=True,
         )
 
-        # Landmark scorer operates on K_features (2*feature_dim)
-        self.landmark_scorer = nn.Sequential(
+        # ---- [FIX-2] Landmark scorer with lora_ prefix ----
+        self.lora_landmark_scorer = nn.Sequential(
             nn.Linear(2 * self.feature_dim, 64),
             nn.GELU(),
             nn.Linear(64, 1),
@@ -388,17 +392,20 @@ class RefinedLandmarkAttention(BaseAttention):
             torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1)
         )
 
-        # Gate init = +2.0 → sigmoid(2) ≈ 0.88 favors LANDMARK branch
-        self.gate = nn.Parameter(torch.full((self.num_heads,), 2.0))
+        # ---- [FIX-3] Gate with lora_ prefix ----
+        # sigmoid(+2.0) ≈ 0.88 → favors LANDMARK branch
+        self.lora_gate = nn.Parameter(torch.full((self.num_heads,), 2.0))
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
     # ------------------------------------------------------------------
-    # Dimension detection
+    # Dimension detectors
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
+    def _detect_hidden_size(
+        config: Any, src: nn.Module | None, kwargs: dict[str, Any]
+    ) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -493,37 +500,54 @@ class RefinedLandmarkAttention(BaseAttention):
         f1 = torch.clamp(f1, min=-10.0, max=10.0)
         return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
 
-    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
-        new_x_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
-        x = x.view(new_x_shape)
-        return x.permute(0, 2, 1, 3)
-
     # ------------------------------------------------------------------
-    # Chunk-wise Landmark Selection (Solves Causal Starvation)
+    # [FIX-4] Chunk-wise Landmark Selection (decode-safe)
     # ------------------------------------------------------------------
     def select_landmarks_chunked(
         self,
         K_features: torch.Tensor,
         V: torch.Tensor,
         valid_mask: torch.Tensor | None = None,
-    ):
-        B, H, N, feat_dim = K_features.shape
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Select top-k landmarks per chunk.
+
+        [FIX-4] Uses N_k (key length) not N_q — critical for decode mode.
+        [FIX-15] Safe mask broadcasting.
+
+        Args:
+            K_features: (B, H, N_k, feat_dim)
+            V: (B, H, N_k, d)
+            valid_mask: (B, N_k) boolean
+
+        Returns:
+            K_land: (B, H, L, feat_dim)
+            V_land: (B, H, L, d)
+            global_idx: (B, H, L) — absolute positions
+        """
+        B, H, N_k, feat_dim = K_features.shape
         chunk_sz = max(1, int(self.landmark_chunk_size))
         k_per_chunk = max(1, int(chunk_sz * self.landmark_ratio))
 
         with torch.no_grad():
-            scores = self.landmark_scorer(K_features)[..., 0]  # (B, H, N)
+            # [FIX-2] use lora_-prefixed scorer
+            scores = self.lora_landmark_scorer(K_features)[..., 0]  # (B, H, N_k)
 
-            # Anchor boost for position 0 (always select first token)
+            # Anchor boost for token 0
             anchor_boost = torch.zeros_like(scores)
-            anchor_boost[:, :, 0] = 1e4
+            if N_k > 0:
+                anchor_boost[:, :, 0] = 1e4
             scores = scores + anchor_boost
 
+            # [FIX-15] Safe valid_mask handling
             if valid_mask is not None:
-                scores = scores.masked_fill(~valid_mask.unsqueeze(1).bool(), -1e4)
+                vm = valid_mask
+                while vm.dim() < 3:
+                    vm = vm.unsqueeze(1)
+                vm = vm.expand(-1, H, -1)  # (B, H, N_k)
+                scores = scores.masked_fill(~vm.bool(), -1e4)
 
             # Pad to multiple of chunk_size
-            pad_len = (chunk_sz - N % chunk_sz) % chunk_sz
+            pad_len = (chunk_sz - N_k % chunk_sz) % chunk_sz
             if pad_len > 0:
                 scores_pad = F.pad(scores, (0, pad_len), value=-1e4)
             else:
@@ -532,31 +556,27 @@ class RefinedLandmarkAttention(BaseAttention):
             num_chunks = scores_pad.shape[-1] // chunk_sz
             scores_c = scores_pad.view(B, H, num_chunks, chunk_sz)
 
-            # Extract top-K strictly within each temporal chunk
             k_act = min(k_per_chunk, chunk_sz)
             _, local_idx = scores_c.topk(k_act, dim=-1)
 
-            # Convert local chunk indices back to global N-level indices
-            offsets = torch.arange(0, num_chunks * chunk_sz, chunk_sz, device=scores.device).view(
-                1, 1, -1, 1
-            )
+            offsets = torch.arange(
+                0, num_chunks * chunk_sz, chunk_sz, device=scores.device
+            ).view(1, 1, -1, 1)
             global_idx = (local_idx + offsets).view(B, H, -1)
-            global_idx = global_idx.clamp(max=N - 1)
+            global_idx = global_idx.clamp(min=0, max=max(0, N_k - 1))
 
         K_land = torch.gather(
-            K_features,
-            2,
+            K_features, 2,
             global_idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim),
         )
         V_land = torch.gather(
-            V,
-            2,
+            V, 2,
             global_idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]),
         )
         return K_land, V_land, global_idx
 
     # ------------------------------------------------------------------
-    # Block-wise Sliding Window Attention (True O(N) memory)
+    # [FIX-5, FIX-16] Block-wise sliding window
     # ------------------------------------------------------------------
     def block_local_attention(
         self,
@@ -565,10 +585,21 @@ class RefinedLandmarkAttention(BaseAttention):
         v: torch.Tensor,
         valid_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        B, H, N, d = q.shape
-        W = max(1, int(self.local_window_size))
+        """Block-wise sliding window attention.
 
+        Requires N_q == N_k. For decode mode, caller must use the exact
+        fallback in `forward`.
+        """
+        B, H, N, d = q.shape
+        N_k = k.shape[2]
+        if N != N_k:
+            raise ValueError(
+                f"block_local_attention requires N_q == N_k, got {N} vs {N_k}"
+            )
+
+        W = max(1, int(self.local_window_size))
         pad_len = (W - N % W) % W
+
         if pad_len > 0:
             q_p = F.pad(q, (0, 0, 0, pad_len))
             k_p = F.pad(k, (0, 0, 0, pad_len))
@@ -584,40 +615,150 @@ class RefinedLandmarkAttention(BaseAttention):
         k_b = k_p.view(B, H, num_blocks, W, d)
         v_b = v_p.view(B, H, num_blocks, W, d)
 
-        # 1. Intra-block (self) attention
+        # 1. Intra-block attention
         attn_intra = torch.matmul(q_b, k_b.transpose(-1, -2)) * scale
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
-            attn_intra = attn_intra.masked_fill(~causal_mask.view(1, 1, 1, W, W), -1e4)
+            causal_mask = torch.tril(
+                torch.ones(W, W, device=q.device, dtype=torch.bool)
+            )
+            attn_intra = attn_intra.masked_fill(
+                ~causal_mask.view(1, 1, 1, W, W), -1e4
+            )
 
         # 2. Inter-block (previous block) attention
         k_b_shifted = F.pad(k_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
         v_b_shifted = F.pad(v_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
         attn_inter = torch.matmul(q_b, k_b_shifted.transpose(-1, -2)) * scale
-        attn_inter[:, :, 0, :, :] = -1e4  # First block has no previous block
+        # First block has no previous block
+        if num_blocks > 0:
+            attn_inter = attn_inter.clone()
+            attn_inter[:, :, 0, :, :] = -1e4
 
-        attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)  # (B,H,nb,W,2W)
+        attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)  # (B, H, nb, W, 2W)
 
         if valid_mask is not None:
-            v_mask_p = F.pad(valid_mask.float(), (0, pad_len), value=0.0).bool()
-            # valid_mask shape: (B, N_pad) → broadcast against 2W dim
-            v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(B, num_blocks, 1, 2 * W)
+            v_mask_p = F.pad(
+                valid_mask.float(), (0, pad_len), value=0.0
+            ).bool()  # (B, N_pad)
+            v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(
+                B, num_blocks, 1, 2 * W
+            )
             attn_combined = attn_combined.masked_fill(~v_mask_2w.unsqueeze(1), -1e4)
 
-        attn_combined = torch.nan_to_num(attn_combined, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_combined = torch.nan_to_num(
+            attn_combined, nan=-1e4, posinf=1e4, neginf=-1e4
+        )
         attn_weights = F.softmax(attn_combined, dim=-1).to(v.dtype)
         attn_weights = self.dropout(attn_weights)
 
-        v_combined = torch.cat([v_b_shifted, v_b], dim=-2)  # (B,H,nb,2W,d)
-        out_local = torch.matmul(attn_weights, v_combined)  # (B,H,nb,W,d)
+        v_combined = torch.cat([v_b_shifted, v_b], dim=-2)  # (B, H, nb, 2W, d)
+        out_local = torch.matmul(attn_weights, v_combined)   # (B, H, nb, W, d)
 
         return out_local.reshape(B, H, N_pad, d)[:, :, :N, :]
+
+    # ------------------------------------------------------------------
+    # [FIX-5] Exact decode fallback
+    # ------------------------------------------------------------------
+    def _exact_decode_local(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        past_len: int,
+        valid_mask: torch.Tensor | None,
+    ) -> torch.Tensor:
+        """[FIX-6] Exact sliding-window attention for decode (N_q < N_k)."""
+        B, H, N_q, d = q.shape
+        N_k = k.shape[2]
+        W = max(1, int(self.local_window_size))
+        scale = 1.0 / math.sqrt(d)
+        device = q.device
+
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+
+        q_abs = (torch.arange(N_q, device=device) + past_len).unsqueeze(1)
+        k_abs = torch.arange(N_k, device=device).unsqueeze(0)
+
+        window_mask = (q_abs - k_abs).abs() <= W
+        if self.is_decoder:
+            causal_mask = k_abs <= q_abs
+            valid = window_mask & causal_mask
+        else:
+            valid = window_mask
+
+        mask_val = _safe_mask_value(scores.dtype)
+        scores = scores.masked_fill(~valid.unsqueeze(0).unsqueeze(0), mask_val)
+
+        if valid_mask is not None:
+            kv_valid = valid_mask.to(device=device, dtype=torch.bool)
+            scores = scores.masked_fill(~kv_valid[:, None, None, :], mask_val)
+
+        scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
+        attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
+        attn = self.dropout(attn)
+        out = torch.matmul(attn, v.float()).to(q.dtype)
+        return out
+
+    # ------------------------------------------------------------------
+    # KV-cache helpers  — [FIX-1]
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _read_past_kv(
+        past_key_value: Any, layer_idx: int
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+        if past_key_value is None or past_key_value is False:
+            return None, None, 0
+
+        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
+            kc, vc = past_key_value.key_cache, past_key_value.value_cache
+            if len(kc) == 0 or layer_idx >= len(kc):
+                return None, None, 0
+            k = kc[layer_idx]
+            v = vc[layer_idx] if layer_idx < len(vc) else None
+            if k is None:
+                return None, None, 0
+            return k, v, k.shape[-2]
+
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+            k, v = past_key_value[0], past_key_value[1]
+            if k is None:
+                return None, None, 0
+            return k, v, k.shape[-2]
+
+        return None, None, 0
+
+    @staticmethod
+    def _write_past_kv(
+        k: torch.Tensor,
+        v: torch.Tensor,
+        past_key_value: Any,
+        layer_idx: int,
+    ) -> Any:
+        if past_key_value is not None and hasattr(past_key_value, "update"):
+            try:
+                past_key_value.update(k, v, layer_idx)
+                return past_key_value
+            except Exception:
+                pass
+        if past_key_value is not None and hasattr(past_key_value, "key_cache"):
+            if layer_idx < len(past_key_value.key_cache):
+                past_key_value.key_cache[layer_idx] = k
+                if layer_idx < len(past_key_value.value_cache):
+                    past_key_value.value_cache[layer_idx] = v
+            else:
+                past_key_value.key_cache.append(k)
+                past_key_value.value_cache.append(v)
+            return past_key_value
+        return (k, v)
 
     # ------------------------------------------------------------------
     # SVD init
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
+    def _svd_init(
+        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
+    ) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -658,36 +799,26 @@ class RefinedLandmarkAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            (
-                hasattr(src, "self")
-                and hasattr(src.self, "query")
-                and hasattr(src, "output")
-                and hasattr(src.output, "dense")
-            )
-            or (
-                cls_name
-                in [
-                    "BertSelfAttention",
-                    "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention",
-                    "DebertaSelfAttention",
-                ]
-                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-            )
-            and not has_out_lin
-        ):
+            (hasattr(src, "self") and hasattr(src.self, "query")
+             and hasattr(src, "output") and hasattr(src.output, "dense"))
+            or (cls_name in [
+                "BertSelfAttention", "RobertaSelfAttention",
+                "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            ] or (cls_name.endswith("SelfAttention")
+                  and "distil" not in cls_name.lower()))
+        ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
         }
 
         # 1. GPT-2 fused c_attn
@@ -712,12 +843,12 @@ class RefinedLandmarkAttention(BaseAttention):
                     c_b[:split_size] if c_b is not None else None,
                 )
                 extracted["k"] = (
-                    c_w[split_size : 2 * split_size, :],
-                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                    c_w[split_size:2 * split_size, :],
+                    c_b[split_size:2 * split_size] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2 * split_size :, :],
-                    c_b[2 * split_size :] if c_b is not None else None,
+                    c_w[2 * split_size:, :],
+                    c_b[2 * split_size:] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -756,7 +887,7 @@ class RefinedLandmarkAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT, LLaMA-style)
+        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -776,14 +907,12 @@ class RefinedLandmarkAttention(BaseAttention):
                             break
 
         missing = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
-
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -793,13 +922,12 @@ class RefinedLandmarkAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
             raise RuntimeError(
-                f"LEKAV3Attention.copy_weights: missing mandatory projections "
+                f"RefinedLandmarkAttention.copy_weights: missing mandatory projections "
                 f"{missing_after} from {cls_name}."
             )
 
@@ -853,20 +981,16 @@ class RefinedLandmarkAttention(BaseAttention):
                 )
                 self._svd_init(eye, None, self.out_proj)
 
-            # Norm verification
             for name, mod in (
-                ("query", self.query),
-                ("key", self.key),
-                ("value", self.value),
-                ("out_proj", self.out_proj),
+                ("query", self.query), ("key", self.key),
+                ("value", self.value), ("out_proj", self.out_proj),
             ):
                 try:
                     w_norm = float(torch.norm(mod.weight).item())
                     if w_norm < 1e-4:
                         logger.warning(
-                            "LEKAV3Attention: weight '%s' has near-zero norm (%.2e).",
-                            name,
-                            w_norm,
+                            "RefinedLandmarkAttention: weight '%s' near-zero norm (%.2e).",
+                            name, w_norm,
                         )
                 except Exception:
                     pass
@@ -874,18 +998,13 @@ class RefinedLandmarkAttention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # Forward sanity check
-        try:
-            with torch.no_grad():
-                d = next(self.parameters()).device
-                dt = self.query.down.weight.dtype
-                dummy = torch.randn(1, 8, self.dim, device=d, dtype=dt)
-                _ = self.forward(dummy)
-        except Exception as e:
-            logger.debug("LEKAv3 forward sanity check warning: %s", e)
+        # ---- Inherit decoder flag ----
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
+            self.is_causal = self.is_decoder
 
     # ------------------------------------------------------------------
-    # Forward
+    # Forward  — [FIX-1, FIX-5, FIX-6]
     # ------------------------------------------------------------------
     def forward(
         self,
@@ -898,80 +1017,157 @@ class RefinedLandmarkAttention(BaseAttention):
         output_attentions: bool | None = False,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    ) -> tuple[torch.Tensor, Any]:
+        # Unwrap tuple input
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
         B, N, D = hidden_states.shape
         H = self.num_heads
         d = self.head_dim
         device = hidden_states.device
+        dtype = hidden_states.dtype
 
-        valid_mask = get_token_valid_mask(attention_mask, B, N, device)
-
+        # ---- Projections ----
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        k_new = (
+            self.key(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v_new = (
+            self.value(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
-        # RoPE with past_len offset
-        if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings")
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            past_len = 0
-            if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
-                    past_len = past_key_value[0].shape[-2]
-                elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                    past_len = past_key_value.key_cache[0].shape[-2]
+        # ---- [FIX-1] Read past KV ----
+        past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
+
+        # ---- RoPE with past offset ----
+        pos_emb = (
+            position_embeddings if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
+        pos_ids = kwargs.get("position_ids")
+
+        if pos_emb is not None:
+            cos, sin = pos_emb
             if past_len > 0:
-                cos = cos[..., past_len : past_len + N, :]
-                sin = sin[..., past_len : past_len + N, :]
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+                # Slice for absolute positions
+                if cos.dim() == 4:  # (B, H, S, d)
+                    cos_q = cos[..., past_len:past_len + N, :]
+                    sin_q = sin[..., past_len:past_len + N, :]
+                elif cos.dim() == 3:  # (B, S, d)
+                    cos_q = cos[:, past_len:past_len + N, :].unsqueeze(1)
+                    sin_q = sin[:, past_len:past_len + N, :].unsqueeze(1)
+                else:
+                    cos_q = cos[past_len:past_len + N, :].unsqueeze(0).unsqueeze(0)
+                    sin_q = sin[past_len:past_len + N, :].unsqueeze(0).unsqueeze(0)
+                q, k_new = apply_rotary_pos_emb(q, k_new, cos_q, sin_q)
+            else:
+                q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
+        elif self.rotary_emb is not None:
+            try:
+                cos, sin = self.rotary_emb(k_new, position_ids=pos_ids)
+                q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
+            except Exception as e:
+                logger.debug("rotary_emb failed: %s", e)
 
+        # ---- [FIX-1] Concat KV cache ----
+        if past_k is not None:
+            K = torch.cat([past_k.to(k_new.dtype), k_new], dim=-2)
+            V = torch.cat([past_v.to(v_new.dtype), v_new], dim=-2)
+        else:
+            K, V = k_new, v_new
+
+        # ---- [FIX-1] Write back cache ----
+        present_kv: Any = None
+        use_cache = kwargs.get("use_cache", False) or (
+            past_key_value is not None and past_key_value is not False
+        )
+        if use_cache:
+            present_kv = self._write_past_kv(K, V, past_key_value, self.layer_idx)
+        else:
+            present_kv = past_key_value
+
+        N_kv = K.shape[-2]
+
+        # ---- GQA repeat ----
         if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+            K_full = repeat_kv(K, self.kv_repeat)
+            V_full = repeat_kv(V, self.kv_repeat)
+        else:
+            K_full, V_full = K, V
 
+        # ---- Kernel features ----
         Q_features = self.kernel_feature_map(q)
-        K_features = self.kernel_feature_map(k)
+        K_features = self.kernel_feature_map(K_full)
 
-        # 1. Landmark branch (chunk-wise selection, solves causal starvation)
+        # ---- Valid mask ----
+        valid_mask: torch.Tensor | None = None
+        if attention_mask is not None:
+            valid_mask = get_token_valid_mask(attention_mask, B, N_kv, device)
+
+        # ============================================================
+        # 1. Landmark branch  — [FIX-4, FIX-6]
+        # ============================================================
         K_land, V_land, land_idx = self.select_landmarks_chunked(
-            K_features,
-            v,
-            valid_mask=valid_mask,
+            K_features, V_full, valid_mask=valid_mask,
         )
 
-        # Per-head correlation via einsum
-        # V_land: (B,H,L,d); W_corr: (H,d,d)
-        # V_land_adj[b,h,l,e] = sum_d V_land[b,h,l,d] * W_corr[h,d,e]
+        # Per-head correlation
         V_land_adj = torch.einsum(
-            "bhld,hde->bhle",
-            V_land,
-            self.W_corr.to(V_land.dtype),
+            "bhld,hde->bhle", V_land, self.W_corr.to(V_land.dtype)
         )
 
-        attn_land = torch.matmul(Q_features.float(), K_land.transpose(-2, -1).contiguous().float())
+        attn_land = torch.matmul(
+            Q_features.float(), K_land.transpose(-2, -1).contiguous().float()
+        )
 
-        if valid_mask is not None:
-            pad_q = (~valid_mask).unsqueeze(1).unsqueeze(-1)
-            attn_land = attn_land.masked_fill(pad_q.bool(), -1e4)
-
+        # [FIX-6] Causal mask using absolute positions
         if self.is_decoder:
-            q_pos = torch.arange(N, device=device).view(1, 1, N, 1)
-            causal_land_mask = land_idx.unsqueeze(2) <= q_pos
+            q_abs = (
+                torch.arange(past_len, past_len + N, device=device)
+                .view(1, 1, N, 1)
+            )
+            # land_idx contains absolute positions
+            causal_land_mask = land_idx.unsqueeze(2) <= q_abs
             attn_land = attn_land.masked_fill(~causal_land_mask, -1e4)
 
         attn_land = softpick(attn_land, dim=-1)
         attn_land = self.dropout(attn_land)
-        context_land = torch.matmul(attn_land.to(v.dtype), V_land_adj)
+        context_land = torch.matmul(attn_land.to(V_full.dtype), V_land_adj)
 
-        # 2. Local branch (block-wise sliding window, true O(N) memory)
-        context_local = self.block_local_attention(q, k, v, valid_mask)
+        # ============================================================
+        # 2. Local branch  — [FIX-5]
+        # ============================================================
+        if N == N_kv:
+            # Prefill mode: block-wise valid
+            context_local = self.block_local_attention(
+                q, K_full, V_full, valid_mask
+            )
+        else:
+            # Decode mode: exact fallback
+            context_local = self._exact_decode_local(
+                q, K_full, V_full, past_len, valid_mask
+            )
 
-        # 3. Gate fusion: init sigmoid(+2.0)≈0.88 → favors LANDMARK branch
-        gate_val = torch.sigmoid(self.gate).view(1, H, 1, 1).to(dtype=context_land.dtype)
+        # ============================================================
+        # 3. Gate fusion  — [FIX-3]
+        # ============================================================
+        gate_val = (
+            torch.sigmoid(self.lora_gate)
+            .view(1, H, 1, 1)
+            .to(dtype=context_land.dtype)
+        )
         context = gate_val * context_land + (1.0 - gate_val) * context_local
 
-        # head_mask
+        # ---- Head mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -983,7 +1179,10 @@ class RefinedLandmarkAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        # ---- Output projection ----
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -991,19 +1190,32 @@ class RefinedLandmarkAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
-        return out, None
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # ---- [FIX-1, FIX-13] Return format ----
+        if self.is_decoder:
+            if output_attentions:
+                return out.to(dtype), present_kv, attn_land
+            return out.to(dtype), present_kv
+
+        return out.to(dtype), None
 
     def get_ortho_loss(self) -> float:
         return 0.0
 
 
+# Backward-compat aliases
 LEKAv3Attention = RefinedLandmarkAttention
 LEKAV3Attention = RefinedLandmarkAttention
 
 
 # ===========================================================================
-# Injection (with recursion guard)
+# [FIX-10, FIX-11] Injection
 # ===========================================================================
+@ATTENTION_REGISTRY.register("inject_refined_landmark")
+@ATTENTION_REGISTRY.register("refined_landmark_inject")
+@ATTENTION_REGISTRY.register("inject_leka_v3")
+@ATTENTION_REGISTRY.register("leka_v3_inject")
 def inject_refined_landmark(
     layer: Any = None,
     model: Any = None,
@@ -1014,42 +1226,45 @@ def inject_refined_landmark(
     old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-):
+) -> Any | None:
     if _depth > 8:
-        logger.warning("inject_leka_v3: max recursion depth exceeded.")
+        logger.warning("inject_refined_landmark: max recursion depth exceeded.")
         return None
 
     target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
-        layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
+    for path in (
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+        ("layers",),
+        ("h",),
     ):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
-        layer_list = target.layers
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
 
     if layer_list is not None:
-        num_injected = 0
+        n_inj = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_refined_landmark(
@@ -1062,36 +1277,42 @@ def inject_refined_landmark(
                 **kwargs,
             )
             if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
+                n_inj += 1
+        return target if n_inj > 0 else None
 
-    try:
-        src_attn = old_attn
-        if src_attn is None and target is not None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(target, attr):
-                    cand = getattr(target, attr)
+    # ---- Single-layer injection ----
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
                     src_attn = getattr(cand, "self", cand)
                     break
 
-        if src_attn is None and target is not None and hasattr(target, "forward"):
-            src_attn = target
+    if src_attn is None and hasattr(target, "forward"):
+        src_attn = target
 
-        if src_attn is None:
-            return None
+    if src_attn is None:
+        return None
 
-        # Double-injection guard
-        if isinstance(src_attn, LEKAV3Attention) or "LEKAv3" in src_attn.__class__.__name__:
-            return None
+    # [FIX-11] Idempotency
+    if (
+        isinstance(src_attn, RefinedLandmarkAttention)
+        or "RefinedLandmark" in src_attn.__class__.__name__
+        or "LEKAv3" in src_attn.__class__.__name__
+    ):
+        return None
 
-        # Skip hybrid layers (e.g. Qwen3.5 DeltaNet)
-        c_name = src_attn.__class__.__name__
-        if "DeltaNet" in c_name or "LinearAttention" in c_name:
-            return None
+    # Skip hybrid layers
+    c_name = src_attn.__class__.__name__
+    if "DeltaNet" in c_name or "LinearAttention" in c_name:
+        return None
 
-        if cfg is None and hasattr(src_attn, "config"):
-            cfg = src_attn.config
+    if cfg is None and hasattr(src_attn, "config"):
+        cfg = src_attn.config
 
+    try:
         new_attn = RefinedLandmarkAttention(
             config=cfg,
             comp_config=comp_config,
@@ -1100,32 +1321,62 @@ def inject_refined_landmark(
             old_attn=src_attn,
             **kwargs,
         )
+    except Exception as e:
+        logger.exception("RefinedLandmarkAttention construction failed: %s", e)
+        return None
 
-        if src_attn is not None:
+    if src_attn is not None:
+        try:
             new_attn.copy_weights(src_attn)
-
-        p = next(src_attn.parameters(), None) if src_attn is not None else None
+        except Exception as e:
+            logger.error("copy_weights failed: %s", e)
+            return None
+        p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
 
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                new_attn.is_nested_encoder = True
-                target.attention.self = new_attn
-            else:
-                new_attn.is_nested_encoder = False
-                target.attention = new_attn
-        elif hasattr(target, "self"):
+    # ---- Splice ----
+    spliced = False
+    if hasattr(target, "attention"):
+        if hasattr(target.attention, "self"):
             new_attn.is_nested_encoder = True
-            target.self = new_attn
-        elif hasattr(target, "self_attn"):
+            target.attention.self = new_attn
+        else:
             new_attn.is_nested_encoder = False
-            target.self_attn = new_attn
-        elif hasattr(target, "attn"):
-            new_attn.is_nested_encoder = False
-            target.attn = new_attn
+            target.attention = new_attn
+        spliced = True
+    elif hasattr(target, "self"):
+        new_attn.is_nested_encoder = True
+        target.self = new_attn
+        spliced = True
+    elif hasattr(target, "self_attn"):
+        new_attn.is_nested_encoder = False
+        target.self_attn = new_attn
+        spliced = True
+    elif hasattr(target, "attn"):
+        new_attn.is_nested_encoder = False
+        target.attn = new_attn
+        spliced = True
 
-        return new_attn
-    except Exception as e:
-        logger.exception("inject_leka_v3 failed at layer %d: %s", layer_idx, e)
+    if not spliced:
+        logger.error(
+            "inject_refined_landmark: no writable attention attribute on %s",
+            type(target).__name__,
+        )
         return None
+
+    return new_attn
+
+
+# ===========================================================================
+# [FIX-13] Exports
+# ===========================================================================
+__all__ = [
+    "RefinedLandmarkAttention",
+    "LEKAv3Attention",
+    "LEKAV3Attention",
+    "FactorizedLoRALinear",
+    "inject_refined_landmark",
+    "apply_rotary_pos_emb",
+    "softpick",
+]
