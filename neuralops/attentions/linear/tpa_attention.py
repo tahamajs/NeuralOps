@@ -498,13 +498,13 @@ class TPAttention(BaseAttention):
                 torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
             )
             self.q_lora_B = nn.Parameter(
-                torch.zeros(self.q_head_size, self.lora_rank, dtype=target_dtype)
+                torch.randn(self.q_head_size, self.lora_rank, dtype=target_dtype) * 1e-4
             )
             self.k_lora_A = nn.Parameter(
                 torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
             )
             self.k_lora_B = nn.Parameter(
-                torch.zeros(self.kv_head_size, self.lora_rank, dtype=target_dtype)
+                torch.randn(self.kv_head_size, self.lora_rank, dtype=target_dtype) * 1e-4
             )
             nn.init.kaiming_uniform_(self.q_lora_A, a=math.sqrt(5))
             nn.init.kaiming_uniform_(self.k_lora_A, a=math.sqrt(5))
