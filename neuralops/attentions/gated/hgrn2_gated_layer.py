@@ -335,6 +335,10 @@ class HGRN2Layer(BaseAttention):
         return self.lora_g_proj
 
     @property
+    def g_proj(self) -> nn.Linear:
+        return self.lora_g_proj
+
+    @property
     def fusion_gate(self) -> nn.Linear:
         return self.lora_fusion_gate
 

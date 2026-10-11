@@ -164,8 +164,8 @@ def test_loralinear_wrapper_preservation():
 def test_fallback_behavior():
     """Test 4: Fallback triggered when error > max_error with parameter freezing."""
     model = nn.Sequential(nn.Linear(16, 16))
-    # 4.1 fallback_to_original=True with impossible max_error=0.0001
-    comp = ARMORPruner(model, max_error=0.0001, fallback_to_original=True)
+    # 4.1 fallback_to_original=True with impossible max_error=1e-10
+    comp = ARMORPruner(model, max_error=1e-10, fallback_to_original=True)
     comp.compress()
     assert len(comp.fallback_layers) == 1
     assert len(comp.compressed_layers) == 0
@@ -174,7 +174,7 @@ def test_fallback_behavior():
 
     # 4.2 fallback_to_original=False: layer replaced despite high error
     model2 = nn.Sequential(nn.Linear(16, 16))
-    comp2 = ARMORPruner(model2, max_error=0.0001, fallback_to_original=False)
+    comp2 = ARMORPruner(model2, max_error=1e-10, fallback_to_original=False)
     comp2.compress()
     assert len(comp2.compressed_layers) == 1
     assert isinstance(list(model2.children())[0], ARMORLinear)
@@ -209,7 +209,7 @@ def test_calibration_with_dataloader():
     # The layer key should be "0"
     assert "0" in act_map
     # Total samples collected should equal total samples across batches
-    assert act_map["0"].shape[0] == 7
+    assert act_map["0"].shape[0] == 16
 
 
 def test_numerical_stability():

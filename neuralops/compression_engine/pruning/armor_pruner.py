@@ -831,6 +831,7 @@ class ARMORPruner(BaseCompressor):
                 "layer_effective_ratios": self.layer_effective_ratios,
                 # AR-FIX-14: distinguish storage from effective.
                 "base_sparse_storage": total_base_sparse_storage,
+                "base_sparse_params": total_base_sparse_storage,
                 "base_sparse_effective": total_base_sparse_effective,
                 "correction_params": total_correction,
                 "effective_parameter_ratio": effective_param_ratio,

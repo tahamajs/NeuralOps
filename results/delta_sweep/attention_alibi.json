@@ -1,0 +1,11 @@
+{
+  "module": "alibi",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 16593.66,
+  "duration_sec": 392.7,
+  "retries_used": 2,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 21:43:03"
+}

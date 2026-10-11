@@ -177,6 +177,7 @@ class ResSVDLinear(nn.Module):
 
         Returns:
             ResSVDLinear: Spectral residual LoRA module.
+        """
         target_mod = getattr(linear, "base_layer", linear)
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")

@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_adaptive_sparse_attention_C_20261011_212039",
+    "run_name": "kd_adaptive_sparse_attention_gpt2_C",
+    "timestamp_start": "2026-10-11T21:23:32.691111+00:00",
+    "timestamp_end": "2026-10-11T21:23:32.691121+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "acb14d14b1a0bd07488e02a4e2358da37160cb48",
+    "git_commit_short": "acb14d14b1",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "_modules_tmp.json                                  |    2 +-\n neuralops/attentions/adaptive/eat.py               |   17 +-\n .../attentions/gated/decay_linear_attention.py     |    6 +\n neuralops/attentions/linear/cosformer.py           |    8 +\n neuralops/core/attention_mask.py                   |   23 +-\n .../attention_adaptive_span_attention.err          |   17 +-\n .../attention_adaptive_span_attention.log          |  115 +-\n results/delta_sweep/summary.csv                    |   76 +-\n results/kd_runs/adaptive_span_attention/latest.txt |    2 +-\n results/kd_runs/registry.json                      | 3117 ++++++++++++++++++++\n results/results.csv                                |    1 +\n results/results.parquet                            |  Bin 15421 -> 15481 bytes\n 12 files changed, 3277 insertions(+), 107 deletions(-)",
+    "session_id": "68e108b7-b24f-487d-ac23-a5d1493b0443",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "adaptive_sparse_attention",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 49.09,
+    "post_ppl": 30.44,
+    "post_ppl_stage1": 34.69,
+    "post_ppl_stage2": 30.44,
+    "kd_gain": 14.4,
+    "recovery_pct": 100.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 3406.3,
+    "train_duration_s": 156.19
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "89e929c824c676da",
+  "run_id": "kd_adaptive_sparse_attention_C_20261011_212039",
+  "run_name": "kd_adaptive_sparse_attention_gpt2_C",
+  "timestamp_start": "2026-10-11T21:23:32.691111+00:00",
+  "timestamp_end": "2026-10-11T21:23:32.691121+00:00",
+  "git_commit": "acb14d14b1a0bd07488e02a4e2358da37160cb48",
+  "git_dirty": true,
+  "run_key": "adaptive_sparse_attention__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

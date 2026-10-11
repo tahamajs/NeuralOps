@@ -328,10 +328,10 @@ class ADMMCompressor(BaseCompressor):
                             )
                             break
 
-                        # AC-FIX-04: track best iterate using ADMM state W.
-                        finite_mask_curr = torch.isfinite(W).float()
-                        mask_curr = (W != 0.0).float() * finite_mask_curr
-                        W_curr = self._quantize_projection(W) * mask_curr
+                        # AC-FIX-04: track best iterate using ADMM state Z (strictly pruned).
+                        finite_mask_curr = torch.isfinite(Z).float()
+                        mask_curr = (Z != 0.0).float() * finite_mask_curr
+                        W_curr = self._quantize_projection(Z) * mask_curr
                         curr_err = float(torch.norm(W0 - W_curr, p="fro").item() / norm_w0)
                         if curr_err < best_err:
                             best_err = curr_err
