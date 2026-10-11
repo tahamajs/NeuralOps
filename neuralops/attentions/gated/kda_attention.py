@@ -1014,7 +1014,7 @@ class KDAAttention(BaseAttention):
             if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
                 cos, sin = pos_emb
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, past_len=past_len)
-            elif self.rotary_emb is not None:
+            elif getattr(self, "rotary_emb", None) is not None:
                 pos_ids = kwargs.get("position_ids")
                 if pos_ids is None and past_len > 0:
                     pos_ids = (

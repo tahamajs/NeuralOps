@@ -752,7 +752,7 @@ class ClusterAttention(BaseAttention):
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             rotary_mod = self.rotary_emb
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:

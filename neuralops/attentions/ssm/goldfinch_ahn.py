@@ -783,7 +783,7 @@ class GoldFinchAHNBlock(BaseAttention):
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=device).unsqueeze(0).expand(B, -1)

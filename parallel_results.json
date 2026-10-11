@@ -5,18 +5,18 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.324652671813965,
-    "delta": 0.8261504173278809,
+    "loss_student": 6.271308422088623,
+    "delta": 0.7728061676025391,
     "is_bug": true
   },
   {
-    "module": "adasplash_attention",
+    "module": "aegis_v6",
     "device": "cpu",
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.3635687828063965,
-    "delta": 0.8650665283203125,
+    "loss_student": 6.259973526000977,
+    "delta": 0.7614712715148926,
     "is_bug": true
   },
   {
@@ -35,8 +35,8 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.4358649253845215,
-    "delta": 0.9373626708984375,
+    "loss_student": 6.285930633544922,
+    "delta": 0.7874283790588379,
     "is_bug": true
   },
   {
@@ -45,9 +45,9 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.5743513107299805,
-    "delta": 1.0758490562438965,
-    "is_bug": false
+    "loss_student": 6.2381439208984375,
+    "delta": 0.7396416664123535,
+    "is_bug": true
   },
   {
     "module": "expert_choice_moe",
@@ -55,8 +55,18 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.480513572692871,
-    "delta": 0.9820113182067871,
+    "loss_student": 6.3213324546813965,
+    "delta": 0.8228302001953125,
+    "is_bug": true
+  },
+  {
+    "module": "adasplash_attention",
+    "device": "cuda",
+    "worker": 0,
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.25617790222168,
+    "delta": 0.757683277130127,
     "is_bug": true
   },
   {
@@ -65,88 +75,79 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.501412391662598,
-    "delta": 1.0029101371765137,
-    "is_bug": false
+    "loss_student": 6.231415271759033,
+    "delta": 0.7329130172729492,
+    "is_bug": true
   },
   {
     "module": "flash_attention3_fp8",
-    "device": "cpu",
-    "worker": 1,
+    "device": "cuda",
+    "worker": 0,
     "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.4318108558654785,
-    "delta": 0.9333086013793945,
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.302122116088867,
+    "delta": 0.8036274909973145,
     "is_bug": true
   },
   {
     "module": "fusion_attn",
     "device": "cpu",
-    "worker": 2,
+    "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.290006160736084,
-    "delta": 0.79150390625,
-    "is_bug": true
-  },
-  {
-    "module": "aegis_v6",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.259978294372559,
-    "delta": 0.7614836692810059,
+    "loss_student": 6.261195659637451,
+    "delta": 0.7626934051513672,
     "is_bug": true
   },
   {
     "module": "gated_delta_net",
     "device": "cpu",
-    "worker": 1,
+    "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.304664611816406,
-    "delta": 0.8061623573303223,
+    "loss_student": 6.291213035583496,
+    "delta": 0.7927107810974121,
     "is_bug": true
   },
   {
     "module": "gated_deltanet_block",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.35160493850708,
-    "delta": 0.8531026840209961,
-    "is_bug": true
-  },
-  {
-    "module": "goldfinch_ahn",
     "device": "cuda",
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.526898384094238,
-    "delta": 1.0284037590026855,
-    "is_bug": false
+    "loss_student": 6.274475574493408,
+    "delta": 0.7759809494018555,
+    "is_bug": true
   },
   {
-    "module": "granite_hybrid",
+    "module": "goldfinch_ahn",
     "device": "cpu",
     "worker": 1,
-    "status": "failed",
-    "error": "ValueError: too many values to unpack (expected 3)",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\hybrid\\granite_hybrid.py\", line 809, in forward\n    moe_out, moe_aux_loss = self.moe(x)\n                            ~~~~~~~~^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\hybrid\\granite_hybrid.py\", line 346, in forward\n    B, L, D = x.shape\n    ^^^^^^^\nValueError: too many values to unpack (expected 3)\n",
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.399394512176514,
+    "delta": 0.9008922576904297,
     "is_bug": true
   },
   {
     "module": "griffin_ssd",
+    "device": "cuda",
+    "worker": 0,
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.337594032287598,
+    "delta": 0.8390994071960449,
+    "is_bug": true
+  },
+  {
+    "module": "granite_hybrid",
     "device": "cpu",
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.387914657592773,
-    "delta": 0.8894124031066895,
-    "is_bug": true
+    "loss_student": 7.616286277770996,
+    "delta": 2.117784023284912,
+    "is_bug": false
   },
   {
     "module": "halo_regla",
@@ -154,28 +155,28 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.302204608917236,
-    "delta": 0.8037023544311523,
+    "loss_student": 6.299736022949219,
+    "delta": 0.8012337684631348,
     "is_bug": true
   },
   {
     "module": "hamming_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.439355373382568,
-    "delta": 0.9408607482910156,
-    "is_bug": true
-  },
-  {
-    "module": "hgrn2_gated_deltanet",
     "device": "cpu",
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.3018341064453125,
-    "delta": 0.8033318519592285,
+    "loss_student": 6.413329124450684,
+    "delta": 0.9148268699645996,
+    "is_bug": true
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "device": "cuda",
+    "worker": 0,
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.253617763519287,
+    "delta": 0.7551231384277344,
     "is_bug": true
   },
   {
@@ -184,27 +185,28 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.266645431518555,
-    "delta": 0.7681431770324707,
-    "is_bug": true
-  },
-  {
-    "module": "hla_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "failed",
-    "error": "RuntimeError: The size of tensor a (12) must match the size of tensor b (64) at non-singleton dimension 2",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\gated\\hla_attention.py\", line 876, in forward\n    y_fwd, next_state = self._hla_chunked_scan(\n                        ~~~~~~~~~~~~~~~~~~~~~~^\n        q, k, v, decay,\n        ^^^^^^^^^^^^^^^\n        initial_state=past_state,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^\n        reverse=False,\n        ^^^^^^^^^^^^^^\n    )\n    ^\n  File \"D:\\SVD_Project\\neuralops\\attentions\\gated\\hla_attention.py\", line 739, in _hla_chunked_scan\n    Z_prev = block_decay.squeeze(-1) * Z_prev + Z_update\n             ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~\nRuntimeError: The size of tensor a (12) must match the size of tensor b (64) at non-singleton dimension 2\n",
+    "loss_student": 6.2864990234375,
+    "delta": 0.787996768951416,
     "is_bug": true
   },
   {
     "module": "hgrn2_gated_outer",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.246082782745361,
+    "delta": 0.7475805282592773,
+    "is_bug": true
+  },
+  {
+    "module": "hla_attention",
     "device": "cuda",
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.243072986602783,
-    "delta": 0.7445783615112305,
+    "loss_student": 6.377215385437012,
+    "delta": 0.878720760345459,
     "is_bug": true
   },
   {
@@ -213,36 +215,38 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.170733451843262,
-    "delta": 0.6722311973571777,
-    "is_bug": true
-  },
-  {
-    "module": "hymba_transx",
-    "device": "cpu",
-    "worker": 2,
-    "status": "failed",
-    "error": "RuntimeError: Expected size for first two dimensions of batch2 tensor to be: [12, 19] but got: [12, 16].",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\hymba_transx.py\", line 862, in forward\n    scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale\n              ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Expected size for first two dimensions of batch2 tensor to be: [12, 19] but got: [12, 16].\n",
+    "loss_student": 6.246451377868652,
+    "delta": 0.7479491233825684,
     "is_bug": true
   },
   {
     "module": "hybrid_local_kernel",
-    "device": "cuda",
-    "worker": 0,
+    "device": "cpu",
+    "worker": 2,
     "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.25832462310791,
-    "delta": 0.7598299980163574,
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.257928848266602,
+    "delta": 0.7594265937805176,
     "is_bug": true
   },
   {
     "module": "jamba_info",
     "device": "cpu",
     "worker": 1,
-    "status": "failed",
-    "error": "RuntimeError: Boolean value of Tensor with more than one value is ambiguous",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\jamba_info.py\", line 864, in forward\n    position_ids = position_ids or kwargs.get(\"position_ids\")\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Boolean value of Tensor with more than one value is ambiguous\n",
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 8.748348236083984,
+    "delta": 3.2498459815979004,
+    "is_bug": false
+  },
+  {
+    "module": "hymba_transx",
+    "device": "cuda",
+    "worker": 0,
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.333685874938965,
+    "delta": 0.8351912498474121,
     "is_bug": true
   },
   {
@@ -251,8 +255,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.366129398345947,
-    "delta": 0.8676271438598633,
+    "loss_student": 6.353132247924805,
+    "delta": 0.8546299934387207,
     "is_bug": true
   },
   {
@@ -261,8 +265,8 @@
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.558033466339111,
-    "delta": 1.0595388412475586,
+    "loss_student": 6.647294521331787,
+    "delta": 1.1487998962402344,
     "is_bug": false
   },
   {
@@ -271,27 +275,18 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.261277675628662,
-    "delta": 0.7627754211425781,
+    "loss_student": 6.260469913482666,
+    "delta": 0.761967658996582,
     "is_bug": true
   },
   {
     "module": "mamba_svd_flash",
     "device": "cpu",
     "worker": 2,
-    "status": "failed",
-    "error": "ValueError: too many values to unpack (expected 2)",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n    ^^^^^^^^^^^^^^\nValueError: too many values to unpack (expected 2)\n",
-    "is_bug": true
-  },
-  {
-    "module": "moba_attention",
-    "device": "cpu",
-    "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.444072723388672,
-    "delta": 0.9455704689025879,
+    "loss_student": 6.321616172790527,
+    "delta": 0.8231139183044434,
     "is_bug": true
   },
   {
@@ -300,37 +295,48 @@
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.201844215393066,
-    "delta": 0.7033495903015137,
+    "loss_student": 6.395042896270752,
+    "delta": 0.8965482711791992,
+    "is_bug": true
+  },
+  {
+    "module": "moba_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.284839153289795,
+    "delta": 0.7863368988037109,
     "is_bug": true
   },
   {
     "module": "moe_deltakv_paged",
     "device": "cpu",
     "worker": 2,
-    "status": "failed",
-    "error": "TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\sparse\\moe_deltakv_paged.py\", line 988, in forward\n    context, attn_probs = self._paged_moe_attention(q, k_hat, v_hat, valid_mask)\n                          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_Project\\neuralops\\attentions\\sparse\\moe_deltakv_paged.py\", line 875, in _paged_moe_attention\n    attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -1e4)\n                                          ^^^^^^^^^^^^^^^^^^^^^^\nTypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors\n",
-    "is_bug": true
-  },
-  {
-    "module": "nexus",
-    "device": "cpu",
-    "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.453144550323486,
-    "delta": 0.9546422958374023,
+    "loss_student": 6.28272008895874,
+    "delta": 0.7842178344726562,
     "is_bug": true
   },
   {
     "module": "nsa_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.239136695861816,
+    "delta": 0.7406344413757324,
+    "is_bug": true
+  },
+  {
+    "module": "nexus",
     "device": "cuda",
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.253828048706055,
-    "delta": 0.755333423614502,
+    "loss_student": 6.280238628387451,
+    "delta": 0.7817440032958984,
     "is_bug": true
   },
   {
@@ -339,8 +345,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.421019554138184,
-    "delta": 0.9225172996520996,
+    "loss_student": 6.3859052658081055,
+    "delta": 0.8874030113220215,
     "is_bug": true
   },
   {
@@ -349,8 +355,8 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.250605583190918,
-    "delta": 0.752103328704834,
+    "loss_student": 6.222756385803223,
+    "delta": 0.7242541313171387,
     "is_bug": true
   },
   {
@@ -359,8 +365,8 @@
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.401408672332764,
-    "delta": 0.9029140472412109,
+    "loss_student": 6.251669406890869,
+    "delta": 0.7531747817993164,
     "is_bug": true
   },
   {
@@ -369,8 +375,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.268155097961426,
-    "delta": 0.7696528434753418,
+    "loss_student": 6.237709999084473,
+    "delta": 0.7392077445983887,
     "is_bug": true
   },
   {
@@ -379,27 +385,29 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 7.387910842895508,
-    "delta": 1.8894085884094238,
+    "loss_student": 7.465091228485107,
+    "delta": 1.9665889739990234,
     "is_bug": false
   },
   {
     "module": "samba_m3",
     "device": "cuda",
     "worker": 0,
-    "status": "failed",
-    "error": "ValueError: not enough values to unpack (expected 4, got 3)",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\samba_m3.py\", line 731, in forward\n    attn_out = self._chunked_sliding_window_attention(\n        q,\n    ...<4 lines>...\n        past_len=past_len,\n    )\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\samba_m3.py\", line 576, in _chunked_sliding_window_attention\n    B, H, L, d = q.shape\n    ^^^^^^^^^^\nValueError: not enough values to unpack (expected 4, got 3)\n",
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.367395401000977,
+    "delta": 0.8689007759094238,
     "is_bug": true
   },
   {
     "module": "samba_moe",
     "device": "cpu",
     "worker": 2,
-    "status": "failed",
-    "error": "ValueError: not enough values to unpack (expected 4, got 3)",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\samba_moe.py\", line 249, in forward\n    swa_res = self.swa_mamba(\n        hidden_states,\n    ...<8 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\samba_m3.py\", line 731, in forward\n    attn_out = self._chunked_sliding_window_attention(\n        q,\n    ...<4 lines>...\n        past_len=past_len,\n    )\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\samba_m3.py\", line 576, in _chunked_sliding_window_attention\n    B, H, L, d = q.shape\n    ^^^^^^^^^^\nValueError: not enough values to unpack (expected 4, got 3)\n",
-    "is_bug": true
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 8.513776779174805,
+    "delta": 3.0152745246887207,
+    "is_bug": false
   },
   {
     "module": "selective_ssm",
@@ -407,8 +415,8 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.265913009643555,
-    "delta": 0.7674107551574707,
+    "loss_student": 6.262962818145752,
+    "delta": 0.764460563659668,
     "is_bug": true
   },
   {
@@ -417,8 +425,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.356803894042969,
-    "delta": 0.8583016395568848,
+    "loss_student": 6.341208457946777,
+    "delta": 0.8427062034606934,
     "is_bug": true
   },
   {
@@ -427,8 +435,8 @@
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.254649639129639,
-    "delta": 0.7561550140380859,
+    "loss_student": 6.261865139007568,
+    "delta": 0.7633705139160156,
     "is_bug": true
   },
   {
@@ -437,18 +445,18 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.323363304138184,
-    "delta": 0.8248610496520996,
+    "loss_student": 6.171729564666748,
+    "delta": 0.6732273101806641,
     "is_bug": true
   },
   {
     "module": "spectron_fp8",
-    "device": "cpu",
-    "worker": 2,
+    "device": "cuda",
+    "worker": 0,
     "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 8.880904197692871,
-    "delta": 3.382401943206787,
+    "loss_base": 5.498494625091553,
+    "loss_student": 8.53158950805664,
+    "delta": 3.033094882965088,
     "is_bug": false
   },
   {
@@ -457,18 +465,18 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.267223834991455,
-    "delta": 0.7687215805053711,
+    "loss_student": 6.269365310668945,
+    "delta": 0.7708630561828613,
     "is_bug": true
   },
   {
     "module": "upi_stuffed_mamba",
-    "device": "cpu",
-    "worker": 2,
+    "device": "cuda",
+    "worker": 0,
     "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.268609046936035,
-    "delta": 0.7701067924499512,
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.223367214202881,
+    "delta": 0.7248725891113281,
     "is_bug": true
   },
   {
@@ -477,397 +485,22 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.259929180145264,
-    "delta": 0.7614269256591797,
-    "is_bug": true
-  },
-  {
-    "module": "split_head_hybrid",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.283220291137695,
-    "delta": 0.7847256660461426,
+    "loss_student": 6.260285377502441,
+    "delta": 0.7617831230163574,
     "is_bug": true
   },
   {
     "module": "xattention",
-    "device": "cpu",
-    "worker": 2,
+    "device": "cuda",
+    "worker": 0,
     "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.3499250411987305,
-    "delta": 0.8514227867126465,
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.459222316741943,
+    "delta": 0.9607276916503906,
     "is_bug": true
   },
   {
     "module": "adaptive_span_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "failed",
-    "error": "RuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 282, in forward\n    hidden_states = attn_output + residual\n                    ~~~~~~~~~~~~^~~~~~~~~~\nRuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2\n",
-    "is_bug": true
-  },
-  {
-    "module": "adaptive_svd_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.257356643676758,
-    "delta": 0.7588620185852051,
-    "is_bug": true
-  },
-  {
-    "module": "alibi",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.187204360961914,
-    "delta": 0.6887021064758301,
-    "is_bug": true
-  },
-  {
-    "module": "asvd_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.252366542816162,
-    "delta": 0.7538642883300781,
-    "is_bug": true
-  },
-  {
-    "module": "chela_slay",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.458160877227783,
-    "delta": 0.9596586227416992,
-    "is_bug": true
-  },
-  {
-    "module": "block_transformer_hiba",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.333270072937012,
-    "delta": 0.834775447845459,
-    "is_bug": true
-  },
-  {
-    "module": "compressed_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.257577896118164,
-    "delta": 0.7590756416320801,
-    "is_bug": true
-  },
-  {
-    "module": "compressed_mha_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.265324592590332,
-    "delta": 0.766822338104248,
-    "is_bug": true
-  },
-  {
-    "module": "cosformer",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.140740394592285,
-    "delta": 0.6422457695007324,
-    "is_bug": true
-  },
-  {
-    "module": "cross_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.272455215454102,
-    "delta": 0.7739529609680176,
-    "is_bug": true
-  },
-  {
-    "module": "dynamic_conv_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "failed",
-    "error": "RuntimeError: shape '[1, 19, 768]' is invalid for input of size 3648",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\modern\\dynamic_conv_attention.py\", line 636, in forward\n    out = out.permute(0, 2, 1, 3).contiguous().view(B, N, D)\nRuntimeError: shape '[1, 19, 768]' is invalid for input of size 3648\n",
-    "is_bug": true
-  },
-  {
-    "module": "factorised_matrix_state",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.310932636260986,
-    "delta": 0.8124303817749023,
-    "is_bug": true
-  },
-  {
-    "module": "eat",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.44726037979126,
-    "delta": 0.948765754699707,
-    "is_bug": true
-  },
-  {
-    "module": "full_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.08993673324585,
-    "delta": 0.5914344787597656,
-    "is_bug": true
-  },
-  {
-    "module": "galerkin_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.45432186126709,
-    "delta": 0.9558196067810059,
-    "is_bug": true
-  },
-  {
-    "module": "fused_svd_kernel",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.260087013244629,
-    "delta": 0.7615923881530762,
-    "is_bug": true
-  },
-  {
-    "module": "gqa_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.592216968536377,
-    "delta": 1.093714714050293,
-    "is_bug": false
-  },
-  {
-    "module": "jamba",
-    "device": "cpu",
-    "worker": 1,
-    "status": "failed",
-    "error": "RuntimeError: shape '[1, 19, 12, 16]' is invalid for input of size 14592",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 274, in forward\n    attn_output, _ = self.attn(\n                     ~~~~~~~~~^\n        hidden_states,\n        ^^^^^^^^^^^^^^\n    ...<3 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\adaptive\\infini_attention.py\", line 987, in forward\n    m_out, present_mamba = self.mamba(\n                           ~~~~~~~~~~^\n        x_norm1, attention_mask=attention_mask, past_state=past_mamba\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\adaptive\\infini_attention.py\", line 293, in forward\n    ssm_result = self.ssm(x_proj, attention_mask=attention_mask)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"D:\\SVD_Project\\neuralops\\attentions\\ssm\\simple_ssm.py\", line 255, in forward\n    u_heads = u.view(B, L, H, d).transpose(1, 2)  # [B, H, L, d]\n              ~~~~~~^^^^^^^^^^^^\nRuntimeError: shape '[1, 19, 12, 16]' is invalid for input of size 14592\n",
-    "is_bug": true
-  },
-  {
-    "module": "linformer_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.669290542602539,
-    "delta": 1.1707959175109863,
-    "is_bug": false
-  },
-  {
-    "module": "lola_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.252748489379883,
-    "delta": 0.7542462348937988,
-    "is_bug": true
-  },
-  {
-    "module": "lora_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.344448566436768,
-    "delta": 0.8459463119506836,
-    "is_bug": true
-  },
-  {
-    "module": "minimal_svd",
-    "device": "cpu",
-    "worker": 2,
-    "status": "failed",
-    "error": "RuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 282, in forward\n    hidden_states = attn_output + residual\n                    ~~~~~~~~~~~~^~~~~~~~~~\nRuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2\n",
-    "is_bug": true
-  },
-  {
-    "module": "minimal_nova",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.259496212005615,
-    "delta": 0.7610015869140625,
-    "is_bug": true
-  },
-  {
-    "module": "mla_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.421753883361816,
-    "delta": 0.9232516288757324,
-    "is_bug": true
-  },
-  {
-    "module": "naive_svd",
-    "device": "cpu",
-    "worker": 2,
-    "status": "failed",
-    "error": "RuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2",
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\test_parallel.py\", line 56, in _run_worker\n    out = student(input_ids, labels=input_ids)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 876, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 691, in forward\n    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(\n                                                                     ~~~~~~~~~~~~~~~~^\n        input_ids,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\generic.py\", line 952, in wrapper\n    output = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\utils\\output_capturing.py\", line 248, in wrapper\n    outputs = func(self, *args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 617, in forward\n    hidden_states = block(\n        hidden_states,\n    ...<6 lines>...\n        **kwargs,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 93, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\gpt2\\modeling_gpt2.py\", line 282, in forward\n    hidden_states = attn_output + residual\n                    ~~~~~~~~~~~~^~~~~~~~~~\nRuntimeError: The size of tensor a (192) must match the size of tensor b (768) at non-singleton dimension 2\n",
-    "is_bug": true
-  },
-  {
-    "module": "mqa",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.381320953369141,
-    "delta": 0.8828263282775879,
-    "is_bug": true
-  },
-  {
-    "module": "nasc_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.308467388153076,
-    "delta": 0.8099651336669922,
-    "is_bug": true
-  },
-  {
-    "module": "nystrom_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.160395622253418,
-    "delta": 0.661893367767334,
-    "is_bug": true
-  },
-  {
-    "module": "performer_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.258360862731934,
-    "delta": 0.7598662376403809,
-    "is_bug": true
-  },
-  {
-    "module": "primal_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.337845325469971,
-    "delta": 0.8393430709838867,
-    "is_bug": true
-  },
-  {
-    "module": "projection_factorized_attn",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.25931978225708,
-    "delta": 0.7608175277709961,
-    "is_bug": true
-  },
-  {
-    "module": "progressive_token_pruning",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.177786827087402,
-    "delta": 0.6792922019958496,
-    "is_bug": true
-  },
-  {
-    "module": "qcqa_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.6076459884643555,
-    "delta": 1.1091437339782715,
-    "is_bug": false
-  },
-  {
-    "module": "rala_compressor",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.220530033111572,
-    "delta": 0.7220277786254883,
-    "is_bug": true
-  },
-  {
-    "module": "rala_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.552362442016602,
-    "delta": 1.0538678169250488,
-    "is_bug": false
-  },
-  {
-    "module": "residual_svd_attention",
-    "device": "cpu",
-    "worker": 1,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.394712448120117,
-    "delta": 0.8962101936340332,
-    "is_bug": true
-  },
-  {
-    "module": "sink_attention",
-    "device": "cpu",
-    "worker": 2,
-    "status": "success",
-    "loss_base": 5.498502254486084,
-    "loss_student": 6.425291061401367,
-    "delta": 0.9267888069152832,
-    "is_bug": true
-  },
-  {
-    "module": "span_expanded_attention",
     "device": "cpu",
     "worker": 1,
     "status": "failed",
@@ -876,13 +509,383 @@
     "is_bug": true
   },
   {
-    "module": "salt_attention",
+    "module": "adaptive_svd_attention",
     "device": "cuda",
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.280417442321777,
-    "delta": 0.7819228172302246,
+    "loss_student": 6.260587215423584,
+    "delta": 0.7620925903320312,
+    "is_bug": true
+  },
+  {
+    "module": "alibi",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.164364337921143,
+    "delta": 0.6658620834350586,
+    "is_bug": true
+  },
+  {
+    "module": "split_head_hybrid",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.293867111206055,
+    "delta": 0.7953648567199707,
+    "is_bug": true
+  },
+  {
+    "module": "asvd_attention",
+    "device": "cuda",
+    "worker": 0,
+    "status": "success",
+    "loss_base": 5.498494625091553,
+    "loss_student": 6.259449005126953,
+    "delta": 0.7609543800354004,
+    "is_bug": true
+  },
+  {
+    "module": "block_transformer_hiba",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.316397190093994,
+    "delta": 0.8178949356079102,
+    "is_bug": true
+  },
+  {
+    "module": "compressed_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.256417274475098,
+    "delta": 0.7579150199890137,
+    "is_bug": true
+  },
+  {
+    "module": "compressed_mha_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.253708839416504,
+    "delta": 0.7552065849304199,
+    "is_bug": true
+  },
+  {
+    "module": "cosformer",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.361603736877441,
+    "delta": 0.8631014823913574,
+    "is_bug": true
+  },
+  {
+    "module": "cross_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.340381145477295,
+    "delta": 0.8418788909912109,
+    "is_bug": true
+  },
+  {
+    "module": "dynamic_conv_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.310008525848389,
+    "delta": 0.8115062713623047,
+    "is_bug": true
+  },
+  {
+    "module": "eat",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.241917610168457,
+    "delta": 0.743415355682373,
+    "is_bug": true
+  },
+  {
+    "module": "factorised_matrix_state",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.242358684539795,
+    "delta": 0.7438564300537109,
+    "is_bug": true
+  },
+  {
+    "module": "full_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.3409247398376465,
+    "delta": 0.8424224853515625,
+    "is_bug": true
+  },
+  {
+    "module": "fused_svd_kernel",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.257739067077637,
+    "delta": 0.7592368125915527,
+    "is_bug": true
+  },
+  {
+    "module": "galerkin_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.322631359100342,
+    "delta": 0.8241291046142578,
+    "is_bug": true
+  },
+  {
+    "module": "gqa_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.1917500495910645,
+    "delta": 0.6932477951049805,
+    "is_bug": true
+  },
+  {
+    "module": "jamba",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.300040245056152,
+    "delta": 0.8015379905700684,
+    "is_bug": true
+  },
+  {
+    "module": "linformer_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.544813632965088,
+    "delta": 1.046311378479004,
+    "is_bug": false
+  },
+  {
+    "module": "lola_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.259173393249512,
+    "delta": 0.7606711387634277,
+    "is_bug": true
+  },
+  {
+    "module": "lora_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.332056045532227,
+    "delta": 0.8335537910461426,
+    "is_bug": true
+  },
+  {
+    "module": "minimal_nova",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.259613037109375,
+    "delta": 0.761110782623291,
+    "is_bug": true
+  },
+  {
+    "module": "minimal_svd",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.266158580780029,
+    "delta": 0.7676563262939453,
+    "is_bug": true
+  },
+  {
+    "module": "mla_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.412082672119141,
+    "delta": 0.9135804176330566,
+    "is_bug": true
+  },
+  {
+    "module": "mqa",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.403859615325928,
+    "delta": 0.9053573608398438,
+    "is_bug": true
+  },
+  {
+    "module": "naive_svd",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.263686180114746,
+    "delta": 0.7651839256286621,
+    "is_bug": true
+  },
+  {
+    "module": "nasc_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.284004211425781,
+    "delta": 0.7855019569396973,
+    "is_bug": true
+  },
+  {
+    "module": "nystrom_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.410675048828125,
+    "delta": 0.912172794342041,
+    "is_bug": true
+  },
+  {
+    "module": "performer_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.248141288757324,
+    "delta": 0.7496390342712402,
+    "is_bug": true
+  },
+  {
+    "module": "primal_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.260122776031494,
+    "delta": 0.7616205215454102,
+    "is_bug": true
+  },
+  {
+    "module": "progressive_token_pruning",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.271100997924805,
+    "delta": 0.7725987434387207,
+    "is_bug": true
+  },
+  {
+    "module": "projection_factorized_attn",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.259588241577148,
+    "delta": 0.7610859870910645,
+    "is_bug": true
+  },
+  {
+    "module": "qcqa_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.3566389083862305,
+    "delta": 0.8581366539001465,
+    "is_bug": true
+  },
+  {
+    "module": "rala_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.460770130157471,
+    "delta": 0.9622678756713867,
+    "is_bug": true
+  },
+  {
+    "module": "rala_compressor",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.280545711517334,
+    "delta": 0.78204345703125,
+    "is_bug": true
+  },
+  {
+    "module": "residual_svd_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.309289932250977,
+    "delta": 0.8107876777648926,
+    "is_bug": true
+  },
+  {
+    "module": "sink_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.296850681304932,
+    "delta": 0.7983484268188477,
+    "is_bug": true
+  },
+  {
+    "module": "salt_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.263782978057861,
+    "delta": 0.7652807235717773,
+    "is_bug": true
+  },
+  {
+    "module": "span_expanded_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.271384239196777,
+    "delta": 0.7728819847106934,
     "is_bug": true
   },
   {
@@ -891,8 +894,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.397237777709961,
-    "delta": 0.898735523223877,
+    "loss_student": 6.342315673828125,
+    "delta": 0.843813419342041,
     "is_bug": true
   },
   {
@@ -901,38 +904,48 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.331193923950195,
-    "delta": 0.8326916694641113,
+    "loss_student": 6.28778076171875,
+    "delta": 0.789278507232666,
+    "is_bug": true
+  },
+  {
+    "module": "spectron",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.259458541870117,
+    "delta": 0.7609562873840332,
     "is_bug": true
   },
   {
     "module": "squeezing_heads_distill",
     "device": "cpu",
-    "worker": 2,
+    "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.359580993652344,
-    "delta": 0.8610787391662598,
-    "is_bug": true
-  },
-  {
-    "module": "spectron",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.2591681480407715,
-    "delta": 0.7606735229492188,
+    "loss_student": 6.309168815612793,
+    "delta": 0.810666561126709,
     "is_bug": true
   },
   {
     "module": "svd_compressed",
     "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.261634349822998,
+    "delta": 0.7631320953369141,
+    "is_bug": true
+  },
+  {
+    "module": "svd_linear_attention",
+    "device": "cpu",
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.259245872497559,
-    "delta": 0.7607436180114746,
+    "loss_student": 6.260499477386475,
+    "delta": 0.7619972229003906,
     "is_bug": true
   },
   {
@@ -941,28 +954,18 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.260164737701416,
-    "delta": 0.761662483215332,
-    "is_bug": true
-  },
-  {
-    "module": "svd_linear_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.258599281311035,
-    "delta": 0.7601046562194824,
+    "loss_student": 6.259400367736816,
+    "delta": 0.7608981132507324,
     "is_bug": true
   },
   {
     "module": "svd_mamba",
-    "device": "cuda",
-    "worker": 0,
+    "device": "cpu",
+    "worker": 2,
     "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.260091304779053,
-    "delta": 0.7615966796875,
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.2574310302734375,
+    "delta": 0.7589287757873535,
     "is_bug": true
   },
   {
@@ -971,28 +974,18 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.347784519195557,
-    "delta": 0.8492822647094727,
+    "loss_student": 6.329463958740234,
+    "delta": 0.8309617042541504,
     "is_bug": true
   },
   {
     "module": "svd_seq",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.390013694763184,
-    "delta": 0.8915190696716309,
-    "is_bug": true
-  },
-  {
-    "module": "tlinformer_attention",
     "device": "cpu",
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.457422256469727,
-    "delta": 0.9589200019836426,
+    "loss_student": 6.275662422180176,
+    "delta": 0.7771601676940918,
     "is_bug": true
   },
   {
@@ -1001,8 +994,28 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.342576026916504,
-    "delta": 0.8440737724304199,
+    "loss_student": 6.216856479644775,
+    "delta": 0.7183542251586914,
+    "is_bug": true
+  },
+  {
+    "module": "tlinformer_attention",
+    "device": "cpu",
+    "worker": 2,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.242730617523193,
+    "delta": 0.7442283630371094,
+    "is_bug": true
+  },
+  {
+    "module": "token_compressed_attention",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.274273872375488,
+    "delta": 0.7757716178894043,
     "is_bug": true
   },
   {
@@ -1011,18 +1024,8 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.473397254943848,
-    "delta": 0.9748950004577637,
-    "is_bug": true
-  },
-  {
-    "module": "token_compressed_attention",
-    "device": "cuda",
-    "worker": 0,
-    "status": "success",
-    "loss_base": 5.498494625091553,
-    "loss_student": 6.414910793304443,
-    "delta": 0.9164161682128906,
+    "loss_student": 6.391767978668213,
+    "delta": 0.8932657241821289,
     "is_bug": true
   },
   {
@@ -1031,9 +1034,9 @@
     "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.676452159881592,
-    "delta": 1.1779499053955078,
-    "is_bug": false
+    "loss_student": 6.201436996459961,
+    "delta": 0.702934741973877,
+    "is_bug": true
   },
   {
     "module": "triton_svd_linear_attention",
@@ -1041,38 +1044,48 @@
     "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.27237606048584,
-    "delta": 0.7738738059997559,
+    "loss_student": 6.32608699798584,
+    "delta": 0.8275847434997559,
     "is_bug": true
   },
   {
     "module": "unified_rope",
+    "device": "cpu",
+    "worker": 1,
+    "status": "success",
+    "loss_base": 5.498502254486084,
+    "loss_student": 6.40008544921875,
+    "delta": 0.901583194732666,
+    "is_bug": true
+  },
+  {
+    "module": "chela_slay",
     "device": "cuda",
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.376621246337891,
-    "delta": 0.8781266212463379,
+    "loss_student": 6.383190631866455,
+    "delta": 0.8846960067749023,
     "is_bug": true
   },
   {
     "module": "vig_attention",
     "device": "cpu",
-    "worker": 1,
+    "worker": 2,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.475389003753662,
-    "delta": 0.9768867492675781,
+    "loss_student": 6.264477252960205,
+    "delta": 0.7659749984741211,
     "is_bug": true
   },
   {
     "module": "zeros_attention",
     "device": "cpu",
-    "worker": 2,
+    "worker": 1,
     "status": "success",
     "loss_base": 5.498502254486084,
-    "loss_student": 6.429874897003174,
-    "delta": 0.9313726425170898,
+    "loss_student": 6.321844100952148,
+    "delta": 0.8233418464660645,
     "is_bug": true
   },
   {
@@ -1081,8 +1094,8 @@
     "worker": 0,
     "status": "success",
     "loss_base": 5.498494625091553,
-    "loss_student": 6.340129852294922,
-    "delta": 0.8416352272033691,
+    "loss_student": 6.258758068084717,
+    "delta": 0.7602634429931641,
     "is_bug": true
   }
 ]

@@ -1101,7 +1101,7 @@ class GatedDeltaNet(BaseAttention):
                     cos = cos[..., past_len : past_len + L, :]
                     sin = sin[..., past_len : past_len + L, :]
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
-            elif self.rotary_emb is not None:
+            elif getattr(self, "rotary_emb", None) is not None:
                 if position_ids is None and past_len > 0:
                     position_ids = (
                         torch.arange(

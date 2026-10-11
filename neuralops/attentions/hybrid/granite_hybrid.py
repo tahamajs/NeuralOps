@@ -732,7 +732,7 @@ class GraniteHybridBlock(BaseAttention):
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, pos_ids)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             try:
                 if pos_ids is not None:
                     cos, sin = self.rotary_emb(k_new, position_ids=pos_ids)

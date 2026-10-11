@@ -842,7 +842,7 @@ class ASVDAttention(BaseAttention):
         ):
             cos, sin = position_embeddings[0], position_embeddings[1]
             q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             try:
                 # Use query tensor q (full H heads) to infer sequence length, shapes, and device correctly
                 rotary_out = (
