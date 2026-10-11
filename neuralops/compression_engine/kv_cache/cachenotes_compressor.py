@@ -93,11 +93,12 @@ class CacheNotesLoRALinear(nn.Module):
                 torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
+                torch.randn(
                     (out_features, self.lora_r),
                     dtype=target_dtype,
                     device=target_device,
                 )
+                * 1e-4
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:

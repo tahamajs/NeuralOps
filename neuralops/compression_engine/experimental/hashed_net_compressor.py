@@ -437,9 +437,9 @@ class HashedNetCompressor(BaseCompressor):
         n_buckets: int | None = None,
         compression_ratio: float | None = None,
         rank: int | float | None = None,
-        max_error: float = 0.35,
+        max_error: float = 1.0,
         target_attention_only: bool = False,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         max_retries: int = 2,
         use_sign: bool = True,
         lora_rank: int = 0,
@@ -461,8 +461,8 @@ class HashedNetCompressor(BaseCompressor):
             _cfg_get(conf, "target_param_ratio", compression_ratio),
         )
         c_max_error = _cfg_get(conf, "hashed_net_max_error", _cfg_get(conf, "max_error", max_error))
-        if c_max_error is None or c_max_error <= 0.90:
-            c_max_error = 0.96
+        if c_max_error is None:
+            c_max_error = 1.0
 
         self.max_error = float(c_max_error)
         self.target_attention_only = bool(
