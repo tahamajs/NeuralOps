@@ -303,10 +303,25 @@ class HybridKVCompressor(BaseCompressor):
                     static_ratio=self.static_ratio,
                     static_heads_mask=static_mask,
                 )
-                # Attach KV cache manager without mutating stationary weights
+                # Attach KV cache manager
                 module.hybrid_kv_cache = kv_cache
                 if hasattr(module, "base_layer"):
                     module.base_layer.hybrid_kv_cache = kv_cache
+
+                # Apply low-rank projection to dynamic heads to reflect cache compression
+                if num_dynamic > 0 and self.budget < 1.0:
+                    with torch.no_grad():
+                        W_mat = W.t().contiguous().float() if is_conv1d else W.contiguous().float()
+                        # Dynamic heads slice
+                        start_idx = num_static * head_dim
+                        if start_idx < out_f:
+                            dyn_w = W_mat[start_idx:, :]
+                            U_d, S_d, Vt_d = torch.linalg.svd(dyn_w, full_matrices=False)
+                            r_d = max(1, min(int(len(S_d) * self.budget), len(S_d)))
+                            dyn_lowrank = (U_d[:, :r_d] * S_d[:r_d].unsqueeze(0)) @ Vt_d[:r_d, :]
+                            W_mat[start_idx:, :] = dyn_lowrank
+                            new_w = W_mat.t().contiguous().to(W.dtype) if is_conv1d else W_mat.to(W.dtype)
+                            target_mod.weight.data.copy_(new_w)
 
                 head_stats[name] = {
                     "head_type": head_type,
