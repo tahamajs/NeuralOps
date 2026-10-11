@@ -266,15 +266,13 @@ class LoRALinear(nn.Module):
         return out
 
 
-# ============================================================================
-# TPAttention v2
-# ============================================================================
-
-
-@ATTENTION_REGISTRY.register("tpa_attention", supports_causal=True, supports_gqa=True)
+# DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
+# @ATTENTION_REGISTRY.register("tpa_attention", supports_causal=True, supports_gqa=True)
 class TPAttention(BaseAttention):
+    """DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
+
+    This module is deprecated. Use 'cross_attention' instead.
     """
-    Tensor Product Attention v2 with asymmetric rank support.
 
     Key improvements:
       - rank_a × rank_b = head_dim (supports head_dim=64 AND head_dim=128)

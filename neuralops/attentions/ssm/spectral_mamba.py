@@ -269,8 +269,13 @@ class SpectralMamba(nn.Module):
         return (x_filtered + state_act) * gate
 
 
-@ATTENTION_REGISTRY.register("spectral_mamba")
+# DEPRECATED: Reverts to identity/bypass states under standard initialization.
+# @ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMambaAttention(BaseAttention):
+    """DEPRECATED: Reverts to identity/bypass states under standard initialization.
+
+    This module is deprecated. Use 'simple_ssm' instead.
+    """
     is_custom_attention: bool = True
 
     def __init__(
