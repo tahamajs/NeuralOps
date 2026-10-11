@@ -196,7 +196,7 @@ class FactorizedLoRALinear(nn.Module):
             self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
             self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
+            nn.init.zeros_(self.lora_B)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)

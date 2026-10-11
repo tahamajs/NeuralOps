@@ -592,14 +592,14 @@ def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> A
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "mgie_max_error", _cfg_get(comp_config, "max_error", 1.0)),
+        _cfg_get(comp_config, "mgie_max_error", _cfg_get(comp_config, "max_error", 0.50)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
         _cfg_get(
             comp_config,
             "mgie_fallback_to_original",
-            _cfg_get(comp_config, "fallback_to_original", False),
+            _cfg_get(comp_config, "fallback_to_original", True),
         ),
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
