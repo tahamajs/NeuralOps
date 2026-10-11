@@ -252,11 +252,11 @@ class SliceGPTPCACompressor(BaseCompressor):
         self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
-        self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 0.50))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 1.0))
         self.fallback_to_original = bool(
             fallback_to_original
             if fallback_to_original is not None
-            else _cfg_get(cfg_obj, "fallback_to_original", True)
+            else _cfg_get(cfg_obj, "fallback_to_original", False)
         )
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
         self.target_modules = target_modules

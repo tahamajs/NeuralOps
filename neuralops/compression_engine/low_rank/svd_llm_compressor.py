@@ -462,16 +462,17 @@ class SVDLLMCompressor(BaseCompressor):
 
         if self.tokenizer is not None and self.calibration_texts:
             try:
-                inputs = self.tokenizer(
-                    self.calibration_texts,
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=True,
-                    max_length=512,
-                )
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-                with torch.no_grad():
-                    self.model(**inputs)
+                for calib_text in self.calibration_texts[:3]:
+                    inputs = self.tokenizer(
+                        [calib_text],
+                        return_tensors="pt",
+                        padding=True,
+                        truncation=True,
+                        max_length=128,
+                    )
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                    with torch.no_grad():
+                        self.model(**inputs)
             except Exception as e:
                 logger.warning("SVD-LLM calibration forward pass exception: %s", e)
 
