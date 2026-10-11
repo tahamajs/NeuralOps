@@ -1,0 +1,11 @@
+{
+  "module": "asvd_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 147.12,
+  "duration_sec": 165.7,
+  "retries_used": 2,
+  "error": "exit=-2",
+  "timestamp": "2026-10-11 21:49:37"
+}
