@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_eat_C_20261011_224748",
+    "run_name": "kd_eat_gpt2_C",
+    "timestamp_start": "2026-10-11T22:50:21.540942+00:00",
+    "timestamp_end": "2026-10-11T22:50:21.540948+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "55862cba9bf7aabf1c0508effd8e1e8514db3b94",
+    "git_commit_short": "55862cba9b",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "results/delta_sweep/summary.csv                   |    1 +\n results/kd_runs/dynamic_conv_attention/latest.txt |    2 +-\n results/kd_runs/registry.json                     | 2973 +++++++++++++++++++++\n results/results.csv                               |    1 +\n results/results.parquet                           |  Bin 16409 -> 16448 bytes\n 5 files changed, 2976 insertions(+), 1 deletion(-)",
+    "session_id": "e7d62e18-7ec8-4f86-80b8-3ca481c3f899",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "eat",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 12,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 13894.64,
+    "post_ppl": 13012.2,
+    "post_ppl_stage1": 12929.31,
+    "post_ppl_stage2": 13012.2,
+    "kd_gain": 965.33,
+    "recovery_pct": 6.37
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 4667.36,
+    "train_duration_s": 132.86
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "c1b13dc122100233",
+  "run_id": "kd_eat_C_20261011_224748",
+  "run_name": "kd_eat_gpt2_C",
+  "timestamp_start": "2026-10-11T22:50:21.540942+00:00",
+  "timestamp_end": "2026-10-11T22:50:21.540948+00:00",
+  "git_commit": "55862cba9bf7aabf1c0508effd8e1e8514db3b94",
+  "git_dirty": true,
+  "run_key": "eat__gpt2__wikitext2__rank32__7521714c81c8"
+}
