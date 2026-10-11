@@ -153,6 +153,8 @@ DEPRECATED_MODULES: set[str] = {
     "tt_linear_factory",
     "lillama_compressor",
     "mamba_svd_flash",
+    "aatc_xkv_compressor",
+    "hybridkv_compressor",
 }
 
 TRACK_MODULES: dict[str, dict[str, list[str]]] = {
