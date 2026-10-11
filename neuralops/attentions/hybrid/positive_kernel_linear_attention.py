@@ -885,7 +885,7 @@ class PositiveKernelLinearAttention(BaseAttention):
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos_q, sin_q)
             else:
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             try:
                 cos, sin = self.rotary_emb(k_new, position_ids=pos_ids)
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)

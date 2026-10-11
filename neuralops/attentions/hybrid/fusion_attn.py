@@ -984,7 +984,7 @@ class FUSIONATTN(BaseAttention):
                     cos = cos[..., past_len : past_len + N, :]
                     sin = sin[..., past_len : past_len + N, :]
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
-            elif self.rotary_emb is not None:
+            elif getattr(self, "rotary_emb", None) is not None:
                 try:
                     cos, sin = self.rotary_emb(hidden_states, seq_len=past_len + N)
                 except TypeError:

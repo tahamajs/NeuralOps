@@ -1059,9 +1059,9 @@ class TokenCompressedAttention(BaseAttention):
 
         # Causal mask based on ABSOLUTE positions
         if self.is_decoder and top_idx is not None:
-            q_pos = new_positions.view(B, 1, L, 1)  # (B, 1, L, 1)
-            k_pos_abs = torch.gather(pos_full, 1, top_idx)  # (B, k_keep)
-            k_pos = k_pos_abs.view(B, 1, 1, N_k)
+            q_pos = new_positions.reshape(B, 1, L, 1) if new_positions.numel() == B * L else new_positions.view(-1)[None, None, :, None]
+            k_pos_abs = torch.gather(pos_full.expand(B, -1) if pos_full.dim() == 2 and pos_full.shape[0] != B else pos_full, 1, top_idx)  # (B, k_keep)
+            k_pos = k_pos_abs.reshape(B, 1, 1, N_k)
             causal = k_pos > q_pos
             scores = scores.masked_fill(causal, float("-inf"))
 

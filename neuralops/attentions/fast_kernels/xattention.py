@@ -801,7 +801,7 @@ class XAttention(BaseAttention):
                 position_ids=kwargs.get("position_ids"),
                 past_len=past_len,
             )
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             try:
                 position_ids = kwargs.get("position_ids")
                 if position_ids is None and past_len > 0:

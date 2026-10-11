@@ -989,7 +989,7 @@ class AdaptiveSpanAttention(BaseAttention):
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             if position_ids is None:
                 position_ids = (
                     torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)

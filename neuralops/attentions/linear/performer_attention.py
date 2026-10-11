@@ -859,7 +859,7 @@ class PerformerAttention(BaseAttention):
         ):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
