@@ -381,20 +381,17 @@ class FWSVDCompressor(BaseCompressor):
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
 
-                if svd_layer is None or err > self.max_error:
-                    if self.fallback_to_original:
-                        logger.warning(
-                            "FWSVD reconstruction error %.4f on %s exceeded threshold %.4f. Skipping compression (fallback).",
-                            err,
-                            name,
-                            self.max_error,
-                        )
-                        self.fallback_layers.append(name)
-                        continue
-                    else:
-                        if svd_layer is None:
-                            self.fallback_layers.append(name)
-                            continue
+                if svd_layer is None:
+                    self.fallback_layers.append(name)
+                    continue
+
+                if err > self.max_error:
+                    logger.warning(
+                        "FWSVD reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
 
                 if hasattr(module, "base_layer"):
                     module.base_layer = svd_layer
