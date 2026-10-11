@@ -183,6 +183,8 @@ class LSCPrunedLoRALinear(nn.Module):
             device=weight.device,
             dtype=weight.dtype,
         )
+        cls_name = base_layer.__class__.__name__.lower()
+        layer.is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         # Preserve existing LoRA if shapes match.
         if (
@@ -207,7 +209,12 @@ class LSCPrunedLoRALinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        if getattr(self, "is_conv1d", False):
+            out = torch.matmul(x, self.weight)
+            if self.bias is not None:
+                out = out + self.bias
+        else:
+            out = F.linear(x, self.weight, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             # Preserve dtype consistency: do the LoRA computation in the
             # base weight's dtype (input dtype may differ).
