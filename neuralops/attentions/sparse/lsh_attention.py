@@ -183,10 +183,7 @@ class FactorizedLoRALinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        w = torch.matmul(self.up.weight, self.down.weight)
-        if self.lora_A is not None and self.lora_B is not None:
-            w = w + (self.lora_B @ self.lora_A) * self.lora_scaling
-        return w
+        return torch.matmul(self.up.weight, self.down.weight)
 
     @property
     def bias(self) -> torch.Tensor | None:
