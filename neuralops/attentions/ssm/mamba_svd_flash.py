@@ -561,6 +561,10 @@ class MambaSVDFlash(BaseAttention):
         if old_attn is None:
             return
 
+        if hasattr(old_attn, "weight") and hasattr(old_attn.weight, "data"):
+            if torch.linalg.norm(old_attn.weight.float()).item() < 1e-4:
+                raise RuntimeError(f"norm too small: {torch.linalg.norm(old_attn.weight.float()).item()}")
+
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
             hasattr(old_attn, a) for a in ("out_proj", "out_lin", "c_proj", "dense", "o_proj")
@@ -655,7 +659,7 @@ class MambaSVDFlash(BaseAttention):
         # Flat
         else:
             cand = {
-                "q": ("q_proj", "q_lin", "query"),
+                "q": ("q_proj", "q_lin", "query", "attention"),
                 "k": ("k_proj", "k_lin", "key"),
                 "v": ("v_proj", "v_lin", "value"),
                 "o": ("out_proj", "out_lin", "dense", "o_proj"),
@@ -704,6 +708,11 @@ class MambaSVDFlash(BaseAttention):
         }
 
         with torch.no_grad():
+            for key in ("q", "k", "v", "o"):
+                w_chk, _ = extracted[key]
+                if w_chk is not None and torch.linalg.norm(w_chk.float()).item() < 1e-4:
+                    raise RuntimeError(f"norm too small for {key}: {torch.linalg.norm(w_chk.float()).item()}")
+
             for key, target in target_map.items():
                 w, b = extracted[key]
                 if w is None:
@@ -1350,6 +1359,7 @@ def inject_mamba_svd_flash(
             rank=kwargs.pop("rank", 16),
             comp_config=comp_config,
             old_attn=src_attn,
+            pretrained_attn=src_attn,
             hidden_size=hidden_size,
             d_model=hidden_size,
             num_heads=num_heads,
