@@ -1199,13 +1199,12 @@ class AdaSVDCompressor(BaseCompressor):
                     r_floor = max(r_floor, 128)
                     max_param_r = min(max_param_r, 432)
             else:
-                # FIXED: Adaptive Rank Strategy: Force rank=64 (or 128 for fused above)
-                # for attention projections to prevent 98% spectral loss (Initial PPL: 1233)
                 if self.rank is not None:
                     r_floor = max(r_floor, min(64, self.rank))
                 else:
                     r_floor = max(r_floor, 64)
 
+            r_floor = min(r_floor, max_param_r)
             allocated_rank = max(r_floor, min(allocated_rank, max_param_r))
 
             svd_layer, err, iters = self.compress_linear(
