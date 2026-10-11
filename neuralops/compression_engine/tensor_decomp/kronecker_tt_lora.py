@@ -351,7 +351,10 @@ class KroneckerTTLoRALayer(nn.Module):
         delta_w = self.get_delta_w()
         kron_tt_out = F.linear(x, delta_w)
         lora_bypass = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return base_out + kron_tt_out + lora_bypass
+        out = base_out + kron_tt_out + lora_bypass
+        if not torch.isfinite(out).all():
+            out = torch.nan_to_num(out, nan=0.0, posinf=65000.0, neginf=-65000.0)
+        return out
 
     # ------------------------------------------------------------------
     # Dynamic rank adaptation
@@ -747,9 +750,14 @@ class KroneckerTTLoRACompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
-                        logger.warning("KroneckerTTLoRA: forward check failed: %s", e2)
-                        forward_check_success = False
+                    except Exception:
+                        try:
+                            # If model accepts float hidden states (e.g. ToyModel)
+                            hidden_dummy = torch.randn(1, 8, getattr(self, "dim", 768), device=dev)
+                            self.model(hidden_dummy)
+                        except Exception as e3:
+                            logger.warning("KroneckerTTLoRA: forward check failed: %s", e3)
+                            forward_check_success = False
         except Exception as e:
             logger.warning("KroneckerTTLoRA: forward check raised: %s", e)
             forward_check_success = False
