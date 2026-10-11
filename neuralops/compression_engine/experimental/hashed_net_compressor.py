@@ -729,7 +729,13 @@ class HashedNetCompressor(BaseCompressor):
             self.layer_errors[name] = best_err
             self.layer_buckets[name] = current_buckets
 
-            if best_layer is None or best_err > self.max_error:
+            if best_layer is None:
+                logger.warning("HashedNet: candidate creation failed on %s; keeping original.", name)
+                self.fallback_layers.append(name)
+                total_comp_bytes += orig_bytes
+                continue
+
+            if best_err > self.max_error:
                 logger.warning(
                     "HashedNet: err=%.4f on %s > max_error=%.4f; keeping original.",
                     best_err,
@@ -744,7 +750,7 @@ class HashedNetCompressor(BaseCompressor):
                     continue
 
             # Apply freeze policy
-            if self.freeze_hash_table and best_layer is not None:
+            if self.freeze_hash_table:
                 best_layer.weight_table.requires_grad = False
 
             # Splice
