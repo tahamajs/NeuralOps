@@ -49,13 +49,19 @@ _ATTN_NAMES = {
     "self_attn",
 }
 
-# LIFTR-FIX-10: safe SiLU reference
-_SILU_CLASSES: tuple[type, ...] = (nn.GELU,)
+# LIFTR-FIX-10: safe GELU / SiLU references including HuggingFace activations
+_silu_list = [nn.GELU]
+if hasattr(nn, "SiLU"):
+    _silu_list.append(nn.SiLU)
 try:
-    if hasattr(nn, "SiLU"):
-        _SILU_CLASSES = (nn.GELU, nn.SiLU)
+    import transformers.activations as hf_act
+    for act_name in dir(hf_act):
+        obj = getattr(hf_act, act_name)
+        if isinstance(obj, type) and issubclass(obj, nn.Module) and ("gelu" in act_name.lower() or "silu" in act_name.lower() or "quick" in act_name.lower()):
+            _silu_list.append(obj)
 except Exception:
     pass
+_SILU_CLASSES: tuple[type, ...] = tuple(_silu_list)
 
 
 # ===========================================================================
@@ -428,11 +434,15 @@ class LIFTRCompressor(BaseCompressor):
                 self.replaced_modules.append(full_name)
                 continue
 
-            if isinstance(child, _SILU_CLASSES):
+            child_cls = child.__class__.__name__.lower()
+            if isinstance(child, _SILU_CLASSES) or "gelu" in child_cls or "silu" in child_cls or "relu" in child_cls:
                 if self.target_attention_only and not is_attn_layer:
                     self.skipped_layers.append(full_name)
                     continue
-                setattr(module, name, _LinearizedGELU(alpha=self.gelu_coefficient))
+                if isinstance(child, nn.ReLU) or "relu" in child_cls:
+                    setattr(module, name, nn.Identity())
+                else:
+                    setattr(module, name, _LinearizedGELU(alpha=self.gelu_coefficient))
                 self.linearized_activations_count += 1
                 self.replaced_modules.append(full_name)
                 continue
