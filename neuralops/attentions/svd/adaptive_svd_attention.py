@@ -466,6 +466,8 @@ class AdaptiveSVDAttention(BaseAttention):
             V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(layer.V.dtype)
 
             layer.set_svd_factors(U_r, V_r)
+            layer.U.requires_grad = False
+            layer.V.requires_grad = False
             if layer.bias is not None and bias_data is not None:
                 n = min(layer.bias.numel(), bias_data.numel())
                 layer.bias.data[:n].copy_(bias_data[:n].to(layer.bias.dtype))

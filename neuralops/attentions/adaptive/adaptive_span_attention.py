@@ -617,6 +617,9 @@ class AdaptiveSpanAttention(BaseAttention):
         raw_span = torch.sigmoid(self.span_logits) * self.max_span
         return torch.clamp(raw_span, min=self.min_span)
 
+    def get_span_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
+        return self.get_span_regularization_loss(lambda_span)
+
     def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
         return lambda_span * torch.sigmoid(self.span_logits).mean()
 
@@ -787,6 +790,14 @@ class AdaptiveSpanAttention(BaseAttention):
             )
         if self.is_nested_encoder and not isinstance(self.out_proj, IdentityOutProj):
             self.out_proj = IdentityOutProj()
+
+        # Verify Frobenius norm of extracted weights or source module
+        if hasattr(src, "weight") and torch.norm(src.weight.float()).item() == 0.0:
+            raise RuntimeError("Source weight tensor has zero Frobenius norm")
+        for k in ("q", "k", "v", "o"):
+            w, _ = extracted[k]
+            if w is not None and torch.norm(w.float()).item() == 0.0:
+                raise RuntimeError(f"Weight tensor for {k} has zero Frobenius norm")
 
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:

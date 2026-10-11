@@ -767,6 +767,12 @@ class BAMUMoEBlock(BaseAttention):
             pass
 
     # ------------------------------------------------------------------
+    @property
+    def aux_loss(self) -> torch.Tensor | None:
+        if self.qkv_moe is not None:
+            return self.qkv_moe._aux_loss
+        return torch.tensor(0.0)
+
     def get_aux_loss(self, device: torch.device) -> torch.Tensor:
         """BAM-FIX-04: MoE aux loss for training loop."""
         if self.qkv_moe is None:
