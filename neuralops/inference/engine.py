@@ -119,7 +119,10 @@ def speculative_generate(
     input_ids: torch.Tensor,
     max_new_tokens: int = 12,
     K: int = 3,
+    gamma: int | None = None,
 ) -> torch.Tensor:
+    if gamma is not None:
+        K = gamma
     """Real speculative decoding with acceptance/rejection sampling."""
     curr = input_ids.clone()
     while curr.shape[1] - input_ids.shape[1] < max_new_tokens:
@@ -169,7 +172,10 @@ def beam_search_generate(
     beam_size: int = 4,
     max_new_tokens: int = 8,
     length_penalty: float = 1.0,
+    beam_width: int | None = None,
 ) -> torch.Tensor:
+    if beam_width is not None:
+        beam_size = beam_width
     """Production beam search decoder with length normalization."""
     _B = input_ids.shape[0]
     beams = input_ids.repeat(beam_size, 1)
@@ -201,22 +207,30 @@ def beam_search_generate(
 class ContinuousBatcher:
     """Continuous dynamic batch scheduler admitting requests on the fly."""
 
-    def __init__(self, model: nn.Module, max_batch_size: int = 8, max_seq_len: int = 2048) -> None:
+    def __init__(self, model: nn.Module | None = None, max_batch_size: int = 8, max_seq_len: int = 2048) -> None:
         self.model = model
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
         self.pending: list[GenerationRequest] = []
         self.active: list[GenerationRequest] = []
 
-    def add_request(self, request: GenerationRequest | tuple[str, torch.Tensor]) -> None:
-        if isinstance(request, tuple):
-            req = GenerationRequest(request_id=request[0], input_ids=request[1])
+    def add_request(self, *args: Any, **kwargs: Any) -> None:
+        if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], torch.Tensor):
+            req = GenerationRequest(request_id=args[0], input_ids=args[1])
+        elif len(args) == 1 and isinstance(args[0], tuple):
+            req = GenerationRequest(request_id=args[0][0], input_ids=args[0][1])
+        elif len(args) == 1 and isinstance(args[0], GenerationRequest):
+            req = args[0]
+        elif "req_id" in kwargs:
+            req = GenerationRequest(request_id=kwargs["req_id"], input_ids=kwargs["input_ids"])
         else:
-            req = request
+            req = args[0]
         self.pending.append(req)
 
     @torch.no_grad()
-    def step(self) -> list[dict[str, Any]]:
+    def step(self, model: nn.Module | None = None) -> list[dict[str, Any]]:
+        if model is not None:
+            self.model = model
         """Executes a single step of batch decode across active requests."""
         while len(self.active) < self.max_batch_size and self.pending:
             self.active.append(self.pending.pop(0))
