@@ -1,0 +1,6 @@
+[
+  {
+    "module": "neuralops.attentions.linear.tlinformer_attention",
+    "error": "SyntaxError: invalid character '\u00b7' (U+00B7) (tlinformer_attention.py, line 176)"
+  }
+]
