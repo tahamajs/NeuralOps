@@ -897,6 +897,9 @@ class AATC_XKVCompressor(BaseCompressor):
         calib = _collect_calibration_data(
             self.model,
             attn_modules,
+            self.calib_batches,
+            device,
+        )
         self._build_subspaces(calib, attn_modules)
 
         # Apply low-rank subspace projection to attention K/V weights
