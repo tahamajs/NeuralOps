@@ -161,11 +161,12 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("spectra_v2")
+# DEPRECATED: Thin wrapper around PyTorch scaled_dot_product_attention without compression.
+# @ATTENTION_REGISTRY.register("spectra_v2")
 class SpectraV2Attention(BaseAttention):
-    """
-    MHA wrapper around PyTorch's scaled_dot_product_attention.
-    Previously named spectra_v2 (deprecated alias).
+    """DEPRECATED: Thin wrapper around PyTorch scaled_dot_product_attention without compression.
+
+    This module is deprecated. Use 'mha_sdpa' instead.
     """
 
     is_custom_attention: bool = True
