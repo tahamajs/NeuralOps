@@ -1,0 +1,10 @@
+﻿{
+    "module":  "kvtc_compressor",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  4246.77,
+    "duration_sec":  302.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 15:24:39"
+}

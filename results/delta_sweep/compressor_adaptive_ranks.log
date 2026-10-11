@@ -1,0 +1,136 @@
+2026-10-11 13:03:57,602 [INFO] MambaKD: ======================================================================
+2026-10-11 13:03:57,605 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 13:03:57,606 [INFO] MambaKD: ======================================================================
+2026-10-11 13:03:57,606 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 13:03:57,607 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 13:03:57,608 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 13:03:58,090 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 13:03:58,095 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 13:03:58,099 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 13:04:01,950 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 13:04:01,953 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 13:04:02,179 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 13:04:02,181 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 13:04:02,181 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:04:02,770 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:04:02,772 [INFO] MambaKD: PROCESSING MODULE 1/1: adaptive_ranks
+2026-10-11 13:04:02,772 [INFO] MambaKD: ======================================================================
+2026-10-11 13:04:02,773 [INFO] MambaKD: 
+# Running method C for adaptive_ranks
+2026-10-11 13:04:03,086 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 13:04:03,090 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 13:04:04,682 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.2843 on transformer.h.0.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:04,999 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3595 on transformer.h.0.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:05,297 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3718 on transformer.h.0.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:05,443 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.2804 on transformer.h.1.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:05,586 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.2652 on transformer.h.1.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:05,736 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3831 on transformer.h.1.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,034 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.4043 on transformer.h.1.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,189 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3169 on transformer.h.2.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,327 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3377 on transformer.h.2.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,475 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3716 on transformer.h.2.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,760 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3722 on transformer.h.2.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:06,902 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3533 on transformer.h.3.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,042 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3517 on transformer.h.3.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,194 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3677 on transformer.h.3.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,495 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3561 on transformer.h.3.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,638 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3364 on transformer.h.4.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,780 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3382 on transformer.h.4.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:07,930 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3595 on transformer.h.4.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:08,225 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3643 on transformer.h.4.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:08,367 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3095 on transformer.h.5.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:08,502 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3730 on transformer.h.5.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:08,651 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3591 on transformer.h.5.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:08,940 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3679 on transformer.h.5.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,084 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3310 on transformer.h.6.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,216 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3340 on transformer.h.6.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,364 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3618 on transformer.h.6.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,655 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3714 on transformer.h.6.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,804 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3418 on transformer.h.7.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:09,947 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3590 on transformer.h.7.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:10,098 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3638 on transformer.h.7.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:10,392 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3764 on transformer.h.7.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:10,536 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3791 on transformer.h.8.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:10,673 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3471 on transformer.h.8.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:10,824 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3707 on transformer.h.8.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,114 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3693 on transformer.h.8.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,260 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3979 on transformer.h.9.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,394 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.4081 on transformer.h.9.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,542 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3669 on transformer.h.9.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,832 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3715 on transformer.h.9.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:11,978 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3720 on transformer.h.10.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:12,113 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.4561 on transformer.h.10.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:12,263 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3662 on transformer.h.10.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:12,568 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3822 on transformer.h.10.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:12,719 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3575 on transformer.h.11.attn.c_attn exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:12,853 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3755 on transformer.h.11.attn.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:13,001 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3613 on transformer.h.11.mlp.c_fc exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:13,291 [WARNING] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks error 0.3878 on transformer.h.11.mlp.c_proj exceeded threshold 0.2000. Falling back to original layer.
+2026-10-11 13:04:13,292 [INFO] neuralops.compression_engine.svd.adaptive_ranks: AdaptiveRanks compression complete: 1 compressed, 47 fallback. Avg error: 0.1982.
+2026-10-11 13:04:13,455 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 22.7276
+2026-10-11 13:04:13,458 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 22.7276
+2026-10-11 13:04:18,113 [INFO] MambaKD: Pre-KD PPL for Module adaptive_ranks, Method C: 65.23
+2026-10-11 13:04:18,116 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:04:18,116 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 65.23 (same protocol)
+2026-10-11 13:04:18,117 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +29.01 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 13:04:18,117 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 13:04:18,491 [INFO] MambaKD: [C] Step 0/300 | Loss: 3.1839...
+2026-10-11 13:04:18,722 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.1839 | LR: 1.50e-05
+2026-10-11 13:04:18,843 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.4972...
+2026-10-11 13:04:18,975 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.4972 | LR: 3.00e-05
+2026-10-11 13:04:19,094 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.4312...
+2026-10-11 13:04:19,202 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.4312 | LR: 4.50e-05
+2026-10-11 13:04:19,318 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.0364...
+2026-10-11 13:04:19,442 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.0364 | LR: 6.00e-05
+2026-10-11 13:04:19,552 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.6305...
+2026-10-11 13:04:19,690 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.6305 | LR: 7.50e-05
+2026-10-11 13:04:19,814 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.4413...
+2026-10-11 13:04:30,719 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.4413 | LR: 7.50e-04
+2026-10-11 13:04:30,865 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.7956...
+2026-10-11 13:04:42,876 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.7956 | LR: 1.50e-03
+2026-10-11 13:04:47,874 [INFO] MambaKD: [C] Step 100 Eval PPL: 40.51
+2026-10-11 13:04:48,005 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5651...
+2026-10-11 13:05:00,375 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5651 | LR: 1.28e-03
+2026-10-11 13:05:00,495 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6537...
+2026-10-11 13:05:12,448 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6537 | LR: 7.50e-04
+2026-10-11 13:05:17,207 [INFO] MambaKD: [C] Step 200 Eval PPL: 42.09
+2026-10-11 13:05:17,329 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4456...
+2026-10-11 13:05:29,268 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4456 | LR: 2.20e-04
+2026-10-11 13:05:29,386 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6167...
+2026-10-11 13:05:41,412 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6167 | LR: 1.50e-04
+2026-10-11 13:05:46,168 [INFO] MambaKD: [C] Step 300 Eval PPL: 38.08
+2026-10-11 13:05:46,170 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 38.08
+2026-10-11 13:05:46,171 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 13:05:46,355 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7418 | LR: 1.50e-05
+2026-10-11 13:05:46,530 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9401 | LR: 3.00e-05
+2026-10-11 13:05:46,707 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9129 | LR: 4.50e-05
+2026-10-11 13:05:46,881 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0192 | LR: 6.00e-05
+2026-10-11 13:05:47,058 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0737 | LR: 7.50e-05
+2026-10-11 13:05:55,022 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5063 | LR: 2.84e-04
+2026-10-11 13:06:03,797 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.9906 | LR: 1.96e-04
+2026-10-11 13:06:08,529 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.16
+2026-10-11 13:06:17,512 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3085 | LR: 8.20e-05
+2026-10-11 13:06:26,368 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3074 | LR: 7.44e-06
+2026-10-11 13:06:31,126 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.03
+2026-10-11 13:06:35,949 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.03
+2026-10-11 13:06:35,952 [INFO] MambaKD: [C] [COMPLETE] Pre: 65.23
+  Stage 1 (KD):    38.08  (kd_gain=+27.15)
+  Stage 2 (self):  31.03  (self_gain=+7.05)
+  Total:                  (total_gain=+34.20)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 38.08 > 36.22)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 137.7s (Stage 1: 87.9s, Stage 2: 49.8s)
+2026-10-11 13:06:49,862 [INFO] MambaKD: [QUALITY] distinct_2=0.90, repetition_3=0.01, train_ppl=21.32, test_ppl=31.03, overfit_gap=9.71, latency=1791.4ms
+2026-10-11 13:06:49,876 [INFO] MambaKD: Saved all run details to results\kd_runs\adaptive_ranks\20261011_130357_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    65.23 |    38.08 |    31.03 |   +27.15 |    +7.05 |   +34.20 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 13:06:55,505 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:06:55,507 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 13:06:55,508 [INFO] MambaKD: ======================================================================

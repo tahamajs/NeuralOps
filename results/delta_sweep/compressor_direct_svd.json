@@ -1,0 +1,10 @@
+﻿{
+    "module":  "direct_svd",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  5215.17,
+    "duration_sec":  226.5,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:05:20"
+}

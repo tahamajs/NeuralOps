@@ -1,0 +1,10 @@
+﻿{
+    "module":  "armor_pruner",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  39.75,
+    "duration_sec":  207.5,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:20:15"
+}

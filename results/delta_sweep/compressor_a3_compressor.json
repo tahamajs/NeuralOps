@@ -1,0 +1,10 @@
+﻿{
+    "module":  "a3_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  382.11,
+    "duration_sec":  212.4,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 12:56:39"
+}

@@ -1,0 +1,10 @@
+﻿{
+    "module":  "svd_linear",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  36.22,
+    "duration_sec":  213.5,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 16:54:04"
+}

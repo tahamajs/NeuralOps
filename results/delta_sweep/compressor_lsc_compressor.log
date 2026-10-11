@@ -1,0 +1,141 @@
+2026-10-11 15:33:03,991 [INFO] MambaKD: ======================================================================
+2026-10-11 15:33:03,994 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 15:33:03,995 [INFO] MambaKD: ======================================================================
+2026-10-11 15:33:03,995 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 15:33:03,996 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 15:33:03,997 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 15:33:04,478 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 15:33:04,483 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 15:33:04,485 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 15:33:08,306 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 15:33:08,309 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 15:33:08,517 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 15:33:08,518 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 15:33:08,519 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 15:33:09,105 [INFO] MambaKD: 
+======================================================================
+2026-10-11 15:33:09,107 [INFO] MambaKD: PROCESSING MODULE 1/1: lsc_compressor
+2026-10-11 15:33:09,107 [INFO] MambaKD: ======================================================================
+2026-10-11 15:33:09,108 [INFO] MambaKD: 
+# Running method C for lsc_compressor
+2026-10-11 15:33:09,435 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 15:33:09,439 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 15:33:09,926 [INFO] neuralops.compression_engine.low_rank.lsc_compressor: LSC: 48 target layers identified.
+2026-10-11 15:33:10,520 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9973 on transformer.h.0.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,532 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9935 on transformer.h.0.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,558 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9834 on transformer.h.0.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,568 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9981 on transformer.h.0.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,570 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.1.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,572 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9934 on transformer.h.1.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,575 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9895 on transformer.h.1.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,577 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9981 on transformer.h.1.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,579 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.2.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,581 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9935 on transformer.h.2.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,583 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9888 on transformer.h.2.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,584 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9976 on transformer.h.2.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,586 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9975 on transformer.h.3.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,587 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9936 on transformer.h.3.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,589 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9888 on transformer.h.3.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,591 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9969 on transformer.h.3.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,593 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9976 on transformer.h.4.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,595 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9934 on transformer.h.4.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,597 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9899 on transformer.h.4.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,599 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.4.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,602 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.5.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,603 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9935 on transformer.h.5.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,605 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9889 on transformer.h.5.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,607 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9977 on transformer.h.5.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,609 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9975 on transformer.h.6.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,611 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9935 on transformer.h.6.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,612 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9891 on transformer.h.6.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,614 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9980 on transformer.h.6.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,616 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9973 on transformer.h.7.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,617 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9936 on transformer.h.7.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,619 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9882 on transformer.h.7.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,623 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9981 on transformer.h.7.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,625 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9975 on transformer.h.8.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,626 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9936 on transformer.h.8.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,628 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9880 on transformer.h.8.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,631 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9981 on transformer.h.8.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,632 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.9.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,635 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9935 on transformer.h.9.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,638 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9876 on transformer.h.9.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,640 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9981 on transformer.h.9.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,642 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9974 on transformer.h.10.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,644 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9934 on transformer.h.10.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,645 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9872 on transformer.h.10.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,648 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9980 on transformer.h.10.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,651 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9975 on transformer.h.11.attn.c_attn > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,652 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9933 on transformer.h.11.attn.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,654 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9862 on transformer.h.11.mlp.c_fc > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,656 [WARNING] neuralops.compression_engine.low_rank.lsc_compressor: LSC: err 0.9958 on transformer.h.11.mlp.c_proj > 0.9500 (base max_err=0.8500). Keeping original.
+2026-10-11 15:33:10,978 [INFO] neuralops.compression_engine.low_rank.lsc_compressor: Compressor lsc finished: 0 compressed, 48 fallback, avg_err=0.0000, max_err_threshold=0.8500
+2026-10-11 15:33:10,979 [INFO] neuralops.compression_engine.low_rank.lsc_compressor: LSC: 0 compressed, 48 fallback, 0 skipped. Avg err 0.0000, effective_param_ratio 0.68x.
+2026-10-11 15:33:11,047 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
+2026-10-11 15:33:11,050 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
+2026-10-11 15:33:15,573 [INFO] MambaKD: Pre-KD PPL for Module lsc_compressor, Method C: 36.22
+2026-10-11 15:33:15,574 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 15:33:15,575 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
+2026-10-11 15:33:15,575 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 15:33:15,575 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
+2026-10-11 15:33:15,576 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 15:33:15,881 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.6166...
+2026-10-11 15:33:16,132 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.6166 | LR: 1.50e-05
+2026-10-11 15:33:16,237 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.8625...
+2026-10-11 15:33:16,348 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.8625 | LR: 3.00e-05
+2026-10-11 15:33:16,446 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.8313...
+2026-10-11 15:33:16,568 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8313 | LR: 4.50e-05
+2026-10-11 15:33:16,686 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8160...
+2026-10-11 15:33:16,812 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8160 | LR: 6.00e-05
+2026-10-11 15:33:16,906 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.7392...
+2026-10-11 15:33:17,021 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.7392 | LR: 7.50e-05
+2026-10-11 15:33:17,133 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.9885...
+2026-10-11 15:33:27,965 [INFO] MambaKD: [C] Step 50/300 | Loss: 1.9885 | LR: 7.50e-04
+2026-10-11 15:33:28,082 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.4380...
+2026-10-11 15:33:39,820 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.4380 | LR: 1.50e-03
+2026-10-11 15:33:44,469 [INFO] MambaKD: [C] Step 100 Eval PPL: 42.08
+2026-10-11 15:33:44,589 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5572...
+2026-10-11 15:33:56,354 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5572 | LR: 1.28e-03
+2026-10-11 15:33:56,466 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.4204...
+2026-10-11 15:34:08,242 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.4204 | LR: 7.50e-04
+2026-10-11 15:34:12,876 [INFO] MambaKD: [C] Step 200 Eval PPL: 43.47
+2026-10-11 15:34:12,994 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.6229...
+2026-10-11 15:34:24,744 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.6229 | LR: 2.20e-04
+2026-10-11 15:34:24,859 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6261...
+2026-10-11 15:34:36,590 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6261 | LR: 1.50e-04
+2026-10-11 15:34:41,199 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.29
+2026-10-11 15:34:41,201 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.29
+2026-10-11 15:34:41,202 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 15:34:41,372 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7647 | LR: 1.50e-05
+2026-10-11 15:34:41,537 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9026 | LR: 3.00e-05
+2026-10-11 15:34:41,709 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.8930 | LR: 4.50e-05
+2026-10-11 15:34:41,875 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0376 | LR: 6.00e-05
+2026-10-11 15:34:42,050 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0480 | LR: 7.50e-05
+2026-10-11 15:34:49,765 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.4971 | LR: 2.84e-04
+2026-10-11 15:34:58,408 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0111 | LR: 1.96e-04
+2026-10-11 15:35:03,043 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.77
+2026-10-11 15:35:11,731 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3333 | LR: 8.20e-05
+2026-10-11 15:35:20,396 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.2930 | LR: 7.44e-06
+2026-10-11 15:35:25,019 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.84
+2026-10-11 15:35:29,745 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.84
+2026-10-11 15:35:29,747 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
+2026-10-11 15:35:29,748 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
+  Stage 1 (KD):    37.29  (kd_gain=-1.07)
+  Stage 2 (self):  30.84  (self_gain=+6.45)
+  Total:                  (total_gain=+5.38)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 37.29 > 36.22)
+  Beat teacher after self? YES
+  Recovery: NaN
+  Time: 134.1s (Stage 1: 85.5s, Stage 2: 48.5s)
+2026-10-11 15:35:46,202 [INFO] MambaKD: [QUALITY] distinct_2=0.89, repetition_3=0.03, train_ppl=21.79, test_ppl=30.84, overfit_gap=9.05, latency=1774.4ms
+2026-10-11 15:35:46,212 [INFO] MambaKD: Saved all run details to results\kd_runs\lsc_compressor\20261011_153303_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.22 |    37.29 |    30.84 |    -1.07 |    +6.45 |    +5.38 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 15:35:51,926 [INFO] MambaKD: 
+======================================================================
+2026-10-11 15:35:51,928 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 15:35:51,929 [INFO] MambaKD: ======================================================================

@@ -1,0 +1,10 @@
+﻿{
+    "module":  "erc_svd",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  3458.32,
+    "duration_sec":  232.8,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:26:26"
+}

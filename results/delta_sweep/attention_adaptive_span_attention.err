@@ -1,0 +1,8 @@
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+forrtl: error (200): program aborting due to control-C event
+Image              PC                Routine            Line        Source             
+libifcoremd.dll    00007FFE031DDF54  Unknown               Unknown  Unknown
+KERNELBASE.dll     00007FFE694D652D  Unknown               Unknown  Unknown
+KERNEL32.DLL       00007FFE6A03CD87  Unknown               Unknown  Unknown
+ntdll.dll          00007FFE6C0CCAEC  Unknown               Unknown  Unknown

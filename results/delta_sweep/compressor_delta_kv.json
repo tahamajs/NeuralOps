@@ -1,0 +1,10 @@
+﻿{
+    "module":  "delta_kv",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  76.36,
+    "duration_sec":  190.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:01:32"
+}

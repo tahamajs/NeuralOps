@@ -1,0 +1,10 @@
+﻿{
+    "module":  "flap",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  1150.28,
+    "duration_sec":  188.6,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:34:39"
+}

@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: fused_svd_kernel / C
+================================================================================
+
+MODEL INFO:
+  Total params:      98.49 M
+  Trainable params:  2.4 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        3750.5600
+  Post-KD PPL:       3742.4500
+  Stage 1 (KD) PPL:  3742.4500
+  Stage 2 (Self) PPL:3742.4500
+  KD Gain:           +8.11
+  Self Gain:         +0.00
+  Total Gain:        +8.11
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         103.3255
+  Recovery:          0.22%
+  Peak VRAM:         1061.64 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8713
+  Repetition-3:      0.0479
+  Train PPL:         2342.4300
+  Test PPL:          3742.4500
+  Overfit Gap:       1400.02
+  Latency (mean):    3198.96 ms
+  Latency (std):     22.90 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        347695032364
+
+TRAINING HISTORY (last 10 steps):

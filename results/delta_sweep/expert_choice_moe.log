@@ -1,0 +1,41 @@
+2026-10-10 23:24:16,138 [INFO] MambaKD: ======================================================================
+2026-10-10 23:24:16,139 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-10 23:24:16,140 [INFO] MambaKD: ======================================================================
+2026-10-10 23:24:16,141 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-10 23:24:16,141 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-10 23:24:16,142 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-10 23:24:16,621 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-10 23:24:16,626 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-10 23:24:16,630 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-10 23:24:22,652 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-10 23:24:22,655 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-10 23:24:23,471 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-10 23:24:23,473 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-10 23:24:23,474 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-10 23:24:24,044 [INFO] MambaKD: 
+======================================================================
+2026-10-10 23:24:24,047 [INFO] MambaKD: PROCESSING MODULE 1/1: expert_choice_moe
+2026-10-10 23:24:24,048 [INFO] MambaKD: ======================================================================
+2026-10-10 23:24:24,048 [INFO] MambaKD: 
+# Running method C for expert_choice_moe
+2026-10-10 23:24:24,323 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-10 23:24:24,325 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-10 23:24:25,337 [INFO] neuralops.core._attention_injectors: Successfully injected 'expert_choice_moe' into 12 transformer blocks.
+2026-10-10 23:24:27,764 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 33.7278
+2026-10-10 23:24:27,766 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 33.7278
+2026-10-10 23:25:04,268 [INFO] MambaKD: Pre-KD PPL for Module expert_choice_moe, Method C: 36.29
+2026-10-10 23:25:04,271 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-10 23:25:04,271 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.29 (same protocol)
+2026-10-10 23:25:04,271 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.07 (should be POSITIVE, e.g. +3 to +30)
+2026-10-10 23:25:04,276 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+2026-10-10 23:25:06,131 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.3760...
+2026-10-10 23:25:07,414 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.3760 | LR: 1.50e-05
+2026-10-10 23:25:07,703 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.4237...
+2026-10-10 23:25:08,152 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.4237 | LR: 3.00e-05
+2026-10-10 23:25:08,438 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.8553...
+2026-10-10 23:25:08,879 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8553 | LR: 4.50e-05
+2026-10-10 23:25:09,165 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.5703...
+2026-10-10 23:25:10,506 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.5703 | LR: 6.00e-05
+2026-10-10 23:25:11,956 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.8980...
+2026-10-10 23:25:12,721 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.8980 | LR: 7.50e-05
+2026-10-10 23:25:13,037 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.7375...

@@ -1,0 +1,10 @@
+﻿{
+    "module":  "gfws",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  3653.17,
+    "duration_sec":  193.3,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:48:25"
+}

@@ -1,0 +1,10 @@
+﻿{
+    "module":  "optimal_subspace_projection",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  43.39,
+    "duration_sec":  193.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 16:00:27"
+}

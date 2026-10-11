@@ -1,0 +1,29 @@
+2026-10-11 16:54:30,642 [INFO] MambaKD: ======================================================================
+2026-10-11 16:54:30,645 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 16:54:30,645 [INFO] MambaKD: ======================================================================
+2026-10-11 16:54:30,646 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 16:54:30,646 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 16:54:30,647 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 16:54:31,127 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 16:54:31,131 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 16:54:31,134 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 16:54:35,047 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 16:54:35,050 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 16:54:35,246 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 16:54:35,248 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 16:54:35,248 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 16:54:35,934 [INFO] MambaKD: 
+======================================================================
+2026-10-11 16:54:35,936 [INFO] MambaKD: PROCESSING MODULE 1/1: svd_llm_compressor
+2026-10-11 16:54:35,937 [INFO] MambaKD: ======================================================================
+2026-10-11 16:54:35,937 [INFO] MambaKD: 
+# Running method C for svd_llm_compressor
+2026-10-11 16:54:36,255 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 16:54:36,258 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 16:54:36,993 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 16:54:36,995 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 16:54:39,202 [INFO] neuralops.compression_engine.low_rank.svd_llm_compressor: Loaded 256 calibration samples from WikiText-2 for SVD-LLM.
+2026-10-11 16:55:57,299 [WARNING] neuralops.compression_engine.low_rank.svd_llm_compressor: SVD-LLM calibration forward pass exception: CUDA out of memory. Tried to allocate 1.38 GiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 13.09 GiB is allocated by PyTorch, and 78.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2026-10-11 16:55:57,515 [INFO] neuralops.compression_engine.low_rank.svd_llm_compressor: Found 24 linear layers targeted for SVD-LLM compression.
+2026-10-11 16:56:00,456 [INFO] neuralops.compression_engine.low_rank.svd_llm_compressor: [SVD-LLM] Starting 2-Stage Sequential LoRA Recovery (50 steps/stage)...
+2026-10-11 16:56:00,748 [INFO] neuralops.compression_engine.low_rank.svd_llm_compressor: [SVD-LLM Sequential LoRA] Stage 1 (Update W_u)...

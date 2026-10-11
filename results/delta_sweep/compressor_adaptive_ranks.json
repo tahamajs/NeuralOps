@@ -1,0 +1,10 @@
+﻿{
+    "module":  "adaptive_ranks",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  65.23,
+    "duration_sec":  198.4,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:06:57"
+}

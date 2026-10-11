@@ -1,0 +1,58 @@
+2026-10-11 00:10:18,735 [INFO] MambaKD: ======================================================================
+2026-10-11 00:10:18,736 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 00:10:18,737 [INFO] MambaKD: ======================================================================
+2026-10-11 00:10:18,737 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 00:10:18,738 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 00:10:18,739 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 00:10:19,181 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 00:10:19,185 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 00:10:19,187 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 00:10:22,739 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 00:10:22,742 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 00:10:22,901 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 00:10:22,903 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 00:10:22,904 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 00:10:23,425 [INFO] MambaKD: 
+======================================================================
+2026-10-11 00:10:23,428 [INFO] MambaKD: PROCESSING MODULE 1/1: hymba_transx
+2026-10-11 00:10:23,428 [INFO] MambaKD: ======================================================================
+2026-10-11 00:10:23,429 [INFO] MambaKD: 
+# Running method C for hymba_transx
+2026-10-11 00:10:23,706 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 00:10:23,709 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 00:10:23,943 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,007 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,063 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,116 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,168 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,220 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,273 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,323 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,371 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,424 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,473 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,519 [INFO] neuralops.attentions.ssm.hymba_transx: HymbaTransX: SSM branch disabled (GPT-2 or unavailable).
+2026-10-11 00:10:24,532 [INFO] neuralops.core._attention_injectors: Successfully injected 'hymba_transx' into 12 transformer blocks.
+2026-10-11 00:10:25,054 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 215.5998
+2026-10-11 00:10:25,056 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 215.5998
+2026-10-11 00:10:38,578 [INFO] MambaKD: Pre-KD PPL for Module hymba_transx, Method C: 100.38
+2026-10-11 00:10:38,581 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 00:10:38,581 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 100.38 (same protocol)
+2026-10-11 00:10:38,581 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +64.16 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 00:10:38,582 [INFO] MambaKD: set_train_scope (module): matched 144 target param tensors
+2026-10-11 00:10:38,963 [INFO] MambaKD: [C] Step 0/300 | Loss: 5.3551...
+2026-10-11 00:10:39,406 [INFO] MambaKD: [C] Step 1/300 | Loss: 5.3551 | LR: 1.50e-05
+2026-10-11 00:10:39,623 [INFO] MambaKD: [C] Step 1/300 | Loss: 6.8715...
+2026-10-11 00:10:39,976 [INFO] MambaKD: [C] Step 2/300 | Loss: 6.8715 | LR: 3.00e-05
+2026-10-11 00:10:40,199 [INFO] MambaKD: [C] Step 2/300 | Loss: 6.3515...
+2026-10-11 00:10:40,543 [INFO] MambaKD: [C] Step 3/300 | Loss: 6.3515 | LR: 4.50e-05
+2026-10-11 00:10:40,765 [INFO] MambaKD: [C] Step 3/300 | Loss: 5.6145...
+2026-10-11 00:10:41,110 [INFO] MambaKD: [C] Step 4/300 | Loss: 5.6145 | LR: 6.00e-05
+2026-10-11 00:10:41,316 [INFO] MambaKD: [C] Step 4/300 | Loss: 5.7140...
+2026-10-11 00:10:41,677 [INFO] MambaKD: [C] Step 5/300 | Loss: 5.7140 | LR: 7.50e-05
+2026-10-11 00:10:41,889 [INFO] MambaKD: [C] Step 5/300 | Loss: 5.6771...
+2026-10-11 00:11:08,336 [INFO] MambaKD: [C] Step 50/300 | Loss: 5.6771 | LR: 7.50e-04
+2026-10-11 00:11:08,558 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3460...
+2026-10-11 00:11:37,668 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3460 | LR: 1.50e-03
+2026-10-11 00:11:51,836 [INFO] MambaKD: [C] Step 100 Eval PPL: 35.12
+2026-10-11 00:11:52,110 [INFO] MambaKD: [C] Step 100/300 | Loss: 15.2656...

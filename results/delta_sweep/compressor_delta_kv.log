@@ -1,0 +1,132 @@
+2026-10-11 13:58:39,738 [INFO] MambaKD: ======================================================================
+2026-10-11 13:58:39,740 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 13:58:39,742 [INFO] MambaKD: ======================================================================
+2026-10-11 13:58:39,742 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 13:58:39,743 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 13:58:39,744 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 13:58:40,214 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 13:58:40,218 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 13:58:40,221 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 13:58:44,137 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 13:58:44,140 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 13:58:44,359 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 13:58:44,361 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 13:58:44,362 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:58:44,948 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:58:44,951 [INFO] MambaKD: PROCESSING MODULE 1/1: delta_kv
+2026-10-11 13:58:44,951 [INFO] MambaKD: ======================================================================
+2026-10-11 13:58:44,952 [INFO] MambaKD: 
+# Running method C for delta_kv
+2026-10-11 13:58:45,262 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 13:58:45,266 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 13:58:45,826 [INFO] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: 48 target layers identified.
+2026-10-11 13:58:46,414 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3616 on transformer.h.0.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:46,482 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3893 on transformer.h.0.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:46,658 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3905 on transformer.h.1.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:46,720 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3955 on transformer.h.1.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:46,833 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3804 on transformer.h.2.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:46,892 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3974 on transformer.h.2.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:46,953 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3995 on transformer.h.2.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,011 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3926 on transformer.h.3.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:47,068 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3947 on transformer.h.3.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,128 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4145 on transformer.h.3.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:47,190 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3974 on transformer.h.3.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,250 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3899 on transformer.h.4.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:47,307 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3917 on transformer.h.4.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,369 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4074 on transformer.h.4.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:47,434 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4047 on transformer.h.4.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,494 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4064 on transformer.h.5.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:47,552 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4016 on transformer.h.5.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,615 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4112 on transformer.h.5.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:47,676 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4101 on transformer.h.5.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,737 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4132 on transformer.h.6.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:47,793 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3954 on transformer.h.6.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,853 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4134 on transformer.h.6.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:47,912 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4142 on transformer.h.6.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:47,970 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4190 on transformer.h.7.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:48,024 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.3960 on transformer.h.7.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,084 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4208 on transformer.h.7.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:48,145 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4189 on transformer.h.7.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,203 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4274 on transformer.h.8.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:48,261 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4017 on transformer.h.8.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,321 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4243 on transformer.h.8.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:48,380 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4178 on transformer.h.8.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,438 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4287 on transformer.h.9.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:48,494 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4110 on transformer.h.9.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,554 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4246 on transformer.h.9.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:48,614 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4198 on transformer.h.9.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,673 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4205 on transformer.h.10.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:48,728 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4076 on transformer.h.10.attn.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,787 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4221 on transformer.h.10.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:48,846 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4223 on transformer.h.10.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:48,904 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4073 on transformer.h.11.attn.c_attn > 0.3500; keeping original.
+2026-10-11 13:58:49,017 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4160 on transformer.h.11.mlp.c_fc > 0.3500; keeping original.
+2026-10-11 13:58:49,079 [WARNING] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: error 0.4114 on transformer.h.11.mlp.c_proj > 0.3500; keeping original.
+2026-10-11 13:58:49,262 [INFO] neuralops.compression_engine.kv_cache.delta_kv: DeltaKV: 6 compressed, 42 fallback, 0 skipped. Avg err 0.3920, effective_param_ratio 0.95x.
+2026-10-11 13:58:49,325 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 51.2470
+2026-10-11 13:58:49,327 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 51.2470
+2026-10-11 13:58:53,871 [INFO] MambaKD: Pre-KD PPL for Module delta_kv, Method C: 76.36
+2026-10-11 13:58:53,873 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:58:53,874 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 76.36 (same protocol)
+2026-10-11 13:58:53,874 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +40.14 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 13:58:53,875 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 13:58:54,178 [INFO] MambaKD: [C] Step 0/300 | Loss: 4.1560...
+2026-10-11 13:58:54,430 [INFO] MambaKD: [C] Step 1/300 | Loss: 4.1560 | LR: 1.50e-05
+2026-10-11 13:58:54,551 [INFO] MambaKD: [C] Step 1/300 | Loss: 4.8038...
+2026-10-11 13:58:54,676 [INFO] MambaKD: [C] Step 2/300 | Loss: 4.8038 | LR: 3.00e-05
+2026-10-11 13:58:54,802 [INFO] MambaKD: [C] Step 2/300 | Loss: 4.3562...
+2026-10-11 13:58:54,925 [INFO] MambaKD: [C] Step 3/300 | Loss: 4.3562 | LR: 4.50e-05
+2026-10-11 13:58:55,037 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.8876...
+2026-10-11 13:58:55,172 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.8876 | LR: 6.00e-05
+2026-10-11 13:58:55,289 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.6288...
+2026-10-11 13:58:55,416 [INFO] MambaKD: [C] Step 5/300 | Loss: 3.6288 | LR: 7.50e-05
+2026-10-11 13:58:55,531 [INFO] MambaKD: [C] Step 5/300 | Loss: 3.7766...
+2026-10-11 13:59:06,350 [INFO] MambaKD: [C] Step 50/300 | Loss: 3.7766 | LR: 7.50e-04
+2026-10-11 13:59:06,466 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.5301...
+2026-10-11 13:59:18,355 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.5301 | LR: 1.50e-03
+2026-10-11 13:59:22,887 [INFO] MambaKD: [C] Step 100 Eval PPL: 44.53
+2026-10-11 13:59:23,006 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.6090...
+2026-10-11 13:59:34,995 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.6090 | LR: 1.28e-03
+2026-10-11 13:59:35,106 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6679...
+2026-10-11 13:59:47,131 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6679 | LR: 7.50e-04
+2026-10-11 13:59:51,844 [INFO] MambaKD: [C] Step 200 Eval PPL: 42.84
+2026-10-11 13:59:51,953 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4904...
+2026-10-11 14:00:03,689 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4904 | LR: 2.20e-04
+2026-10-11 14:00:03,804 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.7618...
+2026-10-11 14:00:15,673 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.7618 | LR: 1.50e-04
+2026-10-11 14:00:20,343 [INFO] MambaKD: [C] Step 300 Eval PPL: 38.54
+2026-10-11 14:00:20,345 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 38.54
+2026-10-11 14:00:20,346 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 14:00:20,525 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7536 | LR: 1.50e-05
+2026-10-11 14:00:20,702 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9639 | LR: 3.00e-05
+2026-10-11 14:00:20,882 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9401 | LR: 4.50e-05
+2026-10-11 14:00:21,055 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0842 | LR: 6.00e-05
+2026-10-11 14:00:21,233 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0761 | LR: 7.50e-05
+2026-10-11 14:00:29,207 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5341 | LR: 2.84e-04
+2026-10-11 14:00:38,055 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0032 | LR: 1.96e-04
+2026-10-11 14:00:42,781 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.15
+2026-10-11 14:00:51,623 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3358 | LR: 8.20e-05
+2026-10-11 14:01:00,175 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3414 | LR: 7.44e-06
+2026-10-11 14:01:04,787 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.27
+2026-10-11 14:01:09,349 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.27
+2026-10-11 14:01:09,352 [INFO] MambaKD: [C] [COMPLETE] Pre: 76.36
+  Stage 1 (KD):    38.54  (kd_gain=+37.82)
+  Stage 2 (self):  31.27  (self_gain=+7.27)
+  Total:                  (total_gain=+45.09)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 38.54 > 36.22)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 135.4s (Stage 1: 86.4s, Stage 2: 49.0s)
+2026-10-11 14:01:24,925 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.07, train_ppl=21.69, test_ppl=31.27, overfit_gap=9.58, latency=1765.1ms
+2026-10-11 14:01:24,936 [INFO] MambaKD: Saved all run details to results\kd_runs\delta_kv\20261011_135839_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    76.36 |    38.54 |    31.27 |   +37.82 |    +7.27 |   +45.09 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 14:01:30,719 [INFO] MambaKD: 
+======================================================================
+2026-10-11 14:01:30,721 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 14:01:30,722 [INFO] MambaKD: ======================================================================

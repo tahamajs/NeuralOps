@@ -1,0 +1,10 @@
+﻿{
+    "module":  "proxsparse",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  386.64,
+    "duration_sec":  183.1,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 16:03:32"
+}

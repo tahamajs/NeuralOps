@@ -1,0 +1,10 @@
+﻿{
+    "module":  "mlorq_compressor",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  38.98,
+    "duration_sec":  300.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 15:44:29"
+}

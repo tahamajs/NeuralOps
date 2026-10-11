@@ -1,0 +1,29 @@
+2026-10-11 02:20:45,262 [INFO] MambaKD: ======================================================================
+2026-10-11 02:20:45,265 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 02:20:45,266 [INFO] MambaKD: ======================================================================
+2026-10-11 02:20:45,267 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 02:20:45,268 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 02:20:45,269 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 02:20:45,706 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 02:20:45,710 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 02:20:45,713 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 02:20:49,376 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 02:20:49,379 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 02:20:49,576 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 02:20:49,577 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 02:20:49,577 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 02:20:50,090 [INFO] MambaKD: 
+======================================================================
+2026-10-11 02:20:50,091 [INFO] MambaKD: PROCESSING MODULE 1/1: token_compressed_attention
+2026-10-11 02:20:50,091 [INFO] MambaKD: ======================================================================
+2026-10-11 02:20:50,092 [INFO] MambaKD: 
+# Running method C for token_compressed_attention
+2026-10-11 02:20:50,383 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 02:20:50,386 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 02:20:50,618 [INFO] neuralops.core._attention_injectors: Successfully injected 'token_compressed_attention' into 12 transformer blocks.
+2026-10-11 02:20:51,127 [WARNING] MambaKD: [DIAG] Diagnostic failed: shape '[2, 1, 32, 1]' is invalid for input of size 32
+2026-10-11 02:21:11,205 [INFO] MambaKD: Pre-KD PPL for Module token_compressed_attention, Method C: 3821.29
+2026-10-11 02:21:11,207 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 02:21:11,208 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3821.29 (same protocol)
+2026-10-11 02:21:11,208 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3785.07 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 02:21:11,209 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors

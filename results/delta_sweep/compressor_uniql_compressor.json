@@ -1,0 +1,10 @@
+﻿{
+    "module":  "uniql_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  36.22,
+    "duration_sec":  186.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 17:16:00"
+}

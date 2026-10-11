@@ -1,0 +1,108 @@
+2026-10-11 13:55:24,354 [INFO] MambaKD: ======================================================================
+2026-10-11 13:55:24,357 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 13:55:24,358 [INFO] MambaKD: ======================================================================
+2026-10-11 13:55:24,358 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 13:55:24,359 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 13:55:24,359 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 13:55:24,828 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 13:55:24,832 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 13:55:24,836 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 13:55:28,760 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 13:55:28,762 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 13:55:28,956 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 13:55:28,957 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 13:55:28,958 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:55:29,538 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:55:29,540 [INFO] MambaKD: PROCESSING MODULE 1/1: cur_moe_compressor
+2026-10-11 13:55:29,541 [INFO] MambaKD: ======================================================================
+2026-10-11 13:55:29,541 [INFO] MambaKD: 
+# Running method C for cur_moe_compressor
+2026-10-11 13:55:29,875 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 13:55:29,876 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 13:55:30,991 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.0.mlp.c_fc error 0.9740 exceeded max_error 0.9500
+2026-10-11 13:55:31,275 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.1.mlp.c_fc error 0.9659 exceeded max_error 0.9500
+2026-10-11 13:55:31,555 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.2.mlp.c_fc error 0.9647 exceeded max_error 0.9500
+2026-10-11 13:55:31,835 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.3.mlp.c_fc error 0.9771 exceeded max_error 0.9500
+2026-10-11 13:55:32,113 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.4.mlp.c_fc error 0.9733 exceeded max_error 0.9500
+2026-10-11 13:55:32,544 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.5.mlp.c_fc error 0.9768 exceeded max_error 0.9500
+2026-10-11 13:55:32,752 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.5.mlp.c_proj error 0.9580 exceeded max_error 0.9500
+2026-10-11 13:55:32,962 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.6.mlp.c_fc error 0.9783 exceeded max_error 0.9500
+2026-10-11 13:55:33,177 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.6.mlp.c_proj error 0.9623 exceeded max_error 0.9500
+2026-10-11 13:55:33,387 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.7.mlp.c_fc error 0.9776 exceeded max_error 0.9500
+2026-10-11 13:55:33,593 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.7.mlp.c_proj error 0.9664 exceeded max_error 0.9500
+2026-10-11 13:55:33,807 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.8.mlp.c_fc error 0.9793 exceeded max_error 0.9500
+2026-10-11 13:55:34,016 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.8.mlp.c_proj error 0.9644 exceeded max_error 0.9500
+2026-10-11 13:55:34,224 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.9.mlp.c_fc error 0.9795 exceeded max_error 0.9500
+2026-10-11 13:55:34,457 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.9.mlp.c_proj error 0.9722 exceeded max_error 0.9500
+2026-10-11 13:55:34,663 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.10.mlp.c_fc error 0.9755 exceeded max_error 0.9500
+2026-10-11 13:55:34,872 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.10.mlp.c_proj error 0.9630 exceeded max_error 0.9500
+2026-10-11 13:55:35,081 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.11.mlp.c_fc error 0.9695 exceeded max_error 0.9500
+2026-10-11 13:55:35,293 [WARNING] neuralops.compression_engine.low_rank.cur_moe_compressor: CURMoECompressor: Layer transformer.h.11.mlp.c_proj error 0.9555 exceeded max_error 0.9500
+2026-10-11 13:55:35,296 [INFO] neuralops.compression_engine.low_rank.cur_moe_compressor: Compressor cur_moe finished: 5 compressed, 19 fallback, avg_err=0.9453, max_err_threshold=0.9500
+2026-10-11 13:55:35,457 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 131.7161
+2026-10-11 13:55:35,459 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 131.7161
+2026-10-11 13:55:40,383 [INFO] MambaKD: Pre-KD PPL for Module cur_moe_compressor, Method C: 4037.78
+2026-10-11 13:55:40,385 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:55:40,386 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 4037.78 (same protocol)
+2026-10-11 13:55:40,386 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +4001.56 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 13:55:40,387 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 13:55:40,680 [INFO] MambaKD: [C] Step 0/300 | Loss: 9.5183...
+2026-10-11 13:55:40,926 [INFO] MambaKD: [C] Step 1/300 | Loss: 9.5183 | LR: 1.50e-05
+2026-10-11 13:55:41,049 [INFO] MambaKD: [C] Step 1/300 | Loss: 11.1058...
+2026-10-11 13:55:41,175 [INFO] MambaKD: [C] Step 2/300 | Loss: 11.1058 | LR: 3.00e-05
+2026-10-11 13:55:41,284 [INFO] MambaKD: [C] Step 2/300 | Loss: 10.0437...
+2026-10-11 13:55:41,417 [INFO] MambaKD: [C] Step 3/300 | Loss: 10.0437 | LR: 4.50e-05
+2026-10-11 13:55:41,527 [INFO] MambaKD: [C] Step 3/300 | Loss: 9.2412...
+2026-10-11 13:55:41,639 [INFO] MambaKD: [C] Step 4/300 | Loss: 9.2412 | LR: 6.00e-05
+2026-10-11 13:55:41,748 [INFO] MambaKD: [C] Step 4/300 | Loss: 9.4900...
+2026-10-11 13:55:41,878 [INFO] MambaKD: [C] Step 5/300 | Loss: 9.4900 | LR: 7.50e-05
+2026-10-11 13:55:41,998 [INFO] MambaKD: [C] Step 5/300 | Loss: 8.6824...
+2026-10-11 13:55:53,425 [INFO] MambaKD: [C] Step 50/300 | Loss: 8.6824 | LR: 7.50e-04
+2026-10-11 13:55:53,547 [INFO] MambaKD: [C] Step 50/300 | Loss: 9.7580...
+2026-10-11 13:56:05,921 [INFO] MambaKD: [C] Step 100/300 | Loss: 9.7580 | LR: 1.50e-03
+2026-10-11 13:56:10,916 [INFO] MambaKD: [C] Step 100 Eval PPL: 253.44
+2026-10-11 13:56:11,037 [INFO] MambaKD: [C] Step 100/300 | Loss: 16.8173...
+2026-10-11 13:56:23,428 [INFO] MambaKD: [C] Step 150/300 | Loss: 16.8173 | LR: 1.28e-03
+2026-10-11 13:56:23,550 [INFO] MambaKD: [C] Step 150/300 | Loss: 19.2028...
+2026-10-11 13:56:35,911 [INFO] MambaKD: [C] Step 200/300 | Loss: 19.2028 | LR: 7.50e-04
+2026-10-11 13:56:40,839 [INFO] MambaKD: [C] Step 200 Eval PPL: 136.76
+2026-10-11 13:56:40,958 [INFO] MambaKD: [C] Step 200/300 | Loss: 21.6580...
+2026-10-11 13:56:53,254 [INFO] MambaKD: [C] Step 250/300 | Loss: 21.6580 | LR: 2.20e-04
+2026-10-11 13:56:53,373 [INFO] MambaKD: [C] Step 250/300 | Loss: 24.8183...
+2026-10-11 13:57:05,715 [INFO] MambaKD: [C] Step 300/300 | Loss: 24.8183 | LR: 1.50e-04
+2026-10-11 13:57:10,659 [INFO] MambaKD: [C] Step 300 Eval PPL: 89.84
+2026-10-11 13:57:10,661 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 89.84
+2026-10-11 13:57:10,661 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 13:57:10,853 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 4.7404 | LR: 1.50e-05
+2026-10-11 13:57:11,026 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.8258 | LR: 3.00e-05
+2026-10-11 13:57:11,208 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.7556 | LR: 4.50e-05
+2026-10-11 13:57:11,386 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.9140 | LR: 6.00e-05
+2026-10-11 13:57:11,574 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.7733 | LR: 7.50e-05
+2026-10-11 13:57:19,863 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 4.2921 | LR: 2.84e-04
+2026-10-11 13:57:28,950 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.6931 | LR: 1.96e-04
+2026-10-11 13:57:33,954 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 76.61
+2026-10-11 13:57:43,361 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 4.1482 | LR: 8.20e-05
+2026-10-11 13:57:52,421 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 4.1759 | LR: 7.44e-06
+2026-10-11 13:57:57,352 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 68.61
+2026-10-11 13:58:02,385 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 68.61
+2026-10-11 13:58:02,388 [INFO] MambaKD: [C] [COMPLETE] Pre: 4037.78
+  Stage 1 (KD):    89.84  (kd_gain=+3947.94)
+  Stage 2 (self):  68.61  (self_gain=+21.23)
+  Total:                  (total_gain=+3969.17)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 89.84 > 36.22)
+  Beat teacher after self? NO
+  Recovery: 99.19%
+  Time: 141.9s (Stage 1: 90.2s, Stage 2: 51.7s)
+2026-10-11 13:58:11,922 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.03, train_ppl=44.22, test_ppl=68.61, overfit_gap=24.39, latency=463.8ms
+2026-10-11 13:58:11,935 [INFO] MambaKD: Saved all run details to results\kd_runs\cur_moe_compressor\20261011_135524_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |  4037.78 |    89.84 |    68.61 | +3947.94 |   +21.23 | +3969.17 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 13:58:18,012 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:58:18,014 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 13:58:18,014 [INFO] MambaKD: ======================================================================

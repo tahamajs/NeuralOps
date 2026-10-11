@@ -1,0 +1,9 @@
+2026-10-10 22:44:52,382 [INFO] MambaKD: ======================================================================
+2026-10-10 22:44:52,384 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-10 22:44:52,385 [INFO] MambaKD: ======================================================================
+2026-10-10 22:44:52,386 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-10 22:44:52,387 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-10 22:44:52,388 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-10 22:44:53,592 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-10 22:44:53,596 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-10 22:44:53,599 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).

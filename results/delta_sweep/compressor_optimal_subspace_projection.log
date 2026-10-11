@@ -1,0 +1,133 @@
+2026-10-11 15:57:31,257 [INFO] MambaKD: ======================================================================
+2026-10-11 15:57:31,258 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 15:57:31,259 [INFO] MambaKD: ======================================================================
+2026-10-11 15:57:31,260 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 15:57:31,261 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 15:57:31,262 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 15:57:31,737 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 15:57:31,742 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 15:57:31,746 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 15:57:35,693 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 15:57:35,695 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 15:57:35,902 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 15:57:35,904 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 15:57:35,904 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 15:57:36,488 [INFO] MambaKD: 
+======================================================================
+2026-10-11 15:57:36,490 [INFO] MambaKD: PROCESSING MODULE 1/1: optimal_subspace_projection
+2026-10-11 15:57:36,490 [INFO] MambaKD: ======================================================================
+2026-10-11 15:57:36,491 [INFO] MambaKD: 
+# Running method C for optimal_subspace_projection
+2026-10-11 15:57:36,824 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 15:57:36,826 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 15:57:38,146 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7053 on transformer.h.0.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,222 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7929 on transformer.h.0.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:38,303 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6365 on transformer.h.0.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,332 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7379 on transformer.h.1.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,393 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7911 on transformer.h.1.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:38,460 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6463 on transformer.h.1.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,491 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7880 on transformer.h.2.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,523 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.5909 on transformer.h.2.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,554 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7880 on transformer.h.2.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:38,621 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6403 on transformer.h.2.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,655 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8089 on transformer.h.3.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,684 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.5941 on transformer.h.3.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,713 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8096 on transformer.h.3.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:38,776 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6330 on transformer.h.3.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,811 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7813 on transformer.h.4.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,838 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6009 on transformer.h.4.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,865 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8010 on transformer.h.4.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:38,926 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6486 on transformer.h.4.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:38,956 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7713 on transformer.h.5.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:38,986 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6012 on transformer.h.5.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,017 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8038 on transformer.h.5.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,082 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6527 on transformer.h.5.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,116 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8070 on transformer.h.6.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,145 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.5904 on transformer.h.6.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,177 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8043 on transformer.h.6.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,239 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6572 on transformer.h.6.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,269 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7979 on transformer.h.7.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,297 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6016 on transformer.h.7.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,329 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8041 on transformer.h.7.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,391 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6600 on transformer.h.7.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,428 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8096 on transformer.h.8.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,458 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.5908 on transformer.h.8.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,488 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8126 on transformer.h.8.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,551 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6594 on transformer.h.8.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,582 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8121 on transformer.h.9.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,612 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6232 on transformer.h.9.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,643 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8110 on transformer.h.9.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,706 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6624 on transformer.h.9.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,739 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7950 on transformer.h.10.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,765 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6214 on transformer.h.10.attn.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,796 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8119 on transformer.h.10.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:39,860 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6654 on transformer.h.10.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:39,891 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.7834 on transformer.h.11.attn.c_attn exceeded 0.5000.
+2026-10-11 15:57:39,943 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.8042 on transformer.h.11.mlp.c_fc exceeded 0.5000.
+2026-10-11 15:57:40,005 [WARNING] neuralops.compression_engine.svd.optimal_subspace_projection: OSP: reconstruction error 0.6591 on transformer.h.11.mlp.c_proj exceeded 0.5000.
+2026-10-11 15:57:40,094 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 32.3920
+2026-10-11 15:57:40,096 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 32.3920
+2026-10-11 15:57:44,858 [INFO] MambaKD: Pre-KD PPL for Module optimal_subspace_projection, Method C: 43.39
+2026-10-11 15:57:44,861 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 15:57:44,861 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 43.39 (same protocol)
+2026-10-11 15:57:44,861 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +7.17 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 15:57:44,862 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 15:57:45,233 [INFO] MambaKD: [C] Step 0/300 | Loss: 3.1942...
+2026-10-11 15:57:45,458 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.1942 | LR: 1.50e-05
+2026-10-11 15:57:45,551 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.9651...
+2026-10-11 15:57:45,619 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.9651 | LR: 3.00e-05
+2026-10-11 15:57:45,718 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.9529...
+2026-10-11 15:57:45,786 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.9529 | LR: 4.50e-05
+2026-10-11 15:57:45,912 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.7048...
+2026-10-11 15:57:46,027 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.7048 | LR: 6.00e-05
+2026-10-11 15:57:46,124 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.5777...
+2026-10-11 15:57:46,249 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.5777 | LR: 7.50e-05
+2026-10-11 15:57:46,339 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.4311...
+2026-10-11 15:57:57,453 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.4311 | LR: 7.50e-04
+2026-10-11 15:57:57,554 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.4441...
+2026-10-11 15:58:09,715 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.4441 | LR: 1.50e-03
+2026-10-11 15:58:14,415 [INFO] MambaKD: [C] Step 100 Eval PPL: 43.59
+2026-10-11 15:58:14,527 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.6604...
+2026-10-11 15:58:26,758 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.6604 | LR: 1.28e-03
+2026-10-11 15:58:26,877 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6865...
+2026-10-11 15:58:39,048 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6865 | LR: 7.50e-04
+2026-10-11 15:58:43,751 [INFO] MambaKD: [C] Step 200 Eval PPL: 42.14
+2026-10-11 15:58:43,868 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4588...
+2026-10-11 15:58:55,878 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4588 | LR: 2.20e-04
+2026-10-11 15:58:55,990 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6254...
+2026-10-11 15:59:08,403 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6254 | LR: 1.50e-04
+2026-10-11 15:59:13,410 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.27
+2026-10-11 15:59:13,412 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.27
+2026-10-11 15:59:13,412 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 15:59:13,597 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7608 | LR: 1.50e-05
+2026-10-11 15:59:13,769 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9329 | LR: 3.00e-05
+2026-10-11 15:59:13,941 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.0119 | LR: 4.50e-05
+2026-10-11 15:59:14,129 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0382 | LR: 6.00e-05
+2026-10-11 15:59:14,315 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.1156 | LR: 7.50e-05
+2026-10-11 15:59:22,392 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5321 | LR: 2.84e-04
+2026-10-11 15:59:31,243 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0209 | LR: 1.96e-04
+2026-10-11 15:59:35,957 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.11
+2026-10-11 15:59:44,804 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3474 | LR: 8.20e-05
+2026-10-11 15:59:53,635 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.2741 | LR: 7.44e-06
+2026-10-11 15:59:58,354 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.04
+2026-10-11 16:00:03,175 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.04
+2026-10-11 16:00:03,178 [INFO] MambaKD: [C] [COMPLETE] Pre: 43.39
+  Stage 1 (KD):    37.27  (kd_gain=+6.12)
+  Stage 2 (self):  31.04  (self_gain=+6.23)
+  Total:                  (total_gain=+12.35)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 37.27 > 36.22)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 138.1s (Stage 1: 88.4s, Stage 2: 49.8s)
+2026-10-11 16:00:19,817 [INFO] MambaKD: [QUALITY] distinct_2=0.91, repetition_3=0.01, train_ppl=21.68, test_ppl=31.04, overfit_gap=9.36, latency=1847.0ms
+2026-10-11 16:00:19,829 [INFO] MambaKD: Saved all run details to results\kd_runs\optimal_subspace_projection\20261011_155731_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    43.39 |    37.27 |    31.04 |    +6.12 |    +6.23 |   +12.35 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 16:00:25,646 [INFO] MambaKD: 
+======================================================================
+2026-10-11 16:00:25,647 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 16:00:25,648 [INFO] MambaKD: ======================================================================

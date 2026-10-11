@@ -1,0 +1,10 @@
+﻿{
+    "module":  "kmeans_quantize",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  37.28,
+    "duration_sec":  227.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 15:09:29"
+}
