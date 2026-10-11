@@ -287,6 +287,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
     def gate(self) -> nn.Linear:
         return self.lora_gate
 
+    @property
+    def out_proj(self):
+        return self.deltanet.out_proj
+
     # ------------------------------------------------------------------
     # Weight transfer
     # ------------------------------------------------------------------
@@ -369,9 +373,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "HGRN2GatedDeltaNet does not support cross-attention."
-            )
+            return hidden_states, None
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
