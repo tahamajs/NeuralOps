@@ -265,8 +265,15 @@ class KroneckerTTLoRALayer(nn.Module):
             if has_bias:
                 lin.bias.data.copy_(bias_holder.data)
             effective_base = lin
-
         dims = cls.factorize_dimensions(effective_base.in_features, effective_base.out_features)
+
+        # Apply low-rank SVD compression to base layer so the base weight is actually compressed
+        with torch.no_grad():
+            w_mat = effective_base.weight.data.float()
+            u_base, s_base, vt_base = torch.linalg.svd(w_mat, full_matrices=False)
+            r_base = max(1, min(32, len(s_base) // 2))
+            w_comp = (u_base[:, :r_base] * s_base[:r_base].unsqueeze(0)) @ vt_base[:r_base, :]
+            effective_base.weight.data.copy_(w_comp.to(dtype=effective_base.weight.dtype))
 
         # Detect existing LoRA.
         existing_lora_A = getattr(base_layer, "lora_A", None)
