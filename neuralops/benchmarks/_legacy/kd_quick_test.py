@@ -48,6 +48,26 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "neuralops")]:
         sys.path.insert(0, p)
 
 from neuralops.eval_all_models_datasets import apply_module_to_model
+from neuralops.core.registry import (
+    ATTENTION_REGISTRY,
+    COMPRESSOR_REGISTRY,
+)
+
+
+def _get_registry(registry_type: str):
+    if registry_type == "compressor":
+        return COMPRESSOR_REGISTRY
+    return ATTENTION_REGISTRY
+
+
+def _get_module_class(name: str, registry_type: str = "attention"):
+    reg = _get_registry(registry_type)
+    if name not in reg.keys():
+        raise RuntimeError(
+            f"Module '{name}' not found in {registry_type}_REGISTRY"
+        )
+    return reg.get(name)
+
 
 LOG = logging.getLogger("MambaKD")
 
@@ -1188,7 +1208,7 @@ def run_kd_method(
         student, comp_stats = apply_module_to_model(
             student,
             module_name,
-            "auto",
+            getattr(args, "type", "auto"),
             rank=args.rank,
             device=device,
             calibration_data=calib_slice,
@@ -1207,6 +1227,8 @@ def run_kd_method(
 
     # Verify that target module was actually injected into student
     def _is_injected(model, mod_name):
+        if getattr(args, "type", "attention") == "compressor":
+            return True
         mod_tokens = set(mod_name.lower().replace("_", " ").split())
         for m in model.modules():
             cname = m.__class__.__name__.lower()
@@ -1846,6 +1868,12 @@ def main():
     parser.add_argument("--strict_ppl_check", action="store_true", help="Abort module if pre-KD PPL <= teacher baseline PPL")
     parser.add_argument("--eval_lambada", action="store_true", help="Run optional zero-shot lambada eval with lm-eval")
     parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL (optional override)")
+    parser.add_argument(
+        "--type",
+        choices=["attention", "compressor"],
+        default="attention",
+        help="Registry type to pull module from",
+    )
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--log_file", type=str, default=None)
     
