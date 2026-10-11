@@ -34,14 +34,14 @@ def test_awq_quantizer():
 def test_smoothquant():
     layer = nn.Linear(16, 16)
     act_scales = torch.ones(16) * 2.0
-    scales = smoothquant_layer(layer, act_scales)
+    layer_mod, scales = smoothquant_layer(layer, act_scales=act_scales)
     assert scales.shape == (16,)
 
 
 def test_wanda_pruning():
     layer = nn.Linear(16, 16)
     act_norm = torch.ones(16)
-    mask = wanda_prune_layer(layer, act_norm, sparsity=0.5)
+    layer_mod, mask = wanda_prune_layer(layer, sparsity=0.5, act_norm=act_norm)
     assert mask.shape == (16, 16)
     assert torch.sum(layer.weight.data == 0) > 0
 
