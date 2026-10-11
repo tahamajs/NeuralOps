@@ -1,0 +1,60 @@
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 33777.18it/s]
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1150: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1385: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1412: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=use_scaler):
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2071, in <module>
+    main()
+    ~~~~^^
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2035, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1434, in run_kd_method
+    student_out = student(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/generic.py", line 943, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/models/gpt2/modeling_gpt2.py", line 682, in forward
+    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(
+                                                                     ~~~~~~~~~~~~~~~~^
+        input_ids,
+        ^^^^^^^^^^
+    ...<8 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/generic.py", line 1081, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/output_capturing.py", line 287, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/models/gpt2/modeling_gpt2.py", line 583, in forward
+    causal_mask = create_causal_mask(
+        config=self.config,
+    ...<3 lines>...
+        position_ids=position_ids,
+    )
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/masking_utils.py", line 944, in create_causal_mask
+    mask_interface = ALL_MASK_ATTENTION_FUNCTIONS[config._attn_implementation]
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/configuration_utils.py", line 522, in __getattribute__
+    def __getattribute__(self, key):
+    
+KeyboardInterrupt

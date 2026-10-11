@@ -4,3 +4,5 @@ adaptive_sparse_attention,attention,UNKNOWN,,49.09,179.5,,no delta parsed,2026-1
 adaptive_svd_attention,attention,UNKNOWN,,1823.67,271.4,2,no delta parsed,2026-10-11 21:25:42
 adasplash_attention,attention,ERROR,,,90.7,2,exit=-2,2026-10-11 21:31:13
 aegis_v6,attention,TIMEOUT,,3162.19,602.3,2,exceeded 300s,2026-10-11 21:33:00
+alibi,attention,UNKNOWN,,16593.66,392.7,2,no delta parsed,2026-10-11 21:43:03
+asvd_attention,attention,ERROR,,147.12,165.7,2,exit=-2,2026-10-11 21:49:37
