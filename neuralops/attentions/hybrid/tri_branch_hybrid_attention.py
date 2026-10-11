@@ -782,6 +782,7 @@ class TriBranchHybridAttention(BaseAttention):
 
         # Nested BERT/RoBERTa
         if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
+            self.is_nested_encoder = True
             s = old_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 if extracted[key][0] is None:
@@ -814,6 +815,11 @@ class TriBranchHybridAttention(BaseAttention):
                             extracted[key] = (m.weight.data.clone(),
                                               b.data.clone() if b is not None else None)
                             break
+
+        # Fail-loud validation for mandatory projections
+        missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
+        if missing:
+            raise RuntimeError(f"AegisHybridAttention: mandatory projections {missing} missing")
 
         # Apply SVD init
         for key, target in (
