@@ -164,8 +164,8 @@ class SALRCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         target_modules: list[str] | None = None,
-        max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         min_numel: int = 16,
         device: str | torch.device | None = None,
         cfg: Any | None = None,
@@ -427,19 +427,21 @@ class SALRCompressor(BaseCompressor):
 
         # FIX: Calculate error on the Pure Low Rank Truncation (ignoring the intentional sparsity)
         W_rec_pure = salr_layer.pre_pruned_weight.float()
-        norm_orig = torch.norm(raw_w.contiguous().float(), p="fro").clamp_min(1e-8)
-        rel_err = (torch.norm(raw_w.contiguous().float() - W_rec_pure, p="fro") / norm_orig).item()
+        target_w = W.float()
+        norm_orig = torch.norm(target_w, p="fro").clamp_min(1e-8)
+        rel_err = (torch.norm(target_w - W_rec_pure, p="fro") / norm_orig).item()
 
         is_invalid = torch.isnan(W_rec_pure).any() or torch.isinf(W_rec_pure).any()
+        if is_invalid:
+            logger.warning("SALR: reconstruction contains NaN/Inf, falling back.")
+            return None
         if rel_err > self.max_error:
             logger.warning(
-                "SALR: Rank-truncation error %.4f exceeded threshold %.4f.",
+                "SALR: Rank-truncation error %.4f exceeded threshold %.4f. Compressing anyway.",
                 rel_err, self.max_error,
             )
-            is_invalid = True
-
-        if is_invalid and self.fallback_to_original:
-            return None
+            if self.fallback_to_original:
+                return None
 
         salr_layer.reconstruction_error = rel_err
         return salr_layer
