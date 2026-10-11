@@ -177,9 +177,20 @@ class ResSVDLinear(nn.Module):
 
         Returns:
             ResSVDLinear: Spectral residual LoRA module.
-        """
-        in_f = linear.in_features
-        out_f = linear.out_features
+        target_mod = getattr(linear, "base_layer", linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
+        if is_conv1d:
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+            W = raw_w.t().contiguous().float()
+        else:
+            out_f = raw_w.shape[0]
+            in_f = raw_w.shape[1]
+            W = raw_w.float()
+
+        has_bias = getattr(target_mod, "bias", None) is not None
         max_rank = min(in_f, out_f)
 
         r = max(1, min(base_rank, max_rank))
@@ -193,12 +204,10 @@ class ResSVDLinear(nn.Module):
             residual_rank=k,
             scaling=scaling,
             factorize_base=factorize_base,
-            bias=linear.bias is not None,
-            dtype=linear.weight.dtype,
-            device=linear.weight.device,
+            bias=has_bias,
+            dtype=raw_w.dtype,
+            device=raw_w.device,
         )
-
-        W = linear.weight.data.float()  # (out_f, in_f)
 
         # SVD decomposition of source weight
         U, S, Vh = torch.linalg.svd(W, full_matrices=False)
@@ -233,14 +242,15 @@ class ResSVDLinear(nn.Module):
             lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail  # (k, in_f)
             lora_B_init = U_tail * sqrt_S.unsqueeze(0)  # (out_f, k)
 
-            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=linear.weight.dtype))
-            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=linear.weight.dtype))
+            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=raw_w.dtype))
+            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=raw_w.dtype))
             new_layer.lora_A.requires_grad = True
             new_layer.lora_B.requires_grad = True
 
         # Copy bias if present
-        if linear.bias is not None:
-            new_layer.bias.data.copy_(linear.bias.data)
+        b = getattr(target_mod, "bias", None)
+        if b is not None and new_layer.bias is not None:
+            new_layer.bias.data.copy_(b.data)
 
         return new_layer
 
@@ -351,10 +361,13 @@ class ResSVDCompressor(BaseCompressor):
         self.replaced_layers: list[str] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        """Check whether module is an eligible nn.Linear layer matching filter."""
-        if not isinstance(module, nn.Linear):
+        """Check whether module is an eligible linear layer matching filter."""
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not is_linear:
             return False
-        if isinstance(module, ResSVDLinear):
+        if isinstance(target_mod, ResSVDLinear):
             return False
         if not should_compress_linear(self.model, name):
             return False
