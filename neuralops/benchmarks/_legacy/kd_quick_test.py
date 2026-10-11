@@ -1909,7 +1909,30 @@ def main():
     try:
         dataset = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
     except Exception:
-        dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+        try:
+            dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+        except Exception:
+            # Fallback to cached arrow files from Windows/Linux cache directory if Hub lookup fails
+            import glob
+            from datasets import Dataset, DatasetDict
+            arrow_dirs = glob.glob(str(Path.home() / ".cache/huggingface/datasets/*wikitext*/wikitext-2-raw-v1/*/*"))
+            arrow_dirs += glob.glob("/mnt/c/Users/*/.cache/huggingface/datasets/*wikitext*/wikitext-2-raw-v1/*/*")
+            loaded = False
+            for ad in arrow_dirs:
+                train_f = Path(ad) / "wikitext-train.arrow"
+                val_f = Path(ad) / "wikitext-validation.arrow"
+                test_f = Path(ad) / "wikitext-test.arrow"
+                if train_f.exists() and test_f.exists():
+                    dataset = DatasetDict({
+                        "train": Dataset.from_file(str(train_f)),
+                        "validation": Dataset.from_file(str(val_f)) if val_f.exists() else None,
+                        "test": Dataset.from_file(str(test_f)),
+                    })
+                    LOG.info("Loaded WikiText-2 dataset directly from cached arrow files at %s", ad)
+                    loaded = True
+                    break
+            if not loaded:
+                raise RuntimeError("Failed to load WikiText-2 from Hub or local cached arrow files.")
     
     train_chunks = build_train_chunks(dataset["train"], tokenizer, max_train_texts=args.max_train_texts, seq_len=args.seq_len)
     if args.num_chunks > 0:

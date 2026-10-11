@@ -17,7 +17,7 @@ def test_alibi_slopes_non_pow2():
 
 
 def test_alibi_forward():
-    layer = ALiBiAttention(num_heads=8)
+    layer = ALiBiAttention(num_heads=8, hidden_size=64)
     x = torch.randn(2, 16, 64)
     out, attn = layer(x)
     assert out.shape == (2, 16, 64)

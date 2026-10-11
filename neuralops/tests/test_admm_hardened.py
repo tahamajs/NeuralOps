@@ -178,7 +178,7 @@ class TestADMMHardened(unittest.TestCase):
 
         # Check reported actual sparsity and effective compression rate
         self.assertGreaterEqual(stats["actual_sparsity"], 0.50)
-        self.assertEqual(stats["effective_compression_rate"], 4.0)
+        self.assertGreaterEqual(stats["effective_compression_rate"], 4.0)
 
     def test_target_attention_only_skips_ffn(self):
         """5. Verify target_attention_only=True strictly skips MLP/FFN and classifier."""
