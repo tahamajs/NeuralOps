@@ -813,10 +813,11 @@ class AdaptiveSparseAttention(BaseAttention):
             in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
-        sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]
+        # Enforce real compression: minimum sparsity ratio >= 0.75
+        sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.75, 0.95)  # [H]
         k_float = (1.0 - sparsity_per_head) * N_k
-        k_floor = torch.clamp(k_float.floor().long(), min=1, max=N_k)
-        k_ceil = torch.clamp(k_floor + 1, min=1, max=N_k)
+        k_floor = torch.clamp(k_float.floor().long(), min=1, max=min(N_k, 32))
+        k_ceil = torch.clamp(k_floor + 1, min=1, max=min(N_k, 32))
         alpha_k = (k_float - k_floor.float()).view(1, H, 1, 1)  # [1, H, 1, 1]
         
         k_indices_floor = (k_floor - 1).view(1, H, 1, 1)
@@ -860,11 +861,11 @@ class AdaptiveSparseAttention(BaseAttention):
                 causal_chunk = k_idx <= q_idx
                 scores_chunk = scores_chunk.masked_fill(~causal_chunk, -10000.0)
 
-            # Vectorized Top-K Thresholding on chunk with differentiable soft sigmoid threshold
+            # Vectorized Top-K Thresholding on chunk with strict pruning below threshold
             if not is_cross_attention:
                 if is_decoder:
                     valid_counts = (q_idx + 1).clamp(min=1, max=N_k).float()  # [1, 1, C_q, 1]
-                    eff_k = torch.clamp((1.0 - sparsity_per_head.view(1, H, 1, 1)) * valid_counts, min=1.0)
+                    eff_k = torch.clamp((1.0 - sparsity_per_head.view(1, H, 1, 1)) * valid_counts, min=1.0, max=16.0)
                     eff_k_floor = (eff_k.floor().long() - 1).clamp(min=0, max=N_k - 1)
                     eff_k_ceil = (eff_k_floor + 1).clamp(min=0, max=N_k - 1)
                     eff_alpha = eff_k - eff_k.floor()
@@ -879,9 +880,9 @@ class AdaptiveSparseAttention(BaseAttention):
                     thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
                     thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
                     topk_thresh = thresh_f * (1.0 - alpha_k) + thresh_c * alpha_k
-                temperature = 0.1
-                soft_mask = torch.sigmoid((scores_chunk - topk_thresh) / temperature)
-                scores_chunk = scores_chunk + torch.log(soft_mask + 1e-8)
+                
+                # Zero out scores strictly below topk_thresh
+                scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
 
             attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(
                 dtype
