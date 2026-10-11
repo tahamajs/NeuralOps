@@ -243,6 +243,9 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register(
     "eat", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
+@ATTENTION_REGISTRY.register(
+    "eat_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
 class EATBlock(BaseAttention):
     is_custom_attention: bool = True
 
@@ -731,9 +734,8 @@ class EATBlock(BaseAttention):
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
-            logger.warning(
-                "EATBlock copy_weights: missing %s; using initialized weights",
-                missing_after,
+            raise RuntimeError(
+                f"EATBlock copy_weights: missing {missing_after} from {pretrained_attn.__class__.__name__}"
             )
 
         def _orient(w, in_dim):
@@ -978,11 +980,12 @@ class EATBlock(BaseAttention):
             except Exception as e:
                 logger.debug("EAT: pruning skipped: %s", e)
 
-        outputs = (out,)
-        if kwargs.get("use_cache", past_key_value is not None):
-            outputs += (present_key_value,)
         if output_attentions:
-            outputs += (probs,)
+            outputs = (out, probs)
+        elif kwargs.get("use_cache", past_key_value is not None):
+            outputs = (out, present_key_value)
+        else:
+            outputs = (out, None)
             
         return outputs 
 

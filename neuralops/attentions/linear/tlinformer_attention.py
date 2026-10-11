@@ -167,28 +167,7 @@ class LoRALinear(nn.Module):
 # DEPRECATED: Identity projection under causal LM masking.
 # @ATTENTION_REGISTRY.register("tlinformer_attention")
 class TLinFormerAttention(BaseAttention):
-    """DEPRECATED: Identity projection under causal LM masking.
-
-    This module is deprecated. Use 'linformer_attention' instead.
-    """
-
-    Encoder mode (N > rank):
-        K' = E · K,   V' = F · V,   E, F ∈ R^{r × N}   (learnable)
-        scores = Q · K'ᵀ / √d          # (B, H, N, r)
-        O = softmax(scores) · V'        # (B, H, N, d)
-
-    Complexity: O(N · r · d) instead of O(N² · d).
-
-    Decoder mode: dense causal attention (Linformer is not causal — projecting
-    over all N positions would leak future information).
-
-    Key corrections:
-        - proj_k / proj_v are nn.Parameters (learnable).
-        - Broadcasting bug in masked_fill fixed (q_mask used).
-        - GQA repeat moved after projection (saves 4× FLOPs).
-        - output_attentions handled safely.
-        - KV-cache support added.
-    """
+    """DEPRECATED: Identity projection under causal LM masking."""
 
     is_custom_attention: bool = True
 
