@@ -89,8 +89,8 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         calibration_texts: list[str] | None = None,
         target_attention_only: bool = False,
         device: str | torch.device | None = None,
-        max_error: float = 0.5,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         use_lora: bool = False,
         lora_r: int = 0,
@@ -407,11 +407,8 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             # Fallback on high reconstruction error
             if rel_err > self.max_error:
                 logger.warning(
-                    "PCA-ASVD reconstruction error %.4f on %s exceeded threshold %.4f%s",
+                    "PCA-ASVD reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
                     rel_err, name, self.max_error,
-                    ". Skipping (fallback to original)."
-                    if self.fallback_to_original
-                    else ". Proceeding with sliced weight.",
                 )
                 if self.fallback_to_original:
                     for p in module.parameters():
@@ -575,10 +572,10 @@ def pca_asvd_factory(
         _cfg_get(comp_config, "sparsity", _cfg_get(comp_config, "sparsity", 0.60)),
     )
     non_uniform = kwargs.pop("non_uniform", _cfg_get(comp_config, "non_uniform", False))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.60))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "fallback_to_original", True),
+        _cfg_get(comp_config, "fallback_to_original", False),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
