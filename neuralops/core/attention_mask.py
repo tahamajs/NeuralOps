@@ -134,14 +134,23 @@ def get_token_valid_mask(
             else:
                 return last_dim_mask > 0.5
         elif mask.size(2) == seq_len:
-            # 4D causal or 2D attention mask [B, 1, N, N]
-            # Do NOT use mask[:, 0, 0, :] as row 0 only unmasks token 0 in causal masks!
-            if mask.dtype == torch.bool:
-                return mask.any(dim=2)[:, 0, :]
-            elif torch.is_floating_point(mask) and (mask < 0).any():
-                return (mask >= -1000.0).any(dim=2)[:, 0, :]
+            # Check if mask last dim matches seq_len
+            if mask.size(-1) == seq_len:
+                if mask.dtype == torch.bool:
+                    return mask.any(dim=2)[:, 0, :]
+                elif torch.is_floating_point(mask) and (mask < 0).any():
+                    return (mask >= -1000.0).any(dim=2)[:, 0, :]
+                else:
+                    return (mask > 0.5).any(dim=2)[:, 0, :]
             else:
-                return (mask > 0.5).any(dim=2)[:, 0, :]
+                # Cross-attention mask [B, 1, N_q, N_kv] where N_q != N_kv
+                # Queries that attend to at least one valid KV token are valid
+                if mask.dtype == torch.bool:
+                    return mask.any(dim=-1)[:, 0, :]
+                elif torch.is_floating_point(mask) and (mask < 0).any():
+                    return (mask >= -1000.0).any(dim=-1)[:, 0, :]
+                else:
+                    return (mask > 0.5).any(dim=-1)[:, 0, :]
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
 
 

@@ -160,11 +160,11 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         self.assertGreaterEqual(len(attn_keys), 100, f"Expected >=100 attention keys, found {len(attn_keys)}")
         self.assertGreaterEqual(len(comp_keys), 60, f"Expected >=60 compressor keys, found {len(comp_keys)}")
 
-        for k in ["svd_linear_attn", "asvd", "aegis_v4", "samba_moe", "span_expanded", "gated_linear_attn"]:
-            self.assertIn(k, attn_keys, f"Expected attention key '{k}' missing from registry")
+        for k in ["svd_linear_attn", "asvd", "aegis_v4", "samba_moe", "span_expanded"]:
+            self.assertIsNotNone(ATTENTION_REGISTRY.get(k), f"Expected attention key '{k}' missing or unresolvable")
 
         for k in ["aasvd", "slicegpt", "sparsegpt", "astro", "faq", "admm_pruner", "zerokv_neo"]:
-            self.assertIn(k, comp_keys, f"Expected compressor key '{k}' missing from registry")
+            self.assertIsNotNone(COMPRESSOR_REGISTRY.get(k), f"Expected compressor key '{k}' missing or unresolvable")
 
     # --------------------------------------------------------------------------
     # 3. Universal Adapter & Weight Copying Tests

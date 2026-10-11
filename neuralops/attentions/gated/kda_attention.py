@@ -749,6 +749,10 @@ class KDAAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"KDA copy_weights: '{proj_key}' norm too small ({w_norm:.2e})")
+
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
@@ -813,7 +817,7 @@ class KDAAttention(BaseAttention):
                 k_f.transpose(-1, -2).contiguous(), v_f
             )
             # Z_new = γ · Z_prev + k^T (as column)
-            Z_new = gamma.squeeze(-1).squeeze(-1) * Z_prev + k_f.transpose(-1, -2).contiguous()
+            Z_new = gamma * Z_prev + k_f.transpose(-1, -2).contiguous()
 
             # y = q · S_new / (q · Z_new)
             num = torch.matmul(q_f, S_new)
@@ -932,7 +936,7 @@ class KDAAttention(BaseAttention):
             Z_update = k_weighted.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
 
             S_prev = gamma_block * S_prev + S_update
-            Z_prev = gamma_block.squeeze(-1).squeeze(-1) * Z_prev + Z_update
+            Z_prev = gamma_block * Z_prev + Z_update
 
         y = torch.cat(outputs, dim=2)
         if pad_len > 0:
