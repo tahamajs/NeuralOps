@@ -1,14 +1,14 @@
 # Progress Tracker
 
 ## Status Overview
-- **Attention Modules (tested)**: 110
-- **Attention Operational & Fixed (Δ > 1.0)**: 110
-- **Attention Deprecated / Null Aliased**: 6
-- **Compressor Modules (tested)**: 73
-- **Compressor Operational & Fixed (Δ > 1.0)**: 72
-- **Compressor Deprecated / Null Aliased**: 1
+- **Attention Modules (canonical)**: 108
+- **Attention Operational & Fixed (Δ > 1.0)**: 101
+- **Attention Deprecated / Null Aliased**: 7
+- **Compressor Modules (canonical)**: 73
+- **Compressor Operational & Fixed (Δ > 1.0)**: 71
+- **Compressor Deprecated / Null Aliased**: 2
 - **Remaining Unresolved**: 0
-- **Current Head**: `e0119bde06`
+- **Total Operational with Δ > 1.0**: 172 / 181
 
 ---
 
