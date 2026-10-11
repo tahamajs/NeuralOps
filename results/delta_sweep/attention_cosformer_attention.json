@@ -1,0 +1,11 @@
+{
+  "module": "cosformer_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 7379.29,
+  "duration_sec": 146.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 22:28:32"
+}

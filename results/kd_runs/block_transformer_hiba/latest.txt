@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\block_transformer_hiba\20261010_195951_bs8_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/block_transformer_hiba/20261011_215721_bs12_seq256_lr3e-04_C

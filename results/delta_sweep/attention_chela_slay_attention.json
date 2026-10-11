@@ -1,0 +1,11 @@
+{
+  "module": "chela_slay_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 36.23,
+  "duration_sec": 416.4,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 22:07:43"
+}
