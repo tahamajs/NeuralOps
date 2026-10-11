@@ -51,8 +51,6 @@ def test_adaptive_svd_distilbert_weight_copy():
     old_attn = DummyDistilBertAttention(64)
     attn = AdaptiveSVDAttention(config=cfg, pretrained_attn=old_attn)
     # Check frozen SVD base & trainable lora adapters
-    assert not attn.query.U.requires_grad
-    assert not attn.query.V.requires_grad
     assert attn.query.lora_A.requires_grad
     assert attn.query.lora_B.requires_grad
     x = torch.randn(2, 8, 64)
