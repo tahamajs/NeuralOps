@@ -609,6 +609,11 @@ class GoldFinchAHNBlock(BaseAttention):
 
         # Flat
         else:
+            if hasattr(src, "weight") and isinstance(src, nn.Linear):
+                # When src is directly a Linear layer (e.g. BrokenLayer.attention)
+                extracted["q"] = (src.weight.data.clone(),
+                                  src.bias.data.clone() if src.bias is not None else None)
+
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
                 "k": ("k_lin", "k_proj", "key", "W_k"),
@@ -616,6 +621,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 "o": ("out_lin", "out_proj", "dense", "o_proj"),
             }
             for key, names in candidates.items():
+                if extracted[key][0] is not None:
+                    continue
                 for n in names:
                     if hasattr(src, n):
                         m = getattr(src, n)
@@ -677,8 +684,7 @@ class GoldFinchAHNBlock(BaseAttention):
 
                 w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning("Goldfinch copy_weights: '%s' has near-zero norm (%.2e)",
-                                   key, w_norm)
+                    raise RuntimeError(f"Goldfinch copy_weights: '{key}' norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target.freeze_base_weights()
