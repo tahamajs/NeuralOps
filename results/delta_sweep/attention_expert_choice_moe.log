@@ -56,3 +56,51 @@
 2026-10-11 22:53:15,269 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8306...
 2026-10-11 22:53:15,501 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8306 | LR: 7.50e-05
 2026-10-11 22:53:15,687 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.0416...
+2026-10-11 22:53:34,661 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.0416 | LR: 7.50e-04
+2026-10-11 22:53:34,862 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.2731...
+2026-10-11 22:53:56,502 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.2731 | LR: 1.50e-03
+2026-10-11 22:53:58,737 [INFO] MambaKD: [C] Step 100 Eval PPL: 35.13
+2026-10-11 22:53:58,930 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.2669...
+2026-10-11 22:54:21,371 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.2669 | LR: 1.28e-03
+2026-10-11 22:54:21,574 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.0982...
+2026-10-11 22:54:42,781 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.0982 | LR: 7.50e-04
+2026-10-11 22:54:45,356 [INFO] MambaKD: [C] Step 200 Eval PPL: 33.70
+2026-10-11 22:54:45,545 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.2733...
+2026-10-11 22:55:06,684 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.2733 | LR: 2.20e-04
+2026-10-11 22:55:06,873 [INFO] MambaKD: [C] Step 250/300 | Loss: 22.7350...
+2026-10-11 22:55:28,058 [INFO] MambaKD: [C] Step 300/300 | Loss: 22.7350 | LR: 1.50e-04
+2026-10-11 22:55:30,186 [INFO] MambaKD: [C] Step 300 Eval PPL: 33.62
+2026-10-11 22:55:30,186 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 33.62
+2026-10-11 22:55:30,193 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 22:55:30,493 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 4.1649 | LR: 1.50e-05
+2026-10-11 22:55:30,791 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.6651 | LR: 3.00e-05
+2026-10-11 22:55:31,089 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.8926 | LR: 4.50e-05
+2026-10-11 22:55:31,387 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 3.7891 | LR: 6.00e-05
+2026-10-11 22:55:31,685 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.1458 | LR: 7.50e-05
+2026-10-11 22:55:45,518 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.4604 | LR: 2.84e-04
+2026-10-11 22:56:01,047 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.5348 | LR: 1.96e-04
+2026-10-11 22:56:02,970 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 29.03
+2026-10-11 22:56:18,814 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.7221 | LR: 8.20e-05
+2026-10-11 22:56:34,261 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.6447 | LR: 7.44e-06
+2026-10-11 22:56:36,867 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 28.95
+2026-10-11 22:56:38,992 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 28.95
+2026-10-11 22:56:38,992 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.24
+  Stage 1 (KD):    33.62  (kd_gain=+2.62)
+  Stage 2 (self):  28.95  (self_gain=+4.67)
+  Total:                  (total_gain=+7.29)
+  Teacher baseline: 36.21
+  Aligned with teacher? YES (post_stage1 33.62 <= 36.21)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 205.7s (Stage 1: 136.9s, Stage 2: 68.8s)
+2026-10-11 22:56:45,052 [INFO] MambaKD: [QUALITY] distinct_2=0.05, repetition_3=0.94, train_ppl=29.46, test_ppl=28.95, overfit_gap=-0.51, latency=687.1ms
+2026-10-11 22:56:45,058 [INFO] MambaKD: Saved all run details to results/kd_runs/expert_choice_moe/20261011_225303_bs12_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.24 |    33.62 |    28.95 |    +2.62 |    +4.67 |    +7.29 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 22:56:47,162 [INFO] MambaKD: 
+======================================================================
+2026-10-11 22:56:47,162 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 22:56:47,162 [INFO] MambaKD: ======================================================================
