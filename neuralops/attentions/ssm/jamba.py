@@ -557,7 +557,7 @@ class Jamba2Block(BaseAttention):
             cos = cos.narrow(-2, past_len, L) if cos.shape[-2] >= past_len + L else cos
             sin = sin.narrow(-2, past_len, L) if sin.shape[-2] >= past_len + L else sin
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(past_len, past_len + L, device=hidden_states.device).unsqueeze(0).expand(B, -1)

@@ -1054,7 +1054,7 @@ class MambaSVDFlash(BaseAttention):
                 cos = cos.narrow(-2, past_len, L)
                 sin = sin.narrow(-2, past_len, L)
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             if position_ids is None:
                 position_ids = (
                     torch.arange(past_len, past_len + L, device=device).unsqueeze(0).expand(B, -1)
