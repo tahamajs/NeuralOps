@@ -210,21 +210,21 @@ class ResSVDLinear(nn.Module):
             device=raw_w.device,
         )
 
-        # SVD decomposition of source weight
-        U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+        # SVD decomposition of source weight on CPU to prevent CUDA OOM
+        U, S, Vh = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
 
         # 1. Base Truncation (Dominant Top-r Singular Components)
         U_base = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)  # (out_f, r)
         V_base = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]  # (r, in_f)
 
         if factorize_base:
-            new_layer.base_U.data.copy_(U_base.to(dtype=linear.weight.dtype))
-            new_layer.base_V.data.copy_(V_base.to(dtype=linear.weight.dtype))
+            new_layer.base_U.data.copy_(U_base.to(dtype=raw_w.dtype, device=raw_w.device))
+            new_layer.base_V.data.copy_(V_base.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.base_U.requires_grad = not freeze_base
             new_layer.base_V.requires_grad = not freeze_base
         else:
             W_base = (U[:, :r] * S[:r].unsqueeze(0)) @ Vh[:r, :]
-            new_layer.base_weight.data.copy_(W_base.to(dtype=linear.weight.dtype))
+            new_layer.base_weight.data.copy_(W_base.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.base_weight.requires_grad = not freeze_base
 
         # 2. Residual Tail Initialization (Singular directions r to r+k)
@@ -243,8 +243,8 @@ class ResSVDLinear(nn.Module):
             lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail  # (k, in_f)
             lora_B_init = U_tail * sqrt_S.unsqueeze(0)  # (out_f, k)
 
-            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=raw_w.dtype))
-            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=raw_w.dtype))
+            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=raw_w.dtype, device=raw_w.device))
+            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=raw_w.dtype, device=raw_w.device))
             new_layer.lora_A.requires_grad = True
             new_layer.lora_B.requires_grad = True
 
