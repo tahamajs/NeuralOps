@@ -386,8 +386,8 @@ class SALRCompressor(BaseCompressor):
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
-        # Clear large tensors from GPU memory aggressively
-        del W, U, S, Vt
+        # Clear SVD factors from memory
+        del U, S, Vt
         torch.cuda.empty_cache()
 
         has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
@@ -444,6 +444,7 @@ class SALRCompressor(BaseCompressor):
                 return None
 
         salr_layer.reconstruction_error = rel_err
+        del W
         return salr_layer
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
