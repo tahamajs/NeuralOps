@@ -10,6 +10,5 @@ This document tracks modules identified as unfixable or unsuitable for delta/com
 | `tlinformer_attention` | `linear/` | Identity projection under causal LM masking; delta ≈ 0. | `linformer_attention` |
 | `tpa_attention` | `sparse/` | Marked deprecated in codebase; temporal pooling bypass causes delta = 0. | `cross_attention` |
 | `span_expanded_attention` | `adaptive/` | Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals; delta ≈ 0. | `adaptive_span_attention` |
-| `mamba_svd_flash` | `ssm/` | Explicitly registered in `DEPRECATED_MODULES` in `eval_types.py`; intentionally bypassed during attention injection. | `mamba_block` |
 
 All listed modules have been mapped to canonical alternatives in `neuralops/core/deprecated_aliases.json`.
