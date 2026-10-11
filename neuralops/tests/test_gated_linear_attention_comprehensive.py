@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.attentions.decay_linear_attention import (DecayLinearAttention,
-                                                         inject_gated_linear)
+                                                         inject_decay_linear)
 
 class DummyRobertaSelfAttention(nn.Module):
     def __init__(self, dim=64):
@@ -91,7 +91,7 @@ def test_decay_linear_attention_inject_safe():
             self.attention = DummyDistilBertAttention(64)
 
     layer = DummyLayer()
-    res = inject_gated_linear(layer=layer, model_config=MockConfig())
+    res = inject_decay_linear(layer=layer, model_config=MockConfig())
     assert res is not None
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)

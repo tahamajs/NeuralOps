@@ -125,8 +125,9 @@ class TestARMORHardened(unittest.TestCase):
 
         # Check LoRALinear wrapper preserved
         self.assertIsInstance(compressed_model.attn.o_proj, MockLoRALinear)
-        self.assertTrue(compressed_model.attn.o_proj.lora_A.requires_grad)
-        self.assertTrue(compressed_model.attn.o_proj.lora_B.requires_grad)
+        # Outer LoRA weights zeroed and frozen per architectural contract
+        self.assertFalse(compressed_model.attn.o_proj.lora_A.requires_grad)
+        self.assertFalse(compressed_model.attn.o_proj.lora_B.requires_grad)
 
         # Base layer inside LoRALinear should be ARMORLinear
         self.assertIsInstance(compressed_model.attn.o_proj.base_layer, ARMORLinear)

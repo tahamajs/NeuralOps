@@ -381,17 +381,14 @@ class BAMUMoEBlock(BaseAttention):
 
         # BAM-FIX-03: SVD rank for real compression
         default_svd = min(128, self.dim)
-        self.svd_rank = int(
-            getattr(
-                config,
-                "svd_rank",
-                (
-                    getattr(comp_config, "svd_rank", svd_rank)
-                    if comp_config is not None
-                    else (svd_rank or default_svd)
-                ),
-            )
-        )
+        if svd_rank is not None:
+            self.svd_rank = int(svd_rank)
+        elif comp_config is not None and hasattr(comp_config, "svd_rank"):
+            self.svd_rank = int(comp_config.svd_rank)
+        elif config is not None and hasattr(config, "svd_rank"):
+            self.svd_rank = int(config.svd_rank)
+        else:
+            self.svd_rank = int(default_svd)
 
         # Decoder detection
         mt = str(getattr(config, "model_type", "") or "").lower()
@@ -767,6 +764,12 @@ class BAMUMoEBlock(BaseAttention):
             pass
 
     # ------------------------------------------------------------------
+    @property
+    def aux_loss(self) -> torch.Tensor | None:
+        if self.qkv_moe is not None:
+            return self.qkv_moe._aux_loss
+        return torch.tensor(0.0)
+
     def get_aux_loss(self, device: torch.device) -> torch.Tensor:
         """BAM-FIX-04: MoE aux loss for training loop."""
         if self.qkv_moe is None:

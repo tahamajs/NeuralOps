@@ -314,6 +314,10 @@ def test_gating_aware_d_for_ffn_lin1():
     )
     # Manually test the detector
     comp = AdaSVDCompressor.__new__(AdaSVDCompressor)
+    comp.gelu_layer_patterns = (
+        "lin1", "intermediate", "mlp.c_fc", "dense_h_to_4h",
+        "up_proj", "gate_proj", "fc1", "w1",
+    )
 
     assert comp._is_followed_by_gelu("ffn.lin1") == True
     assert comp._is_followed_by_gelu("ffn.lin2") == False
