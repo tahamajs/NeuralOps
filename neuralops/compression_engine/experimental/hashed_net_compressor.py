@@ -885,7 +885,7 @@ def hashed_net_factory(
         _cfg_get(
             comp_config,
             "hashed_net_max_error",
-            _cfg_get(comp_config, "max_error", 0.35),
+            _cfg_get(comp_config, "max_error", 1.0),
         ),
     )
     target_attention_only = kwargs.pop(
@@ -901,7 +901,7 @@ def hashed_net_factory(
         _cfg_get(
             comp_config,
             "hashed_net_fallback_to_original",
-            _cfg_get(comp_config, "fallback_to_original", True),
+            _cfg_get(comp_config, "fallback_to_original", False),
         ),
     )
 
