@@ -107,7 +107,7 @@ class FAQLinear(nn.Module):
                 torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
+                torch.randn((out_features, self.lora_r), dtype=dtype, device=device) * 1e-4
             )
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
@@ -270,7 +270,7 @@ class FAQQuantizer(BaseCompressor):
         self,
         model: nn.Module,
         tokenizer: Any | None = None,
-        bits: int = 8,
+        bits: int = 4,
         calibration_texts: list[str] | None = None,
         calibration_data: Any | None = None,
         alpha: float = 0.5,
@@ -278,9 +278,9 @@ class FAQQuantizer(BaseCompressor):
         use_ste: bool = True,
         lora_r: int = 16,
         lora_alpha: float = 1.0,
-        max_error: float = 0.35,
+        max_error: float = 0.85,
         target_attention_only: bool = False,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         skip_attention_qkv: bool = False,
         cfg: Any | None = None,
         num_calibration_batches: int = 8,
