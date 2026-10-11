@@ -54,8 +54,8 @@ class RPCACompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         target_modules: list[str] | None = None,
-        max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         min_numel: int = 16,
         device: str | torch.device | None = None,
         cfg: Any | None = None,
@@ -322,16 +322,17 @@ class RPCACompressor(BaseCompressor):
         rel_err = (torch.norm(W - W_rec, p="fro") / norm_orig).item()
 
         is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+        if is_invalid:
+            logger.warning("RPCA: reconstruction contains NaN/Inf, falling back.")
+            return None
         if rel_err > self.max_error:
             logger.warning(
-                "RPCA: reconstruction error %.4f exceeded threshold %.4f.",
+                "RPCA: reconstruction error %.4f exceeded threshold %.4f. Compressing anyway.",
                 rel_err,
                 self.max_error,
             )
-            is_invalid = True
-
-        if is_invalid and self.fallback_to_original:
-            return None
+            if self.fallback_to_original:
+                return None
 
         svd_layer.reconstruction_error = rel_err
         return svd_layer
