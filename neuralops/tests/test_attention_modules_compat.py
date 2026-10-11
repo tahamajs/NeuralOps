@@ -27,7 +27,7 @@ class TestAttentionFamilyCompatibility:
 
     @pytest.mark.parametrize("module_name", [
         "adaptive_span",
-        "adaptive_sparse",
+        "dynamic_conv",
     ])
     def test_causal_only_incompatible_with_encoders(self, module_name):
         """Causal-only modules must be rejected for BERT, RoBERTa, DistilBERT."""
@@ -38,7 +38,7 @@ class TestAttentionFamilyCompatibility:
 
     @pytest.mark.parametrize("module_name", [
         "adaptive_span",
-        "adaptive_sparse",
+        "dynamic_conv",
     ])
     def test_causal_only_compatible_with_decoders(self, module_name):
         """Causal-only modules must be allowed for GPT-2, Qwen, LLaMA."""
