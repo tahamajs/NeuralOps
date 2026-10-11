@@ -421,9 +421,11 @@ class CosformerAttention(BaseAttention):
                 # Zero contribution from padded keys.
                 scores = scores * (padding_mask == 0).to(dtype)
 
+            scores = torch.clamp(scores, min=0.0, max=1e4)
             num = torch.matmul(scores, V)
             denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-            return (num / denom).to(dtype)
+            res = num / denom
+            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
         logger.warning(
             "CosformerAttention._forward_causal: N=%d > 2048, using chunked accumulation.",
@@ -443,11 +445,11 @@ class CosformerAttention(BaseAttention):
                 cols = torch.arange(N, device=device)
                 allowed = rows.unsqueeze(1) >= cols.unsqueeze(0)
                 s = s.masked_fill(~allowed, 0.0)
-            if padding_mask is not None:
-                s = s * (padding_mask == 0).to(dtype)
-            num = torch.matmul(s, V)
-            denom = s.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-            out[:, :, start:end] = num / denom
+            scores = torch.clamp(s, min=0.0, max=1e4)
+            num = torch.matmul(scores, V)
+            denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            res = num / denom
+            out[:, :, start:end] = torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
         return out
     
     def forward(self, hidden_states, attention_mask=None, head_mask=None,
@@ -470,14 +472,15 @@ class CosformerAttention(BaseAttention):
             V_local = repeat_kv(V_local, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(d)
-        Q_scaled = Q_raw * scale
+        Q_scaled = torch.clamp(Q_raw * scale, min=-50.0, max=50.0)
+        K_clamped = torch.clamp(K_raw, min=-50.0, max=50.0)
         
         if self.act_fun == "softplus":
             Q_k = F.softplus(Q_scaled.float())
-            K_k = F.softplus(K_raw.float())
+            K_k = F.softplus(K_clamped.float())
         else:
             Q_k = F.elu(Q_scaled.float()) + 1.0
-            K_k = F.elu(K_raw.float()) + 1.0
+            K_k = F.elu(K_clamped.float()) + 1.0
 
         cos_w, sin_w = self._get_cos_sin_weights(N, device, dtype=torch.float32)
         Q_cos = Q_k * cos_w
@@ -495,18 +498,24 @@ class CosformerAttention(BaseAttention):
         )
 
         local_out = self._local_attention(
-            Q_raw.float(), K_raw.float(), V_local.float(),
+            torch.clamp(Q_raw.float(), min=-1e4, max=1e4),
+            torch.clamp(K_raw.float(), min=-1e4, max=1e4),
+            torch.clamp(V_local.float(), min=-1e4, max=1e4),
             padding_mask, N, device, torch.float32,
         )
+        local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         gate = torch.sigmoid(self.fusion_gate(hidden_states)).to(torch.float32)
         gate_expanded = gate.view(B, N, 1, 1).transpose(1, 2)
 
         context = (gate_expanded * global_out) + ((1.0 - gate_expanded) * local_out)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        context = context.to(input_dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = torch.clamp(context, min=-65500.0, max=65500.0).to(input_dtype)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         context = self.dropout(context)
         final_out = self.out_proj(context)
+        final_out = torch.nan_to_num(final_out, nan=0.0, posinf=65500.0, neginf=-65500.0)
 
         return final_out.to(input_dtype), None
 
