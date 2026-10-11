@@ -227,10 +227,10 @@ class RPCACompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf")
 
         if is_conv1d:
-            W = raw_w.t().contiguous().float()
+            W = raw_w.t().contiguous().detach().cpu().float()
             out_f, in_f = W.shape
         else:
-            W = raw_w.contiguous().float()
+            W = raw_w.contiguous().detach().cpu().float()
             out_f = getattr(base_layer, "out_features", W.shape[0])
             in_f = getattr(base_layer, "in_features", W.shape[1])
 
