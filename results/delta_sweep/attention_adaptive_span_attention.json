@@ -1,0 +1,10 @@
+{
+  "module": "adaptive_span_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": "",
+  "student_ppl": 6810.76,
+  "duration_sec": 83.4,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 21:18:28"
+}

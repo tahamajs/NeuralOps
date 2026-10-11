@@ -156,6 +156,7 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class CosformerAttention(BaseAttention):
     is_custom_attention: bool = True
     triton_kernel = "linear_attn"
@@ -291,6 +292,14 @@ class CosformerAttention(BaseAttention):
     def value(self): return self.v_proj
     @property
     def dense(self): return self.out_proj
+    @property
+    def q_lin(self): return self.q_proj
+    @property
+    def k_lin(self): return self.k_proj
+    @property
+    def v_lin(self): return self.v_proj
+    @property
+    def out_lin(self): return self.out_proj
 
     def copy_weights(self, src):
         if src is None: return
@@ -300,6 +309,15 @@ class CosformerAttention(BaseAttention):
 
         extracted = {"q": (None, None), "k": (None, None),
                      "v": (None, None), "o": (None, None)}
+
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
+        is_nested = False
+        if ((hasattr(src, "self") and hasattr(src.self, "query") and hasattr(src, "output") and hasattr(src.output, "dense")) or
+            (cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention") or
+             (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) and not has_out_lin):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_w = src.c_attn.weight.data.clone()
@@ -314,6 +332,35 @@ class CosformerAttention(BaseAttention):
                 if hasattr(src.c_proj, "nf") or o_w.shape[0] < o_w.shape[1]: o_w = o_w.t().contiguous()
                 o_b = src.c_proj.bias.data.clone() if src.c_proj.bias is not None else None
                 extracted["o"] = (o_w, o_b)
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
+            for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
+                m = getattr(s, sub, None)
+                if m is not None and hasattr(m, "weight"):
+                    b = getattr(m, "bias", None)
+                    extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
+                d = src.output.dense
+                b = getattr(d, "bias", None)
+                extracted["o"] = (d.weight.data.clone(), b.data.clone() if b is not None else None)
+        else:
+            candidates = {
+                "q": ("q_lin", "q_proj", "query", "W_q"),
+                "k": ("k_lin", "k_proj", "key", "W_k"),
+                "v": ("v_lin", "v_proj", "value", "W_v"),
+                "o": ("out_lin", "out_proj", "dense", "o_proj", "c_proj"),
+            }
+            for key, names in candidates.items():
+                for n in names:
+                    if hasattr(src, n):
+                        m = getattr(src, n)
+                        if m is not None and hasattr(m, "weight"):
+                            b = getattr(m, "bias", None)
+                            extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
+                            break
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
+            raise RuntimeError(f"CosformerAttention.copy_weights: missing {missing} from {src.__class__.__name__}")
 
         target_map = {"q": self.q_proj, "k": self.k_proj, 
                       "v": [self.v_proj, self.v_proj_attn], "o": self.out_proj}

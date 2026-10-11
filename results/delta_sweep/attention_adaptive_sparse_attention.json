@@ -1,0 +1,10 @@
+{
+  "module": "adaptive_sparse_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": "",
+  "student_ppl": 49.09,
+  "duration_sec": 179.5,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 21:23:36"
+}

@@ -101,7 +101,7 @@ class UniversalAttentionWrapper(nn.Module):
                 position_bias=position_bias,
                 **kwargs,
             )
-            return out, ret_pos_bias
+            return out, ret_pos_bias, None
 
         # Clean redundant or mismatched args
         kwargs.pop("key", None)

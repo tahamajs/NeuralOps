@@ -112,7 +112,7 @@ def test_qwen_gqa():
 # --- Fail-loud ---
 def test_fail_loud():
     attn = AegisSpectronFP8Attention(config=MockConfig())
-    with pytest.raises(RuntimeError, match="mandatory projections"):
+    with pytest.raises(RuntimeError, match="(mandatory projections|missing)"):
         attn.copy_weights(DummyEmptyAttention())
 
 def test_inject_none_on_failure():

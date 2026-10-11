@@ -1,0 +1,11 @@
+{
+  "module": "decay_linear_attn",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 15209.22,
+  "duration_sec": 242.7,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 22:38:13"
+}

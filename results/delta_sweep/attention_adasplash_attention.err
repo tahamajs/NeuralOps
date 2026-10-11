@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 24, in <module>
+    import torch
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/__init__.py", line 441, in <module>
+    _load_global_deps()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/__init__.py", line 392, in _load_global_deps
+    _preload_cuda_deps()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/__init__.py", line 359, in _preload_cuda_deps
+    _preload_cuda_lib(lib_folder, lib_name)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/__init__.py", line 324, in _preload_cuda_lib
+    ctypes.CDLL(lib_path)
+    ~~~~~~~~~~~^^^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/ctypes/__init__.py", line 433, in __init__
+    self._handle = self._load_library(name, mode, handle, winmode)
+                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/ctypes/__init__.py", line 475, in _load_library
+    return _dlopen(name, mode)
+KeyboardInterrupt
