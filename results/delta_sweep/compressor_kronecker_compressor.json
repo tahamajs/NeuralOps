@@ -1,0 +1,10 @@
+﻿{
+    "module":  "kronecker_compressor",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  7771.07,
+    "duration_sec":  300.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 15:14:31"
+}

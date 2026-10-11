@@ -1,0 +1,10 @@
+﻿{
+    "module":  "admm_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  54.23,
+    "duration_sec":  189.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:13:35"
+}

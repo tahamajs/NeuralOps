@@ -1,0 +1,10 @@
+﻿{
+    "module":  "entropy_budget_allocation",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  9885.24,
+    "duration_sec":  238,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:22:32"
+}

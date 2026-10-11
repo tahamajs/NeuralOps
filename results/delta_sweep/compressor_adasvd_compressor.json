@@ -1,0 +1,10 @@
+﻿{
+    "module":  "adasvd_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  649.02,
+    "duration_sec":  204.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:10:23"
+}

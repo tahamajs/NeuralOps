@@ -1,0 +1,10 @@
+﻿{
+    "module":  "faq_quantizer",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  36.94,
+    "duration_sec":  300.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 14:31:29"
+}

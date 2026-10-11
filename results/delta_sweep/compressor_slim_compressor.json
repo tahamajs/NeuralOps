@@ -1,0 +1,10 @@
+﻿{
+    "module":  "slim_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  124.83,
+    "duration_sec":  216.5,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 16:39:36"
+}

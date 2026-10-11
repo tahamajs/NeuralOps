@@ -1,0 +1,10 @@
+﻿{
+    "module":  "dynamic_rank",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  9956.47,
+    "duration_sec":  222,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:15:16"
+}

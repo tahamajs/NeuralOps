@@ -1,0 +1,10 @@
+﻿{
+    "module":  "huffman_coder",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  36.22,
+    "duration_sec":  188.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:58:39"
+}

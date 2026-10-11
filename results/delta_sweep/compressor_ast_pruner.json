@@ -1,0 +1,10 @@
+﻿{
+    "module":  "ast_pruner",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  8885.05,
+    "duration_sec":  218.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:23:55"
+}

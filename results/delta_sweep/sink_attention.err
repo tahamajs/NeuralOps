@@ -1,0 +1,101 @@
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3597.28it/s]
+Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+Traceback (most recent call last):
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 2020, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1984, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1278, in run_kd_method
+    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 661, in eval_ppl
+    return compute_perplexity(
+        model=model,
+    ...<5 lines>...
+        device=device,
+    )
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 629, in compute_perplexity
+    out = model(ids, labels=tgt, use_cache=False)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 691, in forward
+    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(
+                                                                     ~~~~~~~~~~~~~~~~^
+        input_ids,
+        ^^^^^^^^^^
+    ...<8 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 617, in forward
+    hidden_states = block(
+        hidden_states,
+    ...<6 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 274, in forward
+    attn_output, _ = self.attn(
+                     ~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+    ...<3 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_linear_Attention\neuralops\utils\replace_attention.py", line 138, in forward
+    out = attempt()
+  File "D:\SVD_linear_Attention\neuralops\utils\replace_attention.py", line 115, in <lambda>
+    lambda: self._wrapped_attention(
+            ~~~~~~~~~~~~~~~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+    ...<3 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    ),
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_linear_Attention\neuralops\attentions\adaptive\sink_attention.py", line 872, in forward
+    scores = scores.masked_fill(
+        ~all_valid.unsqueeze(1).unsqueeze(2), float("-inf")
+    )
+RuntimeError: The size of tensor a (256) must match the size of tensor b (64) at non-singleton dimension 3

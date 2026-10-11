@@ -1,0 +1,10 @@
+﻿{
+    "module":  "swift_svd",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  7777.15,
+    "duration_sec":  239.8,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 17:03:09"
+}

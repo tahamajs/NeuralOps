@@ -1,0 +1,117 @@
+2026-10-11 13:51:41,662 [INFO] MambaKD: ======================================================================
+2026-10-11 13:51:41,664 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 13:51:41,665 [INFO] MambaKD: ======================================================================
+2026-10-11 13:51:41,666 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 13:51:41,666 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 13:51:41,667 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 13:51:42,128 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 13:51:42,133 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 13:51:42,137 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 13:51:46,169 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 13:51:46,172 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 13:51:46,378 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 13:51:46,381 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 13:51:46,382 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:51:46,965 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:51:46,968 [INFO] MambaKD: PROCESSING MODULE 1/1: cur_compressor
+2026-10-11 13:51:46,968 [INFO] MambaKD: ======================================================================
+2026-10-11 13:51:46,968 [INFO] MambaKD: 
+# Running method C for cur_compressor
+2026-10-11 13:51:47,276 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 13:51:47,279 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 13:51:48,312 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_attn error 0.9553 exceeded max_error 0.9500
+2026-10-11 13:51:48,507 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.0.mlp.c_fc error 0.9671 exceeded max_error 0.9500
+2026-10-11 13:51:48,898 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.1.mlp.c_fc error 0.9631 exceeded max_error 0.9500
+2026-10-11 13:51:49,061 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_attn error 0.9589 exceeded max_error 0.9500
+2026-10-11 13:51:49,260 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.2.mlp.c_fc error 0.9570 exceeded max_error 0.9500
+2026-10-11 13:51:49,419 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_attn error 0.9648 exceeded max_error 0.9500
+2026-10-11 13:51:49,597 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.3.mlp.c_fc error 0.9709 exceeded max_error 0.9500
+2026-10-11 13:51:49,951 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.4.mlp.c_fc error 0.9676 exceeded max_error 0.9500
+2026-10-11 13:51:50,128 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_attn error 0.9584 exceeded max_error 0.9500
+2026-10-11 13:51:50,318 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_fc error 0.9721 exceeded max_error 0.9500
+2026-10-11 13:51:50,411 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_proj error 0.9569 exceeded max_error 0.9500
+2026-10-11 13:51:50,506 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_attn error 0.9690 exceeded max_error 0.9500
+2026-10-11 13:51:50,678 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_fc error 0.9731 exceeded max_error 0.9500
+2026-10-11 13:51:50,771 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_proj error 0.9595 exceeded max_error 0.9500
+2026-10-11 13:51:50,865 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_attn error 0.9680 exceeded max_error 0.9500
+2026-10-11 13:51:51,037 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_fc error 0.9728 exceeded max_error 0.9500
+2026-10-11 13:51:51,132 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_proj error 0.9628 exceeded max_error 0.9500
+2026-10-11 13:51:51,226 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_attn error 0.9759 exceeded max_error 0.9500
+2026-10-11 13:51:51,415 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_fc error 0.9738 exceeded max_error 0.9500
+2026-10-11 13:51:51,512 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_proj error 0.9627 exceeded max_error 0.9500
+2026-10-11 13:51:51,606 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_attn error 0.9795 exceeded max_error 0.9500
+2026-10-11 13:51:51,790 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_fc error 0.9732 exceeded max_error 0.9500
+2026-10-11 13:51:51,889 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_proj error 0.9670 exceeded max_error 0.9500
+2026-10-11 13:51:51,983 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_attn error 0.9739 exceeded max_error 0.9500
+2026-10-11 13:51:52,180 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_fc error 0.9688 exceeded max_error 0.9500
+2026-10-11 13:51:52,279 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_proj error 0.9627 exceeded max_error 0.9500
+2026-10-11 13:51:52,381 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_attn error 0.9783 exceeded max_error 0.9500
+2026-10-11 13:51:52,545 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.11.mlp.c_fc error 0.9595 exceeded max_error 0.9500
+2026-10-11 13:51:52,631 [WARNING] neuralops.compression_engine.low_rank.cur_compressor: CURCompressor: Layer transformer.h.11.mlp.c_proj error 0.9517 exceeded max_error 0.9500
+2026-10-11 13:51:52,810 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 93.7588
+2026-10-11 13:51:52,812 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 93.7588
+2026-10-11 13:51:58,198 [INFO] MambaKD: Pre-KD PPL for Module cur_compressor, Method C: 17119.35
+2026-10-11 13:51:58,200 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 13:51:58,200 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 17119.35 (same protocol)
+2026-10-11 13:51:58,201 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +17083.13 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 13:51:58,202 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 13:51:58,520 [INFO] MambaKD: [C] Step 0/300 | Loss: 18.9483...
+2026-10-11 13:51:58,782 [INFO] MambaKD: [C] Step 1/300 | Loss: 18.9483 | LR: 1.50e-05
+2026-10-11 13:51:58,899 [INFO] MambaKD: [C] Step 1/300 | Loss: 26.9589...
+2026-10-11 13:51:59,035 [INFO] MambaKD: [C] Step 2/300 | Loss: 26.9589 | LR: 3.00e-05
+2026-10-11 13:51:59,136 [INFO] MambaKD: [C] Step 2/300 | Loss: 18.1945...
+2026-10-11 13:51:59,245 [INFO] MambaKD: [C] Step 3/300 | Loss: 18.1945 | LR: 4.50e-05
+2026-10-11 13:51:59,384 [INFO] MambaKD: [C] Step 3/300 | Loss: 18.5000...
+2026-10-11 13:51:59,537 [INFO] MambaKD: [C] Step 4/300 | Loss: 18.5000 | LR: 6.00e-05
+2026-10-11 13:51:59,664 [INFO] MambaKD: [C] Step 4/300 | Loss: 19.0478...
+2026-10-11 13:51:59,832 [INFO] MambaKD: [C] Step 5/300 | Loss: 19.0478 | LR: 7.50e-05
+2026-10-11 13:51:59,968 [INFO] MambaKD: [C] Step 5/300 | Loss: 29.8055...
+2026-10-11 13:52:12,832 [INFO] MambaKD: [C] Step 50/300 | Loss: 29.8055 | LR: 7.50e-04
+2026-10-11 13:52:12,948 [INFO] MambaKD: [C] Step 50/300 | Loss: 10.3805...
+2026-10-11 13:52:27,002 [INFO] MambaKD: [C] Step 100/300 | Loss: 10.3805 | LR: 1.50e-03
+2026-10-11 13:52:32,651 [INFO] MambaKD: [C] Step 100 Eval PPL: 1386.23
+2026-10-11 13:52:32,782 [INFO] MambaKD: [C] Step 100/300 | Loss: 18.1188...
+2026-10-11 13:52:46,608 [INFO] MambaKD: [C] Step 150/300 | Loss: 18.1188 | LR: 1.28e-03
+2026-10-11 13:52:46,732 [INFO] MambaKD: [C] Step 150/300 | Loss: 20.8505...
+2026-10-11 13:53:00,400 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.8505 | LR: 7.50e-04
+2026-10-11 13:53:05,816 [INFO] MambaKD: [C] Step 200 Eval PPL: 889.86
+2026-10-11 13:53:05,958 [INFO] MambaKD: [C] Step 200/300 | Loss: 22.8001...
+2026-10-11 13:53:19,513 [INFO] MambaKD: [C] Step 250/300 | Loss: 22.8001 | LR: 2.20e-04
+2026-10-11 13:53:19,635 [INFO] MambaKD: [C] Step 250/300 | Loss: 26.1074...
+2026-10-11 13:53:33,201 [INFO] MambaKD: [C] Step 300/300 | Loss: 26.1074 | LR: 1.50e-04
+2026-10-11 13:53:38,808 [INFO] MambaKD: [C] Step 300 Eval PPL: 687.73
+2026-10-11 13:53:38,810 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 687.73
+2026-10-11 13:53:38,811 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 13:53:39,046 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 6.6985 | LR: 1.50e-05
+2026-10-11 13:53:39,255 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 6.7394 | LR: 3.00e-05
+2026-10-11 13:53:39,464 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 6.7184 | LR: 4.50e-05
+2026-10-11 13:53:39,664 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 6.6879 | LR: 6.00e-05
+2026-10-11 13:53:39,870 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 6.5340 | LR: 7.50e-05
+2026-10-11 13:53:49,301 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 6.0116 | LR: 2.84e-04
+2026-10-11 13:53:59,908 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 6.3050 | LR: 1.96e-04
+2026-10-11 13:54:05,389 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 443.20
+2026-10-11 13:54:16,233 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 6.0146 | LR: 8.20e-05
+2026-10-11 13:54:27,917 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 6.0988 | LR: 7.44e-06
+2026-10-11 13:54:34,225 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 389.26
+2026-10-11 13:54:40,190 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 389.26
+2026-10-11 13:54:40,193 [INFO] MambaKD: [C] [COMPLETE] Pre: 17119.35
+  Stage 1 (KD):    687.73  (kd_gain=+16431.62)
+  Stage 2 (self):  389.26  (self_gain=+298.47)
+  Total:                  (total_gain=+16730.09)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 687.73 > 36.22)
+  Beat teacher after self? NO
+  Recovery: 97.93%
+  Time: 161.9s (Stage 1: 100.5s, Stage 2: 61.4s)
+2026-10-11 13:54:58,071 [INFO] MambaKD: [QUALITY] distinct_2=0.80, repetition_3=0.05, train_ppl=431.90, test_ppl=389.26, overfit_gap=-42.64, latency=2125.2ms
+2026-10-11 13:54:58,081 [INFO] MambaKD: Saved all run details to results\kd_runs\cur_compressor\20261011_135141_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       | 17119.35 |   687.73 |   389.26 | +16431.62 |  +298.47 | +16730.09 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 13:55:04,264 [INFO] MambaKD: 
+======================================================================
+2026-10-11 13:55:04,266 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 13:55:04,266 [INFO] MambaKD: ======================================================================

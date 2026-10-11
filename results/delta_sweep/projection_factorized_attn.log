@@ -1,0 +1,48 @@
+2026-10-11 01:13:06,741 [INFO] MambaKD: ======================================================================
+2026-10-11 01:13:06,743 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 01:13:06,744 [INFO] MambaKD: ======================================================================
+2026-10-11 01:13:06,744 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 01:13:06,745 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 01:13:06,745 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 01:13:07,194 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 01:13:07,197 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 01:13:07,200 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 01:13:10,852 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 01:13:10,854 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 01:13:11,052 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 01:13:11,055 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 01:13:11,055 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 01:13:11,573 [INFO] MambaKD: 
+======================================================================
+2026-10-11 01:13:11,576 [INFO] MambaKD: PROCESSING MODULE 1/1: projection_factorized_attn
+2026-10-11 01:13:11,576 [INFO] MambaKD: ======================================================================
+2026-10-11 01:13:11,576 [INFO] MambaKD: 
+# Running method C for projection_factorized_attn
+2026-10-11 01:13:11,864 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 01:13:11,867 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 01:13:21,330 [INFO] neuralops.core._attention_injectors: Successfully injected 'projection_factorized_attn' into 12 transformer blocks.
+2026-10-11 01:13:21,656 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 105.7994
+2026-10-11 01:13:21,659 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 105.7994
+2026-10-11 01:13:30,393 [INFO] MambaKD: Pre-KD PPL for Module projection_factorized_attn, Method C: 3753.06
+2026-10-11 01:13:30,396 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 01:13:30,396 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3753.06 (same protocol)
+2026-10-11 01:13:30,396 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3716.84 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 01:13:30,397 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+2026-10-11 01:13:30,777 [INFO] MambaKD: [C] Step 0/300 | Loss: 7.7691...
+2026-10-11 01:13:31,132 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.7691 | LR: 1.50e-05
+2026-10-11 01:13:31,312 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.5589...
+2026-10-11 01:13:31,516 [INFO] MambaKD: [C] Step 2/300 | Loss: 7.5589 | LR: 3.00e-05
+2026-10-11 01:13:31,676 [INFO] MambaKD: [C] Step 2/300 | Loss: 8.9002...
+2026-10-11 01:13:31,905 [INFO] MambaKD: [C] Step 3/300 | Loss: 8.9002 | LR: 4.50e-05
+2026-10-11 01:13:32,072 [INFO] MambaKD: [C] Step 3/300 | Loss: 7.7280...
+2026-10-11 01:13:32,290 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.7280 | LR: 6.00e-05
+2026-10-11 01:13:32,450 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.7757...
+2026-10-11 01:13:32,674 [INFO] MambaKD: [C] Step 5/300 | Loss: 7.7757 | LR: 7.50e-05
+2026-10-11 01:13:32,819 [INFO] MambaKD: [C] Step 5/300 | Loss: 7.4286...
+2026-10-11 01:13:50,522 [INFO] MambaKD: [C] Step 50/300 | Loss: 7.4286 | LR: 7.50e-04
+2026-10-11 01:13:50,685 [INFO] MambaKD: [C] Step 50/300 | Loss: 8.6943...
+2026-10-11 01:14:10,115 [INFO] MambaKD: [C] Step 100/300 | Loss: 8.6943 | LR: 1.50e-03
+2026-10-11 01:14:19,312 [INFO] MambaKD: [C] Step 100 Eval PPL: 470.21
+2026-10-11 01:14:19,679 [INFO] MambaKD: [C] Step 100/300 | Loss: 16.5002...
+2026-10-11 01:14:38,991 [INFO] MambaKD: [C] Step 150/300 | Loss: 16.5002 | LR: 1.28e-03
+2026-10-11 01:14:39,153 [INFO] MambaKD: [C] Step 150/300 | Loss: 18.8887...

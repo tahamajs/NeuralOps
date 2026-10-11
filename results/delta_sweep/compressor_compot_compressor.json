@@ -1,0 +1,10 @@
+﻿{
+    "module":  "compot_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  5452.77,
+    "duration_sec":  237.1,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:42:10"
+}

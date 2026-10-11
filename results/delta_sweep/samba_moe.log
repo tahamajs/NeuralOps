@@ -1,0 +1,25 @@
+2026-10-11 01:36:14,557 [INFO] MambaKD: ======================================================================
+2026-10-11 01:36:14,560 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 01:36:14,561 [INFO] MambaKD: ======================================================================
+2026-10-11 01:36:14,562 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 01:36:14,563 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 01:36:14,564 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 01:36:15,008 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 01:36:15,012 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 01:36:15,014 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 01:36:18,628 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 01:36:18,630 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 01:36:18,808 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 01:36:18,810 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 01:36:18,811 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 01:36:19,342 [INFO] MambaKD: 
+======================================================================
+2026-10-11 01:36:19,345 [INFO] MambaKD: PROCESSING MODULE 1/1: samba_moe
+2026-10-11 01:36:19,345 [INFO] MambaKD: ======================================================================
+2026-10-11 01:36:19,346 [INFO] MambaKD: 
+# Running method C for samba_moe
+2026-10-11 01:36:19,629 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 01:36:19,632 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 01:36:21,667 [INFO] neuralops.core._attention_injectors: Successfully injected 'samba_moe' into 12 transformer blocks.
+2026-10-11 01:36:22,313 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 94.4561
+2026-10-11 01:36:22,315 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 94.4561

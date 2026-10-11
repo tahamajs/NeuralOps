@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: triton_svd_linear_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      104.98 M
+  Trainable params:  8.88 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1615.8800
+  Post-KD PPL:       1615.8800
+  Stage 1 (KD) PPL:  1615.8800
+  Stage 2 (Self) PPL:1615.8800
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         44.6129
+  Recovery:          0.00%
+  Peak VRAM:         1092.89 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.6990
+  Repetition-3:      0.1198
+  Train PPL:         1237.2400
+  Test PPL:          1615.8800
+  Overfit Gap:       378.64
+  Latency (mean):    3347.98 ms
+  Latency (std):     12.33 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0c8089580836
+
+TRAINING HISTORY (last 10 steps):

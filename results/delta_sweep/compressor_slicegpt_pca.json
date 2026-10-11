@@ -1,0 +1,10 @@
+﻿{
+    "module":  "slicegpt_pca",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  null,
+    "duration_sec":  300.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 16:35:57"
+}

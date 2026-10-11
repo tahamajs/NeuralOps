@@ -1,0 +1,10 @@
+﻿{
+    "module":  "astro_quantizer",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  38,
+    "duration_sec":  188.4,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:27:06"
+}

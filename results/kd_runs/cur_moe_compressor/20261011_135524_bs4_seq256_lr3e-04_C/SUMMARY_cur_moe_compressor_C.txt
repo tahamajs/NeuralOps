@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: cur_moe_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      113.42 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4037.7800
+  Post-KD PPL:       68.6100
+  Stage 1 (KD) PPL:  89.8400
+  Stage 2 (Self) PPL:68.6100
+  KD Gain:           +3947.94
+  Self Gain:         +21.23
+  Total Gain:        +3969.17
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.8943
+  Recovery:          99.19%
+  Peak VRAM:         2502.42 MB
+  Train time:        141.90 s (Stage 1: 90.2s, Stage 2: 51.7s)
+  s/step:            0.2838
+  Loss (final):      24.8183
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8561
+  Repetition-3:      0.0296
+  Train PPL:         44.2200
+  Test PPL:          68.6100
+  Overfit Gap:       24.39
+  Latency (mean):    463.77 ms
+  Latency (std):     6.47 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0f67bb39bfa9
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=4.0736 | lr=1.74e-04
+  step   420 | loss=4.4159 | lr=1.50e-04
+  step   430 | loss=3.6759 | lr=1.27e-04
+  step   440 | loss=4.3662 | lr=1.04e-04
+  step   450 | loss=4.1482 | lr=8.20e-05
+  step   460 | loss=4.1409 | lr=6.19e-05
+  step   470 | loss=4.3262 | lr=4.40e-05
+  step   480 | loss=4.0793 | lr=2.87e-05
+  step   490 | loss=4.5571 | lr=1.64e-05
+  step   500 | loss=4.1759 | lr=7.44e-06

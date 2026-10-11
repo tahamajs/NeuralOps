@@ -1,0 +1,10 @@
+﻿{
+    "module":  "drone_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  1864.87,
+    "duration_sec":  213.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:11:32"
+}

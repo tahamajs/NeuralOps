@@ -1,0 +1,10 @@
+﻿{
+    "module":  "mamba_shedder",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  null,
+    "duration_sec":  24.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 15:36:19"
+}

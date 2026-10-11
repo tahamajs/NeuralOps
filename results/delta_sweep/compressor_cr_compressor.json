@@ -1,0 +1,10 @@
+﻿{
+    "module":  "cr_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  28168.49,
+    "duration_sec":  247.9,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:51:22"
+}

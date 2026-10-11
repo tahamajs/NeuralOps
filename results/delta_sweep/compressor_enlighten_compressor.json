@@ -1,0 +1,10 @@
+﻿{
+    "module":  "enlighten_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  614.83,
+    "duration_sec":  193.6,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:18:32"
+}

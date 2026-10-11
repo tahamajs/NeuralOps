@@ -1,0 +1,138 @@
+2026-10-11 16:47:39,074 [INFO] MambaKD: ======================================================================
+2026-10-11 16:47:39,076 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 16:47:39,077 [INFO] MambaKD: ======================================================================
+2026-10-11 16:47:39,078 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 16:47:39,079 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 16:47:39,079 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 16:47:39,524 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 16:47:39,527 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 16:47:39,530 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 16:47:43,431 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 16:47:43,433 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 16:47:43,638 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 16:47:43,639 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 16:47:43,640 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 16:47:44,247 [INFO] MambaKD: 
+======================================================================
+2026-10-11 16:47:44,249 [INFO] MambaKD: PROCESSING MODULE 1/1: subspace_projection
+2026-10-11 16:47:44,249 [INFO] MambaKD: ======================================================================
+2026-10-11 16:47:44,249 [INFO] MambaKD: 
+# Running method C for subspace_projection
+2026-10-11 16:47:44,562 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 16:47:44,565 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 16:47:45,541 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8617 on transformer.h.0.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,611 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.7469 on transformer.h.0.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,679 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9067 on transformer.h.0.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,739 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8776 on transformer.h.0.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,796 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8660 on transformer.h.1.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,851 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.7236 on transformer.h.1.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,910 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8907 on transformer.h.1.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:45,969 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8817 on transformer.h.1.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,027 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8834 on transformer.h.2.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,082 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8478 on transformer.h.2.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,144 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8796 on transformer.h.2.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,203 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8796 on transformer.h.2.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,261 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8905 on transformer.h.3.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,316 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8619 on transformer.h.3.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,380 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9021 on transformer.h.3.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,446 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8733 on transformer.h.3.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,507 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8855 on transformer.h.4.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,564 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8572 on transformer.h.4.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,623 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8959 on transformer.h.4.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,684 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8866 on transformer.h.4.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,741 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8934 on transformer.h.5.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,796 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8660 on transformer.h.5.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,855 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8994 on transformer.h.5.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,913 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8965 on transformer.h.5.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:46,971 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9046 on transformer.h.6.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,025 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8548 on transformer.h.6.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,083 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9002 on transformer.h.6.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,142 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9023 on transformer.h.6.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,199 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9056 on transformer.h.7.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,253 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8620 on transformer.h.7.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,313 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9030 on transformer.h.7.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,374 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9082 on transformer.h.7.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,434 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9182 on transformer.h.8.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,490 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8676 on transformer.h.8.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,549 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9085 on transformer.h.8.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,609 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9099 on transformer.h.8.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,666 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9271 on transformer.h.9.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,720 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8949 on transformer.h.9.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,778 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9078 on transformer.h.9.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,838 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9170 on transformer.h.9.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,894 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9216 on transformer.h.10.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:47,947 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8878 on transformer.h.10.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,005 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9026 on transformer.h.10.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,064 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9187 on transformer.h.10.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,123 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9177 on transformer.h.11.attn.c_attn > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,179 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.7560 on transformer.h.11.attn.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,237 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.8911 on transformer.h.11.mlp.c_fc > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,298 [WARNING] neuralops.compression_engine.svd.subspace_projection: SubspaceProjection: err=0.9094 on transformer.h.11.mlp.c_proj > max_error=0.5000; keeping original.
+2026-10-11 16:47:48,542 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
+2026-10-11 16:47:48,545 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
+2026-10-11 16:47:53,168 [INFO] MambaKD: Pre-KD PPL for Module subspace_projection, Method C: 36.22
+2026-10-11 16:47:53,169 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 16:47:53,169 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
+2026-10-11 16:47:53,170 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 16:47:53,170 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
+2026-10-11 16:47:53,171 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 16:47:53,481 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.6128...
+2026-10-11 16:47:53,707 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.6128 | LR: 1.50e-05
+2026-10-11 16:47:53,825 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.5877...
+2026-10-11 16:47:53,952 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.5877 | LR: 3.00e-05
+2026-10-11 16:47:54,067 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.7617...
+2026-10-11 16:47:54,188 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.7617 | LR: 4.50e-05
+2026-10-11 16:47:54,299 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8517...
+2026-10-11 16:47:54,417 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8517 | LR: 6.00e-05
+2026-10-11 16:47:54,530 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.1909...
+2026-10-11 16:47:54,651 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.1909 | LR: 7.50e-05
+2026-10-11 16:47:54,760 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8605...
+2026-10-11 16:48:05,763 [INFO] MambaKD: [C] Step 50/300 | Loss: 1.8605 | LR: 7.50e-04
+2026-10-11 16:48:05,874 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3938...
+2026-10-11 16:48:17,400 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3938 | LR: 1.50e-03
+2026-10-11 16:48:21,937 [INFO] MambaKD: [C] Step 100 Eval PPL: 41.54
+2026-10-11 16:48:22,072 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5337...
+2026-10-11 16:48:35,178 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5337 | LR: 1.28e-03
+2026-10-11 16:48:35,285 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.5738...
+2026-10-11 16:48:46,632 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.5738 | LR: 7.50e-04
+2026-10-11 16:48:51,041 [INFO] MambaKD: [C] Step 200 Eval PPL: 41.53
+2026-10-11 16:48:51,167 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5842...
+2026-10-11 16:49:02,780 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5842 | LR: 2.20e-04
+2026-10-11 16:49:02,890 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.7165...
+2026-10-11 16:49:14,430 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.7165 | LR: 1.50e-04
+2026-10-11 16:49:18,923 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.43
+2026-10-11 16:49:18,924 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.43
+2026-10-11 16:49:18,924 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 16:49:19,091 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7659 | LR: 1.50e-05
+2026-10-11 16:49:19,256 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9175 | LR: 3.00e-05
+2026-10-11 16:49:19,426 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9065 | LR: 4.50e-05
+2026-10-11 16:49:19,589 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0521 | LR: 6.00e-05
+2026-10-11 16:49:19,767 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0597 | LR: 7.50e-05
+2026-10-11 16:49:27,359 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.4998 | LR: 2.84e-04
+2026-10-11 16:49:35,867 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0257 | LR: 1.96e-04
+2026-10-11 16:49:40,346 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.08
+2026-10-11 16:49:48,769 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.2730 | LR: 8.20e-05
+2026-10-11 16:49:57,140 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.2765 | LR: 7.44e-06
+2026-10-11 16:50:01,686 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.91
+2026-10-11 16:50:06,400 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.91
+2026-10-11 16:50:06,402 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
+2026-10-11 16:50:06,403 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
+  Stage 1 (KD):    37.43  (kd_gain=-1.21)
+  Stage 2 (self):  30.91  (self_gain=+6.52)
+  Total:                  (total_gain=+5.31)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 37.43 > 36.22)
+  Beat teacher after self? YES
+  Recovery: NaN
+  Time: 133.1s (Stage 1: 85.6s, Stage 2: 47.5s)
+2026-10-11 16:50:21,692 [INFO] MambaKD: [QUALITY] distinct_2=0.95, repetition_3=0.00, train_ppl=20.80, test_ppl=30.91, overfit_gap=10.11, latency=1765.3ms
+2026-10-11 16:50:21,705 [INFO] MambaKD: Saved all run details to results\kd_runs\subspace_projection\20261011_164739_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.22 |    37.43 |    30.91 |    -1.21 |    +6.52 |    +5.31 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 16:50:27,581 [INFO] MambaKD: 
+======================================================================
+2026-10-11 16:50:27,583 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 16:50:27,583 [INFO] MambaKD: ======================================================================

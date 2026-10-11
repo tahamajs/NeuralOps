@@ -1,0 +1,58 @@
+2026-10-11 01:25:43,338 [INFO] MambaKD: ======================================================================
+2026-10-11 01:25:43,341 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 01:25:43,342 [INFO] MambaKD: ======================================================================
+2026-10-11 01:25:43,343 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 01:25:43,344 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 01:25:43,345 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 01:25:43,789 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 01:25:43,792 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 01:25:43,794 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 01:25:47,247 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 01:25:47,249 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 01:25:47,448 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 01:25:47,450 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 01:25:47,450 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 01:25:47,973 [INFO] MambaKD: 
+======================================================================
+2026-10-11 01:25:47,975 [INFO] MambaKD: PROCESSING MODULE 1/1: residual_svd_attention
+2026-10-11 01:25:47,975 [INFO] MambaKD: ======================================================================
+2026-10-11 01:25:47,976 [INFO] MambaKD: 
+# Running method C for residual_svd_attention
+2026-10-11 01:25:48,255 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 01:25:48,258 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 01:25:49,861 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:51,566 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:53,177 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:54,838 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:56,428 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:58,020 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:25:59,614 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:01,242 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:02,815 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:04,424 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:06,024 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:07,622 [INFO] neuralops.attentions.svd.residual_svd_attention: ResSVDAttention: hidden=768, heads=12, head_dim=64, is_decoder=True, base_rank=32, residual_rank=8
+2026-10-11 01:26:07,822 [INFO] neuralops.core._attention_injectors: Successfully injected 'residual_svd_attention' into 12 transformer blocks.
+2026-10-11 01:26:08,093 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 104.0792
+2026-10-11 01:26:08,095 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 104.0792
+2026-10-11 01:26:18,190 [INFO] MambaKD: Pre-KD PPL for Module residual_svd_attention, Method C: 3749.05
+2026-10-11 01:26:18,192 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 01:26:18,192 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3749.05 (same protocol)
+2026-10-11 01:26:18,193 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3712.83 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 01:26:18,193 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+2026-10-11 01:26:18,596 [INFO] MambaKD: [C] Step 0/300 | Loss: 8.3515...
+2026-10-11 01:26:19,022 [INFO] MambaKD: [C] Step 1/300 | Loss: 8.3515 | LR: 1.50e-05
+2026-10-11 01:26:19,207 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.4430...
+2026-10-11 01:26:19,425 [INFO] MambaKD: [C] Step 2/300 | Loss: 7.4430 | LR: 3.00e-05
+2026-10-11 01:26:19,596 [INFO] MambaKD: [C] Step 2/300 | Loss: 7.6782...
+2026-10-11 01:26:19,833 [INFO] MambaKD: [C] Step 3/300 | Loss: 7.6782 | LR: 4.50e-05
+2026-10-11 01:26:20,012 [INFO] MambaKD: [C] Step 3/300 | Loss: 7.9645...
+2026-10-11 01:26:20,264 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.9645 | LR: 6.00e-05
+2026-10-11 01:26:20,428 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.8898...
+2026-10-11 01:26:20,689 [INFO] MambaKD: [C] Step 5/300 | Loss: 7.8898 | LR: 7.50e-05
+2026-10-11 01:26:20,839 [INFO] MambaKD: [C] Step 5/300 | Loss: 9.3020...
+2026-10-11 01:26:41,070 [INFO] MambaKD: [C] Step 50/300 | Loss: 9.3020 | LR: 7.50e-04
+2026-10-11 01:26:41,247 [INFO] MambaKD: [C] Step 50/300 | Loss: 8.9124...
+2026-10-11 01:27:03,508 [INFO] MambaKD: [C] Step 100/300 | Loss: 8.9124 | LR: 1.50e-03
+2026-10-11 01:27:14,047 [INFO] MambaKD: [C] Step 100 Eval PPL: 550.62
+2026-10-11 01:27:14,283 [INFO] MambaKD: [C] Step 100/300 | Loss: 16.3230...

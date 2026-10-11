@@ -1,0 +1,21 @@
+2026-10-11 00:32:48,166 [INFO] MambaKD: ======================================================================
+2026-10-11 00:32:48,167 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 00:32:48,167 [INFO] MambaKD: ======================================================================
+2026-10-11 00:32:48,167 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 00:32:48,168 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 00:32:48,168 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 00:32:48,633 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 00:32:48,636 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 00:32:48,638 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 00:32:52,293 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 00:32:52,296 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 00:32:52,495 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 00:32:52,497 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 00:32:52,498 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 00:32:53,031 [INFO] MambaKD: 
+======================================================================
+2026-10-11 00:32:53,033 [INFO] MambaKD: PROCESSING MODULE 1/1: mamba_svd_flash
+2026-10-11 00:32:53,033 [INFO] MambaKD: ======================================================================
+2026-10-11 00:32:53,033 [INFO] MambaKD: 
+# Running method C for mamba_svd_flash
+2026-10-11 00:32:53,295 [WARNING] EvalEngine: Module mamba_svd_flash is DEPRECATED; skipping.

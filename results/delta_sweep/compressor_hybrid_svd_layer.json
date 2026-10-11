@@ -1,0 +1,10 @@
+﻿{
+    "module":  "hybrid_svd_layer",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  6809.83,
+    "duration_sec":  225.5,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 15:02:27"
+}

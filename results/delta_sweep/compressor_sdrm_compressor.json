@@ -1,0 +1,10 @@
+﻿{
+    "module":  "sdrm_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  1462.74,
+    "duration_sec":  213.2,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 16:27:28"
+}

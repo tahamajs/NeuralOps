@@ -1,0 +1,163 @@
+2026-10-11 17:06:40,763 [INFO] MambaKD: ======================================================================
+2026-10-11 17:06:40,763 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 17:06:40,764 [INFO] MambaKD: ======================================================================
+2026-10-11 17:06:40,764 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 17:06:40,764 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 17:06:40,765 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 17:06:41,221 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 17:06:41,224 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 17:06:41,227 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 17:06:44,965 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 17:06:44,967 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 17:06:45,167 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 17:06:45,169 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 17:06:45,170 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 17:06:45,759 [INFO] MambaKD: 
+======================================================================
+2026-10-11 17:06:45,787 [INFO] MambaKD: PROCESSING MODULE 1/1: tomoe_compressor
+2026-10-11 17:06:45,787 [INFO] MambaKD: ======================================================================
+2026-10-11 17:06:45,788 [INFO] MambaKD: 
+# Running method C for tomoe_compressor
+2026-10-11 17:06:46,099 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 17:06:46,119 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 17:06:47,288 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.0.attn.c_proj activation reconstruction error (0.8187) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:47,289 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.0.mlp
+2026-10-11 17:06:47,730 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.0.mlp.c_fc activation reconstruction error (0.7914) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:47,912 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.0.mlp.c_proj activation reconstruction error (0.8070) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:47,914 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.0.mlp.act
+2026-10-11 17:06:47,914 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.0.mlp.dropout
+2026-10-11 17:06:48,000 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.1.attn.c_proj activation reconstruction error (0.8065) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:48,001 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.1.mlp
+2026-10-11 17:06:48,418 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.1.mlp.c_fc activation reconstruction error (0.8008) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:48,566 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.1.mlp.c_proj activation reconstruction error (0.8017) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:48,567 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.1.mlp.act
+2026-10-11 17:06:48,567 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.1.mlp.dropout
+2026-10-11 17:06:48,631 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.2.attn.c_proj activation reconstruction error (0.7926) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:48,632 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.2.mlp
+2026-10-11 17:06:48,970 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.2.mlp.c_fc activation reconstruction error (0.7991) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,129 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.2.mlp.c_proj activation reconstruction error (0.8078) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,131 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.2.mlp.act
+2026-10-11 17:06:49,132 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.2.mlp.dropout
+2026-10-11 17:06:49,201 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.3.attn.c_proj activation reconstruction error (0.7951) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,203 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.3.mlp
+2026-10-11 17:06:49,656 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.3.mlp.c_fc activation reconstruction error (0.8001) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,831 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.3.mlp.c_proj activation reconstruction error (0.8075) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,832 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.3.mlp.act
+2026-10-11 17:06:49,833 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.3.mlp.dropout
+2026-10-11 17:06:49,901 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.4.attn.c_proj activation reconstruction error (0.7911) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:49,917 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.4.mlp
+2026-10-11 17:06:50,309 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.4.mlp.c_fc activation reconstruction error (0.7969) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:50,490 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.4.mlp.c_proj activation reconstruction error (0.8068) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:50,513 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.4.mlp.act
+2026-10-11 17:06:50,513 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.4.mlp.dropout
+2026-10-11 17:06:50,575 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.5.attn.c_proj activation reconstruction error (0.7929) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:50,580 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.5.mlp
+2026-10-11 17:06:50,965 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.5.mlp.c_fc activation reconstruction error (0.7862) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,135 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.5.mlp.c_proj activation reconstruction error (0.8049) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,148 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.5.mlp.act
+2026-10-11 17:06:51,149 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.5.mlp.dropout
+2026-10-11 17:06:51,216 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.6.attn.c_proj activation reconstruction error (0.7975) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,229 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.6.mlp
+2026-10-11 17:06:51,702 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.6.mlp.c_fc activation reconstruction error (0.7958) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,869 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.6.mlp.c_proj activation reconstruction error (0.8073) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,870 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.6.mlp.act
+2026-10-11 17:06:51,870 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.6.mlp.dropout
+2026-10-11 17:06:51,934 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.7.attn.c_proj activation reconstruction error (0.7856) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:51,954 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.7.mlp
+2026-10-11 17:06:52,312 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.7.mlp.c_fc activation reconstruction error (0.7949) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:52,501 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.7.mlp.c_proj activation reconstruction error (0.7987) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:52,502 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.7.mlp.act
+2026-10-11 17:06:52,503 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.7.mlp.dropout
+2026-10-11 17:06:52,580 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.8.attn.c_proj activation reconstruction error (0.7929) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:52,597 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.8.mlp
+2026-10-11 17:06:53,157 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.8.mlp.c_fc activation reconstruction error (0.7930) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:53,336 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.8.mlp.c_proj activation reconstruction error (0.8000) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:53,338 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.8.mlp.act
+2026-10-11 17:06:53,338 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.8.mlp.dropout
+2026-10-11 17:06:53,401 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.9.attn.c_proj activation reconstruction error (0.7933) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:53,404 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.9.mlp
+2026-10-11 17:06:53,786 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.9.mlp.c_fc activation reconstruction error (0.7936) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:53,986 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.9.mlp.c_proj activation reconstruction error (0.8045) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:53,988 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.9.mlp.act
+2026-10-11 17:06:53,988 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.9.mlp.dropout
+2026-10-11 17:06:54,050 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.10.attn.c_proj activation reconstruction error (0.7983) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:54,051 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.10.mlp
+2026-10-11 17:06:54,499 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.10.mlp.c_fc activation reconstruction error (0.7965) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:54,661 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.10.mlp.c_proj activation reconstruction error (0.8049) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:54,662 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.10.mlp.act
+2026-10-11 17:06:54,662 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.10.mlp.dropout
+2026-10-11 17:06:54,724 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.11.attn.c_proj activation reconstruction error (0.8090) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:54,725 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type GPT2MLP for transformer.h.11.mlp
+2026-10-11 17:06:55,083 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.11.mlp.c_fc activation reconstruction error (0.7942) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:55,251 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: transformer.h.11.mlp.c_proj activation reconstruction error (0.8071) exceeded max_error (0.2000). Keeping original layer.
+2026-10-11 17:06:55,252 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type NewGELUActivation for transformer.h.11.mlp.act
+2026-10-11 17:06:55,252 [WARNING] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for transformer.h.11.mlp.dropout
+2026-10-11 17:06:55,252 [INFO] neuralops.compression_engine.low_rank.tomoe_compressor: ToMoE Summary: Converted 0 layers, Skipped 72 layers. Params: 124,439,808 -> 124,439,808 (ratio: 1.00x)
+2026-10-11 17:06:55,435 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
+2026-10-11 17:06:55,437 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
+2026-10-11 17:06:59,997 [INFO] MambaKD: Pre-KD PPL for Module tomoe_compressor, Method C: 36.22
+2026-10-11 17:06:59,998 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 17:06:59,999 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
+2026-10-11 17:06:59,999 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
+2026-10-11 17:06:59,999 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
+2026-10-11 17:07:00,000 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-11 17:07:00,292 [INFO] MambaKD: [C] Step 0/300 | Loss: 2.5153...
+2026-10-11 17:07:00,547 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.5153 | LR: 1.50e-05
+2026-10-11 17:07:00,666 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.6460...
+2026-10-11 17:07:00,789 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.6460 | LR: 3.00e-05
+2026-10-11 17:07:00,905 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.2020...
+2026-10-11 17:07:01,026 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.2020 | LR: 4.50e-05
+2026-10-11 17:07:01,141 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.7968...
+2026-10-11 17:07:01,263 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.7968 | LR: 6.00e-05
+2026-10-11 17:07:01,364 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8129...
+2026-10-11 17:07:01,487 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8129 | LR: 7.50e-05
+2026-10-11 17:07:01,597 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8911...
+2026-10-11 17:07:12,319 [INFO] MambaKD: [C] Step 50/300 | Loss: 1.8911 | LR: 7.50e-04
+2026-10-11 17:07:12,437 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.6683...
+2026-10-11 17:07:24,085 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.6683 | LR: 1.50e-03
+2026-10-11 17:07:28,707 [INFO] MambaKD: [C] Step 100 Eval PPL: 41.29
+2026-10-11 17:07:28,824 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5566...
+2026-10-11 17:07:40,457 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5566 | LR: 1.28e-03
+2026-10-11 17:07:40,568 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.3927...
+2026-10-11 17:07:52,181 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.3927 | LR: 7.50e-04
+2026-10-11 17:07:56,802 [INFO] MambaKD: [C] Step 200 Eval PPL: 39.75
+2026-10-11 17:07:56,916 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4479...
+2026-10-11 17:08:08,624 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4479 | LR: 2.20e-04
+2026-10-11 17:08:08,738 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6322...
+2026-10-11 17:08:20,422 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6322 | LR: 1.50e-04
+2026-10-11 17:08:24,999 [INFO] MambaKD: [C] Step 300 Eval PPL: 36.69
+2026-10-11 17:08:25,002 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 36.69
+2026-10-11 17:08:25,002 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-11 17:08:25,186 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7734 | LR: 1.50e-05
+2026-10-11 17:08:25,354 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.0581 | LR: 3.00e-05
+2026-10-11 17:08:25,525 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9337 | LR: 4.50e-05
+2026-10-11 17:08:25,700 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0780 | LR: 6.00e-05
+2026-10-11 17:08:25,871 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0710 | LR: 7.50e-05
+2026-10-11 17:08:33,614 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5186 | LR: 2.84e-04
+2026-10-11 17:08:42,254 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0473 | LR: 1.96e-04
+2026-10-11 17:08:46,890 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.33
+2026-10-11 17:08:55,755 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3892 | LR: 8.20e-05
+2026-10-11 17:09:04,606 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3351 | LR: 7.44e-06
+2026-10-11 17:09:09,227 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.51
+2026-10-11 17:09:12,496 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.51
+2026-10-11 17:09:12,499 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
+2026-10-11 17:09:12,499 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
+  Stage 1 (KD):    36.69  (kd_gain=-0.47)
+  Stage 2 (self):  30.51  (self_gain=+6.18)
+  Total:                  (total_gain=+5.71)
+  Teacher baseline: 36.22
+  Aligned with teacher? NO (post_stage1 36.69 > 36.22)
+  Beat teacher after self? YES
+  Recovery: NaN
+  Time: 132.4s (Stage 1: 84.9s, Stage 2: 47.5s)
+2026-10-11 17:09:29,207 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.08, train_ppl=21.07, test_ppl=30.51, overfit_gap=9.44, latency=1786.0ms
+2026-10-11 17:09:29,219 [INFO] MambaKD: Saved all run details to results\kd_runs\tomoe_compressor\20261011_170640_bs4_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.22 |    36.69 |    30.51 |    -0.47 |    +6.18 |    +5.71 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-11 17:09:34,851 [INFO] MambaKD: 
+======================================================================
+2026-10-11 17:09:34,853 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-11 17:09:34,853 [INFO] MambaKD: ======================================================================

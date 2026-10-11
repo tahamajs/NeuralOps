@@ -1,0 +1,10 @@
+﻿{
+    "module":  "flat_llm",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  7861.81,
+    "duration_sec":  211.9,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:38:13"
+}

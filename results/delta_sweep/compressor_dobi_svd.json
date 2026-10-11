@@ -1,0 +1,10 @@
+﻿{
+    "module":  "dobi_svd",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  3489.94,
+    "duration_sec":  153.6,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:07:56"
+}

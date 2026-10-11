@@ -1,0 +1,10 @@
+﻿{
+    "module":  "nmf_compressor",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  7626.83,
+    "duration_sec":  300.3,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 15:53:40"
+}

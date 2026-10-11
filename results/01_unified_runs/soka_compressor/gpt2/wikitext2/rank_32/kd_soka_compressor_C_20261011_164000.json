@@ -1,0 +1,154 @@
+{
+  "run_metadata": {
+    "run_id": "kd_soka_compressor_C_20261011_164000",
+    "run_name": "kd_soka_compressor_gpt2_C",
+    "timestamp_start": "2026-10-11T13:12:51.155962+00:00",
+    "timestamp_end": "2026-10-11T13:12:51.155979+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "0f67bb39bfa96337e39b5b527defb3d62a12eb2c",
+    "git_commit_short": "0f67bb39bf",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "results/kd_runs/adaptive_span_attention/latest.txt |      2 +-\n results/kd_runs/registry.json                      | 169079 ++++++++++++++++++\n results/results.csv                                |     65 +\n results/results.parquet                            |    Bin 10184 -> 14512 bytes\n 4 files changed, 169145 insertions(+), 1 deletion(-)",
+    "session_id": "6dba3633-58d1-44a1-b986-e319e7c471a4",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "soka_compressor",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 4,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.13.5",
+    "python_executable": "C:\\Users\\Hadi Schumacher\\anaconda3\\python.exe",
+    "platform": "Windows",
+    "platform_version": "Windows-11-10.0.26200-SP0",
+    "cpu_model": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 8.0,
+    "cuda_version": "12.4",
+    "cudnn_version": "90100",
+    "torch_version": "2.6.0+cu124",
+    "torchvision_version": "0.21.0+cu124",
+    "transformers_version": "5.5.0",
+    "datasets_version": "4.3.0",
+    "triton_version": null,
+    "numpy_version": "2.1.3",
+    "pandas_version": "2.2.3",
+    "scipy_version": "1.15.3",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {
+      "CUDA_PATH": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.0",
+      "CUDA_PATH_V13_0": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.0",
+      "HF_DATASETS_OFFLINE": "1",
+      "HF_HOME": "C:\\Users\\Hadi Schumacher\\.cache\\huggingface",
+      "HF_HUB_OFFLINE": "1",
+      "HF_ORG": "Hooshaai",
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True,max_split_size_mb:128",
+      "CUDA_MODULE_LOADING": "LAZY"
+    }
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 36.22,
+    "post_ppl": 30.57,
+    "post_ppl_stage1": 37.46,
+    "post_ppl_stage2": 30.57,
+    "kd_gain": -1.24,
+    "recovery_pct": 0.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2518.01,
+    "train_duration_s": 138.86
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "ce7cfbdda906074c",
+  "run_id": "kd_soka_compressor_C_20261011_164000",
+  "run_name": "kd_soka_compressor_gpt2_C",
+  "timestamp_start": "2026-10-11T13:12:51.155962+00:00",
+  "timestamp_end": "2026-10-11T13:12:51.155979+00:00",
+  "git_commit": "0f67bb39bfa96337e39b5b527defb3d62a12eb2c",
+  "git_dirty": true,
+  "run_key": "soka_compressor__gpt2__wikitext2__rank32__83684b7fc6b8"
+}

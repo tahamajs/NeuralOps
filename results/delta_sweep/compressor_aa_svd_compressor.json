@@ -1,0 +1,10 @@
+﻿{
+    "module":  "aa_svd_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  179.77,
+    "duration_sec":  217.9,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:00:19"
+}

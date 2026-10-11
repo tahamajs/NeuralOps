@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: entropy_budget_allocation / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        9885.2400
+  Post-KD PPL:       795.6500
+  Stage 1 (KD) PPL:  1440.5300
+  Stage 2 (Self) PPL:795.6500
+  KD Gain:           +8444.71
+  Self Gain:         +644.88
+  Total Gain:        +9089.59
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         21.9671
+  Recovery:          92.29%
+  Peak VRAM:         2049.83 MB
+  Train time:        168.10 s (Stage 1: 105.9s, Stage 2: 62.2s)
+  s/step:            0.3362
+  Loss (final):      26.7798
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7179
+  Repetition-3:      0.0676
+  Train PPL:         868.1200
+  Test PPL:          795.6500
+  Overfit Gap:       -72.47
+  Latency (mean):    2307.75 ms
+  Latency (std):     10.26 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0f67bb39bfa9
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=6.6041 | lr=1.74e-04
+  step   420 | loss=6.9196 | lr=1.50e-04
+  step   430 | loss=6.3506 | lr=1.27e-04
+  step   440 | loss=6.9098 | lr=1.04e-04
+  step   450 | loss=6.5711 | lr=8.20e-05
+  step   460 | loss=6.8671 | lr=6.19e-05
+  step   470 | loss=7.0742 | lr=4.40e-05
+  step   480 | loss=6.5690 | lr=2.87e-05
+  step   490 | loss=7.1037 | lr=1.64e-05
+  step   500 | loss=6.5452 | lr=7.44e-06

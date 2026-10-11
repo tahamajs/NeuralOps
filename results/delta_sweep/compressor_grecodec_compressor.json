@@ -1,0 +1,10 @@
+﻿{
+    "module":  "grecodec_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  9881.15,
+    "duration_sec":  220.1,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:52:07"
+}

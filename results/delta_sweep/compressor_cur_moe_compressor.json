@@ -1,0 +1,10 @@
+﻿{
+    "module":  "cur_moe_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  4037.78,
+    "duration_sec":  191.7,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 13:58:19"
+}

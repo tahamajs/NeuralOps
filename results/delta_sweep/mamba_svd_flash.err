@@ -1,0 +1,16 @@
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4207.41it/s]
+Traceback (most recent call last):
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 2020, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1984, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1222, in run_kd_method
+    raise RuntimeError(f"CRITICAL: Module '{module_name}' was not detected in any layer of student. Aborting.")
+RuntimeError: CRITICAL: Module 'mamba_svd_flash' was not detected in any layer of student. Aborting.

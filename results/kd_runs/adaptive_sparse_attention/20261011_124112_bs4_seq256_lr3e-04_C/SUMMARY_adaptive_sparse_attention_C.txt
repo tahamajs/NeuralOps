@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: adaptive_sparse_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.3700
+  Post-KD PPL:       36.3600
+  Stage 1 (KD) PPL:  36.3600
+  Stage 2 (Self) PPL:36.3600
+  KD Gain:           +0.01
+  Self Gain:         +0.00
+  Total Gain:        +0.01
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.0039
+  Recovery:          6.67%
+  Peak VRAM:         1146.94 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0204
+  Repetition-3:      0.9792
+  Train PPL:         36.8500
+  Test PPL:          36.3600
+  Overfit Gap:       -0.49
+  Latency (mean):    5681.19 ms
+  Latency (std):     9.11 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        347695032364
+
+TRAINING HISTORY (last 10 steps):

@@ -1,0 +1,106 @@
+2026-10-11 16:31:16,095 [INFO] MambaKD: ======================================================================
+2026-10-11 16:31:16,098 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-11 16:31:16,099 [INFO] MambaKD: ======================================================================
+2026-10-11 16:31:16,100 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-11 16:31:16,101 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-11 16:31:16,101 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-11 16:31:16,580 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-11 16:31:16,583 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-11 16:31:16,587 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-11 16:31:20,897 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-11 16:31:20,900 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-11 16:31:21,120 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
+2026-10-11 16:31:21,122 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-11 16:31:21,123 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-11 16:31:21,746 [INFO] MambaKD: 
+======================================================================
+2026-10-11 16:31:21,748 [INFO] MambaKD: PROCESSING MODULE 1/1: slicegpt_pca
+2026-10-11 16:31:21,748 [INFO] MambaKD: ======================================================================
+2026-10-11 16:31:21,749 [INFO] MambaKD: 
+# Running method C for slicegpt_pca
+2026-10-11 16:31:22,078 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-11 16:31:22,080 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-11 16:31:27,529 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5461 on transformer.h.0.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:31:27,531 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.0.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:31:30,711 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5479 on transformer.h.0.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:31:30,713 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.0.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:31:33,906 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5481 on transformer.h.0.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:31:33,908 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.0.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:31:49,885 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8652 on transformer.h.0.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:31:49,886 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.0.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:31:53,476 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5473 on transformer.h.1.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:31:53,479 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.1.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:31:56,745 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5461 on transformer.h.1.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:31:56,747 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.1.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:00,293 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5471 on transformer.h.1.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:32:00,295 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.1.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:16,510 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8663 on transformer.h.1.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:32:16,510 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.1.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:18,553 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5469 on transformer.h.2.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:32:18,553 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.2.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:20,140 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5492 on transformer.h.2.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:32:20,141 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.2.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:22,359 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5468 on transformer.h.2.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:32:22,360 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.2.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:40,836 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8650 on transformer.h.2.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:32:40,836 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.2.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:46,652 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5473 on transformer.h.3.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:32:46,653 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.3.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:52,863 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5489 on transformer.h.3.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:32:52,865 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.3.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:32:57,509 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5461 on transformer.h.3.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:32:57,511 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.3.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:13,878 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8665 on transformer.h.3.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:33:13,879 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.3.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:15,592 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5479 on transformer.h.4.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:33:15,593 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.4.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:17,386 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5500 on transformer.h.4.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:33:17,389 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.4.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:19,136 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5482 on transformer.h.4.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:33:19,139 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.4.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:34,697 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8656 on transformer.h.4.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:33:34,699 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.4.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:37,910 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5476 on transformer.h.5.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:33:37,911 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.5.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:41,305 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5461 on transformer.h.5.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:33:41,306 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.5.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:33:44,963 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5466 on transformer.h.5.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:33:44,965 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.5.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:01,942 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8658 on transformer.h.5.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:34:01,944 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.5.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:06,300 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5465 on transformer.h.6.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:34:06,302 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.6.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:09,212 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5468 on transformer.h.6.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:34:09,214 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.6.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:12,649 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5459 on transformer.h.6.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:34:12,651 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.6.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:28,790 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8663 on transformer.h.6.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:34:28,791 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.6.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:32,503 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5483 on transformer.h.7.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:34:32,505 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.7.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:35,669 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5464 on transformer.h.7.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:34:35,671 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.7.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:38,707 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5468 on transformer.h.7.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:34:38,709 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.7.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:54,689 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8659 on transformer.h.7.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:34:54,690 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.7.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:34:57,858 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5487 on transformer.h.8.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:34:57,860 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.8.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:01,094 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5460 on transformer.h.8.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:35:01,096 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.8.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:04,294 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5470 on transformer.h.8.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:35:04,296 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.8.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:23,236 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8663 on transformer.h.8.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:35:23,239 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.8.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:26,473 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5468 on transformer.h.9.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:35:26,476 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.9.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:29,984 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5470 on transformer.h.9.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:35:29,987 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.9.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:33,458 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5469 on transformer.h.9.mlp.c_fc exceeded threshold 0.5000.
+2026-10-11 16:35:33,460 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.9.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:48,221 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.8657 on transformer.h.9.mlp.c_proj exceeded threshold 0.5000.
+2026-10-11 16:35:48,223 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.9.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:51,320 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5473 on transformer.h.10.attn.c_attn exceeded threshold 0.5000.
+2026-10-11 16:35:51,322 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.10.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-11 16:35:54,555 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: reconstruction error 0.5493 on transformer.h.10.attn.c_proj exceeded threshold 0.5000.
+2026-10-11 16:35:54,558 [WARNING] neuralops.compression_engine.quantization.slicegpt_pca: Fallback triggered for transformer.h.10.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.

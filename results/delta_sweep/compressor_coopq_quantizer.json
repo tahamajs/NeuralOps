@@ -1,0 +1,10 @@
+﻿{
+    "module":  "coopq_quantizer",
+    "type":  "compressor",
+    "status":  "TIMEOUT",
+    "delta":  null,
+    "student_ppl":  89.39,
+    "duration_sec":  300.2,
+    "error":  "exceeded 300s",
+    "timestamp":  "2026-10-11 13:47:12"
+}

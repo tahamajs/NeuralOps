@@ -1,0 +1,10 @@
+﻿{
+    "module":  "frandi_compressor",
+    "type":  "compressor",
+    "status":  "ERROR",
+    "delta":  null,
+    "student_ppl":  9886.77,
+    "duration_sec":  218.6,
+    "error":  "exit=",
+    "timestamp":  "2026-10-11 14:41:54"
+}

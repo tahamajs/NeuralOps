@@ -1,0 +1,46 @@
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4321.98it/s]
+Traceback (most recent call last):
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1208, in run_kd_method
+    student, comp_stats = apply_module_to_model(
+                          ~~~~~~~~~~~~~~~~~~~~~^
+        student,
+        ^^^^^^^^
+    ...<5 lines>...
+        tokenizer=tokenizer,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SVD_linear_Attention\neuralops\evaluation\eval_patcher.py", line 533, in apply_module_to_model
+    model = _apply_compressor_module(
+        model, module_name, rank, calibration_data, calibration_loader, tokenizer
+    )
+  File "D:\SVD_linear_Attention\neuralops\evaluation\eval_patcher.py", line 431, in _apply_compressor_module
+    candidate = init_fn()
+  File "D:\SVD_linear_Attention\neuralops\evaluation\eval_patcher.py", line 424, in <lambda>
+    lambda: comp_cls(model, rank=rank, tokenizer=tok, **c_kwargs),
+            ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_linear_Attention\neuralops\compression_engine\pruning\mamba_shedder.py", line 911, in mamba_shedder_factory
+    compressed_model, stats = compressor.compress()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "D:\SVD_linear_Attention\neuralops\compression_engine\pruning\mamba_shedder.py", line 661, in compress
+    _, keep_idx = torch.topk(sens, k=n_keep, largest=True)
+                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: selected index k out of range
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 2048, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 2012, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "D:\SVD_Project\neuralops\benchmarks\_legacy\kd_quick_test.py", line 1223, in run_kd_method
+    raise RuntimeError(f"CRITICAL: Failed to inject module '{module_name}' into model: {e}") from e
+RuntimeError: CRITICAL: Failed to inject module 'mamba_shedder' into model: selected index k out of range
