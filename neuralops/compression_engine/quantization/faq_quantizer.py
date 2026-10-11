@@ -107,7 +107,7 @@ class FAQLinear(nn.Module):
                 torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.randn((out_features, self.lora_r), dtype=dtype, device=device) * 1e-4
+                torch.randn((out_features, self.lora_r), dtype=dtype, device=device) * 1e-3
             )
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
