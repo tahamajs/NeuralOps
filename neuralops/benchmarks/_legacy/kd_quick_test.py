@@ -1139,14 +1139,16 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     cache: dict[str, Any] = {"manifest": manifest, "logits": None, "hidden_states": None, "attentions": None}
 
-    def _load_tensor(key: str):
-        if manifest.get(f"has_{key}") and manifest.get(f"{key}_file"):
-            fpath = cache_dir / manifest[f"{key}_file"]
+    def _load_tensor(key: str, alt_key: str | None = None):
+        has_k = manifest.get(f"has_{key}") or (alt_key and manifest.get(f"has_{alt_key}"))
+        f_k = manifest.get(f"{key}_file") or (alt_key and manifest.get(f"{alt_key}_file"))
+        shape_k = manifest.get(f"{key}_shape") or (alt_key and manifest.get(f"{alt_key}_shape"))
+        if has_k and f_k:
+            fpath = cache_dir / f_k
             if fpath.exists():
                 if fpath.suffix == '.dat':
-                    shape = tuple(manifest[f"{key}_shape"])
+                    shape = tuple(shape_k)
                     np_memmap = np.memmap(fpath, dtype='float16', mode='r', shape=shape)
-                    # خواندن مستقیم از هارد/مم‌مپ بدون کپی کردن در رم اصلی
                     cache[key] = torch.from_numpy(np_memmap)
                 else:
                     try:
@@ -1155,8 +1157,8 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
                         cache[key] = torch.load(fpath, map_location="cpu", mmap=True, weights_only=False)
 
     _load_tensor("logits")
-    _load_tensor("hidden_states")
-    _load_tensor("attentions")
+    _load_tensor("hidden_states", "hidden")
+    _load_tensor("attentions", "attn")
     return cache
 
 def can_use_cache_for_method(cache: dict[str, Any] | None, method_name: str, include_attn: bool = False) -> bool:
