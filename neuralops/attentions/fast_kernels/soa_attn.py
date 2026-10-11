@@ -1383,6 +1383,10 @@ def inject_soa_attn(
 # ===========================================================================
 SOAFusedAttention = SOAAttention
 inject_soa = inject_soa_attn
+# Aliases for testing compatibility
+inject_soa_attention = inject_soa_attn
+inject_soafusedattention = inject_soa_attn
+
 
 
 __all__ = [
@@ -1393,5 +1397,7 @@ __all__ = [
     "LoRALinear",
     "inject_soa_attn",
     "inject_soa",
+    "inject_soa_attention",
+    "inject_soafusedattention",
     "apply_rotary_pos_emb",
 ]
