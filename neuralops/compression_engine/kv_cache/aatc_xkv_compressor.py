@@ -897,10 +897,43 @@ class AATC_XKVCompressor(BaseCompressor):
         calib = _collect_calibration_data(
             self.model,
             attn_modules,
-            self.calib_batches,
-            device,
-        )
         self._build_subspaces(calib, attn_modules)
+
+        # Apply low-rank subspace projection to attention K/V weights
+        # so causal LM forward passes reflect compressed subspace representations
+        with torch.no_grad():
+            for idx, name, mod in attn_modules:
+                g_id = self.layer_to_group.get(idx)
+                if g_id is not None and g_id in self.subspaces:
+                    sub = self.subspaces[g_id]
+                    # If model has separate k_proj / v_proj
+                    for p_name, basis in [("k_proj", sub.V_k), ("v_proj", sub.V_v), ("key", sub.V_k), ("value", sub.V_v)]:
+                        layer = getattr(mod, p_name, None)
+                        if layer is not None and hasattr(layer, "weight"):
+                            w = layer.weight.data
+                            device_w, dtype_w = w.device, w.dtype
+                            V_sub = basis.to(device=device_w, dtype=torch.float32)
+                            # w is (out_features, in_features)
+                            # Project out_features onto subspace: P = V^T @ V
+                            proj_op = (V_sub.t() @ V_sub)
+                            w_proj = torch.matmul(proj_op, w.float()).to(dtype_w)
+                            layer.weight.data.copy_(w_proj)
+                    # If model has fused c_attn (e.g. GPT-2)
+                    if hasattr(mod, "c_attn") and getattr(mod.c_attn, "weight", None) is not None:
+                        c_w = mod.c_attn.weight.data
+                        device_w, dtype_w = c_w.device, c_w.dtype
+                        is_transposed = (mod.c_attn.__class__.__name__ == "Conv1D") or (c_w.shape[0] < c_w.shape[1])
+                        W_mat = c_w.t().contiguous().float() if is_transposed else c_w.contiguous().float()
+                        sz = W_mat.shape[0] // 3
+                        # K slice: sz : 2*sz, V slice: 2*sz : 3*sz
+                        V_k_sub = sub.V_k.to(device=device_w, dtype=torch.float32)
+                        V_v_sub = sub.V_v.to(device=device_w, dtype=torch.float32)
+                        P_k = V_k_sub.t() @ V_k_sub
+                        P_v = V_v_sub.t() @ V_v_sub
+                        W_mat[sz:2*sz, :] = torch.matmul(P_k, W_mat[sz:2*sz, :])
+                        W_mat[2*sz:, :] = torch.matmul(P_v, W_mat[2*sz:, :])
+                        c_w_new = W_mat.t().contiguous().to(dtype_w) if is_transposed else W_mat.to(dtype_w)
+                        mod.c_attn.weight.data.copy_(c_w_new)
 
         factory = self._make_cache_factory()
         self.model._aatc_xkv_cache_factory = factory
