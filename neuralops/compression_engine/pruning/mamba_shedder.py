@@ -597,23 +597,29 @@ class MambaShedderCompressor(BaseCompressor):
                 orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
             total_orig_bytes += orig_bytes
 
-            # Sensitivity: Fisher or weight-norm.
+            # Sensitivity: output channel sensitivity for channel pruning (dim=1)
             act = activations_map.get(name, None)
             used_act_sensitivity = False
             if act is not None and act.numel() > 0:
                 try:
                     act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
                     if act_flat.shape[-1] == d_in:
-                        fisher = (act_flat**2).mean(dim=0).clamp(min=1e-8)
-                        sens = fisher.sqrt()
+                        # act_flat @ W.T gives output activations (N, d_out)
+                        out_acts = torch.matmul(act_flat, W.t())
+                        fisher_out = (out_acts**2).mean(dim=0).clamp(min=1e-8)
+                        sens = fisher_out.sqrt()
                         used_act_sensitivity = True
                     else:
-                        sens = torch.norm(W, dim=0)
+                        sens = torch.norm(W, dim=1)
                 except Exception as e:
                     logger.debug("Fisher computation failed for %s: %s", name, e)
-                    sens = torch.norm(W, dim=0)
+                    sens = torch.norm(W, dim=1)
             else:
-                sens = torch.norm(W, dim=0)
+                sens = torch.norm(W, dim=1)
+
+            # Ensure sens length matches d_out
+            if sens.numel() != d_out:
+                sens = torch.norm(W, dim=1)
 
             # Decide kept output channels (or 2:4 mask).
             if self.structured_24:
@@ -657,7 +663,7 @@ class MambaShedderCompressor(BaseCompressor):
                 }
             else:
                 # Channel pruning → real storage savings.
-                n_keep = max(1, int(d_out * (1.0 - self.sparsity)))
+                n_keep = max(1, min(int(d_out * (1.0 - self.sparsity)), sens.numel()))
                 _, keep_idx = torch.topk(sens, k=n_keep, largest=True)
                 keep_idx, _ = torch.sort(keep_idx)
                 keep_idx = keep_idx.to(device)
