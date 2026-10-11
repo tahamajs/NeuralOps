@@ -1034,7 +1034,7 @@ class BlockTransformerHIBA(BaseAttention):
 
         if cos is not None and sin is not None:
             q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             try:
                 position_ids = kwargs.get("position_ids")
                 if position_ids is None:

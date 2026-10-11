@@ -869,9 +869,17 @@ class SinkAttention(BaseAttention):
             valid_lookup.scatter_(1, new_positions, valid_mask)
             all_valid = valid_lookup.gather(1, pos_keep)     # (B, N_k)
 
-        scores = scores.masked_fill(
-            ~all_valid.unsqueeze(1).unsqueeze(2), float("-inf")
-        )
+        if all_valid.shape[-1] == scores.shape[-1]:
+            scores = scores.masked_fill(
+                ~all_valid.unsqueeze(1).unsqueeze(2), float("-inf")
+            )
+        else:
+            # Broadcast or expand all_valid to match key dimension
+            av = all_valid[:, None, None, :]
+            if av.shape[-1] != scores.shape[-1]:
+                av = av.expand(-1, scores.shape[1], scores.shape[2], -1) if av.shape[-1] == scores.shape[-1] else None
+            if av is not None:
+                scores = scores.masked_fill(~av, float("-inf"))
 
         probs = F.softmax(scores, dim=-1).to(x.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)

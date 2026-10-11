@@ -556,7 +556,7 @@ class GriffinSSDBlock(BaseAttention):
                 cos, sin = pos_emb, None
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
-        elif self.rotary_emb is not None:
+        elif getattr(self, "rotary_emb", None) is not None:
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
