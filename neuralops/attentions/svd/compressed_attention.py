@@ -585,6 +585,29 @@ class CompressedAttentionLayer(BaseAttention):
         return out, (probs if output_attentions and probs is not None else None)
 
 
+
+    @property
+    def query(self) -> nn.Module:
+        q_w = self.qkv_weight[: self.all_head_size, :]
+        linear = nn.Linear(self.hidden_size, self.all_head_size, bias=False)
+        linear.weight = nn.Parameter(q_w, requires_grad=False)
+        return linear
+
+    @property
+    def key(self) -> nn.Module:
+        k_w = self.qkv_weight[self.all_head_size : self.all_head_size + self.kv_head_size, :]
+        linear = nn.Linear(self.hidden_size, self.kv_head_size, bias=False)
+        linear.weight = nn.Parameter(k_w, requires_grad=False)
+        return linear
+
+    @property
+    def value(self) -> nn.Module:
+        v_w = self.qkv_weight[self.all_head_size + self.kv_head_size :, :]
+        linear = nn.Linear(self.hidden_size, self.kv_head_size, bias=False)
+        linear.weight = nn.Parameter(v_w, requires_grad=False)
+        return linear
+
+
 class CompressedAttentionLayer2(CompressedAttentionLayer):
     pass
 
