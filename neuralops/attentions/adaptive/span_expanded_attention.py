@@ -280,11 +280,13 @@ class SinkCache:
         return 3
 
 
-# ===========================================================================
-# SpanExpandedAttention
-# ===========================================================================
-@ATTENTION_REGISTRY.register("span_expanded_attention")
+# DEPRECATED: Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals.
+# @ATTENTION_REGISTRY.register("span_expanded_attention")
 class SpanExpandedAttention(BaseAttention):
+    """DEPRECATED: Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals.
+
+    This module is deprecated. Use 'adaptive_span_attention' instead.
+    """
     is_custom_attention: bool = True
 
     def __init__(
