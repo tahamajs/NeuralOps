@@ -54,7 +54,7 @@ class TestChunkedRecurrentScans(unittest.TestCase):
         y_loop = torch.stack(y_loop_list, dim=2)
 
         # Chunked scan
-        y_chunked = chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=chunk_size)
+        y_chunked, _ = chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=chunk_size)
 
         self.assertEqual(y_chunked.shape, (B, H, L, d))
         self.assertTrue(torch.isfinite(y_chunked).all())
@@ -97,7 +97,7 @@ class TestChunkedRecurrentScans(unittest.TestCase):
         beta = torch.sigmoid(torch.randn(B, H, L, device=self.device))
         alpha = torch.sigmoid(torch.randn(B, H, L, device=self.device))
 
-        y = chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32)
+        y, _ = chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32)
         self.assertEqual(y.shape, (B, H, 130, d))
         self.assertTrue(torch.isfinite(y).all())
 
