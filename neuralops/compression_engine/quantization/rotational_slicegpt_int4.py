@@ -172,8 +172,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         lambda_reg: float = 1e-2,
         slice_ratio: float | None = None,
         quant_bits: int = 4,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         tokenizer: Any | None = None,
         calibration_loader: Any | None = None,
         calibration_texts: list[str] | None = None,
@@ -199,8 +199,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
-        max_error = _cfg_get(cfg, "max_error", max_error)
-        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+        max_error = _cfg_get(cfg, "max_error", 1.0)
+        fallback_to_original = _cfg_get(cfg, "fallback_to_original", False)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
@@ -677,10 +677,10 @@ def rotational_slicegpt_int4_factory(
     )
     lambda_reg = kwargs.pop("lambda_reg", _cfg_get(comp_config, "lambda_reg", 1e-2))
     quant_bits = kwargs.pop("quant_bits", _cfg_get(comp_config, "quant_bits", 4))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback_to_original = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "fallback_to_original", True),
+        _cfg_get(comp_config, "fallback_to_original", False),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
