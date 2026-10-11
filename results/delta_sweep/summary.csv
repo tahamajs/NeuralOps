@@ -21,3 +21,4 @@ decay_linear_attn,attention,UNKNOWN,,15209.22,242.7,1,no delta parsed,2026-10-11
 dynamic_conv_attention,attention,UNKNOWN,,3355115.91,327.5,1,no delta parsed,2026-10-11 22:42:17
 eat,attention,UNKNOWN,,13894.64,158.9,1,no delta parsed,2026-10-11 22:47:45
 eat_attention,attention,UNKNOWN,,7842.68,154.0,1,no delta parsed,2026-10-11 22:50:25
+expert_choice_moe,attention,UNKNOWN,,36.24,227.6,1,no delta parsed,2026-10-11 22:53:00
