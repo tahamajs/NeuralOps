@@ -272,10 +272,9 @@ class TPAttention(BaseAttention):
     """DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
 
     This module is deprecated. Use 'cross_attention' instead.
-    """
 
     Key improvements:
-      - rank_a × rank_b = head_dim (supports head_dim=64 AND head_dim=128)
+      - rank_a x rank_b = head_dim (supports head_dim=64 AND head_dim=128)
       - Better CP decomposition (50 iterations with early stopping)
       - Stricter max_cp_error (0.05)
       - KV cache support for autoregressive inference
