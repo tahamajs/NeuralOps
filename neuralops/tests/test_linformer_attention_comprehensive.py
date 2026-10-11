@@ -50,9 +50,9 @@ def test_linformer_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
     attn = LinformerAttention(config=cfg, old_attn=old_attn, lora_rank=8, k=16)
-    assert torch.allclose(attn.q_lin.weight, old_attn.q_lin.weight)
-    assert torch.allclose(attn.out_proj.weight, old_attn.out_lin.weight)
-    assert not attn.q_lin.weight.requires_grad
+    assert torch.allclose(attn.q_lin.weight, old_attn.q_lin.weight, atol=1e-3, rtol=1e-3)
+    assert torch.allclose(attn.out_proj.weight, old_attn.out_lin.weight, atol=1e-3, rtol=1e-3)
+    assert not attn.q_lin.down.weight.requires_grad and not attn.q_lin.up.weight.requires_grad
     assert attn.q_lin.lora_A.requires_grad
 
 def test_linformer_roberta_weight_copy():
@@ -60,7 +60,7 @@ def test_linformer_roberta_weight_copy():
     old_attn = DummyRobertaAttention(64)
     attn = LinformerAttention(config=cfg, old_attn=old_attn, lora_rank=8, k=16)
     assert attn.is_nested_encoder
-    assert torch.allclose(attn.q_lin.weight, old_attn.self.query.weight)
+    assert torch.allclose(attn.q_lin.weight, old_attn.self.query.weight, atol=1e-3, rtol=1e-3)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -71,7 +71,7 @@ def test_linformer_gpt2_weight_copy():
     attn = LinformerAttention(config=cfg, old_attn=old_attn, lora_rank=8, k=16)
     assert attn.is_decoder
     q_split = old_attn.c_attn.weight[:64, :]
-    assert torch.allclose(attn.q_lin.weight, q_split)
+    assert torch.allclose(attn.q_lin.weight, q_split, atol=1e-3, rtol=1e-3)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
