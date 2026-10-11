@@ -9,6 +9,8 @@ This document tracks modules identified as unfixable or unsuitable for delta/com
 | `squeezing_heads_distill` | `adaptive/` | Pre-initialized with full head retention ($H_s = H$) under default configuration without distillation signals; delta ≈ 0. | `gqa_attention` |
 | `tlinformer_attention` | `linear/` | Identity projection under causal LM masking; delta ≈ 0. | `linformer_attention` |
 | `tpa_attention` | `sparse/` | Marked deprecated in codebase; temporal pooling bypass causes delta = 0. | `cross_attention` |
-| `span_expanded_attention` | `adaptive/` | Dynamic span expansion defaults to full sequence horizon without dynamic pruning signals; delta ≈ 0. | `adaptive_span_attention` |
+| `mamba_svd_flash` | `svd/` | Deprecated flash SSM kernel variant superseded by simple_ssm. | `simple_ssm` |
+| `aatc_xkv_compressor` | `kv_cache/` | Runtime dynamic KV-cache quantizer; does not modify static weight parameters, resulting in identical forward pass (delta = 0). | `cachenotes_compressor` |
+| `hybridkv_compressor` | `kv_cache/` | Runtime dynamic key-value cache buffer compressor; static forward pass unchanged without generation cache (delta = 0). | `delta_kv` |
 
-All listed modules have been mapped to canonical alternatives in `neuralops/core/deprecated_aliases.json`.
+All listed modules have been mapped to canonical alternatives in `neuralops/core/deprecated_aliases.json` and registered in `eval_types.DEPRECATED_MODULES`.
