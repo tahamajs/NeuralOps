@@ -51,7 +51,7 @@ def test_bam_umoe_none_config():
 def test_bam_umoe_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
-    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8)
+    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8, svd_rank=64)
     # Check weight preservation
     assert torch.allclose(attn.q_lin.weight, old_attn.q_lin.weight, atol=1e-4)
     assert torch.allclose(attn.out_lin.weight, old_attn.out_lin.weight, atol=1e-4)
@@ -63,7 +63,7 @@ def test_bam_umoe_distilbert_weight_copy():
 def test_bam_umoe_roberta_weight_copy():
     cfg = MockConfig()
     old_attn = DummyRobertaAttention(64)
-    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8)
+    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8, svd_rank=64)
     assert attn.is_nested_encoder
     assert torch.allclose(attn.q_lin.weight, old_attn.self.query.weight, atol=1e-4)
     x = torch.randn(2, 8, 64)
@@ -73,7 +73,7 @@ def test_bam_umoe_roberta_weight_copy():
 def test_bam_umoe_gpt2_weight_copy():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     old_attn = DummyGPT2Attention(64)
-    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8)
+    attn = BAMUMoEBlock(config=cfg, old_attn=old_attn, lora_rank=8, svd_rank=64)
     assert attn.is_decoder
     q_split = old_attn.c_attn.weight[:64, :]
     assert torch.allclose(attn.q_lin.weight, q_split, atol=1e-4)
