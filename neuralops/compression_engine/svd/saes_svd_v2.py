@@ -55,8 +55,8 @@ class SAESSVDCompressorV2(BaseCompressor):
         correcting_steps: int = 2,
         target_modules: list[str] | None = None,
         target_attention_only: bool = False,
-        max_error: float = 0.60,
-        fallback_to_original: bool = True,  # Fix 1: Default changed to True
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="saes_svd_v2", **kwargs)
@@ -190,15 +190,10 @@ class SAESSVDCompressorV2(BaseCompressor):
         # Fix 2: Always log a warning when reconstruction error exceeds max_error
         if rel_err > self.max_error:
             logger.warning(
-                "SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s",
+                "SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
                 rel_err,
                 name,
                 self.max_error,
-                (
-                    ". Keeping original layer."
-                    if self.fallback_to_original
-                    else ". Proceeding with compressed layer."
-                ),
             )
             if self.fallback_to_original:
                 return None
