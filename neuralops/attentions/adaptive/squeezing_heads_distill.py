@@ -231,17 +231,14 @@ class LoRALinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# SqueezingHeadsDistiller
-# ===========================================================================
-@ATTENTION_REGISTRY.register(
-    "squeezing_heads_distill", supports_causal=True, supports_gqa=True
-)
+# DEPRECATED: Pre-initialized with full head retention without external distillation guidance.
+# @ATTENTION_REGISTRY.register(
+#     "squeezing_heads_distill", supports_causal=True, supports_gqa=True
+# )
 class SqueezingHeadsDistiller(BaseAttention):
-    """
-    Attention wrapper that keeps only the top-k most important heads.
+    """DEPRECATED: Pre-initialized with full head retention without external distillation guidance.
 
-    See module docstring for the algorithm.
+    This module is deprecated. Use 'gqa_attention' instead.
     """
 
     supports_gqa: bool = True

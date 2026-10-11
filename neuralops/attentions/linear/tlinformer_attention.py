@@ -164,13 +164,13 @@ class LoRALinear(nn.Module):
         return out
 
 
-# ===========================================================================
-# TLinFormer — Fully Corrected
-# ===========================================================================
-@ATTENTION_REGISTRY.register("tlinformer_attention")
+# DEPRECATED: Identity projection under causal LM masking.
+# @ATTENTION_REGISTRY.register("tlinformer_attention")
 class TLinFormerAttention(BaseAttention):
+    """DEPRECATED: Identity projection under causal LM masking.
+
+    This module is deprecated. Use 'linformer_attention' instead.
     """
-    TLinFormer: linear-time attention with learnable low-rank sequence projection.
 
     Encoder mode (N > rank):
         K' = E · K,   V' = F · V,   E, F ∈ R^{r × N}   (learnable)
