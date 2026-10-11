@@ -943,7 +943,7 @@ def inject_asvd(
     if target is None:
         return None
 
-    cfg = model_config if model_config is not None else getattr(target, "config", None)
+    cfg = model_config if model_config is not None else kwargs.pop("config", getattr(target, "config", None))
 
     # FIXED: Keyword Argument Cleanup: pop rank and copy_weights early from kwargs
     # so they are never passed twice when delegating to inject_attention or ASVDAttention
