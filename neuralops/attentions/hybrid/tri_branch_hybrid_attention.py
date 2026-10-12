@@ -134,7 +134,7 @@ class AegisHybridConfig:
     lora_rank: int = 32
     dropout: float = 0.1
     use_adaptive_pruning: bool = False
-    gate_init_bias: float = 0.0   # FIX 3: was 1.8 → 0.0 (balanced)
+    gate_init_bias: float = 2.2   # Warm-start with ~90% local attention for stability
     is_decoder: bool | None = None  # FIX 9: None = auto-detect
     use_global: bool = True
     kernel_feature_dim: int = 128
