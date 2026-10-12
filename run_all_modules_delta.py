@@ -316,8 +316,16 @@ def init_summary(path: Path) -> None:
 #  Log parsing
 # ═══════════════════════════════════════════════════════════════════
 
-_DELTA_RE = re.compile(r"DELTA[^0-9+\-]*([-+]?[0-9]+\.?[0-9]*)")
-_PPL_RE = re.compile(r"Student[^0-9]*([0-9]+\.?[0-9]*)")
+# Match "total_gain=+7.37", "total_gain=7.37", "DELTA=1.23", "delta: 1.23"
+_DELTA_RE = re.compile(
+    r"(?:total_gain|DELTA|delta|Δ)\s*[=:]\s*([-+]?\d+\.?\d*)",
+    re.IGNORECASE,
+)
+# Match "Stage 2 (self):  28.85" or "Student PPL: 28.85"
+_PPL_RE = re.compile(
+    r"(?:Stage\s*2\s*\(self\)|Student(?:\s+PPL)?)\s*[=:]\s*([\d.]+)",
+    re.IGNORECASE,
+)
 
 
 def parse_log(log_file: Path) -> tuple[str, str]:
@@ -330,12 +338,13 @@ def parse_log(log_file: Path) -> tuple[str, str]:
 
     delta = ""
     ppl = ""
-    m = _DELTA_RE.search(content)
-    if m:
-        delta = m.group(1)
-    m = _PPL_RE.search(content)
-    if m:
-        ppl = m.group(1)
+    all_d = _DELTA_RE.findall(content)
+    if all_d:
+        # Prefer the last occurrence, as final summary reports total_gain
+        delta = all_d[-1]
+    all_p = _PPL_RE.findall(content)
+    if all_p:
+        ppl = all_p[-1]
     return delta, ppl
 
 
