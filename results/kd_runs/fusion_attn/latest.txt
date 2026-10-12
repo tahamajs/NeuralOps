@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/fusion_attn/20261011_231538_bs12_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/fusion_attn/20261012_012442_bs8_seq256_lr3e-04_C

@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: rotational_slicegpt_int4 / C
+================================================================================
+
+MODEL INFO:
+  Total params:      39.51 M
+  Trainable params:  0.04 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        20915.7000
+  Post-KD PPL:       20900.1500
+  Stage 1 (KD) PPL:  20900.1500
+  Stage 2 (Self) PPL:20900.1500
+  KD Gain:           +15.55
+  Self Gain:         +0.00
+  Total Gain:        +15.55
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         577.1928
+  Recovery:          0.07%
+  Peak VRAM:         837.73 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.4898
+  Repetition-3:      0.1667
+  Train PPL:         23212.2300
+  Test PPL:          20900.1500
+  Overfit Gap:       -2312.08
+  Latency (mean):    308.42 ms
+  Latency (std):     39.30 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        75cbbfdcbcd8
+
+TRAINING HISTORY (last 10 steps):
