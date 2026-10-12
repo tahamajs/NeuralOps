@@ -899,7 +899,7 @@ class PerformerAttention(BaseAttention):
             **self.triton_kwargs,
         )
 
-        context = torch.nan_to_num(context, nan=0.0)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
         context = self.dropout(context)
 
         # ---- Head mask (FIX 9) ----
