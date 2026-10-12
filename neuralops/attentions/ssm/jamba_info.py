@@ -27,6 +27,7 @@ FIX 11: _format_output returns correct 2-tuple when attn_weights is None,
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_return_format
 from neuralops.core.common import _detect_decoder, repeat_kv
 
 from neuralops.core.attention_utils import (
@@ -57,23 +58,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-
-
-
-
-def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
-    if is_nested:
-        return "bert"
-    if source_attn is None:
-        return "llama"
-    cls = source_attn.__class__.__name__.lower()
-    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gpt_neo", "gpt_j")) or hasattr(
-        source_attn, "c_attn"
-    ):
-        return "gpt2"
-    return "llama"
 
 
 def _read_cache(
