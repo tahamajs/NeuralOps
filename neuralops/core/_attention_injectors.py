@@ -479,7 +479,7 @@ def _inject_attention_loop(
     if not modules_list:
         logger.warning("No attention modules found to replace for architecture '%s'", arch)
 
-    for name, old_attn in modules_list:
+    for layer_i, (name, old_attn) in enumerate(modules_list):
         if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
             continue
 
@@ -494,6 +494,10 @@ def _inject_attention_loop(
         layer_cfg = prep["config"]
         effective_rank = rank if rank is not None else getattr(layer_cfg, "rank", 32)
 
+        layer_kwargs = dict(kwargs)
+        layer_kwargs.setdefault("layer_idx", layer_i)
+        layer_kwargs.setdefault("layer_id", layer_i)
+
         new_attn = _instantiate_attention_layer(
             attn_class,
             layer_cfg,
@@ -502,7 +506,7 @@ def _inject_attention_loop(
             family_adapter,
             family,
             attention_type,
-            **kwargs,
+            **layer_kwargs,
         )
 
         if copy_weights:

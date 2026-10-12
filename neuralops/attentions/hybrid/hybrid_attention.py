@@ -250,11 +250,11 @@ class HybridAttention(BaseAttention):
             nn.init.kaiming_uniform_(self.compress_proj.weight, a=math.sqrt(5))
             self.decompress_proj.weight.zero_()
 
-        # Per-head gate: trainable warm-start at bias=8.0 (~99.97% standard attention)
+        # Per-head gate: zero-initialized bias (50/50 balance at step 0 so both branches receive gradients)
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
         with torch.no_grad():
             self.ensemble_gate.weight.zero_()
-            self.ensemble_gate.bias.fill_(8.0)
+            self.ensemble_gate.bias.fill_(0.0)
         self.ensemble_gate.weight.requires_grad = True
         self.ensemble_gate.bias.requires_grad = True
 
@@ -304,6 +304,10 @@ class HybridAttention(BaseAttention):
     def c_proj(self):
         return self.out_proj
 
+    @property
+    def fusion_gate(self):
+        return self.ensemble_gate
+
     # ------------------------------------------------------------------
     # Standard softmax branch (HA-FIX-10: optional SDPA fast path)
     # ------------------------------------------------------------------
@@ -323,9 +327,9 @@ class HybridAttention(BaseAttention):
         can_sdpa = (not self.training or self.dropout.p == 0.0) and True
         if can_sdpa:
             try:
-                q_sdp = Q.half() if Q.dtype == torch.float32 else Q
-                k_sdp = K.half() if K.dtype == torch.float32 else K
-                v_sdp = V.half() if V.dtype == torch.float32 else V
+                q_sdp = Q
+                k_sdp = K
+                v_sdp = V
 
                 attn_bias_sdp = None
                 if valid_mask is not None:
@@ -391,75 +395,76 @@ class HybridAttention(BaseAttention):
         valid_mask: torch.Tensor,
         past_len: int = 0,
     ) -> torch.Tensor:
-        phi_Q = F.elu(Q.float()) + 1.0
-        phi_K = F.elu(K.float()) + 1.0
-        V_f = V.float()
+        with torch.autocast(device_type=Q.device.type, enabled=False):
+            phi_Q = F.elu(Q.float()) + 1.0
+            phi_K = F.elu(K.float()) + 1.0
+            V_f = V.float()
 
-        # Padding mask on K and V
-        mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(phi_K.dtype)
-        phi_K = phi_K * mask
-        V_f = V_f * mask
+            # Padding mask on K and V
+            mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(phi_K.dtype)
+            phi_K = phi_K * mask
+            V_f = V_f * mask
 
-        B_h, H_h, N_h, D_h = phi_Q.shape
-        phi_K.shape[2]
+            B_h, H_h, N_h, D_h = phi_Q.shape
+            phi_K.shape[2]
 
-        # Handle cache: query positions are [past_len .. past_len + N_h), keys are [0 .. N_k)
-        if self.is_decoder and past_len > 0:
-            # Only new queries, keys include cache.
-            # Non-causal over the full key set (past + new).
-            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
-            Z = phi_K.sum(dim=-2, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
+            # Handle cache: query positions are [past_len .. past_len + N_h), keys are [0 .. N_k)
+            if self.is_decoder and past_len > 0:
+                # Only new queries, keys include cache.
+                # Non-causal over the full key set (past + new).
+                KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
+                Z = phi_K.sum(dim=-2, keepdim=True)
+                num = torch.matmul(phi_Q, KV)
+                den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
+                out = num / den
+                return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
+
+            if self.is_decoder:
+                # Chunked causal linear attention.
+                chunk_size = 128
+                num_chunks = (N_h + chunk_size - 1) // chunk_size
+
+                state_KV = torch.zeros(B_h, H_h, D_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
+                state_K = torch.zeros(B_h, H_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
+
+                num_list = []
+                den_list = []
+
+                for c in range(num_chunks):
+                    s = c * chunk_size
+                    e = min(N_h, s + chunk_size)
+
+                    phi_Q_c = phi_Q[:, :, s:e]
+                    phi_K_c = phi_K[:, :, s:e]
+                    V_c = V_f[:, :, s:e]
+
+                    KV_c = torch.einsum("bhnd,bhne->bhnde", phi_K_c, V_c)
+                    KV_c_cumsum = torch.cumsum(KV_c, dim=2)
+                    num_intra = torch.einsum("bhnd,bhnde->bhne", phi_Q_c, KV_c_cumsum)
+
+                    K_c_cumsum = torch.cumsum(phi_K_c, dim=2)
+                    den_intra = torch.einsum("bhnd,bhnd->bhn", phi_Q_c, K_c_cumsum)
+
+                    num_inter = torch.einsum("bhnd,bhde->bhne", phi_Q_c, state_KV)
+                    den_inter = torch.einsum("bhnd,bhd->bhn", phi_Q_c, state_K)
+
+                    num_list.append(num_intra + num_inter)
+                    den_list.append(den_intra + den_inter)
+
+                    state_KV = state_KV + KV_c_cumsum[:, :, -1]
+                    state_K = state_K + K_c_cumsum[:, :, -1]
+
+                num = torch.cat(num_list, dim=2)
+                den = torch.cat(den_list, dim=2).unsqueeze(-1)
+            else:
+                KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
+                Z = phi_K.sum(dim=-2, keepdim=True)
+                num = torch.matmul(phi_Q, KV)
+                den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous())
+
+            den = den.clamp(min=1e-6)
             out = num / den
             return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
-
-        if self.is_decoder:
-            # Chunked causal linear attention.
-            chunk_size = 128
-            num_chunks = (N_h + chunk_size - 1) // chunk_size
-
-            state_KV = torch.zeros(B_h, H_h, D_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
-            state_K = torch.zeros(B_h, H_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
-
-            num_list = []
-            den_list = []
-
-            for c in range(num_chunks):
-                s = c * chunk_size
-                e = min(N_h, s + chunk_size)
-
-                phi_Q_c = phi_Q[:, :, s:e]
-                phi_K_c = phi_K[:, :, s:e]
-                V_c = V_f[:, :, s:e]
-
-                KV_c = torch.einsum("bhnd,bhne->bhnde", phi_K_c, V_c)
-                KV_c_cumsum = torch.cumsum(KV_c, dim=2)
-                num_intra = torch.einsum("bhnd,bhnde->bhne", phi_Q_c, KV_c_cumsum)
-
-                K_c_cumsum = torch.cumsum(phi_K_c, dim=2)
-                den_intra = torch.einsum("bhnd,bhnd->bhn", phi_Q_c, K_c_cumsum)
-
-                num_inter = torch.einsum("bhnd,bhde->bhne", phi_Q_c, state_KV)
-                den_inter = torch.einsum("bhnd,bhd->bhn", phi_Q_c, state_K)
-
-                num_list.append(num_intra + num_inter)
-                den_list.append(den_intra + den_inter)
-
-                state_KV = state_KV + KV_c_cumsum[:, :, -1]
-                state_K = state_K + K_c_cumsum[:, :, -1]
-
-            num = torch.cat(num_list, dim=2)
-            den = torch.cat(den_list, dim=2).unsqueeze(-1)
-        else:
-            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
-            Z = phi_K.sum(dim=-2, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous())
-
-        den = den.clamp(min=1e-6)
-        out = num / den
-        return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
 
     # ------------------------------------------------------------------
     # Forward
