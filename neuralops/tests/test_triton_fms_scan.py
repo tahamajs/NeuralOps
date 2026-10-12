@@ -116,7 +116,7 @@ def test_fms_scan_triton_backward(device):
     q = torch.randn(B, H, L, D, device=device, requires_grad=True)
     k = torch.randn(B, H, L, D, device=device, requires_grad=True)
     v = torch.randn(B, H, L, D, device=device, requires_grad=True)
-    decay = torch.sigmoid(torch.randn(H, device=device, requires_grad=True))
+    decay = torch.sigmoid(torch.randn(H, device=device)).detach().requires_grad_()
 
     out = fms_scan_triton(q, k, v, decay)
     loss = out.sum()

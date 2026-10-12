@@ -114,7 +114,7 @@ def test_gla_scan_triton_backward(device):
     q = torch.randn(B, H, L, D, device=device, requires_grad=True)
     k = torch.randn(B, H, L, D, device=device, requires_grad=True)
     v = torch.randn(B, H, L, D, device=device, requires_grad=True)
-    lambdas = torch.sigmoid(torch.randn(B, H, L, device=device, requires_grad=True))
+    lambdas = torch.sigmoid(torch.randn(B, H, L, device=device)).detach().requires_grad_()
 
     out = gla_scan_triton(q, k, v, lambdas)
     loss = out.sum()

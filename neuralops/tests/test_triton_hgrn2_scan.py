@@ -84,7 +84,7 @@ def test_hgrn2_scan_triton_correctness(device, dtype, D, res_clip):
 def test_hgrn2_scan_triton_backward(device):
     """Verify backward gradient computation."""
     B, L, D = 1, 16, 32
-    f = torch.sigmoid(torch.randn(B, L, D, device=device, requires_grad=True))
+    f = torch.sigmoid(torch.randn(B, L, D, device=device)).detach().requires_grad_()
     iv = torch.randn(B, L, D, device=device, requires_grad=True)
 
     out = hgrn2_scan_triton(f, iv, res_clip=1.0)

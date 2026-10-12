@@ -107,8 +107,7 @@ def _gla_fwd_kernel(
         Z = lam_t * Z + k_t
 
         num_t = tl.sum(q_t[:, None] * S, axis=0)
-        denom_raw = tl.sum(q_t * Z)
-        denom_t = tl.maximum(denom_raw, 1e-4)
+        denom_t = tl.sum(q_t * Z) + 1e-4
 
         y_t = num_t / denom_t
 
