@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.gqa_utils import repeat_kv
 
 # Check Triton availability
@@ -1047,9 +1048,9 @@ class FusedSVDKernelAttention(BaseAttention):
         # Memory-efficient: use SDPA to avoid OOM on large seqs
 
         try:
-            _qs = q.half() if q.dtype == torch.float32 else q
-            _ks = k.half() if k.dtype == torch.float32 else k
-            _vs = v.half() if v.dtype == torch.float32 else v
+            _qs = maybe_half(q)
+            _ks = maybe_half(k)
+            _vs = maybe_half(v)
             _is_causal = (
                 getattr(self, "is_decoder", False) or getattr(self, "is_causal", False)
             ) and L > 1
