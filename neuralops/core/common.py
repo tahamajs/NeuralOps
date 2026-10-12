@@ -796,6 +796,17 @@ class FactorizedLoRALinear(nn.Module):
         return out.to(orig_dtype)
 
 
+def temperature_softmax(
+    x: torch.Tensor,
+    dim: int = -1,
+    temperature: float = 1.0,
+) -> torch.Tensor:
+    """Compute temperature-scaled softmax numerically stably."""
+    x_f = x.float()
+    temp = max(float(temperature), 1e-6)
+    return F.softmax(x_f / temp, dim=dim).to(x.dtype)
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -814,6 +825,7 @@ __all__ = [
     "_unpack_weight_bias",
     "_read_past_kv",
     "FactorizedLoRALinear",
+    "temperature_softmax",
 ]
 
 
