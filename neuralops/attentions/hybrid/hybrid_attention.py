@@ -250,13 +250,13 @@ class HybridAttention(BaseAttention):
             nn.init.kaiming_uniform_(self.compress_proj.weight, a=math.sqrt(5))
             self.decompress_proj.weight.zero_()
 
-        # Per-head gate: freeze at warm-start (bias=4.0, ~98% standard attention) to prevent divergence
+        # Per-head gate: trainable warm-start at bias=8.0 (~99.97% standard attention)
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
         with torch.no_grad():
             self.ensemble_gate.weight.zero_()
-            self.ensemble_gate.bias.fill_(4.0)
-        self.ensemble_gate.weight.requires_grad = False
-        self.ensemble_gate.bias.requires_grad = False
+            self.ensemble_gate.bias.fill_(8.0)
+        self.ensemble_gate.weight.requires_grad = True
+        self.ensemble_gate.bias.requires_grad = True
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
