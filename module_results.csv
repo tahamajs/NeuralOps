@@ -200,3 +200,5 @@ aegis_v5,attention,DEPRECATED,,,47.2,1,Deprecated alias of split_head_hybrid (ca
 aegis_hybrid,attention,DEPRECATED,,,30.8,1,Deprecated alias of tri_branch_hybrid,2026-10-12 19:20:24
 aegis_spectron_fp8,attention,DEPRECATED,,,9.8,1,Deprecated alias of spectron_fp8,2026-10-12 19:20:55
 adasplash_attention,attention,PASS,+2.16,41.0500,91.4,1,,2026-10-12 19:28:46
+svd_linear_attn,attention,PASS,3608.18,164.46,144.3,1,,2026-10-12 22:12:37
+svd_linear_inject,attention,PASS,3602.01,165.92,148.4,1,,2026-10-12 22:15:02
