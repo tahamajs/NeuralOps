@@ -36,6 +36,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
@@ -555,9 +556,9 @@ class SpectraV2Attention(BaseAttention):
 
         if not output_attentions:
             try:
-                _qs = Q.half() if Q.dtype == torch.float32 else Q
-                _ks = K.half() if K.dtype == torch.float32 else K
-                _vs = V.half() if V.dtype == torch.float32 else V
+                _qs = maybe_half(Q)
+                _ks = maybe_half(K)
+                _vs = maybe_half(V)
 
                 attn_mask_for_sdpa = None
                 if eff_mask is not None and not _is_causal:
