@@ -36,6 +36,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -769,9 +770,9 @@ class GatedHybridKernelAttention(BaseAttention):
             attn_bias = torch.zeros(
                 (1, 1, N, N_k), device=Q.device, dtype=Q.dtype
             ).masked_fill(~band, _safe_mask_value(Q.dtype))
-            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
-            k_sdp = K.half() if K.dtype == torch.float32 else K
-            v_sdp = V.half() if V.dtype == torch.float32 else V
+            q_sdp = maybe_half(Q)
+            k_sdp = maybe_half(K)
+            v_sdp = maybe_half(V)
             out = F.scaled_dot_product_attention(
                 q_sdp, k_sdp, v_sdp,
                 attn_mask=attn_bias.to(q_sdp.dtype),
