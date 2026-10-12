@@ -21,6 +21,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -742,9 +743,9 @@ class QCQAAttention(BaseAttention):
                 elif token_valid is not None:
                     bool_mask = token_valid[:, None, None, :].expand(B, 1, L, N_kv)
 
-                q_sdp = q_heads.to(torch.float16) if q_heads.dtype == torch.float32 else q_heads
-                k_sdp = K_mixed.to(torch.float16) if K_mixed.dtype == torch.float32 else K_mixed
-                v_sdp = V_mixed.to(torch.float16) if V_mixed.dtype == torch.float32 else V_mixed
+                q_sdp = maybe_half(q_heads)
+                k_sdp = maybe_half(K_mixed)
+                v_sdp = maybe_half(V_mixed)
 
                 out_sdp = F.scaled_dot_product_attention(
                     q_sdp, k_sdp, v_sdp,
