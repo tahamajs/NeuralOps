@@ -1348,3 +1348,6 @@ __all__ = [
     "ContextFusionGate",
     "apply_rotary_pos_emb",
 ]
+
+AegisAttentionV6 = GatedHybridKernelAttention
+

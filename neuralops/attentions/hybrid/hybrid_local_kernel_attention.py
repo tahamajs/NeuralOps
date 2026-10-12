@@ -1209,3 +1209,11 @@ def inject_hybrid_local_kernel(
     except Exception as e:
         logger.exception("Failed to inject AEGIS-V2: %s", e)
         return None
+
+
+AegisAttentionV1 = HybridLocalKernelAttention
+AegisAttentionV2 = HybridLocalKernelAttention
+AegisAttentionV3 = HybridLocalKernelAttention
+AegisAttentionV4 = HybridLocalKernelAttention
+AegisAttentionV5 = HybridLocalKernelAttention
+
