@@ -784,8 +784,28 @@ class KDAAttention(BaseAttention):
             y: (B, H, L, d)
             (S, Z): final state
         """
-        B, H, L, d = q.shape
-        device = q.device
+        # Execute scan strictly in FP32 outside AMP autocast to prevent half-precision overflow
+        with torch.amp.autocast(device_type=q.device.type, enabled=False):
+            return self._kda_scan_fp32(
+                q=q.float(),
+                k=k.float(),
+                v=v.float(),
+                decay=decay.float(),
+                initial_state=initial_state,
+                mask_bool=mask_bool,
+                out_dtype=q.dtype,
+            )
+
+    def _kda_scan_fp32(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        decay: torch.Tensor,
+        initial_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+        mask_bool: torch.Tensor | None = None,
+        out_dtype: torch.dtype = torch.float32,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
 
         # ---- Feature map (ELU+1) ----
         q_f = F.elu(q.float()) + 1.0
@@ -823,7 +843,7 @@ class KDAAttention(BaseAttention):
             num = torch.matmul(q_f, S_new)
             den = torch.matmul(q_f, Z_new).clamp(min=1e-5)
             y = num / den
-            return y.to(q.dtype), (S_new, Z_new)
+            return y.to(out_dtype), (S_new, Z_new)
 
         # ---- Chunked path ----
         chunk_size = min(self.chunk_size, L)
@@ -942,7 +962,7 @@ class KDAAttention(BaseAttention):
         if pad_len > 0:
             y = y[:, :, :L, :]
 
-        return y.to(q.dtype), (S_prev, Z_prev)
+        return y.to(out_dtype), (S_prev, Z_prev)
 
     # ------------------------------------------------------------------
     # [KDA-FIX-03, 08, 10, 11] Forward
