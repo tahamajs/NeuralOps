@@ -356,8 +356,10 @@ class TokenCompressedAttention(BaseAttention):
                         dim = m.in_features
                         break
             if dim is None and hasattr(src, "c_attn"):
-                w = src.c_attn.weight
-                dim = w.shape[0] if w.shape[0] < w.shape[1] else w.shape[1]
+                c_l = getattr(src.c_attn, "base_layer", src.c_attn)
+                w = getattr(c_l, "weight", None)
+                if w is not None:
+                    dim = w.shape[0] if w.shape[0] < w.shape[1] else w.shape[1]
         if dim is None:
             dim = kwargs.get("hidden_size", 768)
         self.dim = int(dim)
@@ -527,6 +529,14 @@ class TokenCompressedAttention(BaseAttention):
             self.copy_weights(pretrained_attn)
 
     # ---------------- aliases ----------------
+
+    @property
+    def compression_ratio(self) -> float:
+        return self.base_compression_ratio
+
+    @compression_ratio.setter
+    def compression_ratio(self, val: float) -> None:
+        self.base_compression_ratio = float(val)
     @property
     def dense(self):
         return self.out_lin
@@ -662,6 +672,10 @@ class TokenCompressedAttention(BaseAttention):
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
+
+            for name, tensor in (("Q", w_q), ("K", w_k), ("V", w_v), ("O", w_o)):
+                if tensor is not None and float(torch.linalg.norm(tensor.float())) < 1e-4:
+                    raise RuntimeError(f"TokenCompressedAttention: {name} weight norm is near zero (< 1e-4)")
 
             missing = [
                 n for n, w in (("Q", w_q), ("K", w_k), ("V", w_v)) if w is None

@@ -127,10 +127,15 @@ def apply_rotary_pos_emb(
 
     L = q.shape[-2]
 
-    # Slice the correct window when cos/sin cover a longer range
+    # Slice or pad the correct window when cos/sin length differs from L
     if cos.shape[-2] > past_len + L:
         cos = cos[..., past_len : past_len + L, :]
         sin = sin[..., past_len : past_len + L, :]
+    elif cos.shape[-2] < L:
+        # Repeat or pad to match L
+        repeats = (L + cos.shape[-2] - 1) // cos.shape[-2]
+        cos = cos.repeat(*([1] * (cos.dim() - 2)), repeats, 1)[..., :L, :]
+        sin = sin.repeat(*([1] * (sin.dim() - 2)), repeats, 1)[..., :L, :]
 
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
