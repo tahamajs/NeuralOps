@@ -520,83 +520,88 @@ class ZeroSAttention(BaseAttention):
 
         eps = 1e-6
         attn_map = None
-        if is_decoder:
-            valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
-            if valid_m is not None:
-                mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(K.dtype)
-                K = K * mask_f
-                V = V * mask_f
-                k_cum_sum = torch.cumsum(K, dim=2)
-                count = torch.cumsum(mask_f, dim=2).clamp(min=1.0)
-                k_running_mean = k_cum_sum / count
-            else:
-                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(1, 1, N_k, 1)
-                k_cum_sum = torch.cumsum(K, dim=2)
-                k_running_mean = k_cum_sum / step
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            Q_f = Q.float()
+            K_f = K.float()
+            V_f = V.float()
 
-            k_centered = K - k_running_mean
-
-            q_hat = F.relu(Q) + eps  # [B, H, L, d]
-            k_hat = F.relu(k_centered) + eps  # [B, H, N_k, d]
-
-            # Causal linear attention via cumulative states
-            kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V)  # [B, H, N_k, d, d]
-            kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
-            k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
-
-            sim = None
-            if N_k == L:
-                num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
-                den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
-            elif N_k >= L:
-                kv_cum_slice = kv_cum[:, :, -L:, :, :]
-                k_cum_slice = k_cum[:, :, -L:, :]
-                num = torch.einsum(
-                    "b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice
-                )  # [B, H, L, d]
-                den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
-            else:
-                sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
-                causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
-                sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
-                num = torch.matmul(sim, V)  # [B, H, L, d]
-                den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
-
-            context = num / den.clamp(min=eps)  # [B, H, L, d]
-            context = self.dropout(context)
-
-            if output_attentions:
-                if sim is not None:
-                    attn_map = sim / den.clamp(min=eps)
+            if is_decoder:
+                valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
+                if valid_m is not None:
+                    mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(torch.float32)
+                    K_f = K_f * mask_f
+                    V_f = V_f * mask_f
+                    k_cum_sum = torch.cumsum(K_f, dim=2)
+                    count = torch.cumsum(mask_f, dim=2).clamp(min=1.0)
+                    k_running_mean = k_cum_sum / count
                 else:
-                    attn_map = None
-        else:
-            # Bidirectional Mean-Centering
-            valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
-            if valid_m is not None:
-                mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(K.dtype)
-                K = K * mask_f
-                k_mean = K.sum(dim=2, keepdim=True) / mask_f.sum(dim=2, keepdim=True).clamp(min=1.0)
+                    step = torch.arange(1, N_k + 1, device=device, dtype=torch.float32).view(1, 1, N_k, 1)
+                    k_cum_sum = torch.cumsum(K_f, dim=2)
+                    k_running_mean = k_cum_sum / step
+
+                k_centered = K_f - k_running_mean
+
+                q_hat = F.relu(Q_f) + eps  # [B, H, L, d]
+                k_hat = F.relu(k_centered) + eps  # [B, H, N_k, d]
+
+                # Causal linear attention via cumulative states
+                kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V_f)  # [B, H, N_k, d, d]
+                kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
+                k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
+
+                sim = None
+                if N_k == L:
+                    num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
+                    den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                elif N_k >= L:
+                    kv_cum_slice = kv_cum[:, :, -L:, :, :]
+                    k_cum_slice = k_cum[:, :, -L:, :]
+                    num = torch.einsum(
+                        "b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice
+                    )  # [B, H, L, d]
+                    den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                else:
+                    sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
+                    causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
+                    sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+                    num = torch.matmul(sim, V_f)  # [B, H, L, d]
+                    den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+
+                context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
+                context = self.dropout(context)
+
+                if output_attentions:
+                    if sim is not None:
+                        attn_map = (sim / den.clamp(min=eps)).to(Q.dtype)
+                    else:
+                        attn_map = None
             else:
-                k_mean = K.mean(dim=2, keepdim=True)
+                # Bidirectional Mean-Centering
+                valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
+                if valid_m is not None:
+                    mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(torch.float32)
+                    K_f = K_f * mask_f
+                    k_mean = K_f.sum(dim=2, keepdim=True) / mask_f.sum(dim=2, keepdim=True).clamp(min=1.0)
+                else:
+                    k_mean = K_f.mean(dim=2, keepdim=True)
 
-            k_centered = K - k_mean
-            q_hat = F.relu(Q) + eps
-            k_hat = F.relu(k_centered) + eps
+                k_centered = K_f - k_mean
+                q_hat = F.relu(Q_f) + eps
+                k_hat = F.relu(k_centered) + eps
 
-            S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V)  # [B, H, d, d]
-            num = torch.matmul(q_hat, S_kv)  # [B, H, L, d]
-            den = (
-                torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous())
-                + eps
-            )
-            context = num / den.clamp(min=eps)
-            context = self.dropout(context)
-
-            if output_attentions:
-                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous()) / den.clamp(
-                    min=eps
+                S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V_f)  # [B, H, d, d]
+                num = torch.matmul(q_hat, S_kv)  # [B, H, L, d]
+                den = (
+                    torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous())
+                    + eps
                 )
+                context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
+                context = self.dropout(context)
+
+                if output_attentions:
+                    attn_map = (torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous()) / den.clamp(
+                        min=eps
+                    )).to(Q.dtype)
 
         # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:
