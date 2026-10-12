@@ -58,3 +58,49 @@
 2026-10-12 01:28:56,510 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.2618...
 2026-10-12 01:29:17,375 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.2618 | LR: 7.50e-04
 2026-10-12 01:29:17,720 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.0283...
+2026-10-12 01:29:37,403 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.0283 | LR: 1.50e-03
+2026-10-12 01:29:38,599 [INFO] MambaKD: [C] Step 100 Eval PPL: 34.47
+2026-10-12 01:29:39,098 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5051...
+2026-10-12 01:30:03,351 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5051 | LR: 1.28e-03
+2026-10-12 01:30:03,667 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.5056...
+2026-10-12 01:30:18,346 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.5056 | LR: 7.50e-04
+2026-10-12 01:30:19,505 [INFO] MambaKD: [C] Step 200 Eval PPL: 34.08
+2026-10-12 01:30:19,627 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4214...
+2026-10-12 01:30:36,036 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4214 | LR: 2.20e-04
+2026-10-12 01:30:36,815 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.4361...
+2026-10-12 01:30:59,853 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.4361 | LR: 1.50e-04
+2026-10-12 01:31:01,012 [INFO] MambaKD: [C] Step 300 Eval PPL: 33.84
+2026-10-12 01:31:01,013 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 33.84
+2026-10-12 01:31:01,014 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 01:31:01,174 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.6899 | LR: 1.50e-05
+2026-10-12 01:31:01,326 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.1510 | LR: 3.00e-05
+2026-10-12 01:31:01,478 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.1143 | LR: 4.50e-05
+2026-10-12 01:31:01,637 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.1766 | LR: 6.00e-05
+2026-10-12 01:31:01,788 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 3.8766 | LR: 7.50e-05
+2026-10-12 01:31:08,588 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.3986 | LR: 2.84e-04
+2026-10-12 01:31:16,076 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.9135 | LR: 1.96e-04
+2026-10-12 01:31:17,237 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 29.27
+2026-10-12 01:31:25,281 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.6678 | LR: 8.20e-05
+2026-10-12 01:31:33,969 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.5017 | LR: 7.44e-06
+2026-10-12 01:31:35,675 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 28.95
+2026-10-12 01:31:37,200 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 28.95
+2026-10-12 01:31:37,207 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
+  Stage 1 (KD):    33.84  (kd_gain=+2.38)
+  Stage 2 (self):  28.95  (self_gain=+4.89)
+  Total:                  (total_gain=+7.27)
+  Teacher baseline: 36.21
+  Aligned with teacher? YES (post_stage1 33.84 <= 36.21)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 164.3s (Stage 1: 128.1s, Stage 2: 36.2s)
+2026-10-12 01:31:40,573 [INFO] MambaKD: [QUALITY] distinct_2=0.05, repetition_3=0.94, train_ppl=29.48, test_ppl=28.95, overfit_gap=-0.53, latency=279.7ms
+2026-10-12 01:31:40,587 [INFO] MambaKD: Saved all run details to results/kd_runs/galerkin_attention/20261012_012844_bs8_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.22 |    33.84 |    28.95 |    +2.38 |    +4.89 |    +7.27 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-12 01:31:46,711 [INFO] MambaKD: 
+======================================================================
+2026-10-12 01:31:46,711 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 01:31:46,711 [INFO] MambaKD: ======================================================================

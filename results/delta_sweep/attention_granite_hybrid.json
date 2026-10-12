@@ -3,9 +3,9 @@
   "type": "attention",
   "status": "ERROR",
   "delta": null,
-  "student_ppl": 4285.99,
-  "duration_sec": 556.3,
+  "student_ppl": 4208.41,
+  "duration_sec": 23.6,
   "retries_used": 1,
-  "error": "exit=-9",
-  "timestamp": "2026-10-11 23:38:59"
+  "error": "exit=1",
+  "timestamp": "2026-10-12 01:47:14"
 }

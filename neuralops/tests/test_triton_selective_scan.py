@@ -108,7 +108,7 @@ def test_selective_scan_triton_backward(device):
     B, L, D_dim, N = 1, 16, 16, 16
     u = torch.randn(B, L, D_dim, device=device, requires_grad=True)
     delta = torch.randn(B, L, D_dim, device=device, requires_grad=True)
-    A = -torch.rand(D_dim, N, device=device, requires_grad=True)
+    A = (-torch.rand(D_dim, N, device=device)).detach().requires_grad_()
     B_t = torch.randn(B, L, N, device=device, requires_grad=True)
     C_t = torch.randn(B, L, N, device=device, requires_grad=True)
     D = torch.randn(D_dim, device=device, requires_grad=True)

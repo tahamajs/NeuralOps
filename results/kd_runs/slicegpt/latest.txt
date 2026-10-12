@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\slicegpt\20261011_162752_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/slicegpt/20261012_013800_bs4_seq256_lr3e-04_C
