@@ -393,7 +393,7 @@ class GpuMonitor(threading.Thread):
 def build_module_command(
     mod: str, typ: str, args: argparse.Namespace, python_exe: str
 ) -> list[str]:
-    return [
+    cmd = [
         python_exe,
         "neuralops/benchmarks/_legacy/kd_quick_test.py",
         "--modules", mod,
@@ -411,6 +411,15 @@ def build_module_command(
         "--device", args.device,
         "--early_stop_ppl", "1e9",
     ]
+    if getattr(args, "bf16", False):
+        cmd.append("--bf16")
+    elif getattr(args, "fp32", False):
+        cmd.append("--fp32")
+    elif getattr(args, "fp16", False):
+        cmd.append("--fp16")
+    elif getattr(args, "dtype", "auto") != "auto":
+        cmd.extend(["--dtype", args.dtype])
+    return cmd
 
 
 def execute_subprocess(cmd: list[str], log_file: Path, err_file: Path,
@@ -635,6 +644,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--learning-rate", type=float, default=3e-4)
     p.add_argument("--eval-every", type=int, default=100)
     p.add_argument("--device", default="cuda")
+    p.add_argument(
+        "--dtype",
+        type=str,
+        default="auto",
+        choices=["auto", "bfloat16", "float32", "float16", "bf16", "fp32", "fp16"],
+        help="Model & AMP dtype: 'auto' (bfloat16 on RTX 4070/Ampere+, float32 on GTX 1060/Pascal), 'bfloat16' / 'bf16', 'float32' / 'fp32', or 'float16' / 'fp16'",
+    )
+    p.add_argument("--bf16", action="store_true", help="Shortcut for --dtype bfloat16 (recommended for RTX 4070)")
+    p.add_argument("--fp32", action="store_true", help="Shortcut for --dtype float32 (required for GTX 1060)")
+    p.add_argument("--fp16", action="store_true", help="Shortcut for --dtype float16")
     p.add_argument("--output-dir", default="results/delta_sweep")
     p.add_argument("--timeout", type=int, default=300,
                    help="Per-module timeout (seconds)")
