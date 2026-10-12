@@ -248,7 +248,7 @@ class SVDLLMCompressor(BaseCompressor):
         tokenizer: Any | None = None,
         device: str | torch.device | None = None,
         target_attention_only: bool = True,
-        recovery_steps: int = 50,
+        recovery_steps: int = 0,
         learning_rate: float = 2e-4,
         weight_decay: float = 0.01,
         batch_size: int = 8,
@@ -462,6 +462,8 @@ class SVDLLMCompressor(BaseCompressor):
 
         if self.tokenizer is not None and self.calibration_texts:
             try:
+                if getattr(self.tokenizer, "pad_token", None) is None:
+                    self.tokenizer.pad_token = getattr(self.tokenizer, "eos_token", None) or "[PAD]"
                 for calib_text in self.calibration_texts[:3]:
                     inputs = self.tokenizer(
                         [calib_text],
