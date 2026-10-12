@@ -27,38 +27,6 @@ KEY IDEAS
     i_kv = h_j // g.
     We build the effective K/V for attention by gathering via kept indices.
 
-═══════════════════════════════════════════════════════════════════════════
-FIX SUMMARY vs previous version
-═══════════════════════════════════════════════════════════════════════════
-
-🔴 FIX-01  MHA case in forward — when H_kv == H and H_s < H, K/V were not
-           gathered to the kept heads, causing a shape mismatch (crash).
-           → Now K/V are gathered from compact KV using kept indices.
-
-🔴 FIX-02  SDPA with padding + causal — PyTorch forbids setting both
-           `is_causal=True` and `attn_mask` in some versions.
-           → Now a 4D combined (causal + padding) mask is built explicitly.
-
-🔴 FIX-03  Chunked generation causal mask — previously disabled causal
-           when past_len > 0, which let Q attend to future positions.
-           → Causal is now enabled whenever L > 1 during decode.
-
-🟡 FIX-04  `kept_head_indices` device — previously stored on CPU and moved
-           on every forward call.
-           → Now stored on the same device as the module (buffer-like).
-
-🟡 FIX-05  `_copy_kv_full` — previously raised on src_out < target_out.
-           → Now repeats KV heads when the source has fewer than target.
-
-🟡 FIX-06  `apply_rotary_pos_emb` — `position_ids` parameter was unused.
-           → Signature cleaned; caller always slices cos/sin to [past:L].
-
-🟢 FIX-07  `_compute_head_importance` — simplified and made device-safe.
-
-🟢 FIX-08  Head-mask selection — when provided at full H heads, correctly
-           gathered to kept indices.
-
-🟢 FIX-09  Numerical stability — explicit nan_to_num on all outputs.
 """
 
 from __future__ import annotations

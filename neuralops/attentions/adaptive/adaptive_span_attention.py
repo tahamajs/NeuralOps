@@ -1,12 +1,4 @@
-"""Adaptive Span Attention (ASA) — Production-Hardened v2.
-
-Combines:
-  * Adaptive per-head span regularization (learns how far each head looks)
-  * GQA / MQA support
-  * RoPE with partial-dim slicing
-  * LoRA adapters for parameter-efficient fine-tuning
-  * Cross-attention support
-  * Universal weight transfer from HuggingFace models
+"""Adaptive Span Attention
 
 """
 
@@ -30,11 +22,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
-# Config
-# =============================================================================
-
-
 @dataclass
 class AdaptiveSpanConfig:
     """Runtime configuration for AdaptiveSpanAttention."""
@@ -45,8 +32,6 @@ class AdaptiveSpanConfig:
     lora_rank: int = 16
     lora_alpha: float = 32.0
     rolling_cache_size: int | None = None
-
-
 
 
 def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Tensor:
@@ -117,7 +102,6 @@ def _gather_cos_sin(
         cos_g = cos_g.unsqueeze(1)  # (B, 1, N, d)
         sin_g = sin_g.unsqueeze(1)
     else:
-        # Gather per batch, using head 0 (identical across heads in HF impls)
         cos_flat = cos[:, 0].contiguous()  # (B, S, d)
         sin_flat = sin[:, 0].contiguous()
         cos_g = torch.gather(
@@ -198,14 +182,12 @@ def _normalize_mask(
     Handles: 2D (B, N_k), 3D (B, 1, N_k) or (B, N_q, N_k), 4D (B, 1, N_q, N_k).
     """
     if am.dim() == 2:
-        # (B, N_k) — padding mask
         am_b = am[:, None, None, :]
     elif am.dim() == 3:
-        # Could be (B, 1, N_k) or (B, N_q, N_k)
         if am.shape[1] == 1:
-            am_b = am.unsqueeze(1)  # (B, 1, 1, N_k)
+            am_b = am.unsqueeze(1)
         elif am.shape[1] == N_q:
-            am_b = am.unsqueeze(1)  # (B, 1, N_q, N_k)
+            am_b = am.unsqueeze(1)
         else:
             raise ValueError(
                 f"Unsupported 3D mask shape {tuple(am.shape)}; "
@@ -263,9 +245,6 @@ def _build_keep_mask(
 
 class LoRALinear(nn.Module):
     """Linear layer with frozen base weights + trainable LoRA adapters.
-
-    [FIX-10] Follows PEFT naming: lora_A (r, in), lora_B (out, r).
-    lora_B initialized to zero, so the layer starts as identity to base.
     """
 
     def __init__(
