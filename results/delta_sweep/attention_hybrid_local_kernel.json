@@ -1,11 +1,11 @@
 {
   "module": "hybrid_local_kernel",
   "type": "attention",
-  "status": "TIMEOUT",
+  "status": "UNKNOWN",
   "delta": null,
-  "student_ppl": 4256.89,
-  "duration_sec": 600.7,
+  "student_ppl": 4249.58,
+  "duration_sec": 554.6,
   "retries_used": 1,
-  "error": "exceeded 600s",
-  "timestamp": "2026-10-12 00:48:34"
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 02:46:20"
 }
