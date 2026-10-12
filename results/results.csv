@@ -200,3 +200,6 @@ aegis_v5,attention,DEPRECATED,,,47.2,1,Deprecated alias of split_head_hybrid (ca
 aegis_hybrid,attention,DEPRECATED,,,30.8,1,Deprecated alias of tri_branch_hybrid,2026-10-12 19:20:24
 aegis_spectron_fp8,attention,DEPRECATED,,,9.8,1,Deprecated alias of spectron_fp8,2026-10-12 19:20:55
 adasplash_attention,attention,PASS,+2.16,41.0500,91.4,1,,2026-10-12 19:28:46
+kd_cosformer_C_20261012_205039,cosformer__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:52:06.288469+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,32.77,-1.14,100.0,,2894.31,9bf4f09ba940ab1d
+kd_cosformer_attention_C_20261012_205225,cosformer_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:53:51.448258+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,finetune,,,,32.76,-0.98,100.0,,2894.63,4469ac7497ff0382
+kd_tri_branch_hybrid_C_20261012_205626,tri_branch_hybrid__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T20:57:26.575506+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,finetune,,,,4007.32,-336.18,-9.25,,2829.53,5041c2d3885a6be4
