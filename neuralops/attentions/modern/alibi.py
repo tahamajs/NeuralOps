@@ -2,6 +2,7 @@
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     LoRALinear,
@@ -22,19 +23,6 @@ from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def get_alibi_slopes(num_heads: int) -> torch.Tensor:

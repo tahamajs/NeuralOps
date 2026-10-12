@@ -3,6 +3,7 @@ Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -109,41 +110,6 @@ class SVDMambaSub(nn.Module):
 
         out = self.out_proj(ssm_out)
         return out, present_state
-
-
-# ===========================================================================
-# Decoder / format detection
-# ===========================================================================
-def _detect_decoder(
-    config: Any,
-    is_decoder: bool | None,
-    source_attn: nn.Module | None,
-    kwargs: dict[str, Any],
-) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if kwargs.get("is_decoder") or kwargs.get("is_causal"):
-        return True
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "") or "").lower()
-        if any(
-            mt.startswith(p)
-            for p in (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
-            )
-        ):
-            return True
-    if source_attn is not None:
-        if (
-            getattr(source_attn, "is_decoder", False)
-            or hasattr(source_attn, "c_attn")
-            or "gpt" in source_attn.__class__.__name__.lower()
-        ):
-            return True
-    return False
 
 
 def _detect_return_format(

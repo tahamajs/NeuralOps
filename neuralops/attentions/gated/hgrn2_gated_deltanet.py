@@ -9,6 +9,8 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 
 import logging
 import math
@@ -26,47 +28,10 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Config helpers
-# ===========================================================================
-def _env_flag(name: str, default: bool = False) -> bool:
-    v = os.environ.get(name, "")
-    return v.lower() in ("1", "true", "yes", "on") if v else default
 
 
-def _env_float(name: str, default: float) -> float:
-    v = os.environ.get(name, "")
-    try:
-        return float(v) if v else default
-    except ValueError:
-        return default
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    """Extract weight/bias from a linear-like module, handling LoRA wrappers."""
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        cls_name = getattr(module, "__class__", type(module)).__name__
-        base_cls = getattr(base, "__class__", type(base)).__name__
-        is_conv1d = hasattr(base, "nf") or "Conv1D" in cls_name or "Conv1D" in base_cls
-        if is_conv1d and w.ndim == 2:
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 # ===========================================================================

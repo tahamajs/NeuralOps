@@ -669,6 +669,133 @@ def _orthogonal_init(tensor: torch.Tensor) -> None:
         tensor.copy_(q[:, :cols].t())
 
 
+def _env_float(name: str, default: float) -> float:
+    """Read float configuration from environment variable safely."""
+    v = os.environ.get(name, "")
+    try:
+        return float(v) if v else default
+    except ValueError:
+        return default
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Read boolean flag from environment variable."""
+    v = os.environ.get(name, "")
+    if not v:
+        return default
+    return v.lower() in ("1", "true", "yes", "on")
+
+
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+    """Extract weight and bias tensors from a module or wrapper."""
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    return w, b
+
+
+def _read_past_kv(past_key_value: Any, layer_idx: int) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+    """Read past Key and Value from DynamicCache or tuple cache formats."""
+    if past_key_value is None:
+        return None, None
+
+    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
+        keys = past_key_value.key_cache
+        vals = past_key_value.value_cache
+        if len(keys) == 0:
+            return None, None
+        idx = min(layer_idx, len(keys) - 1)
+        k, v = keys[idx], vals[idx]
+        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
+            return k, v
+        return None, None
+
+    if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+        k, v = past_key_value[0], past_key_value[1]
+        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
+            return k, v
+
+    return None, None
+
+
+class FactorizedLoRALinear(nn.Module):
+    """Linear layer decomposed into low-rank SVD projections with additive LoRA adapter."""
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+
+        factory = {"device": device, "dtype": dtype}
+        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
+        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
+
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> torch.Tensor | None:
+        return self.up.bias
+
+    def freeze_base_weights(self) -> None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.down.weight.requires_grad = True
+        self.up.weight.requires_grad = True
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_dtype = x.dtype
+        if x.dtype != self.down.weight.dtype:
+            x = x.to(self.down.weight.dtype)
+        out = self.up(self.down(x))
+        if self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out.to(orig_dtype)
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -682,6 +809,11 @@ __all__ = [
     "_get_device",
     "_is_conv1d",
     "_orthogonal_init",
+    "_env_float",
+    "_env_flag",
+    "_unpack_weight_bias",
+    "_read_past_kv",
+    "FactorizedLoRALinear",
 ]
 
 

@@ -15,6 +15,7 @@ Supports:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -59,25 +60,6 @@ except Exception:
             return self.out_proj(y)
 
 
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        is_conv1d = (
-            (module.__class__.__name__ == "Conv1D")
-            or (base.__class__.__name__ == "Conv1D")
-            or hasattr(module, "nf")
-            or hasattr(base, "nf")
-        )
-        if is_conv1d:
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 

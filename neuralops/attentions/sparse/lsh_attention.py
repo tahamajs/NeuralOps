@@ -17,6 +17,7 @@ Supports:
 """
 
 from __future__ import annotations
+from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -36,125 +37,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Decoder detection
-# ===========================================================================
-
-
-def _detect_decoder(
-    config: Any,
-    is_decoder: bool | None,
-    src_attn: nn.Module | None,
-) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "") or "").lower()
-        if mt.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
-        ):
-            return True
-        arch = getattr(config, "architectures", None)
-        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
-            return True
-    if src_attn is not None:
-        if getattr(src_attn, "is_decoder", False):
-            return True
-        if hasattr(src_attn, "c_attn"):
-            return True
-        if "gpt" in src_attn.__class__.__name__.lower():
-            return True
-    return False
-
-
-# ===========================================================================
-# LSH-08: FactorizedLoRALinear
-# ===========================================================================
-
-
-class FactorizedLoRALinear(nn.Module):
-    is_custom_attention = False
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 64,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        bias: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
-        self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-
-        factory = {"device": device, "dtype": dtype}
-        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
-        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
-
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        return torch.matmul(self.up.weight, self.down.weight)
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return self.up.bias
-
-    def freeze_base_weights(self) -> None:
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-        if self.lora_A is not None:
-            self.lora_A.requires_grad = True
-        if self.lora_B is not None:
-            self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        if x.dtype != self.down.weight.dtype:
-            x = x.to(self.down.weight.dtype)
-        out = self.up(self.down(x))
-        if self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out.to(orig_dtype)
 
 
 # ===========================================================================
