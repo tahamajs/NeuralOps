@@ -1,0 +1,30 @@
+2026-10-12 18:43:14,676 [INFO] MambaKD: ======================================================================
+2026-10-12 18:43:14,676 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 18:43:14,676 [INFO] MambaKD: ======================================================================
+2026-10-12 18:43:14,677 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 18:43:14,677 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 18:43:14,677 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 18:43:14,802 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 18:43:14,803 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-12 18:43:14,803 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
+2026-10-12 18:43:16,257 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 18:43:16,258 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 18:43:16,441 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
+2026-10-12 18:43:16,442 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-12 18:43:16,442 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 18:43:16,675 [INFO] MambaKD: 
+======================================================================
+2026-10-12 18:43:16,676 [INFO] MambaKD: PROCESSING MODULE 1/1: gated_linear_attention
+2026-10-12 18:43:16,676 [INFO] MambaKD: ======================================================================
+2026-10-12 18:43:16,677 [INFO] MambaKD: 
+# Running method C for gated_linear_attention
+2026-10-12 18:43:16,933 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 18:43:16,935 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 18:43:17,278 [INFO] neuralops.core._attention_injectors: Successfully injected 'gated_linear_attention' into 12 transformer blocks.
+2026-10-12 18:43:20,110 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 86.8504
+2026-10-12 18:43:20,110 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 86.8504
+2026-10-12 18:43:27,184 [INFO] MambaKD: Pre-KD PPL for Module gated_linear_attention, Method C: 15217.83
+2026-10-12 18:43:27,184 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 18:43:27,184 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 15217.83 (same protocol)
+2026-10-12 18:43:27,184 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +15181.61 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 18:43:27,185 [INFO] MambaKD: set_train_scope (module): matched 132 target param tensors

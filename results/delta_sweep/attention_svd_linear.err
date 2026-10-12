@@ -1,4 +1,21 @@
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
+/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:206.)
+  cache[key] = torch.from_numpy(np_memmap)
+Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
 Traceback (most recent call last):
-  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 23, in <module>
-    import numpy as np
-ModuleNotFoundError: No module named 'numpy'
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2073, in <module>
+    main()
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2037, in main
+    result = run_kd_method(
+             ^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1302, in run_kd_method
+    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 681, in eval_ppl
+    return compute_perplexity(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 652, in compute_perplexity
+    if torch.isnan(loss) or torch.isinf(loss):
+                            ^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
