@@ -27,6 +27,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
@@ -746,9 +747,9 @@ class SpectralMambaAttention(BaseAttention):
         # Memory-efficient: use SDPA only when attention weights are NOT requested
         if not output_attentions and head_mask is None:
             try:
-                _qs = q.half() if q.dtype == torch.float32 else q
-                _ks = k.half() if k.dtype == torch.float32 else k
-                _vs = v.half() if v.dtype == torch.float32 else v
+                _qs = maybe_half(q)
+                _ks = maybe_half(k)
+                _vs = maybe_half(v)
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
                     _ks,
