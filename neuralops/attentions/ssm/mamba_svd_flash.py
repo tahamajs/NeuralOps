@@ -1187,7 +1187,7 @@ class MambaSVDFlash(BaseAttention):
 
         if output_attentions:
             attn_weights = probs if probs is not None else None
-            return out, attn_weights, present_key_value
+            return out, present_key_value, attn_weights
         return out, present_key_value
 
     def _apply_head_mask(self, head_mask: torch.Tensor, probs: torch.Tensor) -> torch.Tensor:
