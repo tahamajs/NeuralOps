@@ -316,16 +316,17 @@ def init_summary(path: Path) -> None:
 #  Log parsing
 # ═══════════════════════════════════════════════════════════════════
 
-# Match "total_gain=+7.37", "total_gain=7.37", "DELTA=1.23", "delta: 1.23"
+# Match "total_gain=+7.37", "Total Gain: +112.87", "DELTA=1.23", "delta: 1.23"
 _DELTA_RE = re.compile(
-    r"(?:total_gain|DELTA|delta|Δ)\s*[=:]\s*([-+]?\d+\.?\d*)",
+    r"(?:Total\s*Gain|total_gain|KD\s*Gain|DELTA|delta|Δ)\s*[=:]\s*([-+]?\d+\.?\d*)",
     re.IGNORECASE,
 )
-# Match "Stage 2 (self):  28.85" or "Student PPL: 28.85"
+# Match "Stage 2 (self):  28.85", "Post-KD PPL: 66.93", "Student PPL: 28.85"
 _PPL_RE = re.compile(
-    r"(?:Stage\s*2\s*\(self\)|Student(?:\s+PPL)?)\s*[=:]\s*([\d.]+)",
+    r"(?:Post-KD\s*PPL|Post\s*PPL|Stage\s*2\s*\(self\)|Student(?:\s+PPL)?)\s*[=:]\s*([\d.]+)",
     re.IGNORECASE,
 )
+
 
 
 def parse_log(log_file: Path) -> tuple[str, str]:
