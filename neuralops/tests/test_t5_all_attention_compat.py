@@ -75,9 +75,10 @@ def test_cross_attention_different_sources(t5_base_model, module_name):
     enc_hidden = torch.randn(B, N_kv, D)
     
     with torch.no_grad():
-        out1, _ = dec_cross(dec_hidden, key_value_states=enc_hidden)
-        # Change enc_hidden -> output must change
-        out2, _ = dec_cross(dec_hidden, key_value_states=enc_hidden + 1.0)
+        res1 = dec_cross(dec_hidden, key_value_states=enc_hidden)
+        res2 = dec_cross(dec_hidden, key_value_states=enc_hidden + 1.0)
+        out1 = res1[0] if isinstance(res1, tuple) else res1
+        out2 = res2[0] if isinstance(res2, tuple) else res2
         
     assert out1.shape == dec_hidden.shape
     assert not torch.allclose(out1, out2, atol=1e-5), 'Cross-attention output must depend on encoder hidden states!'
