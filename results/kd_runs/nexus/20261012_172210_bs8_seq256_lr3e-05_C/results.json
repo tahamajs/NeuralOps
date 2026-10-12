@@ -1,0 +1,374 @@
+[
+  {
+    "method": "C",
+    "pre_ppl": 509.0,
+    "post_ppl": 509.0,
+    "ppl_ratio": 14.0569,
+    "recovery_pct": 0.0,
+    "peak_vram_mb": 2839.61,
+    "train_time_s": 13.63,
+    "s_per_step": 0.6815,
+    "loss_final": 4.9326,
+    "cached": true,
+    "post_ppl_stage1": 509.0,
+    "post_ppl_stage2": 509.0,
+    "kd_gain": 0.0,
+    "self_gain": 0.0,
+    "total_gain": 0.0,
+    "aligned_with_teacher": false,
+    "beat_teacher_after_self": false,
+    "stage1_time_s": 7.21,
+    "stage2_time_s": 6.42,
+    "self_train_steps": 10,
+    "teacher_params": 124439808,
+    "student_params": 125650944,
+    "trainable_params": 1179648,
+    "batch_size": 8,
+    "seq_len": 256,
+    "learning_rate": 3e-05,
+    "recovery_steps": 10,
+    "train_scope": "module",
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "eval_protocol": {
+      "max_tokens": 15000,
+      "stride": 128,
+      "seq_len": 256,
+      "precision": "fp16",
+      "dataset": "test"
+    },
+    "loss_history": [
+      [
+        0,
+        10.442841529846191
+      ],
+      [
+        1,
+        7.803716659545898
+      ],
+      [
+        2,
+        6.9406867027282715
+      ],
+      [
+        3,
+        6.718203067779541
+      ],
+      [
+        4,
+        5.437087535858154
+      ],
+      [
+        5,
+        4.932621002197266
+      ],
+      [
+        6,
+        4.738041877746582
+      ],
+      [
+        7,
+        4.716834545135498
+      ],
+      [
+        8,
+        4.653608798980713
+      ],
+      [
+        9,
+        5.162176609039307
+      ],
+      [
+        20,
+        6.758975028991699
+      ]
+    ],
+    "ppl_history": {
+      "10": 509.0,
+      "stage2_10": 509.0
+    },
+    "lr_history": [
+      [
+        0,
+        0.0
+      ],
+      [
+        1,
+        3.0000000000000004e-07
+      ],
+      [
+        2,
+        6.000000000000001e-07
+      ],
+      [
+        3,
+        9e-07
+      ],
+      [
+        4,
+        1.2000000000000002e-06
+      ],
+      [
+        5,
+        1.5e-06
+      ],
+      [
+        6,
+        1.8e-06
+      ],
+      [
+        7,
+        2.1000000000000002e-06
+      ],
+      [
+        8,
+        2.4000000000000003e-06
+      ],
+      [
+        9,
+        2.7e-06
+      ],
+      [
+        20,
+        1.5e-05
+      ]
+    ],
+    "generation": {
+      "distinct_2": 0.0255,
+      "repetition_3": 0.974,
+      "samples": [
+        {
+          "prompt": "The quick brown fox",
+          "text": "eseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseseses",
+          "first_50_tokens": [
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274,
+            274
+          ]
+        },
+        {
+          "prompt": "Once upon a time",
+          "text": ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",
+          "first_50_tokens": [
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11,
+            11
+          ]
+        },
+        {
+          "prompt": "In the beginning",
+          "text": " of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of of",
+          "first_50_tokens": [
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286,
+            286
+          ]
+        },
+        {
+          "prompt": "The future of AI is",
+          "text": " already even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even even",
+          "first_50_tokens": [
+            1541,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772,
+            772
+          ]
+        }
+      ]
+    },
+    "latency": {
+      "mean_latency_ms": 425.89,
+      "std_latency_ms": 0.33
+    },
+    "train_ppl": 457.98,
+    "test_ppl": 509.0,
+    "overfit_gap": 51.02,
+    "lambada_acc": null
+  }
+]

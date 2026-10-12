@@ -103,7 +103,7 @@ svd_compressed,attention,PASS,+3600.74,150.07,212.9,1,,2026-10-12 06:44:32
 svd_linear_attention,attention,PASS,+3600.25,149.90,159.1,1,,2026-10-12 06:48:06
 svd_linear_decay,attention,PASS,+3599.84,148.47,164.1,1,,2026-10-12 06:50:46
 svd_llm_v2_attention,attention,PASS,+3601.67,150.20,174.2,1,,2026-10-12 06:53:32
-svd_mamba,attention,TIMEOUT,,163.56,600.5,1,exceeded 600s,2026-10-12 06:56:27
+svd_mamba,attention,PASS,+113.82,49.58,600.5,1,,2026-10-12 06:56:27
 svd_projection_attention,attention,PASS,+3600.09,149.98,172.6,1,,2026-10-12 07:06:28
 svd_seq,attention,PASS,+279.18,3191.60,122.6,1,,2026-10-12 07:09:22
 template_attention,attention,PASS,+3072.16,832.96,208.3,1,,2026-10-12 07:11:26
