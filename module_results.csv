@@ -186,7 +186,7 @@ svd_llm_compressor,compressor,UNKNOWN,,944.3,209.1,1,no delta parsed,2026-10-12 
 swift_svd,compressor,UNKNOWN,,7775.28,196.1,1,no delta parsed,2026-10-12 11:21:16
 swift_svd_act,compressor,UNKNOWN,,7286.93,190.0,1,no delta parsed,2026-10-12 11:24:33
 tomoe_compressor,compressor,UNKNOWN,,25782.07,215.4,1,no delta parsed,2026-10-12 11:27:44
-tt_compressor,compressor,ERROR,,,12.8,1,exit=1,2026-10-12 11:31:20
+tt_compressor,compressor,PASS,33.36,5034.42,87.1,1,,2026-10-12T16:08:50.440000
 uniql_compressor,compressor,UNKNOWN,,10753.39,179.2,1,no delta parsed,2026-10-12 11:31:34
 zerokv_neo_compressor,compressor,UNKNOWN,,1726.76,164.8,1,no delta parsed,2026-10-12 11:34:35
 aegis_hybrid,attention,FAIL_DELTA_ZERO,-13727.86,15574.85,184.8,1,delta=-13727.86,2026-10-12 14:00:08
