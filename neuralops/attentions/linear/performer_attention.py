@@ -368,7 +368,7 @@ class PerformerAttention(BaseAttention):
             comp_config,
             kwargs,
             names=("performer_kernel_type", "kernel_type"),
-            default="favor_plus",
+            default="elu",
         )
 
         # ---------------- Decoder detection ----------------
@@ -567,7 +567,7 @@ class PerformerAttention(BaseAttention):
         if self.kernel_type in ("favor_plus", "exp", "favor"):
             diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5  # [B,H,N,1]
             # FIXED: Added max clamp to prevent FP16 overflow (which causes NaN collapse)
-            diff = torch.clamp(proj - diag_sq, min=-30.0, max=11.0)
+            diff = torch.clamp(proj - diag_sq, min=-20.0, max=8.0)
             phi = torch.exp(diff)  # FIX 6: no +eps
             phi = phi / math.sqrt(self.num_features)
         elif self.kernel_type == "elu":
@@ -978,7 +978,7 @@ class PerformerAttention(BaseAttention):
             z = z + k_c.sum(dim=2)
 
         num = torch.cat(num_list, dim=2)
-        den = torch.cat(den_list, dim=2).clamp(min=self.eps)
+        den = torch.cat(den_list, dim=2).clamp(min=1e-5)
         return (num / den).to(dtype)
 
     # ------------------------------------------------------------
