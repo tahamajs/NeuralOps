@@ -146,12 +146,15 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        input_dtype = x.dtype
         if x.dtype != self.weight.dtype:
             x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            out = out + lora_out
+            # Cast x to lora_A dtype (float32) to support mixed-precision training
+            x_lora = x.to(self.lora_A.dtype)
+            lora_out = F.linear(F.linear(x_lora, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out.to(out.dtype)
         return out
 
 
@@ -272,14 +275,10 @@ class CosformerAttention(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Fusion gate between global cosformer and base local attention
-        # Kept frozen at warm-start bias to prevent FP16 gradient divergence while LoRA trains
-        self.stream_gate = nn.Linear(self.dim, 1, bias=True)
-        with torch.no_grad():
-            nn.init.zeros_(self.stream_gate.weight)
-            self.stream_gate.bias.fill_(-4.0)  # Warm-start prioritized local stream
-        self.stream_gate.weight.requires_grad = False
-        self.stream_gate.bias.requires_grad = False
+        # Additive residual scale for global cosformer branch.
+        # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
+        # As LoRA trains, fusion_scale learns when/how much global context to blend.
+        self.fusion_scale = nn.Parameter(torch.zeros(1))
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -471,24 +470,33 @@ class CosformerAttention(BaseAttention):
 
 
     def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
-        if N <= 2048:
-            score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2))
-            score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2))
-            scores = score_c + score_s
+        # Explicitly run global cosformer linear attention in float32 without autocast
+        # to avoid FP16 matmul overflow (scores * V > 65504 -> inf -> NaN gradients).
+        with torch.cuda.amp.autocast(enabled=False):
+            Q_cos = Q_cos.float()
+            Q_sin = Q_sin.float()
+            K_cos = K_cos.float()
+            K_sin = K_sin.float()
+            V = V.float()
 
-            if self.is_decoder:
-                causal_bool = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-                scores = scores.masked_fill(~causal_bool, 0.0)
+            if N <= 2048:
+                score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2))
+                score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2))
+                scores = score_c + score_s
 
-            if padding_mask is not None:
-                # Zero contribution from padded keys.
-                scores = scores * (padding_mask == 0).to(dtype)
+                if self.is_decoder:
+                    causal_bool = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+                    scores = scores.masked_fill(~causal_bool, 0.0)
 
-            scores = torch.clamp(scores, min=0.0, max=1e4)
-            num = torch.matmul(scores, V)
-            denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-            res = num / denom
-            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
+                if padding_mask is not None:
+                    # Zero contribution from padded keys.
+                    scores = scores * (padding_mask == 0).float()
+
+                scores = torch.clamp(scores, min=0.0, max=1e4)
+                num = torch.matmul(scores, V)
+                denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                res = num / denom
+                return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
         logger.warning(
             "CosformerAttention._forward_causal: N=%d > 2048, using chunked accumulation.",
@@ -524,10 +532,13 @@ class CosformerAttention(BaseAttention):
         device = hidden_states.device
         input_dtype = hidden_states.dtype
 
-        Q_raw = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K_raw = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_global = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_local = self.v_proj_attn(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        # Cast projections to float32 immediately so backward gradients stay in fp32 range.
+        # Without this, Q_raw/K_raw are fp16, and the grad from _local_attention (fp32)
+        # overflows fp16 on the way back, producing NaN that propagates to all trainable params.
+        Q_raw = self.q_proj(hidden_states).float().view(B, N, H, d).transpose(1, 2).contiguous()
+        K_raw = self.k_proj(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_global = self.v_proj(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_local = self.v_proj_attn(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if self.num_kv_heads != self.num_heads:
             K_raw = repeat_kv(K_raw, self.kv_repeat)
@@ -568,10 +579,8 @@ class CosformerAttention(BaseAttention):
         )
         local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        gate = torch.sigmoid(self.stream_gate(hidden_states)).to(torch.float32)
-        gate_expanded = gate.view(B, N, 1, 1).transpose(1, 2)
-
-        context = (gate_expanded * global_out) + ((1.0 - gate_expanded) * local_out)
+        # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
+        context = local_out + self.fusion_scale.to(torch.float32) * global_out
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         context = torch.clamp(context, min=-65500.0, max=65500.0).to(input_dtype)
