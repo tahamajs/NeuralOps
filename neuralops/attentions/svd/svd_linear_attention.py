@@ -33,6 +33,7 @@ Fixes (v2):
 """
 
 from __future__ import annotations
+from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias
 
@@ -96,77 +97,6 @@ def compute_exponential_decay(
         raise ValueError(
             f"Unsupported decay activation '{activation}'. Must be 'softplus' or 'sigmoid'."
         )
-
-
-def _normalize_mask(
-    mask: torch.Tensor | None,
-    B: int,
-    H: int,
-    N: int,
-    dtype: torch.dtype,
-    device: torch.device,
-) -> torch.Tensor | None:
-    """
-    SVDLA-FIX-10: single mask normalizer.
-    Returns a (B, 1, N, 1) float mask where 1.0 = valid, 0.0 = masked.
-    """
-    if mask is None:
-        return None
-
-    if mask.dim() == 2:
-        # (B, N)
-        if mask.dtype == torch.bool:
-            m = mask.float()
-        elif mask.dtype.is_floating_point:
-            m = (mask > -1e4).float()
-        else:
-            m = (mask > 0).float()
-        m = m.view(B, 1, N, 1)
-
-    elif mask.dim() == 3:
-        # (B, H, N) or (B, N, N)
-        if mask.shape[1] == H:
-            m = mask
-            if m.dtype == torch.bool:
-                m = m.float()
-            elif m.dtype.is_floating_point:
-                m = (m > -1e4).float()
-            else:
-                m = (m > 0).float()
-            m = m.unsqueeze(-1)  # (B, H, N, 1)
-        else:
-            # assume (B, N, N) - take diagonal as validity
-            m = mask
-            if m.dtype == torch.bool:
-                m = m.float()
-            elif m.dtype.is_floating_point:
-                m = (m > -1e4).float()
-            else:
-                m = (m > 0).float()
-            m = m.diagonal(dim1=-2, dim2=-1).unsqueeze(-1)  # (B, N, 1)
-            m = m.unsqueeze(1)  # (B, 1, N, 1)
-
-    elif mask.dim() == 4:
-        # (B, 1, 1, N) or (B, 1, N, N) or (B, H, N, N)
-        m = mask
-        if m.dtype == torch.bool:
-            m = m.float()
-        elif m.dtype.is_floating_point:
-            m = (m > -1e4).float()
-        else:
-            m = (m > 0).float()
-        if m.shape[-2] == 1:
-            # (B, 1, 1, N) -> (B, 1, N, 1)
-            m = m.permute(0, 1, 3, 2)
-        elif m.shape[-2] == N and m.shape[-1] == N:
-            # (B, H, N, N) -> take diagonal
-            m = m.diagonal(dim1=-2, dim2=-1).unsqueeze(-1)  # (B, H, N, 1)
-        # else already (B, H, N, 1)
-
-    else:
-        return None
-
-    return m.to(device=device, dtype=dtype)
 
 
 # ===========================================================================

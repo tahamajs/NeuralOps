@@ -3,6 +3,7 @@
 """
 
 from __future__ import annotations
+from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -117,50 +118,6 @@ def _gather_cos_sin(
             sin_flat, 1, ids.unsqueeze(-1).expand(-1, -1, d)
         ).unsqueeze(1)
     return cos_g, sin_g
-
-
-
-
-
-
-
-
-def _normalize_mask(
-    am: torch.Tensor,
-    B: int,
-    N_q: int,
-    N_k: int,
-    device: torch.device,
-) -> torch.Tensor:
-    """[FIX-4] Normalize any mask shape to (B, 1, N_q, N_k) bool.
-
-    Handles: 2D (B, N_k), 3D (B, 1, N_k) or (B, N_q, N_k), 4D (B, 1, N_q, N_k).
-    """
-    if am.dim() == 2:
-        am_b = am[:, None, None, :]
-    elif am.dim() == 3:
-        if am.shape[1] == 1:
-            am_b = am.unsqueeze(1)
-        elif am.shape[1] == N_q:
-            am_b = am.unsqueeze(1)
-        else:
-            raise ValueError(
-                f"Unsupported 3D mask shape {tuple(am.shape)}; "
-                f"expected (B, 1, N_k) or (B, {N_q}, N_k)"
-            )
-    elif am.dim() == 4:
-        am_b = am
-    else:
-        raise ValueError(f"Unsupported mask dim: {am.dim()}")
-
-    # Coerce to bool
-    if am_b.dtype != torch.bool:
-        if am_b.dtype.is_floating_point:
-            am_b = am_b > -1e4
-        else:
-            am_b = am_b > 0
-
-    return am_b.expand(B, 1, N_q, N_k)
 
 
 def _build_keep_mask(
