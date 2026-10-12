@@ -9,6 +9,8 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _env_float, _unpack_weight_bias
 
 import logging
 import math
@@ -36,41 +38,8 @@ except Exception as _e:
     HAS_TRITON_HGRN2 = False
 
 
-# ===========================================================================
-# Config helpers
-# ===========================================================================
-def _env_float(name: str, default: float) -> float:
-    v = os.environ.get(name, "")
-    try:
-        return float(v) if v else default
-    except ValueError:
-        return default
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _unpack_weight_bias(module: Any):
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        cls_name = getattr(module, "__class__", type(module)).__name__
-        base_cls_name = getattr(base, "__class__", type(base)).__name__
-        if "Conv1D" in cls_name or "Conv1D" in base_cls_name or hasattr(base, "nf"):
-            if w.ndim == 2:
-                w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 # ===========================================================================

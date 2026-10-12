@@ -10,6 +10,7 @@ trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -39,17 +40,6 @@ except Exception:
     HAS_TRITON = False
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Config helpers
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _extract_valid_token_mask(

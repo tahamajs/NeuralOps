@@ -11,6 +11,7 @@ Features:
 - No internal LayerNorm duplication
 - Memory-safe contiguous memory layouts and padding mask protections
 """
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -28,13 +29,6 @@ from neuralops.core.selective_scan import selective_scan
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely retrieve attribute from dict, object, namespace, or None."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 @ATTENTION_REGISTRY.register("selective_ssm")

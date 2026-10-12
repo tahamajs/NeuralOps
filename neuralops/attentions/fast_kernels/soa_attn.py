@@ -11,6 +11,8 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _read_past_kv
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -37,43 +39,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely retrieve configuration value from dict, object, or None."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _read_past_kv(
-    past_key_value: Any | None, layer_idx: int
-) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
-    """Read (past_k, past_v, past_len) from various cache formats."""
-    if past_key_value is None or past_key_value is False:
-        return None, None, 0
-
-    # HF DynamicCache-style
-    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-        keys = past_key_value.key_cache
-        vals = past_key_value.value_cache
-        if len(keys) > layer_idx:
-            k = keys[layer_idx]
-            v = vals[layer_idx]
-            if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-                return k, v, k.shape[-2]
-        return None, None, 0
-
-    # Tuple / list style
-    if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-        k, v = past_key_value[0], past_key_value[1]
-        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-            return k, v, k.shape[-2]
-
-    return None, None, 0
 
 
 def _write_past_kv(

@@ -1,6 +1,7 @@
 """
 Refined Gated Linear Attention (ReGLA)
 """
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -23,12 +24,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 

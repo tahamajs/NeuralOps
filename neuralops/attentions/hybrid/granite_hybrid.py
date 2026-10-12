@@ -8,6 +8,8 @@ weight transfer. Hardened across DistilBERT, RoBERTa, GPT-2, Qwen3.5.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -32,31 +34,8 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        if (
-            (module.__class__.__name__ == "Conv1D")
-            or (base.__class__.__name__ == "Conv1D")
-            or (w.ndim == 2 and w.shape[0] < w.shape[1])
-        ):
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 

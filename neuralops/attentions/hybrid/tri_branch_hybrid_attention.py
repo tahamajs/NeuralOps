@@ -4,6 +4,7 @@ Aegis-Hybrid Attention — Production-Hardened (v3).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_decoder, _env_flag, _env_float
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -27,17 +28,8 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _env_flag(name: str, default: bool = False) -> bool:
-    v = os.environ.get(name, "")
-    return v.lower() in ("1", "true", "yes", "on") if v else default
 
 
-def _env_float(name: str, default: float) -> float:
-    v = os.environ.get(name, "")
-    try:
-        return float(v) if v else default
-    except ValueError:
-        return default
 
 
 
@@ -51,32 +43,6 @@ _DECODER_PREFIXES = (
 )
 
 
-def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-
-    # FIX 2: check old_attn first — GPT-2 has c_attn, which is a strong signal
-    if old_attn is not None:
-        if getattr(old_attn, "is_decoder", False):
-            return True
-        if hasattr(old_attn, "c_attn"):
-            return True
-        if "gpt" in old_attn.__class__.__name__.lower():
-            return True
-        if "causal" in old_attn.__class__.__name__.lower():
-            return True
-
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(_DECODER_PREFIXES):
-            return True
-        arch = getattr(config, "architectures", None)
-        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
-            return True
-
-    return False
 
 
 # ===========================================================================

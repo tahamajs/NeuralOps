@@ -11,6 +11,7 @@ Hybrid sparse attention architecture combining multi-scale sparsity mechanisms:
  6. Softpick rectified softmax (2025) - natural ~47% activation sparsity
 
 """
+from neuralops.core.common import softpick
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -59,29 +60,6 @@ class NEXUSConfig:
     causal_chunk_size: int = 256
     # NEW: number of landmarks per chunk for inter-chunk Nyström
     causal_landmarks: int = 32
-
-
-# ===========================================================================
-# Softpick rectified softmax
-# ===========================================================================
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    orig_dtype = x.dtype
-    x_f = x.float()
-    temp = max(temperature, 1e-6)
-    m = x_f.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -1e3, torch.zeros_like(m), m)
-    z = x_f - m
-    exp_z = torch.exp(z / temp)
-    exp_neg_m = torch.exp((-m) / temp).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
-    denom = p.sum(dim=dim, keepdim=True)
-    zero_mask = denom <= 1e-8
-    if zero_mask.any():
-        fallback = F.softmax(x_f, dim=dim)
-        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
-    else:
-        p = p / denom
-    return p.to(orig_dtype)
 
 
 # ===========================================================================

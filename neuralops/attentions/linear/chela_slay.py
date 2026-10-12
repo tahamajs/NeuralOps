@@ -4,6 +4,7 @@ CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — PRODUCTION-HARDEN
 """
 
 from __future__ import annotations
+from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -104,16 +105,6 @@ def _resolve_attr(cfg: Any, *keys: str) -> Any:
         if v is not None:
             return v
     return None
-
-
-# ===========================================================================
-# Helpers: GQA & RoPE
-# ===========================================================================
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    if n_rep == 1:
-        return hidden_states
-    b, h, s, d = hidden_states.shape
-    return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
 
 
 

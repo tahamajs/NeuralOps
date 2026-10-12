@@ -8,6 +8,7 @@ pretrained weight transfer.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -28,44 +29,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Decoder detection (OHA-FIX-09)
-# ===========================================================================
-def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
-        ):
-            return True
-        arch = getattr(config, "architectures", None)
-        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
-            return True
-    if src_attn is not None:
-        if getattr(src_attn, "is_decoder", False) or hasattr(src_attn, "c_attn"):
-            return True
-        if "gpt" in src_attn.__class__.__name__.lower():
-            return True
-    return False
 
 
 # ===========================================================================

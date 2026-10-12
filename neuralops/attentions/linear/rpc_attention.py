@@ -7,6 +7,7 @@ projection buffers to compress query-key similarity evaluations.
 """
 
 from __future__ import annotations
+from neuralops.core.common import FactorizedLoRALinear
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -27,126 +28,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# FactorizedLoRALinear
-# ===========================================================================
-
-
-class FactorizedLoRALinear(nn.Module):
-    """
-    SVD-factorized linear + LoRA:
-        y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
-    Base (down, up) frozen; LoRA trainable.
-    """
-
-    is_custom_attention = False
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 64,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        bias: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
-        self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-
-        factory = {"device": device, "dtype": dtype}
-        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
-        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
-
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        # RPC-16: cache
-        self._cached_weight: torch.Tensor | None = None
-        self._cached_versions: tuple[int, ...] = ()
-
-    def _current_versions(self) -> tuple[int, ...]:
-        v = [
-            getattr(self.down.weight, "_version", 0),
-            getattr(self.up.weight, "_version", 0),
-        ]
-        if self.lora_A is not None:
-            v.append(getattr(self.lora_A, "_version", 0))
-            v.append(getattr(self.lora_B, "_version", 0))
-        return tuple(v)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        if (
-            not self.training
-            and self._cached_weight is not None
-            and self._cached_versions == self._current_versions()
-        ):
-            return self._cached_weight
-        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
-        if self.lora_A is not None and self.lora_B is not None:
-            w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
-        w = w.to(self.down.weight.dtype)
-        if not self.training:
-            self._cached_weight = w
-            self._cached_versions = self._current_versions()
-        return w.detach()
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return self.up.bias
-
-    def freeze_base_weights(self) -> None:
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-        if self.lora_A is not None:
-            self.lora_A.requires_grad = True
-        if self.lora_B is not None:
-            self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        d_w = (
-            self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
-        )
-        u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
-        u_b = (
-            self.up.bias.to(x.dtype)
-            if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
-            else self.up.bias
-        )
-        out = F.linear(F.linear(x, d_w), u_w, u_b)
-        if self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
-        return out
-
-    def storage_bytes(self) -> int:
-        b = 0
-        for p in self.parameters():
-            b += p.numel() * p.element_size()
-        return b
 
 
 # ===========================================================================

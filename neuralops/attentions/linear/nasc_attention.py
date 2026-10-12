@@ -2,6 +2,7 @@
 NASC: NEXUS-AEGIS Spectral Cascade Attention.
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
+from neuralops.core.common import softpick
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -26,24 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """Stable softpick function with negative-clamp and softmax fallback."""
-    orig_dtype = x.dtype
-    x = x.float()
-    m = x.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -1e3, torch.zeros_like(m), m)
-    z = x - m
-    exp_z = torch.exp(z / temperature)
-    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
-    denom = p.sum(dim=dim, keepdim=True)
-    zero_mask = denom <= 1e-8
-    if zero_mask.any():
-        fallback = F.softmax(x, dim=dim)
-        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
-    else:
-        p = p / denom
-    return p.to(orig_dtype)
 
 
 

@@ -7,6 +7,8 @@ Key-Value head pair (H_KV = G <= H_Q).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     LoRALinear,
@@ -28,36 +30,6 @@ from neuralops.core.rope import _rotate_half, apply_rotary_pos_emb
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
-# Helpers
-# =============================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    if hasattr(module, "base_layer"):
-        module = module.base_layer
-    w = getattr(module, "weight", None)
-    b = getattr(module, "bias", None)
-    cls_name = module.__class__.__name__
-
-    if w is not None:
-        w = w.data
-        if hasattr(module, "nf") or "Conv1D" in cls_name:
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data
-
-    return w, b
 
 
 # =============================================================================

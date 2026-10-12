@@ -8,6 +8,7 @@ Hardened for production use across diverse transformer architectures:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -32,13 +33,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely retrieve attribute from dict, object, namespace, or None."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
