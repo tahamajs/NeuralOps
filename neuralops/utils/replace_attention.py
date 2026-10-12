@@ -171,36 +171,25 @@ class UniversalAttentionWrapper(nn.Module):
             "ssm",
         }
 
-        # ---- Preserve the full tuple length from the inner module ----
-        # GPT-2 expects (hidden, present, attn_weights) when
-        # use_cache=True AND output_attentions=True. Do NOT collapse
-        # a 3-tuple to a 2-tuple, or GPT-2 will crash with IndexError.
+        # ---- Standardize output tuple to match HuggingFace contract ----
         if isinstance(out, tuple):
-            if self.return_tuple is not None:
-                if self.return_tuple:
-                    if len(out) == 0:
-                        out = (None, None)
-                    elif len(out) == 1:
-                        out = (out[0], None)
-                    return out
-                return out[0]
-
-            if "linear_attn" in self.layer_name:
-                return out[0]
-
-            # Pad to at least 2 elements; keep 3+ intact
-            if len(out) == 0:
-                return (None, None)
-            if len(out) == 1:
-                return (out[0], None)
-            return out
+            hidden = out[0] if len(out) >= 1 else None
+            present = out[1] if len(out) >= 2 else None
+            attn_weights = out[2] if len(out) >= 3 else None
         else:
-            # Not a tuple
-            if self.return_tuple is not None:
-                return (out, None) if self.return_tuple else out
-            if "linear_attn" in self.layer_name:
-                return out
-            return (out, None)
+            hidden = out
+            present = None
+            attn_weights = None
+
+        if self.return_tuple is not None and not self.return_tuple:
+            return hidden
+
+        if "linear_attn" in self.layer_name and not output_attentions:
+            return hidden
+
+        if output_attentions:
+            return (hidden, present, attn_weights)
+        return (hidden, present)
     def _forward_t5(
         self,
         hidden_states: torch.Tensor,
