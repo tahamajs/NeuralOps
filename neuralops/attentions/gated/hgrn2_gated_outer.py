@@ -569,14 +569,13 @@ class HGRN2GatedOuterBlock(BaseAttention):
 
             # S_1 = f_1 · S_0 + k_1ᵀ · v_1
             f_1 = f[:, :, 0].unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
-            S_next = f_1 * S_prev + torch.matmul(
-                k.float()[:, :, 0].transpose(-1, -2).contiguous(),
-                v.float()[:, :, 0],
-            )
+            k_1 = k.float()[:, :, 0]  # (B, H, d)
+            v_1 = v.float()[:, :, 0]  # (B, H, d)
+            S_next = f_1 * S_prev + torch.matmul(k_1.unsqueeze(-1), v_1.unsqueeze(-2))  # (B, H, d, d)
 
             # y_1 = q_1 · S_1
-            y_1 = torch.matmul(q.float()[:, :, 0].unsqueeze(2), S_next.unsqueeze(2))
-            y_1 = y_1.squeeze(2)  # (B, H, d)
+            q_1 = q.float()[:, :, 0].unsqueeze(-2)  # (B, H, 1, d)
+            y_1 = torch.matmul(q_1, S_next).squeeze(-2)  # (B, H, d)
             return y_1.unsqueeze(2).to(q.dtype), S_next
 
         # ---- Prefill / training path ----
