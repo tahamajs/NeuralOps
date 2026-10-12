@@ -1,30 +1,61 @@
-2026-10-12 18:43:33,723 [INFO] MambaKD: ======================================================================
-2026-10-12 18:43:33,723 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 18:43:33,723 [INFO] MambaKD: ======================================================================
-2026-10-12 18:43:33,723 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 18:43:33,723 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
-2026-10-12 18:43:33,723 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 18:43:33,855 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 18:43:33,856 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-12 18:43:33,856 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
-2026-10-12 18:43:35,205 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 18:43:35,205 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 18:43:35,386 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
-2026-10-12 18:43:35,386 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-12 18:43:35,386 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 18:43:35,624 [INFO] MambaKD: 
-======================================================================
-2026-10-12 18:43:35,624 [INFO] MambaKD: PROCESSING MODULE 1/1: gated_linear_attn
-2026-10-12 18:43:35,624 [INFO] MambaKD: ======================================================================
-2026-10-12 18:43:35,624 [INFO] MambaKD: 
-# Running method C for gated_linear_attn
-2026-10-12 18:43:35,867 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 18:43:35,869 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 18:43:36,212 [INFO] neuralops.core._attention_injectors: Successfully injected 'gated_linear_attn' into 12 transformer blocks.
-2026-10-12 18:43:37,415 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 86.8094
-2026-10-12 18:43:37,416 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 86.8094
-2026-10-12 18:43:43,611 [INFO] MambaKD: Pre-KD PPL for Module gated_linear_attn, Method C: 15214.45
-2026-10-12 18:43:43,611 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 18:43:43,611 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 15214.45 (same protocol)
-2026-10-12 18:43:43,611 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +15178.23 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 18:43:43,612 [INFO] MambaKD: set_train_scope (module): matched 132 target param tensors
+================================================================================
+RUN SUMMARY: gated_linear_attn / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.73 M
+  Trainable params:  1.29 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        15207.5600
+  Post-KD PPL:       749.2100
+  Stage 1 (KD) PPL:  749.2100
+  Stage 2 (Self) PPL:749.2100
+  KD Gain:           +14458.35
+  Self Gain:         +0.00
+  Total Gain:        +14458.35
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         20.6907
+  Recovery:          95.30%
+  Peak VRAM:         2836.62 MB
+  Train time:        27.00 s (Stage 1: 27.0s, Stage 2: 0.0s)
+  s/step:            0.5400
+  Loss (final):      12.0885
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0800
+  Repetition-3:      0.8973
+  Train PPL:         673.8800
+  Test PPL:          749.2100
+  Overfit Gap:       75.33
+  Latency (mean):    338.93 ms
+  Latency (std):     3.07 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0d365d9f33df
+
+TRAINING HISTORY (last 10 steps):
+  step    40 | loss=11.8666 | lr=1.20e-04
+  step    41 | loss=12.3137 | lr=1.23e-04
+  step    42 | loss=12.7257 | lr=1.26e-04
+  step    43 | loss=12.9789 | lr=1.29e-04
+  step    44 | loss=13.5195 | lr=1.32e-04
+  step    45 | loss=13.7615 | lr=1.35e-04
+  step    46 | loss=14.0005 | lr=1.38e-04
+  step    47 | loss=14.5869 | lr=1.41e-04
+  step    48 | loss=15.0794 | lr=1.44e-04
+  step    49 | loss=15.5037 | lr=1.47e-04

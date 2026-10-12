@@ -1,39 +1,61 @@
-2026-10-12 19:28:52,657 [INFO] MambaKD: ======================================================================
-2026-10-12 19:28:52,658 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 19:28:52,658 [INFO] MambaKD: ======================================================================
-2026-10-12 19:28:52,658 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 19:28:52,658 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
-2026-10-12 19:28:52,658 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 19:28:53,503 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 19:29:01,451 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 19:29:01,451 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 19:29:02,810 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
-2026-10-12 19:29:02,811 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-12 19:29:02,811 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 19:29:03,078 [INFO] MambaKD: 
-======================================================================
-2026-10-12 19:29:03,078 [INFO] MambaKD: PROCESSING MODULE 1/1: adasplash_attention
-2026-10-12 19:29:03,078 [INFO] MambaKD: ======================================================================
-2026-10-12 19:29:03,079 [INFO] MambaKD: 
-# Running method C for adasplash_attention
-2026-10-12 19:29:03,564 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 19:29:03,566 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 19:29:04,076 [INFO] neuralops.core._attention_injectors: Successfully injected 'adasplash_attention' into 12 transformer blocks.
-2026-10-12 19:29:04,270 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 53.5498
-2026-10-12 19:29:04,270 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 53.5498
-2026-10-12 19:29:20,007 [INFO] MambaKD: Pre-KD PPL for Module adasplash_attention, Method C: 43.22
-2026-10-12 19:29:20,007 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 19:29:20,007 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 43.22 (same protocol)
-2026-10-12 19:29:20,007 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +7.00 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 19:29:20,008 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
-2026-10-12 19:29:21,303 [INFO] MambaKD: [C] Step 0/300 | Loss: 2.5152...
-2026-10-12 19:29:21,408 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.5152 | LR: 3.00e-06
-2026-10-12 19:29:22,462 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.9537...
-2026-10-12 19:29:22,505 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.9537 | LR: 6.00e-06
-2026-10-12 19:29:23,624 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.0207...
-2026-10-12 19:29:23,666 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.0207 | LR: 9.00e-06
-2026-10-12 19:29:24,912 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.3758...
-2026-10-12 19:29:24,955 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.3758 | LR: 1.20e-05
-2026-10-12 19:29:26,134 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.3421...
-2026-10-12 19:29:26,176 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.3421 | LR: 1.50e-05
-2026-10-12 19:29:27,394 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.5285...
+================================================================================
+RUN SUMMARY: adasplash_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        43.2100
+  Post-KD PPL:       41.0500
+  Stage 1 (KD) PPL:  41.0500
+  Stage 2 (Self) PPL:41.0500
+  KD Gain:           +2.16
+  Self Gain:         +0.00
+  Total Gain:        +2.16
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.1337
+  Recovery:          30.86%
+  Peak VRAM:         2838.27 MB
+  Train time:        45.68 s (Stage 1: 45.7s, Stage 2: 0.0s)
+  s/step:            0.9136
+  Loss (final):      2.5027
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0255
+  Repetition-3:      0.9688
+  Train PPL:         39.9800
+  Test PPL:          41.0500
+  Overfit Gap:       1.07
+  Latency (mean):    650.17 ms
+  Latency (std):     58.79 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        4b230f0d85b5
+
+TRAINING HISTORY (last 10 steps):
+  step    40 | loss=9.8941 | lr=1.20e-04
+  step    41 | loss=10.1081 | lr=1.23e-04
+  step    42 | loss=10.6357 | lr=1.26e-04
+  step    43 | loss=10.8236 | lr=1.29e-04
+  step    44 | loss=11.3569 | lr=1.32e-04
+  step    45 | loss=11.8129 | lr=1.35e-04
+  step    46 | loss=12.0909 | lr=1.38e-04
+  step    47 | loss=12.6347 | lr=1.41e-04
+  step    48 | loss=12.9842 | lr=1.44e-04
+  step    49 | loss=13.5902 | lr=1.47e-04

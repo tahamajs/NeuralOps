@@ -1,0 +1,378 @@
+{
+  "method": "C",
+  "pre_ppl": 3671.02,
+  "post_ppl": 3671.02,
+  "ppl_ratio": 101.3814,
+  "recovery_pct": 0.0,
+  "peak_vram_mb": 1608.23,
+  "train_time_s": 4.46,
+  "s_per_step": 0.2973,
+  "loss_final": 6.2845,
+  "cached": true,
+  "post_ppl_stage1": 3671.02,
+  "post_ppl_stage2": 3671.02,
+  "kd_gain": 0.0,
+  "self_gain": 0.0,
+  "total_gain": 0.0,
+  "aligned_with_teacher": false,
+  "beat_teacher_after_self": false,
+  "stage1_time_s": 4.46,
+  "stage2_time_s": 0.0,
+  "self_train_steps": 0,
+  "teacher_params": 124439808,
+  "student_params": 100846992,
+  "trainable_params": 2359296,
+  "batch_size": 4,
+  "seq_len": 256,
+  "learning_rate": 1e-05,
+  "recovery_steps": 15,
+  "train_scope": "module",
+  "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "eval_protocol": {
+    "max_tokens": 15000,
+    "stride": 128,
+    "seq_len": 256,
+    "precision": "fp16",
+    "dataset": "test"
+  },
+  "loss_history": [
+    [
+      0,
+      7.624068260192871
+    ],
+    [
+      1,
+      6.7798991203308105
+    ],
+    [
+      2,
+      6.923562526702881
+    ],
+    [
+      3,
+      6.710333347320557
+    ],
+    [
+      4,
+      6.293833255767822
+    ],
+    [
+      5,
+      6.284469127655029
+    ],
+    [
+      6,
+      5.799204349517822
+    ],
+    [
+      7,
+      5.293219566345215
+    ],
+    [
+      8,
+      5.228719234466553
+    ],
+    [
+      9,
+      5.145233631134033
+    ],
+    [
+      10,
+      5.167469501495361
+    ],
+    [
+      11,
+      5.396596908569336
+    ],
+    [
+      12,
+      5.694957733154297
+    ],
+    [
+      13,
+      5.898665428161621
+    ],
+    [
+      14,
+      7.014685153961182
+    ]
+  ],
+  "ppl_history": {
+    "15": 3671.02
+  },
+  "lr_history": [
+    [
+      0,
+      0.0
+    ],
+    [
+      1,
+      1.0000000000000001e-07
+    ],
+    [
+      2,
+      2.0000000000000002e-07
+    ],
+    [
+      3,
+      3.0000000000000004e-07
+    ],
+    [
+      4,
+      4.0000000000000003e-07
+    ],
+    [
+      5,
+      5.000000000000001e-07
+    ],
+    [
+      6,
+      6.000000000000001e-07
+    ],
+    [
+      7,
+      7.000000000000001e-07
+    ],
+    [
+      8,
+      8.000000000000001e-07
+    ],
+    [
+      9,
+      9.000000000000001e-07
+    ],
+    [
+      10,
+      1.0000000000000002e-06
+    ],
+    [
+      11,
+      1.1e-06
+    ],
+    [
+      12,
+      1.2000000000000002e-06
+    ],
+    [
+      13,
+      1.3e-06
+    ],
+    [
+      14,
+      1.4000000000000001e-06
+    ]
+  ],
+  "generation": {
+    "distinct_2": 0.848,
+    "repetition_3": 0.0419,
+    "samples": [
+      {
+        "prompt": "The quick brown fox",
+        "text": " for the only that), Litt, _ to the fucking in the big leap into the government, _to C# (F*\nThe most important in the government offices, G:\nIf you do you work and while he ran a)",
+        "first_50_tokens": [
+          329,
+          262,
+          691,
+          326,
+          828,
+          406,
+          715,
+          11,
+          4808,
+          284,
+          262,
+          9372,
+          287,
+          262,
+          1263,
+          16470,
+          656,
+          262,
+          1230,
+          11,
+          4808,
+          1462,
+          327,
+          2,
+          357,
+          37,
+          9,
+          198,
+          464,
+          749,
+          1593,
+          287,
+          262,
+          1230,
+          9730,
+          11,
+          402,
+          25,
+          198,
+          1532,
+          345,
+          466,
+          345,
+          670,
+          290,
+          981,
+          339,
+          4966,
+          257,
+          8
+        ]
+      },
+      {
+        "prompt": "Once upon a time",
+        "text": " is that) Vow John and when the fucking, _blank.5) Vise the most popular TV shows/s: Theology in) Andr\u00e9.Vault, US government-12) VE) -\nIn space.5",
+        "first_50_tokens": [
+          318,
+          326,
+          8,
+          569,
+          322,
+          1757,
+          290,
+          618,
+          262,
+          9372,
+          11,
+          4808,
+          27190,
+          13,
+          20,
+          8,
+          569,
+          786,
+          262,
+          749,
+          2968,
+          3195,
+          2523,
+          14,
+          82,
+          25,
+          383,
+          1435,
+          287,
+          8,
+          843,
+          29350,
+          13,
+          53,
+          1721,
+          11,
+          1294,
+          1230,
+          12,
+          1065,
+          8,
+          569,
+          36,
+          8,
+          532,
+          198,
+          818,
+          2272,
+          13,
+          20
+        ]
+      },
+      {
+        "prompt": "In the beginning",
+        "text": " of the government, _ to the fuck off\n\"I'Cause \"A little b) Vialized.000",
+        "first_50_tokens": [
+          286,
+          262,
+          1230,
+          11,
+          4808,
+          284,
+          262,
+          5089,
+          572,
+          198,
+          1,
+          40,
+          6,
+          42323,
+          366,
+          32,
+          1310,
+          275,
+          8,
+          569,
+          498,
+          1143,
+          13,
+          830,
+          50256
+        ]
+      },
+      {
+        "prompt": "The future of AI is",
+        "text": " that) LaMasters, _type.5) Viality. This is still, udp.5 Bases and when not worth the most likely to the most often and when you're s =] Let's them] Theorem\n",
+        "first_50_tokens": [
+          326,
+          8,
+          4689,
+          44,
+          7060,
+          11,
+          4808,
+          4906,
+          13,
+          20,
+          8,
+          569,
+          498,
+          414,
+          13,
+          770,
+          318,
+          991,
+          11,
+          334,
+          26059,
+          13,
+          20,
+          347,
+          1386,
+          290,
+          618,
+          407,
+          2861,
+          262,
+          749,
+          1884,
+          284,
+          262,
+          749,
+          1690,
+          290,
+          618,
+          345,
+          821,
+          264,
+          796,
+          60,
+          3914,
+          338,
+          606,
+          60,
+          383,
+          29625,
+          198
+        ]
+      }
+    ]
+  },
+  "latency": {
+    "mean_latency_ms": 590.09,
+    "std_latency_ms": 1.05
+  },
+  "train_ppl": 2316.66,
+  "test_ppl": 3671.02,
+  "overfit_gap": 1354.36,
+  "lambada_acc": null
+}
