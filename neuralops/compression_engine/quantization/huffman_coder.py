@@ -320,7 +320,7 @@ class HuffmanCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        quantize_bits: int = 8,
+        quantize_bits: int = 4,
         max_error: float = 1.0,
         target_attention_only: bool = False,
         fallback_to_original: bool = False,
@@ -599,12 +599,12 @@ def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
         "quantize_bits",
         kwargs.pop(
             "bits",
-            _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8)),
+            _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 4)),
         ),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)),
+        _cfg_get(comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 1.0)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
@@ -619,7 +619,7 @@ def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
         _cfg_get(
             comp_config,
             "huffman_fallback_to_original",
-            _cfg_get(comp_config, "fallback_to_original", True),
+            _cfg_get(comp_config, "fallback_to_original", False),
         ),
     )
     compressor = HuffmanCompressor(
