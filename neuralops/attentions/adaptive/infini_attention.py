@@ -1,28 +1,7 @@
 """
 Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
 
-Architecture:
-    Parallel branches (all Pre-LayerNorm):
-        * SVD-Mamba SSM branch (delta)
-        * Multi-Head Attention branch (delta)
-        * Expert-Choice MoE branch (delta)
 
-    Final output is the SUM of all three deltas.
-    The outer transformer block is responsible for the residual add.
-
-Key fixes in this version:
-    [JAMBA-FIX-01]  ReZero done RIGHT: only `mamba_scale` and `moe_scale` are zero.
-                    `out_proj` weights use normal init → gradients flow.
-    [JAMBA-FIX-02]  SDPA path enabled WITH attention_mask via explicit attn_mask.
-    [JAMBA-FIX-03]  is_causal + attn_mask conflict resolved (never both).
-    [JAMBA-FIX-04]  Causal mask uses `diagonal=past_len` for KV-cache decode.
-    [JAMBA-FIX-05]  RoPE applied only to NEW tokens; past_k/v concatenated after.
-    [JAMBA-FIX-06]  Parallel Pre-LN deltas (no double residual).
-    [JAMBA-FIX-07]  Robust cache I/O (tuple, list-of-tuples, DynamicCache).
-    [JAMBA-FIX-08]  Multi-architecture weight transfer.
-    [JAMBA-FIX-09]  Idempotency + recursion guards in injector.
-    [JAMBA-FIX-10]  dtype-safe LoRALinear (input cast only).
-    [JAMBA-FIX-11]  Safe mask value by dtype.
 """
 
 from __future__ import annotations

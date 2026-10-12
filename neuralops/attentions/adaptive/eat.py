@@ -1,29 +1,5 @@
 """
 EAT: Efficient Attention Transformer with Progressive Token Pruning.
-
-Production-hardened:
-    * Dense + SDPA fast paths with correct mask handling
-    * RoPE with independent Q/K slicing (incremental decode safe)
-    * Full KV-cache / GQA support
-    * Multi-architecture weight transfer
-    * Optional progressive token pruning (fault-tolerant)
-
-Fixes applied:
-    [EAT-FIX-01]  Removed output padding/truncation hack
-    [EAT-FIX-02]  Cos/sin broadcast helper
-    [EAT-FIX-03]  Never mark DistilBERT-like as nested by default
-    [EAT-FIX-04]  Recursion + idempotency guards in injector
-    [EAT-FIX-05]  Unified causal + padding mask
-    [EAT-FIX-06]  head_mask broadcast
-    [EAT-FIX-07]  Pruning only when explicitly requested
-    [EAT-FIX-08]  dtype-safe LoRALinear (input-side cast only)
-    [EAT-FIX-09]  Storage accounting
-    [EAT-FIX-10]  Config None-safety
-    [EAT-FIX-11]  Robust weight extraction
-    [EAT-FIX-12]  SDPA receives explicit attn_mask (no silent mask drop)
-    [EAT-FIX-13]  RoPE slices Q and K independently (KV-cache safe)
-    [EAT-FIX-14]  Safe mask value by dtype (no hardcoded -1e4)
-    [EAT-FIX-15]  No bare try/except hiding OOM in SDPA
 """
 
 from __future__ import annotations
@@ -140,9 +116,6 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-# ===========================================================================
-# LoRALinear (dtype-safe)
-# ===========================================================================
 class LoRALinear(nn.Module):
     """[EAT-FIX-08] Cast input, not weights. Avoid per-forward weight `.to()`."""
 
@@ -237,9 +210,6 @@ class LoRALinear(nn.Module):
         return out.to(orig_dtype)
 
 
-# ===========================================================================
-# EATBlock
-# ===========================================================================
 @ATTENTION_REGISTRY.register(
     "eat", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
