@@ -12,6 +12,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import platform
 import subprocess
 import sys
@@ -47,11 +48,71 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "neuralops")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from neuralops.eval_all_models_datasets import apply_module_to_model
+try:
+    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+except ImportError:
+    from neuralops.eval_all_models_datasets import apply_module_to_model
 from neuralops.core.registry import (
     ATTENTION_REGISTRY,
     COMPRESSOR_REGISTRY,
 )
+
+
+def _detect_amp_dtype(
+    requested_dtype: str = "auto",
+    requested_bf16: bool = False,
+    requested_fp32: bool = False,
+    requested_fp16: bool = False,
+    device: str = "cuda",
+) -> tuple[torch.dtype, bool]:
+    """
+    Auto-select AMP dtype and GradScaler usage based on GPU capability and user settings.
+    
+    GPU-specific rules:
+    - RTX 4070 (or compute capability >= 8.0 / Ada / Ampere): bfloat16 (amp enabled, scaler disabled)
+    - GTX 1060 (or compute capability < 7.0 / Pascal): float32 (amp disabled, scaler disabled)
+    - Turing / Volta (compute capability 7.x): float16 (amp enabled, scaler enabled)
+    
+    Returns (amp_dtype, use_scaler):
+      - float32  → no autocast, no scaler (full FP32 precision, ideal for GTX 1060)
+      - float16  → autocast + GradScaler (Turing/Volta)
+      - bfloat16 → autocast, no scaler (BF16 native range, ideal for RTX 4070)
+    """
+    env_dtype = os.environ.get("NEURALOPS_DTYPE", "").lower()
+
+    # 1. Explicit user precision request
+    if requested_fp32 or requested_dtype in ("float32", "fp32") or env_dtype in ("float32", "fp32"):
+        return torch.float32, False
+    if requested_bf16 or requested_dtype in ("bfloat16", "bf16") or env_dtype in ("bfloat16", "bf16"):
+        return torch.bfloat16, False
+    if requested_fp16 or requested_dtype in ("float16", "fp16") or env_dtype in ("float16", "fp16"):
+        return torch.float16, True
+
+    # 2. If not on CUDA, fallback to float32
+    if not str(device).startswith("cuda") or not torch.cuda.is_available():
+        return torch.float32, False
+
+    gpu_name = torch.cuda.get_device_name(0).lower()
+    cap = torch.cuda.get_device_capability(0)
+    major, minor = cap
+
+    # 3. Hardware-based auto-detection:
+    # GTX 1060 (Pascal CC 6.1 or any pre-Volta GPU < 7.0) -> pure float32
+    if "1060" in gpu_name or (major, minor) < (7, 0):
+        LOG.info(f"[GPU DETECT] Detected GTX 1060 / Pascal architecture ({gpu_name}, CC {major}.{minor}). Enforcing float32 precision.")
+        return torch.float32, False
+
+    # RTX 4070 (Ada Lovelace CC 8.9, or any Ampere/Ada/Hopper CC >= 8.0 with BF16 support) -> bfloat16
+    if "4070" in gpu_name or (major >= 8 and torch.cuda.is_bf16_supported()):
+        LOG.info(f"[GPU DETECT] Detected RTX 4070 / Ada-Ampere architecture ({gpu_name}, CC {major}.{minor}). Using bfloat16 mixed precision.")
+        return torch.bfloat16, False
+
+    # Turing / Volta (CC 7.0 - 7.5) -> float16 with GradScaler
+    if major >= 7:
+        LOG.info(f"[GPU DETECT] Detected Turing/Volta architecture ({gpu_name}, CC {major}.{minor}). Using float16 mixed precision with GradScaler.")
+        return torch.float16, True
+
+    return torch.float32, False
 
 
 def _get_registry(registry_type: str):
@@ -614,7 +675,7 @@ def build_train_chunks(train_dataset, tokenizer, max_train_texts: int = 5000, se
 # -----------------------------------------------------------------------------
 # Perplexity Evaluation (Sliding Window)
 # -----------------------------------------------------------------------------
-def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 1024, stride: int = 512, max_eval_tokens: int = 15000, device: str = "cuda") -> float:
+def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 1024, stride: int = 512, max_eval_tokens: int = 15000, device: str = "cuda", amp_dtype: torch.dtype = torch.float32) -> float:
     model.eval()
     sample_texts = []
     accum_chars = 0
@@ -645,7 +706,7 @@ def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int =
             if trg_len < (end - begin):
                 tgt[:, :-trg_len] = -100
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=device.startswith("cuda")):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32 and device.startswith("cuda"))):
                 out = model(ids, labels=tgt, use_cache=False)
                 loss = out.loss
 
@@ -669,6 +730,7 @@ def eval_ppl(
     tokenizer,
     test_dataset,
     args: argparse.Namespace,
+    amp_dtype: torch.dtype | None = None,
 ) -> float:
     """Canonical evaluation wrapper around compute_perplexity to guarantee consistent evaluation protocol.
 
@@ -678,6 +740,14 @@ def eval_ppl(
     max_eval_tokens = getattr(args, "eval_max_tokens", 15000)
     seq_len = getattr(args, "seq_len", 256)
     device = getattr(args, "device", "cuda" if torch.cuda.is_available() else "cpu")
+    if amp_dtype is None:
+        amp_dtype, _ = _detect_amp_dtype(
+            requested_dtype=getattr(args, "dtype", "auto"),
+            requested_bf16=getattr(args, "bf16", False),
+            requested_fp32=getattr(args, "fp32", False),
+            requested_fp16=getattr(args, "fp16", False),
+            device=device,
+        )
     return compute_perplexity(
         model=model,
         tokenizer=tokenizer,
@@ -686,6 +756,7 @@ def eval_ppl(
         stride=stride,
         max_eval_tokens=max_eval_tokens,
         device=device,
+        amp_dtype=amp_dtype,
     )
 
 
@@ -699,6 +770,7 @@ def evaluate_generation(
     n_prompts: int = 4,
     max_new_tokens: int = 50,
     seed: int = 42,
+    amp_dtype: torch.dtype = torch.float32,
 ) -> dict[str, Any]:
     """Test text generation on fixed prompts. Computes distinct-2 and repetition-3 metrics."""
     student.eval()
@@ -716,9 +788,9 @@ def evaluate_generation(
     all_bigrams: list[tuple[int, int]] = []
     all_trigrams: list[tuple[int, int, int]] = []
     samples: list[dict[str, Any]] = []
-    amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
+    amp_enabled = device.startswith("cuda") and torch.cuda.is_available() and (amp_dtype != torch.float32)
 
-    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
+    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=amp_enabled):
         for prompt in prompts:
             inp = tokenizer(prompt, return_tensors="pt").to(device)
             inp_len = inp.input_ids.shape[1]
@@ -730,6 +802,7 @@ def evaluate_generation(
                     temperature=0.8,
                     top_p=0.95,
                     pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
                 )
                 gen_ids = out[0, inp_len:].detach().cpu().tolist()
             except Exception as e:
@@ -778,32 +851,37 @@ def measure_latency(
     inp = tokenizer("The quick brown fox", return_tensors="pt").to(device)
     amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
 
-    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
-        for _ in range(warmup):
-            _ = student.generate(
-                **inp,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-            if amp_enabled:
-                torch.cuda.synchronize()
+    latencies = []
+    try:
+        with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
+            for _ in range(warmup):
+                _ = student.generate(
+                    **inp,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
+                )
+                if amp_enabled:
+                    torch.cuda.synchronize()
 
-        latencies = []
-        for _ in range(n_runs):
-            if amp_enabled:
-                torch.cuda.synchronize()
-            t0 = time.perf_counter()
-            _ = student.generate(
-                **inp,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-            if amp_enabled:
-                torch.cuda.synchronize()
-            t1 = time.perf_counter()
-            latencies.append((t1 - t0) * 1000.0)
+            for _ in range(n_runs):
+                if amp_enabled:
+                    torch.cuda.synchronize()
+                t0 = time.perf_counter()
+                _ = student.generate(
+                    **inp,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
+                )
+                if amp_enabled:
+                    torch.cuda.synchronize()
+                t1 = time.perf_counter()
+                latencies.append((t1 - t0) * 1000.0)
+    except Exception as e:
+        LOG.warning("measure_latency failed: %s", e)
 
     mean_ms = round(float(np.mean(latencies)), 2) if latencies else 0.0
     std_ms = round(float(np.std(latencies)), 2) if latencies else 0.0
@@ -858,8 +936,8 @@ class HiddenProjectionAdapter(nn.Module):
 
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
     # تغییر به CrossEntropy با تارگت‌های Soft (بسیار سریع‌تر و کم‌مصرف‌تر از kl_div)
-    s_logits = student_logits.view(-1, student_logits.size(-1)) / temperature
-    t_logits = teacher_logits.contiguous().view(-1, teacher_logits.size(-1)) / temperature
+    s_logits = student_logits.reshape(-1, student_logits.size(-1)) / temperature
+    t_logits = teacher_logits.reshape(-1, teacher_logits.size(-1)) / temperature
     
     t_probs = F.softmax(t_logits, dim=-1)
     loss = F.cross_entropy(s_logits, t_probs)
@@ -1038,7 +1116,7 @@ def build_teacher_cache(
     teacher: nn.Module, tokenizer, train_chunks: torch.Tensor, cache_dir: Path, methods: list[str],
     device: str, seq_len: int, include_attn: bool = False, max_train_texts: int = 1000,
     baseline_ppl: float | None = None, eval_max_tokens: int | None = None, eval_stride: int | None = None,
-    eval_seq_len: int | None = None, test_split_name: str = "test"
+    eval_seq_len: int | None = None, test_split_name: str = "test", amp_dtype: torch.dtype = torch.float32,
 ) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     n_chunks = len(train_chunks)
@@ -1047,7 +1125,7 @@ def build_teacher_cache(
     need_hidden = any(m in methods_set for m in ("B", "C", "D"))
     need_attn = include_attn and ("C" in methods_set)
 
-    LOG.info("Building teacher cache for %d chunks...", n_chunks)
+    LOG.info("Building teacher cache for %d chunks (AMP: %s)...", n_chunks, amp_dtype)
     t0 = time.time()
     teacher.eval()
     teacher.to(device)
@@ -1076,7 +1154,7 @@ def build_teacher_cache(
             if chunk_batch.size(1) > seq_len:
                 chunk_batch = chunk_batch[:, :seq_len]
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=device.startswith("cuda")):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32 and device.startswith("cuda"))):
                 out = teacher(chunk_batch, output_hidden_states=need_hidden, output_attentions=need_attn)
 
             if need_logits and logits_buffer is not None:
@@ -1282,24 +1360,40 @@ def run_kd_method(
     # Move to device + dtype
     # ═══════════════════════════════════════════════════════════
 # ═══════════════════════════════════════════════════════════
-    if args.fp16 and device.startswith("cuda"):
+    # Detect optimal AMP dtype based on GPU capability
+    amp_dtype, use_scaler = _detect_amp_dtype(
+        requested_dtype=getattr(args, "dtype", "auto"),
+        requested_bf16=getattr(args, "bf16", False),
+        requested_fp32=getattr(args, "fp32", False),
+        requested_fp16=getattr(args, "fp16", False),
+        device=device,
+    )
+    LOG.info(f"[AMP] GPU={torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'} | "
+             f"cap={torch.cuda.get_device_capability(0) if torch.cuda.is_available() else 'N/A'} | "
+             f"amp_dtype={amp_dtype} | use_scaler={use_scaler}")
+
+    if amp_dtype == torch.float16 and device.startswith("cuda"):
         student = student.half().to(device)
-    else:
+    elif amp_dtype == torch.bfloat16 and device.startswith("cuda"):
         student = student.to(device)
+    else:
+        student = student.float().to(device)
 
     # 1. Disable internal cache (required for modified architectures and gradient checkpointing)
     student.config.use_cache = False
 
-    # 2. Enable Gradient Checkpointing to save VRAM
-    use_grad_ckpt = True
+    # 2. Enable Gradient Checkpointing only if explicitly requested
+    use_grad_ckpt = getattr(args, "grad_checkpointing", False)
     if use_grad_ckpt and hasattr(student, "gradient_checkpointing_enable"):
         student.gradient_checkpointing_enable()
+        if hasattr(student, "enable_input_require_grads"):
+            student.enable_input_require_grads()
 
     # 3. Strictly DISABLE torch.compile due to graph break bugs with dynamic GQA
     use_compile = False 
     
     # NOW evaluate the Pre-KD PPL with the fully configured student
-    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
     delta_pre = pre_ppl - baseline_ppl
     LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
 
@@ -1335,7 +1429,13 @@ def run_kd_method(
                 f"Injected module slightly regularizes attention. Continuing..."
             )
 
-    n_trainable = set_train_scope(student, args.train_scope)
+    effective_train_scope = args.train_scope
+    # Adaptive scope: if pre-KD PPL is catastrophically high (SVD over-compressed),
+    # escalate from 'module' to 'attention' so the full attention block can be tuned.
+    if effective_train_scope == "module" and pre_ppl > 500.0:
+        effective_train_scope = "attention"
+        LOG.info(f"[ADAPTIVE] pre_ppl={pre_ppl:.2f} > 500, escalating train_scope: module → attention")
+    n_trainable = set_train_scope(student, effective_train_scope)
     if n_trainable == 0:
         for name, p in student.named_parameters():
             if any(k in name.lower() for k in ["attn", "mamba", "ssm"]): 
@@ -1358,17 +1458,23 @@ def run_kd_method(
             else: 
                 other_params.append(p)
 
+    # Adaptive LR: if pre-KD PPL is catastrophically high, reduce LR to avoid divergence
+    effective_lr = args.learning_rate
+    if pre_ppl > 500.0:
+        effective_lr = min(args.learning_rate, 3e-5)
+        LOG.info(f"[ADAPTIVE] pre_ppl={pre_ppl:.2f} > 500, reducing LR: {args.learning_rate:.2e} → {effective_lr:.2e}")
+
     adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
     param_groups = []
-    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": args.learning_rate})
-    if other_params: param_groups.append({"params": other_params, "lr": args.learning_rate})
-    if adapter_params: param_groups.append({"params": adapter_params, "lr": args.learning_rate})
+    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": effective_lr})
+    if other_params: param_groups.append({"params": other_params, "lr": effective_lr})
+    if adapter_params: param_groups.append({"params": adapter_params, "lr": effective_lr})
 
     if not param_groups:
         for p in student.parameters():
             p.requires_grad = True
             p.data = p.data.float()
-        param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": args.learning_rate}]
+        param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": effective_lr}]
 
     optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01,fused=True)
     all_trainable_params = [p for group in param_groups for p in group["params"]]
@@ -1383,15 +1489,15 @@ def run_kd_method(
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    use_scaler = bool(args.fp16 and device.startswith("cuda"))
-    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+    scaler = None
+    if use_scaler:
+        scaler = torch.amp.GradScaler('cuda', enabled=True)
 
     ppl_history: dict[int, float] = {}
     loss_history: list[tuple[int, float]] = []
     lr_history: list[tuple[int, float]] = []
     current_seq_len = args.seq_len
-    gpu_train_chunks = train_chunks.to(device)
-    num_chunks = len(gpu_train_chunks)
+    num_chunks = len(train_chunks)
     chunk_idx = 0
 
     t_start = time.time()
@@ -1406,28 +1512,46 @@ def run_kd_method(
 
         try:
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = gpu_train_chunks[batch_slice]
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(1) > current_seq_len:
                 batch_ids = batch_ids[:, :current_seq_len]
 
-            with torch.cuda.amp.autocast(enabled=use_scaler):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                 if use_cache and teacher_cache is not None:
                     c_logits, c_hidden, c_attn = None, None, None
-                    # import numpy as np  ← این خط را حذف کن (قبلاً بالای فایل import شده)
-                    
+
                     if teacher_cache.get("logits") is not None:
-                        # کپی سریع از هارد به رم، پین کردن، و ارسال غیرهمزمان به GPU
                         c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
-                    
+                        if amp_dtype == torch.float32:
+                            c_logits = c_logits.float()
+                        elif amp_dtype == torch.bfloat16:
+                            c_logits = c_logits.bfloat16()
+                        elif amp_dtype == torch.float16:
+                            c_logits = c_logits.half()
+
                     if teacher_cache.get("hidden_states") is not None:
                         raw_h = teacher_cache["hidden_states"]
-                        c_hidden = tuple(torch.from_numpy(np.array(raw_h[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
-                    
+                        def _cast_h(t):
+                            t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+                            if amp_dtype == torch.float32:
+                                return t_gpu.float()
+                            elif amp_dtype == torch.bfloat16:
+                                return t_gpu.bfloat16()
+                            return t_gpu.half()
+                        c_hidden = tuple(_cast_h(raw_h[l, batch_slice]) for l in range(raw_h.shape[0]))
+
                     if teacher_cache.get("attentions") is not None:
                         raw_a = teacher_cache["attentions"]
-                        c_attn = tuple(torch.from_numpy(np.array(raw_a[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len] for l in range(raw_a.shape[0]))
-                    
+                        def _cast_a(t):
+                            t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len]
+                            if amp_dtype == torch.float32:
+                                return t_gpu.float()
+                            elif amp_dtype == torch.bfloat16:
+                                return t_gpu.bfloat16()
+                            return t_gpu.half()
+                        c_attn = tuple(_cast_a(raw_a[l, batch_slice]) for l in range(raw_a.shape[0]))
+
                     teacher_out = CachedTeacherOutput(logits=c_logits, hidden_states=c_hidden, attentions=c_attn)
                 else:
                     with torch.no_grad():
@@ -1468,16 +1592,17 @@ def run_kd_method(
                 if step % 50 == 0 or step == total_steps or step <= 5:
                     final_loss = float(current_loss_detached.item())  
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f}...")
-            if use_scaler: scaler.scale(loss_scaled).backward()
-
-            else: loss_scaled.backward()
+            if use_scaler and scaler is not None:
+                scaler.scale(loss_scaled).backward()
+            else:
+                loss_scaled.backward()
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
                 loss_history.append((step, float(current_loss_detached.item())))
                 lr_history.append((step, float(scheduler.get_last_lr()[0])))
                 max_norm = getattr(args, "max_grad_norm", 1.0)
-                if use_scaler:
+                if use_scaler and scaler is not None:
                     scaler.unscale_(optimizer)
                     torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
                     scaler.step(optimizer)
@@ -1493,7 +1618,7 @@ def run_kd_method(
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f} | LR: {scheduler.get_last_lr()[0]:.2e}")
 
                 if step % args.eval_every == 0 or step == total_steps:
-                    eval_ppl_val = eval_ppl(student, tokenizer, test_dataset, args)
+                    eval_ppl_val = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
                     ppl_history[step] = eval_ppl_val
                     LOG.info(f"[{method_name}] Step {step} Eval PPL: {eval_ppl_val:.2f}")
                     if math.isnan(eval_ppl_val) or eval_ppl_val > args.early_stop_ppl:
@@ -1514,7 +1639,7 @@ def run_kd_method(
     if math.isnan(post_ppl_stage1) and ppl_history:
         post_ppl_stage1 = list(ppl_history.values())[-1]
     if math.isnan(post_ppl_stage1):
-        post_ppl_stage1 = eval_ppl(student, tokenizer, test_dataset, args)
+        post_ppl_stage1 = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
     LOG.info(f"[{method_name}] [STAGE1-DONE] KD finished. post_ppl_stage1 = {post_ppl_stage1:.2f}")
 
     # ---- Stage 2: CE-only self-training ----
@@ -1527,13 +1652,25 @@ def run_kd_method(
         s2_lr = getattr(args, "self_train_lr", None) or args.learning_rate
         LOG.info(f"[{method_name}] Starting Stage 2 (self-training, CE-only) for {self_train_steps} steps (LR={s2_lr:.2e})...")
 
+        # Ensure train mode and at least some trainable params for Stage 2
+        student.train()
         stage2_params = [p for p in student.parameters() if p.requires_grad]
+        if not stage2_params:
+            LOG.warning(f"[{method_name}] Stage 2: no trainable params found – re-enabling attention/lora params.")
+            for name, p in student.named_parameters():
+                if any(k in name.lower() for k in ["attn", "lora", "adapter", "mamba", "ssm"]):
+                    p.requires_grad = True
+            stage2_params = [p for p in student.parameters() if p.requires_grad]
         stage2_optimizer = torch.optim.AdamW(
             stage2_params,
             lr=s2_lr,
             weight_decay=0.01,
             fused=True
         )
+        # Use a fresh scaler for Stage 2 to avoid GradScaler state corruption from Stage 1
+        s2_scaler = None
+        if use_scaler:
+            s2_scaler = torch.amp.GradScaler("cuda", enabled=True)
         stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             stage2_optimizer,
             T_max=self_train_steps,
@@ -1545,30 +1682,33 @@ def run_kd_method(
         for s2_step in range(1, self_train_steps + 1):
             student.train()
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = gpu_train_chunks[batch_slice]
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(0) == 0:
                 chunk_idx = 0
                 batch_slice = slice(0, min(args.batch_size, num_chunks))
-                batch_ids = gpu_train_chunks[batch_slice]
+                batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
 
             if warmup_s2 > 0 and s2_step <= warmup_s2:
                 for param_group in stage2_optimizer.param_groups:
                     param_group['lr'] = s2_lr * (s2_step / warmup_s2)
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=use_scaler):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                 student_out = student(batch_ids)
                 shift_logits = student_out.logits[..., :-1, :].contiguous()
                 shift_labels = batch_ids[..., 1:].contiguous()
                 loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
                 loss_scaled = loss_ce / args.grad_accum_steps
 
-            if use_scaler:
-                scaler.scale(loss_scaled).backward()
-                scaler.unscale_(stage2_optimizer)
-                torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
-                scaler.step(stage2_optimizer)
-                scaler.update()
+            if use_scaler and s2_scaler is not None:
+                if loss_scaled.requires_grad:
+                    s2_scaler.scale(loss_scaled).backward()
+                    s2_scaler.unscale_(stage2_optimizer)
+                    torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                    s2_scaler.step(stage2_optimizer)
+                    s2_scaler.update()
+                else:
+                    LOG.warning(f"[{method_name}] Stage 2 step {s2_step}: loss has no grad_fn, skipping backward.")
             else:
                 loss_scaled.backward()
                 torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
@@ -1587,11 +1727,11 @@ def run_kd_method(
                 LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | CE Loss: {loss_ce.item():.4f} | LR: {curr_lr:.2e}")
 
             if s2_step % args.eval_every == 0 or s2_step == self_train_steps:
-                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
                 ppl_history[f"stage2_{s2_step}"] = s2_eval_ppl
                 LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | Eval PPL: {s2_eval_ppl:.2f}")
 
-        post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args)
+        post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
         stage2_time_s = round(time.time() - t_stage2_start, 2)
         LOG.info(f"[{method_name}] [STAGE2-DONE] post_ppl_stage2 = {post_ppl_stage2:.2f}")
         del stage2_optimizer, stage2_scheduler
@@ -1643,7 +1783,7 @@ def run_kd_method(
     t_qual_start = time.time()
     
     # 1. Generation test
-    gen_results = evaluate_generation(student, tokenizer, device=device)
+    gen_results = evaluate_generation(student, tokenizer, device=device, amp_dtype=amp_dtype)
     
     # 2. Train/Test Gap
     test_ppl = post_ppl
@@ -1860,7 +2000,17 @@ def main():
     
     # ---- System ----
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--fp16", action="store_true", default=(torch.cuda.is_available()))
+    cuda_capability = torch.cuda.get_device_capability(0)[0] if torch.cuda.is_available() else 0
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="auto",
+        choices=["auto", "bfloat16", "float32", "float16", "bf16", "fp32", "fp16"],
+        help="Target precision: 'auto' (detects RTX 4070 -> bfloat16, GTX 1060 -> float32), 'bfloat16' / 'bf16', 'float32' / 'fp32', or 'float16' / 'fp16'",
+    )
+    parser.add_argument("--bf16", action="store_true", default=False, help="Force bfloat16 precision (ideal for RTX 4070 / Ada / Ampere)")
+    parser.add_argument("--fp32", action="store_true", default=False, help="Force float32 full precision (required for GTX 1060 / Pascal)")
+    parser.add_argument("--fp16", action="store_true", default=False, help="Enable float16 mixed precision (Turing / Volta)")
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
@@ -1880,6 +2030,27 @@ def main():
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
+    if getattr(args, "fp32", False) or args.dtype in ("float32", "fp32"):
+        args.fp16 = False
+        args.bf16 = False
+        args.dtype = "float32"
+    elif getattr(args, "bf16", False) or args.dtype in ("bfloat16", "bf16"):
+        args.fp16 = False
+        args.fp32 = False
+        args.dtype = "bfloat16"
+    elif getattr(args, "fp16", False) or args.dtype in ("float16", "fp16"):
+        args.fp32 = False
+        args.bf16 = False
+        args.dtype = "float16"
+
+    # Resolve global AMP dtype
+    global_amp_dtype, global_use_scaler = _detect_amp_dtype(
+        requested_dtype=args.dtype,
+        requested_bf16=args.bf16,
+        requested_fp32=args.fp32,
+        requested_fp16=args.fp16,
+        device=args.device,
+    )
     
     # Flatten/split comma-separated module names if provided (e.g. --modules mod1,mod2)
     resolved_modules = []
@@ -1899,7 +2070,7 @@ def main():
     LOG.info("Multi-Module Knowledge Distillation Sweep")
     LOG.info("=" * 70)
     LOG.info("Model: %s | Modules: %d to process | Methods: %s", args.model_name, len(args.modules), args.methods)
-    LOG.info("Device: %s | FP16: %s | Batch: %d | Seq: %d", args.device, args.fp16, args.batch_size, args.seq_len)
+    LOG.info("Device: %s | Precision: %s (AMP: %s, Scaler: %s) | Batch: %d | Seq: %d", args.device, global_amp_dtype, global_amp_dtype != torch.float32, global_use_scaler, args.batch_size, args.seq_len)
     
     # ---- 1. Phase 0: Setup Once ----
     LOG.info("Loading tokenizer: %s", args.model_name)
@@ -1989,16 +2160,20 @@ def main():
                 LOG.info("Loading teacher model to build cache: %s", args.model_name)
                 teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
                 teacher.eval()
-                if args.fp16 and args.device.startswith("cuda"):
+                if global_amp_dtype == torch.float16 and args.device.startswith("cuda"):
                     teacher = teacher.half()
+                elif global_amp_dtype == torch.bfloat16 and args.device.startswith("cuda"):
+                    teacher = teacher.to(args.device)
+                else:
+                    teacher = teacher.float().to(args.device)
                 teacher.to(args.device)
                 LOG.info("Computing teacher baseline PPL...")
-                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args, amp_dtype=global_amp_dtype)
                 LOG.info("Building teacher cache at %s", cache_dir)
                 build_teacher_cache(
                     teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len,
                     args.cache_attn, args.max_train_texts, baseline_ppl, args.eval_max_tokens, eval_stride,
-                    eval_seq_len=args.seq_len, test_split_name=test_split_name
+                    eval_seq_len=args.seq_len, test_split_name=test_split_name, amp_dtype=global_amp_dtype,
                 )
                 teacher_cache = load_teacher_cache(cache_dir)
                 LOG.info("Teacher cache built. Evicting Teacher from VRAM to CPU to save memory...")
@@ -2008,11 +2183,15 @@ def main():
         LOG.info("Loading teacher model: %s", args.model_name)
         teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
         teacher.eval()
-        if args.fp16 and args.device.startswith("cuda"):
+        if global_amp_dtype == torch.float16 and args.device.startswith("cuda"):
             teacher = teacher.half()
+        elif global_amp_dtype == torch.bfloat16 and args.device.startswith("cuda"):
+            teacher = teacher.to(args.device)
+        else:
+            teacher = teacher.float().to(args.device)
         teacher.to(args.device)
         LOG.info("Computing teacher baseline PPL...")
-        baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+        baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args, amp_dtype=global_amp_dtype)
 
     LOG.info("Using teacher baseline PPL: %.2f", baseline_ppl)
     LOG.info(

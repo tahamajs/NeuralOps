@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/tri_branch_hybrid/20261012_195121_bs4_seq256_lr3e-06_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/tri_branch_hybrid/20261012_205626_bs8_seq256_lr3e-04_C

@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_block_transformer_hiba_C_20261012_214643",
+    "run_name": "kd_block_transformer_hiba_gpt2_C",
+    "timestamp_start": "2026-10-12T21:47:21.019576+00:00",
+    "timestamp_end": "2026-10-12T21:47:21.021314+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "a38ca56397fc0529de758bf9e9b87ed2063451f8",
+    "git_commit_short": "a38ca56397",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "neuralops/benchmarks/_legacy/kd_quick_test.py |  134 +-\n results/kd_runs/hybrid_attention/latest.txt   |    2 +-\n results/kd_runs/registry.json                 | 6132 +++++++++++++++++++++++++\n results/kd_runs/tri_branch_hybrid/latest.txt  |    2 +-\n results/results.csv                           |    2 +\n results/results.parquet                       |  Bin 29907 -> 29963 bytes\n 6 files changed, 6236 insertions(+), 36 deletions(-)",
+    "session_id": "750e5794-a30b-4b07-bdfc-202463ba1ede",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "block_transformer_hiba",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 50,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 36.57,
+    "post_ppl": 36.5,
+    "post_ppl_stage1": 36.5,
+    "post_ppl_stage2": 36.5,
+    "kd_gain": 0.07,
+    "recovery_pct": 19.44
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 4830.77,
+    "train_duration_s": 24.76
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "a9380c5d6a9db9ce",
+  "run_id": "kd_block_transformer_hiba_C_20261012_214643",
+  "run_name": "kd_block_transformer_hiba_gpt2_C",
+  "timestamp_start": "2026-10-12T21:47:21.019576+00:00",
+  "timestamp_end": "2026-10-12T21:47:21.021314+00:00",
+  "git_commit": "a38ca56397fc0529de758bf9e9b87ed2063451f8",
+  "git_dirty": true,
+  "run_key": "block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7"
+}
