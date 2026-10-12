@@ -464,9 +464,9 @@ class ReplaceAttention(BaseAttention):
         # SDPA does not support returning attention weights or arbitrary head_mask
         if not output_attentions and head_mask is None:
             try:
-                q_sdpa = Q.half() if Q.dtype == torch.float32 else Q
-                k_sdpa = K.half() if K.dtype == torch.float32 else K
-                v_sdpa = V.half() if V.dtype == torch.float32 else V
+                q_sdpa = Q
+                k_sdpa = K
+                v_sdpa = V
 
                 out_sdpa = F.scaled_dot_product_attention(
                     q_sdpa,
