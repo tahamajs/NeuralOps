@@ -166,7 +166,7 @@ class CosformerAttention(BaseAttention):
 
     def __init__(self, config=None, rank=None, max_seq_len=512, act_fun="relu",
                  eps=1e-6, pretrained_attn=None, old_attn=None, comp_config=None,
-                 layer_id=None, layer_idx=None, window_size=64, **kwargs):
+                 layer_id=None, layer_idx=None, window_size=256, **kwargs):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         def _cfg_get(k, default=None):
