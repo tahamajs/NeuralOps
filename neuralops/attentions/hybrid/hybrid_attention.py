@@ -327,9 +327,9 @@ class HybridAttention(BaseAttention):
         can_sdpa = (not self.training or self.dropout.p == 0.0) and True
         if can_sdpa:
             try:
-                q_sdp = Q.half() if Q.dtype == torch.float32 else Q
-                k_sdp = K.half() if K.dtype == torch.float32 else K
-                v_sdp = V.half() if V.dtype == torch.float32 else V
+                q_sdp = Q
+                k_sdp = K
+                v_sdp = V
 
                 attn_bias_sdp = None
                 if valid_mask is not None:
