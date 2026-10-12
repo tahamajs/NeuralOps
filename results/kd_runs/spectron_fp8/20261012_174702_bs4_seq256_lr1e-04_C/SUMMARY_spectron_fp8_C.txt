@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: spectron_fp8 / C
+================================================================================
+
+MODEL INFO:
+  Total params:      110.36 M
+  Trainable params:  2.38 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4864.3400
+  Post-KD PPL:       3563.9800
+  Stage 1 (KD) PPL:  3563.9800
+  Stage 2 (Self) PPL:3563.9800
+  KD Gain:           +1300.36
+  Self Gain:         +0.00
+  Total Gain:        +1300.36
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         98.4253
+  Recovery:          26.93%
+  Peak VRAM:         1665.58 MB
+  Train time:        39.24 s (Stage 1: 39.2s, Stage 2: 0.0s)
+  s/step:            1.9620
+  Loss (final):      7.6379
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.1378
+  Repetition-3:      0.8385
+  Train PPL:         3024.3800
+  Test PPL:          3563.9800
+  Overfit Gap:       539.60
+  Latency (mean):    822.17 ms
+  Latency (std):     0.60 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        3049fd3abe8a
+
+TRAINING HISTORY (last 10 steps):
+  step    10 | loss=6.3220 | lr=1.00e-05
+  step    11 | loss=6.7178 | lr=1.10e-05
+  step    12 | loss=6.2441 | lr=1.20e-05
+  step    13 | loss=5.8862 | lr=1.30e-05
+  step    14 | loss=5.8710 | lr=1.40e-05
+  step    15 | loss=6.1645 | lr=1.50e-05
+  step    16 | loss=6.7997 | lr=1.60e-05
+  step    17 | loss=6.8948 | lr=1.70e-05
+  step    18 | loss=7.2326 | lr=1.80e-05
+  step    19 | loss=7.7197 | lr=1.90e-05

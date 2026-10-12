@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/cosformer/20261012_103440_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/cosformer/20261012_175600_bs4_seq256_lr1e-04_C
