@@ -1,0 +1,22 @@
+2026-10-12 19:21:00,188 [INFO] MambaKD: ======================================================================
+2026-10-12 19:21:00,188 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 19:21:00,189 [INFO] MambaKD: ======================================================================
+2026-10-12 19:21:00,189 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 19:21:00,189 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 19:21:00,189 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 19:21:00,314 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 19:21:00,316 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-12 19:21:00,316 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
+2026-10-12 19:21:01,801 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 19:21:01,801 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 19:21:01,972 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
+2026-10-12 19:21:01,973 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-12 19:21:01,973 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 19:21:02,213 [INFO] MambaKD: 
+======================================================================
+2026-10-12 19:21:02,213 [INFO] MambaKD: PROCESSING MODULE 1/1: aegis_spectron_fp8
+2026-10-12 19:21:02,213 [INFO] MambaKD: ======================================================================
+2026-10-12 19:21:02,214 [INFO] MambaKD: 
+# Running method C for aegis_spectron_fp8
+2026-10-12 19:21:02,450 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 19:21:02,452 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available

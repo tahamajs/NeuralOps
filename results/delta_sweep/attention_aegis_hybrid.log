@@ -1,22 +1,7 @@
-2026-10-12 19:11:57,626 [INFO] MambaKD: ======================================================================
-2026-10-12 19:11:57,626 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 19:11:57,626 [INFO] MambaKD: ======================================================================
-2026-10-12 19:11:57,626 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 19:11:57,626 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
-2026-10-12 19:11:57,626 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 19:11:57,756 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 19:11:57,757 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-12 19:11:57,758 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
-2026-10-12 19:11:59,171 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 19:11:59,171 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 19:11:59,359 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
-2026-10-12 19:11:59,359 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-12 19:11:59,360 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 19:11:59,606 [INFO] MambaKD: 
-======================================================================
-2026-10-12 19:11:59,607 [INFO] MambaKD: PROCESSING MODULE 1/1: aegis_hybrid
-2026-10-12 19:11:59,607 [INFO] MambaKD: ======================================================================
-2026-10-12 19:11:59,608 [INFO] MambaKD: 
-# Running method C for aegis_hybrid
-2026-10-12 19:11:59,855 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 19:11:59,856 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 19:30:25,698 [INFO] MambaKD: ======================================================================
+2026-10-12 19:30:25,698 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 19:30:25,698 [INFO] MambaKD: ======================================================================
+2026-10-12 19:30:25,698 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 19:30:25,698 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 19:30:25,698 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 19:30:27,824 [INFO] MambaKD: Loading WikiText-2 dataset...
