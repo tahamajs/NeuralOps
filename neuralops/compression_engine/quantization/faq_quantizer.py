@@ -779,7 +779,7 @@ class FAQQuantizer(BaseCompressor):
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 8)))
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 4)))
     alpha = kwargs.pop(
         "alpha", _cfg_get(comp_config, "faq_alpha", _cfg_get(comp_config, "alpha", 0.5))
     )
@@ -798,7 +798,7 @@ def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "faq_max_error", _cfg_get(comp_config, "max_error", 0.35)),
+        _cfg_get(comp_config, "faq_max_error", _cfg_get(comp_config, "max_error", 0.85)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
