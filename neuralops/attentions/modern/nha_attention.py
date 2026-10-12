@@ -414,6 +414,11 @@ class NativeHybridAttention(BaseAttention):
         target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
 
         with torch.no_grad():
+            for key in ("q", "k", "v", "o"):
+                w_chk, _ = extracted[key]
+                if w_chk is not None and torch.linalg.norm(w_chk.float()).item() < 1e-4:
+                    raise RuntimeError(f"NHA: weight norm for {key} is < 1e-4 ({torch.linalg.norm(w_chk.float()).item()})")
+
             for key, target_mod in target_map.items():
                 w, b = extracted[key]
                 if w is None:
