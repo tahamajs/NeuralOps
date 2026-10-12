@@ -455,7 +455,7 @@ class EATBlock(BaseAttention):
         if prune_layer is not None:
             self.prune_layer = prune_layer
         else:
-            enable_pruning = True
+            enable_pruning = False
             keep_ratio = None
             if comp_config is not None:
                 enable_pruning = bool(
