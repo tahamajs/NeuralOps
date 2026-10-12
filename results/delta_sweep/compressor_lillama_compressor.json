@@ -1,10 +1,10 @@
-﻿{
-    "module":  "lillama_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  36.22,
-    "duration_sec":  182.4,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:32:46"
+{
+  "module": "lillama_compressor",
+  "type": "compressor",
+  "status": "DEPRECATED",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 0.0,
+  "error": "Deprecated alias in eval_types.py DEPRECATED_MODULES",
+  "timestamp": "2026-10-12 02:10:00"
 }
