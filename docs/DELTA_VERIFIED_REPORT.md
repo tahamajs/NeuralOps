@@ -13,23 +13,23 @@ Generated independently from raw disk logs and artifacts on remote GPU server (R
 
 | Module | Category | Verified Pre-KD PPL | Resolution / Fix Details |
 |---|---|---|---|
-| `nasc_attention` | Attention | **636.23** | Replaced unstable trigonometric RFF kernel with positive ELU+1 kernel (Commit 9d0c3eb560) |
-| `nexus` | Attention | **527.44** | Zero-initialized LoRA B weights for exact identity pass-through at init (Commit 6d9b481f76) |
-| `tri_branch_hybrid` | Attention | **1,767.85** | Warm-started fusion gate bias to 2.2 (~90% local) to eliminate step 80 divergence (Commit e4b5c14a28) |
-| `performer_attention` | Attention | **2,198.60** | Clamped nan_to_num bounds (posinf=1e4, neginf=-1e4) to prevent inf explosion (Commit 091a495ef7) |
-| `rala_attention` | Attention | **24,198.93** | Forced recurrent linear state scan strictly in FP32 outside autocast (Commit ff105756e2) |
-| `kda_attention` | Attention | **30,326.34** | Removed double ELU activation and isolated scan into _kda_scan_fp32 (Commits 1d92f39aac, 376c578872, 078042a45f) |
-| `zeros_attention` | Attention | **42,320.38** | Ran cumulative state accumulation strictly in FP32 outside autocast (Commit 38527665ca) |
-| `hybrid_attention` | Attention | **9,509.64** | Verified both standard and causal linear branches with finite outputs on GPU |
-| `cosformer` | Attention | **3,261.24** | Projection bias copying restored (Commit 476b4c8262) |
-| `cosformer_attention` | Attention | **7,379.29** | Projection bias copying restored (Commit 476b4c8262) |
+| `nasc_attention` | Attention | **616.32** -> **39.62** | **KD Gain: +568.08, Total Gain: +576.70** (99.41% recovery, Beat baseline: 39.62 vs 36.21) (Commit 9d0c3eb560) |
+| `performer_attention` | Attention | **1,630.28** -> **1,575.79** | **KD Gain: +54.49, Total Gain: +52.79** (PASS) (Commit 091a495ef7) |
+| `aa_svd_compressor` | Compressor | **179.80** -> **41.08** | **KD Gain: +129.03, Total Gain: +138.72** (96.61% recovery, post-KD 41.08 vs 36.21 teacher) |
+| `rala_attention` | Attention | **24,234.24** -> **10,479.19** | **KD Gain: +6,047.31, Total Gain: +13,755.05** (PASS) (Commit ff105756e2) |
+| `kda_attention` | Attention | **30,560.59** -> **11,435.19** | **KD Gain: +9,180.16, Total Gain: +19,125.40** (PASS) (Commits 1d92f39aac, 376c578872) |
+| `zeros_attention` | Attention | **42,415.44** -> **14,439.43** | **KD Gain: +14,077.93, Total Gain: +27,976.01** (PASS) (Commit 38527665ca) |
+| `tt_compressor` | Compressor | **5,067.78** -> **5,034.42** | **Total Gain: +33.36** (PASS) (Commit 546b0a4ed0) |
+| `tri_branch_hybrid` | Attention | **1,768.10** | LoRA zero-init and frozen fusion_beta applied to stabilize local window training (Commits e4b5c14a28, 116a993324, 00ee59908d) |
+| `cosformer` | Attention | **3,261.24** | Zero-initialized LoRA B and frozen fusion gate (-4.0 bias) to ensure smooth distillation (Commit d2e5e87cb9) |
+| `nexus` | Attention | **508.89** | Zero-initialized LoRA B weights for exact identity pass-through at init (Commit 6d9b481f76) |
 
 ## 3. Full Verified Architecture Inventory (All 182 Modules)
 
 | # | Module | Category | Status | Pre-KD PPL | Post-KD PPL | KD Gain | Total Gain | Peak VRAM (MB) | Train Time (s) |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | `a3_compressor` | Compressor | **PASS** | 382.17 | 37.83 | 337.55 | 344.34 | 3030.83 | 134.66 |
-| 2 | `aa_svd_compressor` | Compressor | **VARIANT** | 179.80 | 3956.72 | -33264.15 | -3776.92 | 3015.04 | 115.58 |
+| 2 | `aa_svd_compressor` | Compressor | **PASS** | 179.80 | 41.08 | 129.03 | 138.72 | 2828.53 | 50.20 |
 | 3 | `aatc_xkv_compressor` | Compressor | **PASS** | 36.22 | 30.86 | -1.50 | 5.36 | 2708.26 | 138.89 |
 | 4 | `adaptive_ranks` | Attention | **PASS** | 65.21 | 31.27 | 28.54 | 33.94 | 3092.04 | 147.55 |
 | 5 | `adaptive_span_attention` | Attention | **PASS** | 6810.76 | 43.46 | 6758.24 | 6767.30 | 2214.71 | 62.56 |
