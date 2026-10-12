@@ -20,6 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -1025,9 +1026,9 @@ class SplitHeadHybridAttention(BaseAttention):
             # ------------------------------------------------------------------
             # SDPA fast path
             # ------------------------------------------------------------------
-            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
-            k_sdp = K_full.half() if K_full.dtype == torch.float32 else K_full
-            v_sdp = V_full.half() if V_full.dtype == torch.float32 else V_full
+            q_sdp = maybe_half(Q)
+            k_sdp = maybe_half(K_full)
+            v_sdp = maybe_half(V_full)
 
             attn_bias_sdp = None
             if eff_mask is not None and eff_mask.dim() == 4:

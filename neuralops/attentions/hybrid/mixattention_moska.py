@@ -32,6 +32,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -902,9 +903,9 @@ class MixAttentionMoSKA(BaseAttention):
             # ====================================================
             if eff_mask is None and head_mask is None and not output_attentions:
                 try:
-                    _qs = q.half() if q.dtype == torch.float32 else q
-                    _ks = K_full.half() if K_full.dtype == torch.float32 else K_full
-                    _vs = V_full.half() if V_full.dtype == torch.float32 else V_full
+                    _qs = maybe_half(q)
+                    _ks = maybe_half(K_full)
+                    _vs = maybe_half(V_full)
                     _sdpa_out = F.scaled_dot_product_attention(
                         _qs, _ks, _vs,
                         is_causal=is_causal,
