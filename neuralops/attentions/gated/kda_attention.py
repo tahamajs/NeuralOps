@@ -1037,9 +1037,7 @@ class KDAAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- Feature map ----
-        q = F.elu(q) + 1.0
-        k = F.elu(k) + 1.0
+        # Feature map (ELU+1) is applied inside _kda_scan in float32 for numerical stability
 
         # ---- Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -1058,10 +1056,12 @@ class KDAAttention(BaseAttention):
                 k = k * m_kv
                 v = v * m_kv
 
-            S = torch.matmul(k.float().transpose(-1, -2).contiguous(), v.float())
-            Z = k.float().sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-            num = torch.matmul(q.float(), S)
-            den = torch.matmul(q.float(), Z).clamp(min=1e-5)
+            q_f = F.elu(q.float()) + 1.0
+            k_f = F.elu(k.float()) + 1.0
+            S = torch.matmul(k_f.transpose(-1, -2).contiguous(), v.float())
+            Z = k_f.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            num = torch.matmul(q_f, S)
+            den = torch.matmul(q_f, Z).clamp(min=1e-5)
             y = (num / den).to(q.dtype)
             new_past_key_value = None
 
