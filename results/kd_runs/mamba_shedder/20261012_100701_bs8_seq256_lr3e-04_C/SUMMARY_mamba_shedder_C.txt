@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: mamba_shedder / C
+================================================================================
+
+MODEL INFO:
+  Total params:      107.41 M
+  Trainable params:  22.67 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        653.2900
+  Post-KD PPL:       59.5900
+  Stage 1 (KD) PPL:  73.9200
+  Stage 2 (Self) PPL:59.5900
+  KD Gain:           +579.37
+  Self Gain:         +14.33
+  Total Gain:        +593.70
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.6457
+  Recovery:          96.21%
+  Peak VRAM:         3007.86 MB
+  Train time:        171.20 s (Stage 1: 138.9s, Stage 2: 32.3s)
+  s/step:            0.3424
+  Loss (final):      24.3176
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8655
+  Repetition-3:      0.0359
+  Train PPL:         39.5700
+  Test PPL:          59.5900
+  Overfit Gap:       20.02
+  Latency (mean):    226.77 ms
+  Latency (std):     6.25 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=4.0445 | lr=1.74e-04
+  step   420 | loss=3.5128 | lr=1.50e-04
+  step   430 | loss=3.9408 | lr=1.27e-04
+  step   440 | loss=3.6605 | lr=1.04e-04
+  step   450 | loss=4.0408 | lr=8.20e-05
+  step   460 | loss=3.7879 | lr=6.19e-05
+  step   470 | loss=3.5270 | lr=4.40e-05
+  step   480 | loss=3.5819 | lr=2.87e-05
+  step   490 | loss=3.6019 | lr=1.64e-05
+  step   500 | loss=3.7783 | lr=7.44e-06

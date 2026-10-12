@@ -1,12 +1,11 @@
 {
   "module": "uniql_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 10717.18,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 10753.39,
-  "pre_ppl": 10753.39,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.362894"
+  "duration_sec": 179.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:31:34"
 }

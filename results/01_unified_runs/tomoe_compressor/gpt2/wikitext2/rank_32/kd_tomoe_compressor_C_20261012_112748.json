@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_tomoe_compressor_C_20261012_112748",
+    "run_name": "kd_tomoe_compressor_gpt2_C",
+    "timestamp_start": "2026-10-12T11:31:14.902784+00:00",
+    "timestamp_end": "2026-10-12T11:31:14.902795+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "078042a45f7358235411b29a972fb1f2d5ed0d3e",
+    "git_commit_short": "078042a45f",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "generate_inventory.py                              |    109 -\n results/delta_sweep/attention_lola_attention.log   |     38 +\n results/delta_sweep/compressor_a3_compressor.err   |     18 +-\n results/delta_sweep/compressor_a3_compressor.json  |     15 +-\n results/delta_sweep/compressor_a3_compressor.log   |    203 +-\n .../delta_sweep/compressor_aa_svd_compressor.err   |     18 +-\n .../delta_sweep/compressor_aa_svd_compressor.json  |     15 +-\n .../delta_sweep/compressor_aa_svd_compressor.log   |    191 +-\n results/delta_sweep/compressor_adaptive_ranks.err  |     18 +-\n results/delta_sweep/compressor_adaptive_ranks.json |     15 +-\n results/delta_sweep/compressor_adaptive_ranks.log  |    289 +-\n .../delta_sweep/compressor_adasvd_compressor.err   |     18 +-\n .../delta_sweep/compressor_adasvd_compressor.json  |     15 +-\n .../delta_sweep/compressor_adasvd_compressor.log   |    253 +-\n results/delta_sweep/compressor_admm_compressor.err |     18 +-\n .../delta_sweep/compressor_admm_compressor.json    |     15 +-\n results/delta_sweep/compressor_admm_compressor.log |    195 +-\n results/delta_sweep/compressor_admm_pruner.err     |     18 +-\n results/delta_sweep/compressor_admm_pruner.json    |     15 +-\n results/delta_sweep/compressor_admm_pruner.log     |    193 +-\n results/delta_sweep/compressor_armor_pruner.err    |     18 +-\n results/delta_sweep/compressor_armor_pruner.json   |     15 +-\n results/delta_sweep/compressor_armor_pruner.log    |    267 +-\n results/delta_sweep/compressor_ast_pruner.err      |     18 +-\n results/delta_sweep/compressor_ast_pruner.json     |     15 +-\n results/delta_sweep/compressor_ast_pruner.log      |    195 +-\n results/delta_sweep/compressor_astro_quantizer.err |     18 +-\n .../delta_sweep/compressor_astro_quantizer.json    |     15 +-\n results/delta_sweep/compressor_astro_quantizer.log |    205 +-\n results/delta_sweep/compressor_bonsai_pruner.err   |     18 +-\n results/delta_sweep/compressor_bonsai_pruner.json  |     15 +-\n results/delta_sweep/compressor_bonsai_pruner.log   |    195 +-\n .../compressor_cachenotes_compressor.err           |     18 +-\n .../compressor_cachenotes_compressor.json          |     15 +-\n .../compressor_cachenotes_compressor.log           |    333 +-\n results/delta_sweep/compressor_come_compressor.err |     18 +-\n .../delta_sweep/compressor_come_compressor.json    |     15 +-\n results/delta_sweep/compressor_come_compressor.log |    193 +-\n .../delta_sweep/compressor_compot_compressor.err   |     18 +-\n .../delta_sweep/compressor_compot_compressor.json  |     15 +-\n .../delta_sweep/compressor_compot_compressor.log   |    195 +-\n results/delta_sweep/compressor_coopq_quantizer.err |     18 +-\n .../delta_sweep/compressor_coopq_quantizer.json    |     15 +-\n results/delta_sweep/compressor_coopq_quantizer.log |    168 +-\n results/delta_sweep/compressor_cr_compressor.err   |     18 +-\n results/delta_sweep/compressor_cr_compressor.json  |     15 +-\n results/delta_sweep/compressor_cr_compressor.log   |    195 +-\n results/delta_sweep/compressor_cur_compressor.err  |     18 +-\n results/delta_sweep/compressor_cur_compressor.json |     15 +-\n results/delta_sweep/compressor_cur_compressor.log  |    251 +-\n .../delta_sweep/compressor_cur_moe_compressor.err  |     18 +-\n .../delta_sweep/compressor_cur_moe_compressor.json |     15 +-\n .../delta_sweep/compressor_cur_moe_compressor.log  |    233 +-\n results/delta_sweep/compressor_delta_kv.err        |     18 +-\n results/delta_sweep/compressor_delta_kv.json       |     15 +-\n results/delta_sweep/compressor_delta_kv.log        |    281 +-\n results/delta_sweep/compressor_direct_svd.err      |     18 +-\n results/delta_sweep/compressor_direct_svd.json     |     15 +-\n results/delta_sweep/compressor_direct_svd.log      |    291 +-\n results/delta_sweep/compressor_dobi_svd.err        |     18 +-\n results/delta_sweep/compressor_dobi_svd.json       |     15 +-\n results/delta_sweep/compressor_dobi_svd.log        |    177 +-\n .../delta_sweep/compressor_drone_compressor.err    |     18 +-\n .../delta_sweep/compressor_drone_compressor.json   |     15 +-\n .../delta_sweep/compressor_drone_compressor.log    |    195 +-\n results/delta_sweep/compressor_dynamic_rank.err    |     18 +-\n results/delta_sweep/compressor_dynamic_rank.json   |     15 +-\n results/delta_sweep/compressor_dynamic_rank.log    |    197 +-\n .../compressor_enlighten_compressor.err            |     18 +-\n .../compressor_enlighten_compressor.json           |     15 +-\n .../compressor_enlighten_compressor.log            |    195 +-\n .../compressor_entropy_budget_allocation.err       |     18 +-\n .../compressor_entropy_budget_allocation.json      |     15 +-\n .../compressor_entropy_budget_allocation.log       |    195 +-\n results/delta_sweep/compressor_erc_svd.err         |     18 +-\n results/delta_sweep/compressor_erc_svd.json        |     15 +-\n results/delta_sweep/compressor_erc_svd.log         |    195 +-\n results/delta_sweep/compressor_faq_quantizer.err   |     18 +-\n results/delta_sweep/compressor_faq_quantizer.json  |     15 +-\n results/delta_sweep/compressor_faq_quantizer.log   |    161 +-\n results/delta_sweep/compressor_flap.err            |     18 +-\n results/delta_sweep/compressor_flap.json           |     15 +-\n results/delta_sweep/compressor_flap.log            |    195 +-\n results/delta_sweep/compressor_flat_llm.err        |     18 +-\n results/delta_sweep/compressor_flat_llm.json       |     15 +-\n results/delta_sweep/compressor_flat_llm.log        |    195 +-\n .../delta_sweep/compressor_frandi_compressor.err   |     18 +-\n .../delta_sweep/compressor_frandi_compressor.json  |     15 +-\n .../delta_sweep/compressor_frandi_compressor.log   |    195 +-\n .../delta_sweep/compressor_fwsvd_compressor.err    |     18 +-\n .../delta_sweep/compressor_fwsvd_compressor.json   |     13 +-\n .../delta_sweep/compressor_fwsvd_compressor.log    |    161 +-\n results/delta_sweep/compressor_gfws.err            |     18 +-\n results/delta_sweep/compressor_gfws.json           |     15 +-\n results/delta_sweep/compressor_gfws.log            |    195 +-\n .../delta_sweep/compressor_grecodec_compressor.err |     18 +-\n .../compressor_grecodec_compressor.json            |     15 +-\n .../delta_sweep/compressor_grecodec_compressor.log |    195 +-\n .../compressor_hashed_net_compressor.err           |     18 +-\n .../compressor_hashed_net_compressor.json          |     15 +-\n .../compressor_hashed_net_compressor.log           |    163 +-\n results/delta_sweep/compressor_huffman_coder.err   |     18 +-\n results/delta_sweep/compressor_huffman_coder.json  |     13 +-\n results/delta_sweep/compressor_huffman_coder.log   |    182 +-\n .../delta_sweep/compressor_hybrid_svd_layer.err    |     18 +-\n .../delta_sweep/compressor_hybrid_svd_layer.json   |     15 +-\n .../delta_sweep/compressor_hybrid_svd_layer.log    |    193 +-\n results/delta_sweep/compressor_kmeans_quantize.err |     18 +-\n .../delta_sweep/compressor_kmeans_quantize.json    |     15 +-\n results/delta_sweep/compressor_kmeans_quantize.log |    197 +-\n .../compressor_kronecker_compressor.err            |     18 +-\n .../compressor_kronecker_compressor.json           |     15 +-\n .../compressor_kronecker_compressor.log            |    197 +-\n .../delta_sweep/compressor_kronecker_tt_lora.err   |     18 +-\n .../delta_sweep/compressor_kronecker_tt_lora.json  |     15 +-\n .../delta_sweep/compressor_kronecker_tt_lora.log   |    165 +-\n results/delta_sweep/compressor_kvtc_compressor.err |     18 +-\n .../delta_sweep/compressor_kvtc_compressor.json    |     15 +-\n results/delta_sweep/compressor_kvtc_compressor.log |    146 +-\n results/delta_sweep/compressor_liftr.err           |     18 +-\n results/delta_sweep/compressor_liftr.json          |     13 +-\n results/delta_sweep/compressor_liftr.log           |    163 +-\n .../delta_sweep/compressor_lillama_compressor.err  |     18 +-\n .../delta_sweep/compressor_lillama_compressor.json |     13 +-\n .../delta_sweep/compressor_lillama_compressor.log  |    195 +-\n results/delta_sweep/compressor_lsc_compressor.err  |     18 +-\n results/delta_sweep/compressor_lsc_compressor.json |     13 +-\n results/delta_sweep/compressor_lsc_compressor.log  |    167 +-\n results/delta_sweep/compressor_mamba_shedder.err   |     59 +-\n results/delta_sweep/compressor_mamba_shedder.json  |     15 +-\n results/delta_sweep/compressor_mamba_shedder.log   |    113 +-\n results/delta_sweep/compressor_mgie_budget.err     |     18 +-\n results/delta_sweep/compressor_mgie_budget.json    |     15 +-\n results/delta_sweep/compressor_mgie_budget.log     |    161 +-\n .../delta_sweep/compressor_mlorq_compressor.err    |     18 +-\n .../delta_sweep/compressor_mlorq_compressor.json   |     15 +-\n .../delta_sweep/compressor_mlorq_compressor.log    |    193 +-\n .../delta_sweep/compressor_modegpt_compressor.err  |     18 +-\n .../delta_sweep/compressor_modegpt_compressor.json |     15 +-\n .../delta_sweep/compressor_modegpt_compressor.log  |    195 +-\n results/delta_sweep/compressor_nmf_compressor.err  |     18 +-\n results/delta_sweep/compressor_nmf_compressor.json |     15 +-\n results/delta_sweep/compressor_nmf_compressor.log  |    182 +-\n results/delta_sweep/compressor_oats_compressor.err |     18 +-\n .../delta_sweep/compressor_oats_compressor.json    |     15 +-\n results/delta_sweep/compressor_oats_compressor.log |    193 +-\n .../compressor_optimal_subspace_projection.err     |     18 +-\n .../compressor_optimal_subspace_projection.json    |     15 +-\n .../compressor_optimal_subspace_projection.log     |    283 +-\n results/delta_sweep/compressor_proxsparse.err      |     18 +-\n results/delta_sweep/compressor_proxsparse.json     |     15 +-\n results/delta_sweep/compressor_proxsparse.log      |    193 +-\n .../compressor_residual_svd_compressor.err         |     18 +-\n .../compressor_residual_svd_compressor.json        |     15 +-\n .../compressor_residual_svd_compressor.log         |    161 +-\n .../delta_sweep/compressor_roast_hashed_linear.err |     18 +-\n .../compressor_roast_hashed_linear.json            |     15 +-\n .../delta_sweep/compressor_roast_hashed_linear.log |    152 +-\n .../compressor_rotational_slicegpt_int4.err        |     18 +-\n .../compressor_rotational_slicegpt_int4.json       |     15 +-\n .../compressor_rotational_slicegpt_int4.log        |    184 +-\n results/delta_sweep/compressor_rpca_compressor.err |     18 +-\n .../delta_sweep/compressor_rpca_compressor.json    |     15 +-\n results/delta_sweep/compressor_rpca_compressor.log |    161 +-\n results/delta_sweep/compressor_saes_svd_v2.err     |     18 +-\n results/delta_sweep/compressor_saes_svd_v2.json    |     13 +-\n results/delta_sweep/compressor_saes_svd_v2.log     |    161 +-\n results/delta_sweep/compressor_salr.err            |     18 +-\n results/delta_sweep/compressor_salr.json           |     13 +-\n results/delta_sweep/compressor_salr.log            |    161 +-\n results/delta_sweep/compressor_sdrm_compressor.err |     18 +-\n .../delta_sweep/compressor_sdrm_compressor.json    |     15 +-\n results/delta_sweep/compressor_sdrm_compressor.log |    193 +-\n results/delta_sweep/compressor_slicegpt.err        |     18 +-\n results/delta_sweep/compressor_slicegpt.json       |     13 +-\n results/delta_sweep/compressor_slicegpt.log        |    187 +-\n results/delta_sweep/compressor_slicegpt_pca.err    |     16 +-\n results/delta_sweep/compressor_slicegpt_pca.json   |     15 +-\n results/delta_sweep/compressor_slicegpt_pca.log    |    211 +-\n results/delta_sweep/compressor_slim_compressor.err |     18 +-\n .../delta_sweep/compressor_slim_compressor.json    |     15 +-\n results/delta_sweep/compressor_slim_compressor.log |    365 +-\n results/delta_sweep/compressor_soka_compressor.err |     18 +-\n .../delta_sweep/compressor_soka_compressor.json    |     13 +-\n results/delta_sweep/compressor_soka_compressor.log |    161 +-\n results/delta_sweep/compressor_sparsegpt.err       |     18 +-\n results/delta_sweep/compressor_sparsegpt.json      |     15 +-\n results/delta_sweep/compressor_sparsegpt.log       |    197 +-\n .../delta_sweep/compressor_subspace_projection.err |     18 +-\n .../compressor_subspace_projection.json            |     13 +-\n .../delta_sweep/compressor_subspace_projection.log |    161 +-\n results/delta_sweep/compressor_svd_linear.err      |     18 +-\n results/delta_sweep/compressor_svd_linear.json     |     15 +-\n results/delta_sweep/compressor_svd_linear.log      |    163 +-\n .../delta_sweep/compressor_svd_llm_compressor.err  |     19 +-\n .../delta_sweep/compressor_svd_llm_compressor.json |     15 +-\n .../delta_sweep/compressor_svd_llm_compressor.log  |    179 +-\n results/delta_sweep/compressor_swift_svd.err       |     18 +-\n results/delta_sweep/compressor_swift_svd.json      |     15 +-\n results/delta_sweep/compressor_swift_svd.log       |    195 +-\n results/delta_sweep/compressor_swift_svd_act.err   |     18 +-\n results/delta_sweep/compressor_swift_svd_act.json  |     13 +-\n results/delta_sweep/compressor_swift_svd_act.log   |    163 +-\n .../delta_sweep/compressor_tomoe_compressor.err    |     47 +-\n .../delta_sweep/compressor_tomoe_compressor.log    |    306 +-\n results/delta_sweep/summary.csv                    |    319 +-\n results/kd_runs/a3_compressor/latest.txt           |      2 +-\n results/kd_runs/aa_svd_compressor/latest.txt       |      2 +-\n results/kd_runs/adaptive_ranks/latest.txt          |      2 +-\n results/kd_runs/adasvd_compressor/latest.txt       |      2 +-\n results/kd_runs/admm_compressor/latest.txt         |      2 +-\n results/kd_runs/admm_pruner/latest.txt             |      2 +-\n results/kd_runs/armor_pruner/latest.txt            |      2 +-\n results/kd_runs/ast_pruner/latest.txt              |      2 +-\n results/kd_runs/astro_quantizer/latest.txt         |      2 +-\n results/kd_runs/bonsai_pruner/latest.txt           |      2 +-\n results/kd_runs/cachenotes_compressor/latest.txt   |      2 +-\n results/kd_runs/come_compressor/latest.txt         |      2 +-\n results/kd_runs/compot_compressor/latest.txt       |      2 +-\n results/kd_runs/cosformer/latest.txt               |      2 +-\n results/kd_runs/cr_compressor/latest.txt           |      2 +-\n results/kd_runs/cur_compressor/latest.txt          |      2 +-\n results/kd_runs/cur_moe_compressor/latest.txt      |      2 +-\n results/kd_runs/delta_kv/latest.txt                |      2 +-\n results/kd_runs/direct_svd/latest.txt              |      2 +-\n results/kd_runs/dobi_svd/latest.txt                |      2 +-\n results/kd_runs/drone_compressor/latest.txt        |      2 +-\n results/kd_runs/dynamic_rank/latest.txt            |      2 +-\n results/kd_runs/enlighten_compressor/latest.txt    |      2 +-\n .../kd_runs/entropy_budget_allocation/latest.txt   |      2 +-\n results/kd_runs/erc_svd/latest.txt                 |      2 +-\n results/kd_runs/faq_quantizer/latest.txt           |      2 +-\n results/kd_runs/flap/latest.txt                    |      2 +-\n results/kd_runs/flat_llm/latest.txt                |      2 +-\n results/kd_runs/frandi_compressor/latest.txt       |      2 +-\n results/kd_runs/fwsvd_compressor/latest.txt        |      2 +-\n results/kd_runs/gfws/latest.txt                    |      2 +-\n results/kd_runs/grecodec_compressor/latest.txt     |      2 +-\n results/kd_runs/hashed_net_compressor/latest.txt   |      2 +-\n results/kd_runs/huffman_coder/latest.txt           |      2 +-\n results/kd_runs/hybrid_svd_layer/latest.txt        |      2 +-\n results/kd_runs/kmeans_quantize/latest.txt         |      2 +-\n results/kd_runs/kronecker_compressor/latest.txt    |      2 +-\n results/kd_runs/kronecker_tt_lora/latest.txt       |      2 +-\n results/kd_runs/liftr/latest.txt                   |      2 +-\n results/kd_runs/lillama_compressor/latest.txt      |      2 +-\n results/kd_runs/lola_attention/latest.txt          |      2 +-\n results/kd_runs/lsc_compressor/latest.txt          |      2 +-\n results/kd_runs/mamba_shedder/latest.txt           |      2 +-\n results/kd_runs/mgie_budget/latest.txt             |      2 +-\n results/kd_runs/mlorq_compressor/latest.txt        |      2 +-\n results/kd_runs/modegpt_compressor/latest.txt      |      2 +-\n results/kd_runs/mqa/latest.txt                     |      2 +-\n results/kd_runs/oats_compressor/latest.txt         |      2 +-\n .../kd_runs/optimal_subspace_projection/latest.txt |      2 +-\n .../kd_runs/progressive_token_pruning/latest.txt   |      2 +-\n results/kd_runs/proxsparse/latest.txt              |      2 +-\n results/kd_runs/registry.json                      | 359499 ++++++++++++++++++\n results/kd_runs/regla_attention/latest.txt         |      2 +-\n results/kd_runs/residual_svd_compressor/latest.txt |      2 +-\n results/kd_runs/roast_hashed_linear/latest.txt     |      2 +-\n .../kd_runs/rotational_slicegpt_int4/latest.txt    |      2 +-\n results/kd_runs/rpca_compressor/latest.txt         |      2 +-\n results/kd_runs/saes_svd_v2/latest.txt             |      2 +-\n results/kd_runs/salr/latest.txt                    |      2 +-\n results/kd_runs/samba_m3/latest.txt                |      2 +-\n results/kd_runs/sdrm_compressor/latest.txt         |      2 +-\n results/kd_runs/sink_attention/latest.txt          |      2 +-\n results/kd_runs/slicegpt/latest.txt                |      2 +-\n results/kd_runs/slicegpt_pca/latest.txt            |      2 +-\n results/kd_runs/slim_compressor/latest.txt         |      2 +-\n results/kd_runs/soka_compressor/latest.txt         |      2 +-\n results/kd_runs/sparsegpt/latest.txt               |      2 +-\n results/kd_runs/subspace_projection/latest.txt     |      2 +-\n results/kd_runs/svd_linear/latest.txt              |      2 +-\n results/kd_runs/svd_llm_compressor/latest.txt      |      2 +-\n results/kd_runs/swift_svd/latest.txt               |      2 +-\n results/kd_runs/swift_svd_act/latest.txt           |      2 +-\n .../kd_runs/triton_svd_linear_attention/latest.txt |      2 +-\n results/kd_runs/vspec/latest.txt                   |      2 +-\n results/results.csv                                |    126 +\n results/results.parquet                            |    Bin 19011 -> 25690 bytes\n 282 files changed, 368890 insertions(+), 7142 deletions(-)",
+    "session_id": "63986e3d-2b60-447d-bd58-448c86d16db1",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "tomoe_compressor",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 25782.07,
+    "post_ppl": 206.67,
+    "post_ppl_stage1": 335.49,
+    "post_ppl_stage2": 206.67,
+    "kd_gain": 25446.58,
+    "recovery_pct": 99.34
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 3134.32,
+    "train_duration_s": 187.82
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "1c89d81156bab702",
+  "run_id": "kd_tomoe_compressor_C_20261012_112748",
+  "run_name": "kd_tomoe_compressor_gpt2_C",
+  "timestamp_start": "2026-10-12T11:31:14.902784+00:00",
+  "timestamp_end": "2026-10-12T11:31:14.902795+00:00",
+  "git_commit": "078042a45f7358235411b29a972fb1f2d5ed0d3e",
+  "git_dirty": true,
+  "run_key": "tomoe_compressor__gpt2__wikitext2__rank32__7cdc20fee34c"
+}

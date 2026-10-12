@@ -1,174 +1,191 @@
-2026-10-11 16:36:20,767 [INFO] MambaKD: ======================================================================
-2026-10-11 16:36:20,768 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 16:36:20,768 [INFO] MambaKD: ======================================================================
-2026-10-11 16:36:20,769 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 16:36:20,770 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 16:36:20,770 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 16:36:21,209 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 16:36:21,213 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 16:36:21,217 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 16:36:25,012 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 16:36:25,014 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 16:36:25,218 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 16:36:25,220 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 16:36:25,220 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 16:36:25,827 [INFO] MambaKD: 
+2026-10-12 11:01:24,899 [INFO] MambaKD: ======================================================================
+2026-10-12 11:01:24,899 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 11:01:24,899 [INFO] MambaKD: ======================================================================
+2026-10-12 11:01:24,899 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 11:01:24,899 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 11:01:24,899 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 11:01:26,771 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:01:27,349 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 11:01:27,616 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:01:27,849 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 11:01:28,073 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:01:28,308 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:01:28,411 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 11:01:29,052 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:01:29,170 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 11:01:51,116 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 11:01:51,841 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 11:01:52,129 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 11:01:52,360 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 11:01:52,942 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 11:01:53,184 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:01:53,413 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:01:53,729 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 11:01:53,959 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:01:54,619 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 11:01:54,620 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 11:01:54,877 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:01:55,095 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 11:01:55,202 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 11:01:55,202 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 11:01:55,203 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 11:01:55,311 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 16:36:25,829 [INFO] MambaKD: PROCESSING MODULE 1/1: slim_compressor
-2026-10-11 16:36:25,830 [INFO] MambaKD: ======================================================================
-2026-10-11 16:36:25,830 [INFO] MambaKD: 
+2026-10-12 11:01:55,311 [INFO] MambaKD: PROCESSING MODULE 1/1: slim_compressor
+2026-10-12 11:01:55,311 [INFO] MambaKD: ======================================================================
+2026-10-12 11:01:55,311 [INFO] MambaKD: 
 # Running method C for slim_compressor
-2026-10-11 16:36:26,172 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 16:36:26,176 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 16:36:27,338 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5937 on transformer.h.0.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,340 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,489 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7373 on transformer.h.0.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,492 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,558 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 2.5028 on transformer.h.0.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,560 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,676 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7491 on transformer.h.1.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,678 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,741 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6107 on transformer.h.1.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,744 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,808 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8794 on transformer.h.1.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,809 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,926 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8953 on transformer.h.2.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,928 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:27,989 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.6696 on transformer.h.2.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:27,991 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,056 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 2.5251 on transformer.h.2.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,057 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,119 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5352 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,120 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,176 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6963 on transformer.h.3.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,178 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,244 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6834 on transformer.h.3.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,246 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,312 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8723 on transformer.h.3.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,314 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,375 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7360 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,377 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,433 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7032 on transformer.h.4.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,435 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,500 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6231 on transformer.h.4.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,502 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,568 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5826 on transformer.h.4.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,572 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,631 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5058 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,633 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,687 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6703 on transformer.h.5.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,688 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,752 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5842 on transformer.h.5.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,753 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,818 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9461 on transformer.h.5.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,819 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,880 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5182 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,882 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,937 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5892 on transformer.h.6.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:28,938 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:28,998 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5991 on transformer.h.6.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,000 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,064 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7890 on transformer.h.6.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,067 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,130 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5630 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,132 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,187 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6374 on transformer.h.7.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,188 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,316 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.1019 on transformer.h.7.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,318 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,380 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5744 on transformer.h.8.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,381 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,437 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7174 on transformer.h.8.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,438 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,565 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8811 on transformer.h.8.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,565 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,626 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5868 on transformer.h.9.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,628 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,682 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5326 on transformer.h.9.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,684 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,749 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7173 on transformer.h.9.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,752 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,817 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8800 on transformer.h.9.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,819 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,880 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5931 on transformer.h.10.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,882 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:29,937 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9070 on transformer.h.10.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:29,938 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,003 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6721 on transformer.h.10.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,005 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,070 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9375 on transformer.h.10.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,073 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,136 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6763 on transformer.h.11.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,137 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,192 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5957 on transformer.h.11.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,193 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,257 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5660 on transformer.h.11.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,260 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,324 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5491 on transformer.h.11.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
-2026-10-11 16:36:30,326 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
-2026-10-11 16:36:30,518 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 43.6016
-2026-10-11 16:36:30,521 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 43.6016
-2026-10-11 16:36:35,072 [INFO] MambaKD: Pre-KD PPL for Module slim_compressor, Method C: 124.83
-2026-10-11 16:36:35,074 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 16:36:35,074 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 124.83 (same protocol)
-2026-10-11 16:36:35,075 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +88.61 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 16:36:35,076 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 16:36:35,374 [INFO] MambaKD: [C] Step 0/300 | Loss: 7.1366...
-2026-10-11 16:36:35,612 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.1366 | LR: 1.50e-05
-2026-10-11 16:36:35,733 [INFO] MambaKD: [C] Step 1/300 | Loss: 6.6930...
-2026-10-11 16:36:35,852 [INFO] MambaKD: [C] Step 2/300 | Loss: 6.6930 | LR: 3.00e-05
-2026-10-11 16:36:35,966 [INFO] MambaKD: [C] Step 2/300 | Loss: 6.1176...
-2026-10-11 16:36:36,096 [INFO] MambaKD: [C] Step 3/300 | Loss: 6.1176 | LR: 4.50e-05
-2026-10-11 16:36:36,255 [INFO] MambaKD: [C] Step 3/300 | Loss: 5.2598...
-2026-10-11 16:36:36,413 [INFO] MambaKD: [C] Step 4/300 | Loss: 5.2598 | LR: 6.00e-05
-2026-10-11 16:36:36,568 [INFO] MambaKD: [C] Step 4/300 | Loss: 4.9188...
-2026-10-11 16:36:36,716 [INFO] MambaKD: [C] Step 5/300 | Loss: 4.9188 | LR: 7.50e-05
-2026-10-11 16:36:36,835 [INFO] MambaKD: [C] Step 5/300 | Loss: 4.5527...
-2026-10-11 16:36:49,797 [INFO] MambaKD: [C] Step 50/300 | Loss: 4.5527 | LR: 7.50e-04
-2026-10-11 16:36:49,909 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.7148...
-2026-10-11 16:37:02,192 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.7148 | LR: 1.50e-03
-2026-10-11 16:37:08,128 [INFO] MambaKD: [C] Step 100 Eval PPL: 45.22
-2026-10-11 16:37:08,386 [INFO] MambaKD: [C] Step 100/300 | Loss: 15.0661...
-2026-10-11 16:37:28,871 [INFO] MambaKD: [C] Step 150/300 | Loss: 15.0661 | LR: 1.28e-03
-2026-10-11 16:37:29,035 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6511...
-2026-10-11 16:37:44,482 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6511 | LR: 7.50e-04
-2026-10-11 16:37:49,448 [INFO] MambaKD: [C] Step 200 Eval PPL: 43.61
-2026-10-11 16:37:49,563 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.6558...
-2026-10-11 16:38:01,738 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.6558 | LR: 2.20e-04
-2026-10-11 16:38:01,858 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.8069...
-2026-10-11 16:38:14,211 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.8069 | LR: 1.50e-04
-2026-10-11 16:38:19,181 [INFO] MambaKD: [C] Step 300 Eval PPL: 39.01
-2026-10-11 16:38:19,196 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 39.01
-2026-10-11 16:38:19,197 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 16:38:19,374 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.8549 | LR: 1.50e-05
-2026-10-11 16:38:19,582 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.0024 | LR: 3.00e-05
-2026-10-11 16:38:19,767 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9577 | LR: 4.50e-05
-2026-10-11 16:38:19,960 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0985 | LR: 6.00e-05
-2026-10-11 16:38:20,155 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.1628 | LR: 7.50e-05
-2026-10-11 16:38:28,395 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5576 | LR: 2.84e-04
-2026-10-11 16:38:37,734 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0933 | LR: 1.96e-04
-2026-10-11 16:38:42,559 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 33.99
-2026-10-11 16:38:51,660 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3413 | LR: 8.20e-05
-2026-10-11 16:39:00,624 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3732 | LR: 7.44e-06
-2026-10-11 16:39:05,581 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 32.87
-2026-10-11 16:39:10,549 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 32.87
-2026-10-11 16:39:10,551 [INFO] MambaKD: [C] [COMPLETE] Pre: 124.83
-  Stage 1 (KD):    39.01  (kd_gain=+85.82)
-  Stage 2 (self):  32.87  (self_gain=+6.14)
-  Total:                  (total_gain=+91.96)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 39.01 > 36.22)
+2026-10-12 11:01:55,690 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 11:01:55,691 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 11:01:56,194 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5937 on transformer.h.0.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,194 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,307 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7373 on transformer.h.0.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,307 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,366 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 2.5028 on transformer.h.0.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,366 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.0.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,453 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7491 on transformer.h.1.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,453 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,500 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6107 on transformer.h.1.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,500 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,547 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8794 on transformer.h.1.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,547 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.1.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,631 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8953 on transformer.h.2.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,631 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,676 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.6696 on transformer.h.2.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,676 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,723 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 2.5251 on transformer.h.2.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,723 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.2.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,768 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5352 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,768 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,807 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6963 on transformer.h.3.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,807 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,854 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6834 on transformer.h.3.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,854 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,902 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8723 on transformer.h.3.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,902 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.3.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,946 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7360 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,946 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:56,988 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7032 on transformer.h.4.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:56,988 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,034 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6231 on transformer.h.4.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,034 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,081 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5826 on transformer.h.4.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,082 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.4.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,127 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5058 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,127 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,167 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6703 on transformer.h.5.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,167 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,213 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5842 on transformer.h.5.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,213 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,260 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9461 on transformer.h.5.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,260 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.5.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,304 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5182 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,304 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,344 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5892 on transformer.h.6.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,344 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,389 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5991 on transformer.h.6.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,389 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,436 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7890 on transformer.h.6.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,436 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.6.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,479 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5630 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,479 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,519 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6374 on transformer.h.7.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,521 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,614 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.1019 on transformer.h.7.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,614 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.7.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,659 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5744 on transformer.h.8.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,659 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,699 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7174 on transformer.h.8.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,699 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,792 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8811 on transformer.h.8.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,793 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.8.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,837 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5868 on transformer.h.9.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,837 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,877 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5326 on transformer.h.9.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,877 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,924 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.7173 on transformer.h.9.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,925 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:57,972 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.8800 on transformer.h.9.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:57,972 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.9.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,016 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5931 on transformer.h.10.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,016 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,057 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9070 on transformer.h.10.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,058 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,105 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6721 on transformer.h.10.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,105 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,152 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.9375 on transformer.h.10.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,152 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.10.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,197 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.6763 on transformer.h.11.attn.c_attn exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,197 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,237 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5957 on transformer.h.11.attn.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,237 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,284 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 0.5660 on transformer.h.11.mlp.c_fc exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,284 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.mlp.c_fc. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,332 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: SLiM reconstruction error 1.5491 on transformer.h.11.mlp.c_proj exceeded threshold 0.5000. Skipping (fallback to original).
+2026-10-12 11:01:58,332 [WARNING] neuralops.compression_engine.low_rank.slim_compressor: Fallback triggered for transformer.h.11.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-10-12 11:01:58,398 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 43.4789
+2026-10-12 11:01:58,398 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 43.4789
+2026-10-12 11:01:59,113 [INFO] MambaKD: Pre-KD PPL for Module slim_compressor, Method C: 124.81
+2026-10-12 11:01:59,113 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 11:01:59,113 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 124.81 (same protocol)
+2026-10-12 11:01:59,113 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +88.60 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 11:01:59,114 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-12 11:01:59,700 [INFO] MambaKD: [C] Step 0/300 | Loss: 5.9832...
+2026-10-12 11:01:59,856 [INFO] MambaKD: [C] Step 1/300 | Loss: 5.9832 | LR: 1.50e-05
+2026-10-12 11:02:00,278 [INFO] MambaKD: [C] Step 1/300 | Loss: 5.8706...
+2026-10-12 11:02:00,406 [INFO] MambaKD: [C] Step 2/300 | Loss: 5.8706 | LR: 3.00e-05
+2026-10-12 11:02:00,858 [INFO] MambaKD: [C] Step 2/300 | Loss: 5.9650...
+2026-10-12 11:02:00,974 [INFO] MambaKD: [C] Step 3/300 | Loss: 5.9650 | LR: 4.50e-05
+2026-10-12 11:02:01,552 [INFO] MambaKD: [C] Step 3/300 | Loss: 5.4851...
+2026-10-12 11:02:01,668 [INFO] MambaKD: [C] Step 4/300 | Loss: 5.4851 | LR: 6.00e-05
+2026-10-12 11:02:02,088 [INFO] MambaKD: [C] Step 4/300 | Loss: 4.9228...
+2026-10-12 11:02:02,204 [INFO] MambaKD: [C] Step 5/300 | Loss: 4.9228 | LR: 7.50e-05
+2026-10-12 11:02:02,755 [INFO] MambaKD: [C] Step 5/300 | Loss: 4.7409...
+2026-10-12 11:02:25,729 [INFO] MambaKD: [C] Step 50/300 | Loss: 4.7409 | LR: 7.50e-04
+2026-10-12 11:02:26,267 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.7145...
+2026-10-12 11:02:54,801 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.7145 | LR: 1.50e-03
+2026-10-12 11:02:55,693 [INFO] MambaKD: [C] Step 100 Eval PPL: 43.16
+2026-10-12 11:02:56,476 [INFO] MambaKD: [C] Step 100/300 | Loss: 15.2240...
+2026-10-12 11:03:24,521 [INFO] MambaKD: [C] Step 150/300 | Loss: 15.2240 | LR: 1.28e-03
+2026-10-12 11:03:24,976 [INFO] MambaKD: [C] Step 150/300 | Loss: 18.3145...
+2026-10-12 11:03:52,224 [INFO] MambaKD: [C] Step 200/300 | Loss: 18.3145 | LR: 7.50e-04
+2026-10-12 11:03:53,097 [INFO] MambaKD: [C] Step 200 Eval PPL: 42.26
+2026-10-12 11:03:53,426 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.6923...
+2026-10-12 11:04:24,277 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.6923 | LR: 2.20e-04
+2026-10-12 11:04:24,712 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.7247...
+2026-10-12 11:04:48,872 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.7247 | LR: 1.50e-04
+2026-10-12 11:04:49,749 [INFO] MambaKD: [C] Step 300 Eval PPL: 38.36
+2026-10-12 11:04:49,750 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 38.36
+2026-10-12 11:04:49,751 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 11:04:49,909 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.6512 | LR: 1.50e-05
+2026-10-12 11:04:50,059 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.0826 | LR: 3.00e-05
+2026-10-12 11:04:50,209 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.0437 | LR: 4.50e-05
+2026-10-12 11:04:50,359 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0430 | LR: 6.00e-05
+2026-10-12 11:04:50,509 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 3.8378 | LR: 7.50e-05
+2026-10-12 11:04:57,295 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.3071 | LR: 2.84e-04
+2026-10-12 11:05:04,680 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.6961 | LR: 1.96e-04
+2026-10-12 11:05:05,349 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.06
+2026-10-12 11:05:12,829 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3643 | LR: 8.20e-05
+2026-10-12 11:05:20,218 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.0881 | LR: 7.44e-06
+2026-10-12 11:05:20,984 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 32.60
+2026-10-12 11:05:21,730 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 32.60
+2026-10-12 11:05:21,738 [INFO] MambaKD: [C] [COMPLETE] Pre: 124.81
+  Stage 1 (KD):    38.36  (kd_gain=+86.45)
+  Stage 2 (self):  32.60  (self_gain=+5.76)
+  Total:                  (total_gain=+92.21)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 38.36 > 36.21)
   Beat teacher after self? YES
   Recovery: 100.00%
-  Time: 155.4s (Stage 1: 104.0s, Stage 2: 51.4s)
-2026-10-11 16:39:28,057 [INFO] MambaKD: [QUALITY] distinct_2=0.90, repetition_3=0.02, train_ppl=21.97, test_ppl=32.87, overfit_gap=10.90, latency=1905.2ms
-2026-10-11 16:39:28,066 [INFO] MambaKD: Saved all run details to results\kd_runs\slim_compressor\20261011_163620_bs4_seq256_lr3e-04_C
+  Time: 202.6s (Stage 1: 170.6s, Stage 2: 32.0s)
+2026-10-12 11:05:23,581 [INFO] MambaKD: [QUALITY] distinct_2=0.92, repetition_3=0.02, train_ppl=20.68, test_ppl=32.60, overfit_gap=11.92, latency=166.6ms
+2026-10-12 11:05:23,595 [INFO] MambaKD: Saved all run details to results/kd_runs/slim_compressor/20261012_110124_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
 | Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |   124.83 |    39.01 |    32.87 |   +85.82 |    +6.14 |   +91.96 |
+| C       |   124.81 |    38.36 |    32.60 |   +86.45 |    +5.76 |   +92.21 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 16:39:34,261 [INFO] MambaKD: 
+2026-10-12 11:05:29,468 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 16:39:34,264 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 16:39:34,264 [INFO] MambaKD: ======================================================================
+2026-10-12 11:05:29,469 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 11:05:29,469 [INFO] MambaKD: ======================================================================

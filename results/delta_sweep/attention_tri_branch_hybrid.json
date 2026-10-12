@@ -1,0 +1,11 @@
+{
+  "module": "tri_branch_hybrid",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1846.99,
+  "duration_sec": 172.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 07:19:28"
+}

@@ -1,12 +1,11 @@
 {
   "module": "liftr",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 11102.7,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 11138.91,
-  "pre_ppl": 11138.91,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.344057"
+  "duration_sec": 174.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:57:15"
 }

@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/huffman_coder/20261012_012229_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/huffman_coder/20261012_093814_bs8_seq256_lr3e-04_C

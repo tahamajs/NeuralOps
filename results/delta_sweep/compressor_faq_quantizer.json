@@ -1,12 +1,11 @@
 {
   "module": "faq_quantizer",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 198212.6,
-  "student_ppl": 198248.81,
-  "pre_ppl": 198248.81,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.336009"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 198215.56,
+  "duration_sec": 216.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:12:56"
 }

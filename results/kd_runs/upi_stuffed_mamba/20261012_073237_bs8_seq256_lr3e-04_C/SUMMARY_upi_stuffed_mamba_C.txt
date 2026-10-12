@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: upi_stuffed_mamba / C
+================================================================================
+
+MODEL INFO:
+  Total params:      119.46 M
+  Trainable params:  0.74 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        2105.3900
+  Post-KD PPL:       319.5500
+  Stage 1 (KD) PPL:  522.6100
+  Stage 2 (Self) PPL:319.5500
+  KD Gain:           +1582.78
+  Self Gain:         +203.06
+  Total Gain:        +1785.84
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         8.8249
+  Recovery:          86.31%
+  Peak VRAM:         2853.21 MB
+  Train time:        236.19 s (Stage 1: 183.8s, Stage 2: 52.4s)
+  s/step:            0.4724
+  Loss (final):      25.5774
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8265
+  Repetition-3:      0.0469
+  Train PPL:         315.5700
+  Test PPL:          319.5500
+  Overfit Gap:       3.98
+  Latency (mean):    369.95 ms
+  Latency (std):     0.73 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=5.8598 | lr=1.74e-04
+  step   420 | loss=5.8539 | lr=1.50e-04
+  step   430 | loss=5.6937 | lr=1.27e-04
+  step   440 | loss=5.5850 | lr=1.04e-04
+  step   450 | loss=5.6156 | lr=8.20e-05
+  step   460 | loss=5.7901 | lr=6.19e-05
+  step   470 | loss=5.9755 | lr=4.40e-05
+  step   480 | loss=5.4711 | lr=2.87e-05
+  step   490 | loss=5.9487 | lr=1.64e-05
+  step   500 | loss=5.5374 | lr=7.44e-06

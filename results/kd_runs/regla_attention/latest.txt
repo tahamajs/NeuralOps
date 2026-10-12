@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\regla_attention\20261010_042753_bs8_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/regla_attention/20261012_051514_bs8_seq256_lr3e-04_C

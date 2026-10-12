@@ -1,12 +1,11 @@
 {
   "module": "admm_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 18.01,
-  "student_ppl": 33.05,
-  "pre_ppl": 54.23,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.322464"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1205.16,
+  "duration_sec": 173.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:13:43"
 }

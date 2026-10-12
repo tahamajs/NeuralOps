@@ -1,12 +1,11 @@
 {
   "module": "optimal_subspace_projection",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 7.17,
-  "student_ppl": 31.04,
-  "pre_ppl": 43.39,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.348637"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 42.75,
+  "duration_sec": 190.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:27:17"
 }

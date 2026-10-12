@@ -1,5 +1,37 @@
-Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3880.22it/s]
-Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 5869.04it/s]
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1210, in run_kd_method
+    student, comp_stats = apply_module_to_model(
+                          ~~~~~~~~~~~~~~~~~~~~~^
+        student,
+        ^^^^^^^^
+    ...<5 lines>...
+        tokenizer=tokenizer,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/d/SVD_linear_Attention/neuralops/evaluation/eval_patcher.py", line 533, in apply_module_to_model
+    model = _apply_compressor_module(
+        model, module_name, rank, calibration_data, calibration_loader, tokenizer
+    )
+  File "/mnt/d/SVD_linear_Attention/neuralops/evaluation/eval_patcher.py", line 386, in _apply_compressor_module
+    raise RuntimeError(f"Compressor '{module_name}' not in COMPRESSOR_REGISTRY")
+RuntimeError: Compressor 'tt_compressor' not in COMPRESSOR_REGISTRY
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2073, in <module>
+    main()
+    ~~~~^^
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2037, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1225, in run_kd_method
+    raise RuntimeError(f"CRITICAL: Failed to inject module '{module_name}' into model: {e}") from e
+RuntimeError: CRITICAL: Failed to inject module 'tt_compressor' into model: Compressor 'tt_compressor' not in COMPRESSOR_REGISTRY

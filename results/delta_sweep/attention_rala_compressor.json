@@ -1,0 +1,11 @@
+{
+  "module": "rala_compressor",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 2026.0,
+  "duration_sec": 528.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 05:02:49"
+}

@@ -1,12 +1,11 @@
 {
   "module": "admm_pruner",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 587.41,
-  "student_ppl": 44.79,
-  "pre_ppl": 623.63,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.323051"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 623.76,
+  "duration_sec": 163.4,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:16:37"
 }

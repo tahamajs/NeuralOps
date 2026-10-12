@@ -1,12 +1,11 @@
 {
   "module": "fwsvd_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 1869.32,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 1905.53,
-  "pre_ppl": 1905.53,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.338035"
+  "duration_sec": 156.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:25:21"
 }

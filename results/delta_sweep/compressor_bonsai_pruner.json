@@ -1,12 +1,11 @@
 {
   "module": "bonsai_pruner",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 26.37,
-  "student_ppl": 37.82,
-  "pre_ppl": 62.59,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.325397"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 62.61,
+  "duration_sec": 188.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:28:26"
 }

@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\sink_attention\20261010_202031_bs8_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/sink_attention/20261012_061448_bs8_seq256_lr3e-04_C

@@ -1,12 +1,11 @@
 {
   "module": "gfws",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 3616.95,
-  "student_ppl": 476.05,
-  "pre_ppl": 3653.17,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.338461"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 3650.57,
+  "duration_sec": 208.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:27:59"
 }

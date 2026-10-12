@@ -1,12 +1,11 @@
 {
   "module": "mgie_budget",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 9832.09,
-  "student_ppl": 9868.3,
-  "pre_ppl": 9868.3,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.345898"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 9868.75,
+  "duration_sec": 170.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:10:13"
 }

@@ -1,12 +1,11 @@
 {
   "module": "kvtc_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 4210.55,
-  "student_ppl": 4246.77,
-  "pre_ppl": 4246.77,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.343283"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 4252.41,
+  "duration_sec": 196.7,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:53:58"
 }

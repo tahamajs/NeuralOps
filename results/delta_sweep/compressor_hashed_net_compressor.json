@@ -1,12 +1,11 @@
 {
   "module": "hashed_net_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 10783.98,
-  "student_ppl": 10820.19,
-  "pre_ppl": 10820.19,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.339551"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 10837.61,
+  "duration_sec": 210.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:34:39"
 }

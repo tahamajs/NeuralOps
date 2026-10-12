@@ -1,69 +1,40 @@
-2026-10-12 01:53:14,605 [INFO] MambaKD: ======================================================================
-2026-10-12 01:53:14,605 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 01:53:14,605 [INFO] MambaKD: ======================================================================
-2026-10-12 01:53:14,605 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 01:53:14,605 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-12 01:53:14,605 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 01:53:15,205 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:53:15,531 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-2026-10-12 01:53:15,766 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:53:15,997 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-2026-10-12 01:53:16,228 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:53:16,464 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:53:16,568 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 01:53:16,803 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:53:16,893 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
-2026-10-12 01:53:17,133 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 01:53:17,801 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 01:53:18,090 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
-2026-10-12 01:53:18,324 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
-2026-10-12 01:53:19,049 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
-2026-10-12 01:53:19,284 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:53:19,517 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:53:19,761 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
-2026-10-12 01:53:20,040 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:53:20,782 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 01:53:20,782 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 01:53:21,014 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:53:21,250 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|██████████| 148/148 [00:00<00:00, 15618.10it/s]
-2026-10-12 01:53:21,336 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
-  cache[key] = torch.from_numpy(np_memmap)
-2026-10-12 01:53:21,337 [INFO] MambaKD: Using teacher baseline PPL: 36.21
-2026-10-12 01:53:21,337 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 01:53:21,425 [INFO] MambaKD: 
+2026-10-12 11:31:25,412 [INFO] MambaKD: ======================================================================
+2026-10-12 11:31:25,412 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 11:31:25,412 [INFO] MambaKD: ======================================================================
+2026-10-12 11:31:25,412 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 11:31:25,412 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 11:31:25,412 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 11:31:25,985 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:31:26,224 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 11:31:26,464 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:31:26,696 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 11:31:26,930 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:31:27,168 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:31:27,276 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 11:31:27,509 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:31:27,634 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 11:31:27,869 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 11:31:28,527 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 11:31:28,855 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 11:31:29,091 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 11:31:30,047 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 11:31:30,285 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:31:30,520 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:31:30,752 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 11:31:30,988 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 11:31:31,643 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 11:31:31,644 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 11:31:31,876 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 11:31:32,118 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 11:31:32,220 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 11:31:32,221 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 11:31:32,221 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 11:31:32,311 [INFO] MambaKD: 
 ======================================================================
-2026-10-12 01:53:21,425 [INFO] MambaKD: PROCESSING MODULE 1/1: tt_compressor
-2026-10-12 01:53:21,425 [INFO] MambaKD: ======================================================================
-2026-10-12 01:53:21,425 [INFO] MambaKD: 
+2026-10-12 11:31:32,311 [INFO] MambaKD: PROCESSING MODULE 1/1: tt_compressor
+2026-10-12 11:31:32,311 [INFO] MambaKD: ======================================================================
+2026-10-12 11:31:32,311 [INFO] MambaKD: 
 # Running method C for tt_compressor
-2026-10-12 01:53:22,275 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 01:53:22,276 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 01:53:29,210 [INFO] neuralops.compression_engine.tensor_decomp.tt_compressor: TT compressor: 48 TT + 0 SVD layers, 0 fallback, avg_err=0.9336, storage_ratio=20.30x
-2026-10-12 01:53:29,231 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 136.3529
-2026-10-12 01:53:29,231 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 136.3529
-[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
-2026-10-12 01:53:31,326 [INFO] MambaKD: Pre-KD PPL for Module tt_compressor, Method C: 5067.78
-2026-10-12 01:53:31,326 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 01:53:31,326 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 5067.78 (same protocol)
-2026-10-12 01:53:31,326 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +5031.57 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 01:53:31,327 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
-2026-10-12 01:53:33,207 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 5067.78
-2026-10-12 01:53:33,208 [INFO] MambaKD: [C] COMPLETE | Pre: 5067.78 -> Post: 5067.78 | Recovery: 0.00% | VRAM: 618.89 MB | Time: 0.0s
-2026-10-12 01:53:36,688 [INFO] MambaKD: [QUALITY] distinct_2=0.81, repetition_3=0.02, train_ppl=5475.83, test_ppl=5067.78, overfit_gap=-408.05, latency=402.0ms
-2026-10-12 01:53:36,693 [INFO] MambaKD: Saved all run details to results/kd_runs/tt_compressor/20261012_015314_bs4_seq256_lr3e-04_C
-+---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
-+---------+----------+----------+----------+----------+----------+----------+
-| C       |  5067.78 |  5067.78 |     0.0% |      0.0 |    618.9 |      YES |
-+---------+----------+----------+----------+----------+----------+----------+
-2026-10-12 01:53:38,424 [INFO] MambaKD: 
-======================================================================
-2026-10-12 01:53:38,424 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-12 01:53:38,424 [INFO] MambaKD: ======================================================================
+2026-10-12 11:31:32,692 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 11:31:32,693 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 11:31:32,932 [ERROR] MambaKD: [INJECTION FAILED] Module 'tt_compressor' failed to inject: Compressor 'tt_compressor' not in COMPRESSOR_REGISTRY

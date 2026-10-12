@@ -1,12 +1,11 @@
 {
   "module": "delta_kv",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 40.14,
-  "student_ppl": 31.27,
-  "pre_ppl": 76.36,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.330679"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 76.38,
+  "duration_sec": 182.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:51:30"
 }

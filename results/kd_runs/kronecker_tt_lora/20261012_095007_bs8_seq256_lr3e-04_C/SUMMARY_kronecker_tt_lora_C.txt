@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: kronecker_tt_lora / C
+================================================================================
+
+MODEL INFO:
+  Total params:      133.16 M
+  Trainable params:  0.59 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        10135.2600
+  Post-KD PPL:       1123.9200
+  Stage 1 (KD) PPL:  1943.9000
+  Stage 2 (Self) PPL:1123.9200
+  KD Gain:           +8191.36
+  Self Gain:         +819.98
+  Total Gain:        +9011.34
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         31.0389
+  Recovery:          89.23%
+  Peak VRAM:         2837.56 MB
+  Train time:        205.76 s (Stage 1: 156.4s, Stage 2: 49.4s)
+  s/step:            0.4115
+  Loss (final):      26.8145
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.6429
+  Repetition-3:      0.1458
+  Train PPL:         1200.4000
+  Test PPL:          1123.9200
+  Overfit Gap:       -76.48
+  Latency (mean):    468.97 ms
+  Latency (std):     4.51 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=7.1552 | lr=1.74e-04
+  step   420 | loss=7.1550 | lr=1.50e-04
+  step   430 | loss=6.9390 | lr=1.27e-04
+  step   440 | loss=7.0372 | lr=1.04e-04
+  step   450 | loss=7.1430 | lr=8.20e-05
+  step   460 | loss=7.0422 | lr=6.19e-05
+  step   470 | loss=7.0532 | lr=4.40e-05
+  step   480 | loss=6.9244 | lr=2.87e-05
+  step   490 | loss=7.1383 | lr=1.64e-05
+  step   500 | loss=6.9796 | lr=7.44e-06

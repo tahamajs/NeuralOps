@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: drone_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      97.9 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1865.2400
+  Post-KD PPL:       157.5100
+  Stage 1 (KD) PPL:  240.3200
+  Stage 2 (Self) PPL:157.5100
+  KD Gain:           +1624.92
+  Self Gain:         +82.81
+  Total Gain:        +1707.73
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         4.3499
+  Recovery:          93.37%
+  Peak VRAM:         2782.99 MB
+  Train time:        180.00 s (Stage 1: 150.9s, Stage 2: 29.1s)
+  s/step:            0.3600
+  Loss (final):      24.6533
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7959
+  Repetition-3:      0.0417
+  Train PPL:         129.8400
+  Test PPL:          157.5100
+  Overfit Gap:       27.67
+  Latency (mean):    190.09 ms
+  Latency (std):     5.61 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=5.1461 | lr=1.74e-04
+  step   420 | loss=4.6594 | lr=1.50e-04
+  step   430 | loss=4.8221 | lr=1.27e-04
+  step   440 | loss=4.7170 | lr=1.04e-04
+  step   450 | loss=4.9905 | lr=8.20e-05
+  step   460 | loss=4.9663 | lr=6.19e-05
+  step   470 | loss=5.0233 | lr=4.40e-05
+  step   480 | loss=4.5932 | lr=2.87e-05
+  step   490 | loss=4.7476 | lr=1.64e-05
+  step   500 | loss=4.7891 | lr=7.44e-06

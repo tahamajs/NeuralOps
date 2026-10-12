@@ -1,0 +1,11 @@
+{
+  "module": "salt_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1823.8,
+  "duration_sec": 210.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 05:38:50"
+}

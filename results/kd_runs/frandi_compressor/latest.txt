@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\frandi_compressor\20261011_143831_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/frandi_compressor/20261012_092238_bs8_seq256_lr3e-04_C

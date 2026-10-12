@@ -1,12 +1,11 @@
 {
   "module": "drone_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 1828.65,
-  "student_ppl": 175.2,
-  "pre_ppl": 1864.87,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.333376"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1865.24,
+  "duration_sec": 204.7,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:58:52"
 }

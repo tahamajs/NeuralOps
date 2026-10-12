@@ -1,137 +1,154 @@
-2026-10-11 14:01:51,853 [INFO] MambaKD: ======================================================================
-2026-10-11 14:01:51,856 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 14:01:51,857 [INFO] MambaKD: ======================================================================
-2026-10-11 14:01:51,857 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 14:01:51,858 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 14:01:51,858 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 14:01:52,309 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 14:01:52,313 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 14:01:52,315 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 14:01:56,225 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 14:01:56,228 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 14:01:56,433 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 14:01:56,435 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 14:01:56,436 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:01:57,040 [INFO] MambaKD: 
+2026-10-12 08:54:37,950 [INFO] MambaKD: ======================================================================
+2026-10-12 08:54:37,951 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 08:54:37,951 [INFO] MambaKD: ======================================================================
+2026-10-12 08:54:37,951 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 08:54:37,951 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 08:54:37,951 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 08:54:38,499 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:54:38,734 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:54:38,967 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:54:39,200 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 08:54:39,433 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:54:39,706 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:54:39,816 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 08:54:40,042 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:54:40,174 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 08:54:40,408 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:54:41,055 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:54:41,337 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 08:54:41,567 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 08:54:42,527 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 08:54:42,827 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:54:43,058 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:54:43,289 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 08:54:43,530 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:54:44,190 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 08:54:44,190 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 08:54:44,422 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:54:44,682 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:54:44,785 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 08:54:44,785 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 08:54:44,785 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:54:44,876 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:01:57,042 [INFO] MambaKD: PROCESSING MODULE 1/1: direct_svd
-2026-10-11 14:01:57,042 [INFO] MambaKD: ======================================================================
-2026-10-11 14:01:57,043 [INFO] MambaKD: 
+2026-10-12 08:54:44,876 [INFO] MambaKD: PROCESSING MODULE 1/1: direct_svd
+2026-10-12 08:54:44,876 [INFO] MambaKD: ======================================================================
+2026-10-12 08:54:44,877 [INFO] MambaKD: 
 # Running method C for direct_svd
-2026-10-11 14:01:57,350 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 14:01:57,354 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 14:01:58,358 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7589 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:58,437 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.5974 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:58,507 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8406 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:58,578 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8203 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:58,646 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7723 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:58,712 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.6188 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:58,782 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8250 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:58,850 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8270 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:58,918 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7972 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:58,983 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7407 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,053 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8141 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:59,119 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8125 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,187 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8103 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:59,252 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7498 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,320 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8322 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:59,422 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8017 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,490 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7974 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:59,554 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7425 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,622 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8217 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:59,692 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8143 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,758 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7969 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:01:59,823 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7615 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:01:59,891 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8256 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:01:59,960 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8244 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,028 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8189 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:00,091 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7348 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,158 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8266 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:00,227 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8323 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,302 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8202 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:00,366 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7523 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,435 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8305 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:00,502 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8392 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,572 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8423 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:00,637 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7532 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,704 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8378 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:00,775 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8404 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,842 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8577 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:00,907 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8023 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:00,975 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8367 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:01,044 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8476 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:01,110 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8439 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:01,174 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8099 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:01,242 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8308 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:01,309 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8529 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:01,376 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8349 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 14:02:01,439 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.6877 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:01,508 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8185 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 14:02:01,573 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8473 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 14:02:01,736 [INFO] neuralops.compression_engine.svd.direct_svd: Compressor direct_svd finished: 48 compressed, 0 fallback, avg_err=0.8000, max_err_threshold=0.3500
-2026-10-11 14:02:01,811 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 98.0075
-2026-10-11 14:02:01,813 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 98.0075
-2026-10-11 14:02:07,523 [INFO] MambaKD: Pre-KD PPL for Module direct_svd, Method C: 5215.17
-2026-10-11 14:02:07,526 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:02:07,526 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 5215.17 (same protocol)
-2026-10-11 14:02:07,527 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +5178.95 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 14:02:07,527 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 14:02:07,860 [INFO] MambaKD: [C] Step 0/300 | Loss: 14.2646...
-2026-10-11 14:02:08,137 [INFO] MambaKD: [C] Step 1/300 | Loss: 14.2646 | LR: 1.50e-05
-2026-10-11 14:02:08,278 [INFO] MambaKD: [C] Step 1/300 | Loss: 14.9740...
-2026-10-11 14:02:08,435 [INFO] MambaKD: [C] Step 2/300 | Loss: 14.9740 | LR: 3.00e-05
-2026-10-11 14:02:08,569 [INFO] MambaKD: [C] Step 2/300 | Loss: 14.8275...
-2026-10-11 14:02:08,723 [INFO] MambaKD: [C] Step 3/300 | Loss: 14.8275 | LR: 4.50e-05
-2026-10-11 14:02:08,855 [INFO] MambaKD: [C] Step 3/300 | Loss: 14.0096...
-2026-10-11 14:02:09,013 [INFO] MambaKD: [C] Step 4/300 | Loss: 14.0096 | LR: 6.00e-05
-2026-10-11 14:02:09,146 [INFO] MambaKD: [C] Step 4/300 | Loss: 14.9095...
-2026-10-11 14:02:09,315 [INFO] MambaKD: [C] Step 5/300 | Loss: 14.9095 | LR: 7.50e-05
-2026-10-11 14:02:09,443 [INFO] MambaKD: [C] Step 5/300 | Loss: 12.3870...
-2026-10-11 14:02:22,640 [INFO] MambaKD: [C] Step 50/300 | Loss: 12.3870 | LR: 7.50e-04
-2026-10-11 14:02:22,771 [INFO] MambaKD: [C] Step 50/300 | Loss: 11.1553...
-2026-10-11 14:02:36,992 [INFO] MambaKD: [C] Step 100/300 | Loss: 11.1553 | LR: 1.50e-03
-2026-10-11 14:02:42,709 [INFO] MambaKD: [C] Step 100 Eval PPL: 1405.44
-2026-10-11 14:02:42,841 [INFO] MambaKD: [C] Step 100/300 | Loss: 18.4646...
-2026-10-11 14:02:57,051 [INFO] MambaKD: [C] Step 150/300 | Loss: 18.4646 | LR: 1.28e-03
-2026-10-11 14:02:57,179 [INFO] MambaKD: [C] Step 150/300 | Loss: 20.9263...
-2026-10-11 14:03:11,329 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.9263 | LR: 7.50e-04
-2026-10-11 14:03:17,128 [INFO] MambaKD: [C] Step 200 Eval PPL: 1066.03
-2026-10-11 14:03:17,263 [INFO] MambaKD: [C] Step 200/300 | Loss: 23.1086...
-2026-10-11 14:03:31,469 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.1086 | LR: 2.20e-04
-2026-10-11 14:03:31,582 [INFO] MambaKD: [C] Step 250/300 | Loss: 26.4186...
-2026-10-11 14:03:45,964 [INFO] MambaKD: [C] Step 300/300 | Loss: 26.4186 | LR: 1.50e-04
-2026-10-11 14:03:51,871 [INFO] MambaKD: [C] Step 300 Eval PPL: 763.47
-2026-10-11 14:03:51,873 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 763.47
-2026-10-11 14:03:51,874 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 14:03:52,091 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 6.8320 | LR: 1.50e-05
-2026-10-11 14:03:52,312 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 6.9024 | LR: 3.00e-05
-2026-10-11 14:03:52,548 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 6.8943 | LR: 4.50e-05
-2026-10-11 14:03:52,765 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 6.7373 | LR: 6.00e-05
-2026-10-11 14:03:52,985 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 6.6776 | LR: 7.50e-05
-2026-10-11 14:04:03,000 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 5.8620 | LR: 2.84e-04
-2026-10-11 14:04:14,139 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 6.3475 | LR: 1.96e-04
-2026-10-11 14:04:20,165 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 527.71
-2026-10-11 14:04:31,237 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 6.0471 | LR: 8.20e-05
-2026-10-11 14:04:42,253 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 6.1366 | LR: 7.44e-06
-2026-10-11 14:04:48,104 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 451.22
-2026-10-11 14:04:54,063 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 451.22
-2026-10-11 14:04:54,066 [INFO] MambaKD: [C] [COMPLETE] Pre: 5215.17
-  Stage 1 (KD):    763.47  (kd_gain=+4451.70)
-  Stage 2 (self):  451.22  (self_gain=+312.25)
-  Total:                  (total_gain=+4763.95)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 763.47 > 36.22)
+2026-10-12 08:54:45,258 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 08:54:45,259 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 08:54:45,707 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7589 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:45,760 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.5974 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:45,812 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8406 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:45,865 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8203 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:45,913 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7723 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:45,954 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.6188 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:45,998 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8250 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,041 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8270 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,083 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7972 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,124 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7407 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,167 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8141 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,210 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8125 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,252 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8103 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,293 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7498 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,337 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8322 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,381 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8017 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,423 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7974 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,466 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7425 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,510 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8217 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,553 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8143 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,595 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7969 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,637 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7615 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,680 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8256 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,723 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8244 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,765 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8189 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,806 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7348 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,849 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8266 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:46,892 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8323 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:46,934 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8202 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:46,975 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7523 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,018 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8305 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:47,061 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8392 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,103 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8423 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:47,144 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.7532 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,188 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8378 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:47,232 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8404 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,274 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8577 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:47,315 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8023 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,359 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8367 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:47,401 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8476 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,444 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8439 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:47,485 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8099 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,528 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8308 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:47,571 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8529 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,614 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8349 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:54:47,655 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.6877 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,697 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8185 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:54:47,742 [WARNING] neuralops.compression_engine.svd.direct_svd: DirectSVD reconstruction error 0.8473 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:54:47,816 [INFO] neuralops.compression_engine.svd.direct_svd: Compressor direct_svd finished: 48 compressed, 0 fallback, avg_err=0.8000, max_err_threshold=0.3500
+2026-10-12 08:54:47,839 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 97.9527
+2026-10-12 08:54:47,839 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 97.9527
+2026-10-12 08:54:48,610 [INFO] MambaKD: Pre-KD PPL for Module direct_svd, Method C: 5214.68
+2026-10-12 08:54:48,610 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:54:48,610 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 5214.68 (same protocol)
+2026-10-12 08:54:48,610 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +5178.47 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 08:54:48,611 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-12 08:54:49,104 [INFO] MambaKD: [C] Step 0/300 | Loss: 15.6888...
+2026-10-12 08:54:49,244 [INFO] MambaKD: [C] Step 1/300 | Loss: 15.6888 | LR: 1.50e-05
+2026-10-12 08:54:49,841 [INFO] MambaKD: [C] Step 1/300 | Loss: 15.7530...
+2026-10-12 08:54:49,945 [INFO] MambaKD: [C] Step 2/300 | Loss: 15.7530 | LR: 3.00e-05
+2026-10-12 08:54:50,314 [INFO] MambaKD: [C] Step 2/300 | Loss: 16.1080...
+2026-10-12 08:54:50,417 [INFO] MambaKD: [C] Step 3/300 | Loss: 16.1080 | LR: 4.50e-05
+2026-10-12 08:54:50,723 [INFO] MambaKD: [C] Step 3/300 | Loss: 14.9613...
+2026-10-12 08:54:50,826 [INFO] MambaKD: [C] Step 4/300 | Loss: 14.9613 | LR: 6.00e-05
+2026-10-12 08:54:51,184 [INFO] MambaKD: [C] Step 4/300 | Loss: 14.3847...
+2026-10-12 08:54:51,291 [INFO] MambaKD: [C] Step 5/300 | Loss: 14.3847 | LR: 7.50e-05
+2026-10-12 08:54:51,705 [INFO] MambaKD: [C] Step 5/300 | Loss: 14.6049...
+2026-10-12 08:55:22,774 [INFO] MambaKD: [C] Step 50/300 | Loss: 14.6049 | LR: 7.50e-04
+2026-10-12 08:55:23,075 [INFO] MambaKD: [C] Step 50/300 | Loss: 11.6548...
+2026-10-12 08:55:39,177 [INFO] MambaKD: [C] Step 100/300 | Loss: 11.6548 | LR: 1.50e-03
+2026-10-12 08:55:40,106 [INFO] MambaKD: [C] Step 100 Eval PPL: 1268.38
+2026-10-12 08:55:40,303 [INFO] MambaKD: [C] Step 100/300 | Loss: 18.2855...
+2026-10-12 08:55:58,387 [INFO] MambaKD: [C] Step 150/300 | Loss: 18.2855 | LR: 1.28e-03
+2026-10-12 08:55:58,516 [INFO] MambaKD: [C] Step 150/300 | Loss: 20.6526...
+2026-10-12 08:56:10,575 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.6526 | LR: 7.50e-04
+2026-10-12 08:56:11,265 [INFO] MambaKD: [C] Step 200 Eval PPL: 873.25
+2026-10-12 08:56:11,395 [INFO] MambaKD: [C] Step 200/300 | Loss: 23.0273...
+2026-10-12 08:56:23,163 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.0273 | LR: 2.20e-04
+2026-10-12 08:56:23,291 [INFO] MambaKD: [C] Step 250/300 | Loss: 25.9369...
+2026-10-12 08:56:34,855 [INFO] MambaKD: [C] Step 300/300 | Loss: 25.9369 | LR: 1.50e-04
+2026-10-12 08:56:35,538 [INFO] MambaKD: [C] Step 300 Eval PPL: 654.99
+2026-10-12 08:56:35,539 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 654.99
+2026-10-12 08:56:35,539 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 08:56:35,673 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 6.4045 | LR: 1.50e-05
+2026-10-12 08:56:35,800 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 6.5685 | LR: 3.00e-05
+2026-10-12 08:56:35,927 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 6.5219 | LR: 4.50e-05
+2026-10-12 08:56:36,053 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 6.3861 | LR: 6.00e-05
+2026-10-12 08:56:36,179 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 6.5714 | LR: 7.50e-05
+2026-10-12 08:56:41,833 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 6.2273 | LR: 2.84e-04
+2026-10-12 08:56:48,042 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 6.3047 | LR: 1.96e-04
+2026-10-12 08:56:48,894 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 438.02
+2026-10-12 08:56:55,178 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 6.1511 | LR: 8.20e-05
+2026-10-12 08:57:01,386 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 5.7994 | LR: 7.44e-06
+2026-10-12 08:57:02,252 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 389.66
+2026-10-12 08:57:03,054 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 389.66
+2026-10-12 08:57:03,064 [INFO] MambaKD: [C] [COMPLETE] Pre: 5214.68
+  Stage 1 (KD):    654.99  (kd_gain=+4559.69)
+  Stage 2 (self):  389.66  (self_gain=+265.33)
+  Total:                  (total_gain=+4825.02)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 654.99 > 36.21)
   Beat teacher after self? NO
-  Recovery: 91.99%
-  Time: 166.4s (Stage 1: 104.2s, Stage 2: 62.2s)
-2026-10-11 14:05:13,151 [INFO] MambaKD: [QUALITY] distinct_2=0.80, repetition_3=0.02, train_ppl=522.13, test_ppl=451.22, overfit_gap=-70.91, latency=2329.8ms
-2026-10-11 14:05:13,162 [INFO] MambaKD: Saved all run details to results\kd_runs\direct_svd\20261011_140151_bs4_seq256_lr3e-04_C
+  Recovery: 93.17%
+  Time: 134.4s (Stage 1: 106.9s, Stage 2: 27.5s)
+2026-10-12 08:57:04,045 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.00, train_ppl=411.04, test_ppl=389.66, overfit_gap=-21.38, latency=8.9ms
+2026-10-12 08:57:04,058 [INFO] MambaKD: Saved all run details to results/kd_runs/direct_svd/20261012_085437_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
 | Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |  5215.17 |   763.47 |   451.22 | +4451.70 |  +312.25 | +4763.95 |
+| C       |  5214.68 |   654.99 |   389.66 | +4559.69 |  +265.33 | +4825.02 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 14:05:19,273 [INFO] MambaKD: 
+2026-10-12 08:57:09,548 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:05:19,275 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 14:05:19,275 [INFO] MambaKD: ======================================================================
+2026-10-12 08:57:09,548 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 08:57:09,548 [INFO] MambaKD: ======================================================================

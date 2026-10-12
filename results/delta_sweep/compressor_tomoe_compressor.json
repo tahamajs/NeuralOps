@@ -1,12 +1,11 @@
 {
   "module": "tomoe_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 78188.73,
-  "student_ppl": 78224.94,
-  "pre_ppl": 78224.94,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.361666"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 25782.07,
+  "duration_sec": 215.4,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:27:44"
 }

@@ -1,0 +1,11 @@
+{
+  "module": "nasc_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 2026.0,
+  "duration_sec": 463.7,
+  "retries_used": 1,
+  "error": "exit=1",
+  "timestamp": "2026-10-12 04:04:00"
+}

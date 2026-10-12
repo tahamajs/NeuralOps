@@ -1,125 +1,142 @@
-2026-10-11 13:17:07,442 [INFO] MambaKD: ======================================================================
-2026-10-11 13:17:07,445 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 13:17:07,445 [INFO] MambaKD: ======================================================================
-2026-10-11 13:17:07,446 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 13:17:07,447 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 13:17:07,447 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 13:17:07,886 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 13:17:07,890 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 13:17:07,894 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 13:17:11,548 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 13:17:11,550 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 13:17:11,762 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 13:17:11,763 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 13:17:11,764 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 13:17:12,355 [INFO] MambaKD: 
+2026-10-12 08:19:26,860 [INFO] MambaKD: ======================================================================
+2026-10-12 08:19:26,861 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 08:19:26,861 [INFO] MambaKD: ======================================================================
+2026-10-12 08:19:26,861 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 08:19:26,861 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 08:19:26,861 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 08:19:27,443 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:19:27,882 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:19:28,115 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:19:28,345 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 08:19:28,574 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:19:28,807 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:19:28,920 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 08:19:29,152 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:19:29,240 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 08:19:29,470 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:19:30,140 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:19:30,437 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 08:19:30,668 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 08:19:31,194 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 08:19:31,426 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:19:31,660 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:19:31,891 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 08:19:32,130 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:19:32,794 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 08:19:32,795 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 08:19:33,060 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:19:33,295 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:19:33,397 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 08:19:33,397 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 08:19:33,397 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:19:33,492 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 13:17:12,357 [INFO] MambaKD: PROCESSING MODULE 1/1: armor_pruner
-2026-10-11 13:17:12,357 [INFO] MambaKD: ======================================================================
-2026-10-11 13:17:12,358 [INFO] MambaKD: 
+2026-10-12 08:19:33,492 [INFO] MambaKD: PROCESSING MODULE 1/1: armor_pruner
+2026-10-12 08:19:33,492 [INFO] MambaKD: ======================================================================
+2026-10-12 08:19:33,493 [INFO] MambaKD: 
 # Running method C for armor_pruner
-2026-10-11 13:17:12,679 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 13:17:12,682 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 13:17:14,325 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3523 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:14,487 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3561 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:14,683 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3501 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:14,845 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3521 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:14,933 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3582 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:15,023 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3509 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:15,193 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3583 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:15,284 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3593 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:15,530 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3563 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:15,632 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3565 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:15,715 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3514 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:15,795 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3645 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:15,881 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3580 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:15,971 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3682 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,056 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3518 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:16,133 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3514 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,217 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3574 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:16,305 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3576 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,385 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3532 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:16,462 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3565 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,547 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3585 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:16,637 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3548 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,717 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3534 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:16,794 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3541 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:16,880 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3586 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:16,970 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3515 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:17,050 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3552 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:17,132 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3585 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:17,215 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3598 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:17,307 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3527 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:17,390 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3553 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:17,470 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3559 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:17,555 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3587 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:17,642 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3554 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:17,719 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3542 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:17:17,875 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3564 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:17:17,961 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3577 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:17:18,069 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 38.2868
-2026-10-11 13:17:18,072 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 38.2868
-2026-10-11 13:17:22,855 [INFO] MambaKD: Pre-KD PPL for Module armor_pruner, Method C: 39.75
-2026-10-11 13:17:22,857 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 13:17:22,858 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 39.75 (same protocol)
-2026-10-11 13:17:22,858 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3.53 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 13:17:22,859 [INFO] MambaKD: set_train_scope (module): matched 22 target param tensors
-2026-10-11 13:17:23,140 [INFO] MambaKD: [C] Step 0/300 | Loss: 3.5933...
-2026-10-11 13:17:23,374 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.5933 | LR: 1.50e-05
-2026-10-11 13:17:23,509 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.6269...
-2026-10-11 13:17:23,647 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.6269 | LR: 3.00e-05
-2026-10-11 13:17:23,786 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.4488...
-2026-10-11 13:17:23,926 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.4488 | LR: 4.50e-05
-2026-10-11 13:17:24,050 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.7266...
-2026-10-11 13:17:24,173 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.7266 | LR: 6.00e-05
-2026-10-11 13:17:24,292 [INFO] MambaKD: [C] Step 4/300 | Loss: 4.6291...
-2026-10-11 13:17:24,414 [INFO] MambaKD: [C] Step 5/300 | Loss: 4.6291 | LR: 7.50e-05
-2026-10-11 13:17:24,534 [INFO] MambaKD: [C] Step 5/300 | Loss: 3.6250...
-2026-10-11 13:17:35,497 [INFO] MambaKD: [C] Step 50/300 | Loss: 3.6250 | LR: 7.50e-04
-2026-10-11 13:17:35,621 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.9946...
-2026-10-11 13:17:47,903 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.9946 | LR: 1.50e-03
-2026-10-11 13:17:53,144 [INFO] MambaKD: [C] Step 100 Eval PPL: 37.31
-2026-10-11 13:17:53,281 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.4420...
-2026-10-11 13:18:05,885 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.4420 | LR: 1.28e-03
-2026-10-11 13:18:06,009 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.3013...
-2026-10-11 13:18:18,667 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.3013 | LR: 7.50e-04
-2026-10-11 13:18:24,029 [INFO] MambaKD: [C] Step 200 Eval PPL: 36.98
-2026-10-11 13:18:24,145 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5328...
-2026-10-11 13:18:36,808 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5328 | LR: 2.20e-04
-2026-10-11 13:18:36,921 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.7349...
-2026-10-11 13:18:49,575 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.7349 | LR: 1.50e-04
-2026-10-11 13:18:54,902 [INFO] MambaKD: [C] Step 300 Eval PPL: 36.98
-2026-10-11 13:18:54,903 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 36.98
-2026-10-11 13:18:54,903 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 13:18:55,092 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.8737 | LR: 1.50e-05
-2026-10-11 13:18:55,274 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.1559 | LR: 3.00e-05
-2026-10-11 13:18:55,446 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.1373 | LR: 4.50e-05
-2026-10-11 13:18:55,633 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.2962 | LR: 6.00e-05
-2026-10-11 13:18:55,816 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.3177 | LR: 7.50e-05
-2026-10-11 13:19:04,269 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.7644 | LR: 2.84e-04
-2026-10-11 13:19:13,701 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.1633 | LR: 1.96e-04
-2026-10-11 13:19:19,037 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.54
-2026-10-11 13:19:28,409 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.8374 | LR: 8.20e-05
-2026-10-11 13:19:37,854 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.7755 | LR: 7.44e-06
-2026-10-11 13:19:43,139 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.75
-2026-10-11 13:19:48,492 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.75
-2026-10-11 13:19:48,495 [INFO] MambaKD: [C] [COMPLETE] Pre: 39.75
-  Stage 1 (KD):    36.98  (kd_gain=+2.77)
-  Stage 2 (self):  31.75  (self_gain=+5.23)
-  Total:                  (total_gain=+8.00)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 36.98 > 36.22)
+2026-10-12 08:19:33,947 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 08:19:33,949 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 08:19:34,758 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3523 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:34,850 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3561 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:34,939 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3501 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:35,023 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3521 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,069 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3582 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,111 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3509 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:35,195 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3583 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,241 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3593 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,367 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3563 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,413 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3565 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,456 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3514 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:35,497 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3645 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,541 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3580 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,586 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3682 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,629 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3518 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:35,668 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3514 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,712 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3574 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,772 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3576 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,814 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3532 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:35,854 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3565 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,897 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3585 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:35,942 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3548 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:35,984 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3534 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:36,023 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3541 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,066 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3586 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:36,112 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3515 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,153 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3552 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:36,193 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3585 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,236 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3598 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:36,282 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3527 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,324 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3553 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:36,364 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3559 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,407 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3587 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:36,453 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3554 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,494 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3542 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:19:36,577 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3564 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:19:36,623 [WARNING] neuralops.compression_engine.pruning.armor_pruner: ARMOR reconstruction error 0.3577 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:19:36,690 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 38.1382
+2026-10-12 08:19:36,690 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 38.1382
+2026-10-12 08:19:37,465 [INFO] MambaKD: Pre-KD PPL for Module armor_pruner, Method C: 39.73
+2026-10-12 08:19:37,465 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:19:37,465 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 39.73 (same protocol)
+2026-10-12 08:19:37,465 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3.52 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 08:19:37,466 [INFO] MambaKD: set_train_scope (module): matched 22 target param tensors
+2026-10-12 08:19:37,960 [INFO] MambaKD: [C] Step 0/300 | Loss: 3.8102...
+2026-10-12 08:19:38,116 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.8102 | LR: 1.50e-05
+2026-10-12 08:19:38,657 [INFO] MambaKD: [C] Step 1/300 | Loss: 3.7598...
+2026-10-12 08:19:38,773 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.7598 | LR: 3.00e-05
+2026-10-12 08:19:39,332 [INFO] MambaKD: [C] Step 2/300 | Loss: 3.3160...
+2026-10-12 08:19:39,449 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.3160 | LR: 4.50e-05
+2026-10-12 08:19:39,945 [INFO] MambaKD: [C] Step 3/300 | Loss: 3.4425...
+2026-10-12 08:19:40,061 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.4425 | LR: 6.00e-05
+2026-10-12 08:19:40,563 [INFO] MambaKD: [C] Step 4/300 | Loss: 3.4537...
+2026-10-12 08:19:40,678 [INFO] MambaKD: [C] Step 5/300 | Loss: 3.4537 | LR: 7.50e-05
+2026-10-12 08:19:41,203 [INFO] MambaKD: [C] Step 5/300 | Loss: 3.5526...
+2026-10-12 08:20:05,429 [INFO] MambaKD: [C] Step 50/300 | Loss: 3.5526 | LR: 7.50e-04
+2026-10-12 08:20:05,917 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.6501...
+2026-10-12 08:20:24,168 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.6501 | LR: 1.50e-03
+2026-10-12 08:20:25,104 [INFO] MambaKD: [C] Step 100 Eval PPL: 37.36
+2026-10-12 08:20:25,293 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.8117...
+2026-10-12 08:20:46,945 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.8117 | LR: 1.28e-03
+2026-10-12 08:20:47,252 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.4066...
+2026-10-12 08:21:02,477 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.4066 | LR: 7.50e-04
+2026-10-12 08:21:03,263 [INFO] MambaKD: [C] Step 200 Eval PPL: 36.96
+2026-10-12 08:21:03,560 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5843...
+2026-10-12 08:21:21,305 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5843 | LR: 2.20e-04
+2026-10-12 08:21:21,489 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6943...
+2026-10-12 08:21:37,552 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6943 | LR: 1.50e-04
+2026-10-12 08:21:38,233 [INFO] MambaKD: [C] Step 300 Eval PPL: 36.77
+2026-10-12 08:21:38,235 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 36.77
+2026-10-12 08:21:38,236 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 08:21:38,387 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.8656 | LR: 1.50e-05
+2026-10-12 08:21:38,533 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.2745 | LR: 3.00e-05
+2026-10-12 08:21:38,678 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.2227 | LR: 4.50e-05
+2026-10-12 08:21:38,823 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.2885 | LR: 6.00e-05
+2026-10-12 08:21:38,968 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0245 | LR: 7.50e-05
+2026-10-12 08:21:45,463 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.6289 | LR: 2.84e-04
+2026-10-12 08:21:52,596 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.1179 | LR: 1.96e-04
+2026-10-12 08:21:53,388 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.65
+2026-10-12 08:22:00,606 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.8776 | LR: 8.20e-05
+2026-10-12 08:22:07,734 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.6895 | LR: 7.44e-06
+2026-10-12 08:22:08,450 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.15
+2026-10-12 08:22:09,126 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.15
+2026-10-12 08:22:09,135 [INFO] MambaKD: [C] [COMPLETE] Pre: 39.73
+  Stage 1 (KD):    36.77  (kd_gain=+2.96)
+  Stage 2 (self):  31.15  (self_gain=+5.62)
+  Total:                  (total_gain=+8.58)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 36.77 > 36.21)
   Beat teacher after self? YES
   Recovery: 100.00%
-  Time: 145.6s (Stage 1: 92.0s, Stage 2: 53.6s)
-2026-10-11 13:20:08,102 [INFO] MambaKD: [QUALITY] distinct_2=0.90, repetition_3=0.01, train_ppl=32.16, test_ppl=31.75, overfit_gap=-0.41, latency=2158.4ms
-2026-10-11 13:20:08,112 [INFO] MambaKD: Saved all run details to results\kd_runs\armor_pruner\20261011_131707_bs4_seq256_lr3e-04_C
+  Time: 151.6s (Stage 1: 120.7s, Stage 2: 30.9s)
+2026-10-12 08:22:11,314 [INFO] MambaKD: [QUALITY] distinct_2=0.90, repetition_3=0.01, train_ppl=31.73, test_ppl=31.15, overfit_gap=-0.58, latency=204.6ms
+2026-10-12 08:22:11,324 [INFO] MambaKD: Saved all run details to results/kd_runs/armor_pruner/20261012_081926_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
 | Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    39.75 |    36.98 |    31.75 |    +2.77 |    +5.23 |    +8.00 |
+| C       |    39.73 |    36.77 |    31.15 |    +2.96 |    +5.62 |    +8.58 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 13:20:13,860 [INFO] MambaKD: 
+2026-10-12 08:22:17,371 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 13:20:13,861 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 13:20:13,861 [INFO] MambaKD: ======================================================================
+2026-10-12 08:22:17,371 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 08:22:17,371 [INFO] MambaKD: ======================================================================
