@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: residual_svd_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      45.4 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        6029.2200
+  Post-KD PPL:       6029.2200
+  Stage 1 (KD) PPL:  6029.2200
+  Stage 2 (Self) PPL:6029.2200
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         166.5070
+  Recovery:          0.00%
+  Peak VRAM:         981.60 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7398
+  Repetition-3:      0.0365
+  Train PPL:         7514.8100
+  Test PPL:          6029.2200
+  Overfit Gap:       -1485.59
+  Latency (mean):    334.43 ms
+  Latency (std):     4.43 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        ff43ef63c930
+
+TRAINING HISTORY (last 10 steps):

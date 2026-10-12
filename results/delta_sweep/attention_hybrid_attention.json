@@ -1,0 +1,11 @@
+{
+  "module": "hybrid_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 1120608.38,
+  "duration_sec": 221.0,
+  "retries_used": 1,
+  "error": "exit=-9",
+  "timestamp": "2026-10-12 00:44:52"
+}

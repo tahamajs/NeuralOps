@@ -1,0 +1,11 @@
+{
+  "module": "full",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 11.6,
+  "retries_used": 1,
+  "error": "exit=1",
+  "timestamp": "2026-10-11 23:07:32"
+}

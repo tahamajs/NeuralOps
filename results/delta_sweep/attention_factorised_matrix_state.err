@@ -1,47 +1,72 @@
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 19113.15it/s]
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1150: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
-  cache[key] = torch.from_numpy(np_memmap)
-In file included from /home/taha/miniconda3/include/python3.14/Python.h:14,
-                 from /mnt/d/tmp/tmp66ymf4g6/__triton_launcher.c:7:
-/home/taha/miniconda3/include/python3.14/pyconfig.h:2031:9: warning: ‘_POSIX_C_SOURCE’ redefined
- 2031 | #define _POSIX_C_SOURCE 200809L
-      |         ^~~~~~~~~~~~~~~
-In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
-                 from /usr/include/stdlib.h:26,
-                 from /mnt/d/venv/lib/python3.14/site-packages/triton/backends/nvidia/include/cuda.h:56,
-                 from /mnt/d/tmp/tmp66ymf4g6/__triton_launcher.c:2:
-/usr/include/features.h:319:10: note: this is the location of the previous definition
-  319 | # define _POSIX_C_SOURCE        202405L
-      |          ^~~~~~~~~~~~~~~
-[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-In file included from /home/taha/miniconda3/include/python3.14/Python.h:14,
-                 from /mnt/d/tmp/tmp4jexoqxt/__triton_launcher.c:7:
-/home/taha/miniconda3/include/python3.14/pyconfig.h:2031:9: warning: ‘_POSIX_C_SOURCE’ redefined
- 2031 | #define _POSIX_C_SOURCE 200809L
-      |         ^~~~~~~~~~~~~~~
-In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
-                 from /usr/include/stdlib.h:26,
-                 from /mnt/d/venv/lib/python3.14/site-packages/triton/backends/nvidia/include/cuda.h:56,
-                 from /mnt/d/tmp/tmp4jexoqxt/__triton_launcher.c:2:
-/usr/include/features.h:319:10: note: this is the location of the previous definition
-  319 | # define _POSIX_C_SOURCE        202405L
-      |          ^~~~~~~~~~~~~~~
-[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1385: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1412: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast(enabled=use_scaler):
-In file included from /home/taha/miniconda3/include/python3.14/Python.h:14,
-                 from /mnt/d/tmp/tmpm9c0hs0l/__triton_launcher.c:7:
-/home/taha/miniconda3/include/python3.14/pyconfig.h:2031:9: warning: ‘_POSIX_C_SOURCE’ redefined
- 2031 | #define _POSIX_C_SOURCE 200809L
-      |         ^~~~~~~~~~~~~~~
-In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
-                 from /usr/include/stdlib.h:26,
-                 from /mnt/d/venv/lib/python3.14/site-packages/triton/backends/nvidia/include/cuda.h:56,
-                 from /mnt/d/tmp/tmpm9c0hs0l/__triton_launcher.c:2:
-/usr/include/features.h:319:10: note: this is the location of the previous definition
-  319 | # define _POSIX_C_SOURCE        202405L
-      |          ^~~~~~~~~~~~~~~
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1412: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast(enabled=use_scaler):
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 31, in <module>
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+  File "<frozen importlib._bootstrap>", line 1431, in _handle_fromlist
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/import_utils.py", line 2589, in __getattr__
+    module = self._get_module(self._class_to_module[name])
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/import_utils.py", line 2818, in _get_module
+    return importlib.import_module("." + module_name, self.__name__)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/models/auto/modeling_auto.py", line 21, in <module>
+    from .auto_factory import (
+    ...<4 lines>...
+    )
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/models/auto/auto_factory.py", line 41, in <module>
+    from ...generation import GenerationMixin
+  File "<frozen importlib._bootstrap>", line 1431, in _handle_fromlist
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/import_utils.py", line 2589, in __getattr__
+    module = self._get_module(self._class_to_module[name])
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/utils/import_utils.py", line 2818, in _get_module
+    return importlib.import_module("." + module_name, self.__name__)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/generation/utils.py", line 48, in <module>
+    from ..masking_utils import create_masks_for_generate
+  File "/mnt/d/venv/lib/python3.14/site-packages/transformers/masking_utils.py", line 43, in <module>
+    from torch._dynamo._trace_wrapped_higher_order_op import TransformGetItemToIndex
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/__init__.py", line 76, in <module>
+    from .polyfills import loader as _  # usort: skip # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/polyfills/loader.py", line 34, in <module>
+    POLYFILLED_MODULES: tuple["ModuleType", ...] = tuple(
+                                                   ^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/polyfills/loader.py", line 35, in <genexpr>
+    importlib.import_module(f".{submodule}", package=polyfills.__name__)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/polyfills/_collections.py", line 20, in <module>
+    @substitute_in_graph(_collections._count_elements)
+     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/decorators.py", line 783, in wrapper
+    rule_map: dict[Any, type[VariableTracker]] = get_torch_obj_rule_map()
+                                                 ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/trace_rules.py", line 3000, in get_torch_obj_rule_map
+    obj = load_object(k)
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/trace_rules.py", line 3036, in load_object
+    val = _load_obj_from_str(x[0])
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/_dynamo/trace_rules.py", line 3020, in _load_obj_from_str
+    return getattr(importlib.import_module(module), obj_name)
+                   ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/taha/miniconda3/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/onnx/__init__.py", line 33, in <module>
+    from ._internal.torchscript_exporter import (  # Deprecated members that are excluded from __all__
+    ...<4 lines>...
+    )
+  File "/mnt/d/venv/lib/python3.14/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_helper.py", line 119, in <module>
+    from torch.onnx._internal.torchscript_exporter import _type_utils, jit_utils, utils
+  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 755, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 888, in get_code
+  File "<frozen importlib._bootstrap_external>", line 511, in _compile_bytecode
+KeyboardInterrupt

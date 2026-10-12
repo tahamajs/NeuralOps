@@ -1,0 +1,1 @@
+/mnt/d/SVD_linear_Attention/results/kd_runs/gated_delta_net/20261011_232307_bs12_seq256_lr3e-04_C

@@ -1,0 +1,11 @@
+{
+  "module": "hymba_transx",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 100.35,
+  "duration_sec": 511.8,
+  "retries_used": 1,
+  "error": "exit=-9",
+  "timestamp": "2026-10-12 00:58:36"
+}

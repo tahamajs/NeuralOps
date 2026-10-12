@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: goldfinch_ahn / C
+================================================================================
+
+MODEL INFO:
+  Total params:      139.8 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4412.3000
+  Post-KD PPL:       47.7200
+  Stage 1 (KD) PPL:  57.8800
+  Stage 2 (Self) PPL:47.7200
+  KD Gain:           +4354.42
+  Self Gain:         +10.16
+  Total Gain:        +4364.58
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.3179
+  Recovery:          99.74%
+  Peak VRAM:         4680.98 MB
+  Train time:        226.03 s (Stage 1: 150.8s, Stage 2: 75.2s)
+  s/step:            0.4521
+  Loss (final):      23.0631
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0459
+  Repetition-3:      0.9479
+  Train PPL:         40.8100
+  Test PPL:          47.7200
+  Overfit Gap:       6.91
+  Latency (mean):    481.21 ms
+  Latency (std):     0.73 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        75f4064a8492
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.7965 | lr=1.74e-04
+  step   420 | loss=3.7142 | lr=1.50e-04
+  step   430 | loss=3.6554 | lr=1.27e-04
+  step   440 | loss=3.6547 | lr=1.04e-04
+  step   450 | loss=4.0066 | lr=8.20e-05
+  step   460 | loss=3.7167 | lr=6.19e-05
+  step   470 | loss=3.6413 | lr=4.40e-05
+  step   480 | loss=3.7889 | lr=2.87e-05
+  step   490 | loss=3.9293 | lr=1.64e-05
+  step   500 | loss=3.9029 | lr=7.44e-06

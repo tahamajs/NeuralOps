@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 30, in <module>
+    from datasets import load_dataset
+  File "/mnt/d/venv/lib/python3.14/site-packages/datasets/__init__.py", line 17, in <module>
+    from .arrow_dataset import Column, Dataset
+  File "/mnt/d/venv/lib/python3.14/site-packages/datasets/arrow_dataset.py", line 58, in <module>
+    import pandas as pd
+  File "/mnt/d/venv/lib/python3.14/site-packages/pandas/__init__.py", line 44, in <module>
+    import pandas.core.config_init  # pyright: ignore[reportUnusedImport] # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/venv/lib/python3.14/site-packages/pandas/core/config_init.py", line 31, in <module>
+    from pandas.errors import Pandas4Warning
+  File "/mnt/d/venv/lib/python3.14/site-packages/pandas/errors/__init__.py", line 12, in <module>
+    from pandas._libs.tslibs import (
+    ...<3 lines>...
+    )
+  File "/mnt/d/venv/lib/python3.14/site-packages/pandas/_libs/__init__.py", line 18, in <module>
+    from pandas._libs.interval import Interval
+  File "pandas/_libs/interval.pyx", line 1, in init pandas._libs.interval
+  File "<frozen importlib._bootstrap>", line 648, in parent
+KeyboardInterrupt

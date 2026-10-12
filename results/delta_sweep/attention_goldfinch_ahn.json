@@ -1,0 +1,11 @@
+{
+  "module": "goldfinch_ahn",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 4412.3,
+  "duration_sec": 246.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 23:31:51"
+}

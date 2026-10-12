@@ -1,0 +1,11 @@
+{
+  "module": "hla_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 3746.5,
+  "duration_sec": 258.7,
+  "retries_used": 1,
+  "error": "exit=-9",
+  "timestamp": "2026-10-12 00:40:32"
+}

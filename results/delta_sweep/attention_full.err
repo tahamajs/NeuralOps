@@ -1,0 +1,16 @@
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 17286.47it/s]
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1150: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+Traceback (most recent call last):
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2071, in <module>
+    main()
+    ~~~~^^
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2035, in main
+    result = run_kd_method(
+        method_name=method_name,
+    ...<12 lines>...
+        train_dataset=dataset["train"],
+    )
+  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1244, in run_kd_method
+    raise RuntimeError(f"CRITICAL: Module '{module_name}' was not detected in any layer of student. Aborting.")
+RuntimeError: CRITICAL: Module 'full' was not detected in any layer of student. Aborting.
