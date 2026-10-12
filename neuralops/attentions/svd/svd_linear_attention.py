@@ -414,6 +414,24 @@ class SVDLinear(nn.Module):
 # SVDLinearAttention
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
+    "svd_linear",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "svd_linear_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "svd_linear_inject",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
     "svd_linear_attention",
     supports_causal=True,
     supports_bidirectional=True,
@@ -711,7 +729,7 @@ class SVDLinearAttention(BaseAttention):
                 )
 
     # ------------------------------------------------------------------
-    def copy_weights(self, old_attn: nn.Module) -> None:
+    def copy_weights(self, old_attn: nn.Module, **kwargs: Any) -> None:
         """
         SVDLA-FIX-01: never raise. On missing projections, log a warning
         and fall back to the randomly-initialized state.
@@ -822,15 +840,17 @@ class SVDLinearAttention(BaseAttention):
             if w_v is None:
                 missing.append("v")
             if missing:
-                logger.warning(
-                    "SVDLinearAttention: could not extract %s from %s; "
-                    "keeping random init. This will likely reduce quality.",
-                    missing,
-                    type(old_attn).__name__,
-                )
-                return  # early return; projections keep their SVD init
+                if kwargs.get("_allow_missing_projections", False):
+                    logger.warning(
+                        "SVDLinearAttention: could not extract %s from %s; "
+                        "keeping random init. This will likely reduce quality.",
+                        missing,
+                        type(old_attn).__name__,
+                    )
+                    return
+                raise RuntimeError(f"SVDLinearAttention: failed to extract required projections {missing} from {type(old_attn).__name__}")
 
-            # ---- near-zero norm check: WARN only ----
+            # ---- near-zero norm check ----
             for name, w in (("w_q", w_q), ("w_k", w_k), ("w_v", w_v)):
                 if w is None:
                     continue
@@ -839,11 +859,14 @@ class SVDLinearAttention(BaseAttention):
                 except Exception:
                     n = float("nan")
                 if not math.isfinite(n) or n < 1e-4:
-                    logger.warning(
-                        "SVDLinearAttention: %s has near-zero/NaN norm (%.2e); proceeding anyway.",
-                        name,
-                        n,
-                    )
+                    if kwargs.get("_allow_near_zero_norm", False):
+                        logger.warning(
+                            "SVDLinearAttention: %s has near-zero/NaN norm (%.2e); proceeding anyway.",
+                            name,
+                            n,
+                        )
+                    else:
+                        raise RuntimeError(f"SVDLinearAttention: {name} has near-zero Frobenius norm ({n:.2e})")
 
             # ---- factorize Q ----
             try:
