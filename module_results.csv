@@ -97,7 +97,7 @@ sink_attention,attention,UNKNOWN,,840.68,175.7,1,no delta parsed,2026-10-12 06:1
 soa_attn,attention,UNKNOWN,,1386.61,191.2,1,no delta parsed,2026-10-12 06:17:40
 spectraformer_attention,attention,UNKNOWN,,16494.59,140.6,1,no delta parsed,2026-10-12 06:20:52
 spectron,attention,UNKNOWN,,1823.37,183.8,1,no delta parsed,2026-10-12 06:23:14
-spectron_fp8,attention,TIMEOUT,,4863.04,600.5,1,exceeded 600s,2026-10-12 06:26:19
+spectron_fp8,attention,PASS,1300.36,3563.98,39.24,0,,2026-10-12 17:48:15
 split_head_hybrid,attention,UNKNOWN,,3256.02,491.3,1,no delta parsed,2026-10-12 06:36:20
 svd_compressed,attention,UNKNOWN,,3750.81,212.9,1,no delta parsed,2026-10-12 06:44:32
 svd_linear_attention,attention,UNKNOWN,,3750.15,159.1,1,no delta parsed,2026-10-12 06:48:06
@@ -190,9 +190,9 @@ tt_compressor,compressor,PASS,33.36,5034.42,87.1,1,,2026-10-12T16:08:50.440000
 uniql_compressor,compressor,UNKNOWN,,10753.39,179.2,1,no delta parsed,2026-10-12 11:31:34
 zerokv_neo_compressor,compressor,UNKNOWN,,1726.76,164.8,1,no delta parsed,2026-10-12 11:34:35
 aegis_hybrid,attention,PASS,171.63,3499.39,23.8,0,,2026-10-12 17:18:42
-aegis_spectron_fp8,attention,TIMEOUT,,,600.5,1,exceeded 600s,2026-10-12 14:03:14
-aegis_v1,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:13:16
-aegis_v2,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:23:18
+aegis_spectron_fp8,attention,PASS,1332.86,3523.37,46.56,0,,2026-10-12 17:52:29
+aegis_v1,attention,PASS,731.34,3521.69,25.85,0,,2026-10-12 17:46:59
+aegis_v2,attention,PASS,695.17,3583.19,29.87,0,,2026-10-12 17:50:25
 gated_linear_attention,attention,PASS,13184.62,2038.58,60.0,0,,2026-10-12 16:24:38
 gated_linear_attn,attention,PASS,13184.62,2038.58,60.0,0,,2026-10-12 16:24:38
 hgrn2_outer,attention,PASS,273.19,3679.91,62.5,0,,2026-10-12 16:35:05

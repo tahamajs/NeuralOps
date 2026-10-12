@@ -242,17 +242,13 @@ class HybridAttention(BaseAttention):
         self.out_proj = nn.Linear(self.all_head_size, self.hidden_size, bias=True)
         self.dropout = nn.Dropout(drop_rate)
 
-        # Rank-reduced compression bottleneck with identity-preserving initialization
+        # Rank-reduced compression bottleneck initialized residually (ΔW=0 at init for perfect fidelity)
         bottleneck = max(16, self.all_head_size // 2)
         self.compress_proj = nn.Linear(self.all_head_size, bottleneck, bias=False)
         self.decompress_proj = nn.Linear(bottleneck, self.all_head_size, bias=False)
         with torch.no_grad():
-            self.compress_proj.weight.zero_()
+            nn.init.kaiming_uniform_(self.compress_proj.weight, a=math.sqrt(5))
             self.decompress_proj.weight.zero_()
-            # Orthogonal / truncated identity projection for stable representation pass-through
-            min_dim = min(bottleneck, self.all_head_size)
-            self.compress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
-            self.decompress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
 
         # Per-head gate: freeze at warm-start (bias=4.0, ~98% standard attention) to prevent divergence
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
@@ -601,7 +597,7 @@ class HybridAttention(BaseAttention):
 
         fused = fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
-        fused = self.decompress_proj(self.compress_proj(fused))
+        fused = fused + self.decompress_proj(self.compress_proj(fused))
 
         # HA-FIX-01: out_proj ALWAYS executed.
         if self.is_nested_encoder:
