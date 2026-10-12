@@ -20260,6 +20260,4689 @@
           "lambada_acc": null
         }
       }
+    },
+    {
+      "module": "block_transformer_hiba",
+      "timestamp": "20261012_222648",
+      "run_dir": "results/kd_runs/block_transformer_hiba/20261012_222648_bs8_seq256_lr3e-04_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 8,
+      "grad_accum_steps": 1,
+      "seq_len": 256,
+      "recovery_steps": 50,
+      "baseline_ppl": 36.22,
+      "best_post_ppl": 64.07,
+      "best_recovery_pct": 30.57,
+      "post_ppl_stage1": 64.07,
+      "post_ppl_stage2": 64.07,
+      "kd_gain": 12.26,
+      "self_gain": 0.0,
+      "total_gain": 12.26,
+      "aligned_with_teacher": false,
+      "beat_teacher_after_self": false,
+      "stage1_time_s": 113.15,
+      "stage2_time_s": 0.0,
+      "eval_protocol": {
+        "max_tokens": 15000,
+        "stride": 128,
+        "seq_len": 256,
+        "precision": "fp16",
+        "dataset": "test"
+      },
+      "generation": {
+        "distinct_2": 0.9676,
+        "repetition_3": 0.0,
+        "samples": [
+          {
+            "prompt": "The quick brown fox",
+            "text": "es you see in the picture below, are actually the most common animals in the wild. They have no known predators and are often killed by other birds for eating or passing on their prey.",
+            "first_50_tokens": [
+              274,
+              345,
+              766,
+              287,
+              262,
+              4286,
+              2174,
+              11,
+              389,
+              1682,
+              262,
+              749,
+              2219,
+              4695,
+              287,
+              262,
+              4295,
+              13,
+              1119,
+              423,
+              645,
+              1900,
+              23311,
+              290,
+              389,
+              1690,
+              2923,
+              416,
+              584,
+              10087,
+              329,
+              6600,
+              393,
+              6427,
+              319,
+              511,
+              15974,
+              13,
+              50256
+            ]
+          },
+          {
+            "prompt": "Once upon a time",
+            "text": ", however, the British government was reluctant to open up to India, insisting that it must be allowed to continue. They had no choice but to make the decision.\n\n\nThere was no way in hell the British would ever allow their own army to",
+            "first_50_tokens": [
+              11,
+              2158,
+              11,
+              262,
+              3517,
+              1230,
+              373,
+              18416,
+              284,
+              1280,
+              510,
+              284,
+              3794,
+              11,
+              23630,
+              326,
+              340,
+              1276,
+              307,
+              3142,
+              284,
+              2555,
+              13,
+              1119,
+              550,
+              645,
+              3572,
+              475,
+              284,
+              787,
+              262,
+              2551,
+              13,
+              628,
+              198,
+              1858,
+              373,
+              645,
+              835,
+              287,
+              5968,
+              262,
+              3517,
+              561,
+              1683,
+              1249,
+              511,
+              898,
+              5428,
+              284
+            ]
+          },
+          {
+            "prompt": "In the beginning",
+            "text": ", there were two types of players, one was a player with a strong, disciplined personality, and the other was someone with a more conventional set of skills, but after a while, he became a bigger part of the team. A lot of the",
+            "first_50_tokens": [
+              11,
+              612,
+              547,
+              734,
+              3858,
+              286,
+              1938,
+              11,
+              530,
+              373,
+              257,
+              2137,
+              351,
+              257,
+              1913,
+              11,
+              30654,
+              8806,
+              11,
+              290,
+              262,
+              584,
+              373,
+              2130,
+              351,
+              257,
+              517,
+              10224,
+              900,
+              286,
+              4678,
+              11,
+              475,
+              706,
+              257,
+              981,
+              11,
+              339,
+              2627,
+              257,
+              5749,
+              636,
+              286,
+              262,
+              1074,
+              13,
+              317,
+              1256,
+              286,
+              262
+            ]
+          },
+          {
+            "prompt": "The future of AI is",
+            "text": " on the horizon, and it's not just a matter of computing and learning. It is also about more than AI, especially with regard to a technology like this. Artificial intelligence is an ongoing process that continues to evolve, with new and complex features added",
+            "first_50_tokens": [
+              319,
+              262,
+              17810,
+              11,
+              290,
+              340,
+              338,
+              407,
+              655,
+              257,
+              2300,
+              286,
+              14492,
+              290,
+              4673,
+              13,
+              632,
+              318,
+              635,
+              546,
+              517,
+              621,
+              9552,
+              11,
+              2592,
+              351,
+              2754,
+              284,
+              257,
+              3037,
+              588,
+              428,
+              13,
+              35941,
+              4430,
+              318,
+              281,
+              7044,
+              1429,
+              326,
+              4477,
+              284,
+              18101,
+              11,
+              351,
+              649,
+              290,
+              3716,
+              3033,
+              2087
+            ]
+          }
+        ]
+      },
+      "overfit_gap": 3.52,
+      "latency": {
+        "mean_latency_ms": 1160.19,
+        "std_latency_ms": 5.13
+      },
+      "train_ppl": 60.55,
+      "test_ppl": 64.07,
+      "lambada_acc": null,
+      "results": {
+        "C": {
+          "pre_ppl": 76.33,
+          "post_ppl": 64.07,
+          "ppl_ratio": 1.7689,
+          "recovery_pct": 30.57,
+          "peak_vram_mb": 5399.57,
+          "train_time_s": 113.15,
+          "s_per_step": 2.263,
+          "loss_final": 4.0164,
+          "cached": true,
+          "post_ppl_stage1": 64.07,
+          "post_ppl_stage2": 64.07,
+          "kd_gain": 12.26,
+          "self_gain": 0.0,
+          "total_gain": 12.26,
+          "aligned_with_teacher": false,
+          "beat_teacher_after_self": false,
+          "stage1_time_s": 113.15,
+          "stage2_time_s": 0.0,
+          "self_train_steps": 0,
+          "teacher_params": 124439808,
+          "student_params": 125619456,
+          "trainable_params": 1179648,
+          "batch_size": 8,
+          "seq_len": 256,
+          "learning_rate": 0.0003,
+          "recovery_steps": 50,
+          "train_scope": "module",
+          "gpu_name": "NVIDIA GeForce GTX 1060",
+          "eval_protocol": {
+            "max_tokens": 15000,
+            "stride": 128,
+            "seq_len": 256,
+            "precision": "fp16",
+            "dataset": "test"
+          },
+          "loss_history": [
+            [
+              0,
+              3.5192580223083496
+            ],
+            [
+              1,
+              3.42385196685791
+            ],
+            [
+              2,
+              3.340749979019165
+            ],
+            [
+              3,
+              3.624847888946533
+            ],
+            [
+              4,
+              3.4637227058410645
+            ],
+            [
+              5,
+              4.016402721405029
+            ],
+            [
+              6,
+              3.584205389022827
+            ],
+            [
+              7,
+              3.9972212314605713
+            ],
+            [
+              8,
+              3.9599454402923584
+            ],
+            [
+              9,
+              4.531008243560791
+            ],
+            [
+              10,
+              4.479920864105225
+            ],
+            [
+              11,
+              4.2183451652526855
+            ],
+            [
+              12,
+              4.268679618835449
+            ],
+            [
+              13,
+              4.258834362030029
+            ],
+            [
+              14,
+              4.244663715362549
+            ],
+            [
+              15,
+              4.391736030578613
+            ],
+            [
+              16,
+              4.878577709197998
+            ],
+            [
+              17,
+              4.721078872680664
+            ],
+            [
+              18,
+              4.818264484405518
+            ],
+            [
+              19,
+              5.0870208740234375
+            ],
+            [
+              20,
+              5.108704566955566
+            ],
+            [
+              21,
+              5.269491195678711
+            ],
+            [
+              22,
+              5.587333679199219
+            ],
+            [
+              23,
+              5.637650012969971
+            ],
+            [
+              24,
+              6.0245513916015625
+            ],
+            [
+              25,
+              6.085249900817871
+            ],
+            [
+              26,
+              6.332837104797363
+            ],
+            [
+              27,
+              6.408814430236816
+            ],
+            [
+              28,
+              6.5862321853637695
+            ],
+            [
+              29,
+              6.946145534515381
+            ],
+            [
+              30,
+              7.094650745391846
+            ],
+            [
+              31,
+              7.4503350257873535
+            ],
+            [
+              32,
+              7.667938232421875
+            ],
+            [
+              33,
+              7.890111446380615
+            ],
+            [
+              34,
+              8.14694881439209
+            ],
+            [
+              35,
+              8.534942626953125
+            ],
+            [
+              36,
+              8.763151168823242
+            ],
+            [
+              37,
+              9.130444526672363
+            ],
+            [
+              38,
+              9.611753463745117
+            ],
+            [
+              39,
+              9.729192733764648
+            ],
+            [
+              40,
+              10.081880569458008
+            ],
+            [
+              41,
+              10.65185546875
+            ],
+            [
+              42,
+              11.038860321044922
+            ],
+            [
+              43,
+              11.553152084350586
+            ],
+            [
+              44,
+              11.868975639343262
+            ],
+            [
+              45,
+              12.504722595214844
+            ],
+            [
+              46,
+              12.627891540527344
+            ],
+            [
+              47,
+              13.153372764587402
+            ],
+            [
+              48,
+              13.587068557739258
+            ],
+            [
+              49,
+              13.873623847961426
+            ]
+          ],
+          "ppl_history": {
+            "25": 71.46,
+            "50": 64.07
+          },
+          "lr_history": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              2.9999999999999997e-06
+            ],
+            [
+              2,
+              5.999999999999999e-06
+            ],
+            [
+              3,
+              8.999999999999999e-06
+            ],
+            [
+              4,
+              1.1999999999999999e-05
+            ],
+            [
+              5,
+              1.4999999999999999e-05
+            ],
+            [
+              6,
+              1.7999999999999997e-05
+            ],
+            [
+              7,
+              2.1e-05
+            ],
+            [
+              8,
+              2.3999999999999997e-05
+            ],
+            [
+              9,
+              2.6999999999999996e-05
+            ],
+            [
+              10,
+              2.9999999999999997e-05
+            ],
+            [
+              11,
+              3.2999999999999996e-05
+            ],
+            [
+              12,
+              3.5999999999999994e-05
+            ],
+            [
+              13,
+              3.9e-05
+            ],
+            [
+              14,
+              4.2e-05
+            ],
+            [
+              15,
+              4.4999999999999996e-05
+            ],
+            [
+              16,
+              4.7999999999999994e-05
+            ],
+            [
+              17,
+              5.1e-05
+            ],
+            [
+              18,
+              5.399999999999999e-05
+            ],
+            [
+              19,
+              5.6999999999999996e-05
+            ],
+            [
+              20,
+              5.9999999999999995e-05
+            ],
+            [
+              21,
+              6.299999999999999e-05
+            ],
+            [
+              22,
+              6.599999999999999e-05
+            ],
+            [
+              23,
+              6.9e-05
+            ],
+            [
+              24,
+              7.199999999999999e-05
+            ],
+            [
+              25,
+              7.5e-05
+            ],
+            [
+              26,
+              7.8e-05
+            ],
+            [
+              27,
+              8.1e-05
+            ],
+            [
+              28,
+              8.4e-05
+            ],
+            [
+              29,
+              8.699999999999999e-05
+            ],
+            [
+              30,
+              8.999999999999999e-05
+            ],
+            [
+              31,
+              9.3e-05
+            ],
+            [
+              32,
+              9.599999999999999e-05
+            ],
+            [
+              33,
+              9.9e-05
+            ],
+            [
+              34,
+              0.000102
+            ],
+            [
+              35,
+              0.00010499999999999999
+            ],
+            [
+              36,
+              0.00010799999999999998
+            ],
+            [
+              37,
+              0.00011099999999999999
+            ],
+            [
+              38,
+              0.00011399999999999999
+            ],
+            [
+              39,
+              0.000117
+            ],
+            [
+              40,
+              0.00011999999999999999
+            ],
+            [
+              41,
+              0.00012299999999999998
+            ],
+            [
+              42,
+              0.00012599999999999997
+            ],
+            [
+              43,
+              0.000129
+            ],
+            [
+              44,
+              0.00013199999999999998
+            ],
+            [
+              45,
+              0.000135
+            ],
+            [
+              46,
+              0.000138
+            ],
+            [
+              47,
+              0.00014099999999999998
+            ],
+            [
+              48,
+              0.00014399999999999998
+            ],
+            [
+              49,
+              0.000147
+            ]
+          ],
+          "generation": {
+            "distinct_2": 0.9676,
+            "repetition_3": 0.0,
+            "samples": [
+              {
+                "prompt": "The quick brown fox",
+                "text": "es you see in the picture below, are actually the most common animals in the wild. They have no known predators and are often killed by other birds for eating or passing on their prey.",
+                "first_50_tokens": [
+                  274,
+                  345,
+                  766,
+                  287,
+                  262,
+                  4286,
+                  2174,
+                  11,
+                  389,
+                  1682,
+                  262,
+                  749,
+                  2219,
+                  4695,
+                  287,
+                  262,
+                  4295,
+                  13,
+                  1119,
+                  423,
+                  645,
+                  1900,
+                  23311,
+                  290,
+                  389,
+                  1690,
+                  2923,
+                  416,
+                  584,
+                  10087,
+                  329,
+                  6600,
+                  393,
+                  6427,
+                  319,
+                  511,
+                  15974,
+                  13,
+                  50256
+                ]
+              },
+              {
+                "prompt": "Once upon a time",
+                "text": ", however, the British government was reluctant to open up to India, insisting that it must be allowed to continue. They had no choice but to make the decision.\n\n\nThere was no way in hell the British would ever allow their own army to",
+                "first_50_tokens": [
+                  11,
+                  2158,
+                  11,
+                  262,
+                  3517,
+                  1230,
+                  373,
+                  18416,
+                  284,
+                  1280,
+                  510,
+                  284,
+                  3794,
+                  11,
+                  23630,
+                  326,
+                  340,
+                  1276,
+                  307,
+                  3142,
+                  284,
+                  2555,
+                  13,
+                  1119,
+                  550,
+                  645,
+                  3572,
+                  475,
+                  284,
+                  787,
+                  262,
+                  2551,
+                  13,
+                  628,
+                  198,
+                  1858,
+                  373,
+                  645,
+                  835,
+                  287,
+                  5968,
+                  262,
+                  3517,
+                  561,
+                  1683,
+                  1249,
+                  511,
+                  898,
+                  5428,
+                  284
+                ]
+              },
+              {
+                "prompt": "In the beginning",
+                "text": ", there were two types of players, one was a player with a strong, disciplined personality, and the other was someone with a more conventional set of skills, but after a while, he became a bigger part of the team. A lot of the",
+                "first_50_tokens": [
+                  11,
+                  612,
+                  547,
+                  734,
+                  3858,
+                  286,
+                  1938,
+                  11,
+                  530,
+                  373,
+                  257,
+                  2137,
+                  351,
+                  257,
+                  1913,
+                  11,
+                  30654,
+                  8806,
+                  11,
+                  290,
+                  262,
+                  584,
+                  373,
+                  2130,
+                  351,
+                  257,
+                  517,
+                  10224,
+                  900,
+                  286,
+                  4678,
+                  11,
+                  475,
+                  706,
+                  257,
+                  981,
+                  11,
+                  339,
+                  2627,
+                  257,
+                  5749,
+                  636,
+                  286,
+                  262,
+                  1074,
+                  13,
+                  317,
+                  1256,
+                  286,
+                  262
+                ]
+              },
+              {
+                "prompt": "The future of AI is",
+                "text": " on the horizon, and it's not just a matter of computing and learning. It is also about more than AI, especially with regard to a technology like this. Artificial intelligence is an ongoing process that continues to evolve, with new and complex features added",
+                "first_50_tokens": [
+                  319,
+                  262,
+                  17810,
+                  11,
+                  290,
+                  340,
+                  338,
+                  407,
+                  655,
+                  257,
+                  2300,
+                  286,
+                  14492,
+                  290,
+                  4673,
+                  13,
+                  632,
+                  318,
+                  635,
+                  546,
+                  517,
+                  621,
+                  9552,
+                  11,
+                  2592,
+                  351,
+                  2754,
+                  284,
+                  257,
+                  3037,
+                  588,
+                  428,
+                  13,
+                  35941,
+                  4430,
+                  318,
+                  281,
+                  7044,
+                  1429,
+                  326,
+                  4477,
+                  284,
+                  18101,
+                  11,
+                  351,
+                  649,
+                  290,
+                  3716,
+                  3033,
+                  2087
+                ]
+              }
+            ]
+          },
+          "latency": {
+            "mean_latency_ms": 1160.19,
+            "std_latency_ms": 5.13
+          },
+          "train_ppl": 60.55,
+          "test_ppl": 64.07,
+          "overfit_gap": 3.52,
+          "lambada_acc": null
+        }
+      }
+    },
+    {
+      "module": "block_transformer_hiba",
+      "timestamp": "20261012_222933",
+      "run_dir": "results/kd_runs/block_transformer_hiba/20261012_222933_bs8_seq256_lr3e-04_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 8,
+      "grad_accum_steps": 1,
+      "seq_len": 256,
+      "recovery_steps": 50,
+      "baseline_ppl": 36.22,
+      "best_post_ppl": 63.51,
+      "best_recovery_pct": 31.96,
+      "post_ppl_stage1": 63.51,
+      "post_ppl_stage2": 63.51,
+      "kd_gain": 12.82,
+      "self_gain": 0.0,
+      "total_gain": 12.82,
+      "aligned_with_teacher": false,
+      "beat_teacher_after_self": false,
+      "stage1_time_s": 118.86,
+      "stage2_time_s": 0.0,
+      "eval_protocol": {
+        "max_tokens": 15000,
+        "stride": 128,
+        "seq_len": 256,
+        "precision": "fp16",
+        "dataset": "test"
+      },
+      "generation": {
+        "distinct_2": 0.9459,
+        "repetition_3": 0.0166,
+        "samples": [
+          {
+            "prompt": "The quick brown fox",
+            "text": "es you see in the picture below, are actually the most common animals in the wild. They have no known predators and are often killed by other birds for eating or passing on their prey.",
+            "first_50_tokens": [
+              274,
+              345,
+              766,
+              287,
+              262,
+              4286,
+              2174,
+              11,
+              389,
+              1682,
+              262,
+              749,
+              2219,
+              4695,
+              287,
+              262,
+              4295,
+              13,
+              1119,
+              423,
+              645,
+              1900,
+              23311,
+              290,
+              389,
+              1690,
+              2923,
+              416,
+              584,
+              10087,
+              329,
+              6600,
+              393,
+              6427,
+              319,
+              511,
+              15974,
+              13,
+              50256
+            ]
+          },
+          {
+            "prompt": "Once upon a time",
+            "text": ", however, the British government was reluctant to open up to India, insisting that it must be allowed to continue. They had no choice but to make the decision.\n\n\nThere was no real threat in the form of any government and even if the",
+            "first_50_tokens": [
+              11,
+              2158,
+              11,
+              262,
+              3517,
+              1230,
+              373,
+              18416,
+              284,
+              1280,
+              510,
+              284,
+              3794,
+              11,
+              23630,
+              326,
+              340,
+              1276,
+              307,
+              3142,
+              284,
+              2555,
+              13,
+              1119,
+              550,
+              645,
+              3572,
+              475,
+              284,
+              787,
+              262,
+              2551,
+              13,
+              628,
+              198,
+              1858,
+              373,
+              645,
+              1103,
+              2372,
+              287,
+              262,
+              1296,
+              286,
+              597,
+              1230,
+              290,
+              772,
+              611,
+              262
+            ]
+          },
+          {
+            "prompt": "In the beginning",
+            "text": ", there were two types of players, one was a player with a strong, disciplined personality, and the other was someone with a more conventional set of skills, but I think the two types of players really helped me in the game. That's why",
+            "first_50_tokens": [
+              11,
+              612,
+              547,
+              734,
+              3858,
+              286,
+              1938,
+              11,
+              530,
+              373,
+              257,
+              2137,
+              351,
+              257,
+              1913,
+              11,
+              30654,
+              8806,
+              11,
+              290,
+              262,
+              584,
+              373,
+              2130,
+              351,
+              257,
+              517,
+              10224,
+              900,
+              286,
+              4678,
+              11,
+              475,
+              314,
+              892,
+              262,
+              734,
+              3858,
+              286,
+              1938,
+              1107,
+              4193,
+              502,
+              287,
+              262,
+              983,
+              13,
+              1320,
+              338,
+              1521
+            ]
+          },
+          {
+            "prompt": "The future of AI is",
+            "text": " on the horizon, and the field is beginning to become more mature.\n\nA computer science major at Carnegie Mellon University and a professor at the School of Electrical and Computer Engineering at Harvard University, he is one of the few people to have applied for",
+            "first_50_tokens": [
+              319,
+              262,
+              17810,
+              11,
+              290,
+              262,
+              2214,
+              318,
+              3726,
+              284,
+              1716,
+              517,
+              15345,
+              13,
+              198,
+              198,
+              32,
+              3644,
+              3783,
+              1688,
+              379,
+              33976,
+              49808,
+              2059,
+              290,
+              257,
+              6240,
+              379,
+              262,
+              3961,
+              286,
+              40224,
+              290,
+              13851,
+              14044,
+              379,
+              11131,
+              2059,
+              11,
+              339,
+              318,
+              530,
+              286,
+              262,
+              1178,
+              661,
+              284,
+              423,
+              5625,
+              329
+            ]
+          }
+        ]
+      },
+      "overfit_gap": 2.82,
+      "latency": {
+        "mean_latency_ms": 1119.87,
+        "std_latency_ms": 4.35
+      },
+      "train_ppl": 60.69,
+      "test_ppl": 63.51,
+      "lambada_acc": null,
+      "results": {
+        "C": {
+          "pre_ppl": 76.33,
+          "post_ppl": 63.51,
+          "ppl_ratio": 1.7535,
+          "recovery_pct": 31.96,
+          "peak_vram_mb": 5399.82,
+          "train_time_s": 118.86,
+          "s_per_step": 2.3772,
+          "loss_final": 3.8525,
+          "cached": true,
+          "post_ppl_stage1": 63.51,
+          "post_ppl_stage2": 63.51,
+          "kd_gain": 12.82,
+          "self_gain": 0.0,
+          "total_gain": 12.82,
+          "aligned_with_teacher": false,
+          "beat_teacher_after_self": false,
+          "stage1_time_s": 118.86,
+          "stage2_time_s": 0.0,
+          "self_train_steps": 0,
+          "teacher_params": 124439808,
+          "student_params": 125619456,
+          "trainable_params": 1179648,
+          "batch_size": 8,
+          "seq_len": 256,
+          "learning_rate": 0.0003,
+          "recovery_steps": 50,
+          "train_scope": "module",
+          "gpu_name": "NVIDIA GeForce GTX 1060",
+          "eval_protocol": {
+            "max_tokens": 15000,
+            "stride": 128,
+            "seq_len": 256,
+            "precision": "fp16",
+            "dataset": "test"
+          },
+          "loss_history": [
+            [
+              0,
+              3.8936541080474854
+            ],
+            [
+              1,
+              3.6490492820739746
+            ],
+            [
+              2,
+              5.271361827850342
+            ],
+            [
+              3,
+              3.5746266841888428
+            ],
+            [
+              4,
+              3.496389865875244
+            ],
+            [
+              5,
+              3.8525266647338867
+            ],
+            [
+              6,
+              3.573275566101074
+            ],
+            [
+              7,
+              4.404152870178223
+            ],
+            [
+              8,
+              4.1659932136535645
+            ],
+            [
+              9,
+              3.742280960083008
+            ],
+            [
+              10,
+              4.059582710266113
+            ],
+            [
+              11,
+              4.362591743469238
+            ],
+            [
+              12,
+              4.282517910003662
+            ],
+            [
+              13,
+              4.4736223220825195
+            ],
+            [
+              14,
+              4.198159217834473
+            ],
+            [
+              15,
+              4.658880233764648
+            ],
+            [
+              16,
+              4.945408344268799
+            ],
+            [
+              17,
+              4.761994361877441
+            ],
+            [
+              18,
+              4.890111923217773
+            ],
+            [
+              19,
+              5.14971923828125
+            ],
+            [
+              20,
+              5.093739986419678
+            ],
+            [
+              21,
+              5.541715621948242
+            ],
+            [
+              22,
+              5.608603477478027
+            ],
+            [
+              23,
+              5.795323371887207
+            ],
+            [
+              24,
+              6.016199588775635
+            ],
+            [
+              25,
+              6.0135087966918945
+            ],
+            [
+              26,
+              6.450632572174072
+            ],
+            [
+              27,
+              6.527414798736572
+            ],
+            [
+              28,
+              6.739597320556641
+            ],
+            [
+              29,
+              7.167084217071533
+            ],
+            [
+              30,
+              7.225222110748291
+            ],
+            [
+              31,
+              7.5461249351501465
+            ],
+            [
+              32,
+              7.574987888336182
+            ],
+            [
+              33,
+              7.8948869705200195
+            ],
+            [
+              34,
+              8.19016170501709
+            ],
+            [
+              35,
+              8.669782638549805
+            ],
+            [
+              36,
+              8.894546508789062
+            ],
+            [
+              37,
+              9.043277740478516
+            ],
+            [
+              38,
+              9.577235221862793
+            ],
+            [
+              39,
+              9.70765495300293
+            ],
+            [
+              40,
+              10.096342086791992
+            ],
+            [
+              41,
+              10.623239517211914
+            ],
+            [
+              42,
+              11.006499290466309
+            ],
+            [
+              43,
+              11.313097953796387
+            ],
+            [
+              44,
+              12.047365188598633
+            ],
+            [
+              45,
+              12.189778327941895
+            ],
+            [
+              46,
+              12.525344848632812
+            ],
+            [
+              47,
+              13.047551155090332
+            ],
+            [
+              48,
+              13.559579849243164
+            ],
+            [
+              49,
+              13.866369247436523
+            ]
+          ],
+          "ppl_history": {
+            "25": 71.35,
+            "50": 63.51
+          },
+          "lr_history": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              2.9999999999999997e-06
+            ],
+            [
+              2,
+              5.999999999999999e-06
+            ],
+            [
+              3,
+              8.999999999999999e-06
+            ],
+            [
+              4,
+              1.1999999999999999e-05
+            ],
+            [
+              5,
+              1.4999999999999999e-05
+            ],
+            [
+              6,
+              1.7999999999999997e-05
+            ],
+            [
+              7,
+              2.1e-05
+            ],
+            [
+              8,
+              2.3999999999999997e-05
+            ],
+            [
+              9,
+              2.6999999999999996e-05
+            ],
+            [
+              10,
+              2.9999999999999997e-05
+            ],
+            [
+              11,
+              3.2999999999999996e-05
+            ],
+            [
+              12,
+              3.5999999999999994e-05
+            ],
+            [
+              13,
+              3.9e-05
+            ],
+            [
+              14,
+              4.2e-05
+            ],
+            [
+              15,
+              4.4999999999999996e-05
+            ],
+            [
+              16,
+              4.7999999999999994e-05
+            ],
+            [
+              17,
+              5.1e-05
+            ],
+            [
+              18,
+              5.399999999999999e-05
+            ],
+            [
+              19,
+              5.6999999999999996e-05
+            ],
+            [
+              20,
+              5.9999999999999995e-05
+            ],
+            [
+              21,
+              6.299999999999999e-05
+            ],
+            [
+              22,
+              6.599999999999999e-05
+            ],
+            [
+              23,
+              6.9e-05
+            ],
+            [
+              24,
+              7.199999999999999e-05
+            ],
+            [
+              25,
+              7.5e-05
+            ],
+            [
+              26,
+              7.8e-05
+            ],
+            [
+              27,
+              8.1e-05
+            ],
+            [
+              28,
+              8.4e-05
+            ],
+            [
+              29,
+              8.699999999999999e-05
+            ],
+            [
+              30,
+              8.999999999999999e-05
+            ],
+            [
+              31,
+              9.3e-05
+            ],
+            [
+              32,
+              9.599999999999999e-05
+            ],
+            [
+              33,
+              9.9e-05
+            ],
+            [
+              34,
+              0.000102
+            ],
+            [
+              35,
+              0.00010499999999999999
+            ],
+            [
+              36,
+              0.00010799999999999998
+            ],
+            [
+              37,
+              0.00011099999999999999
+            ],
+            [
+              38,
+              0.00011399999999999999
+            ],
+            [
+              39,
+              0.000117
+            ],
+            [
+              40,
+              0.00011999999999999999
+            ],
+            [
+              41,
+              0.00012299999999999998
+            ],
+            [
+              42,
+              0.00012599999999999997
+            ],
+            [
+              43,
+              0.000129
+            ],
+            [
+              44,
+              0.00013199999999999998
+            ],
+            [
+              45,
+              0.000135
+            ],
+            [
+              46,
+              0.000138
+            ],
+            [
+              47,
+              0.00014099999999999998
+            ],
+            [
+              48,
+              0.00014399999999999998
+            ],
+            [
+              49,
+              0.000147
+            ]
+          ],
+          "generation": {
+            "distinct_2": 0.9459,
+            "repetition_3": 0.0166,
+            "samples": [
+              {
+                "prompt": "The quick brown fox",
+                "text": "es you see in the picture below, are actually the most common animals in the wild. They have no known predators and are often killed by other birds for eating or passing on their prey.",
+                "first_50_tokens": [
+                  274,
+                  345,
+                  766,
+                  287,
+                  262,
+                  4286,
+                  2174,
+                  11,
+                  389,
+                  1682,
+                  262,
+                  749,
+                  2219,
+                  4695,
+                  287,
+                  262,
+                  4295,
+                  13,
+                  1119,
+                  423,
+                  645,
+                  1900,
+                  23311,
+                  290,
+                  389,
+                  1690,
+                  2923,
+                  416,
+                  584,
+                  10087,
+                  329,
+                  6600,
+                  393,
+                  6427,
+                  319,
+                  511,
+                  15974,
+                  13,
+                  50256
+                ]
+              },
+              {
+                "prompt": "Once upon a time",
+                "text": ", however, the British government was reluctant to open up to India, insisting that it must be allowed to continue. They had no choice but to make the decision.\n\n\nThere was no real threat in the form of any government and even if the",
+                "first_50_tokens": [
+                  11,
+                  2158,
+                  11,
+                  262,
+                  3517,
+                  1230,
+                  373,
+                  18416,
+                  284,
+                  1280,
+                  510,
+                  284,
+                  3794,
+                  11,
+                  23630,
+                  326,
+                  340,
+                  1276,
+                  307,
+                  3142,
+                  284,
+                  2555,
+                  13,
+                  1119,
+                  550,
+                  645,
+                  3572,
+                  475,
+                  284,
+                  787,
+                  262,
+                  2551,
+                  13,
+                  628,
+                  198,
+                  1858,
+                  373,
+                  645,
+                  1103,
+                  2372,
+                  287,
+                  262,
+                  1296,
+                  286,
+                  597,
+                  1230,
+                  290,
+                  772,
+                  611,
+                  262
+                ]
+              },
+              {
+                "prompt": "In the beginning",
+                "text": ", there were two types of players, one was a player with a strong, disciplined personality, and the other was someone with a more conventional set of skills, but I think the two types of players really helped me in the game. That's why",
+                "first_50_tokens": [
+                  11,
+                  612,
+                  547,
+                  734,
+                  3858,
+                  286,
+                  1938,
+                  11,
+                  530,
+                  373,
+                  257,
+                  2137,
+                  351,
+                  257,
+                  1913,
+                  11,
+                  30654,
+                  8806,
+                  11,
+                  290,
+                  262,
+                  584,
+                  373,
+                  2130,
+                  351,
+                  257,
+                  517,
+                  10224,
+                  900,
+                  286,
+                  4678,
+                  11,
+                  475,
+                  314,
+                  892,
+                  262,
+                  734,
+                  3858,
+                  286,
+                  1938,
+                  1107,
+                  4193,
+                  502,
+                  287,
+                  262,
+                  983,
+                  13,
+                  1320,
+                  338,
+                  1521
+                ]
+              },
+              {
+                "prompt": "The future of AI is",
+                "text": " on the horizon, and the field is beginning to become more mature.\n\nA computer science major at Carnegie Mellon University and a professor at the School of Electrical and Computer Engineering at Harvard University, he is one of the few people to have applied for",
+                "first_50_tokens": [
+                  319,
+                  262,
+                  17810,
+                  11,
+                  290,
+                  262,
+                  2214,
+                  318,
+                  3726,
+                  284,
+                  1716,
+                  517,
+                  15345,
+                  13,
+                  198,
+                  198,
+                  32,
+                  3644,
+                  3783,
+                  1688,
+                  379,
+                  33976,
+                  49808,
+                  2059,
+                  290,
+                  257,
+                  6240,
+                  379,
+                  262,
+                  3961,
+                  286,
+                  40224,
+                  290,
+                  13851,
+                  14044,
+                  379,
+                  11131,
+                  2059,
+                  11,
+                  339,
+                  318,
+                  530,
+                  286,
+                  262,
+                  1178,
+                  661,
+                  284,
+                  423,
+                  5625,
+                  329
+                ]
+              }
+            ]
+          },
+          "latency": {
+            "mean_latency_ms": 1119.87,
+            "std_latency_ms": 4.35
+          },
+          "train_ppl": 60.69,
+          "test_ppl": 63.51,
+          "overfit_gap": 2.82,
+          "lambada_acc": null
+        }
+      }
+    },
+    {
+      "module": "block_transformer_hiba",
+      "timestamp": "20261012_223236",
+      "run_dir": "results/kd_runs/block_transformer_hiba/20261012_223236_bs8_seq256_lr3e-04_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 8,
+      "grad_accum_steps": 1,
+      "seq_len": 256,
+      "recovery_steps": 50,
+      "baseline_ppl": 36.22,
+      "best_post_ppl": 64.67,
+      "best_recovery_pct": 28.73,
+      "post_ppl_stage1": 64.67,
+      "post_ppl_stage2": 64.67,
+      "kd_gain": 11.47,
+      "self_gain": 0.0,
+      "total_gain": 11.47,
+      "aligned_with_teacher": false,
+      "beat_teacher_after_self": false,
+      "stage1_time_s": 105.08,
+      "stage2_time_s": 0.0,
+      "eval_protocol": {
+        "max_tokens": 15000,
+        "stride": 128,
+        "seq_len": 256,
+        "precision": "fp32",
+        "dataset": "test"
+      },
+      "generation": {
+        "distinct_2": 0.9133,
+        "repetition_3": 0.0104,
+        "samples": [
+          {
+            "prompt": "The quick brown fox",
+            "text": "es are no threat to you, but they are easy prey for your big game and can be aggressive with the help of the smaller foxes. They eat a few plants (like a few carrots) and even a few fish. They can be used",
+            "first_50_tokens": [
+              274,
+              389,
+              645,
+              2372,
+              284,
+              345,
+              11,
+              475,
+              484,
+              389,
+              2562,
+              15974,
+              329,
+              534,
+              1263,
+              983,
+              290,
+              460,
+              307,
+              8361,
+              351,
+              262,
+              1037,
+              286,
+              262,
+              4833,
+              21831,
+              274,
+              13,
+              1119,
+              4483,
+              257,
+              1178,
+              6134,
+              357,
+              2339,
+              257,
+              1178,
+              34397,
+              8,
+              290,
+              772,
+              257,
+              1178,
+              5916,
+              13,
+              1119,
+              460,
+              307,
+              973
+            ]
+          },
+          {
+            "prompt": "Once upon a time",
+            "text": ", he had had the good fortune of having been appointed a teacher in a school for his family and friends. His father, the son of a former Republican Sen. John McCain's 2008 presidential campaign, was a former state senator. His grandfather was a",
+            "first_50_tokens": [
+              11,
+              339,
+              550,
+              550,
+              262,
+              922,
+              15807,
+              286,
+              1719,
+              587,
+              9899,
+              257,
+              4701,
+              287,
+              257,
+              1524,
+              329,
+              465,
+              1641,
+              290,
+              2460,
+              13,
+              2399,
+              2988,
+              11,
+              262,
+              3367,
+              286,
+              257,
+              1966,
+              3415,
+              2311,
+              13,
+              1757,
+              14264,
+              338,
+              3648,
+              4787,
+              1923,
+              11,
+              373,
+              257,
+              1966,
+              1181,
+              12329,
+              13,
+              2399,
+              17695,
+              373,
+              257
+            ]
+          },
+          {
+            "prompt": "In the beginning",
+            "text": " of the year, however, the two were engaged in a dispute with the local police over the use of a gas station to extract water from a lake.\n\nAn inquest into the incident was held in February, and the judge said that he could",
+            "first_50_tokens": [
+              286,
+              262,
+              614,
+              11,
+              2158,
+              11,
+              262,
+              734,
+              547,
+              7953,
+              287,
+              257,
+              11047,
+              351,
+              262,
+              1957,
+              1644,
+              625,
+              262,
+              779,
+              286,
+              257,
+              3623,
+              4429,
+              284,
+              7925,
+              1660,
+              422,
+              257,
+              13546,
+              13,
+              198,
+              198,
+              2025,
+              48314,
+              656,
+              262,
+              4519,
+              373,
+              2714,
+              287,
+              3945,
+              11,
+              290,
+              262,
+              5052,
+              531,
+              326,
+              339,
+              714
+            ]
+          },
+          {
+            "prompt": "The future of AI is",
+            "text": " largely unknown. For the past five years, scientists have been studying how we perceive the world through the eyes of artificial intelligence, rather than through their own brains. They have been studying how they might use their own brain to better in ways that could help",
+            "first_50_tokens": [
+              5688,
+              6439,
+              13,
+              1114,
+              262,
+              1613,
+              1936,
+              812,
+              11,
+              5519,
+              423,
+              587,
+              11065,
+              703,
+              356,
+              19973,
+              262,
+              995,
+              832,
+              262,
+              2951,
+              286,
+              11666,
+              4430,
+              11,
+              2138,
+              621,
+              832,
+              511,
+              898,
+              14290,
+              13,
+              1119,
+              423,
+              587,
+              11065,
+              703,
+              484,
+              1244,
+              779,
+              511,
+              898,
+              3632,
+              284,
+              1365,
+              287,
+              2842,
+              326,
+              714,
+              1037
+            ]
+          }
+        ]
+      },
+      "overfit_gap": 3.02,
+      "latency": {
+        "mean_latency_ms": 1299.9,
+        "std_latency_ms": 10.56
+      },
+      "train_ppl": 61.65,
+      "test_ppl": 64.67,
+      "lambada_acc": null,
+      "results": {
+        "C": {
+          "pre_ppl": 76.14,
+          "post_ppl": 64.67,
+          "ppl_ratio": 1.7855,
+          "recovery_pct": 28.73,
+          "peak_vram_mb": 5935.74,
+          "train_time_s": 105.08,
+          "s_per_step": 2.1016,
+          "loss_final": 3.3144,
+          "cached": true,
+          "post_ppl_stage1": 64.67,
+          "post_ppl_stage2": 64.67,
+          "kd_gain": 11.47,
+          "self_gain": 0.0,
+          "total_gain": 11.47,
+          "aligned_with_teacher": false,
+          "beat_teacher_after_self": false,
+          "stage1_time_s": 105.08,
+          "stage2_time_s": 0.0,
+          "self_train_steps": 0,
+          "teacher_params": 124439808,
+          "student_params": 125619456,
+          "trainable_params": 1179648,
+          "batch_size": 8,
+          "seq_len": 256,
+          "learning_rate": 0.0003,
+          "recovery_steps": 50,
+          "train_scope": "module",
+          "gpu_name": "NVIDIA GeForce GTX 1060",
+          "eval_protocol": {
+            "max_tokens": 15000,
+            "stride": 128,
+            "seq_len": 256,
+            "precision": "fp32",
+            "dataset": "test"
+          },
+          "loss_history": [
+            [
+              0,
+              2.867725372314453
+            ],
+            [
+              1,
+              3.062939167022705
+            ],
+            [
+              2,
+              3.5944414138793945
+            ],
+            [
+              3,
+              3.1097216606140137
+            ],
+            [
+              4,
+              3.3073604106903076
+            ],
+            [
+              5,
+              3.3143680095672607
+            ],
+            [
+              6,
+              3.344517469406128
+            ],
+            [
+              7,
+              3.1587533950805664
+            ],
+            [
+              8,
+              3.7135260105133057
+            ],
+            [
+              9,
+              4.293525695800781
+            ],
+            [
+              10,
+              3.8072922229766846
+            ],
+            [
+              11,
+              4.232176303863525
+            ],
+            [
+              12,
+              3.774752378463745
+            ],
+            [
+              13,
+              3.806856870651245
+            ],
+            [
+              14,
+              4.858989715576172
+            ],
+            [
+              15,
+              4.214632987976074
+            ],
+            [
+              16,
+              4.368885040283203
+            ],
+            [
+              17,
+              4.243549823760986
+            ],
+            [
+              18,
+              4.6743645668029785
+            ],
+            [
+              19,
+              4.687493324279785
+            ],
+            [
+              20,
+              5.083681583404541
+            ],
+            [
+              21,
+              4.968387603759766
+            ],
+            [
+              22,
+              5.5817108154296875
+            ],
+            [
+              23,
+              5.458216667175293
+            ],
+            [
+              24,
+              5.8782501220703125
+            ],
+            [
+              25,
+              5.852775573730469
+            ],
+            [
+              26,
+              6.129256725311279
+            ],
+            [
+              27,
+              6.465205669403076
+            ],
+            [
+              28,
+              6.394090175628662
+            ],
+            [
+              29,
+              6.6819305419921875
+            ],
+            [
+              30,
+              7.197540760040283
+            ],
+            [
+              31,
+              7.252682685852051
+            ],
+            [
+              32,
+              7.7163286209106445
+            ],
+            [
+              33,
+              7.724277496337891
+            ],
+            [
+              34,
+              8.511317253112793
+            ],
+            [
+              35,
+              8.24090576171875
+            ],
+            [
+              36,
+              8.595301628112793
+            ],
+            [
+              37,
+              9.421661376953125
+            ],
+            [
+              38,
+              9.495223999023438
+            ],
+            [
+              39,
+              10.610641479492188
+            ],
+            [
+              40,
+              10.402493476867676
+            ],
+            [
+              41,
+              10.246063232421875
+            ],
+            [
+              42,
+              11.146665573120117
+            ],
+            [
+              43,
+              11.287147521972656
+            ],
+            [
+              44,
+              11.875391006469727
+            ],
+            [
+              45,
+              12.006669998168945
+            ],
+            [
+              46,
+              12.662470817565918
+            ],
+            [
+              47,
+              13.102371215820312
+            ],
+            [
+              48,
+              13.511638641357422
+            ],
+            [
+              49,
+              13.88846206665039
+            ]
+          ],
+          "ppl_history": {
+            "25": 73.09,
+            "50": 64.67
+          },
+          "lr_history": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              2.9999999999999997e-06
+            ],
+            [
+              2,
+              5.999999999999999e-06
+            ],
+            [
+              3,
+              8.999999999999999e-06
+            ],
+            [
+              4,
+              1.1999999999999999e-05
+            ],
+            [
+              5,
+              1.4999999999999999e-05
+            ],
+            [
+              6,
+              1.7999999999999997e-05
+            ],
+            [
+              7,
+              2.1e-05
+            ],
+            [
+              8,
+              2.3999999999999997e-05
+            ],
+            [
+              9,
+              2.6999999999999996e-05
+            ],
+            [
+              10,
+              2.9999999999999997e-05
+            ],
+            [
+              11,
+              3.2999999999999996e-05
+            ],
+            [
+              12,
+              3.5999999999999994e-05
+            ],
+            [
+              13,
+              3.9e-05
+            ],
+            [
+              14,
+              4.2e-05
+            ],
+            [
+              15,
+              4.4999999999999996e-05
+            ],
+            [
+              16,
+              4.7999999999999994e-05
+            ],
+            [
+              17,
+              5.1e-05
+            ],
+            [
+              18,
+              5.399999999999999e-05
+            ],
+            [
+              19,
+              5.6999999999999996e-05
+            ],
+            [
+              20,
+              5.9999999999999995e-05
+            ],
+            [
+              21,
+              6.299999999999999e-05
+            ],
+            [
+              22,
+              6.599999999999999e-05
+            ],
+            [
+              23,
+              6.9e-05
+            ],
+            [
+              24,
+              7.199999999999999e-05
+            ],
+            [
+              25,
+              7.5e-05
+            ],
+            [
+              26,
+              7.8e-05
+            ],
+            [
+              27,
+              8.1e-05
+            ],
+            [
+              28,
+              8.4e-05
+            ],
+            [
+              29,
+              8.699999999999999e-05
+            ],
+            [
+              30,
+              8.999999999999999e-05
+            ],
+            [
+              31,
+              9.3e-05
+            ],
+            [
+              32,
+              9.599999999999999e-05
+            ],
+            [
+              33,
+              9.9e-05
+            ],
+            [
+              34,
+              0.000102
+            ],
+            [
+              35,
+              0.00010499999999999999
+            ],
+            [
+              36,
+              0.00010799999999999998
+            ],
+            [
+              37,
+              0.00011099999999999999
+            ],
+            [
+              38,
+              0.00011399999999999999
+            ],
+            [
+              39,
+              0.000117
+            ],
+            [
+              40,
+              0.00011999999999999999
+            ],
+            [
+              41,
+              0.00012299999999999998
+            ],
+            [
+              42,
+              0.00012599999999999997
+            ],
+            [
+              43,
+              0.000129
+            ],
+            [
+              44,
+              0.00013199999999999998
+            ],
+            [
+              45,
+              0.000135
+            ],
+            [
+              46,
+              0.000138
+            ],
+            [
+              47,
+              0.00014099999999999998
+            ],
+            [
+              48,
+              0.00014399999999999998
+            ],
+            [
+              49,
+              0.000147
+            ]
+          ],
+          "generation": {
+            "distinct_2": 0.9133,
+            "repetition_3": 0.0104,
+            "samples": [
+              {
+                "prompt": "The quick brown fox",
+                "text": "es are no threat to you, but they are easy prey for your big game and can be aggressive with the help of the smaller foxes. They eat a few plants (like a few carrots) and even a few fish. They can be used",
+                "first_50_tokens": [
+                  274,
+                  389,
+                  645,
+                  2372,
+                  284,
+                  345,
+                  11,
+                  475,
+                  484,
+                  389,
+                  2562,
+                  15974,
+                  329,
+                  534,
+                  1263,
+                  983,
+                  290,
+                  460,
+                  307,
+                  8361,
+                  351,
+                  262,
+                  1037,
+                  286,
+                  262,
+                  4833,
+                  21831,
+                  274,
+                  13,
+                  1119,
+                  4483,
+                  257,
+                  1178,
+                  6134,
+                  357,
+                  2339,
+                  257,
+                  1178,
+                  34397,
+                  8,
+                  290,
+                  772,
+                  257,
+                  1178,
+                  5916,
+                  13,
+                  1119,
+                  460,
+                  307,
+                  973
+                ]
+              },
+              {
+                "prompt": "Once upon a time",
+                "text": ", he had had the good fortune of having been appointed a teacher in a school for his family and friends. His father, the son of a former Republican Sen. John McCain's 2008 presidential campaign, was a former state senator. His grandfather was a",
+                "first_50_tokens": [
+                  11,
+                  339,
+                  550,
+                  550,
+                  262,
+                  922,
+                  15807,
+                  286,
+                  1719,
+                  587,
+                  9899,
+                  257,
+                  4701,
+                  287,
+                  257,
+                  1524,
+                  329,
+                  465,
+                  1641,
+                  290,
+                  2460,
+                  13,
+                  2399,
+                  2988,
+                  11,
+                  262,
+                  3367,
+                  286,
+                  257,
+                  1966,
+                  3415,
+                  2311,
+                  13,
+                  1757,
+                  14264,
+                  338,
+                  3648,
+                  4787,
+                  1923,
+                  11,
+                  373,
+                  257,
+                  1966,
+                  1181,
+                  12329,
+                  13,
+                  2399,
+                  17695,
+                  373,
+                  257
+                ]
+              },
+              {
+                "prompt": "In the beginning",
+                "text": " of the year, however, the two were engaged in a dispute with the local police over the use of a gas station to extract water from a lake.\n\nAn inquest into the incident was held in February, and the judge said that he could",
+                "first_50_tokens": [
+                  286,
+                  262,
+                  614,
+                  11,
+                  2158,
+                  11,
+                  262,
+                  734,
+                  547,
+                  7953,
+                  287,
+                  257,
+                  11047,
+                  351,
+                  262,
+                  1957,
+                  1644,
+                  625,
+                  262,
+                  779,
+                  286,
+                  257,
+                  3623,
+                  4429,
+                  284,
+                  7925,
+                  1660,
+                  422,
+                  257,
+                  13546,
+                  13,
+                  198,
+                  198,
+                  2025,
+                  48314,
+                  656,
+                  262,
+                  4519,
+                  373,
+                  2714,
+                  287,
+                  3945,
+                  11,
+                  290,
+                  262,
+                  5052,
+                  531,
+                  326,
+                  339,
+                  714
+                ]
+              },
+              {
+                "prompt": "The future of AI is",
+                "text": " largely unknown. For the past five years, scientists have been studying how we perceive the world through the eyes of artificial intelligence, rather than through their own brains. They have been studying how they might use their own brain to better in ways that could help",
+                "first_50_tokens": [
+                  5688,
+                  6439,
+                  13,
+                  1114,
+                  262,
+                  1613,
+                  1936,
+                  812,
+                  11,
+                  5519,
+                  423,
+                  587,
+                  11065,
+                  703,
+                  356,
+                  19973,
+                  262,
+                  995,
+                  832,
+                  262,
+                  2951,
+                  286,
+                  11666,
+                  4430,
+                  11,
+                  2138,
+                  621,
+                  832,
+                  511,
+                  898,
+                  14290,
+                  13,
+                  1119,
+                  423,
+                  587,
+                  11065,
+                  703,
+                  484,
+                  1244,
+                  779,
+                  511,
+                  898,
+                  3632,
+                  284,
+                  1365,
+                  287,
+                  2842,
+                  326,
+                  714,
+                  1037
+                ]
+              }
+            ]
+          },
+          "latency": {
+            "mean_latency_ms": 1299.9,
+            "std_latency_ms": 10.56
+          },
+          "train_ppl": 61.65,
+          "test_ppl": 64.67,
+          "overfit_gap": 3.02,
+          "lambada_acc": null
+        }
+      }
+    },
+    {
+      "module": "svd_linear_attn",
+      "timestamp": "20261012_224655",
+      "run_dir": "results/kd_runs/svd_linear_attn/20261012_224655_bs8_seq256_lr3e-04_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 8,
+      "grad_accum_steps": 1,
+      "seq_len": 256,
+      "recovery_steps": 50,
+      "baseline_ppl": 36.22,
+      "best_post_ppl": 393.67,
+      "best_recovery_pct": 90.37,
+      "post_ppl_stage1": 813.4,
+      "post_ppl_stage2": 393.67,
+      "kd_gain": 2935.76,
+      "self_gain": 419.73,
+      "total_gain": 3355.49,
+      "aligned_with_teacher": false,
+      "beat_teacher_after_self": false,
+      "stage1_time_s": 69.79,
+      "stage2_time_s": 25.01,
+      "eval_protocol": {
+        "max_tokens": 15000,
+        "stride": 128,
+        "seq_len": 256,
+        "precision": "fp16",
+        "dataset": "test"
+      },
+      "generation": {
+        "distinct_2": 0.6988,
+        "repetition_3": 0.1049,
+        "samples": [
+          {
+            "prompt": "The quick brown fox",
+            "text": " , the city that the earth , and , a natural world in an environment , she could be \" with the moon and the sun will = = = = = = = = = = =",
+            "first_50_tokens": [
+              837,
+              262,
+              1748,
+              326,
+              262,
+              4534,
+              837,
+              290,
+              837,
+              257,
+              3288,
+              995,
+              287,
+              281,
+              2858,
+              837,
+              673,
+              714,
+              307,
+              366,
+              351,
+              262,
+              8824,
+              290,
+              262,
+              4252,
+              481,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              796,
+              50256
+            ]
+          },
+          {
+            "prompt": "Once upon a time",
+            "text": ", , she felt that he was of the \" God is a strong form was the goddess of the soul of the face of God , and vice .",
+            "first_50_tokens": [
+              11,
+              837,
+              673,
+              2936,
+              326,
+              339,
+              373,
+              286,
+              262,
+              366,
+              1793,
+              318,
+              257,
+              1913,
+              1296,
+              373,
+              262,
+              22215,
+              286,
+              262,
+              5848,
+              286,
+              262,
+              1986,
+              286,
+              1793,
+              837,
+              290,
+              7927,
+              764,
+              50256
+            ]
+          },
+          {
+            "prompt": "In the beginning",
+            "text": " of the days of the body is a god for the world as the earth and the world had been a \" , and the person of the universe , and the stars , and to be , and spirit of the ocean and . The first stage of the",
+            "first_50_tokens": [
+              286,
+              262,
+              1528,
+              286,
+              262,
+              1767,
+              318,
+              257,
+              5770,
+              329,
+              262,
+              995,
+              355,
+              262,
+              4534,
+              290,
+              262,
+              995,
+              550,
+              587,
+              257,
+              366,
+              837,
+              290,
+              262,
+              1048,
+              286,
+              262,
+              6881,
+              837,
+              290,
+              262,
+              5788,
+              837,
+              290,
+              284,
+              307,
+              837,
+              290,
+              4437,
+              286,
+              262,
+              9151,
+              290,
+              764,
+              383,
+              717,
+              3800,
+              286,
+              262
+            ]
+          },
+          {
+            "prompt": "The future of AI is",
+            "text": " the \" , and has been a state , and the natural and the universe , and the spirit of the physical world , he was to him , the human race of the human , but to the gods . The world and religion , the world as the",
+            "first_50_tokens": [
+              262,
+              366,
+              837,
+              290,
+              468,
+              587,
+              257,
+              1181,
+              837,
+              290,
+              262,
+              3288,
+              290,
+              262,
+              6881,
+              837,
+              290,
+              262,
+              4437,
+              286,
+              262,
+              3518,
+              995,
+              837,
+              339,
+              373,
+              284,
+              683,
+              837,
+              262,
+              1692,
+              3234,
+              286,
+              262,
+              1692,
+              837,
+              475,
+              284,
+              262,
+              11858,
+              764,
+              383,
+              995,
+              290,
+              5737,
+              837,
+              262,
+              995,
+              355,
+              262
+            ]
+          }
+        ]
+      },
+      "overfit_gap": 64.58,
+      "latency": {
+        "mean_latency_ms": 857.96,
+        "std_latency_ms": 2.98
+      },
+      "train_ppl": 329.09,
+      "test_ppl": 393.67,
+      "lambada_acc": null,
+      "results": {
+        "C": {
+          "pre_ppl": 3749.16,
+          "post_ppl": 393.67,
+          "ppl_ratio": 10.8689,
+          "recovery_pct": 90.37,
+          "peak_vram_mb": 5570.63,
+          "train_time_s": 94.8,
+          "s_per_step": 1.3543,
+          "loss_final": 7.8258,
+          "cached": true,
+          "post_ppl_stage1": 813.4,
+          "post_ppl_stage2": 393.67,
+          "kd_gain": 2935.76,
+          "self_gain": 419.73,
+          "total_gain": 3355.49,
+          "aligned_with_teacher": false,
+          "beat_teacher_after_self": false,
+          "stage1_time_s": 69.79,
+          "stage2_time_s": 25.01,
+          "self_train_steps": 20,
+          "teacher_params": 124439808,
+          "student_params": 99777936,
+          "trainable_params": 60355728,
+          "batch_size": 8,
+          "seq_len": 256,
+          "learning_rate": 0.0003,
+          "recovery_steps": 50,
+          "train_scope": "module",
+          "gpu_name": "NVIDIA GeForce GTX 1060",
+          "eval_protocol": {
+            "max_tokens": 15000,
+            "stride": 128,
+            "seq_len": 256,
+            "precision": "fp16",
+            "dataset": "test"
+          },
+          "loss_history": [
+            [
+              0,
+              7.91679048538208
+            ],
+            [
+              1,
+              6.544331073760986
+            ],
+            [
+              2,
+              7.815652847290039
+            ],
+            [
+              3,
+              7.167021751403809
+            ],
+            [
+              4,
+              7.891482353210449
+            ],
+            [
+              5,
+              7.825815677642822
+            ],
+            [
+              6,
+              7.127995491027832
+            ],
+            [
+              7,
+              7.237709045410156
+            ],
+            [
+              8,
+              6.643754005432129
+            ],
+            [
+              9,
+              6.461769104003906
+            ],
+            [
+              10,
+              7.293015480041504
+            ],
+            [
+              11,
+              7.084506511688232
+            ],
+            [
+              12,
+              6.266451835632324
+            ],
+            [
+              13,
+              7.034397125244141
+            ],
+            [
+              14,
+              7.236458778381348
+            ],
+            [
+              15,
+              6.4701714515686035
+            ],
+            [
+              16,
+              6.76425838470459
+            ],
+            [
+              17,
+              8.291021347045898
+            ],
+            [
+              18,
+              7.559693336486816
+            ],
+            [
+              19,
+              6.565482139587402
+            ],
+            [
+              20,
+              6.941883087158203
+            ],
+            [
+              21,
+              7.042924404144287
+            ],
+            [
+              22,
+              6.982774257659912
+            ],
+            [
+              23,
+              6.989803791046143
+            ],
+            [
+              24,
+              7.08819055557251
+            ],
+            [
+              25,
+              7.334436416625977
+            ],
+            [
+              26,
+              7.6784348487854
+            ],
+            [
+              27,
+              7.729732036590576
+            ],
+            [
+              28,
+              8.140278816223145
+            ],
+            [
+              29,
+              8.12186050415039
+            ],
+            [
+              30,
+              8.793086051940918
+            ],
+            [
+              31,
+              8.874547004699707
+            ],
+            [
+              32,
+              8.672965049743652
+            ],
+            [
+              33,
+              8.824695587158203
+            ],
+            [
+              34,
+              9.243191719055176
+            ],
+            [
+              35,
+              9.572833061218262
+            ],
+            [
+              36,
+              9.593681335449219
+            ],
+            [
+              37,
+              10.136913299560547
+            ],
+            [
+              38,
+              10.780160903930664
+            ],
+            [
+              39,
+              10.861567497253418
+            ],
+            [
+              40,
+              11.432758331298828
+            ],
+            [
+              41,
+              11.783377647399902
+            ],
+            [
+              42,
+              12.023390769958496
+            ],
+            [
+              43,
+              12.585564613342285
+            ],
+            [
+              44,
+              12.911534309387207
+            ],
+            [
+              45,
+              13.219412803649902
+            ],
+            [
+              46,
+              13.550450325012207
+            ],
+            [
+              47,
+              14.14513111114502
+            ],
+            [
+              48,
+              14.515861511230469
+            ],
+            [
+              49,
+              14.778575897216797
+            ],
+            [
+              60,
+              6.18692684173584
+            ],
+            [
+              70,
+              5.595500469207764
+            ]
+          ],
+          "ppl_history": {
+            "25": 1383.02,
+            "50": 813.4,
+            "stage2_20": 393.67
+          },
+          "lr_history": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              3.0000000000000004e-07
+            ],
+            [
+              2,
+              6.000000000000001e-07
+            ],
+            [
+              3,
+              9e-07
+            ],
+            [
+              4,
+              1.2000000000000002e-06
+            ],
+            [
+              5,
+              1.5e-06
+            ],
+            [
+              6,
+              1.8e-06
+            ],
+            [
+              7,
+              2.1000000000000002e-06
+            ],
+            [
+              8,
+              2.4000000000000003e-06
+            ],
+            [
+              9,
+              2.7e-06
+            ],
+            [
+              10,
+              3e-06
+            ],
+            [
+              11,
+              3.3e-06
+            ],
+            [
+              12,
+              3.6e-06
+            ],
+            [
+              13,
+              3.9e-06
+            ],
+            [
+              14,
+              4.2000000000000004e-06
+            ],
+            [
+              15,
+              4.5e-06
+            ],
+            [
+              16,
+              4.800000000000001e-06
+            ],
+            [
+              17,
+              5.1e-06
+            ],
+            [
+              18,
+              5.4e-06
+            ],
+            [
+              19,
+              5.7000000000000005e-06
+            ],
+            [
+              20,
+              6e-06
+            ],
+            [
+              21,
+              6.3e-06
+            ],
+            [
+              22,
+              6.6e-06
+            ],
+            [
+              23,
+              6.900000000000001e-06
+            ],
+            [
+              24,
+              7.2e-06
+            ],
+            [
+              25,
+              7.5e-06
+            ],
+            [
+              26,
+              7.8e-06
+            ],
+            [
+              27,
+              8.1e-06
+            ],
+            [
+              28,
+              8.400000000000001e-06
+            ],
+            [
+              29,
+              8.7e-06
+            ],
+            [
+              30,
+              9e-06
+            ],
+            [
+              31,
+              9.3e-06
+            ],
+            [
+              32,
+              9.600000000000001e-06
+            ],
+            [
+              33,
+              9.9e-06
+            ],
+            [
+              34,
+              1.02e-05
+            ],
+            [
+              35,
+              1.05e-05
+            ],
+            [
+              36,
+              1.08e-05
+            ],
+            [
+              37,
+              1.11e-05
+            ],
+            [
+              38,
+              1.1400000000000001e-05
+            ],
+            [
+              39,
+              1.1700000000000001e-05
+            ],
+            [
+              40,
+              1.2e-05
+            ],
+            [
+              41,
+              1.2299999999999999e-05
+            ],
+            [
+              42,
+              1.26e-05
+            ],
+            [
+              43,
+              1.29e-05
+            ],
+            [
+              44,
+              1.32e-05
+            ],
+            [
+              45,
+              1.3500000000000001e-05
+            ],
+            [
+              46,
+              1.3800000000000002e-05
+            ],
+            [
+              47,
+              1.4099999999999999e-05
+            ],
+            [
+              48,
+              1.44e-05
+            ],
+            [
+              49,
+              1.47e-05
+            ],
+            [
+              60,
+              0.00015
+            ],
+            [
+              70,
+              0.0003
+            ]
+          ],
+          "generation": {
+            "distinct_2": 0.6988,
+            "repetition_3": 0.1049,
+            "samples": [
+              {
+                "prompt": "The quick brown fox",
+                "text": " , the city that the earth , and , a natural world in an environment , she could be \" with the moon and the sun will = = = = = = = = = = =",
+                "first_50_tokens": [
+                  837,
+                  262,
+                  1748,
+                  326,
+                  262,
+                  4534,
+                  837,
+                  290,
+                  837,
+                  257,
+                  3288,
+                  995,
+                  287,
+                  281,
+                  2858,
+                  837,
+                  673,
+                  714,
+                  307,
+                  366,
+                  351,
+                  262,
+                  8824,
+                  290,
+                  262,
+                  4252,
+                  481,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  796,
+                  50256
+                ]
+              },
+              {
+                "prompt": "Once upon a time",
+                "text": ", , she felt that he was of the \" God is a strong form was the goddess of the soul of the face of God , and vice .",
+                "first_50_tokens": [
+                  11,
+                  837,
+                  673,
+                  2936,
+                  326,
+                  339,
+                  373,
+                  286,
+                  262,
+                  366,
+                  1793,
+                  318,
+                  257,
+                  1913,
+                  1296,
+                  373,
+                  262,
+                  22215,
+                  286,
+                  262,
+                  5848,
+                  286,
+                  262,
+                  1986,
+                  286,
+                  1793,
+                  837,
+                  290,
+                  7927,
+                  764,
+                  50256
+                ]
+              },
+              {
+                "prompt": "In the beginning",
+                "text": " of the days of the body is a god for the world as the earth and the world had been a \" , and the person of the universe , and the stars , and to be , and spirit of the ocean and . The first stage of the",
+                "first_50_tokens": [
+                  286,
+                  262,
+                  1528,
+                  286,
+                  262,
+                  1767,
+                  318,
+                  257,
+                  5770,
+                  329,
+                  262,
+                  995,
+                  355,
+                  262,
+                  4534,
+                  290,
+                  262,
+                  995,
+                  550,
+                  587,
+                  257,
+                  366,
+                  837,
+                  290,
+                  262,
+                  1048,
+                  286,
+                  262,
+                  6881,
+                  837,
+                  290,
+                  262,
+                  5788,
+                  837,
+                  290,
+                  284,
+                  307,
+                  837,
+                  290,
+                  4437,
+                  286,
+                  262,
+                  9151,
+                  290,
+                  764,
+                  383,
+                  717,
+                  3800,
+                  286,
+                  262
+                ]
+              },
+              {
+                "prompt": "The future of AI is",
+                "text": " the \" , and has been a state , and the natural and the universe , and the spirit of the physical world , he was to him , the human race of the human , but to the gods . The world and religion , the world as the",
+                "first_50_tokens": [
+                  262,
+                  366,
+                  837,
+                  290,
+                  468,
+                  587,
+                  257,
+                  1181,
+                  837,
+                  290,
+                  262,
+                  3288,
+                  290,
+                  262,
+                  6881,
+                  837,
+                  290,
+                  262,
+                  4437,
+                  286,
+                  262,
+                  3518,
+                  995,
+                  837,
+                  339,
+                  373,
+                  284,
+                  683,
+                  837,
+                  262,
+                  1692,
+                  3234,
+                  286,
+                  262,
+                  1692,
+                  837,
+                  475,
+                  284,
+                  262,
+                  11858,
+                  764,
+                  383,
+                  995,
+                  290,
+                  5737,
+                  837,
+                  262,
+                  995,
+                  355,
+                  262
+                ]
+              }
+            ]
+          },
+          "latency": {
+            "mean_latency_ms": 857.96,
+            "std_latency_ms": 2.98
+          },
+          "train_ppl": 329.09,
+          "test_ppl": 393.67,
+          "overfit_gap": 64.58,
+          "lambada_acc": null
+        }
+      }
+    },
+    {
+      "module": "qcqa_attention",
+      "timestamp": "20261012_225935",
+      "run_dir": "results/kd_runs/qcqa_attention/20261012_225935_bs8_seq256_lr3e-04_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 8,
+      "grad_accum_steps": 1,
+      "seq_len": 256,
+      "recovery_steps": 50,
+      "baseline_ppl": 36.22,
+      "best_post_ppl": 38.38,
+      "best_recovery_pct": 37.93,
+      "post_ppl_stage1": 38.38,
+      "post_ppl_stage2": 38.38,
+      "kd_gain": 1.32,
+      "self_gain": 0.0,
+      "total_gain": 1.32,
+      "aligned_with_teacher": false,
+      "beat_teacher_after_self": false,
+      "stage1_time_s": 63.84,
+      "stage2_time_s": 0.0,
+      "eval_protocol": {
+        "max_tokens": 15000,
+        "stride": 128,
+        "seq_len": 256,
+        "precision": "fp32",
+        "dataset": "test"
+      },
+      "generation": {
+        "distinct_2": 0.9235,
+        "repetition_3": 0.026,
+        "samples": [
+          {
+            "prompt": "The quick brown fox",
+            "text": "es you see in the picture below, are actually the most common species of foxes in North America. A few people have argued that the fact that foxes are not common in North America is a sign of the times.\n\nIt's possible",
+            "first_50_tokens": [
+              274,
+              345,
+              766,
+              287,
+              262,
+              4286,
+              2174,
+              11,
+              389,
+              1682,
+              262,
+              749,
+              2219,
+              4693,
+              286,
+              21831,
+              274,
+              287,
+              2258,
+              2253,
+              13,
+              317,
+              1178,
+              661,
+              423,
+              7189,
+              326,
+              262,
+              1109,
+              326,
+              21831,
+              274,
+              389,
+              407,
+              2219,
+              287,
+              2258,
+              2253,
+              318,
+              257,
+              1051,
+              286,
+              262,
+              1661,
+              13,
+              198,
+              198,
+              1026,
+              338,
+              1744
+            ]
+          },
+          {
+            "prompt": "Once upon a time",
+            "text": ", he had had the good fortune of having been appointed a teacher in a school for his family and friends. His father, however, could not bear the thought of taking his own life.\n\nHe began writing his first novel, The Golden Man",
+            "first_50_tokens": [
+              11,
+              339,
+              550,
+              550,
+              262,
+              922,
+              15807,
+              286,
+              1719,
+              587,
+              9899,
+              257,
+              4701,
+              287,
+              257,
+              1524,
+              329,
+              465,
+              1641,
+              290,
+              2460,
+              13,
+              2399,
+              2988,
+              11,
+              2158,
+              11,
+              714,
+              407,
+              6842,
+              262,
+              1807,
+              286,
+              2263,
+              465,
+              898,
+              1204,
+              13,
+              198,
+              198,
+              1544,
+              2540,
+              3597,
+              465,
+              717,
+              5337,
+              11,
+              383,
+              8407,
+              1869
+            ]
+          },
+          {
+            "prompt": "In the beginning",
+            "text": ", there were some people who called himself \"Kubun\" (Kubun was a Japanese name for a girl who was a prostitute). It was assumed by the group that her identity was that of a prostitute.\n\nOne of the reasons",
+            "first_50_tokens": [
+              11,
+              612,
+              547,
+              617,
+              661,
+              508,
+              1444,
+              2241,
+              366,
+              42,
+              549,
+              403,
+              1,
+              357,
+              42,
+              549,
+              403,
+              373,
+              257,
+              4960,
+              1438,
+              329,
+              257,
+              2576,
+              508,
+              373,
+              257,
+              37833,
+              737,
+              632,
+              373,
+              9672,
+              416,
+              262,
+              1448,
+              326,
+              607,
+              5369,
+              373,
+              326,
+              286,
+              257,
+              37833,
+              13,
+              198,
+              198,
+              3198,
+              286,
+              262,
+              3840
+            ]
+          },
+          {
+            "prompt": "The future of AI is",
+            "text": " largely unknown. For the past five years, scientists have struggled to create AI that can do things like perform complex tasks and perform complex tasks well. In order to build AI that does some of these tasks, researchers have to work with complex algorithms. And",
+            "first_50_tokens": [
+              5688,
+              6439,
+              13,
+              1114,
+              262,
+              1613,
+              1936,
+              812,
+              11,
+              5519,
+              423,
+              11615,
+              284,
+              2251,
+              9552,
+              326,
+              460,
+              466,
+              1243,
+              588,
+              1620,
+              3716,
+              8861,
+              290,
+              1620,
+              3716,
+              8861,
+              880,
+              13,
+              554,
+              1502,
+              284,
+              1382,
+              9552,
+              326,
+              857,
+              617,
+              286,
+              777,
+              8861,
+              11,
+              4837,
+              423,
+              284,
+              670,
+              351,
+              3716,
+              16113,
+              13,
+              843
+            ]
+          }
+        ]
+      },
+      "overfit_gap": -0.23,
+      "latency": {
+        "mean_latency_ms": 1371.45,
+        "std_latency_ms": 60.95
+      },
+      "train_ppl": 38.61,
+      "test_ppl": 38.38,
+      "lambada_acc": null,
+      "results": {
+        "C": {
+          "pre_ppl": 39.7,
+          "post_ppl": 38.38,
+          "ppl_ratio": 1.0596,
+          "recovery_pct": 37.93,
+          "peak_vram_mb": 5755.56,
+          "train_time_s": 63.84,
+          "s_per_step": 1.2768,
+          "loss_final": 1.9237,
+          "cached": true,
+          "post_ppl_stage1": 38.38,
+          "post_ppl_stage2": 38.38,
+          "kd_gain": 1.32,
+          "self_gain": 0.0,
+          "total_gain": 1.32,
+          "aligned_with_teacher": false,
+          "beat_teacher_after_self": false,
+          "stage1_time_s": 63.84,
+          "stage2_time_s": 0.0,
+          "self_train_steps": 0,
+          "teacher_params": 124439808,
+          "student_params": 125630400,
+          "trainable_params": 1179648,
+          "batch_size": 8,
+          "seq_len": 256,
+          "learning_rate": 0.0003,
+          "recovery_steps": 50,
+          "train_scope": "module",
+          "gpu_name": "NVIDIA GeForce GTX 1060",
+          "eval_protocol": {
+            "max_tokens": 15000,
+            "stride": 128,
+            "seq_len": 256,
+            "precision": "fp32",
+            "dataset": "test"
+          },
+          "loss_history": [
+            [
+              0,
+              2.4039218425750732
+            ],
+            [
+              1,
+              1.6880027055740356
+            ],
+            [
+              2,
+              2.3961756229400635
+            ],
+            [
+              3,
+              2.2832911014556885
+            ],
+            [
+              4,
+              2.5207126140594482
+            ],
+            [
+              5,
+              1.9237287044525146
+            ],
+            [
+              6,
+              2.0269792079925537
+            ],
+            [
+              7,
+              3.381875991821289
+            ],
+            [
+              8,
+              2.3230862617492676
+            ],
+            [
+              9,
+              2.7769722938537598
+            ],
+            [
+              10,
+              3.3335020542144775
+            ],
+            [
+              11,
+              2.595989227294922
+            ],
+            [
+              12,
+              3.091167688369751
+            ],
+            [
+              13,
+              3.085084915161133
+            ],
+            [
+              14,
+              3.1239888668060303
+            ],
+            [
+              15,
+              3.658378839492798
+            ],
+            [
+              16,
+              3.338326930999756
+            ],
+            [
+              17,
+              4.03751802444458
+            ],
+            [
+              18,
+              4.032257080078125
+            ],
+            [
+              19,
+              4.337404251098633
+            ],
+            [
+              20,
+              4.106492519378662
+            ],
+            [
+              21,
+              4.617620468139648
+            ],
+            [
+              22,
+              4.8583574295043945
+            ],
+            [
+              23,
+              5.125047206878662
+            ],
+            [
+              24,
+              4.92415189743042
+            ],
+            [
+              25,
+              5.294490337371826
+            ],
+            [
+              26,
+              5.555818557739258
+            ],
+            [
+              27,
+              5.9221014976501465
+            ],
+            [
+              28,
+              5.934709548950195
+            ],
+            [
+              29,
+              6.165585041046143
+            ],
+            [
+              30,
+              6.485414505004883
+            ],
+            [
+              31,
+              6.748399257659912
+            ],
+            [
+              32,
+              6.938363552093506
+            ],
+            [
+              33,
+              7.343003273010254
+            ],
+            [
+              34,
+              7.492772579193115
+            ],
+            [
+              35,
+              8.145023345947266
+            ],
+            [
+              36,
+              8.144820213317871
+            ],
+            [
+              37,
+              8.771356582641602
+            ],
+            [
+              38,
+              9.583043098449707
+            ],
+            [
+              39,
+              9.355252265930176
+            ],
+            [
+              40,
+              9.684301376342773
+            ],
+            [
+              41,
+              10.05422306060791
+            ],
+            [
+              42,
+              10.637641906738281
+            ],
+            [
+              43,
+              11.021384239196777
+            ],
+            [
+              44,
+              11.38693904876709
+            ],
+            [
+              45,
+              11.647644996643066
+            ],
+            [
+              46,
+              12.244670867919922
+            ],
+            [
+              47,
+              13.243876457214355
+            ],
+            [
+              48,
+              12.895963668823242
+            ],
+            [
+              49,
+              13.34314250946045
+            ]
+          ],
+          "ppl_history": {
+            "25": 39.53,
+            "50": 38.38
+          },
+          "lr_history": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              2.9999999999999997e-06
+            ],
+            [
+              2,
+              5.999999999999999e-06
+            ],
+            [
+              3,
+              8.999999999999999e-06
+            ],
+            [
+              4,
+              1.1999999999999999e-05
+            ],
+            [
+              5,
+              1.4999999999999999e-05
+            ],
+            [
+              6,
+              1.7999999999999997e-05
+            ],
+            [
+              7,
+              2.1e-05
+            ],
+            [
+              8,
+              2.3999999999999997e-05
+            ],
+            [
+              9,
+              2.6999999999999996e-05
+            ],
+            [
+              10,
+              2.9999999999999997e-05
+            ],
+            [
+              11,
+              3.2999999999999996e-05
+            ],
+            [
+              12,
+              3.5999999999999994e-05
+            ],
+            [
+              13,
+              3.9e-05
+            ],
+            [
+              14,
+              4.2e-05
+            ],
+            [
+              15,
+              4.4999999999999996e-05
+            ],
+            [
+              16,
+              4.7999999999999994e-05
+            ],
+            [
+              17,
+              5.1e-05
+            ],
+            [
+              18,
+              5.399999999999999e-05
+            ],
+            [
+              19,
+              5.6999999999999996e-05
+            ],
+            [
+              20,
+              5.9999999999999995e-05
+            ],
+            [
+              21,
+              6.299999999999999e-05
+            ],
+            [
+              22,
+              6.599999999999999e-05
+            ],
+            [
+              23,
+              6.9e-05
+            ],
+            [
+              24,
+              7.199999999999999e-05
+            ],
+            [
+              25,
+              7.5e-05
+            ],
+            [
+              26,
+              7.8e-05
+            ],
+            [
+              27,
+              8.1e-05
+            ],
+            [
+              28,
+              8.4e-05
+            ],
+            [
+              29,
+              8.699999999999999e-05
+            ],
+            [
+              30,
+              8.999999999999999e-05
+            ],
+            [
+              31,
+              9.3e-05
+            ],
+            [
+              32,
+              9.599999999999999e-05
+            ],
+            [
+              33,
+              9.9e-05
+            ],
+            [
+              34,
+              0.000102
+            ],
+            [
+              35,
+              0.00010499999999999999
+            ],
+            [
+              36,
+              0.00010799999999999998
+            ],
+            [
+              37,
+              0.00011099999999999999
+            ],
+            [
+              38,
+              0.00011399999999999999
+            ],
+            [
+              39,
+              0.000117
+            ],
+            [
+              40,
+              0.00011999999999999999
+            ],
+            [
+              41,
+              0.00012299999999999998
+            ],
+            [
+              42,
+              0.00012599999999999997
+            ],
+            [
+              43,
+              0.000129
+            ],
+            [
+              44,
+              0.00013199999999999998
+            ],
+            [
+              45,
+              0.000135
+            ],
+            [
+              46,
+              0.000138
+            ],
+            [
+              47,
+              0.00014099999999999998
+            ],
+            [
+              48,
+              0.00014399999999999998
+            ],
+            [
+              49,
+              0.000147
+            ]
+          ],
+          "generation": {
+            "distinct_2": 0.9235,
+            "repetition_3": 0.026,
+            "samples": [
+              {
+                "prompt": "The quick brown fox",
+                "text": "es you see in the picture below, are actually the most common species of foxes in North America. A few people have argued that the fact that foxes are not common in North America is a sign of the times.\n\nIt's possible",
+                "first_50_tokens": [
+                  274,
+                  345,
+                  766,
+                  287,
+                  262,
+                  4286,
+                  2174,
+                  11,
+                  389,
+                  1682,
+                  262,
+                  749,
+                  2219,
+                  4693,
+                  286,
+                  21831,
+                  274,
+                  287,
+                  2258,
+                  2253,
+                  13,
+                  317,
+                  1178,
+                  661,
+                  423,
+                  7189,
+                  326,
+                  262,
+                  1109,
+                  326,
+                  21831,
+                  274,
+                  389,
+                  407,
+                  2219,
+                  287,
+                  2258,
+                  2253,
+                  318,
+                  257,
+                  1051,
+                  286,
+                  262,
+                  1661,
+                  13,
+                  198,
+                  198,
+                  1026,
+                  338,
+                  1744
+                ]
+              },
+              {
+                "prompt": "Once upon a time",
+                "text": ", he had had the good fortune of having been appointed a teacher in a school for his family and friends. His father, however, could not bear the thought of taking his own life.\n\nHe began writing his first novel, The Golden Man",
+                "first_50_tokens": [
+                  11,
+                  339,
+                  550,
+                  550,
+                  262,
+                  922,
+                  15807,
+                  286,
+                  1719,
+                  587,
+                  9899,
+                  257,
+                  4701,
+                  287,
+                  257,
+                  1524,
+                  329,
+                  465,
+                  1641,
+                  290,
+                  2460,
+                  13,
+                  2399,
+                  2988,
+                  11,
+                  2158,
+                  11,
+                  714,
+                  407,
+                  6842,
+                  262,
+                  1807,
+                  286,
+                  2263,
+                  465,
+                  898,
+                  1204,
+                  13,
+                  198,
+                  198,
+                  1544,
+                  2540,
+                  3597,
+                  465,
+                  717,
+                  5337,
+                  11,
+                  383,
+                  8407,
+                  1869
+                ]
+              },
+              {
+                "prompt": "In the beginning",
+                "text": ", there were some people who called himself \"Kubun\" (Kubun was a Japanese name for a girl who was a prostitute). It was assumed by the group that her identity was that of a prostitute.\n\nOne of the reasons",
+                "first_50_tokens": [
+                  11,
+                  612,
+                  547,
+                  617,
+                  661,
+                  508,
+                  1444,
+                  2241,
+                  366,
+                  42,
+                  549,
+                  403,
+                  1,
+                  357,
+                  42,
+                  549,
+                  403,
+                  373,
+                  257,
+                  4960,
+                  1438,
+                  329,
+                  257,
+                  2576,
+                  508,
+                  373,
+                  257,
+                  37833,
+                  737,
+                  632,
+                  373,
+                  9672,
+                  416,
+                  262,
+                  1448,
+                  326,
+                  607,
+                  5369,
+                  373,
+                  326,
+                  286,
+                  257,
+                  37833,
+                  13,
+                  198,
+                  198,
+                  3198,
+                  286,
+                  262,
+                  3840
+                ]
+              },
+              {
+                "prompt": "The future of AI is",
+                "text": " largely unknown. For the past five years, scientists have struggled to create AI that can do things like perform complex tasks and perform complex tasks well. In order to build AI that does some of these tasks, researchers have to work with complex algorithms. And",
+                "first_50_tokens": [
+                  5688,
+                  6439,
+                  13,
+                  1114,
+                  262,
+                  1613,
+                  1936,
+                  812,
+                  11,
+                  5519,
+                  423,
+                  11615,
+                  284,
+                  2251,
+                  9552,
+                  326,
+                  460,
+                  466,
+                  1243,
+                  588,
+                  1620,
+                  3716,
+                  8861,
+                  290,
+                  1620,
+                  3716,
+                  8861,
+                  880,
+                  13,
+                  554,
+                  1502,
+                  284,
+                  1382,
+                  9552,
+                  326,
+                  857,
+                  617,
+                  286,
+                  777,
+                  8861,
+                  11,
+                  4837,
+                  423,
+                  284,
+                  670,
+                  351,
+                  3716,
+                  16113,
+                  13,
+                  843
+                ]
+              }
+            ]
+          },
+          "latency": {
+            "mean_latency_ms": 1371.45,
+            "std_latency_ms": 60.95
+          },
+          "train_ppl": 38.61,
+          "test_ppl": 38.38,
+          "overfit_gap": -0.23,
+          "lambada_acc": null
+        }
+      }
     }
   ]
 }
