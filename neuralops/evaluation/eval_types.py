@@ -145,7 +145,7 @@ DEPRECATED_MODULES: set[str] = {
     "tpa_attention",
     "tp_attention",
     "lillama_compressor",
-    "mamba_svd_flash",
+    # "mamba_svd_flash",
     "aatc_xkv_compressor",
     "hybridkv_compressor",
 }
@@ -163,7 +163,7 @@ TRACK_MODULES: dict[str, dict[str, list[str]]] = {
             "svd_projection_attention",
             "svd_llm_v2_attention",
             "factorised_matrix_state",
-            "mamba_svd_flash",
+            # "mamba_svd_flash",
             "minimal_svd",
             "minimal_svd_v2",
         ],

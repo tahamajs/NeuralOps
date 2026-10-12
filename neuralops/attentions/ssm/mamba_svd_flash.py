@@ -218,7 +218,7 @@ class SVDS6StateSpace(nn.Module):
 # Main attention block
 # ===========================================================================
 # DEPRECATED: alias of simple_ssm
-# @ATTENTION_REGISTRY.register("mamba_svd_flash", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("mamba_svd_flash", supports_causal=True, supports_gqa=True)
 class MambaSVDFlash(BaseAttention):
     """
     Hybrid SSM + MHA with per-chunk SVD and learnable per-head gating.
@@ -890,20 +890,18 @@ class MambaSVDFlash(BaseAttention):
         Sigma.shape[-1]
         device = x.device
 
-        # MSF-FIX-08: preallocate output tensor (no list)
-        H = torch.zeros(B, L, D, device=device, dtype=torch.float32)
         h = torch.zeros(B, D, device=device, dtype=torch.float32) if h0 is None else h0.float()
-
-        US = U.float() * Sigma.float().unsqueeze(-2)  # (B, L, D, r)
-        V_f = V.float()
-        bx = B_seq.float() * x.float()
+        US = (U.float() * Sigma.float().unsqueeze(-2)).contiguous()  # (B, L, D, r)
+        V_f = V.float().contiguous()
+        bx = (B_seq.float() * x.float()).contiguous()
 
         steps = range(L - 1, -1, -1) if reverse else range(L)
 
+        h_list = []
+        h_col = h.unsqueeze(-1)
         for t in steps:
-            # V_f[:, t] is shape (B, r, D), h is (B, D)
-            v_t = torch.einsum("brd,bd->br", V_f[:, t], h)  # (B, r)
-            h_trans = torch.einsum("bdr,br->bd", US[:, t], v_t)  # (B, D)
+            v_t = torch.bmm(V_f[:, t], h_col)  # (B, r, 1)
+            h_trans = torch.bmm(US[:, t], v_t).squeeze(-1)  # (B, D)
             h_next = h_trans + bx[:, t]
             if mask is not None:
                 m_t = mask[:, t].unsqueeze(-1).to(h_next.dtype)
@@ -911,7 +909,12 @@ class MambaSVDFlash(BaseAttention):
             else:
                 h = h_next
             h = torch.nan_to_num(h, nan=0.0, posinf=1e4, neginf=-1e4)
-            H[:, t] = h
+            h_col = h.unsqueeze(-1)
+            h_list.append(h)
+
+        if reverse:
+            h_list.reverse()
+        H = torch.stack(h_list, dim=1)
 
         out = C_seq.float() * H
         return out.to(x.dtype), h.to(x.dtype)

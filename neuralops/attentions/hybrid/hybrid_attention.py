@@ -612,7 +612,7 @@ class HybridAttention(BaseAttention):
             out = self.out_proj(fused)
             out = self.dropout(out)
 
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e3, neginf=-1e3).clamp(min=-1e3, max=1e3)
         return out, None
 
     # ------------------------------------------------------------------
