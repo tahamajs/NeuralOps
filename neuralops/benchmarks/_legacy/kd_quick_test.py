@@ -1678,58 +1678,73 @@ def run_kd_method(
         )
 
         warmup_s2 = getattr(args, "self_train_warmup", 20)
+        s2_step = 0
 
-        for s2_step in range(1, self_train_steps + 1):
+        while s2_step < self_train_steps:
             student.train()
-            batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
-            chunk_idx = (chunk_idx + args.batch_size) % num_chunks
-            if batch_ids.size(0) == 0:
-                chunk_idx = 0
-                batch_slice = slice(0, min(args.batch_size, num_chunks))
+            try:
+                batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
                 batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+                chunk_idx = (chunk_idx + args.batch_size) % num_chunks
+                if batch_ids.size(0) == 0:
+                    chunk_idx = 0
+                    batch_slice = slice(0, min(args.batch_size, num_chunks))
+                    batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
 
-            if warmup_s2 > 0 and s2_step <= warmup_s2:
-                for param_group in stage2_optimizer.param_groups:
-                    param_group['lr'] = s2_lr * (s2_step / warmup_s2)
+                if batch_ids.size(1) > current_seq_len:
+                    batch_ids = batch_ids[:, :current_seq_len]
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
-                student_out = student(batch_ids)
-                shift_logits = student_out.logits[..., :-1, :].contiguous()
-                shift_labels = batch_ids[..., 1:].contiguous()
-                loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                loss_scaled = loss_ce / args.grad_accum_steps
+                if warmup_s2 > 0 and (s2_step + 1) <= warmup_s2:
+                    for param_group in stage2_optimizer.param_groups:
+                        param_group['lr'] = s2_lr * ((s2_step + 1) / warmup_s2)
 
-            if use_scaler and s2_scaler is not None:
-                if loss_scaled.requires_grad:
-                    s2_scaler.scale(loss_scaled).backward()
-                    s2_scaler.unscale_(stage2_optimizer)
-                    torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
-                    s2_scaler.step(stage2_optimizer)
-                    s2_scaler.update()
+                with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                    student_out = student(batch_ids)
+                    shift_logits = student_out.logits[..., :-1, :].contiguous()
+                    shift_labels = batch_ids[..., 1:].contiguous()
+                    loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                    loss_scaled = loss_ce / args.grad_accum_steps
+
+                if use_scaler and s2_scaler is not None:
+                    if loss_scaled.requires_grad:
+                        s2_scaler.scale(loss_scaled).backward()
+                        s2_scaler.unscale_(stage2_optimizer)
+                        torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                        s2_scaler.step(stage2_optimizer)
+                        s2_scaler.update()
+                    else:
+                        LOG.warning(f"[{method_name}] Stage 2 step {s2_step + 1}: loss has no grad_fn, skipping backward.")
                 else:
-                    LOG.warning(f"[{method_name}] Stage 2 step {s2_step}: loss has no grad_fn, skipping backward.")
-            else:
-                loss_scaled.backward()
-                torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
-                stage2_optimizer.step()
+                    loss_scaled.backward()
+                    torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                    stage2_optimizer.step()
 
-            stage2_optimizer.zero_grad()
-            if warmup_s2 == 0 or s2_step > warmup_s2:
-                stage2_scheduler.step()
+                stage2_optimizer.zero_grad()
+                if warmup_s2 == 0 or (s2_step + 1) > warmup_s2:
+                    stage2_scheduler.step()
 
-            if s2_step % 10 == 0 or s2_step == self_train_steps:
-                loss_history.append((step + s2_step, float(loss_ce.item())))
-                lr_history.append((step + s2_step, float(stage2_optimizer.param_groups[0]['lr'])))
+                s2_step += 1
 
-            if s2_step % 50 == 0 or s2_step == self_train_steps or s2_step <= 5:
-                curr_lr = stage2_optimizer.param_groups[0]['lr']
-                LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | CE Loss: {loss_ce.item():.4f} | LR: {curr_lr:.2e}")
+                if s2_step % 10 == 0 or s2_step == self_train_steps:
+                    loss_history.append((step + s2_step, float(loss_ce.item())))
+                    lr_history.append((step + s2_step, float(stage2_optimizer.param_groups[0]['lr'])))
 
-            if s2_step % args.eval_every == 0 or s2_step == self_train_steps:
-                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
-                ppl_history[f"stage2_{s2_step}"] = s2_eval_ppl
-                LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | Eval PPL: {s2_eval_ppl:.2f}")
+                if s2_step % 50 == 0 or s2_step == self_train_steps or s2_step <= 5:
+                    curr_lr = stage2_optimizer.param_groups[0]['lr']
+                    LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | CE Loss: {loss_ce.item():.4f} | LR: {curr_lr:.2e}")
+
+                if s2_step % args.eval_every == 0 or s2_step == self_train_steps:
+                    s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
+                    ppl_history[f"stage2_{s2_step}"] = s2_eval_ppl
+                    LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | Eval PPL: {s2_eval_ppl:.2f}")
+
+            except torch.cuda.OutOfMemoryError:
+                LOG.warning(f"[{method_name}] [STAGE2] CUDA OOM! Halving sequence length from {current_seq_len} to {max(64, current_seq_len // 2)}...")
+                current_seq_len = max(64, current_seq_len // 2)
+                stage2_optimizer.zero_grad()
+                gc.collect()
+                torch.cuda.empty_cache()
+                continue
 
         post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
         stage2_time_s = round(time.time() - t_stage2_start, 2)
