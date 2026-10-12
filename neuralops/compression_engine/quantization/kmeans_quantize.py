@@ -6,6 +6,8 @@ Registered as 'kmeans_class', 'kmeans_quantize_class', 'kmeans_compressor_class'
 """
 
 from __future__ import annotations
+from neuralops.core.common import _get_device
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,21 +25,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _get_device(model: nn.Module) -> torch.device:
-    """Safe device resolution."""
-    p = next(iter(model.parameters()), None)
-    return p.device if p is not None else torch.device("cpu")
 
 
 def _dtype_for_clusters(n_clusters: int) -> torch.dtype:

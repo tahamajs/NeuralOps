@@ -13,6 +13,7 @@ Mathematical Formulation:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -120,13 +121,6 @@ def quantize_dequantize_coopq(
     return out.to(dtype=orig_dtype)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely extract configuration attribute from dict, object, or namespace."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 class CoopQLinear(nn.Module):

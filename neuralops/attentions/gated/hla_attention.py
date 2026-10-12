@@ -11,20 +11,12 @@ Architecture:
     * GQA support with repeat_kv
     * Partial RoPE support
 
-Fixes applied:
-    [HLA-FIX-01] lora_ prefix on beta and output_scale (KD scope)
-    [HLA-FIX-02] Property aliases for backward compatibility
-    [HLA-FIX-03] Memory-bounded chunked scan O(L · C) not O(L²)
-    [HLA-FIX-04] Full KV-cache support: S, Z, and past_len preserved
-    [HLA-FIX-05] Single-token (L=1) decode fast path
-    [HLA-FIX-06] Robust mask handling (2D, 4D)
-    [HLA-FIX-07] Padding does not corrupt state
-    [HLA-FIX-08] Safely packed cache (HLAState) instead of tuple attributes
-    [HLA-FIX-09] Idempotency + recursion guards in injector
-    [HLA-FIX-10] Frobenius norm verification on weight copy
-    [HLA-FIX-11] State returned in HF-compatible format
-    [HLA-FIX-12] __all__ declaration
 """
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
 
 import logging
 import math
@@ -41,37 +33,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# RoPE helper
-# ===========================================================================
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-    unsqueeze_dim: int = 1,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Apply RoPE with partial-dimension support."""
-    if cos is None or sin is None:
-        return q, k
-
-    rotary_dim = cos.shape[-1]
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
-
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
-    return q, k
 
 
 # ===========================================================================
@@ -108,75 +69,6 @@ class HLAState:
 
     def __getitem__(self, idx: int):
         return (self.S, self.Z)[idx]
-
-
-# ===========================================================================
-# LoRALinear
-# ===========================================================================
-class LoRALinear(nn.Module):
-    """Linear projection with frozen base weights and trainable LoRA adapters."""
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 0,
-        lora_alpha: float = 1.0,
-        freeze_base: bool = True,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.lora_rank = int(lora_rank)
-        self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = self.lora_alpha / max(1, self.lora_rank)
-
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        else:
-            self.register_parameter("bias", None)
-
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
-            out = out + lora_out
-        return out
 
 
 # ===========================================================================

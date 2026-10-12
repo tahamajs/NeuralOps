@@ -17,6 +17,7 @@ Mathematical Formulation:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -41,13 +42,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely extract configuration attribute from None, dict, or namespace."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _rank_to_bridge_rank(rank: int, hidden_size: int) -> int:

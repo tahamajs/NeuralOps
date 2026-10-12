@@ -12,6 +12,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import (
+    safe_mask_value as _safe_mask_value,
+    broadcast_cos_sin as _broadcast_cos_sin,
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -25,189 +31,6 @@ except ImportError:
     ProgressiveTokenPruning = None
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _safe_mask_value(dtype: torch.dtype) -> float:
-    """[EAT-FIX-14] Dtype-aware mask sentinel."""
-    if dtype in (torch.float16, torch.bfloat16):
-        return -1e4
-    return -1e9
-
-
-def _broadcast_cos_sin(
-    cos: torch.Tensor, sin: torch.Tensor, q: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """[EAT-FIX-02] Broadcast cos/sin to match q's rank."""
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-    return cos, sin
-
-
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Apply RoPE with [EAT-FIX-13]: Q and K are sliced independently.
-
-    In incremental decode, Q has length 1 while K has full cache length.
-    A naive slice of cos/sin to q.shape[-2] breaks K broadcasting.
-    """
-    if cos is None or sin is None:
-        return q, k
-
-    cos, sin = _broadcast_cos_sin(cos, sin, q)
-
-    N_q = q.shape[-2]
-    N_k = k.shape[-2]
-    cos_len = cos.shape[-2]
-
-    # ---- Independent slicing for Q and K ----
-    if cos_len > N_q:
-        cos_q = cos[..., :N_q, :]
-        sin_q = sin[..., :N_q, :]
-    else:
-        cos_q = cos
-        sin_q = sin
-
-    if cos_len > N_k:
-        cos_k = cos[..., :N_k, :]
-        sin_k = sin[..., :N_k, :]
-    else:
-        cos_k = cos
-        sin_k = sin
-
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos_q.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin_q.to(q_rot.dtype)
-        )
-        k_rot_e = (k_rot * cos_k.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin_k.to(k_rot.dtype)
-        )
-        q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
-        k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
-    else:
-        cos_q_cut = cos_q[..., :head_dim].to(q.dtype)
-        sin_q_cut = sin_q[..., :head_dim].to(q.dtype)
-        q = (q * cos_q_cut) + (_rotate_half(q) * sin_q_cut)
-
-        cos_k_cut = cos_k[..., :head_dim].to(k.dtype)
-        sin_k_cut = sin_k[..., :head_dim].to(k.dtype)
-        k = (k * cos_k_cut) + (_rotate_half(k) * sin_k_cut)
-
-    return q, k
-
-
-class LoRALinear(nn.Module):
-    """[EAT-FIX-08] Cast input, not weights. Avoid per-forward weight `.to()`."""
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.lora_rank = int(lora_rank) if lora_rank and lora_rank > 0 else 0
-        self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
-        self.freeze_base = bool(freeze_base)
-
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **fk)
-        )
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_rank, in_features), **fk)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, self.lora_rank), **fk)
-            )
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
-
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_B.requires_grad = True
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
-                self.lora_A.requires_grad = True
-            if self.lora_B is not None:
-                self.lora_B.requires_grad = True
-
-    def unfreeze_base_weights(self) -> None:
-        self.weight.requires_grad = True
-        if self.bias is not None:
-            self.bias.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        if x.dtype != self.weight.dtype:
-            x = x.to(self.weight.dtype)
-        out = F.linear(x, self.weight, self.bias)
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B)
-                * self.lora_scaling
-            )
-        return out.to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register(
@@ -427,11 +250,17 @@ class EATBlock(BaseAttention):
         else:
             enable_pruning = False
             keep_ratio = None
+            if config is not None:
+                enable_pruning = bool(
+                    getattr(config, "enable_pruning", False)
+                )
+                keep_ratio = getattr(config, "keep_ratio", None)
             if comp_config is not None:
                 enable_pruning = bool(
-                    getattr(comp_config, "enable_pruning", False)
+                    getattr(comp_config, "enable_pruning", enable_pruning)
                 )
-                keep_ratio = getattr(comp_config, "keep_ratio", None)
+                if getattr(comp_config, "keep_ratio", None) is not None:
+                    keep_ratio = getattr(comp_config, "keep_ratio", None)
             if kwargs.get("enable_pruning", False):
                 enable_pruning = True
             if kwargs.get("keep_ratio") is not None:

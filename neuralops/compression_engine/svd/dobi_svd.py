@@ -6,6 +6,7 @@ and safe fallback.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -115,13 +116,6 @@ class DobiSVDLinearLayer(nn.Module):
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}"
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely extract config value from None, dict, or namespace/object."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 _ATTN_NAMES = {

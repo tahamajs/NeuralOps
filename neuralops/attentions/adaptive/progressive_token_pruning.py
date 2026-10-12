@@ -31,168 +31,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import (
+    LoRALinear,
+    apply_rotary_pos_emb,
+)
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# FIX-01: RoPE with always-slice semantics
-# ===========================================================================
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    past_len: int = 0,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Apply RoPE. cos/sin are ALWAYS sliced to match q's sequence length.
-
-    FIX-01: previous code skipped slicing when past_len == 0, which caused
-    a shape mismatch crash in prefill. Now we always slice, and prefer the
-    window [past_len : past_len + L]; if cos is too short, we fall back to
-    the first L positions (with a warning).
-    """
-    if cos is None or sin is None:
-        return q, k
-
-    # ---- Dimension alignment ----
-    if cos.dim() == 2:                     # (S, d) → (1, 1, S, d)
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:                   # (B, S, d) → (B, 1, S, d)
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    # ---- FIX-01: ALWAYS slice to L ----
-    L = q.shape[-2]
-    S = cos.shape[-2]
-    if S != L:
-        if S >= past_len + L:
-            # Preferred window
-            cos = cos[..., past_len : past_len + L, :]
-            sin = sin[..., past_len : past_len + L, :]
-        elif S >= L:
-            # Fallback: first L positions
-            logger.warning(
-                "PTP RoPE: cos length %d < past_len+L=%d; "
-                "falling back to first %d positions.",
-                S, past_len + L, L,
-            )
-            cos = cos[..., :L, :]
-            sin = sin[..., :L, :]
-        else:
-            raise ValueError(
-                f"PTP RoPE: cos length {S} is too short for q length {L} "
-                f"(past_len={past_len})."
-            )
-
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-
-    if rotary_dim <= head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
-        k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
-    else:
-        cos_q = cos[..., :head_dim].to(q.dtype)
-        sin_q = sin[..., :head_dim].to(q.dtype)
-        cos_k = cos[..., :head_dim].to(k.dtype)
-        sin_k = sin[..., :head_dim].to(k.dtype)
-        q = (q * cos_q) + (_rotate_half(q) * sin_q)
-        k = (k * cos_k) + (_rotate_half(k) * sin_k)
-
-    return q, k
-
-
-# ===========================================================================
-# LoRALinear (as before — no changes needed)
-# ===========================================================================
-class LoRALinear(nn.Module):
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
-
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
-
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_B.requires_grad = True
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
-                self.lora_A.requires_grad = True
-            if self.lora_B is not None:
-                self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
-        return out
 
 
 # ===========================================================================
@@ -675,7 +523,8 @@ class ProgressiveTokenPruning(BaseAttention):
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=past_len)
 
         # ---------- FIX-04: SDPA fast-path (no pruning + no cache) ----------
-        if k_tokens == L and past_k is None and not self.training:
+        no_pruning = (k_tokens >= L) or (self.keep_ratio >= 1.0)
+        if no_pruning and past_k is None and not output_attentions:
             # No pruning happened — fall back to native SDPA.
             k_full = k_new
             v_full = v_new
@@ -708,6 +557,7 @@ class ProgressiveTokenPruning(BaseAttention):
                 attn_out.permute(0, 2, 1, 3).contiguous()
                 .view(B, L, self.all_head_size)
             )
+            attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
             # Update cache even on fast path
             if cache_obj is not None:
@@ -715,10 +565,17 @@ class ProgressiveTokenPruning(BaseAttention):
             elif past_key_value is not None and isinstance(past_key_value, (tuple, list)):
                 pass  # no update on tuple caches without explicit management
 
-            if self.is_nested_encoder:
-                return attn_out, None
-            out = self.out_lin(attn_out)
-            return out, None
+            use_cache_flag = kwargs.get("use_cache", False) or (past_key_value is not None)
+            if use_cache_flag:
+                if self.is_nested_encoder:
+                    return (attn_out, None, None)
+                out = self.out_lin(attn_out)
+                return (out, None, None)
+            else:
+                if self.is_nested_encoder:
+                    return (attn_out, None)
+                out = self.out_lin(attn_out)
+                return (out, None)
 
         # ---------- Standard path: gather pruned K/V ----------
         top_idx_exp = (
@@ -800,6 +657,7 @@ class ProgressiveTokenPruning(BaseAttention):
             .contiguous()
             .view(B, L, self.all_head_size)
         )
+        attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ---------- Update cache ----------
         updated_cache = None
@@ -815,16 +673,23 @@ class ProgressiveTokenPruning(BaseAttention):
         # ---------- Return ----------
         attn_weights = probs if output_attentions else None
 
-        if self.is_nested_encoder:
-            # Nested encoder (BERT): (output, attn_weights)
-            return attn_out, attn_weights
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None)
 
-        out = self.out_lin(attn_out)
-
-        # FIX-02: include cache when present (HF convention for decoders)
-        if updated_cache is not None or past_key_value is not None:
-            return out, attn_weights, updated_cache
-        return out, attn_weights
+        if use_cache:
+            if output_attentions:
+                if self.is_nested_encoder:
+                    return (attn_out, updated_cache, attn_weights)
+                out = self.out_lin(attn_out)
+                return (out, updated_cache, attn_weights)
+            if self.is_nested_encoder:
+                return (attn_out, updated_cache, None)
+            out = self.out_lin(attn_out)
+            return (out, updated_cache, None)
+        else:
+            if self.is_nested_encoder:
+                return (attn_out, attn_weights)
+            out = self.out_lin(attn_out)
+            return (out, attn_weights)
 
 
 # ===========================================================================

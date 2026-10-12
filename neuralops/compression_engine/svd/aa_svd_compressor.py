@@ -10,6 +10,8 @@ nn.Linear/Conv1D layers with structural low-rank SVDLinear modules:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _orthogonal_init
+from neuralops.core.common import _cfg_get
 
 import contextlib
 import logging
@@ -62,12 +64,6 @@ DEFAULT_CALIBRATION_CORPUS: list[str] = [
 ]
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _autocast_off(x: torch.Tensor) -> contextlib.AbstractContextManager:
@@ -229,17 +225,6 @@ class SVDLinear(nn.Module):
             self.V.data[:r, :].copy_(V_factor[:r, :].to(self.V.device, self.V.dtype))
 
 
-def _orthogonal_init(t: torch.Tensor) -> None:
-    r, c = t.shape
-    if r == c:
-        nn.init.orthogonal_(t)
-        return
-    a = torch.randn(max(r, c), min(r, c), device=t.device, dtype=t.dtype)
-    q, _ = torch.linalg.qr(a)
-    if r >= c:
-        t.copy_(q[:r, :])
-    else:
-        t.copy_(q[:, :c].t())
 
 
 # ===========================================================================
