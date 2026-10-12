@@ -6,19 +6,6 @@ Architecture:
     * Local sliding-window attention branch (O(L·W))
     * Learned fusion gate blending both branches
 
-Fixes applied:
-    [HGRN2-FIX-01]  lora_ prefix on forget_gate, input_gate, g_proj, fusion_gate
-    [HGRN2-FIX-02]  Property aliases for backward compatibility
-    [HGRN2-FIX-03]  Full recurrent state passthrough in forward
-    [HGRN2-FIX-04]  Triton path falls back to PyTorch when initial_state != None
-    [HGRN2-FIX-05]  Local attention rolling KV cache for generation
-    [HGRN2-FIX-06]  Robust 2D/3D/4D mask normalization
-    [HGRN2-FIX-07]  No attribute assignment on tuples (bug in analysis)
-    [HGRN2-FIX-08]  Past length tracking via dict-like cache wrapper
-    [HGRN2-FIX-09]  Idempotency + recursion guards in injector
-    [HGRN2-FIX-10]  Correct causal safety in local attention with past_len
-    [HGRN2-FIX-11]  Output scale default = 1.0 (was 0.01)
-    [HGRN2-FIX-12]  Fusion gate default = -4.0 (98% local init)
 """
 
 from __future__ import annotations

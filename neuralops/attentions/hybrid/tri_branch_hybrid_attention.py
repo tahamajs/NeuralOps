@@ -1,19 +1,13 @@
 """
 Aegis-Hybrid Attention — Production-Hardened (v3).
 
-FIXES in v3:
-  - FIX 1: LoRA scaling corrected (was neutral 1.0, now properly scaled)
-  - FIX 2: is_decoder detection forced for GPT/Llama/Qwen (was defaulting False)
-  - FIX 3: fusion_beta balanced (was 4.0 → 98% local)
-  - FIX 4: KernelFeatureMap proper FAVOR+ (was non-standard formula)
-  - FIX 5: local_window adaptive (full context when window >= seq_len)
-  - FIX 6: removed .item() from chunked loop (was 24 CUDA syncs/forward)
-  - FIX 7: chunk_size dynamic causal mask
-  - FIX 8: Conv1D condition precedence corrected
-  - FIX 9: AegisHybridConfig.is_decoder no longer defaults False
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
 
 import logging
 import math
@@ -46,41 +40,6 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-# ===========================================================================
-# RoPE
-# ===========================================================================
-def apply_rotary_pos_emb(q, k, cos, sin):
-    if cos is None or sin is None:
-        return q, k
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-
-    q_rot_emb = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_emb = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q_out = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
-    k_out = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
-    return q_out, k_out
 
 
 # ===========================================================================

@@ -5,6 +5,7 @@ Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -25,12 +26,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 @COMPRESSOR_REGISTRY.register("admm_compressor")

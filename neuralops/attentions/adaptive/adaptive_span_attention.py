@@ -4,6 +4,12 @@
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    safe_mask_value as _safe_mask_value,
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
+
 import logging
 import math
 from dataclasses import dataclass
@@ -113,61 +119,10 @@ def _gather_cos_sin(
     return cos_g, sin_g
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Apply RoPE with partial-dim slicing."""
-    if cos is None or sin is None:
-        return q, k
-
-    N = q.shape[-2]
-
-    if position_ids is not None:
-        cos, sin = _gather_cos_sin(cos, sin, position_ids)
-    else:
-        if cos.dim() == 2:
-            cos = cos.unsqueeze(0).unsqueeze(0)
-            sin = sin.unsqueeze(0).unsqueeze(0)
-        elif cos.dim() == 3:
-            cos = cos.unsqueeze(1)
-            sin = sin.unsqueeze(1)
-        if cos.shape[-2] != N:
-            raise ValueError(
-                f"RoPE cos length ({cos.shape[-2]}) != sequence ({N}) "
-                f"and position_ids was not provided."
-            )
-
-    head_dim = q.shape[-1]
-    rotary_dim = cos.shape[-1]
-
-    if rotary_dim <= head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half_q(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half_q(k_rot) * sin.to(k_rot.dtype))
-
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    else:
-        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
-        q = (q * cos_cut.to(q.dtype)) + (_rotate_half_q(q) * sin_cut.to(q.dtype))
-        k = (k * cos_cut.to(k.dtype)) + (_rotate_half_q(k) * sin_cut.to(k.dtype))
-
-    return q, k
 
 
 
 
-def _safe_mask_value(dtype: torch.dtype) -> float:
-    """Safe mask value that won't overflow fp16 (max 65504)."""
-    if dtype in (torch.float16, torch.bfloat16):
-        return -1e4
-    return -1e9
 
 
 def _normalize_mask(
@@ -243,87 +198,6 @@ def _build_keep_mask(
 
 
 
-class LoRALinear(nn.Module):
-    """Linear layer with frozen base weights + trainable LoRA adapters.
-    """
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
-
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
-
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in = self.weight.shape[1]
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-        if self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-        if self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_A is not None:
-            self.lora_A.requires_grad = True
-        if self.lora_B is not None:
-            self.lora_B.requires_grad = True
-
-    def unfreeze_base_weights(self) -> None:
-        self.weight.requires_grad = True
-        if self.bias is not None:
-            self.bias.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Dtype-safe: match input dtype (weights may be fp32 after copy_weights)
-        w = self.weight if self.weight.dtype == x.dtype else self.weight.to(x.dtype)
-        b = (
-            self.bias
-            if (self.bias is None or self.bias.dtype == x.dtype)
-            else self.bias.to(x.dtype)
-        )
-        out = F.linear(x, w, b)
-
-        if self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A if self.lora_A.dtype == x.dtype else self.lora_A.to(x.dtype)
-            b_lora = self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
-            out = out + F.linear(F.linear(x, a), b_lora) * self.lora_scaling
-        return out
 
 
 class IdentityOutProj(nn.Identity):

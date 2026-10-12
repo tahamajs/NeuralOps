@@ -4,6 +4,7 @@ Registered in COMPRESSOR_REGISTRY as 'rpca', 'rpca_factory', and 'rpca_compresso
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -20,12 +21,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 @COMPRESSOR_REGISTRY.register("rpca_compressor")

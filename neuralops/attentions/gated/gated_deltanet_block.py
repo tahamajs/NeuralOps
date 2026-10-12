@@ -12,13 +12,6 @@ The outer transformer block is responsible for the residual + LayerNorm:
     x_out = x + Block(x)
 so this module MUST NOT add its own residual or normalization.
 
-Hardened for MambaKD and Hugging Face Autoregressive Generation:
-- No double residual / double norm (delegated to the outer block)
-- Full KV-cache / state passthrough for autoregressive decoding
-- GQA-aware weight transfer (handles num_kv_heads < num_heads)
-- Idempotency guard in the injector
-- Recursion guard in the injector
-- Nested-encoder detection for BERT/RoBERTa bypass
 """
 
 from __future__ import annotations

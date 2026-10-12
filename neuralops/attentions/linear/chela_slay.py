@@ -1,28 +1,13 @@
 r"""
 CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — PRODUCTION-HARDENED & TRITON-ACCELERATED.
 
-HARDWARE & ARCHITECTURAL HIGHLIGHTS:
-  1. Fused OpenAI Triton Kernel (_chela_slay_causal_linear_fwd_kernel):
-     - Intra-chunk causal masked attention computed in on-chip SRAM tiles (BLOCK_C, BLOCK_F, BLOCK_D).
-     - Inter-chunk running states (S of shape [2F, D] and Z of shape [2F]) updated entirely on-chip in registers.
-     - True O(N * d^2) linear complexity with causal lower-triangular masking and on-chip memory reuse.
-     - Fused denominator clamping (minimum 1.0) completely eliminating HBM trips.
-  2. Autotuning with @triton.autotune:
-     - Automatically selects optimal block configurations (BLOCK_C, num_warps, num_stages) across GPU architectures.
-  3. Custom Autograd Wrapper (ChelaSlayCausalLinearFunction):
-     - Custom torch.autograd.Function with activation recomputation via torch.autograd.grad.
-     - Eliminates graph memory bloat while preserving exact gradient flow for knowledge distillation.
-  4. Vectorized PyTorch Parallel-Scan Fallback (_py_causal_linear_attention_vectorized):
-     - Evaluates causal attention using batched chunk matrix multiplications and torch.cumsum prefix scans.
-     - Completely eliminates sequential Python for-loops on CPU, Apple Silicon (MPS), and non-CUDA platforms.
-  5. Mathematical Stability Guarantees:
-     - Non-negative shifted Yat feature map: (cos + 1)/2 and (sin + 1)/2 in [0, 1].
-     - Denominator clamped to at least 1.0 in both causal and bidirectional attention paths.
-     - Magnitude normalization of linear stream output before residual gating.
-     - Safe gate bias initialization: gate_init_bias = 8.0 (sigmoid(8.0) ~ 0.9997 dense fidelity at step 0).
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
 
 import logging
 import math
@@ -131,30 +116,6 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
 
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
-    if cos is None or sin is None:
-        return q, k
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    rotary_dim = cos.shape[-1]
-    if q.shape[-1] > rotary_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        return torch.cat((q_rot, q_pass), dim=-1), torch.cat((k_rot, k_pass), dim=-1)
-
-    q = (q * cos) + (_rotate_half(q) * sin)
-    k = (k * cos) + (_rotate_half(k) * sin)
-    return q, k
 
 
 # ===========================================================================

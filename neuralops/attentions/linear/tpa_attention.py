@@ -16,6 +16,11 @@ Tensor-Product factorization of Q and K:
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
+
 import logging
 import math
 from typing import Any
@@ -39,50 +44,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ============================================================================
-# Helpers
-# ============================================================================
-
-
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
-    if cos is None or sin is None:
-        return q, k
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_sub = cos[..., : q.shape[-2], :rotary_dim]
-    sin_sub = sin[..., : q.shape[-2], :rotary_dim]
-
-    cos_q = cos_sub.to(device=q.device, dtype=q.dtype)
-    sin_q = sin_sub.to(device=q.device, dtype=q.dtype)
-    cos_k = cos_sub.to(device=k.device, dtype=k.dtype)
-    sin_k = sin_sub.to(device=k.device, dtype=k.dtype)
-
-    q_out = torch.empty_like(q)
-    k_out = torch.empty_like(k)
-    q_out[..., :rotary_dim] = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_out[..., :rotary_dim] = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-    if q_pass.numel() > 0:
-        q_out[..., rotary_dim:] = q_pass
-        k_out[..., rotary_dim:] = k_pass
-    return q_out, k_out
 
 
 # ============================================================================
@@ -196,74 +157,6 @@ def _svd_factorize(
     A = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
     B = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
     return A, B
-
-
-# ============================================================================
-# LoRALinear (dtype-safe)
-# ============================================================================
-
-
-class LoRALinear(nn.Module):
-    def __init__(
-        self,
-        in_features,
-        out_features,
-        bias=True,
-        lora_rank=0,
-        lora_alpha=1.0,
-        freeze_base=True,
-        device=None,
-        dtype=None,
-    ):
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.scaling = lora_alpha / max(1, lora_rank)
-
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_A.requires_grad = True
-            self.lora_B.requires_grad = True
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
-
-    def forward(self, x):
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.scaling
-        return out
 
 
 # DEPRECATED: Deprecated temporal pooling bypass causes delta = 0.
