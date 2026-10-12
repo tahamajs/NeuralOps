@@ -130,7 +130,9 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         self.register_buffer("W_centroids", W_centroids)
 
         if bias is not None:
-            self.bias = nn.Parameter(bias.clone(), requires_grad=False)
+            self.bias = nn.Parameter(
+                bias.clone().to(device=Q_P_r.device, dtype=Q_P_r.dtype), requires_grad=False
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -442,7 +444,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 act_flat = act.reshape(-1, act.shape[-1]).float()
                 if act_flat.shape[-1] == d_in:
                     # Synthesize a small sample matrix from the mean vector.
-                    mean_act = act_flat.mean(dim=0, keepdim=True)  # (1, D_in)
+                    mean_act = act_flat.mean(dim=0, keepdim=True).to(device=device)  # (1, D_in)
                     # Repeat with small jitter to give variance-based slicing signal.
                     X = mean_act.T + 0.01 * torch.randn(d_in, 32, device=device)
                 else:
