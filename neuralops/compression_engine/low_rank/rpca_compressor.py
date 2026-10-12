@@ -84,11 +84,11 @@ class RPCACompressor(BaseCompressor):
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
-        self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 0.50))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 1.0))
         self.fallback_to_original = bool(
             fallback_to_original
             if fallback_to_original is not None
-            else _cfg_get(cfg_obj, "fallback_to_original", True)
+            else _cfg_get(cfg_obj, "fallback_to_original", False)
         )
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
 
@@ -456,9 +456,9 @@ def rpca_compressor_factory(
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
     )
 
     compressor = RPCACompressor(
