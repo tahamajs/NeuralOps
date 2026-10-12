@@ -159,7 +159,7 @@ def test_tpa_qwen_head_dim_and_rank():
     assert attn.q_head_size == 2048
     assert attn.rank == 8  # 16*16 = 256
     assert attn.is_decoder is True
-    assert attn.qk_proj is not None
+    assert attn.q_proj1 is not None
 
     x = torch.randn(2, 4, 1024)
     out, _ = attn(x)
@@ -169,7 +169,7 @@ def test_tpa_qwen_head_dim_and_rank():
 def test_tpa_orthogonal_init():
     cfg = make_config(hidden_size=64, num_heads=4)
     dummy = DummyAttn(64, 4)
-    attn = TPAttention(cfg, pretrained_attn=dummy, rank=4)
+    attn = TPAttention(cfg, rank_a=4, rank_b=4, pretrained_attn=dummy)
 
     w1 = attn.q_proj1.weight
     w2 = attn.q_proj2.weight
@@ -242,7 +242,7 @@ def test_tpa_non_square_head_dim():
     attn = TPAttention(cfg, rank=8)
     assert attn.head_dim == 128
     assert attn.rank == 8
-    assert attn.qk_proj is not None
+    assert attn.q_proj1 is not None
     x = torch.randn(2, 6, 512)
     out, _ = attn(x)
     assert out.shape == (2, 6, 512)
