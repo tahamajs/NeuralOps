@@ -271,18 +271,41 @@ class Mamba2(nn.Module):
 
         dBx = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
 
-        # 4. Parallel scan (with optional cached state)
-        chunk = min(L, self.chunk_size) if L > 0 else 1
-        h, next_state = self._vectorized_scan_with_chunks(
-            dA, dBx, initial_state=past_state, chunk_size=chunk
+        # 4. Streamed chunk scan & readout to avoid materializing full 4D (B, L, inner, state) tensor
+        chunk_len = min(L, 64) if L > 0 else 1
+        num_chunks = (L + chunk_len - 1) // chunk_len
+        running_h = (
+            past_state
+            if past_state is not None
+            else torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
         )
+        D_weight = self.D.view(1, 1, inner_dim, 1)
 
-        # 5. Output readout
-        y = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1)
+        y_chunks = []
+        for chunk_idx in range(num_chunks):
+            start = chunk_idx * chunk_len
+            end = min(start + chunk_len, L)
 
-        # 6. Gating + output projection
+            dA_c = dA[:, start:end]
+            dBx_c = dBx[:, start:end]
+
+            log_dA = torch.log(dA_c.clamp(min=1e-20))
+            cum_log_dA = torch.cumsum(log_dA, dim=1)
+
+            dBx_scaled = dBx_c * torch.exp(-cum_log_dA)
+            cum_dBx = torch.cumsum(dBx_scaled, dim=1)
+
+            h_c = torch.exp(cum_log_dA) * (cum_dBx + running_h.unsqueeze(1))
+            running_h = h_c[:, -1].detach() if not self.training else h_c[:, -1]
+
+            y_c = (h_c * D_weight).sum(dim=-1)
+            y_chunks.append(y_c)
+
+        y = torch.cat(y_chunks, dim=1) if len(y_chunks) > 1 else y_chunks[0]
+
+        # 5. Gating + output projection
         y = y * F.silu(z)
-        return self.out_proj(y), next_state
+        return self.out_proj(y), running_h
 
 
 # =============================================================================
