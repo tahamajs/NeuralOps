@@ -159,6 +159,9 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class CosformerAttention(BaseAttention):
     is_custom_attention: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_gqa: bool = True
     triton_kernel = "linear_attn"
 
     def __init__(self, config=None, rank=None, max_seq_len=512, act_fun="relu",
@@ -272,7 +275,7 @@ class CosformerAttention(BaseAttention):
         self.fusion_gate = nn.Linear(self.dim, 1, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.fusion_gate.weight)
-            self.fusion_gate.bias.fill_(0.0) # 50-50 Start
+            self.fusion_gate.bias.fill_(-4.0)  # Prioritize pretrained local attention stream at init
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
