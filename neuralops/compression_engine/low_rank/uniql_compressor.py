@@ -99,7 +99,7 @@ class UniQLinear(nn.Module):
     def _reconstruct_weight(self) -> torch.Tensor:
         U = self.U_q.float() * self.scale_u.unsqueeze(1)  # (out, r)
         S = self.S_q.float() * self.scale_s  # (r,)
-        Vt = self.Vt_q.float() * self.scale_v.unsqueeze(0)  # (r, in)
+        Vt = self.Vt_q.float() * self.scale_v.unsqueeze(1)  # (r, in) UQ-FIX: per-row
         W = (U * S.unsqueeze(0)) @ Vt  # (out, in)
         return W.to(self._weight_dtype)
 
@@ -336,13 +336,14 @@ class UniQLCompressor(BaseCompressor):
             logger.warning("UniQL SVD failed: %s", e)
             return None
 
-        # Candidate ranks: start at requested rank, expand up to max_r.
+        # Candidate ranks: start at requested rank, cap at 2x base_r.
+        # UQ-FIX: do NOT escalate to max_r (full rank = lossless compression).
         base_r = max(1, min(self.rank, max_r))
         rank_candidates = [base_r]
-        if base_r < max_r:
-            rank_candidates.append(min(max_r, base_r * 2))
-        if max_r not in rank_candidates:
-            rank_candidates.append(max_r)
+        double_r = min(max_r, base_r * 2)
+        if double_r > base_r:
+            rank_candidates.append(double_r)
+        # Never append max_r — that would reconstruct the original perfectly.
 
         # Candidate bits: bits, then 8, then 16 (int8 storage cap).
         bit_candidates = [self.bits]
@@ -366,7 +367,7 @@ class UniQLCompressor(BaseCompressor):
                 # Reconstruct in fp32 for error measurement.
                 U_hat = U_q.float() * scale_u.unsqueeze(1)
                 S_hat = S_q.float() * scale_s
-                Vt_hat = Vt_q.float() * scale_v.unsqueeze(0)
+                Vt_hat = Vt_q.float() * scale_v.unsqueeze(1)  # UQ-FIX: per-row scale => unsqueeze(1)
                 W_rec = (U_hat * S_hat.unsqueeze(0)) @ Vt_hat
                 rel_err = (torch.linalg.norm(W - W_rec).item()) / norm_orig
 
