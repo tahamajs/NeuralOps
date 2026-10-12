@@ -275,7 +275,7 @@ class CosformerAttention(BaseAttention):
         self.fusion_gate = nn.Linear(self.dim, 1, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.fusion_gate.weight)
-            self.fusion_gate.bias.fill_(0.0)  # Neutral balanced gate (50-50) at init
+            self.fusion_gate.bias.fill_(-4.0)  # Prioritize exact base local stream at init, learnable during KD
         self.fusion_gate.weight.requires_grad = True
         self.fusion_gate.bias.requires_grad = True
 
