@@ -242,21 +242,25 @@ class HybridAttention(BaseAttention):
         self.out_proj = nn.Linear(self.all_head_size, self.hidden_size, bias=True)
         self.dropout = nn.Dropout(drop_rate)
 
-        # Rank-reduced compression bottleneck
+        # Rank-reduced compression bottleneck with identity-preserving initialization
         bottleneck = max(16, self.all_head_size // 2)
         self.compress_proj = nn.Linear(self.all_head_size, bottleneck, bias=False)
         self.decompress_proj = nn.Linear(bottleneck, self.all_head_size, bias=False)
         with torch.no_grad():
-            nn.init.kaiming_uniform_(self.compress_proj.weight, a=math.sqrt(5))
-            nn.init.kaiming_uniform_(self.decompress_proj.weight, a=math.sqrt(5))
+            self.compress_proj.weight.zero_()
+            self.decompress_proj.weight.zero_()
+            # Orthogonal / truncated identity projection for stable representation pass-through
+            min_dim = min(bottleneck, self.all_head_size)
+            self.compress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
+            self.decompress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
 
         # Per-head gate
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
 
-        # Initialize gate to balanced 50/50 mixture (bias=0.0) so linear compression branch is active
+        # Initialize gate with slight positive bias (bias=2.0, ~88% standard attention) for stable warm-start
         with torch.no_grad():
             self.ensemble_gate.weight.normal_(mean=0.0, std=0.02)
-            self.ensemble_gate.bias.zero_()
+            self.ensemble_gate.bias.fill_(2.0)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
