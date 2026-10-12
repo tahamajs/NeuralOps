@@ -408,6 +408,7 @@ def build_module_command(
         "--learning_rate", str(args.learning_rate),
         "--eval_every", str(args.eval_every),
         "--device", args.device,
+        "--early_stop_ppl", "1e9",
     ]
 
 
