@@ -9,6 +9,10 @@ Hardened for production use across diverse transformer architectures:
 - Qwen / LLaMA (GQA with Rotary Position Embeddings)
 """
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import logging
 import math
 from typing import Any
@@ -28,46 +32,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) to query and key tensors."""
-    if cos.dim() == 2 and position_ids is not None:
-        cos = cos[position_ids].unsqueeze(1)
-        sin = sin[position_ids].unsqueeze(1)
-    elif cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    if cos.shape[-2] != q.shape[-2]:
-        seq_len = q.shape[-2]
-        cos = cos[..., :seq_len, :]
-        sin = sin[..., :seq_len, :]
-
-    rotary_dim = cos.shape[-1]
-    if rotary_dim <= q.shape[-1]:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q_embed = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
-        k_embed = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
-    else:
-        cos_cut, sin_cut = cos[..., : q.shape[-1]], sin[..., : q.shape[-1]]
-        q_embed = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
-        k_embed = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
-    return q_embed.to(q.dtype), k_embed.to(k.dtype)
 
 
 class ASVDLinear(nn.Module):

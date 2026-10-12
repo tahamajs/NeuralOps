@@ -11,6 +11,8 @@ Mathematical formulation:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _is_conv1d
+from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -147,19 +149,6 @@ class DeltaKVStore:
         return k_hat.reshape(orig_shape), v_hat.reshape(orig_shape)
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
 _ATTN_NAMES = {
     "q_proj",
     "k_proj",
@@ -177,9 +166,6 @@ _ATTN_NAMES = {
 }
 
 
-def _is_conv1d(module: nn.Module) -> bool:
-    cls = module.__class__.__name__.lower()
-    return "conv1d" in cls or hasattr(module, "nf")
 
 
 # ===========================================================================

@@ -643,6 +643,32 @@ class ResSVDLinear(nn.Module):
         return out
 
 
+def _get_device(model: nn.Module) -> torch.device:
+    """Safe model device resolution."""
+    p = next(iter(model.parameters()), None)
+    return p.device if p is not None else torch.device("cpu")
+
+
+def _is_conv1d(module: nn.Module) -> bool:
+    """Check if module is a Conv1D or equivalent layer."""
+    cls = module.__class__.__name__.lower()
+    return "conv1d" in cls or hasattr(module, "nf")
+
+
+def _orthogonal_init(tensor: torch.Tensor) -> None:
+    """Robust orthogonal initialization for square and rectangular 2D matrices."""
+    rows, cols = tensor.shape
+    if rows == cols:
+        nn.init.orthogonal_(tensor)
+        return
+    a = torch.randn(max(rows, cols), min(rows, cols), device=tensor.device, dtype=tensor.dtype)
+    q, _ = torch.linalg.qr(a)
+    if rows >= cols:
+        tensor.copy_(q[:rows, :])
+    else:
+        tensor.copy_(q[:, :cols].t())
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -653,6 +679,9 @@ __all__ = [
     "_FactorizedLinear",
     "ResSVDLinear",
     "softpick",
+    "_get_device",
+    "_is_conv1d",
+    "_orthogonal_init",
 ]
 
 

@@ -15,6 +15,8 @@ Algorithm:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _orthogonal_init
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -35,12 +37,6 @@ from neuralops.utils.compat import get_dynamic_compression_rank, should_compress
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 # ===========================================================================
@@ -209,19 +205,6 @@ class A3FactorizedLinear(nn.Module):
         return layer
 
 
-def _orthogonal_init(tensor: torch.Tensor) -> None:
-    """A3-FIX-14: robust orthogonal init for non-square matrices."""
-    rows, cols = tensor.shape
-    if rows == cols:
-        nn.init.orthogonal_(tensor)
-        return
-    # Generate orthogonal via QR on a random matrix of the appropriate shape
-    a = torch.randn(max(rows, cols), min(rows, cols), device=tensor.device, dtype=tensor.dtype)
-    q, _ = torch.linalg.qr(a)
-    if rows >= cols:
-        tensor.copy_(q[:rows, :])
-    else:
-        tensor.copy_(q[:, :cols].t())
 
 
 # ===========================================================================

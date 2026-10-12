@@ -5,6 +5,7 @@ Registered in COMPRESSOR_REGISTRY as 'cr' and 'cr_compressor'.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -22,13 +23,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely extract configuration attribute from dict, object, or namespace."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 class CRLinear(nn.Module):

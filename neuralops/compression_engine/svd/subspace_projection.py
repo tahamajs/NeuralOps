@@ -22,6 +22,7 @@ Bug-fix map (v2):
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -36,17 +37,6 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)  # SP-FIX-02
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _get_lora_param(mod: Any) -> torch.Tensor | None:

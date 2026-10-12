@@ -10,6 +10,7 @@ dequantizes on the fly and never materializes the dense weight.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -314,17 +315,6 @@ class MLoRQLoRALinear(nn.Module):
             layer.lora_B.requires_grad = True
 
         return layer
-
-
-# ===========================================================================
-# Config helper
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 _ATTN_NAMES = {

@@ -18,6 +18,7 @@ Key components:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -80,12 +81,6 @@ DEFAULT_CALIBRATION_CORPUS: list[str] = [
 ]
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 # ============================================================================

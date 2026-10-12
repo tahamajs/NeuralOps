@@ -2,31 +2,15 @@
 MHA-SDPA: A thin Multi-Head Attention wrapper around PyTorch's
 scaled_dot_product_attention.
 
-DISCLAIMER:
-    This module was previously named "SPECTRA-v2" and claimed to
-    implement a sparse per-head efficient context transformer
-    with intra-block attention, top-k inter-block routing,
-    adaptive spans, and RFF rectification. NONE of these
-    features are implemented here. What this module actually
-    does is:
 
-      1. Project Q, K, V via LoRALinear (frozen base + adapters).
-      2. Apply RoPE if position_embeddings are provided.
-      3. Repeat KV heads for GQA.
-      4. Call scaled_dot_product_attention.
-      5. Apply head_mask.
-      6. Project the output.
-
-    This is functionally equivalent to a standard MHA with SDPA.
-    It provides NO sparsity, NO top-k, NO adaptive span, and NO
-    RFF features.
-
-If you need the actual SPECTRA architecture, see paper/_SPECTRA_V2_REPORT.md.
-
-Registered as "mha_sdpa" (canonical) and "spectra_v2" (deprecated).
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
 
 import logging
 import math
@@ -66,100 +50,8 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    elif cos.dim() == 4:
-        pass
-
-    q_rot = (q * cos) + (_rotate_half(q) * sin)
-    k_rot = (k * cos) + (_rotate_half(k) * sin)
-    return q_rot, k_rot
 
 
-class LoRALinear(nn.Module):
-    """Linear layer augmented with Low-Rank Adaptation (LoRA) and base freezing."""
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
-
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
-        else:
-            self.register_parameter("bias", None)
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
-
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_B.requires_grad = True
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
-                self.lora_A.requires_grad = True
-            if self.lora_B is not None:
-                self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            out = out + lora_out
-        return out
 
 
 # DEPRECATED: Thin wrapper around PyTorch scaled_dot_product_attention without compression.

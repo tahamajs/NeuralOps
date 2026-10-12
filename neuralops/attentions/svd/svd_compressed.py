@@ -1,3 +1,7 @@
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
 r"""
 SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation.
 
@@ -158,56 +162,6 @@ def lagrangian_rank_allocation(
 
     rank_dict = {name: r for name, r in zip(layer_proj_names, best_allocation)}
     return rank_dict
-
-
-# =============================================================================
-# 3. SVD‑Compressed Attention module
-# =============================================================================
-
-
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-    unsqueeze_dim: int = 1,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
-    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
-    return q_out, k_out
 
 
 def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:

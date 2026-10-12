@@ -10,6 +10,10 @@ PyTorch autograd function with fallback.
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import math
 from typing import Any
 
@@ -441,39 +445,6 @@ from neuralops.core.common import _cfg_get
 logger = logging.getLogger(__name__)
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos is None or sin is None:
-        return q, k
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    elif cos.dim() < q.dim():
-        while cos.dim() < q.dim():
-            cos = cos.unsqueeze(0)
-            sin = sin.unsqueeze(0)
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q.dtype)) + (_rotate_half(q_rot) * sin.to(q.dtype))
-        k_rot_embed = (k_rot * cos.to(k.dtype)) + (_rotate_half(k_rot) * sin.to(k.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        cos_cut = cos[..., :head_dim].to(q.dtype)
-        sin_cut = sin[..., :head_dim].to(q.dtype)
-        q = (q * cos_cut) + (_rotate_half(q) * sin_cut)
-        k = (k * cos_cut) + (_rotate_half(k) * sin_cut)
-    return q, k
 
 
 from neuralops.core.registry import ATTENTION_REGISTRY

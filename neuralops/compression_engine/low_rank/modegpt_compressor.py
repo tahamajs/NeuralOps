@@ -15,6 +15,7 @@ For unpaired layers, both U and V are stored per-layer.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -173,17 +174,6 @@ class MoDeGPTLowRankLinear(nn.Module):
             f"in_features={self.in_features}, out_features={self.out_features}, "
             f"rank={self.rank}, shared_V={self._uses_shared_V}, lora_r={self.lora_r}"
         )
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 _ATTN_NAMES = {

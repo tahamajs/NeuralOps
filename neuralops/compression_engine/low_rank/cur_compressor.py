@@ -5,6 +5,7 @@ Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -245,12 +246,6 @@ class CURLinear(nn.Module):
         return cur_layer
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 @COMPRESSOR_REGISTRY.register("cur_compressor")

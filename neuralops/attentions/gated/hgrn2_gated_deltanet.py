@@ -6,20 +6,6 @@ Architecture:
     * GatedDeltaNet: delta-rule linear attention
     * Token-wise fusion gate blending both branches
 
-Fixes applied:
-    [HGD-FIX-01] None-safe super().__init__
-    [HGD-FIX-02] lora_ prefix on fusion gate (KD optimizer scope)
-    [HGD-FIX-03] Persistent recurrent state passthrough for both branches
-    [HGD-FIX-04] Correct tuple unpacking with length check
-    [HGD-FIX-05] Argument filtering to prevent **kwargs overflow
-    [HGD-FIX-06] Idempotency guard in injector
-    [HGD-FIX-07] Recursion depth guard in injector
-    [HGD-FIX-08] No double output-scale (delegated to branches)
-    [HGD-FIX-09] Trust branch freeze_base_weights()
-    [HGD-FIX-10] Frozen gate protected during KD
-    [HGD-FIX-11] Proper past_key_value routing to branches
-    [HGD-FIX-12] Branch output shape validation
-    [HGD-FIX-13] Safe storage accounting
 """
 
 from __future__ import annotations

@@ -4,6 +4,7 @@ Registered in COMPRESSOR_REGISTRY as 'salr', 'salr_factory', and 'salr_compresso
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -133,12 +134,6 @@ class SALRLayer(nn.Module):
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, sparsity={self.sparsity}, lora_r={self.lora_r}"
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 @COMPRESSOR_REGISTRY.register("salr")
