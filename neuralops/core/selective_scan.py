@@ -49,8 +49,8 @@ def _auto_chunk_size(
     D_dim: int,
     N: int,
     B_size: int,
-    max_bytes: int = 256 * 1024 * 1024,  # 256 MB ceiling
-    default: int = 32,
+    max_bytes: int = 32 * 1024 * 1024,  # 32 MB ceiling per layer
+    default: int = 16,
     min_chunk: int = 4,
 ) -> int:
     """
@@ -141,7 +141,7 @@ def selective_scan_chunked(
         chunk_size = _auto_chunk_size(D_dim, N, B_size)
     else:
         # Enforce memory bound even if user gave explicit chunk_size.
-        max_chunk = _auto_chunk_size(D_dim, N, B_size, max_bytes=512 * 1024 * 1024)
+        max_chunk = _auto_chunk_size(D_dim, N, B_size, max_bytes=64 * 1024 * 1024)
         chunk_size = min(chunk_size, max_chunk)
     chunk_size = max(1, chunk_size)
 
