@@ -770,7 +770,12 @@ class AdaSplashAttention(BaseAttention):
 
         if position_bias is not None:
             return output, position_bias
-        return output, (attn if output_attentions else None)
+        _use_cache = kwargs.get('use_cache', False) or (kwargs.get('past_key_value') is not None and kwargs.get('past_key_value') is not False)
+        present = None
+        if output_attentions:
+            return (output, present, attn)
+        else:
+            return (output, present)
 
 
 def inject_adasplash(

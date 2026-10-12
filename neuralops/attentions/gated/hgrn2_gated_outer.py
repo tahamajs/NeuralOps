@@ -825,7 +825,10 @@ class HGRN2GatedOuterBlock(BaseAttention):
         if self.is_decoder and use_cache:
             new_past_key_value = (next_state,)
 
-        return out, new_past_key_value
+        if output_attentions:
+            return (out, new_past_key_value, None)
+        else:
+            return (out, new_past_key_value)
 
     # ------------------------------------------------------------------
     # Storage accounting
