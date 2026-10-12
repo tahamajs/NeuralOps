@@ -13,6 +13,8 @@ control adapter size.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -44,40 +46,6 @@ except Exception:
     _HAS_MODEL_ADAPTER = False
 
 
-# ============================================================================
-# Helpers
-# ============================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        cls_n = getattr(module, "__class__", type(module)).__name__
-        base_n = getattr(base, "__class__", type(base)).__name__
-        if (
-            ("Conv1D" in cls_n)
-            or ("Conv1D" in base_n)
-            or hasattr(module, "nf")
-            or hasattr(base, "nf")
-            or (w.ndim == 2 and w.shape[0] < w.shape[1])
-        ):
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 

@@ -5,6 +5,7 @@ Parameter-efficient adaptation mechanism for transformer attention projections c
 orthogonal singular vector preservation, singular value rescaling ($\gamma$), and additive low-rank adapters ($A B$).
 Hardened for multi-architecture production deployment.
 """
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -27,13 +28,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely retrieve attribute from dict, object, namespace, or None."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 

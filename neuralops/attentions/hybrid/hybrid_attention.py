@@ -7,6 +7,7 @@ computation at long sequence lengths by routing some heads to linear attention.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_decoder
 
 import logging
 import math
@@ -88,38 +89,6 @@ def _extract_valid_mask(
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
 
-def _detect_decoder(config, is_decoder, old_attn):
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
-        ):
-            return True
-    if old_attn is not None:
-        if getattr(old_attn, "is_decoder", False):
-            return True
-        if hasattr(old_attn, "c_attn"):
-            return True
-        if "gpt" in old_attn.__class__.__name__.lower():
-            return True
-    return False
 
 
 # ===========================================================================

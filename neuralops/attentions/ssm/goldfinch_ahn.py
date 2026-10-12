@@ -11,6 +11,7 @@ Production-hardened v2 with:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _env_flag
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -33,14 +34,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Environment toggles (for ablation)
-# ===========================================================================
-def _env_flag(name: str, default: bool = False) -> bool:
-    v = os.environ.get(name, "")
-    return v.lower() in ("1", "true", "yes", "on") if v else default
 
 
 # ===========================================================================

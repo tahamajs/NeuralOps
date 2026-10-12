@@ -8,6 +8,7 @@ pretrained weight transfer.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv, repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -38,51 +39,6 @@ except Exception:
     HAS_TRITON_DECAY = False
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    r"""Expands grouped key/value heads to match query heads."""
-    if n_rep == 1:
-        return hidden_states
-    batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        batch, num_kv_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
-
-
-
-
-# ===========================================================================
-# KV-cache helpers
-# ===========================================================================
-def _read_past_kv(past_key_value: Any, layer_idx: int):
-    r"""Reads past K, V from either a tuple or a DynamicCache-style object."""
-    if past_key_value is None:
-        return None, None
-
-    # HF DynamicCache-style
-    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-        keys = past_key_value.key_cache
-        vals = past_key_value.value_cache
-        if len(keys) == 0:
-            return None, None
-        idx = min(layer_idx, len(keys) - 1)
-        k, v = keys[idx], vals[idx]
-        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-            return k, v
-        return None, None
-
-    # Tuple / list style
-    if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-        k, v = past_key_value[0], past_key_value[1]
-        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-            return k, v
-
-    return None, None
 
 
 # ===========================================================================

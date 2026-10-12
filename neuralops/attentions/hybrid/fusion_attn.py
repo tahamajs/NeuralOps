@@ -15,6 +15,7 @@ Hybrid sparse attention with:
 """
 
 from __future__ import annotations
+from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -35,19 +36,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    if n_rep == 1:
-        return hidden_states
-    batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        batch, num_kv_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
 

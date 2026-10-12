@@ -11,6 +11,8 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _env_float
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -35,23 +37,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Config helpers
-# ===========================================================================
-def _env_float(name: str, default: float) -> float:
-    v = os.environ.get(name, "")
-    try:
-        return float(v) if v else default
-    except ValueError:
-        return default
-
-
-def _cfg_get(config: Any, attr: str, default: Any = None) -> Any:
-    if config is None:
-        return default
-    if isinstance(config, dict):
-        return config.get(attr, default)
-    return getattr(config, attr, default)
 
 
 # ===========================================================================
