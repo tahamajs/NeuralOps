@@ -212,9 +212,11 @@ class MultiQueryAttention(BaseAttention):
         # ---------------- Dimensions ----------------
         h_size = (
             hidden_size
+            or kwargs.get("embed_dim")
             or kwargs.get("d_model")
             or kwargs.get("dim")
             or _cfg_get(config, "hidden_size")
+            or _cfg_get(config, "embed_dim")
             or _cfg_get(config, "d_model")
             or _cfg_get(config, "n_embd")
             or _cfg_get(config, "dim")
