@@ -58,6 +58,8 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.attentions.leka_v1_inject": "neuralops.attentions.leka_v1",
         "neuralops.attentions.leka_v2_inject": "neuralops.attentions.leka_v2",
         "neuralops.attentions.leka_v3_inject": "neuralops.attentions.leka_v3",
+        "neuralops.attentions.Mamba": "neuralops.attentions.mamba_svd_flash",
+        "neuralops.attentions.SVD-Mamba": "neuralops.attentions.svd_mamba",
         "neuralops.attentions.mamba_attention": "neuralops.attentions.mamba_block",
         "neuralops.attentions.moba": "neuralops.attentions.moba_attention",
         "neuralops.attentions.nha_compressor": "neuralops.attentions.nha_attention",
