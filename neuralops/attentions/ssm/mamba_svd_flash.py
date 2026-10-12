@@ -18,6 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -1112,9 +1113,9 @@ class MambaSVDFlash(BaseAttention):
         )
         if can_sdpa:
             try:
-                _qs = Q.half() if Q.dtype == torch.float32 else Q
-                _ks = K.half() if K.dtype == torch.float32 else K
-                _vs = V_a.half() if V_a.dtype == torch.float32 else V_a
+                _qs = maybe_half(Q)
+                _ks = maybe_half(K)
+                _vs = maybe_half(V_a)
                 _is_causal = self.is_decoder and L > 1
                 _sdpa_out = F.scaled_dot_product_attention(
                     _qs,
