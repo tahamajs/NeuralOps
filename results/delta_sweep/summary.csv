@@ -25,3 +25,9 @@ expert_choice_moe,attention,UNKNOWN,,36.24,227.6,1,no delta parsed,2026-10-11 22
 hymba_transx,attention,ERROR,,100.35,511.8,1,exit=-9,2026-10-12 00:58:36
 inject_leka_v1,attention,ERROR,,,8.1,1,exit=-2,2026-10-12 01:07:09
 factorised_matrix_state,attention,ERROR,,,3.6,1,exit=-2,2026-10-12 01:08:17
+flash_attention3,attention,UNKNOWN,,36.22,305.7,1,no delta parsed,2026-10-12 01:08:42
+flash_attention3_fp8,attention,UNKNOWN,,36.22,153.6,1,no delta parsed,2026-10-12 01:13:49
+full,attention,ERROR,,,11.6,1,exit=1,2026-10-12 01:16:23
+full_attention,attention,UNKNOWN,,36.21,223.0,1,no delta parsed,2026-10-12 01:16:36
+fused_svd_kernel,attention,UNKNOWN,,3750.36,257.6,1,no delta parsed,2026-10-12 01:20:20
+fusion_attn,attention,UNKNOWN,,36.21,242.3,1,no delta parsed,2026-10-12 01:24:38

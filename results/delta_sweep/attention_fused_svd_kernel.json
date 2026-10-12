@@ -4,8 +4,8 @@
   "status": "UNKNOWN",
   "delta": null,
   "student_ppl": 3750.36,
-  "duration_sec": 240.4,
+  "duration_sec": 257.6,
   "retries_used": 1,
   "error": "no delta parsed",
-  "timestamp": "2026-10-11 23:11:34"
+  "timestamp": "2026-10-12 01:20:20"
 }
