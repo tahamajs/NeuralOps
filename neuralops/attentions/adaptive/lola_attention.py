@@ -5,22 +5,6 @@ Combines factorized low-rank projections with selective multi-system cached
 retrieval, trainable LoRA residual adapters, frozen SVD base weights, GQA,
 RoPE, and causal decoding.
 
-Architecture:
-    * Factorized low-rank Q/K/V/O projections (SVD-initialized)
-    * LoRA residual adapters on frozen base weights
-    * Multi-system streaming cache (recent / sparse / low-rank subspace)
-    * Cache used only during autoregressive decode (N_q == 1)
-
-Fixes applied:
-    [LOLA-FIX-01]  Cache dimension safety: only enabled for N_q == 1 decode
-    [LOLA-FIX-02]  Ring-buffer cache (no per-step cat+clone)
-    [LOLA-FIX-03]  SVD on CPU (cuSolver unreliable on some GPU shapes)
-    [LOLA-FIX-04]  Causal mask preserved with cache
-    [LOLA-FIX-05]  dtype-safe: FP32 only for softmax
-    [LOLA-FIX-06]  Safe softmax via max-subtraction
-    [LOLA-FIX-07]  Robust cache read from past_key_value (optional)
-    [LOLA-FIX-08]  Idempotency + recursion guards in injector
-    [LOLA-FIX-09]  __all__ declaration
 """
 
 from __future__ import annotations

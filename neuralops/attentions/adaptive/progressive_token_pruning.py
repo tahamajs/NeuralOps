@@ -4,7 +4,6 @@ Progressive Token Pruning (PTP) — Production-Hardened v2.0.
 Learnable Progressive Token Pruning module with guaranteed [CLS]/BOS retention,
 causal-safe decoder pruning, SDPA fast-path, and full multi-architecture support.
 
-⚠️  WHAT PTP ACTUALLY DOES  ⚠️
 
 PTP is a **compute optimization**, not a parameter compressor. It prunes
 tokens at *inference time* by keeping the top-k highest-scoring tokens per
@@ -19,31 +18,6 @@ Consequences:
   - FLOPs during attention ARE reduced (≈ keep_ratio × L²).
   - Long-context inference is significantly faster.
 
-For parameter compression, use SVD/MLA/quantization instead (or apply them
-*after* PTP).
-
-═══════════════════════════════════════════════════════════════════════════
-FIX SUMMARY (v2.0):
-═══════════════════════════════════════════════════════════════════════════
-
-🔴 CRITICAL FIXES
-  FIX-01  RoPE crash at step 0 — cos/sin always sliced to [past_len : past_len + L]
-  FIX-02  Tuple KV-cache return — return (out, attn_weights, updated_cache)
-  FIX-03  Causal pruning for decoders — keep first + last (k-1) tokens
-           (replaces the previous "k_tokens = L" which disabled pruning entirely)
-
-🟡 PERFORMANCE FIXES
-  FIX-04  SDPA fast-path when k_tokens == L (no pruning → use native SDPA)
-  FIX-05  masked_fill instead of torch.where for [CLS] force-keep
-  FIX-06  Removed redundant score masking (single assignment)
-
-🟢 ARCHITECTURAL FIXES
-  FIX-07  Per-layer scorer by default (shared scorer requires explicit opt-in
-           with `share_scorer=True` and a clear warning about gradient interference)
-  FIX-08  Cache handling for both tuple and DynamicCache
-  FIX-09  Cleaner injection helper (find_layer_list unified)
-
-═══════════════════════════════════════════════════════════════════════════
 """
 
 from __future__ import annotations
