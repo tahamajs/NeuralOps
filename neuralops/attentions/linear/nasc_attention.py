@@ -646,25 +646,25 @@ class NASCAttention(BaseAttention):
         Qf = torch.matmul(Q.float(), self.rff_proj.float())
         Kf = torch.matmul(K.float(), self.rff_proj.float())
         norm = 1.0 / math.sqrt(self.rff_features)
-        phi_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
-        phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
+        phi_Q = (F.elu(Qf) + 1.0) * norm
+        phi_K = (F.elu(Kf) + 1.0) * norm
 
         phi_K = phi_K.masked_fill(pad, 0.0)
         V_masked = V.float().masked_fill(pad, 0.0)
 
         if is_causal:
-            # Causal linear recurrence via cumulative prefix sums
-            KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, 2F, d]
+            # Causal linear recurrence via cumulative prefix sums with strictly positive denominator
+            KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, F, d]
             KV_cumsum = torch.cumsum(KV, dim=2)
             num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)  # [B, H, L, d]
             Z = torch.cumsum(phi_K, dim=2)
-            den = (phi_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
+            den = (phi_Q * Z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
             return (num / den).to(Q.dtype)
         else:
             KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()) + 1e-5
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-4)
             return (num / den).to(Q.dtype)
 
     def forward(
