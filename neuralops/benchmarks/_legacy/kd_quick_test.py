@@ -47,7 +47,10 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "neuralops")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from neuralops.eval_all_models_datasets import apply_module_to_model
+try:
+    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+except ImportError:
+    from neuralops.eval_all_models_datasets import apply_module_to_model
 from neuralops.core.registry import (
     ATTENTION_REGISTRY,
     COMPRESSOR_REGISTRY,
@@ -858,8 +861,8 @@ class HiddenProjectionAdapter(nn.Module):
 
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
     # تغییر به CrossEntropy با تارگت‌های Soft (بسیار سریع‌تر و کم‌مصرف‌تر از kl_div)
-    s_logits = student_logits.view(-1, student_logits.size(-1)) / temperature
-    t_logits = teacher_logits.contiguous().view(-1, teacher_logits.size(-1)) / temperature
+    s_logits = student_logits.reshape(-1, student_logits.size(-1)) / temperature
+    t_logits = teacher_logits.reshape(-1, teacher_logits.size(-1)) / temperature
     
     t_probs = F.softmax(t_logits, dim=-1)
     loss = F.cross_entropy(s_logits, t_probs)
@@ -1335,7 +1338,13 @@ def run_kd_method(
                 f"Injected module slightly regularizes attention. Continuing..."
             )
 
-    n_trainable = set_train_scope(student, args.train_scope)
+    effective_train_scope = args.train_scope
+    # Adaptive scope: if pre-KD PPL is catastrophically high (SVD over-compressed),
+    # escalate from 'module' to 'attention' so the full attention block can be tuned.
+    if effective_train_scope == "module" and pre_ppl > 500.0:
+        effective_train_scope = "attention"
+        LOG.info(f"[ADAPTIVE] pre_ppl={pre_ppl:.2f} > 500, escalating train_scope: module → attention")
+    n_trainable = set_train_scope(student, effective_train_scope)
     if n_trainable == 0:
         for name, p in student.named_parameters():
             if any(k in name.lower() for k in ["attn", "mamba", "ssm"]): 
@@ -1358,17 +1367,23 @@ def run_kd_method(
             else: 
                 other_params.append(p)
 
+    # Adaptive LR: if pre-KD PPL is catastrophically high, reduce LR to avoid divergence
+    effective_lr = args.learning_rate
+    if pre_ppl > 500.0:
+        effective_lr = min(args.learning_rate, 3e-5)
+        LOG.info(f"[ADAPTIVE] pre_ppl={pre_ppl:.2f} > 500, reducing LR: {args.learning_rate:.2e} → {effective_lr:.2e}")
+
     adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
     param_groups = []
-    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": args.learning_rate})
-    if other_params: param_groups.append({"params": other_params, "lr": args.learning_rate})
-    if adapter_params: param_groups.append({"params": adapter_params, "lr": args.learning_rate})
+    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": effective_lr})
+    if other_params: param_groups.append({"params": other_params, "lr": effective_lr})
+    if adapter_params: param_groups.append({"params": adapter_params, "lr": effective_lr})
 
     if not param_groups:
         for p in student.parameters():
             p.requires_grad = True
             p.data = p.data.float()
-        param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": args.learning_rate}]
+        param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": effective_lr}]
 
     optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01,fused=True)
     all_trainable_params = [p for group in param_groups for p in group["params"]]
@@ -1527,13 +1542,23 @@ def run_kd_method(
         s2_lr = getattr(args, "self_train_lr", None) or args.learning_rate
         LOG.info(f"[{method_name}] Starting Stage 2 (self-training, CE-only) for {self_train_steps} steps (LR={s2_lr:.2e})...")
 
+        # Ensure train mode and at least some trainable params for Stage 2
+        student.train()
         stage2_params = [p for p in student.parameters() if p.requires_grad]
+        if not stage2_params:
+            LOG.warning(f"[{method_name}] Stage 2: no trainable params found – re-enabling attention/lora params.")
+            for name, p in student.named_parameters():
+                if any(k in name.lower() for k in ["attn", "lora", "adapter", "mamba", "ssm"]):
+                    p.requires_grad = True
+            stage2_params = [p for p in student.parameters() if p.requires_grad]
         stage2_optimizer = torch.optim.AdamW(
             stage2_params,
             lr=s2_lr,
             weight_decay=0.01,
             fused=True
         )
+        # Use a fresh scaler for Stage 2 to avoid GradScaler state corruption from Stage 1
+        s2_scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
         stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             stage2_optimizer,
             T_max=self_train_steps,
@@ -1564,11 +1589,14 @@ def run_kd_method(
                 loss_scaled = loss_ce / args.grad_accum_steps
 
             if use_scaler:
-                scaler.scale(loss_scaled).backward()
-                scaler.unscale_(stage2_optimizer)
-                torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
-                scaler.step(stage2_optimizer)
-                scaler.update()
+                if loss_scaled.requires_grad:
+                    s2_scaler.scale(loss_scaled).backward()
+                    s2_scaler.unscale_(stage2_optimizer)
+                    torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                    s2_scaler.step(stage2_optimizer)
+                    s2_scaler.update()
+                else:
+                    LOG.warning(f"[{method_name}] Stage 2 step {s2_step}: loss has no grad_fn, skipping backward.")
             else:
                 loss_scaled.backward()
                 torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
