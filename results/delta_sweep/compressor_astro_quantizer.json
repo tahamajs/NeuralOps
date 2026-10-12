@@ -1,10 +1,12 @@
-﻿{
-    "module":  "astro_quantizer",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  38,
-    "duration_sec":  188.4,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 13:27:06"
+{
+  "module": "astro_quantizer",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1.78,
+  "student_ppl": 31.45,
+  "pre_ppl": 38.0,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.324928"
 }

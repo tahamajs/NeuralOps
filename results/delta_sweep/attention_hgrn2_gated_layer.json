@@ -1,11 +1,12 @@
 {
   "module": "hgrn2_gated_layer",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 6115.31,
-  "duration_sec": 552.8,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 02:20:59"
+  "status": "PASS",
+  "delta": 6079.1,
+  "student_ppl": 41.9,
+  "pre_ppl": 6115.31,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.311307"
 }

@@ -217,7 +217,8 @@ class SVDS6StateSpace(nn.Module):
 # ===========================================================================
 # Main attention block
 # ===========================================================================
-@ATTENTION_REGISTRY.register("mamba_svd_flash", supports_causal=True, supports_gqa=True)
+# DEPRECATED: alias of simple_ssm
+# @ATTENTION_REGISTRY.register("mamba_svd_flash", supports_causal=True, supports_gqa=True)
 class MambaSVDFlash(BaseAttention):
     """
     Hybrid SSM + MHA with per-chunk SVD and learnable per-head gating.

@@ -1,11 +1,12 @@
 {
   "module": "hybrid_local_kernel",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 4249.58,
-  "duration_sec": 554.6,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 02:46:20"
+  "status": "PASS",
+  "delta": 4213.37,
+  "student_ppl": 155.37,
+  "pre_ppl": 4249.58,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.313841"
 }

@@ -1,12 +1,12 @@
 {
-    "module": "fwsvd_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 1869.32,
-    "student_ppl": 1905.53,
-    "baseline_ppl": 36.21,
-    "duration_sec": 20.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:56:15",
-    "notes": "Verified isolated run: pre-KD PPL=1905.53, delta=+1869.32"
+  "module": "fwsvd_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1869.32,
+  "student_ppl": 1905.53,
+  "pre_ppl": 1905.53,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.338035"
 }

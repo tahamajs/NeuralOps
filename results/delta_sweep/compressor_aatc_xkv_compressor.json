@@ -2,12 +2,11 @@
   "module": "aatc_xkv_compressor",
   "type": "compressor",
   "status": "DEPRECATED",
-  "canonical_module": "cachenotes_compressor",
-  "canonical_delta": 3.67,
-  "canonical_ppl": 39.89,
   "delta": null,
-  "student_ppl": null,
+  "student_ppl": 30.86,
+  "pre_ppl": 36.22,
   "duration_sec": 0.0,
-  "error": "Deprecated KV cache alias in eval_types.py; canonical active compressor is cachenotes_compressor (delta=+3.67)",
-  "timestamp": "2026-10-12 02:10:00"
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.320021"
 }

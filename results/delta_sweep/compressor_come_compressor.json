@@ -1,10 +1,12 @@
-﻿{
-    "module":  "come_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  117.9,
-    "duration_sec":  250,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 13:38:11"
+{
+  "module": "come_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 81.68,
+  "student_ppl": 39.58,
+  "pre_ppl": 117.9,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.326954"
 }

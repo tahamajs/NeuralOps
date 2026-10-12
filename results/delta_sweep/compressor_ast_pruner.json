@@ -1,10 +1,12 @@
-﻿{
-    "module":  "ast_pruner",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  8885.05,
-    "duration_sec":  218.2,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 13:23:55"
+{
+  "module": "ast_pruner",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 8848.83,
+  "student_ppl": 130.1,
+  "pre_ppl": 8885.05,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.324331"
 }

@@ -1,11 +1,12 @@
 {
   "module": "hla_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 3746.5,
-  "duration_sec": 122.5,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 02:39:41"
+  "status": "PASS",
+  "delta": 3710.29,
+  "student_ppl": 5102.36,
+  "pre_ppl": 3746.5,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.312503"
 }

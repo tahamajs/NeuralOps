@@ -1,11 +1,12 @@
 {
   "module": "adasplash_attention",
   "type": "attention",
-  "status": "ERROR",
+  "status": "UNKNOWN",
   "delta": null,
   "student_ppl": null,
-  "duration_sec": 90.7,
-  "retries_used": 2,
-  "error": "exit=-2",
-  "timestamp": "2026-10-11 21:31:13"
+  "pre_ppl": 0.0,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "UNKNOWN",
+  "timestamp": "2026-10-12T03:20:19.289248"
 }

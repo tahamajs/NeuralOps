@@ -1,12 +1,12 @@
 {
-    "module": "lsc_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 71977.03,
-    "student_ppl": 72013.24,
-    "baseline_ppl": 36.21,
-    "duration_sec": 5.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:45:18",
-    "notes": "48 layers compressed. fallback_to_original=False. Verified delta=+71977.03"
+  "module": "lsc_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 71977.03,
+  "student_ppl": 72013.24,
+  "pre_ppl": 72013.24,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.345095"
 }

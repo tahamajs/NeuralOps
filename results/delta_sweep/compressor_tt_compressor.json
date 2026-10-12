@@ -1,12 +1,12 @@
 {
-    "module": "tt_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 5031.57,
-    "student_ppl": 5067.78,
-    "baseline_ppl": 36.21,
-    "duration_sec": 24.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:53:38",
-    "notes": "Verified isolated run: 48 TT layers compressed, pre-KD PPL=5067.78, delta=+5031.57"
+  "module": "tt_compressor",
+  "type": "compressor",
+  "status": "DEPRECATED",
+  "delta": null,
+  "student_ppl": 5067.78,
+  "pre_ppl": 5067.78,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.362280"
 }

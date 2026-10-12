@@ -1,12 +1,12 @@
 {
-    "module": "faq_quantizer",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 198212.60,
-    "student_ppl": 198248.81,
-    "baseline_ppl": 36.21,
-    "duration_sec": 28.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:55:23",
-    "notes": "Verified isolated run: 3-bit quantization, pre-KD PPL=198248.81, delta=+198212.60"
+  "module": "faq_quantizer",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 198212.6,
+  "student_ppl": 198248.81,
+  "pre_ppl": 198248.81,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.336009"
 }

@@ -1,10 +1,12 @@
-﻿{
-    "module":  "erc_svd",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  3458.32,
-    "duration_sec":  232.8,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 14:26:26"
+{
+  "module": "erc_svd",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 3422.1,
+  "student_ppl": 1801.75,
+  "pre_ppl": 3458.32,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.335333"
 }

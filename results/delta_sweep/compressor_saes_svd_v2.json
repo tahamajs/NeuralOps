@@ -1,12 +1,12 @@
 {
-    "module": "saes_svd_v2",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 9836.54,
-    "student_ppl": 9872.75,
-    "baseline_ppl": 36.21,
-    "duration_sec": 23.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:57:12",
-    "notes": "Verified isolated run: pre-KD PPL=9872.75, delta=+9836.54"
+  "module": "saes_svd_v2",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 9836.54,
+  "student_ppl": 9872.75,
+  "pre_ppl": 9872.75,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.352230"
 }

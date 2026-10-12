@@ -1,10 +1,12 @@
-﻿{
-    "module":  "proxsparse",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  386.64,
-    "duration_sec":  183.1,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 16:03:32"
+{
+  "module": "proxsparse",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 350.42,
+  "student_ppl": 36.27,
+  "pre_ppl": 386.64,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.349107"
 }

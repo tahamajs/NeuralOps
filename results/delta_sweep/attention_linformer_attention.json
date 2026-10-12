@@ -1,0 +1,11 @@
+{
+  "module": "linformer_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 2656.11,
+  "duration_sec": 28.2,
+  "retries_used": 1,
+  "error": "exit=1",
+  "timestamp": "2026-10-12 03:22:09"
+}

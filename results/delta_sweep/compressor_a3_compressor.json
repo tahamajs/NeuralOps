@@ -1,10 +1,12 @@
-﻿{
-    "module":  "a3_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  382.11,
-    "duration_sec":  212.4,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 12:56:39"
+{
+  "module": "a3_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 345.89,
+  "student_ppl": 38.64,
+  "pre_ppl": 382.11,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.319123"
 }

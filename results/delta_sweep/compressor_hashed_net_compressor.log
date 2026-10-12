@@ -1,139 +1,69 @@
-2026-10-11 14:52:26,629 [INFO] MambaKD: ======================================================================
-2026-10-11 14:52:26,632 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 14:52:26,633 [INFO] MambaKD: ======================================================================
-2026-10-11 14:52:26,634 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 14:52:26,635 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 14:52:26,636 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 14:52:27,097 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 14:52:27,101 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 14:52:27,105 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 14:52:30,947 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 14:52:30,949 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 14:52:31,144 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 14:52:31,146 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 14:52:31,146 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:52:31,719 [INFO] MambaKD: 
+2026-10-12 01:58:04,287 [INFO] MambaKD: ======================================================================
+2026-10-12 01:58:04,287 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 01:58:04,287 [INFO] MambaKD: ======================================================================
+2026-10-12 01:58:04,287 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 01:58:04,287 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-12 01:58:04,287 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 01:58:04,709 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:58:04,948 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 01:58:05,192 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:58:05,431 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 01:58:05,669 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:58:05,906 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:58:06,084 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 01:58:06,314 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:58:06,408 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 01:58:06,655 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:58:07,367 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:58:07,786 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 01:58:08,019 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 01:58:08,645 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 01:58:08,909 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:58:09,141 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:58:09,379 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 01:58:09,616 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:58:10,764 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 01:58:10,764 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 01:58:11,042 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:58:11,284 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 28959.97it/s]
+2026-10-12 01:58:11,482 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+2026-10-12 01:58:11,487 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 01:58:11,487 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:58:13,166 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:52:31,721 [INFO] MambaKD: PROCESSING MODULE 1/1: hashed_net_compressor
-2026-10-11 14:52:31,721 [INFO] MambaKD: ======================================================================
-2026-10-11 14:52:31,721 [INFO] MambaKD: 
+2026-10-12 01:58:13,166 [INFO] MambaKD: PROCESSING MODULE 1/1: hashed_net_compressor
+2026-10-12 01:58:13,166 [INFO] MambaKD: ======================================================================
+2026-10-12 01:58:13,166 [INFO] MambaKD: 
 # Running method C for hashed_net_compressor
-2026-10-11 14:52:32,055 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 14:52:32,058 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 14:52:33,487 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.0.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:33,690 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.0.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:33,889 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.0.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:34,087 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.0.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:34,278 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.1.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:34,455 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.1.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:34,653 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.1.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:34,848 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.1.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,036 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.2.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,211 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.2.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,409 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.2.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,600 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.2.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,786 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.3.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:35,962 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.3.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:36,156 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.3.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:36,349 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.3.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:36,536 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.4.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:36,722 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.4.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:36,917 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.4.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:37,111 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.4.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:37,301 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.5.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:37,483 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.5.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:37,676 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.5.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:37,875 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.5.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,062 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.6.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,241 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.6.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,438 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.6.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,635 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.6.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,820 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.7.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:38,998 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.7.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:39,194 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.7.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:39,389 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.7.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:39,576 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.8.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:39,753 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.8.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:39,951 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.8.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:40,145 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.8.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:40,331 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.9.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:40,505 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.9.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:40,699 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.9.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:40,892 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.9.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:41,082 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.10.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:41,256 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.10.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:41,453 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.10.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:41,651 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.10.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:41,836 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.11.attn.c_attn > max_error=0.9600; keeping original.
-2026-10-11 14:52:42,013 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=0.9999 on transformer.h.11.attn.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:42,210 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.11.mlp.c_fc > max_error=0.9600; keeping original.
-2026-10-11 14:52:42,409 [WARNING] neuralops.compression_engine.experimental.hashed_net_compressor: HashedNet: err=1.0000 on transformer.h.11.mlp.c_proj > max_error=0.9600; keeping original.
-2026-10-11 14:52:42,484 [INFO] neuralops.compression_engine.experimental.hashed_net_compressor: Compressor hashed_net finished: 0 compressed, 48 fallback, avg_err=0.0000, max_err_threshold=0.9600
-2026-10-11 14:52:42,544 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
-2026-10-11 14:52:42,547 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
-2026-10-11 14:52:47,170 [INFO] MambaKD: Pre-KD PPL for Module hashed_net_compressor, Method C: 36.22
-2026-10-11 14:52:47,170 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:52:47,171 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
-2026-10-11 14:52:47,171 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 14:52:47,171 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
-2026-10-11 14:52:47,173 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 14:52:47,468 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.6488...
-2026-10-11 14:52:47,709 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.6488 | LR: 1.50e-05
-2026-10-11 14:52:47,796 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.2998...
-2026-10-11 14:52:47,921 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.2998 | LR: 3.00e-05
-2026-10-11 14:52:48,036 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.2357...
-2026-10-11 14:52:48,163 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.2357 | LR: 4.50e-05
-2026-10-11 14:52:48,280 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.2218...
-2026-10-11 14:52:48,409 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.2218 | LR: 6.00e-05
-2026-10-11 14:52:48,523 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8698...
-2026-10-11 14:52:48,641 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8698 | LR: 7.50e-05
-2026-10-11 14:52:48,758 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.3424...
-2026-10-11 14:53:00,339 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.3424 | LR: 7.50e-04
-2026-10-11 14:53:00,460 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.6666...
-2026-10-11 14:53:12,484 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.6666 | LR: 1.50e-03
-2026-10-11 14:53:17,245 [INFO] MambaKD: [C] Step 100 Eval PPL: 44.00
-2026-10-11 14:53:17,367 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.9658...
-2026-10-11 14:53:29,445 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.9658 | LR: 1.28e-03
-2026-10-11 14:53:29,550 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.4855...
-2026-10-11 14:53:41,574 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.4855 | LR: 7.50e-04
-2026-10-11 14:53:46,311 [INFO] MambaKD: [C] Step 200 Eval PPL: 41.37
-2026-10-11 14:53:46,432 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5934...
-2026-10-11 14:53:58,511 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5934 | LR: 2.20e-04
-2026-10-11 14:53:58,628 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6708...
-2026-10-11 14:54:10,580 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6708 | LR: 1.50e-04
-2026-10-11 14:54:15,316 [INFO] MambaKD: [C] Step 300 Eval PPL: 36.99
-2026-10-11 14:54:15,318 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 36.99
-2026-10-11 14:54:15,318 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 14:54:15,500 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7470 | LR: 1.50e-05
-2026-10-11 14:54:15,681 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9168 | LR: 3.00e-05
-2026-10-11 14:54:15,872 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.8665 | LR: 4.50e-05
-2026-10-11 14:54:16,048 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0286 | LR: 6.00e-05
-2026-10-11 14:54:16,237 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0346 | LR: 7.50e-05
-2026-10-11 14:54:24,172 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5159 | LR: 2.84e-04
-2026-10-11 14:54:33,325 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0155 | LR: 1.96e-04
-2026-10-11 14:54:38,389 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.64
-2026-10-11 14:54:47,214 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3183 | LR: 8.20e-05
-2026-10-11 14:54:56,084 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.2748 | LR: 7.44e-06
-2026-10-11 14:55:00,821 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.68
-2026-10-11 14:55:05,547 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.68
-2026-10-11 14:55:05,550 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
-2026-10-11 14:55:05,550 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
-  Stage 1 (KD):    36.99  (kd_gain=-0.77)
-  Stage 2 (self):  30.68  (self_gain=+6.31)
-  Total:                  (total_gain=+5.54)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 36.99 > 36.22)
-  Beat teacher after self? YES
-  Recovery: NaN
-  Time: 138.3s (Stage 1: 88.0s, Stage 2: 50.2s)
-2026-10-11 14:55:21,506 [INFO] MambaKD: [QUALITY] distinct_2=0.90, repetition_3=0.02, train_ppl=21.72, test_ppl=30.68, overfit_gap=8.96, latency=1831.1ms
-2026-10-11 14:55:21,521 [INFO] MambaKD: Saved all run details to results\kd_runs\hashed_net_compressor\20261011_145226_bs4_seq256_lr3e-04_C
+2026-10-12 01:58:14,113 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 01:58:14,116 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 01:58:19,165 [INFO] neuralops.compression_engine.experimental.hashed_net_compressor: Compressor hashed_net finished: 48 compressed, 0 fallback, avg_err=1.0000, max_err_threshold=1.0000
+2026-10-12 01:58:19,212 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 123.3448
+2026-10-12 01:58:19,212 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 123.3448
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-10-12 01:58:20,591 [INFO] MambaKD: Pre-KD PPL for Module hashed_net_compressor, Method C: 10820.19
+2026-10-12 01:58:20,592 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:58:20,592 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 10820.19 (same protocol)
+2026-10-12 01:58:20,592 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +10783.98 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 01:58:20,592 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+2026-10-12 01:58:22,604 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 10820.19
+2026-10-12 01:58:22,604 [INFO] MambaKD: [C] COMPLETE | Pre: 10820.19 -> Post: 10820.19 | Recovery: 0.00% | VRAM: 1033.31 MB | Time: 0.0s
+2026-10-12 01:58:30,113 [INFO] MambaKD: [QUALITY] distinct_2=0.80, repetition_3=0.02, train_ppl=16373.02, test_ppl=10820.19, overfit_gap=-5552.83, latency=765.8ms
+2026-10-12 01:58:30,118 [INFO] MambaKD: Saved all run details to results/kd_runs/hashed_net_compressor/20261012_015804_bs4_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
+| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    36.22 |    36.99 |    30.68 |    -0.77 |    +6.31 |    +5.54 |
+| C       | 10820.19 | 10820.19 |     0.0% |      0.0 |   1033.3 |      YES |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 14:55:27,417 [INFO] MambaKD: 
+2026-10-12 01:58:34,521 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:55:27,419 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 14:55:27,419 [INFO] MambaKD: ======================================================================
+2026-10-12 01:58:34,521 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 01:58:34,521 [INFO] MambaKD: ======================================================================

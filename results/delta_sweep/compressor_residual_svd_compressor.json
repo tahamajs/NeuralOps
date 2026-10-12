@@ -1,12 +1,12 @@
 {
-    "module": "residual_svd_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 5994.05,
-    "student_ppl": 6030.26,
-    "baseline_ppl": 36.21,
-    "duration_sec": 24.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:52:34",
-    "notes": "Verified isolated run: pre-KD PPL=6030.26, delta=+5994.05"
+  "module": "residual_svd_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 5994.05,
+  "student_ppl": 6030.26,
+  "pre_ppl": 6030.26,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.349695"
 }

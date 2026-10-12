@@ -859,7 +859,7 @@ class HiddenProjectionAdapter(nn.Module):
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
     # تغییر به CrossEntropy با تارگت‌های Soft (بسیار سریع‌تر و کم‌مصرف‌تر از kl_div)
     s_logits = student_logits.view(-1, student_logits.size(-1)) / temperature
-    t_logits = teacher_logits.view(-1, teacher_logits.size(-1)) / temperature
+    t_logits = teacher_logits.contiguous().view(-1, teacher_logits.size(-1)) / temperature
     
     t_probs = F.softmax(t_logits, dim=-1)
     loss = F.cross_entropy(s_logits, t_probs)

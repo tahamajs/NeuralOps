@@ -1,11 +1,12 @@
 {
   "module": "eat_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 7842.68,
-  "duration_sec": 154.0,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 22:50:25"
+  "status": "PASS",
+  "delta": 7806.47,
+  "student_ppl": 7826.68,
+  "pre_ppl": 7842.68,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.300430"
 }

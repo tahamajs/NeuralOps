@@ -1,11 +1,12 @@
 {
   "module": "expert_choice_moe",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 36.24,
-  "duration_sec": 227.6,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 22:53:00"
+  "status": "PASS",
+  "delta": 7.29,
+  "student_ppl": 28.95,
+  "pre_ppl": 36.24,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.301088"
 }

@@ -1,114 +1,68 @@
-2026-10-11 14:42:13,477 [INFO] MambaKD: ======================================================================
-2026-10-11 14:42:13,480 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 14:42:13,480 [INFO] MambaKD: ======================================================================
-2026-10-11 14:42:13,481 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 14:42:13,482 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 14:42:13,482 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 14:42:13,943 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 14:42:13,947 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 14:42:13,950 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 14:42:17,741 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 14:42:17,744 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 14:42:17,964 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 14:42:17,966 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 14:42:17,967 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:42:18,567 [INFO] MambaKD: 
+2026-10-12 01:56:00,549 [INFO] MambaKD: ======================================================================
+2026-10-12 01:56:00,549 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 01:56:00,549 [INFO] MambaKD: ======================================================================
+2026-10-12 01:56:00,549 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 01:56:00,549 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-12 01:56:00,549 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 01:56:01,067 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:56:01,292 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 01:56:01,517 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:56:01,750 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 01:56:02,209 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:56:02,437 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:56:02,582 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 01:56:02,819 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:56:02,959 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 01:56:03,204 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:56:03,863 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:56:04,228 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 01:56:04,446 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 01:56:04,982 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 01:56:05,210 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:56:05,432 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:56:05,669 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 01:56:05,902 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:56:06,864 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 01:56:06,865 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 01:56:07,084 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:56:07,306 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 36958.62it/s]
+2026-10-12 01:56:07,404 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+2026-10-12 01:56:07,404 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 01:56:07,404 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:56:07,539 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:42:18,569 [INFO] MambaKD: PROCESSING MODULE 1/1: fwsvd_compressor
-2026-10-11 14:42:18,570 [INFO] MambaKD: ======================================================================
-2026-10-11 14:42:18,570 [INFO] MambaKD: 
+2026-10-12 01:56:07,539 [INFO] MambaKD: PROCESSING MODULE 1/1: fwsvd_compressor
+2026-10-12 01:56:07,539 [INFO] MambaKD: ======================================================================
+2026-10-12 01:56:07,539 [INFO] MambaKD: 
 # Running method C for fwsvd_compressor
-2026-10-11 14:42:18,899 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 14:42:18,902 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 14:42:20,236 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8717 on transformer.h.0.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,312 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.7884 on transformer.h.0.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,383 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8932 on transformer.h.1.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,445 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.7526 on transformer.h.1.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,504 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9077 on transformer.h.2.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,562 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8780 on transformer.h.2.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,623 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9053 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,680 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8893 on transformer.h.3.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,739 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8993 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,795 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9153 on transformer.h.4.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,855 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9186 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,912 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8997 on transformer.h.5.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:20,974 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9242 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,031 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8774 on transformer.h.6.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,091 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9269 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,150 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8845 on transformer.h.7.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,210 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9368 on transformer.h.8.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,265 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.8868 on transformer.h.8.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,323 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9483 on transformer.h.9.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,381 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9164 on transformer.h.9.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,441 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9447 on transformer.h.10.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,500 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9101 on transformer.h.10.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,559 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.9436 on transformer.h.11.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,616 [WARNING] neuralops.compression_engine.svd.fwsvd_compressor: FWSVD reconstruction error 0.7837 on transformer.h.11.attn.c_proj exceeded threshold 0.5000. Skipping compression (fallback).
-2026-10-11 14:42:21,686 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
-2026-10-11 14:42:21,687 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
-2026-10-11 14:42:26,454 [INFO] MambaKD: Pre-KD PPL for Module fwsvd_compressor, Method C: 36.22
-2026-10-11 14:42:26,456 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 14:42:26,456 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
-2026-10-11 14:42:26,457 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 14:42:26,457 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
-2026-10-11 14:42:26,458 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 14:42:26,741 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.6327...
-2026-10-11 14:42:26,955 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.6327 | LR: 1.50e-05
-2026-10-11 14:42:27,074 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.7660...
-2026-10-11 14:42:27,210 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.7660 | LR: 3.00e-05
-2026-10-11 14:42:27,323 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.9735...
-2026-10-11 14:42:27,429 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.9735 | LR: 4.50e-05
-2026-10-11 14:42:27,532 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.1947...
-2026-10-11 14:42:27,659 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.1947 | LR: 6.00e-05
-2026-10-11 14:42:27,762 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.7904...
-2026-10-11 14:42:27,887 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.7904 | LR: 7.50e-05
-2026-10-11 14:42:28,005 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8415...
-2026-10-11 14:42:39,074 [INFO] MambaKD: [C] Step 50/300 | Loss: 1.8415 | LR: 7.50e-04
-2026-10-11 14:42:39,198 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3365...
-2026-10-11 14:42:50,985 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3365 | LR: 1.50e-03
-2026-10-11 14:42:55,744 [INFO] MambaKD: [C] Step 100 Eval PPL: 39.92
-2026-10-11 14:42:55,853 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5003...
-2026-10-11 14:43:07,778 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5003 | LR: 1.28e-03
-2026-10-11 14:43:07,907 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.3857...
-2026-10-11 14:43:19,773 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.3857 | LR: 7.50e-04
-2026-10-11 14:43:24,771 [INFO] MambaKD: [C] Step 200 Eval PPL: 41.31
-2026-10-11 14:43:24,898 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4143...
-2026-10-11 14:43:36,778 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4143 | LR: 2.20e-04
-2026-10-11 14:43:36,873 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6349...
-2026-10-11 14:43:49,355 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6349 | LR: 1.50e-04
-2026-10-11 14:43:54,679 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.48
-2026-10-11 14:43:54,679 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.48
-2026-10-11 14:43:54,680 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 14:43:54,907 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7766 | LR: 1.50e-05
-2026-10-11 14:43:55,150 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9245 | LR: 3.00e-05
-2026-10-11 14:43:55,335 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9187 | LR: 4.50e-05
-2026-10-11 14:43:55,590 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0413 | LR: 6.00e-05
-2026-10-11 14:43:55,915 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0740 | LR: 7.50e-05
-2026-10-11 14:44:03,768 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5303 | LR: 2.84e-04
-2026-10-11 14:44:13,048 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.9942 | LR: 1.96e-04
-2026-10-11 14:44:17,788 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.76
-2026-10-11 14:44:26,854 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3261 | LR: 8.20e-05
-2026-10-11 14:44:35,879 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3455 | LR: 7.44e-06
-2026-10-11 14:44:40,752 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.89
-2026-10-11 14:44:45,516 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.89
-2026-10-11 14:44:45,519 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
-2026-10-11 14:44:45,519 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
-  Stage 1 (KD):    37.48  (kd_gain=-1.26)
-  Stage 2 (self):  30.89  (self_gain=+6.59)
-  Total:                  (total_gain=+5.33)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 37.48 > 36.22)
-  Beat teacher after self? YES
-  Recovery: NaN
-  Time: 139.0s (Stage 1: 88.1s, Stage 2: 50.8s)
-2026-10-11 14:45:02,549 [INFO] MambaKD: [QUALITY] distinct_2=0.91, repetition_3=0.02, train_ppl=21.28, test_ppl=30.89, overfit_gap=9.61, latency=1837.8ms
-2026-10-11 14:45:02,561 [INFO] MambaKD: Saved all run details to results\kd_runs\fwsvd_compressor\20261011_144213_bs4_seq256_lr3e-04_C
+2026-10-12 01:56:08,450 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 01:56:08,451 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 01:56:11,146 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 79.5683
+2026-10-12 01:56:11,147 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 79.5683
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-10-12 01:56:12,609 [INFO] MambaKD: Pre-KD PPL for Module fwsvd_compressor, Method C: 1905.53
+2026-10-12 01:56:12,609 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:56:12,609 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 1905.53 (same protocol)
+2026-10-12 01:56:12,609 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +1869.32 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 01:56:12,610 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+2026-10-12 01:56:14,498 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 1905.53
+2026-10-12 01:56:14,498 [INFO] MambaKD: [C] COMPLETE | Pre: 1905.53 -> Post: 1905.53 | Recovery: 0.00% | VRAM: 618.97 MB | Time: 0.0s
+2026-10-12 01:56:19,695 [INFO] MambaKD: [QUALITY] distinct_2=0.84, repetition_3=0.05, train_ppl=1213.84, test_ppl=1905.53, overfit_gap=691.69, latency=726.1ms
+2026-10-12 01:56:19,698 [INFO] MambaKD: Saved all run details to results/kd_runs/fwsvd_compressor/20261012_015600_bs4_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
+| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    36.22 |    37.48 |    30.89 |    -1.26 |    +6.59 |    +5.33 |
+| C       |  1905.53 |  1905.53 |     0.0% |      0.0 |    619.0 |      YES |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 14:45:08,298 [INFO] MambaKD: 
+2026-10-12 01:56:21,693 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 14:45:08,299 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 14:45:08,299 [INFO] MambaKD: ======================================================================
+2026-10-12 01:56:21,693 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 01:56:21,693 [INFO] MambaKD: ======================================================================

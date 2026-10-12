@@ -1,12 +1,12 @@
 {
-    "module": "uniql_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 10717.18,
-    "student_ppl": 10753.39,
-    "baseline_ppl": 36.21,
-    "duration_sec": 12.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:44:05",
-    "notes": "Fixed: Vt scale unsqueeze(0)->unsqueeze(1) bug + remove lossless full-rank escalation. 48 layers compressed. delta=+10717.18"
+  "module": "uniql_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 10717.18,
+  "student_ppl": 10753.39,
+  "pre_ppl": 10753.39,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.362894"
 }

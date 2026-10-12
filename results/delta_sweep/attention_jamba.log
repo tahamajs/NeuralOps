@@ -68,3 +68,39 @@
 2026-10-12 03:10:22,893 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4955...
 2026-10-12 03:10:58,119 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4955 | LR: 2.20e-04
 2026-10-12 03:10:58,506 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.3728...
+2026-10-12 03:11:35,150 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.3728 | LR: 1.50e-04
+2026-10-12 03:11:42,594 [INFO] MambaKD: [C] Step 300 Eval PPL: 33.97
+2026-10-12 03:11:42,594 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 33.97
+2026-10-12 03:11:42,594 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 03:11:43,025 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7057 | LR: 1.50e-05
+2026-10-12 03:11:43,445 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.1359 | LR: 3.00e-05
+2026-10-12 03:11:43,867 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.1024 | LR: 4.50e-05
+2026-10-12 03:11:44,291 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.1666 | LR: 6.00e-05
+2026-10-12 03:11:44,711 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 3.8839 | LR: 7.50e-05
+2026-10-12 03:12:04,124 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.4037 | LR: 2.84e-04
+2026-10-12 03:12:25,993 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.8982 | LR: 1.96e-04
+2026-10-12 03:12:33,271 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 29.32
+2026-10-12 03:12:55,414 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.6985 | LR: 8.20e-05
+2026-10-12 03:13:17,307 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.4719 | LR: 7.44e-06
+2026-10-12 03:13:24,617 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 29.09
+2026-10-12 03:13:32,240 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 29.09
+2026-10-12 03:13:32,242 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
+  Stage 1 (KD):    33.97  (kd_gain=+2.25)
+  Stage 2 (self):  29.09  (self_gain=+4.88)
+  Total:                  (total_gain=+7.13)
+  Teacher baseline: 36.21
+  Aligned with teacher? YES (post_stage1 33.97 <= 36.21)
+  Beat teacher after self? YES
+  Recovery: 100.00%
+  Time: 355.9s (Stage 1: 246.2s, Stage 2: 109.7s)
+2026-10-12 03:13:41,514 [INFO] MambaKD: [QUALITY] distinct_2=0.04, repetition_3=0.95, train_ppl=29.53, test_ppl=29.09, overfit_gap=-0.44, latency=896.0ms
+2026-10-12 03:13:41,520 [INFO] MambaKD: Saved all run details to results/kd_runs/jamba/20261012_030721_bs8_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |    36.22 |    33.97 |    29.09 |    +2.25 |    +4.88 |    +7.13 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-12 03:13:43,748 [INFO] MambaKD: 
+======================================================================
+2026-10-12 03:13:43,748 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 03:13:43,748 [INFO] MambaKD: ======================================================================

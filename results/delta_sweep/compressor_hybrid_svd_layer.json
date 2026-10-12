@@ -1,10 +1,12 @@
-﻿{
-    "module":  "hybrid_svd_layer",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  6809.83,
-    "duration_sec":  225.5,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:02:27"
+{
+  "module": "hybrid_svd_layer",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 6773.61,
+  "student_ppl": 309.25,
+  "pre_ppl": 6809.83,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.340765"
 }
