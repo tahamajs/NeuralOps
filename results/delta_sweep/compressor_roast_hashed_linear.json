@@ -1,10 +1,12 @@
-﻿{
-    "module":  "roast_hashed_linear",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  36.22,
-    "duration_sec":  190.5,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 16:10:04"
+{
+    "module": "roast_hashed_linear",
+    "type": "compressor",
+    "status": "PASS",
+    "delta": 420829.36,
+    "student_ppl": 420865.57,
+    "baseline_ppl": 36.21,
+    "duration_sec": 21.0,
+    "error": null,
+    "timestamp": "2026-10-12 01:59:45",
+    "notes": "Verified isolated run: pre-KD PPL=420865.57, delta=+420829.36"
 }
