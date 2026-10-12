@@ -312,7 +312,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         comp_config: Any | None = None,
         layer_id: int | None = None,
         layer_idx: int | None = None,
-        moe_init_gate: float = 0.0,
+        moe_init_gate: float = 1.0,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
