@@ -23,28 +23,7 @@ length. It works because:
   2. Recent tokens provide local context.
   3. Middle tokens are typically low-information and can be evicted.
 
-═══════════════════════════════════════════════════════════════════════════
-FIX SUMMARY vs DRAFT VERSION
-═══════════════════════════════════════════════════════════════════════════
 
-🔴 CRITICAL
-  FIX-01  Full attention implemented — Q/K/V projections, QK^T, softmax, attn·V.
-  FIX-02  Output has same shape as input (residual connection safe).
-  FIX-03  Pruning is applied to K/V cache, NOT to hidden_states.
-  FIX-04  KV-cache supported (tuple + HF DynamicCache) with position tracking.
-
-🟡 PERFORMANCE
-  FIX-05  SDPA fast-path when no pruning is needed.
-  FIX-06  GQA support via repeat_kv.
-
-🟢 ARCHITECTURE
-  FIX-07  Full multi-architecture `copy_weights` (BERT/RoBERTa/DistilBERT/
-           GPT-2/LLaMA/Qwen/T5/DeBERTa).
-  FIX-08  Absolute position tracking — pruned cache keeps original positions
-           for correct causal masking.
-  FIX-09  RoPE applied at insertion time (positions preserved across pruning).
-
-═══════════════════════════════════════════════════════════════════════════
 """
 
 from __future__ import annotations

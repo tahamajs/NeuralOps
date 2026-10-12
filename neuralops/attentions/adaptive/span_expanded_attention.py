@@ -12,34 +12,7 @@ Amazon's paper. It uses a rolling KV-cache with:
 If you actually need the Amazon Span-Expanded mechanism (retrieval of
 evicted blocks into the context), this module is NOT it.
 
-═══════════════════════════════════════════════════════════════════════════
-CRITICAL FIXES vs PREVIOUS VERSION
-═══════════════════════════════════════════════════════════════════════════
 
-🔴 FIX-01  RoPE Freeze Bug
-    Absolute positions must come from position_ids or a seen_tokens counter,
-    NOT from the physical cache length (which saturates at expansion_span).
-
-🔴 FIX-02  Causality Violation During Prefill
-    During prefill (L > 1), attention is computed on the FULL K/V sequence.
-    Truncation is applied ONLY to the cache that is returned for the next step.
-
-🔴 FIX-03  GQA VRAM Spike
-    Concat + truncate operate on the COMPACT KV (num_kv_heads).
-    repeat_kv is applied only immediately before the QK^T matmul.
-
-🟡 FIX-04  Position Tracking Through Cache
-    Supports three cache conventions:
-      - Custom object with `.seen_tokens` attribute
-      - Tuple `(k, v, positions)` with absolute position tensor
-      - Explicit `position_ids` kwarg
-    Falls back to a warning + best-effort behaviour if none are provided.
-
-🟢 FIX-05  SDPA fast-path correctness
-    is_causal is enabled only during prefill (L > 1). During decode
-    (L == 1), no causal mask is needed.
-
-🟢 FIX-06  head_mask + attention_mask path unified with the manual path.
 """
 
 from __future__ import annotations
