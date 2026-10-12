@@ -728,7 +728,7 @@ def _joint_svd_shared_basis(
 # =========================================================================
 # Compressor
 # =========================================================================
-# @COMPRESSOR_REGISTRY.register("aatc_xkv_compressor")
+@COMPRESSOR_REGISTRY.register("aatc_xkv_compressor")
 class AATC_XKVCompressor(BaseCompressor):
     # AXKV-FIX-01
     is_custom_attention: bool = False
