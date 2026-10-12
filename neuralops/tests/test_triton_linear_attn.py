@@ -103,7 +103,7 @@ def test_linear_attn_correctness(device, dtype, phi, is_causal, batch, num_heads
     out = fwd(q, k, v, is_causal=is_causal, phi=phi)
     ref = reference_linear_attn_pytorch(q, k, v, is_causal=is_causal, phi=phi)
 
-    tol = {torch.float32: 1e-3, torch.float16: 5e-2}[dtype]
+    tol = {torch.float32: 1e-3, torch.float16: 2e-2}[dtype]
     assert out.shape == (batch, num_heads, seq_len, dim)
     assert torch.allclose(out, ref, atol=tol, rtol=tol)
 

@@ -256,10 +256,10 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         k_flat = k.contiguous().view(BH, N, D_k)
         v_flat = v.contiguous().view(BH, N, D_v)
 
-        # Apply modulation if present
-        if cos_weight is not None and sin_weight is not None:
-            # When modulated, pass to PyTorch fallback.
-            # MUST save tensors here so backward() has them regardless of path.
+        # Apply modulation if present or fallback for numerical instability
+        if (cos_weight is not None and sin_weight is not None) or (phi == "identity" and q.dtype == torch.float16):
+            # When modulated or for mixed-sign phi='identity' in FP16, pass to PyTorch fallback
+            # with FP32 accumulation and autograd sanitization.
             ctx.save_for_backward(q, k, v)
             ctx.is_causal = is_causal
             ctx.phi = phi
