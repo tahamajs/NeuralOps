@@ -57,33 +57,61 @@ from neuralops.core.registry import (
 )
 
 
-def _detect_amp_dtype(requested_fp16: bool, device: str) -> tuple[torch.dtype, bool]:
+def _detect_amp_dtype(
+    requested_dtype: str = "auto",
+    requested_bf16: bool = False,
+    requested_fp32: bool = False,
+    requested_fp16: bool = False,
+    device: str = "cuda",
+) -> tuple[torch.dtype, bool]:
     """
-    Auto-select AMP dtype and GradScaler usage based on GPU capability.
+    Auto-select AMP dtype and GradScaler usage based on GPU capability and user settings.
+    
+    GPU-specific rules:
+    - RTX 4070 (or compute capability >= 8.0 / Ada / Ampere): bfloat16 (amp enabled, scaler disabled)
+    - GTX 1060 (or compute capability < 7.0 / Pascal): float32 (amp disabled, scaler disabled)
+    - Turing / Volta (compute capability 7.x): float16 (amp enabled, scaler enabled)
     
     Returns (amp_dtype, use_scaler):
-      - float32  → no autocast, no scaler
-      - float16  → autocast + GradScaler
-      - bfloat16 → autocast, no scaler
+      - float32  → no autocast, no scaler (full FP32 precision, ideal for GTX 1060)
+      - float16  → autocast + GradScaler (Turing/Volta)
+      - bfloat16 → autocast, no scaler (BF16 native range, ideal for RTX 4070)
     """
-    if not requested_fp16 or not str(device).startswith("cuda"):
+    env_dtype = os.environ.get("NEURALOPS_DTYPE", "").lower()
+
+    # 1. Explicit user precision request
+    if requested_fp32 or requested_dtype in ("float32", "fp32") or env_dtype in ("float32", "fp32"):
         return torch.float32, False
-
-    if not torch.cuda.is_available():
-        return torch.float32, False
-
-    cap = torch.cuda.get_device_capability(0)
-    major = cap[0]
-
-    if major >= 8:
-        # Ampere / Ada / Hopper → bf16 (stable, no scaler)
+    if requested_bf16 or requested_dtype in ("bfloat16", "bf16") or env_dtype in ("bfloat16", "bf16"):
         return torch.bfloat16, False
-    elif major >= 7:
-        # Turing / Volta → fp16 with scaler
+    if requested_fp16 or requested_dtype in ("float16", "fp16") or env_dtype in ("float16", "fp16"):
         return torch.float16, True
-    else:
-        # Pascal or older → fp32 only
+
+    # 2. If not on CUDA, fallback to float32
+    if not str(device).startswith("cuda") or not torch.cuda.is_available():
         return torch.float32, False
+
+    gpu_name = torch.cuda.get_device_name(0).lower()
+    cap = torch.cuda.get_device_capability(0)
+    major, minor = cap
+
+    # 3. Hardware-based auto-detection:
+    # GTX 1060 (Pascal CC 6.1 or any pre-Volta GPU < 7.0) -> pure float32
+    if "1060" in gpu_name or (major, minor) < (7, 0):
+        LOG.info(f"[GPU DETECT] Detected GTX 1060 / Pascal architecture ({gpu_name}, CC {major}.{minor}). Enforcing float32 precision.")
+        return torch.float32, False
+
+    # RTX 4070 (Ada Lovelace CC 8.9, or any Ampere/Ada/Hopper CC >= 8.0 with BF16 support) -> bfloat16
+    if "4070" in gpu_name or (major >= 8 and torch.cuda.is_bf16_supported()):
+        LOG.info(f"[GPU DETECT] Detected RTX 4070 / Ada-Ampere architecture ({gpu_name}, CC {major}.{minor}). Using bfloat16 mixed precision.")
+        return torch.bfloat16, False
+
+    # Turing / Volta (CC 7.0 - 7.5) -> float16 with GradScaler
+    if major >= 7:
+        LOG.info(f"[GPU DETECT] Detected Turing/Volta architecture ({gpu_name}, CC {major}.{minor}). Using float16 mixed precision with GradScaler.")
+        return torch.float16, True
+
+    return torch.float32, False
 
 
 def _get_registry(registry_type: str):
@@ -712,7 +740,13 @@ def eval_ppl(
     seq_len = getattr(args, "seq_len", 256)
     device = getattr(args, "device", "cuda" if torch.cuda.is_available() else "cpu")
     if amp_dtype is None:
-        amp_dtype, _ = _detect_amp_dtype(getattr(args, "fp16", False), device)
+        amp_dtype, _ = _detect_amp_dtype(
+            requested_dtype=getattr(args, "dtype", "auto"),
+            requested_bf16=getattr(args, "bf16", False),
+            requested_fp32=getattr(args, "fp32", False),
+            requested_fp16=getattr(args, "fp16", False),
+            device=device,
+        )
     return compute_perplexity(
         model=model,
         tokenizer=tokenizer,
@@ -735,6 +769,7 @@ def evaluate_generation(
     n_prompts: int = 4,
     max_new_tokens: int = 50,
     seed: int = 42,
+    amp_dtype: torch.dtype = torch.float32,
 ) -> dict[str, Any]:
     """Test text generation on fixed prompts. Computes distinct-2 and repetition-3 metrics."""
     student.eval()
@@ -752,9 +787,9 @@ def evaluate_generation(
     all_bigrams: list[tuple[int, int]] = []
     all_trigrams: list[tuple[int, int, int]] = []
     samples: list[dict[str, Any]] = []
-    amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
+    amp_enabled = device.startswith("cuda") and torch.cuda.is_available() and (amp_dtype != torch.float32)
 
-    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
+    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=amp_enabled):
         for prompt in prompts:
             inp = tokenizer(prompt, return_tensors="pt").to(device)
             inp_len = inp.input_ids.shape[1]
@@ -766,6 +801,7 @@ def evaluate_generation(
                     temperature=0.8,
                     top_p=0.95,
                     pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
                 )
                 gen_ids = out[0, inp_len:].detach().cpu().tolist()
             except Exception as e:
@@ -1074,7 +1110,7 @@ def build_teacher_cache(
     teacher: nn.Module, tokenizer, train_chunks: torch.Tensor, cache_dir: Path, methods: list[str],
     device: str, seq_len: int, include_attn: bool = False, max_train_texts: int = 1000,
     baseline_ppl: float | None = None, eval_max_tokens: int | None = None, eval_stride: int | None = None,
-    eval_seq_len: int | None = None, test_split_name: str = "test"
+    eval_seq_len: int | None = None, test_split_name: str = "test", amp_dtype: torch.dtype = torch.float32,
 ) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     n_chunks = len(train_chunks)
@@ -1083,7 +1119,7 @@ def build_teacher_cache(
     need_hidden = any(m in methods_set for m in ("B", "C", "D"))
     need_attn = include_attn and ("C" in methods_set)
 
-    LOG.info("Building teacher cache for %d chunks...", n_chunks)
+    LOG.info("Building teacher cache for %d chunks (AMP: %s)...", n_chunks, amp_dtype)
     t0 = time.time()
     teacher.eval()
     teacher.to(device)
@@ -1112,7 +1148,7 @@ def build_teacher_cache(
             if chunk_batch.size(1) > seq_len:
                 chunk_batch = chunk_batch[:, :seq_len]
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=device.startswith("cuda")):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32 and device.startswith("cuda"))):
                 out = teacher(chunk_batch, output_hidden_states=need_hidden, output_attentions=need_attn)
 
             if need_logits and logits_buffer is not None:
@@ -1319,15 +1355,23 @@ def run_kd_method(
     # ═══════════════════════════════════════════════════════════
 # ═══════════════════════════════════════════════════════════
     # Detect optimal AMP dtype based on GPU capability
-    amp_dtype, use_scaler = _detect_amp_dtype(args.fp16, device)
+    amp_dtype, use_scaler = _detect_amp_dtype(
+        requested_dtype=getattr(args, "dtype", "auto"),
+        requested_bf16=getattr(args, "bf16", False),
+        requested_fp32=getattr(args, "fp32", False),
+        requested_fp16=getattr(args, "fp16", False),
+        device=device,
+    )
     LOG.info(f"[AMP] GPU={torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'} | "
              f"cap={torch.cuda.get_device_capability(0) if torch.cuda.is_available() else 'N/A'} | "
              f"amp_dtype={amp_dtype} | use_scaler={use_scaler}")
 
     if amp_dtype == torch.float16 and device.startswith("cuda"):
         student = student.half().to(device)
-    else:
+    elif amp_dtype == torch.bfloat16 and device.startswith("cuda"):
         student = student.to(device)
+    else:
+        student = student.float().to(device)
 
     # 1. Disable internal cache (required for modified architectures and gradient checkpointing)
     student.config.use_cache = False
@@ -1733,7 +1777,7 @@ def run_kd_method(
     t_qual_start = time.time()
     
     # 1. Generation test
-    gen_results = evaluate_generation(student, tokenizer, device=device)
+    gen_results = evaluate_generation(student, tokenizer, device=device, amp_dtype=amp_dtype)
     
     # 2. Train/Test Gap
     test_ppl = post_ppl
