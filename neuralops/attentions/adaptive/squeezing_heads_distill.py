@@ -71,6 +71,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -995,9 +996,9 @@ class SqueezingHeadsDistiller(BaseAttention):
         )
 
         if use_sdpa:
-            q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
-            k_sdp = k_full.to(torch.float16) if k_full.dtype == torch.float32 else k_full
-            v_sdp = v_full.to(torch.float16) if v_full.dtype == torch.float32 else v_full
+            q_sdp = maybe_half(q)
+            k_sdp = maybe_half(k_full)
+            v_sdp = maybe_half(v_full)
 
             # FIX-03: causal whenever L > 1 for decoder self-attention.
             is_causal_sdp = bool(self.is_decoder) and not is_cross and L > 1
