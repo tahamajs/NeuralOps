@@ -811,23 +811,22 @@ class NEXUSAttention(BaseAttention):
                 )
             F3 = F.softmax(scores3, dim=-1)
 
-            # Stable pseudoinverse via Newton-Schulz / torch.linalg.pinv
+            # Stable pseudoinverse with rcond clamping
             try:
-                F2_pinv = torch.linalg.pinv(F2)
+                F2_pinv = torch.linalg.pinv(F2, rcond=1e-3)
             except Exception:
-                # Fallback: Tikhonov-regularized inverse
                 mx = F2.shape[-1]
-                F2_reg = F2 + 1e-3 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+                F2_reg = F2 + 1e-2 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
                 F2_pinv = torch.linalg.inv(F2_reg)
 
-            # Cross-chunk output
+            # Cross-chunk output with bounded scaling
             step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
             step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
             out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
-            out_cross = torch.nan_to_num(out_cross, nan=0.0)
+            out_cross = torch.nan_to_num(out_cross, nan=0.0, posinf=50.0, neginf=-50.0)
 
             # Combine
-            out_c = out_intra + out_cross
+            out_c = out_intra + 0.1 * out_cross
             outputs.append(out_c)
 
         context = torch.cat(outputs, dim=2)
