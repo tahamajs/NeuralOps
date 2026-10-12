@@ -275,9 +275,9 @@ class CosformerAttention(BaseAttention):
         self.fusion_gate = nn.Linear(self.dim, 1, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.fusion_gate.weight)
-            self.fusion_gate.bias.fill_(-4.0)  # Prioritize pretrained local attention stream at init
-        self.fusion_gate.weight.requires_grad = False
-        self.fusion_gate.bias.requires_grad = False
+            self.fusion_gate.bias.fill_(0.0)  # Neutral balanced gate (50-50) at init
+        self.fusion_gate.weight.requires_grad = True
+        self.fusion_gate.bias.requires_grad = True
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
