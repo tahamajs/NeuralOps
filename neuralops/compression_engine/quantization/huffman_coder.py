@@ -151,7 +151,7 @@ class HuffmanCoder:
         """
         Vectorized encode input tensor into packed bitstream bytes and Huffman codebook.
         """
-        flat = tensor.detach().float().contiguous().view(-1)
+        flat = tensor.detach().float().view(-1)
         numel = flat.numel()
         if numel == 0:
             return b"", {}, {"total_elements": 0, "entropy": 0.0, "compressed_bytes": 0}
@@ -447,7 +447,7 @@ class HuffmanCompressor(BaseCompressor):
             elem_bytes = raw_w.element_size() if hasattr(raw_w, "element_size") else 2
             layer_orig_bytes = raw_w.numel() * elem_bytes
 
-            W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
+            W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
             norm_w = torch.norm(W_orig, p="fro").item()
 
             try:
