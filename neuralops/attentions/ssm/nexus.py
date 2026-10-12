@@ -575,6 +575,7 @@ class NEXUSAttention(BaseAttention):
                 self.cfg.seer_gate_rank, self.cfg.seer_top_k_blocks,
                 self.cfg.seer_temperature,
             )
+        self.seer_beta = nn.Parameter(torch.zeros(1, device=target_device, dtype=target_dtype))
 
         self.rect_interval = self.cfg.rectify_interval
         self.is_rectify = (
@@ -704,7 +705,7 @@ class NEXUSAttention(BaseAttention):
                 if nb > 1:
                     seer_mask = self.seer_gate(Q, K, nb, training=self.training)
                     expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-                    scores = scores + (expanded_seer - 1.0) * 10000.0
+                    scores = scores + torch.tanh(self.seer_beta).to(scores.dtype) * (expanded_seer - 1.0) * 10000.0
             if token_valid is not None:
                 scores = scores.masked_fill(
                     (~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4
@@ -744,7 +745,7 @@ class NEXUSAttention(BaseAttention):
                 if nb_intra > 1:
                     seer_mask = self.seer_gate(Q_c, K_c, nb_intra, training=self.training)
                     expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :C_len, :C_len]
-                    scores_intra = scores_intra + (expanded_seer - 1.0) * 10000.0
+                    scores_intra = scores_intra + torch.tanh(self.seer_beta).to(scores_intra.dtype) * (expanded_seer - 1.0) * 10000.0
             if mask_c is not None:
                 scores_intra = scores_intra.masked_fill(
                     (~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4
