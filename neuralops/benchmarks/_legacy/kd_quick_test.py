@@ -1501,6 +1501,9 @@ def run_kd_method(
                         break
 
         except torch.cuda.OutOfMemoryError:
+            if current_seq_len <= 128:
+                LOG.warning(f"[{method_name}] Persistent CUDA OOM at seq_len={current_seq_len}! Breaking training loop.")
+                break
             LOG.warning(f"[{method_name}] CUDA OOM! Halving sequence length to 128...")
             current_seq_len = 128
             optimizer.zero_grad()
