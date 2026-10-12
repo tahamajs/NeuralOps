@@ -1407,3 +1407,5 @@ __all__ = [
     "apply_rotary_pos_emb",
     "LoRALinear",
 ]
+
+Mamba = MambaSVDFlash
