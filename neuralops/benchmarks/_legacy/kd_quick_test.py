@@ -57,6 +57,35 @@ from neuralops.core.registry import (
 )
 
 
+def _detect_amp_dtype(requested_fp16: bool, device: str) -> tuple[torch.dtype, bool]:
+    """
+    Auto-select AMP dtype and GradScaler usage based on GPU capability.
+    
+    Returns (amp_dtype, use_scaler):
+      - float32  → no autocast, no scaler
+      - float16  → autocast + GradScaler
+      - bfloat16 → autocast, no scaler
+    """
+    if not requested_fp16 or not str(device).startswith("cuda"):
+        return torch.float32, False
+
+    if not torch.cuda.is_available():
+        return torch.float32, False
+
+    cap = torch.cuda.get_device_capability(0)
+    major = cap[0]
+
+    if major >= 8:
+        # Ampere / Ada / Hopper → bf16 (stable, no scaler)
+        return torch.bfloat16, False
+    elif major >= 7:
+        # Turing / Volta → fp16 with scaler
+        return torch.float16, True
+    else:
+        # Pascal or older → fp32 only
+        return torch.float32, False
+
+
 def _get_registry(registry_type: str):
     if registry_type == "compressor":
         return COMPRESSOR_REGISTRY
@@ -617,7 +646,7 @@ def build_train_chunks(train_dataset, tokenizer, max_train_texts: int = 5000, se
 # -----------------------------------------------------------------------------
 # Perplexity Evaluation (Sliding Window)
 # -----------------------------------------------------------------------------
-def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 1024, stride: int = 512, max_eval_tokens: int = 15000, device: str = "cuda") -> float:
+def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 1024, stride: int = 512, max_eval_tokens: int = 15000, device: str = "cuda", amp_dtype: torch.dtype = torch.float32) -> float:
     model.eval()
     sample_texts = []
     accum_chars = 0
@@ -648,7 +677,7 @@ def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int =
             if trg_len < (end - begin):
                 tgt[:, :-trg_len] = -100
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=device.startswith("cuda")):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32 and device.startswith("cuda"))):
                 out = model(ids, labels=tgt, use_cache=False)
                 loss = out.loss
 
@@ -672,6 +701,7 @@ def eval_ppl(
     tokenizer,
     test_dataset,
     args: argparse.Namespace,
+    amp_dtype: torch.dtype | None = None,
 ) -> float:
     """Canonical evaluation wrapper around compute_perplexity to guarantee consistent evaluation protocol.
 
@@ -681,6 +711,8 @@ def eval_ppl(
     max_eval_tokens = getattr(args, "eval_max_tokens", 15000)
     seq_len = getattr(args, "seq_len", 256)
     device = getattr(args, "device", "cuda" if torch.cuda.is_available() else "cpu")
+    if amp_dtype is None:
+        amp_dtype, _ = _detect_amp_dtype(getattr(args, "fp16", False), device)
     return compute_perplexity(
         model=model,
         tokenizer=tokenizer,
@@ -689,6 +721,7 @@ def eval_ppl(
         stride=stride,
         max_eval_tokens=max_eval_tokens,
         device=device,
+        amp_dtype=amp_dtype,
     )
 
 
@@ -1285,7 +1318,13 @@ def run_kd_method(
     # Move to device + dtype
     # ═══════════════════════════════════════════════════════════
 # ═══════════════════════════════════════════════════════════
-    if args.fp16 and device.startswith("cuda"):
+    # Detect optimal AMP dtype based on GPU capability
+    amp_dtype, use_scaler = _detect_amp_dtype(args.fp16, device)
+    LOG.info(f"[AMP] GPU={torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'} | "
+             f"cap={torch.cuda.get_device_capability(0) if torch.cuda.is_available() else 'N/A'} | "
+             f"amp_dtype={amp_dtype} | use_scaler={use_scaler}")
+
+    if amp_dtype == torch.float16 and device.startswith("cuda"):
         student = student.half().to(device)
     else:
         student = student.to(device)
@@ -1293,16 +1332,18 @@ def run_kd_method(
     # 1. Disable internal cache (required for modified architectures and gradient checkpointing)
     student.config.use_cache = False
 
-    # 2. Enable Gradient Checkpointing to save VRAM
-    use_grad_ckpt = True
+    # 2. Enable Gradient Checkpointing only if explicitly requested
+    use_grad_ckpt = getattr(args, "grad_checkpointing", False)
     if use_grad_ckpt and hasattr(student, "gradient_checkpointing_enable"):
         student.gradient_checkpointing_enable()
+        if hasattr(student, "enable_input_require_grads"):
+            student.enable_input_require_grads()
 
     # 3. Strictly DISABLE torch.compile due to graph break bugs with dynamic GQA
     use_compile = False 
     
     # NOW evaluate the Pre-KD PPL with the fully configured student
-    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
     delta_pre = pre_ppl - baseline_ppl
     LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
 
@@ -1398,15 +1439,15 @@ def run_kd_method(
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    use_scaler = bool(args.fp16 and device.startswith("cuda"))
-    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+    scaler = None
+    if use_scaler:
+        scaler = torch.amp.GradScaler('cuda', enabled=True)
 
     ppl_history: dict[int, float] = {}
     loss_history: list[tuple[int, float]] = []
     lr_history: list[tuple[int, float]] = []
     current_seq_len = args.seq_len
-    gpu_train_chunks = train_chunks.to(device)
-    num_chunks = len(gpu_train_chunks)
+    num_chunks = len(train_chunks)
     chunk_idx = 0
 
     t_start = time.time()
@@ -1421,28 +1462,46 @@ def run_kd_method(
 
         try:
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = gpu_train_chunks[batch_slice]
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(1) > current_seq_len:
                 batch_ids = batch_ids[:, :current_seq_len]
 
-            with torch.cuda.amp.autocast(enabled=use_scaler):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                 if use_cache and teacher_cache is not None:
                     c_logits, c_hidden, c_attn = None, None, None
-                    # import numpy as np  ← این خط را حذف کن (قبلاً بالای فایل import شده)
-                    
+
                     if teacher_cache.get("logits") is not None:
-                        # کپی سریع از هارد به رم، پین کردن، و ارسال غیرهمزمان به GPU
                         c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
-                    
+                        if amp_dtype == torch.float32:
+                            c_logits = c_logits.float()
+                        elif amp_dtype == torch.bfloat16:
+                            c_logits = c_logits.bfloat16()
+                        elif amp_dtype == torch.float16:
+                            c_logits = c_logits.half()
+
                     if teacher_cache.get("hidden_states") is not None:
                         raw_h = teacher_cache["hidden_states"]
-                        c_hidden = tuple(torch.from_numpy(np.array(raw_h[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
-                    
+                        def _cast_h(t):
+                            t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+                            if amp_dtype == torch.float32:
+                                return t_gpu.float()
+                            elif amp_dtype == torch.bfloat16:
+                                return t_gpu.bfloat16()
+                            return t_gpu.half()
+                        c_hidden = tuple(_cast_h(raw_h[l, batch_slice]) for l in range(raw_h.shape[0]))
+
                     if teacher_cache.get("attentions") is not None:
                         raw_a = teacher_cache["attentions"]
-                        c_attn = tuple(torch.from_numpy(np.array(raw_a[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len] for l in range(raw_a.shape[0]))
-                    
+                        def _cast_a(t):
+                            t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :, :current_seq_len, :current_seq_len]
+                            if amp_dtype == torch.float32:
+                                return t_gpu.float()
+                            elif amp_dtype == torch.bfloat16:
+                                return t_gpu.bfloat16()
+                            return t_gpu.half()
+                        c_attn = tuple(_cast_a(raw_a[l, batch_slice]) for l in range(raw_a.shape[0]))
+
                     teacher_out = CachedTeacherOutput(logits=c_logits, hidden_states=c_hidden, attentions=c_attn)
                 else:
                     with torch.no_grad():
@@ -1483,16 +1542,17 @@ def run_kd_method(
                 if step % 50 == 0 or step == total_steps or step <= 5:
                     final_loss = float(current_loss_detached.item())  
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f}...")
-            if use_scaler: scaler.scale(loss_scaled).backward()
-
-            else: loss_scaled.backward()
+            if use_scaler and scaler is not None:
+                scaler.scale(loss_scaled).backward()
+            else:
+                loss_scaled.backward()
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
                 loss_history.append((step, float(current_loss_detached.item())))
                 lr_history.append((step, float(scheduler.get_last_lr()[0])))
                 max_norm = getattr(args, "max_grad_norm", 1.0)
-                if use_scaler:
+                if use_scaler and scaler is not None:
                     scaler.unscale_(optimizer)
                     torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
                     scaler.step(optimizer)
@@ -1508,7 +1568,7 @@ def run_kd_method(
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f} | LR: {scheduler.get_last_lr()[0]:.2e}")
 
                 if step % args.eval_every == 0 or step == total_steps:
-                    eval_ppl_val = eval_ppl(student, tokenizer, test_dataset, args)
+                    eval_ppl_val = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
                     ppl_history[step] = eval_ppl_val
                     LOG.info(f"[{method_name}] Step {step} Eval PPL: {eval_ppl_val:.2f}")
                     if math.isnan(eval_ppl_val) or eval_ppl_val > args.early_stop_ppl:
@@ -1529,7 +1589,7 @@ def run_kd_method(
     if math.isnan(post_ppl_stage1) and ppl_history:
         post_ppl_stage1 = list(ppl_history.values())[-1]
     if math.isnan(post_ppl_stage1):
-        post_ppl_stage1 = eval_ppl(student, tokenizer, test_dataset, args)
+        post_ppl_stage1 = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
     LOG.info(f"[{method_name}] [STAGE1-DONE] KD finished. post_ppl_stage1 = {post_ppl_stage1:.2f}")
 
     # ---- Stage 2: CE-only self-training ----
@@ -1558,7 +1618,9 @@ def run_kd_method(
             fused=True
         )
         # Use a fresh scaler for Stage 2 to avoid GradScaler state corruption from Stage 1
-        s2_scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
+        s2_scaler = None
+        if use_scaler:
+            s2_scaler = torch.amp.GradScaler("cuda", enabled=True)
         stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             stage2_optimizer,
             T_max=self_train_steps,
@@ -1570,25 +1632,25 @@ def run_kd_method(
         for s2_step in range(1, self_train_steps + 1):
             student.train()
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = gpu_train_chunks[batch_slice]
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(0) == 0:
                 chunk_idx = 0
                 batch_slice = slice(0, min(args.batch_size, num_chunks))
-                batch_ids = gpu_train_chunks[batch_slice]
+                batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
 
             if warmup_s2 > 0 and s2_step <= warmup_s2:
                 for param_group in stage2_optimizer.param_groups:
                     param_group['lr'] = s2_lr * (s2_step / warmup_s2)
 
-            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=use_scaler):
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                 student_out = student(batch_ids)
                 shift_logits = student_out.logits[..., :-1, :].contiguous()
                 shift_labels = batch_ids[..., 1:].contiguous()
                 loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
                 loss_scaled = loss_ce / args.grad_accum_steps
 
-            if use_scaler:
+            if use_scaler and s2_scaler is not None:
                 if loss_scaled.requires_grad:
                     s2_scaler.scale(loss_scaled).backward()
                     s2_scaler.unscale_(stage2_optimizer)
@@ -1615,11 +1677,11 @@ def run_kd_method(
                 LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | CE Loss: {loss_ce.item():.4f} | LR: {curr_lr:.2e}")
 
             if s2_step % args.eval_every == 0 or s2_step == self_train_steps:
-                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
                 ppl_history[f"stage2_{s2_step}"] = s2_eval_ppl
                 LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | Eval PPL: {s2_eval_ppl:.2f}")
 
-        post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args)
+        post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args, amp_dtype=amp_dtype)
         stage2_time_s = round(time.time() - t_stage2_start, 2)
         LOG.info(f"[{method_name}] [STAGE2-DONE] post_ppl_stage2 = {post_ppl_stage2:.2f}")
         del stage2_optimizer, stage2_scheduler
@@ -1888,7 +1950,9 @@ def main():
     
     # ---- System ----
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--fp16", action="store_true", default=(torch.cuda.is_available()))
+    cuda_capability = torch.cuda.get_device_capability(0)[0] if torch.cuda.is_available() else 0
+    parser.add_argument("--fp16", action="store_true", default=(cuda_capability >= 7), help="Enable FP16 mixed precision (default: True only for compute capability >= 7)")
+    parser.add_argument("--fp32", action="store_true", default=False, help="Force FP32 precision (disables FP16 and GradScaler)")
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
@@ -1908,6 +1972,8 @@ def main():
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
+    if getattr(args, "fp32", False) or cuda_capability < 7:
+        args.fp16 = False
     
     # Flatten/split comma-separated module names if provided (e.g. --modules mod1,mod2)
     resolved_modules = []
