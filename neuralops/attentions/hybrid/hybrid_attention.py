@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -327,9 +328,9 @@ class HybridAttention(BaseAttention):
         can_sdpa = (not self.training or self.dropout.p == 0.0) and True
         if can_sdpa:
             try:
-                q_sdp = Q
-                k_sdp = K
-                v_sdp = V
+                q_sdp = maybe_half(Q)
+                k_sdp = maybe_half(K)
+                v_sdp = maybe_half(V)
 
                 attn_bias_sdp = None
                 if valid_mask is not None:
