@@ -722,15 +722,14 @@ class TPAttention(BaseAttention):
         proj2.weight.data.zero_()
 
         # Distribute A and B across proj1/proj2 rows
-        a_eff = min(A.shape[0], r_a_rows)
-        b_eff = min(B.shape[0], r_b_rows)
-
-        proj1.weight.data[:a_eff, :in_dim].copy_(
-            A[:a_eff, :in_dim].to(proj1.weight.dtype)
-        )
-        proj2.weight.data[:b_eff, :in_dim].copy_(
-            B[:b_eff, :in_dim].to(proj2.weight.dtype)
-        )
+        # A has shape [out_dim, r], B has shape [r, in_dim]
+        # proj1 has shape [r_a_rows, in_dim], proj2 has shape [r_b_rows, in_dim]
+        # For tensor product fallback, initialize orthogonal random projections scaled by SVD energy
+        nn.init.orthogonal_(proj1.weight.data)
+        nn.init.orthogonal_(proj2.weight.data)
+        energy = torch.norm(W_f) / math.sqrt(r_a_rows * r_b_rows)
+        proj1.weight.data.mul_(math.sqrt(energy))
+        proj2.weight.data.mul_(math.sqrt(energy))
 
         logger.info("TPAttention[%s]: SVD fallback applied", name)
 
