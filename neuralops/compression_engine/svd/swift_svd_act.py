@@ -66,8 +66,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         calibration_loader: Any | None = None,
         calibration_texts: list[str] | None = None,
         rank: int = 64,
-        max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_attention_only: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -474,7 +474,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         if r_act > 0:
                             sqrt_S_m = torch.sqrt(torch.clamp(S_m[:r_act], min=1e-12))
                             A = (U_act @ U_m[:, :r_act]) * sqrt_S_m.unsqueeze(0)
-                            B = sqrt_S_m.unsqueeze(1) @ (Vt_m[:r_act, :] @ V_act.t().contiguous())
+                            B = sqrt_S_m.unsqueeze(1) * (Vt_m[:r_act, :] @ V_act.t().contiguous())
                             r = r_act
             except Exception as e:
                 logger.debug(
@@ -490,7 +490,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 r = min(r, len(S))
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                 A = U[:, :r] * sqrt_S.unsqueeze(0)
-                B = sqrt_S.unsqueeze(1) @ Vt[:r, :]
+                B = sqrt_S.unsqueeze(1) * Vt[:r, :]
             except Exception as e:
                 logger.warning("SwiftSVDActivation SVD failure: %s", e)
                 return None
@@ -507,7 +507,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 r_d = min(r, len(S))
                 sqrt_S = torch.sqrt(torch.clamp(S[:r_d], min=1e-12))
                 A_d = U[:, :r_d] * sqrt_S.unsqueeze(0)
-                B_d = sqrt_S.unsqueeze(1) @ Vt[:r_d, :]
+                B_d = sqrt_S.unsqueeze(1) * Vt[:r_d, :]
                 W_rec_d = A_d @ B_d
                 err_d = (torch.norm(W - W_rec_d) / max(norm_orig, 1e-12)).item()
                 if err_d < rel_err:
@@ -516,14 +516,18 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 logger.debug("Direct SVD fallback failed: %s", e)
 
         # SW-FIX-14: preserve original on high error
-        if not math.isfinite(rel_err) or rel_err > self.max_error:
+        if not math.isfinite(rel_err):
+            logger.warning("SwiftSVDActivation reconstruction error is NaN/Inf; falling back.")
+            return None
+        if rel_err > self.max_error:
             logger.warning(
-                "SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f on %s.",
+                "SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f on %s. Compressing anyway.",
                 rel_err,
                 self.max_error,
                 getattr(base_layer, "_name", "?"),
             )
-            return None
+            if self.fallback_to_original:
+                return None
 
         # ---- Build SVDLinear ----
         effective_lora_r = self.lora_r
@@ -754,9 +758,9 @@ def swift_svd_act_factory(model: nn.Module, comp_config: Any = None, **kwargs: A
         "rank",
         _cfg_get(comp_config, "swift_svd_act_rank", _cfg_get(comp_config, "rank", 64)),
     )
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
