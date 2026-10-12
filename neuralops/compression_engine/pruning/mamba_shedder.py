@@ -663,7 +663,11 @@ class MambaShedderCompressor(BaseCompressor):
                 }
             else:
                 # Channel pruning → real storage savings.
+                if sens.numel() == 0:
+                    sens = torch.norm(W, dim=1)
                 n_keep = max(1, min(int(d_out * (1.0 - self.sparsity)), sens.numel()))
+                if n_keep > sens.numel():
+                    n_keep = sens.numel()
                 _, keep_idx = torch.topk(sens, k=n_keep, largest=True)
                 keep_idx, _ = torch.sort(keep_idx)
                 keep_idx = keep_idx.to(device)
@@ -879,9 +883,9 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
             _cfg_get(comp_config, "structured_24", False),
         ),
     )
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
