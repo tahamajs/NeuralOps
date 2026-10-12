@@ -180,7 +180,7 @@ class HybridKVCache:
         return out_k, out_v
 
 
-# @COMPRESSOR_REGISTRY.register("hybridkv_compressor")
+@COMPRESSOR_REGISTRY.register("hybridkv_compressor")
 class HybridKVCompressor(BaseCompressor):
     """
     HybridKV Compressor: Classifies projection heads into static/dynamic types
