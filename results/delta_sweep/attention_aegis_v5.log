@@ -1,0 +1,30 @@
+2026-10-12 19:06:24,420 [INFO] MambaKD: ======================================================================
+2026-10-12 19:06:24,420 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 19:06:24,420 [INFO] MambaKD: ======================================================================
+2026-10-12 19:06:24,420 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 19:06:24,421 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 19:06:24,421 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 19:06:25,179 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 19:06:32,808 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 19:06:32,808 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 19:06:34,511 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
+2026-10-12 19:06:34,512 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-12 19:06:34,512 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 19:06:34,772 [INFO] MambaKD: 
+======================================================================
+2026-10-12 19:06:34,772 [INFO] MambaKD: PROCESSING MODULE 1/1: aegis_v5
+2026-10-12 19:06:34,772 [INFO] MambaKD: ======================================================================
+2026-10-12 19:06:34,772 [INFO] MambaKD: 
+# Running method C for aegis_v5
+2026-10-12 19:06:38,285 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 19:06:38,363 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 19:06:51,048 [INFO] neuralops.core._attention_injectors: Successfully injected 'aegis_v5' into 12 transformer blocks.
+2026-10-12 19:06:51,493 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 103.4968
+2026-10-12 19:06:51,494 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 103.4968
+2026-10-12 19:07:00,268 [INFO] MambaKD: Pre-KD PPL for Module aegis_v5, Method C: 3255.72
+2026-10-12 19:07:00,268 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 19:07:00,268 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3255.72 (same protocol)
+2026-10-12 19:07:00,268 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3219.50 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 19:07:00,271 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+2026-10-12 19:07:05,244 [INFO] MambaKD: [C] Step 0/300 | Loss: 7.4860...
+2026-10-12 19:07:05,372 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.4860 | LR: 3.00e-06

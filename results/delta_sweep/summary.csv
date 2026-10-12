@@ -2,7 +2,6 @@ module,type,status,delta,student_ppl,duration_sec,retries_used,error,timestamp
 adaptive_span_attention,attention,PASS,6774.55,43.46,0.0,0,,2026-10-12T03:20:19.287769
 adaptive_sparse_attention,attention,PASS,12.88,30.44,0.0,0,,2026-10-12T03:20:19.288539
 adaptive_svd_attention,attention,PASS,1787.46,101.02,0.0,0,,2026-10-12T03:20:19.289201
-adasplash_attention,attention,UNKNOWN,,,0.0,0,UNKNOWN,2026-10-12T03:20:19.289248
 aegis_v6,attention,PASS,3125.98,3162.19,0.0,0,,2026-10-12T03:20:19.289863
 alibi,attention,PASS,16557.45,39.93,0.0,0,,2026-10-12T03:20:19.290513
 asvd_attention,attention,PASS,110.91,147.12,0.0,0,,2026-10-12T03:20:19.291104
@@ -189,13 +188,15 @@ tomoe_compressor,compressor,PASS,+25575.40,206.67,215.4,1,,2026-10-12 11:27:44
 tt_compressor,compressor,DEPRECATED,,,12.8,1,deprecated alias of kronecker_tt_lora,2026-10-12 11:31:20
 uniql_compressor,compressor,PASS,+8321.67,2431.72,179.2,1,,2026-10-12 11:31:34
 zerokv_neo_compressor,compressor,PASS,+1658.56,68.20,164.8,1,,2026-10-12 11:34:35
-aegis_hybrid,attention,FAIL_DELTA_ZERO,-13727.86,15574.85,184.8,1,delta=-13727.86,2026-10-12 14:00:08
-aegis_spectron_fp8,attention,TIMEOUT,,,600.5,1,exceeded 600s,2026-10-12 14:03:14
 aegis_v1,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:13:16
 aegis_v2,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:23:18
-aegis_v4,attention,ERROR,,,32.0,1,exit=1,2026-10-12 18:42:08
-aegis_v5,attention,ERROR,,,28.4,1,exit=1,2026-10-12 18:42:41
 gated_linear_attention,attention,ERROR,,,18.1,1,exit=1,2026-10-12 18:43:10
 gated_linear_attn,attention,ERROR,,,15.4,1,exit=1,2026-10-12 18:43:29
 hgrn2_outer,attention,ERROR,,,22.5,1,exit=1,2026-10-12 18:43:45
 svd_linear,attention,ERROR,,,14.3,1,exit=-2,2026-10-12 18:44:09
+aegis_spectron_fp8,attention,ERROR,,,1.6,1,exit=-2,2026-10-12 18:54:18
+aegis_v3,attention,TIMEOUT,,,300.8,1,exceeded 300s,2026-10-12 18:56:15
+aegis_v4,attention,TIMEOUT,,,300.6,1,exceeded 300s,2026-10-12 19:01:17
+aegis_v5,attention,ERROR,,,47.2,1,exit=-9,2026-10-12 19:06:18
+adasplash_attention,attention,ERROR,,,17.0,1,exit=1,2026-10-12 19:11:35
+aegis_hybrid,attention,ERROR,,,9.7,1,exit=-2,2026-10-12 19:11:53

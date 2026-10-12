@@ -1152,7 +1152,17 @@ class SplitHeadHybridAttention(BaseAttention):
             output = self.out_proj(out)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        return output.to(hidden_states.dtype), attn_weights_out
+        # ---- HuggingFace-compatible return tuple ----
+        _use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
+
+        present = None
+        if _use_cache and not is_cross:
+            present = (K_new, V_new)
+
+        if output_attentions:
+            return (output.to(hidden_states.dtype), present, attn_weights_out)
+        else:
+            return (output.to(hidden_states.dtype), present)
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)

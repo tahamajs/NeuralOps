@@ -1,13 +1,31 @@
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 15874.51it/s]
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
+/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:206.)
   cache[key] = torch.from_numpy(np_memmap)
-[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1414: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast(enabled=use_scaler):
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1421: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
-  c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1425: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
-  c_hidden = tuple(torch.from_numpy(np.array(raw_h[l, batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :] for l in range(raw_h.shape[0]))
+Traceback (most recent call last):
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2073, in <module>
+    main()
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2037, in main
+    result = run_kd_method(
+             ^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1210, in run_kd_method
+    student, comp_stats = apply_module_to_model(
+                          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/evaluation/eval_patcher.py", line 534, in apply_module_to_model
+    model = _apply_attention_module(model, module_name, rank, device)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/evaluation/eval_patcher.py", line 294, in _apply_attention_module
+    inject_attention(model, module_name, rank=rank, copy_weights=True)
+  File "/home/tahoora/Project/neuralops/core/attention_utils.py", line 45, in inject_attention
+    return _inject_attention_loop(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/core/_attention_injectors.py", line 509, in _inject_attention_loop
+    _transplant_weights(
+  File "/home/tahoora/Project/neuralops/core/_attention_injectors.py", line 251, in _transplant_weights
+    new_attn.copy_weights(old_attn)
+  File "/home/tahoora/Project/neuralops/attentions/hybrid/tri_branch_hybrid_attention.py", line 821, in copy_weights
+    self._svd_init(w, b, target, whitening_L=self.whitening.get(key, None))
+  File "/home/tahoora/Project/neuralops/attentions/hybrid/tri_branch_hybrid_attention.py", line 691, in _svd_init
+    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

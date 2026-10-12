@@ -1,0 +1,11 @@
+{
+  "module": "aegis_v4",
+  "type": "attention",
+  "status": "TIMEOUT",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 300.6,
+  "retries_used": 1,
+  "error": "exceeded 300s",
+  "timestamp": "2026-10-12 19:01:17"
+}

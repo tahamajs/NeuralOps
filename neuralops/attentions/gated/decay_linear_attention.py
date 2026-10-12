@@ -1043,10 +1043,11 @@ class DecayLinearAttention(BaseAttention):
             final_out = final_out * mask_bool.unsqueeze(-1).to(final_out.dtype)
 
         # --- 12. Return ---
-        if self.is_decoder and not is_cross_attention:
-            return final_out, new_past_key_value
-
-        return final_out, None
+        present = new_past_key_value if (self.is_decoder and not is_cross_attention) else None
+        if output_attentions:
+            return (final_out, present, None)
+        else:
+            return (final_out, present)
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.out_proj.weight.device)
