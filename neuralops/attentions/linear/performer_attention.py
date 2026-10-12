@@ -511,9 +511,12 @@ class PerformerAttention(BaseAttention):
         if source_attn is not None:
             success = self.copy_weights(source_attn)
             if not success:
-                logger.warning(
-                    "PerformerAttention: copy_weights failed. Proceeding with initialized weights."
-                )
+                if kwargs.get("_allow_copy_failure", False):
+                    logger.warning(
+                        "PerformerAttention: copy_weights failed. Proceeding with initialized weights."
+                    )
+                else:
+                    raise RuntimeError("PerformerAttention: copy_weights failed")
 
         # FIX 2: after is_nested_encoder is known, disable LoRA on out_proj
         # if nested encoder (since out_proj is not used in forward).
