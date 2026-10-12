@@ -335,3 +335,4 @@ kd_selective_ssm_C_20261012_172255,selective_ssm__gpt2__wikitext2__rank32__b386f
 kd_nexus_C_20261012_173140,nexus__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T17:36:35.743390+00:00,success,nexus,attention,gpt2,wikitext2,32,finetune,,,,534.08,5.5,-5.12,,2839.11,ebc9ac5ca2db176d
 kd_simple_ssm_C_20261012_173201,simple_ssm__gpt2__wikitext2__rank32__b386fa38f2a1,2026-10-12T17:38:44.622479+00:00,success,simple_ssm,attention,gpt2,wikitext2,32,finetune,,,,2785.14,1146.64,43.38,,3072.23,8ace197929620f98
 kd_nexus_C_20261012_173727,nexus__gpt2__wikitext2__rank32__891a463069c8,2026-10-12T17:40:07.463366+00:00,success,nexus,attention,gpt2,wikitext2,32,finetune,,,,8658.28,-8140.5,-1690.41,,2841.86,3d3ca164d6310b87
+kd_regla_attention_C_20261012_174117,regla_attention__gpt2__wikitext2__rank32__a417dfca682c,2026-10-12T17:43:22.565260+00:00,success,regla_attention,attention,gpt2,wikitext2,32,finetune,,,,918.78,528.77,37.47,,1698.62,7f1c9dcb7b72c0a4

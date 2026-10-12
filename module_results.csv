@@ -84,7 +84,7 @@ qcqa_attention,attention,UNKNOWN,,39.7,185.2,1,no delta parsed,2026-10-12 04:51:
 rala_attention,attention,UNKNOWN,,2026.0,513.2,1,no delta parsed,2026-10-12 04:54:14
 rala_compressor,attention,UNKNOWN,,2026.0,528.6,1,no delta parsed,2026-10-12 05:02:49
 reap_moe,attention,UNKNOWN,,45276.56,210.2,1,no delta parsed,2026-10-12 05:11:38
-regla_attention,attention,TIMEOUT,,1385.77,600.2,1,exceeded 600s,2026-10-12 05:15:10
+regla_attention,attention,PASS,528.77,918.78,60.6,0,,2026-10-12 17:43:24
 residual_svd_attention,attention,UNKNOWN,,3749.05,204.5,1,no delta parsed,2026-10-12 05:25:11
 routing_attention,attention,UNKNOWN,,1870.58,346.0,1,no delta parsed,2026-10-12 05:28:36
 rpc_attention,attention,UNKNOWN,,2887.02,265.3,1,no delta parsed,2026-10-12 05:34:23
