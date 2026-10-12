@@ -202,7 +202,7 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
+            nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self) -> None:
@@ -262,7 +262,7 @@ class BlockTransformerHIBA(BaseAttention):
         rank: int = 64,
         block_size: int = 16,
         top_k_inter: int = 2,
-        rectification_interval: int = 100,
+        rectification_interval: int = 4,
         layer_id: int | None = None,
         layer_idx: int | None = None,
         old_attn: nn.Module | None = None,
@@ -326,7 +326,7 @@ class BlockTransformerHIBA(BaseAttention):
         # ---- Block config ----
         self.block_size: int = max(8, int(block_size))
         self.top_k_inter: int = max(1, int(top_k_inter))
-        self.rectification_interval: int = max(1, int(rectification_interval))
+        self.rectification_interval: int = max(1, int(rectification_interval if rectification_interval is not None else 4))
 
         # ---- Layer index ----
         resolved_layer_id = (
@@ -873,15 +873,9 @@ class BlockTransformerHIBA(BaseAttention):
 
             _, topk_idx = torch.topk(score_for_topk, k_keep, dim=-1)
 
-            # Hard mask for masking non-selected
-            topk_mask = torch.zeros_like(nb_scores, dtype=torch.bool)
-            topk_mask.scatter_(-1, topk_idx, True)
+            # Gather selected scores and V (B, H, bs, k_keep) and (B, H, bs, k_keep, D)
+            topk_scores = torch.gather(nb_scores, -1, topk_idx)
 
-            # Apply mask (keeps selected scores, masks others)
-            nb_scores = nb_scores.masked_fill(~topk_mask, -1e4)
-
-            # Gather selected V (B, H, bs, k_keep, D) → (B, H, bs, k_keep * D) → reshape
-            # Simpler: build gathered V directly with gather
             v_nb_expanded = v_nb.unsqueeze(2).expand(-1, -1, bs, -1, -1)  # (B,H,bs,N_nb,D)
             topk_v = torch.gather(
                 v_nb_expanded,
@@ -889,7 +883,7 @@ class BlockTransformerHIBA(BaseAttention):
                 topk_idx.unsqueeze(-1).expand(-1, -1, -1, -1, D),
             )  # (B, H, bs, k_keep, D)
 
-            inter_scores_list.append(nb_scores)
+            inter_scores_list.append(topk_scores)
             inter_v_list.append(topk_v)
 
         # ---- Concatenate inter scores per query block ----
@@ -914,16 +908,16 @@ class BlockTransformerHIBA(BaseAttention):
             inter_v_cat = torch.stack(padded_inter_v, dim=2)  # (B,H,NB,bs,max_k,D)
         else:
             inter_scores_cat = intra_scores.new_zeros(B, H, num_blocks, bs, 0)
-            inter_v_cat = v_blk.new_zeros(B, H, num_blocks, bs, 0, D)
+            inter_v_cat = v_blk.unsqueeze(3).new_zeros(B, H, num_blocks, bs, 0, D)
 
         # ---- [HIBA-FIX-01] Combine intra + inter into single attention ----
         # all_scores: (B, H, NB, bs, bs + max_k)
         all_scores = torch.cat([intra_scores, inter_scores_cat], dim=-1)
 
         # Combine V: intra (bs slots) + inter (max_k slots)
-        # For intra V, it's v_blk (B,H,NB,bs,D). We need to align so that
-        # position i in intra corresponds to key i in the same block.
-        all_v = torch.cat([v_blk, inter_v_cat], dim=3)  # (B,H,NB,bs,bs+max_k,D)
+        # v_blk is (B,H,NB,bs,D) -> expand to (B,H,NB,bs,bs,D) for per-query-token keys
+        v_intra_expanded = v_blk.unsqueeze(3).expand(-1, -1, -1, bs, -1, -1)
+        all_v = torch.cat([v_intra_expanded, inter_v_cat], dim=4)  # (B,H,NB,bs,bs+max_k,D)
 
         # ---- [HIBA-FIX-05] Safe softmax (max-subtraction) in FP32 ----
         scores_f = all_scores.float()
@@ -1088,15 +1082,8 @@ class BlockTransformerHIBA(BaseAttention):
                 try:
                     attn_bias = None
                     if valid_mask is not None and not valid_mask.all():
-                        bias_val = (
-                            -1e4
-                            if q.dtype in (torch.float16, torch.bfloat16)
-                            else -1e9
-                        )
-                        attn_bias = torch.zeros(
-                            (B, 1, L, S), device=q.device, dtype=q.dtype
-                        ).masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), bias_val)
-
+                        causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S-L)
+                        attn_bias = attn_bias.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), bias_val)
                     _qs = q.half() if q.dtype == torch.float32 else q
                     _ks = k.half() if k.dtype == torch.float32 else k
                     _vs = v.half() if v.dtype == torch.float32 else v
@@ -1128,8 +1115,8 @@ class BlockTransformerHIBA(BaseAttention):
 
             # ─── Manual path (either head_mask given, attn needed, or SDPA failed) ───
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale  # ضرب در فرمت اصلی (bfloat16/float16)
+            scores = scores.float() # فقط برای محاسبه امن Softmax به float32 کست شود
             if is_causal_dense:
                 causal_mask = torch.triu(
                     torch.full((L, S), float("-inf"), device=scores.device),
@@ -1174,8 +1161,7 @@ class BlockTransformerHIBA(BaseAttention):
             else:
                 final_out = out
 
-        return final_out.to(hidden_states.dtype), return_attn
-
+        return final_out.to(hidden_states.dtype), return_attn 
 
 # ===========================================================================
 # Injection
