@@ -400,6 +400,15 @@ class CosformerAttention(BaseAttention):
                     in_d = min(tw.size(1), w_to_use.size(1))
                     tw.data[:out_d, :in_d].copy_(w_to_use[:out_d, :in_d].to(tw.dtype))
 
+                    if b is not None and getattr(target_mod, "bias", None) is not None:
+                        tb = target_mod.bias
+                        b_to_use = b.data.clone() if hasattr(b, "data") else b.clone()
+                        if b_to_use.shape != tb.shape:
+                            b_out_d = min(tb.size(0), b_to_use.size(0))
+                            tb.data[:b_out_d].copy_(b_to_use[:b_out_d].to(tb.dtype))
+                        else:
+                            tb.data.copy_(b_to_use.to(tb.dtype))
+
     def _get_cos_sin_weights(self, seq_len, device, dtype):
         pos = torch.arange(seq_len, device=device, dtype=torch.float32)
         m = max(16384, self.max_seq_len)
