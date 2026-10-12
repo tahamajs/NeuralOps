@@ -286,8 +286,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -464,18 +464,19 @@ class SubspaceProjectionCompressor(BaseCompressor):
             err = float((torch.norm(W_orig_cmp - W_rec_cmp, p="fro") / denom).item())
             self.layer_errors[name] = err
 
-            if self.fallback_to_original and err > self.max_error:
+            if err > self.max_error:
                 logger.warning(
-                    "SubspaceProjection: err=%.4f on %s > max_error=%.4f; keeping original.",
+                    "SubspaceProjection: err=%.4f on %s > max_error=%.4f. Compressing anyway.",
                     err,
                     name,
                     self.max_error,
                 )
-                self.fallback_layers.append(name)
-                total_comp_bytes += orig_bytes
-                for p in module.parameters():
-                    p.requires_grad = False
-                continue
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    total_comp_bytes += orig_bytes
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
 
             # SP-FIX-10: preserve LoRA wrapper
             try:
@@ -628,10 +629,10 @@ def subspace_projection_factory(
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "fallback_to_original", True),
+        _cfg_get(comp_config, "fallback_to_original", False),
     )
 
     compressor = SubspaceProjectionCompressor(
