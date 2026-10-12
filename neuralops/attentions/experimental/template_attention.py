@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 from neuralops.core.gqa_utils import repeat_kv
@@ -634,9 +635,9 @@ class YourCustomAttention(BaseAttention):
 
         if use_sdpa:
             try:
-                q_sdpa = q.half() if q.dtype == torch.float32 else q
-                k_sdpa = k.half() if k.dtype == torch.float32 else k
-                v_sdpa = v.half() if v.dtype == torch.float32 else v
+                q_sdpa = maybe_half(q)
+                k_sdpa = maybe_half(k)
+                v_sdpa = maybe_half(v)
 
                 attn_bias = None
                 if eff_mask is not None:
