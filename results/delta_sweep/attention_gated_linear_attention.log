@@ -1,49 +1,61 @@
-2026-10-12 19:07:21,340 [INFO] MambaKD: ======================================================================
-2026-10-12 19:07:21,340 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 19:07:21,340 [INFO] MambaKD: ======================================================================
-2026-10-12 19:07:21,340 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 19:07:21,340 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
-2026-10-12 19:07:21,340 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 19:07:22,079 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 19:07:31,931 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 19:07:31,931 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 19:07:32,865 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
-2026-10-12 19:07:32,866 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-12 19:07:32,866 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 19:07:33,129 [INFO] MambaKD: 
-======================================================================
-2026-10-12 19:07:33,129 [INFO] MambaKD: PROCESSING MODULE 1/1: gated_linear_attention
-2026-10-12 19:07:33,129 [INFO] MambaKD: ======================================================================
-2026-10-12 19:07:33,130 [INFO] MambaKD: 
-# Running method C for gated_linear_attention
-2026-10-12 19:07:33,617 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 19:07:33,635 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 19:07:34,688 [INFO] neuralops.core._attention_injectors: Successfully injected 'gated_linear_attention' into 12 transformer blocks.
-2026-10-12 19:07:36,084 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 86.8243
-2026-10-12 19:07:36,085 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 86.8243
-2026-10-12 19:07:43,151 [INFO] MambaKD: Pre-KD PPL for Module gated_linear_attention, Method C: 15210.19
-2026-10-12 19:07:43,164 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 19:07:43,164 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 15210.19 (same protocol)
-2026-10-12 19:07:43,244 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +15173.97 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 19:07:43,289 [INFO] MambaKD: set_train_scope (module): matched 132 target param tensors
-2026-10-12 19:07:51,285 [INFO] MambaKD: [C] Step 0/300 | Loss: 13.9661...
-2026-10-12 19:07:51,847 [INFO] MambaKD: [C] Step 1/300 | Loss: 13.9661 | LR: 3.00e-06
-2026-10-12 19:07:52,770 [INFO] MambaKD: [C] Step 1/300 | Loss: 13.9582...
-2026-10-12 19:07:52,817 [INFO] MambaKD: [C] Step 2/300 | Loss: 13.9582 | LR: 6.00e-06
-2026-10-12 19:07:53,641 [INFO] MambaKD: [C] Step 2/300 | Loss: 13.7410...
-2026-10-12 19:07:53,686 [INFO] MambaKD: [C] Step 3/300 | Loss: 13.7410 | LR: 9.00e-06
-2026-10-12 19:07:54,533 [INFO] MambaKD: [C] Step 3/300 | Loss: 13.9081...
-2026-10-12 19:07:54,555 [INFO] MambaKD: [C] Step 4/300 | Loss: 13.9081 | LR: 1.20e-05
-2026-10-12 19:07:55,375 [INFO] MambaKD: [C] Step 4/300 | Loss: 13.5489...
-2026-10-12 19:07:55,421 [INFO] MambaKD: [C] Step 5/300 | Loss: 13.5489 | LR: 1.50e-05
-2026-10-12 19:07:56,242 [INFO] MambaKD: [C] Step 5/300 | Loss: 12.6636...
-2026-10-12 19:08:38,482 [INFO] MambaKD: [C] Step 50/300 | Loss: 12.6636 | LR: 1.50e-04
-2026-10-12 19:08:40,027 [INFO] MambaKD: [C] Step 50/300 | Loss: 13.4671...
-2026-10-12 19:09:23,566 [INFO] MambaKD: [C] Step 100/300 | Loss: 13.4671 | LR: 3.00e-04
-2026-10-12 19:09:29,964 [INFO] MambaKD: [C] Step 100 Eval PPL: 15211.50
-2026-10-12 19:09:30,637 [INFO] MambaKD: [C] Step 100/300 | Loss: 20.4259...
-2026-10-12 19:09:58,762 [INFO] MambaKD: [C] Step 150/300 | Loss: 20.4259 | LR: 2.56e-04
-2026-10-12 19:09:59,306 [INFO] MambaKD: [C] Step 150/300 | Loss: 22.6415...
-2026-10-12 19:10:26,427 [INFO] MambaKD: [C] Step 200/300 | Loss: 22.6415 | LR: 1.50e-04
-2026-10-12 19:10:32,709 [INFO] MambaKD: [C] Step 200 Eval PPL: 15211.50
-2026-10-12 19:10:33,250 [INFO] MambaKD: [C] Step 200/300 | Loss: 25.1845...
+================================================================================
+RUN SUMMARY: gated_linear_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.73 M
+  Trainable params:  1.29 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        15206.2400
+  Post-KD PPL:       762.0300
+  Stage 1 (KD) PPL:  762.0300
+  Stage 2 (Self) PPL:762.0300
+  KD Gain:           +14444.21
+  Self Gain:         +0.00
+  Total Gain:        +14444.21
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         21.0447
+  Recovery:          95.22%
+  Peak VRAM:         2842.67 MB
+  Train time:        27.41 s (Stage 1: 27.4s, Stage 2: 0.0s)
+  s/step:            0.5482
+  Loss (final):      11.8940
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0800
+  Repetition-3:      0.8973
+  Train PPL:         685.8500
+  Test PPL:          762.0300
+  Overfit Gap:       76.18
+  Latency (mean):    333.77 ms
+  Latency (std):     0.94 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0d365d9f33df
+
+TRAINING HISTORY (last 10 steps):
+  step    40 | loss=11.8544 | lr=1.20e-04
+  step    41 | loss=12.3617 | lr=1.23e-04
+  step    42 | loss=12.8192 | lr=1.26e-04
+  step    43 | loss=12.9193 | lr=1.29e-04
+  step    44 | loss=13.2894 | lr=1.32e-04
+  step    45 | loss=13.7629 | lr=1.35e-04
+  step    46 | loss=14.1321 | lr=1.38e-04
+  step    47 | loss=14.6792 | lr=1.41e-04
+  step    48 | loss=15.0600 | lr=1.44e-04
+  step    49 | loss=15.9113 | lr=1.47e-04

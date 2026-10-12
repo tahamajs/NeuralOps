@@ -1,25 +1,61 @@
-2026-10-12 18:44:13,759 [INFO] MambaKD: ======================================================================
-2026-10-12 18:44:13,759 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 18:44:13,759 [INFO] MambaKD: ======================================================================
-2026-10-12 18:44:13,759 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 18:44:13,760 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
-2026-10-12 18:44:13,760 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 18:44:13,892 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 18:44:13,892 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-12 18:44:13,893 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at /home/tahoora/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 08:56:52 2026).
-2026-10-12 18:44:15,250 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 18:44:15,251 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 18:44:15,429 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
-2026-10-12 18:44:15,430 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-12 18:44:15,430 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 18:44:15,666 [INFO] MambaKD: 
-======================================================================
-2026-10-12 18:44:15,666 [INFO] MambaKD: PROCESSING MODULE 1/1: svd_linear
-2026-10-12 18:44:15,666 [INFO] MambaKD: ======================================================================
-2026-10-12 18:44:15,667 [INFO] MambaKD: 
-# Running method C for svd_linear
-2026-10-12 18:44:15,920 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 18:44:15,921 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 18:44:22,037 [INFO] neuralops.core._attention_injectors: Successfully injected 'svd_linear' into 12 transformer blocks.
-2026-10-12 18:44:22,130 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 100.1323
-2026-10-12 18:44:22,130 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 100.1323
+================================================================================
+RUN SUMMARY: svd_linear / C
+================================================================================
+
+MODEL INFO:
+  Total params:      99.78 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        3752.3200
+  Post-KD PPL:       1481.8000
+  Stage 1 (KD) PPL:  2374.8900
+  Stage 2 (Self) PPL:1481.8000
+  KD Gain:           +1377.43
+  Self Gain:         +893.09
+  Total Gain:        +2270.52
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         40.9224
+  Recovery:          61.10%
+  Peak VRAM:         1612.13 MB
+  Train time:        16.92 s (Stage 1: 10.7s, Stage 2: 6.3s)
+  s/step:            0.5640
+  Loss (final):      6.1158
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8367
+  Repetition-3:      0.0260
+  Train PPL:         977.9900
+  Test PPL:          1481.8000
+  Overfit Gap:       503.81
+  Latency (mean):    358.30 ms
+  Latency (std):     0.00 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        48699001d8dc
+
+TRAINING HISTORY (last 10 steps):
+  step    11 | loss=5.8432 | lr=3.30e-05
+  step    12 | loss=5.8109 | lr=3.60e-05
+  step    13 | loss=5.6768 | lr=3.90e-05
+  step    14 | loss=6.0621 | lr=4.20e-05
+  step    15 | loss=5.8994 | lr=4.50e-05
+  step    16 | loss=6.4734 | lr=4.80e-05
+  step    17 | loss=6.5593 | lr=5.10e-05
+  step    18 | loss=7.0297 | lr=5.40e-05
+  step    19 | loss=7.3910 | lr=5.70e-05
+  step    30 | loss=7.2287 | lr=1.50e-04

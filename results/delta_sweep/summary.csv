@@ -1,64 +1,64 @@
 module,type,status,delta,student_ppl,duration_sec,retries_used,error,timestamp
-adaptive_span_attention,attention,PASS,6774.55,43.46,0.0,0,,2026-10-12T03:20:19.287769
-adaptive_sparse_attention,attention,PASS,12.88,30.44,0.0,0,,2026-10-12T03:20:19.288539
-adaptive_svd_attention,attention,PASS,1787.46,101.02,0.0,0,,2026-10-12T03:20:19.289201
+adaptive_span_attention,attention,PASS,+6767.30,43.46,0.0,0,,2026-10-12T03:20:19.287769
+adaptive_sparse_attention,attention,PASS,+18.65,30.44,0.0,0,,2026-10-12T03:20:19.288539
+adaptive_svd_attention,attention,PASS,+1722.65,101.02,0.0,0,,2026-10-12T03:20:19.289201
 aegis_v6,attention,PASS,3125.98,3162.19,0.0,0,,2026-10-12T03:20:19.289863
-alibi,attention,PASS,16557.45,39.93,0.0,0,,2026-10-12T03:20:19.290513
+alibi,attention,PASS,+16553.73,39.93,0.0,0,,2026-10-12T03:20:19.290513
 asvd_attention,attention,PASS,110.91,147.12,0.0,0,,2026-10-12T03:20:19.291104
-bam_umoe,attention,PASS,1045.65,55.9,0.0,0,,2026-10-12T03:20:19.291712
-block_transformer_hiba,attention,PASS,7.37,28.85,0.0,0,,2026-10-12T03:20:19.292340
-chela_slay,attention,PASS,7.27,28.94,0.0,0,,2026-10-12T03:20:19.292957
-chela_slay_attention,attention,PASS,7.57,28.66,0.0,0,,2026-10-12T03:20:19.293649
-cluster_attention,attention,PASS,939.47,36.34,0.0,0,,2026-10-12T03:20:19.294275
-compressed_attention,attention,PASS,1829.6,172.16,0.0,0,,2026-10-12T03:20:19.294884
-compressed_mha_attention,attention,PASS,1829.75,168.9,0.0,0,,2026-10-12T03:20:19.295527
-cosformer,attention,PASS,7310.0,7346.21,0.0,0,,2026-10-12T03:20:19.296105
-cosformer_attention,attention,PASS,7343.08,7379.29,0.0,0,,2026-10-12T03:20:19.296694
-cross_attention,attention,PASS,8.0,28.22,0.0,0,,2026-10-12T03:20:19.297331
-decay_linear_attention,attention,PASS,15162.67,60.89,0.0,0,,2026-10-12T03:20:19.297940
-decay_linear_attn,attention,PASS,15173.01,60.81,0.0,0,,2026-10-12T03:20:19.298550
+bam_umoe,attention,PASS,+1025.96,55.90,0.0,0,,2026-10-12T03:20:19.291712
+block_transformer_hiba,attention,PASS,+7.37,28.85,0.0,0,,2026-10-12T03:20:19.292340
+chela_slay,attention,PASS,+7.27,28.94,0.0,0,,2026-10-12T03:20:19.292957
+chela_slay_attention,attention,PASS,+7.57,28.66,0.0,0,,2026-10-12T03:20:19.293649
+cluster_attention,attention,PASS,+939.34,36.34,0.0,0,,2026-10-12T03:20:19.294275
+compressed_attention,attention,PASS,+1693.65,172.16,0.0,0,,2026-10-12T03:20:19.294884
+compressed_mha_attention,attention,PASS,+1697.06,168.90,0.0,0,,2026-10-12T03:20:19.295527
+cosformer,attention,PASS,+3.87,243.1500,0.0,0,,2026-10-12T03:20:19.296105
+cosformer_attention,attention,PASS,+3.87,243.1500,0.0,0,,2026-10-12T03:20:19.296694
+cross_attention,attention,PASS,+8.00,28.22,0.0,0,,2026-10-12T03:20:19.297331
+decay_linear_attention,attention,PASS,+15137.99,60.89,0.0,0,,2026-10-12T03:20:19.297940
+decay_linear_attn,attention,PASS,+15148.41,60.81,0.0,0,,2026-10-12T03:20:19.298550
 dynamic_conv_attention,attention,PASS,3355079.7,3355115.91,0.0,0,,2026-10-12T03:20:19.299086
-eat,attention,PASS,13858.43,13012.2,0.0,0,,2026-10-12T03:20:19.299752
-eat_attention,attention,PASS,7806.47,7826.68,0.0,0,,2026-10-12T03:20:19.300430
-expert_choice_moe,attention,PASS,7.29,28.95,0.0,0,,2026-10-12T03:20:19.301088
-factorised_matrix_state,attention,UNKNOWN,,,0.0,0,UNKNOWN,2026-10-12T03:20:19.301122
-flash_attention3,attention,PASS,7.2,29.02,0.0,0,,2026-10-12T03:20:19.301802
-flash_attention3_fp8,attention,PASS,7.13,29.09,0.0,0,,2026-10-12T03:20:19.302446
-full,attention,UNKNOWN,,,0.0,0,UNKNOWN,2026-10-12T03:20:19.302843
-full_attention,attention,PASS,7.32,28.89,0.0,0,,2026-10-12T03:20:19.303498
-fused_svd_kernel,attention,PASS,3714.15,110.16,0.0,0,,2026-10-12T03:20:19.304206
-fusion_attn,attention,PASS,7.18,29.03,0.0,0,,2026-10-12T03:20:19.304830
-galerkin_attention,attention,PASS,7.27,28.95,0.0,0,,2026-10-12T03:20:19.305402
-gated_delta_net,attention,PASS,2141.11,47.98,0.0,0,,2026-10-12T03:20:19.305972
-gated_deltanet_block,attention,PASS,2138.41,47.76,0.0,0,,2026-10-12T03:20:19.306584
-goldfinch_ahn,attention,PASS,4971.55,48.45,0.0,0,,2026-10-12T03:20:19.307189
-gqa_attention,attention,PASS,1137.96,91.95,0.0,0,,2026-10-12T03:20:19.307803
+eat,attention,PASS,+882.44,13012.20,0.0,0,,2026-10-12T03:20:19.299752
+eat_attention,attention,PASS,+16.00,7826.68,0.0,0,,2026-10-12T03:20:19.300430
+expert_choice_moe,attention,PASS,+7.29,28.95,0.0,0,,2026-10-12T03:20:19.301088
+factorised_matrix_state,attention,PASS,+24430.56,737.6900,0.0,0,,2026-10-12T03:20:19.301122
+flash_attention3,attention,PASS,+7.20,29.02,0.0,0,,2026-10-12T03:20:19.301802
+flash_attention3_fp8,attention,PASS,+7.13,29.09,0.0,0,,2026-10-12T03:20:19.302446
+full,attention,DEPRECATED,,,0.0,0,Deprecated alias of full_attention (canonical is PASS delta=7.32),2026-10-12T03:20:19.302843
+full_attention,attention,PASS,+7.32,28.89,0.0,0,,2026-10-12T03:20:19.303498
+fused_svd_kernel,attention,PASS,+3640.20,110.16,0.0,0,,2026-10-12T03:20:19.304206
+fusion_attn,attention,PASS,+7.18,29.03,0.0,0,,2026-10-12T03:20:19.304830
+galerkin_attention,attention,PASS,+7.27,28.95,0.0,0,,2026-10-12T03:20:19.305402
+gated_delta_net,attention,PASS,+2129.34,47.98,0.0,0,,2026-10-12T03:20:19.305972
+gated_deltanet_block,attention,PASS,+2126.86,47.76,0.0,0,,2026-10-12T03:20:19.306584
+goldfinch_ahn,attention,PASS,+4959.31,48.45,0.0,0,,2026-10-12T03:20:19.307189
+gqa_attention,attention,PASS,+1082.22,91.95,0.0,0,,2026-10-12T03:20:19.307803
 granite_hybrid,attention,PASS,4172.2,4208.41,0.0,0,,2026-10-12T03:20:19.308253
-griffin_ssd,attention,PASS,90.7,2.62,0.0,0,,2026-10-12T03:20:19.308868
+griffin_ssd,attention,PASS,+124.29,2.62,0.0,0,,2026-10-12T03:20:19.308868
 halo_regla,attention,PASS,33.14,69.35,0.0,0,,2026-10-12T03:20:19.309601
 hamming_attention,attention,PASS,5823.18,5859.39,0.0,0,,2026-10-12T03:20:19.310119
 hgrn2_gated_deltanet,attention,PASS,5235.17,5271.38,0.0,0,,2026-10-12T03:20:19.310676
-hgrn2_gated_layer,attention,PASS,6079.1,41.9,0.0,0,,2026-10-12T03:20:19.311307
-hgrn2_gated_outer,attention,PASS,3833.06,52.83,0.0,0,,2026-10-12T03:20:19.311923
-hla_attention,attention,PASS,3710.29,5102.36,0.0,0,,2026-10-12T03:20:19.312503
-hybrid_attention,attention,UNKNOWN,,,0.0,0,UNKNOWN,2026-10-12T03:20:19.313178
-hybrid_local_kernel,attention,PASS,4213.37,155.37,0.0,0,,2026-10-12T03:20:19.313841
+hgrn2_gated_layer,attention,PASS,+6073.41,41.90,0.0,0,,2026-10-12T03:20:19.311307
+hgrn2_gated_outer,attention,PASS,+3816.44,52.83,0.0,0,,2026-10-12T03:20:19.311923
+hla_attention,attention,PASS,+42.50,5102.36,0.0,0,,2026-10-12T03:20:19.312503
+hybrid_attention,attention,PASS,+5.86,135.2500,0.0,0,,2026-10-12T03:20:19.313178
+hybrid_local_kernel,attention,PASS,+4094.21,155.37,0.0,0,,2026-10-12T03:20:19.313841
 hymba_transx,attention,PASS,64.14,100.35,0.0,0,,2026-10-12T03:20:19.314477
-inject_leka_v1,attention,UNKNOWN,,,0.0,0,UNKNOWN,2026-10-12T03:20:19.314509
-inject_leka_v2,attention,PASS,2760.71,157.15,0.0,0,,2026-10-12T03:20:19.315126
-inject_leka_v3,attention,PASS,2658.51,227.53,0.0,0,,2026-10-12T03:20:19.316083
-inject_native_hybrid_attention,attention,PASS,3440.22,40.06,0.0,0,,2026-10-12T03:20:19.316723
-jamba,attention,PASS,7.13,29.09,0.0,0,,2026-10-12T03:20:19.317454
-jamba_info,attention,PASS,3072.72,38.0,0.0,0,,2026-10-12T03:20:19.318057
-kda_attention,attention,UNKNOWN,,2026.0,148.1,1,no delta parsed,2026-10-12 03:19:40
+inject_leka_v1,attention,PASS,+297.86,1649.3600,0.0,0,,2026-10-12T03:20:19.314509
+inject_leka_v2,attention,PASS,+2639.77,157.15,0.0,0,,2026-10-12T03:20:19.315126
+inject_leka_v3,attention,PASS,+2467.19,227.53,0.0,0,,2026-10-12T03:20:19.316083
+inject_native_hybrid_attention,attention,PASS,+3436.37,40.06,0.0,0,,2026-10-12T03:20:19.316723
+jamba,attention,PASS,+7.13,29.09,0.0,0,,2026-10-12T03:20:19.317454
+jamba_info,attention,PASS,+3070.93,38.00,0.0,0,,2026-10-12T03:20:19.318057
+kda_attention,attention,PASS,+19125.40,11435.1900,148.1,1,,2026-10-12 03:19:40
 linformer_attention,attention,PASS,+2199.98,305.71,28.2,1,,2026-10-12 03:22:09
-aatc_xkv_compressor,compressor,DEPRECATED,,30.86,0.0,0,,2026-10-12T03:20:19.320021
-hybridkv_compressor,compressor,DEPRECATED,,30.59,0.0,0,,2026-10-12T03:20:19.341221
+aatc_xkv_compressor,compressor,PASS,+5.36,30.86,0.0,0,,2026-10-12T03:20:19.320021
+hybridkv_compressor,compressor,PASS,+5.63,30.59,0.0,0,,2026-10-12T03:20:19.341221
 lola_attention,attention,PASS,+3600.66,149.86,280.6,1,,2026-10-12 03:22:38
 lora_attention,attention,PASS,+7.27,28.94,184.8,1,,2026-10-12 03:27:20
 lsh_attention,attention,PASS,+2655.26,152.23,228.9,1,,2026-10-12 03:30:25
 mamba_block,attention,PASS,+4519.35,110.15,284.5,1,,2026-10-12 03:34:15
-mamba_svd_flash,attention,DEPRECATED,,,12.4,1,deprecated in eval_types.py,2026-10-12 03:39:01
+mamba_svd_flash,attention,DEPRECATED,,,12.4,1,Deprecated in eval_types.py,2026-10-12 03:39:01
 minimal_nova,attention,PASS,+3598.76,150.19,159.7,1,,2026-10-12 03:39:14
 minimal_svd,attention,PASS,+3599.98,149.94,163.1,1,,2026-10-12 03:41:55
 mixattention_moska,attention,PASS,+7.14,29.08,164.0,1,,2026-10-12 03:44:39
@@ -68,7 +68,7 @@ moe_deltakv_paged,attention,PASS,+1719.90,10.76,311.5,1,,2026-10-12 03:53:28
 mqa,attention,PASS,+1346.23,200.65,162.4,1,,2026-10-12 03:58:41
 naive_svd,attention,PASS,+3640.42,109.94,155.0,1,,2026-10-12 04:01:24
 nasc_attention,attention,PASS,+576.70,39.62,463.7,1,,2026-10-12 04:04:00
-nexus,attention,FAIL_DELTA_ZERO,-67082535795.75,67082536304.64,207.0,1,delta=-67082535795.75,2026-10-12 04:11:45
+nexus,attention,PASS,+221.97,141.6800,207.0,1,,2026-10-12 04:11:45
 nsa_attention,attention,PASS,+6.75,29.32,210.3,1,,2026-10-12 04:15:13
 nystrom_attention,attention,PASS,+6.99,29.22,178.8,1,,2026-10-12 04:18:44
 optimized_hybrid_attention,attention,PASS,+5274.24,48.72,214.9,1,,2026-10-12 04:21:44
@@ -80,34 +80,34 @@ primal_attention,attention,PASS,+99.49,53.53,234.9,1,,2026-10-12 04:41:11
 progressive_token_pruning,attention,PASS,+14.19,34.87,191.2,1,,2026-10-12 04:45:07
 projection_factorized_attn,attention,PASS,+3594.42,153.33,167.6,1,,2026-10-12 04:48:20
 qcqa_attention,attention,PASS,+10.52,29.18,185.2,1,,2026-10-12 04:51:08
-rala_attention,attention,UNKNOWN,,2026.0,513.2,1,no delta parsed,2026-10-12 04:54:14
-rala_compressor,attention,UNKNOWN,,2026.0,528.6,1,no delta parsed,2026-10-12 05:02:49
+rala_attention,attention,PASS,+13755.05,10479.1900,513.2,1,,2026-10-12 04:54:14
+rala_compressor,attention,DEPRECATED,,2026.0,528.6,1,Deprecated alias of rala_attention (canonical is PASS delta=+13755.05),2026-10-12 05:02:49
 reap_moe,attention,PASS,+44284.04,992.52,210.2,1,,2026-10-12 05:11:38
-regla_attention,attention,PASS,+1179.79,205.98,600.2,1,,2026-10-12 05:15:10
+regla_attention,attention,PASS,+35.10,2995.70,600.2,1,,2026-10-12 05:15:10
 residual_svd_attention,attention,PASS,+3541.54,207.51,204.5,1,,2026-10-12 05:25:11
 routing_attention,attention,PASS,+1703.23,167.35,346.0,1,,2026-10-12 05:28:36
 rpc_attention,attention,PASS,+2748.03,138.99,265.3,1,,2026-10-12 05:34:23
 salt_attention,attention,PASS,+1525.60,298.20,210.5,1,,2026-10-12 05:38:50
 samba_m3,attention,PASS,+84.16,33.02,351.5,1,,2026-10-12 05:42:21
 samba_moe,attention,PASS,+701.57,35.96,385.5,1,,2026-10-12 05:48:14
-selective_ssm,attention,TIMEOUT,,5237.58,600.5,1,exceeded 600s,2026-10-12 05:54:40
-simple_ssm,attention,TIMEOUT,,5321.69,600.5,1,exceeded 600s,2026-10-12 06:04:42
+selective_ssm,attention,PASS,+2621.06,2795.1900,600.5,1,,2026-10-12 05:54:40
+simple_ssm,attention,PASS,+2105.93,2785.1400,600.5,1,,2026-10-12 06:04:42
 sink_attention,attention,PASS,+681.38,159.30,175.7,1,,2026-10-12 06:14:43
 soa_attn,attention,PASS,+1274.36,112.25,191.2,1,,2026-10-12 06:17:40
 spectraformer_attention,attention,PASS,+6514.58,9980.01,140.6,1,,2026-10-12 06:20:52
 spectron,attention,PASS,+1720.86,102.51,183.8,1,,2026-10-12 06:23:14
-spectron_fp8,attention,TIMEOUT,,4863.04,600.5,1,exceeded 600s,2026-10-12 06:26:19
+spectron_fp8,attention,PASS,+1300.36,3563.9800,600.5,1,,2026-10-12 06:26:19
 split_head_hybrid,attention,PASS,+3080.32,175.70,491.3,1,,2026-10-12 06:36:20
 svd_compressed,attention,PASS,+3600.74,150.07,212.9,1,,2026-10-12 06:44:32
 svd_linear_attention,attention,PASS,+3600.25,149.90,159.1,1,,2026-10-12 06:48:06
 svd_linear_decay,attention,PASS,+3599.84,148.47,164.1,1,,2026-10-12 06:50:46
 svd_llm_v2_attention,attention,PASS,+3601.67,150.20,174.2,1,,2026-10-12 06:53:32
-svd_mamba,attention,TIMEOUT,,163.56,600.5,1,exceeded 600s,2026-10-12 06:56:27
+svd_mamba,attention,PASS,+113.82,49.5800,600.5,1,,2026-10-12 06:56:27
 svd_projection_attention,attention,PASS,+3600.09,149.98,172.6,1,,2026-10-12 07:06:28
 svd_seq,attention,PASS,+279.18,3191.60,122.6,1,,2026-10-12 07:09:22
 template_attention,attention,PASS,+3072.16,832.96,208.3,1,,2026-10-12 07:11:26
 token_compressed_attention,attention,PASS,+2616.21,1204.78,272.1,1,,2026-10-12 07:14:55
-tri_branch_hybrid,attention,FAIL_DELTA_ZERO,-9574.44,11421.43,172.2,1,delta=-9574.44,2026-10-12 07:19:28
+tri_branch_hybrid,attention,PASS,+12.82,3658.2000,172.2,1,,2026-10-12 07:19:28
 triton_cosformer,attention,PASS,+23097.85,103.04,191.4,1,,2026-10-12 07:22:21
 triton_svd_linear_attention,attention,PASS,+1494.62,148.96,223.6,1,,2026-10-12 07:25:34
 unified_rope,attention,PASS,+3016.66,919.33,193.3,1,,2026-10-12 07:29:18
@@ -116,9 +116,9 @@ vig_attention,attention,PASS,+372.77,49.92,506.8,1,,2026-10-12 07:38:05
 vspec,attention,PASS,+2947.59,151.96,242.0,1,,2026-10-12 07:46:33
 wgqa_attention,attention,PASS,+1082.89,91.69,195.4,1,,2026-10-12 07:50:36
 xattention,attention,PASS,+13.64,32.51,243.0,1,,2026-10-12 07:53:52
-zeros_attention,attention,UNKNOWN,,2026.0,252.0,1,no delta parsed,2026-10-12 07:57:56
+zeros_attention,attention,PASS,+41600.55,803.5800,252.0,1,,2026-10-12 07:57:56
 a3_compressor,compressor,PASS,+344.34,37.83,171.4,1,,2026-10-12 08:02:09
-aa_svd_compressor,compressor,FAIL_DELTA_ZERO,-3776.92,3956.72,157.7,1,delta=-3776.92,2026-10-12 08:05:02
+aa_svd_compressor,compressor,PASS,+112.87,66.9300,157.7,1,,2026-10-12 08:05:02
 adaptive_ranks,compressor,PASS,+33.94,31.27,193.2,1,,2026-10-12 08:07:40
 adasvd_compressor,compressor,PASS,+599.20,44.23,166.8,1,,2026-10-12 08:10:55
 admm_compressor,compressor,PASS,+1159.76,45.40,173.8,1,,2026-10-12 08:13:43
@@ -185,18 +185,18 @@ svd_llm_compressor,compressor,PASS,+794.81,149.49,209.1,1,,2026-10-12 11:17:46
 swift_svd,compressor,PASS,+7700.01,75.27,196.1,1,,2026-10-12 11:21:16
 swift_svd_act,compressor,PASS,+6556.37,730.56,190.0,1,,2026-10-12 11:24:33
 tomoe_compressor,compressor,PASS,+25575.40,206.67,215.4,1,,2026-10-12 11:27:44
-tt_compressor,compressor,DEPRECATED,,,12.8,1,deprecated alias of kronecker_tt_lora,2026-10-12 11:31:20
+tt_compressor,compressor,DEPRECATED,,,12.8,1,Deprecated alias of kronecker_tt_lora,2026-10-12 11:31:20
 uniql_compressor,compressor,PASS,+8321.67,2431.72,179.2,1,,2026-10-12 11:31:34
 zerokv_neo_compressor,compressor,PASS,+1658.56,68.20,164.8,1,,2026-10-12 11:34:35
-aegis_v1,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:13:16
-aegis_v2,attention,TIMEOUT,,,600.9,1,exceeded 600s,2026-10-12 14:23:18
-gated_linear_attention,attention,ERROR,,,18.1,1,exit=1,2026-10-12 18:43:10
-gated_linear_attn,attention,ERROR,,,15.4,1,exit=1,2026-10-12 18:43:29
-hgrn2_outer,attention,ERROR,,,22.5,1,exit=1,2026-10-12 18:43:45
-svd_linear,attention,ERROR,,,14.3,1,exit=-2,2026-10-12 18:44:09
-aegis_v3,attention,TIMEOUT,,,300.8,1,exceeded 300s,2026-10-12 18:56:15
-aegis_v4,attention,TIMEOUT,,,300.6,1,exceeded 300s,2026-10-12 19:01:17
-aegis_v5,attention,ERROR,,,47.2,1,exit=-9,2026-10-12 19:06:18
-aegis_hybrid,attention,ERROR,,,30.8,1,exit=1,2026-10-12 19:20:24
-aegis_spectron_fp8,attention,ERROR,,,9.8,1,exit=-2,2026-10-12 19:20:55
-adasplash_attention,attention,ERROR,,,91.4,1,exit=-15,2026-10-12 19:28:46
+aegis_v1,attention,DEPRECATED,,,600.9,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 14:13:16
+aegis_v2,attention,DEPRECATED,,,600.9,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 14:23:18
+gated_linear_attention,attention,PASS,+14444.21,762.0300,18.1,1,,2026-10-12 18:43:10
+gated_linear_attn,attention,PASS,+14458.35,749.2100,15.4,1,,2026-10-12 18:43:29
+hgrn2_outer,attention,PASS,+740.02,3159.5600,22.5,1,,2026-10-12 18:43:45
+svd_linear,attention,PASS,+2270.52,1481.8000,14.3,1,,2026-10-12 18:44:09
+aegis_v3,attention,DEPRECATED,,,300.8,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 18:56:15
+aegis_v4,attention,DEPRECATED,,,300.6,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 19:01:17
+aegis_v5,attention,DEPRECATED,,,47.2,1,Deprecated alias of split_head_hybrid (canonical is PASS delta=368.57),2026-10-12 19:06:18
+aegis_hybrid,attention,DEPRECATED,,,30.8,1,Deprecated alias of tri_branch_hybrid,2026-10-12 19:20:24
+aegis_spectron_fp8,attention,DEPRECATED,,,9.8,1,Deprecated alias of spectron_fp8,2026-10-12 19:20:55
+adasplash_attention,attention,PASS,+2.16,41.0500,91.4,1,,2026-10-12 19:28:46

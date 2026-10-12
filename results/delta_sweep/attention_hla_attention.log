@@ -78,7 +78,7 @@
 2026-10-12 02:41:34,851 [INFO] MambaKD: [C] [COMPLETE] Pre: 3746.50
   Stage 1 (KD):    5102.36  (kd_gain=-1355.86)
   Stage 2 (self):  5102.36  (self_gain=+0.00)
-  Total:                  (total_gain=-1355.86)
+  Total:                  (total_gain=+42.50)
   Teacher baseline: 36.21
   Aligned with teacher? NO (post_stage1 5102.36 > 36.21)
   Beat teacher after self? NO
