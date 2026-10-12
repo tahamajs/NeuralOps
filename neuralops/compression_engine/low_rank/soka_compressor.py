@@ -95,9 +95,9 @@ class LowRankCompressor(BaseCompressor):
         model: nn.Module,
         rank: int = 8,
         energy_threshold: float | None = None,
-        max_error: float = 0.5,
+        max_error: float = 1.0,
         target_attention_only: bool = False,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -240,16 +240,17 @@ class LowRankCompressor(BaseCompressor):
                 rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
                 self.layer_errors[name] = rel_err
 
-                if self.fallback_to_original and rel_err > self.max_error:
+                if rel_err > self.max_error:
                     logger.warning(
-                        "SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        "SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
                         rel_err,
                         name,
                         self.max_error,
                     )
-                    for p in module.parameters():
-                        p.requires_grad = False
-                    continue
+                    if self.fallback_to_original:
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        continue
 
                 compressed_layer = new_layer
                 # Preserve existing LoRA adapter weights if the source module has them
@@ -328,9 +329,9 @@ def soka_factory(
         "energy_threshold",
         _cfg_get(comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)),
     )
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.5))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
     )
     target_attention_only = kwargs.pop(
         "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
