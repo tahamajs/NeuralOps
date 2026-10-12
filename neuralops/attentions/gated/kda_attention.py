@@ -806,6 +806,8 @@ class KDAAttention(BaseAttention):
         mask_bool: torch.Tensor | None = None,
         out_dtype: torch.dtype = torch.float32,
     ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        B, H, L, d = q.shape
+        device = q.device
 
         # ---- Feature map (ELU+1) ----
         q_f = F.elu(q.float()) + 1.0
