@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -666,9 +667,9 @@ class MoBAAttention(BaseAttention):
         if self.block_size >= L or is_cross:
             if valid_mask is None and head_mask is None and not output_attentions:
                 try:
-                    _qs = Q.half() if Q.dtype == torch.float32 else Q
-                    _ks = K.half() if K.dtype == torch.float32 else K
-                    _vs = V.half() if V.dtype == torch.float32 else V
+                    _qs = maybe_half(Q)
+                    _ks = maybe_half(K)
+                    _vs = maybe_half(V)
                     _is_causal = self.is_decoder and not is_cross and L > 1
                     _sdpa_out = F.scaled_dot_product_attention(
                         _qs,
