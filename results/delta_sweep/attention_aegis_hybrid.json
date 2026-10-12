@@ -1,11 +1,11 @@
 {
   "module": "aegis_hybrid",
   "type": "attention",
-  "status": "FAIL_DELTA_ZERO",
-  "delta": -13727.86,
-  "student_ppl": 15574.85,
-  "duration_sec": 184.8,
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 9.7,
   "retries_used": 1,
-  "error": "delta=-13727.86",
-  "timestamp": "2026-10-12 14:00:08"
+  "error": "exit=-2",
+  "timestamp": "2026-10-12 19:11:53"
 }

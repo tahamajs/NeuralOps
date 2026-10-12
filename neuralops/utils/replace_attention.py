@@ -171,21 +171,36 @@ class UniversalAttentionWrapper(nn.Module):
             "ssm",
         }
 
+        # ---- Preserve the full tuple length from the inner module ----
+        # GPT-2 expects (hidden, present, attn_weights) when
+        # use_cache=True AND output_attentions=True. Do NOT collapse
+        # a 3-tuple to a 2-tuple, or GPT-2 will crash with IndexError.
         if isinstance(out, tuple):
-            first = out[0]
-            second = out[1] if len(out) > 1 else None
+            if self.return_tuple is not None:
+                if self.return_tuple:
+                    if len(out) == 0:
+                        out = (None, None)
+                    elif len(out) == 1:
+                        out = (out[0], None)
+                    return out
+                return out[0]
+
+            if "linear_attn" in self.layer_name:
+                return out[0]
+
+            # Pad to at least 2 elements; keep 3+ intact
+            if len(out) == 0:
+                return (None, None)
+            if len(out) == 1:
+                return (out[0], None)
+            return out
         else:
-            first = out
-            second = None
-
-        if self.return_tuple is not None:
-            return (first, second) if self.return_tuple else first
-
-        if "linear_attn" in self.layer_name:
-            return first
-
-        return (first, second)
-
+            # Not a tuple
+            if self.return_tuple is not None:
+                return (out, None) if self.return_tuple else out
+            if "linear_attn" in self.layer_name:
+                return out
+            return (out, None)
     def _forward_t5(
         self,
         hidden_states: torch.Tensor,

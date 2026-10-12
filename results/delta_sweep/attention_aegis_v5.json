@@ -1,0 +1,11 @@
+{
+  "module": "aegis_v5",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 47.2,
+  "retries_used": 1,
+  "error": "exit=-9",
+  "timestamp": "2026-10-12 19:06:18"
+}
