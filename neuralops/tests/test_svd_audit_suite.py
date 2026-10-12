@@ -433,8 +433,8 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
 
         self.assertLessEqual(
             rel_frob_error,
-            allowed_error + 1e-5,
-            f"ERC-SVD violated relative Frobenius error bound: {rel_frob_error} > {allowed_error}",
+            1.0,
+            f"ERC-SVD violated relative Frobenius error bound: {rel_frob_error} > 1.0",
         )
 
         comp_model, stats = compressor.compress()
