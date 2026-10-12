@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -286,13 +287,16 @@ def sparse_attn_pytorch_fallback(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
-    topk: int = 32,
+    block_mask: torch.Tensor | None = None,
     block_size: int = 64,
-    scale: float | None = None,
     is_causal: bool = False,
+    eps: float = 1e-6,
     **kwargs: Any,
 ) -> torch.Tensor:
-    """Pure PyTorch fallback for top-k block-sparse attention."""
+    """
+    Pure PyTorch fallback for block-sparse attention.
+    Expands block_mask to full attention matrix or falls back to causal/dense attention.
+    """
     orig_dtype = q.dtype
     orig_dim = q.dim()
 
@@ -301,35 +305,37 @@ def sparse_attn_pytorch_fallback(
         k = k.unsqueeze(1)
         v = v.unsqueeze(1)
 
-    B, H, N, D = q.shape
-    if scale is None:
-        scale = 1.0 / (D**0.5)
+    scale = 1.0 / math.sqrt(q.shape[-1])
+    scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+    N_q, N_k = scores.shape[-2], scores.shape[-1]
 
-    q_f = q.float() * scale
-    k_f = k.float()
-    v_f = v.float()
-
-    scores = torch.matmul(q_f, k_f.transpose(-1, -2))
+    if block_mask is not None:
+        # Expand block_mask to element-wise boolean mask
+        bm = block_mask.to(torch.bool)
+        if bm.dim() == 2:
+            expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(
+                block_size, dim=1
+            )
+            expanded_mask = expanded_mask[:N_q, :N_k]
+            scores = scores.masked_fill(~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+        elif bm.dim() == 4:
+            expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(
+                block_size, dim=3
+            )
+            expanded_mask = expanded_mask[..., :N_q, :N_k]
+            scores = scores.masked_fill(~expanded_mask, float("-inf"))
 
     if is_causal:
-        causal_mask = torch.tril(torch.ones(N, N, device=q.device, dtype=torch.bool))
-        scores = torch.where(causal_mask, scores, float("-inf"))
-
-    k_sel = min(topk, N)
-    if k_sel < N:
-        topk_vals, _ = torch.topk(scores, k=k_sel, dim=-1)
-        cutoff = topk_vals[..., -1:]
-        mask = scores >= cutoff
-        scores = torch.where(mask, scores, float("-inf"))
+        causal_mask = torch.tril(torch.ones(N_q, N_k, device=q.device, dtype=torch.bool))
+        scores = scores.masked_fill(~causal_mask, float("-inf"))
 
     attn_probs = F.softmax(scores, dim=-1)
     attn_probs = torch.nan_to_num(attn_probs, nan=0.0)
-
-    out = torch.matmul(attn_probs, v_f)
+    out = torch.matmul(attn_probs, v.float()).to(orig_dtype)
 
     if orig_dim == 3:
         out = out.squeeze(1)
-    return out.to(orig_dtype)
+    return out
 
 
 def low_rank_pytorch_fallback(

@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: salr / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        10775.8900
+  Post-KD PPL:       10775.8900
+  Stage 1 (KD) PPL:  10775.8900
+  Stage 2 (Self) PPL:10775.8900
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         297.5943
+  Recovery:          0.00%
+  Peak VRAM:         554.96 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8112
+  Repetition-3:      0.0208
+  Train PPL:         16295.2100
+  Test PPL:          10775.8900
+  Overfit Gap:       -5519.32
+  Latency (mean):    263.54 ms
+  Latency (std):     27.65 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        9bdbef13ec63
+
+TRAINING HISTORY (last 10 steps):

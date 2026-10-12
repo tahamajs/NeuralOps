@@ -31,3 +31,9 @@ full,attention,ERROR,,,11.6,1,exit=1,2026-10-12 01:16:23
 full_attention,attention,UNKNOWN,,36.21,223.0,1,no delta parsed,2026-10-12 01:16:36
 fused_svd_kernel,attention,UNKNOWN,,3750.36,257.6,1,no delta parsed,2026-10-12 01:20:20
 fusion_attn,attention,UNKNOWN,,36.21,242.3,1,no delta parsed,2026-10-12 01:24:38
+galerkin_attention,attention,UNKNOWN,,36.22,186.9,1,no delta parsed,2026-10-12 01:28:42
+gated_delta_net,attention,UNKNOWN,,2177.32,253.0,1,no delta parsed,2026-10-12 01:31:50
+gated_deltanet_block,attention,UNKNOWN,,2174.62,243.1,1,no delta parsed,2026-10-12 01:36:04
+goldfinch_ahn,attention,UNKNOWN,,5007.76,248.5,1,no delta parsed,2026-10-12 01:40:08
+gqa_attention,attention,UNKNOWN,,77.3969,175.8,1,no delta parsed,2026-10-12 01:44:17
+granite_hybrid,attention,ERROR,,4208.41,23.6,1,exit=1,2026-10-12 01:47:14

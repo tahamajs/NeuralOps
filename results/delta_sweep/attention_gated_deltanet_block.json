@@ -3,9 +3,9 @@
   "type": "attention",
   "status": "UNKNOWN",
   "delta": null,
-  "student_ppl": 2173.37,
-  "duration_sec": 265.2,
+  "student_ppl": 2174.62,
+  "duration_sec": 243.1,
   "retries_used": 1,
   "error": "no delta parsed",
-  "timestamp": "2026-10-11 23:27:25"
+  "timestamp": "2026-10-12 01:36:04"
 }

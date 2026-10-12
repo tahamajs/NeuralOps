@@ -1,10 +1,10 @@
-﻿{
-    "module":  "salr",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  36.22,
-    "duration_sec":  211,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 16:23:52"
+{
+    "module": "salr",
+    "type": "compressor",
+    "status": "PASS",
+    "delta": 10739.68,
+    "student_ppl": 10775.89,
+    "duration_sec": 20.0,
+    "error": null,
+    "timestamp": "2026-10-12 01:33:22"
 }

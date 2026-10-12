@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: swift_svd_act / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        7286.9300
+  Post-KD PPL:       7286.9300
+  Stage 1 (KD) PPL:  7286.9300
+  Stage 2 (Self) PPL:7286.9300
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         201.2408
+  Recovery:          0.00%
+  Peak VRAM:         564.93 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7755
+  Repetition-3:      0.0208
+  Train PPL:         8225.3700
+  Test PPL:          7286.9300
+  Overfit Gap:       -938.44
+  Latency (mean):    244.24 ms
+  Latency (std):     18.27 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        9bdbef13ec63
+
+TRAINING HISTORY (last 10 steps):

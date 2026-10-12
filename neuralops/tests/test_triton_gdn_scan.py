@@ -120,8 +120,8 @@ def test_gdn_scan_triton_backward(device):
     q = torch.randn(B, H, L, D, device=device, requires_grad=True)
     k = torch.randn(B, H, L, D, device=device, requires_grad=True)
     v = torch.randn(B, H, L, D, device=device, requires_grad=True)
-    beta = torch.sigmoid(torch.randn(B, H, L, device=device, requires_grad=True))
-    alpha = torch.sigmoid(torch.randn(B, H, L, device=device, requires_grad=True))
+    beta = torch.sigmoid(torch.randn(B, H, L, device=device)).detach().requires_grad_()
+    alpha = torch.sigmoid(torch.randn(B, H, L, device=device)).detach().requires_grad_()
 
     out = gdn_scan_triton(q, k, v, beta, alpha)
     loss = out.sum()

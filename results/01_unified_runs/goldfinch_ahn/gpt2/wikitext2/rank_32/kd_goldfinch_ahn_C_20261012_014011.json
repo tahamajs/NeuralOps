@@ -1,0 +1,145 @@
+{
+  "run_metadata": {
+    "run_id": "kd_goldfinch_ahn_C_20261012_014011",
+    "run_name": "kd_goldfinch_ahn_gpt2_C",
+    "timestamp_start": "2026-10-12T01:44:12.192978+00:00",
+    "timestamp_end": "2026-10-12T01:44:12.193149+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "2dd4e82ca783961369895446c9ad1c89e83c7021",
+    "git_commit_short": "2dd4e82ca7",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": "neuralops/__init__.py                              |     2 +\n .../hybrid/gated_hybrid_kernel_attention.py        |     5 +-\n .../hybrid/hybrid_local_kernel_attention.py        |     8 +\n neuralops/attentions/ssm/mamba_svd_flash.py        |     2 +\n neuralops/core/triton_kernels/gla_scan.py          |     3 +-\n neuralops/tests/test_triton_fms_scan.py            |     2 +-\n neuralops/tests/test_triton_gdn_scan.py            |     4 +-\n neuralops/tests/test_triton_gla_scan.py            |     2 +-\n neuralops/tests/test_triton_hgrn2_scan.py          |     2 +-\n neuralops/tests/test_triton_selective_scan.py      |     2 +-\n .../delta_sweep/attention_galerkin_attention.json  |     4 +-\n .../delta_sweep/attention_galerkin_attention.log   |    46 +\n results/delta_sweep/attention_gated_delta_net.err  |    50 +-\n results/delta_sweep/attention_gated_delta_net.json |     6 +-\n results/delta_sweep/attention_gated_delta_net.log  |   194 +-\n .../delta_sweep/attention_gated_deltanet_block.err |    12 +-\n .../attention_gated_deltanet_block.json            |     6 +-\n .../delta_sweep/attention_gated_deltanet_block.log |   194 +-\n results/delta_sweep/attention_goldfinch_ahn.err    |    12 +-\n results/delta_sweep/attention_goldfinch_ahn.log    |   195 +-\n results/delta_sweep/compressor_salr.json           |    20 +-\n .../delta_sweep/compressor_soka_compressor.json    |    20 +-\n .../compressor_subspace_projection.json            |    20 +-\n results/delta_sweep/compressor_swift_svd_act.json  |    20 +-\n .../delta_sweep/compressor_tomoe_compressor.json   |    20 +-\n results/delta_sweep/summary.csv                    |     3 +\n results/kd_runs/galerkin_attention/latest.txt      |     2 +-\n results/kd_runs/gated_delta_net/latest.txt         |     2 +-\n results/kd_runs/gated_deltanet_block/latest.txt    |     2 +-\n results/kd_runs/registry.json                      | 15116 +++++++++++++++++++\n results/kd_runs/rpca_compressor/latest.txt         |     2 +-\n results/kd_runs/salr/latest.txt                    |     2 +-\n results/kd_runs/slicegpt/latest.txt                |     2 +-\n results/kd_runs/soka_compressor/latest.txt         |     2 +-\n results/kd_runs/subspace_projection/latest.txt     |     2 +-\n results/kd_runs/svd_linear/latest.txt              |     2 +-\n results/kd_runs/swift_svd_act/latest.txt           |     2 +-\n results/kd_runs/tomoe_compressor/latest.txt        |     2 +-\n results/kd_runs/uniql_compressor/latest.txt        |     2 +-\n results/results.csv                                |    14 +\n results/results.parquet                            |   Bin 17207 -> 17851 bytes\n 41 files changed, 15583 insertions(+), 425 deletions(-)",
+    "session_id": "695eb02d-30de-4487-b7dc-5e7222d29969",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "goldfinch_ahn",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 300,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.14.7",
+    "python_executable": "/mnt/d/venv/bin/python3",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 16,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_vram_gb": 7.62,
+    "cuda_version": "12.8",
+    "cudnn_version": "91900",
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "5.19.0",
+    "datasets_version": "5.1.0",
+    "triton_version": "3.6.0",
+    "numpy_version": "2.5.2",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {}
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 5007.76,
+    "post_ppl": 48.45,
+    "post_ppl_stage1": 58.55,
+    "post_ppl_stage2": 48.45,
+    "kd_gain": 4949.21,
+    "recovery_pct": 99.75
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2899.36,
+    "train_duration_s": 225.3
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "422e0aa7a5aaea04",
+  "run_id": "kd_goldfinch_ahn_C_20261012_014011",
+  "run_name": "kd_goldfinch_ahn_gpt2_C",
+  "timestamp_start": "2026-10-12T01:44:12.192978+00:00",
+  "timestamp_end": "2026-10-12T01:44:12.193149+00:00",
+  "git_commit": "2dd4e82ca783961369895446c9ad1c89e83c7021",
+  "git_dirty": true,
+  "run_key": "goldfinch_ahn__gpt2__wikitext2__rank32__7cdc20fee34c"
+}
