@@ -132,7 +132,7 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
+            nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self) -> None:
@@ -276,6 +276,8 @@ class CosformerAttention(BaseAttention):
         with torch.no_grad():
             nn.init.zeros_(self.fusion_gate.weight)
             self.fusion_gate.bias.fill_(-4.0)  # Prioritize pretrained local attention stream at init
+        self.fusion_gate.weight.requires_grad = False
+        self.fusion_gate.bias.requires_grad = False
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
