@@ -272,12 +272,14 @@ class CosformerAttention(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.fusion_gate = nn.Linear(self.dim, 1, bias=True)
+        # Fusion gate between global cosformer and base local attention
+        # Kept frozen at warm-start bias to prevent FP16 gradient divergence while LoRA trains
+        self.stream_gate = nn.Linear(self.dim, 1, bias=True)
         with torch.no_grad():
-            nn.init.zeros_(self.fusion_gate.weight)
-            self.fusion_gate.bias.fill_(-4.0)  # Prioritize exact base local stream at init, learnable during KD
-        self.fusion_gate.weight.requires_grad = True
-        self.fusion_gate.bias.requires_grad = True
+            nn.init.zeros_(self.stream_gate.weight)
+            self.stream_gate.bias.fill_(-4.0)  # Warm-start prioritized local stream
+        self.stream_gate.weight.requires_grad = False
+        self.stream_gate.bias.requires_grad = False
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -566,7 +568,7 @@ class CosformerAttention(BaseAttention):
         )
         local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        gate = torch.sigmoid(self.fusion_gate(hidden_states)).to(torch.float32)
+        gate = torch.sigmoid(self.stream_gate(hidden_states)).to(torch.float32)
         gate_expanded = gate.view(B, N, 1, 1).transpose(1, 2)
 
         context = (gate_expanded * global_out) + ((1.0 - gate_expanded) * local_out)
