@@ -1,12 +1,11 @@
 {
   "module": "lsc_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 71977.03,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 72013.24,
-  "pre_ppl": 72013.24,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.345095"
+  "duration_sec": 193.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:03:44"
 }

@@ -1,12 +1,11 @@
 {
   "module": "dobi_svd",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 3453.72,
-  "student_ppl": 1370.64,
-  "pre_ppl": 3489.94,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.332842"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 3489.92,
+  "duration_sec": 98.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:57:13"
 }

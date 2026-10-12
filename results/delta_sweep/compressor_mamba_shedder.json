@@ -1,12 +1,11 @@
 {
   "module": "mamba_shedder",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 4.74,
-  "student_ppl": 40.96,
-  "pre_ppl": 40.96,
-  "duration_sec": 24.2,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-11T17:30:52"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 653.29,
+  "duration_sec": 194.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:06:58"
 }

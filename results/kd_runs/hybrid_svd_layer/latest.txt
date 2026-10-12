@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\hybrid_svd_layer\20261011_145859_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/hybrid_svd_layer/20261012_094044_bs8_seq256_lr3e-04_C

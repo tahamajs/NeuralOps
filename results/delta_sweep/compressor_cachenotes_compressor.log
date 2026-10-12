@@ -1,158 +1,175 @@
-2026-10-11 13:30:59,637 [INFO] MambaKD: ======================================================================
-2026-10-11 13:30:59,640 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 13:30:59,640 [INFO] MambaKD: ======================================================================
-2026-10-11 13:30:59,641 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 13:30:59,641 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 13:30:59,642 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 13:31:00,097 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 13:31:00,101 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 13:31:00,104 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 13:31:03,970 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 13:31:03,973 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 13:31:04,152 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 13:31:04,154 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 13:31:04,155 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 13:31:04,739 [INFO] MambaKD: 
+2026-10-12 08:31:40,222 [INFO] MambaKD: ======================================================================
+2026-10-12 08:31:40,223 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 08:31:40,223 [INFO] MambaKD: ======================================================================
+2026-10-12 08:31:40,223 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 08:31:40,223 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 08:31:40,223 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 08:31:41,171 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:31:41,487 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:31:41,797 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:31:42,083 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 08:31:42,370 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:31:42,658 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:31:42,766 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 08:31:43,054 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:31:43,313 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 08:31:43,631 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:31:44,275 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 08:31:44,612 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 08:31:44,962 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 08:31:45,925 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 08:31:46,215 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:31:46,497 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:31:46,781 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 08:31:47,066 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 08:31:47,721 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 08:31:47,721 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 08:31:48,007 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 08:31:48,295 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 08:31:48,399 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 08:31:48,400 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 08:31:48,400 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:31:48,482 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 13:31:04,742 [INFO] MambaKD: PROCESSING MODULE 1/1: cachenotes_compressor
-2026-10-11 13:31:04,742 [INFO] MambaKD: ======================================================================
-2026-10-11 13:31:04,742 [INFO] MambaKD: 
+2026-10-12 08:31:48,482 [INFO] MambaKD: PROCESSING MODULE 1/1: cachenotes_compressor
+2026-10-12 08:31:48,483 [INFO] MambaKD: ======================================================================
+2026-10-12 08:31:48,483 [INFO] MambaKD: 
 # Running method C for cachenotes_compressor
-2026-10-11 13:31:05,063 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 13:31:05,067 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 13:31:05,616 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: CPT generator not yet trained. Running initial task-aware training pass...
-2026-10-11 13:31:10,506 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: CPT generator trained successfully over 60 steps with avg loss 0.3216
-2026-10-11 13:31:10,703 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4434 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:10,705 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_fc (fallback to original).
-2026-10-11 13:31:10,765 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4541 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:10,767 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_proj (fallback to original).
-2026-10-11 13:31:10,944 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4587 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:10,947 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_fc (fallback to original).
-2026-10-11 13:31:11,007 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4833 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:11,009 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_proj (fallback to original).
-2026-10-11 13:31:11,068 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3647 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:11,070 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.attn.c_attn (fallback to original).
-2026-10-11 13:31:11,187 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4480 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:11,190 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_fc (fallback to original).
-2026-10-11 13:31:11,251 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4498 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:11,252 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_proj (fallback to original).
-2026-10-11 13:31:11,312 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4027 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:11,314 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.attn.c_attn (fallback to original).
-2026-10-11 13:31:11,431 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:11,434 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_fc (fallback to original).
-2026-10-11 13:31:11,493 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4316 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:11,494 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_proj (fallback to original).
-2026-10-11 13:31:11,552 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3846 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:11,553 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.attn.c_attn (fallback to original).
-2026-10-11 13:31:11,673 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4369 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:11,675 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_fc (fallback to original).
-2026-10-11 13:31:11,737 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4394 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:11,739 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_proj (fallback to original).
-2026-10-11 13:31:11,797 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3574 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:11,799 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.attn.c_attn (fallback to original).
-2026-10-11 13:31:11,916 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4364 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:11,919 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_fc (fallback to original).
-2026-10-11 13:31:11,980 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4450 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:11,981 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_proj (fallback to original).
-2026-10-11 13:31:12,040 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3821 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:12,042 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.attn.c_attn (fallback to original).
-2026-10-11 13:31:12,159 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4387 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:12,161 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_fc (fallback to original).
-2026-10-11 13:31:12,220 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4494 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:12,221 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_proj (fallback to original).
-2026-10-11 13:31:12,279 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3910 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:12,281 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.attn.c_attn (fallback to original).
-2026-10-11 13:31:12,403 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4420 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:12,406 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_fc (fallback to original).
-2026-10-11 13:31:12,467 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4554 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:12,469 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_proj (fallback to original).
-2026-10-11 13:31:12,527 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4304 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:12,529 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.attn.c_attn (fallback to original).
-2026-10-11 13:31:12,646 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4498 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:12,649 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_fc (fallback to original).
-2026-10-11 13:31:12,708 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4489 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:12,711 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_proj (fallback to original).
-2026-10-11 13:31:12,770 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4508 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:12,771 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.attn.c_attn (fallback to original).
-2026-10-11 13:31:12,889 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:12,892 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_fc (fallback to original).
-2026-10-11 13:31:12,952 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4521 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:12,953 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_proj (fallback to original).
-2026-10-11 13:31:13,013 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4226 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:13,016 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.attn.c_attn (fallback to original).
-2026-10-11 13:31:13,133 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4445 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:13,135 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_fc (fallback to original).
-2026-10-11 13:31:13,194 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4633 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:13,196 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_proj (fallback to original).
-2026-10-11 13:31:13,255 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4077 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
-2026-10-11 13:31:13,256 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.attn.c_attn (fallback to original).
-2026-10-11 13:31:13,371 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4380 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
-2026-10-11 13:31:13,374 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_fc (fallback to original).
-2026-10-11 13:31:13,432 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4677 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
-2026-10-11 13:31:13,433 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_proj (fallback to original).
-2026-10-11 13:31:13,538 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 22.0899
-2026-10-11 13:31:13,540 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 22.0899
-2026-10-11 13:31:18,108 [INFO] MambaKD: Pre-KD PPL for Module cachenotes_compressor, Method C: 39.89
-2026-10-11 13:31:18,110 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 13:31:18,110 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 39.89 (same protocol)
-2026-10-11 13:31:18,111 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3.67 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 13:31:18,111 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 13:31:18,378 [INFO] MambaKD: [C] Step 0/300 | Loss: 2.1846...
-2026-10-11 13:31:18,582 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.1846 | LR: 1.50e-05
-2026-10-11 13:31:18,704 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.2041...
-2026-10-11 13:31:18,819 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.2041 | LR: 3.00e-05
-2026-10-11 13:31:18,924 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.1778...
-2026-10-11 13:31:19,058 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.1778 | LR: 4.50e-05
-2026-10-11 13:31:19,170 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.1095...
-2026-10-11 13:31:19,265 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.1095 | LR: 6.00e-05
-2026-10-11 13:31:19,376 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.0794...
-2026-10-11 13:31:19,500 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.0794 | LR: 7.50e-05
-2026-10-11 13:31:19,618 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.5351...
-2026-10-11 13:31:30,626 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.5351 | LR: 7.50e-04
-2026-10-11 13:31:30,747 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.5483...
-2026-10-11 13:31:42,715 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.5483 | LR: 1.50e-03
-2026-10-11 13:31:47,433 [INFO] MambaKD: [C] Step 100 Eval PPL: 43.45
-2026-10-11 13:31:47,559 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.9905...
-2026-10-11 13:31:59,759 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.9905 | LR: 1.28e-03
-2026-10-11 13:31:59,867 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6126...
-2026-10-11 13:32:11,838 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6126 | LR: 7.50e-04
-2026-10-11 13:32:16,687 [INFO] MambaKD: [C] Step 200 Eval PPL: 43.20
-2026-10-11 13:32:16,795 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5034...
-2026-10-11 13:32:28,787 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5034 | LR: 2.20e-04
-2026-10-11 13:32:28,920 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.6305...
-2026-10-11 13:32:40,816 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.6305 | LR: 1.50e-04
-2026-10-11 13:32:45,536 [INFO] MambaKD: [C] Step 300 Eval PPL: 38.01
-2026-10-11 13:32:45,539 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 38.01
-2026-10-11 13:32:45,539 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 13:32:45,722 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7787 | LR: 1.50e-05
-2026-10-11 13:32:45,895 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9581 | LR: 3.00e-05
-2026-10-11 13:32:46,084 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.8942 | LR: 4.50e-05
-2026-10-11 13:32:46,271 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0740 | LR: 6.00e-05
-2026-10-11 13:32:46,448 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0733 | LR: 7.50e-05
-2026-10-11 13:32:54,401 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5321 | LR: 2.84e-04
-2026-10-11 13:33:03,250 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0267 | LR: 1.96e-04
-2026-10-11 13:33:07,926 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 32.58
-2026-10-11 13:33:16,846 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3305 | LR: 8.20e-05
-2026-10-11 13:33:25,687 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3058 | LR: 7.44e-06
-2026-10-11 13:33:30,412 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.31
-2026-10-11 13:33:35,136 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.31
-2026-10-11 13:33:35,138 [INFO] MambaKD: [C] [COMPLETE] Pre: 39.89
-  Stage 1 (KD):    38.01  (kd_gain=+1.88)
-  Stage 2 (self):  31.31  (self_gain=+6.70)
-  Total:                  (total_gain=+8.58)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 38.01 > 36.22)
+2026-10-12 08:31:48,908 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 08:31:48,909 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 08:31:49,160 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: CPT generator not yet trained. Running initial task-aware training pass...
+2026-10-12 08:31:52,163 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: CPT generator trained successfully over 60 steps with avg loss 0.3215
+2026-10-12 08:31:52,301 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4434 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:52,301 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_fc (fallback to original).
+2026-10-12 08:31:52,343 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4540 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:52,343 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_proj (fallback to original).
+2026-10-12 08:31:52,466 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4586 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:52,466 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_fc (fallback to original).
+2026-10-12 08:31:52,508 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4832 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:52,508 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_proj (fallback to original).
+2026-10-12 08:31:52,549 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3647 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:52,549 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.attn.c_attn (fallback to original).
+2026-10-12 08:31:52,629 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4479 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:52,629 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_fc (fallback to original).
+2026-10-12 08:31:52,671 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4497 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:52,672 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_proj (fallback to original).
+2026-10-12 08:31:52,712 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4027 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:52,715 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.attn.c_attn (fallback to original).
+2026-10-12 08:31:52,796 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:52,796 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_fc (fallback to original).
+2026-10-12 08:31:52,838 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4315 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:52,838 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_proj (fallback to original).
+2026-10-12 08:31:52,878 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3846 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:52,878 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.attn.c_attn (fallback to original).
+2026-10-12 08:31:52,961 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4368 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:52,961 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,003 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4394 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,003 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,044 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3574 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,044 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,125 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4364 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,125 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,167 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4449 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,167 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,205 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3821 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,205 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,287 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4387 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,287 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,329 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4493 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,331 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,372 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.3909 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,372 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,453 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4420 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,453 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,495 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4553 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,495 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,535 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4304 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,535 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,617 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4498 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,617 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,659 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4488 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,659 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,700 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4507 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,700 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,781 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,781 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,823 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4520 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,823 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_proj (fallback to original).
+2026-10-12 08:31:53,864 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4226 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:53,864 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.attn.c_attn (fallback to original).
+2026-10-12 08:31:53,944 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4445 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:53,946 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_fc (fallback to original).
+2026-10-12 08:31:53,988 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4633 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:53,988 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_proj (fallback to original).
+2026-10-12 08:31:54,030 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4077 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-10-12 08:31:54,030 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.attn.c_attn (fallback to original).
+2026-10-12 08:31:54,112 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4380 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-10-12 08:31:54,112 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_fc (fallback to original).
+2026-10-12 08:31:54,154 [WARNING] neuralops.compression_engine.kv_cache.cachenotes_compressor: CacheNotes reconstruction error 0.4677 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-10-12 08:31:54,154 [INFO] neuralops.compression_engine.kv_cache.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_proj (fallback to original).
+2026-10-12 08:31:54,192 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 21.7744
+2026-10-12 08:31:54,192 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 21.7744
+2026-10-12 08:31:54,907 [INFO] MambaKD: Pre-KD PPL for Module cachenotes_compressor, Method C: 39.91
+2026-10-12 08:31:54,907 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 08:31:54,907 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 39.91 (same protocol)
+2026-10-12 08:31:54,907 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3.70 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 08:31:54,908 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-12 08:31:55,461 [INFO] MambaKD: [C] Step 0/300 | Loss: 2.5603...
+2026-10-12 08:31:55,597 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.5603 | LR: 1.50e-05
+2026-10-12 08:31:56,055 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.1882...
+2026-10-12 08:31:56,172 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.1882 | LR: 3.00e-05
+2026-10-12 08:31:56,464 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.4158...
+2026-10-12 08:31:56,581 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.4158 | LR: 4.50e-05
+2026-10-12 08:31:56,837 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.4241...
+2026-10-12 08:31:56,953 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.4241 | LR: 6.00e-05
+2026-10-12 08:31:57,206 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.1880...
+2026-10-12 08:31:57,322 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.1880 | LR: 7.50e-05
+2026-10-12 08:31:57,573 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.3553...
+2026-10-12 08:32:19,616 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.3553 | LR: 7.50e-04
+2026-10-12 08:32:20,009 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3518...
+2026-10-12 08:32:43,589 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3518 | LR: 1.50e-03
+2026-10-12 08:32:44,495 [INFO] MambaKD: [C] Step 100 Eval PPL: 39.83
+2026-10-12 08:32:44,798 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.7620...
+2026-10-12 08:33:05,582 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.7620 | LR: 1.28e-03
+2026-10-12 08:33:05,844 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.6411...
+2026-10-12 08:33:22,218 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.6411 | LR: 7.50e-04
+2026-10-12 08:33:22,889 [INFO] MambaKD: [C] Step 200 Eval PPL: 38.99
+2026-10-12 08:33:23,046 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5885...
+2026-10-12 08:33:36,207 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5885 | LR: 2.20e-04
+2026-10-12 08:33:36,350 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.7150...
+2026-10-12 08:33:48,663 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.7150 | LR: 1.50e-04
+2026-10-12 08:33:49,331 [INFO] MambaKD: [C] Step 300 Eval PPL: 36.51
+2026-10-12 08:33:49,334 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 36.51
+2026-10-12 08:33:49,335 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 08:33:49,495 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.6275 | LR: 1.50e-05
+2026-10-12 08:33:49,645 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9963 | LR: 3.00e-05
+2026-10-12 08:33:49,796 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.0018 | LR: 4.50e-05
+2026-10-12 08:33:49,946 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0324 | LR: 6.00e-05
+2026-10-12 08:33:50,096 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 3.7381 | LR: 7.50e-05
+2026-10-12 08:33:56,837 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.2310 | LR: 2.84e-04
+2026-10-12 08:34:04,247 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.6232 | LR: 1.96e-04
+2026-10-12 08:34:04,923 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.42
+2026-10-12 08:34:12,421 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3293 | LR: 8.20e-05
+2026-10-12 08:34:19,835 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.0116 | LR: 7.44e-06
+2026-10-12 08:34:20,601 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 31.42
+2026-10-12 08:34:21,318 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 31.42
+2026-10-12 08:34:21,328 [INFO] MambaKD: [C] [COMPLETE] Pre: 39.91
+  Stage 1 (KD):    36.51  (kd_gain=+3.40)
+  Stage 2 (self):  31.42  (self_gain=+5.09)
+  Total:                  (total_gain=+8.49)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 36.51 > 36.21)
   Beat teacher after self? YES
   Recovery: 100.00%
-  Time: 136.9s (Stage 1: 87.3s, Stage 2: 49.6s)
-2026-10-11 13:33:51,931 [INFO] MambaKD: [QUALITY] distinct_2=0.85, repetition_3=0.04, train_ppl=21.29, test_ppl=31.31, overfit_gap=10.02, latency=1819.8ms
-2026-10-11 13:33:51,942 [INFO] MambaKD: Saved all run details to results\kd_runs\cachenotes_compressor\20261011_133059_bs4_seq256_lr3e-04_C
+  Time: 146.4s (Stage 1: 114.4s, Stage 2: 32.0s)
+2026-10-12 08:34:22,860 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.02, train_ppl=20.01, test_ppl=31.42, overfit_gap=11.41, latency=97.7ms
+2026-10-12 08:34:22,874 [INFO] MambaKD: Saved all run details to results/kd_runs/cachenotes_compressor/20261012_083140_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
 | Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    39.89 |    38.01 |    31.31 |    +1.88 |    +6.70 |    +8.58 |
+| C       |    39.91 |    36.51 |    31.42 |    +3.40 |    +5.09 |    +8.49 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 13:33:57,467 [INFO] MambaKD: 
+2026-10-12 08:34:28,348 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 13:33:57,468 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 13:33:57,468 [INFO] MambaKD: ======================================================================
+2026-10-12 08:34:28,348 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 08:34:28,348 [INFO] MambaKD: ======================================================================

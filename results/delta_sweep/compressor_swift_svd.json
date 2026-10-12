@@ -1,12 +1,11 @@
 {
   "module": "swift_svd",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 7740.93,
-  "student_ppl": 82.54,
-  "pre_ppl": 7777.15,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.359753"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 7775.28,
+  "duration_sec": 196.1,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:21:16"
 }

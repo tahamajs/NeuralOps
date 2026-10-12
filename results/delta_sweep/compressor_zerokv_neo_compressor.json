@@ -1,12 +1,11 @@
 {
   "module": "zerokv_neo_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 1690.81,
-  "student_ppl": 78.88,
-  "pre_ppl": 1727.03,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.363348"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1726.76,
+  "duration_sec": 164.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:34:35"
 }

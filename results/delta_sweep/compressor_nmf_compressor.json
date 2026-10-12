@@ -1,12 +1,11 @@
 {
   "module": "nmf_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 7590.61,
-  "student_ppl": 153.21,
-  "pre_ppl": 7626.83,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.347294"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 8170.61,
+  "duration_sec": 252.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:19:26"
 }

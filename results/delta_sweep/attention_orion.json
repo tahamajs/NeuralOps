@@ -1,0 +1,11 @@
+{
+  "module": "orion",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 3346.03,
+  "duration_sec": 262.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 04:25:20"
+}

@@ -1,0 +1,1 @@
+/mnt/d/SVD_linear_Attention/results/kd_runs/minimal_nova/20261012_033918_bs8_seq256_lr3e-04_C

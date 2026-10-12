@@ -1,0 +1,30 @@
+# Benchmark Run Summary: zeros_attention
+
+- **Run ID**: `kd_zeros_attention_C_20261012_075801`
+- **Status**: **FAILED**
+- **Timestamp**: 2026-10-12T08:02:00.424677+00:00
+- **Git Commit**: `e744a85270` (dirty=True)
+
+## Architecture & Configuration
+| Field | Value |
+|---|---|
+| **Module** | `zeros_attention` |
+| **Model** | `gpt2` |
+| **Dataset** | `wikitext2` |
+| **Rank** | `32` |
+| **Epochs** | `1` |
+| **Batch Size** | `8` |
+
+## Primary Metrics
+| Metric | Value |
+|---|---|
+| **Accuracy** | N/A |
+| **F1 Score** | N/A |
+| **Loss** | N/A |
+| **Duration (s)** | 0.0s |
+| **Peak VRAM** | 2836.22 MB |
+
+## Reproduction Command
+```bash
+python -m neuralops.benchmarks run --module zeros_attention --model gpt2 --dataset wikitext2 --rank 32
+```

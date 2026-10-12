@@ -1,12 +1,11 @@
 {
   "module": "entropy_budget_allocation",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 9849.02,
-  "student_ppl": 795.65,
-  "pre_ppl": 9885.24,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.334803"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 9885.73,
+  "duration_sec": 152.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:07:39"
 }

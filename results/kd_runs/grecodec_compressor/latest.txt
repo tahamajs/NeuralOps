@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\grecodec_compressor\20261011_144844_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/grecodec_compressor/20261012_093133_bs8_seq256_lr3e-04_C

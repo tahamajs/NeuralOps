@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\aa_svd_compressor\20261011_125700_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/aa_svd_compressor/20261012_080506_bs8_seq256_lr3e-04_C

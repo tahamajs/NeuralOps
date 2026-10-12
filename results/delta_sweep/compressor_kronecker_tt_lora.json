@@ -1,12 +1,11 @@
 {
   "module": "kronecker_tt_lora",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 10026.05,
-  "student_ppl": 10062.26,
-  "pre_ppl": 10062.26,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.342896"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 10135.26,
+  "duration_sec": 235.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:50:02"
 }

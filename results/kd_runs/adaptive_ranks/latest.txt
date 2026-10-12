@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\adaptive_ranks\20261011_130357_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/adaptive_ranks/20261012_080745_bs8_seq256_lr3e-04_C

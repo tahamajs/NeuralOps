@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\proxsparse\20261011_160045_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/proxsparse/20261012_103033_bs8_seq256_lr3e-04_C

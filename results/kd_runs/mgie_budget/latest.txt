@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/mgie_budget/20261012_014547_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/mgie_budget/20261012_101016_bs8_seq256_lr3e-04_C

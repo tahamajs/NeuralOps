@@ -1,12 +1,11 @@
 {
   "module": "saes_svd_v2",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 9836.54,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 9872.75,
-  "pre_ppl": 9872.75,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.352230"
+  "duration_sec": 195.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:44:39"
 }

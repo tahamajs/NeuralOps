@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: bonsai_pruner / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        62.6100
+  Post-KD PPL:       37.1900
+  Stage 1 (KD) PPL:  44.6000
+  Stage 2 (Self) PPL:37.1900
+  KD Gain:           +18.01
+  Self Gain:         +7.41
+  Total Gain:        +25.42
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.0271
+  Recovery:          96.29%
+  Peak VRAM:         3258.12 MB
+  Train time:        161.64 s (Stage 1: 128.1s, Stage 2: 33.5s)
+  s/step:            0.3233
+  Loss (final):      23.8930
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8827
+  Repetition-3:      0.0156
+  Train PPL:         29.0700
+  Test PPL:          37.1900
+  Overfit Gap:       8.12
+  Latency (mean):    76.19 ms
+  Latency (std):     0.36 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.8265 | lr=1.74e-04
+  step   420 | loss=3.1775 | lr=1.50e-04
+  step   430 | loss=3.6605 | lr=1.27e-04
+  step   440 | loss=3.3378 | lr=1.04e-04
+  step   450 | loss=3.7418 | lr=8.20e-05
+  step   460 | loss=3.5167 | lr=6.19e-05
+  step   470 | loss=3.3383 | lr=4.40e-05
+  step   480 | loss=3.2744 | lr=2.87e-05
+  step   490 | loss=3.3395 | lr=1.64e-05
+  step   500 | loss=3.4878 | lr=7.44e-06

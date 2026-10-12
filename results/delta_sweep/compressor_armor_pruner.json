@@ -1,12 +1,11 @@
 {
   "module": "armor_pruner",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 3.53,
-  "student_ppl": 31.75,
-  "pre_ppl": 39.75,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.323856"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 39.73,
+  "duration_sec": 177.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:19:22"
 }

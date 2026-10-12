@@ -1,12 +1,11 @@
 {
   "module": "svd_linear",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 3713.08,
-  "student_ppl": 3749.29,
-  "pre_ppl": 3749.29,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.358593"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 3749.92,
+  "duration_sec": 206.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:14:19"
 }

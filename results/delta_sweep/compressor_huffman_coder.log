@@ -1,83 +1,111 @@
-2026-10-12 01:22:29,787 [INFO] MambaKD: ======================================================================
-2026-10-12 01:22:29,788 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 01:22:29,788 [INFO] MambaKD: ======================================================================
-2026-10-12 01:22:29,788 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 01:22:29,788 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-12 01:22:29,788 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 01:22:30,358 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:22:30,604 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-2026-10-12 01:22:30,846 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:22:31,100 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-2026-10-12 01:22:31,342 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:22:31,596 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:22:31,738 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 01:22:31,980 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:22:32,117 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
-2026-10-12 01:22:32,358 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 01:22:33,038 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 01:22:33,358 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
-2026-10-12 01:22:33,607 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
-2026-10-12 01:22:34,245 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
-2026-10-12 01:22:34,494 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:22:34,739 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:22:34,984 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
-2026-10-12 01:22:35,234 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 01:22:35,972 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 01:22:35,972 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 01:22:36,215 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 01:22:36,514 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|██████████| 148/148 [00:00<00:00, 11021.57it/s]
-2026-10-12 01:22:36,619 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
-  cache[key] = torch.from_numpy(np_memmap)
-2026-10-12 01:22:36,620 [INFO] MambaKD: Using teacher baseline PPL: 36.21
-2026-10-12 01:22:36,620 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 01:22:37,082 [INFO] MambaKD: 
+2026-10-12 09:38:14,427 [INFO] MambaKD: ======================================================================
+2026-10-12 09:38:14,427 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 09:38:14,427 [INFO] MambaKD: ======================================================================
+2026-10-12 09:38:14,427 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 09:38:14,427 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 09:38:14,427 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 09:38:14,955 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 09:38:15,181 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 09:38:15,411 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 09:38:15,637 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 09:38:15,874 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 09:38:16,137 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 09:38:16,255 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 09:38:16,484 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 09:38:16,619 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 09:38:16,835 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 09:38:17,474 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 09:38:17,788 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 09:38:18,013 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 09:38:18,758 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 09:38:19,026 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 09:38:19,250 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 09:38:19,548 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 09:38:19,778 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 09:38:20,430 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 09:38:20,430 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 09:38:20,708 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 09:38:20,943 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 09:38:21,052 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 09:38:21,052 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 09:38:21,052 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 09:38:21,141 [INFO] MambaKD: 
 ======================================================================
-2026-10-12 01:22:37,082 [INFO] MambaKD: PROCESSING MODULE 1/1: huffman_coder
-2026-10-12 01:22:37,082 [INFO] MambaKD: ======================================================================
-2026-10-12 01:22:37,082 [INFO] MambaKD: 
+2026-10-12 09:38:21,141 [INFO] MambaKD: PROCESSING MODULE 1/1: huffman_coder
+2026-10-12 09:38:21,141 [INFO] MambaKD: ======================================================================
+2026-10-12 09:38:21,141 [INFO] MambaKD: 
 # Running method C for huffman_coder
-2026-10-12 01:22:37,676 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 01:22:37,677 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 01:22:40,473 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 3.8651 on transformer.h.0.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:41,391 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.1222 on transformer.h.1.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:42,901 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.0968 on transformer.h.1.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:43,784 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2037 on transformer.h.2.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:44,465 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.9391 on transformer.h.2.mlp.c_fc exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:45,136 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 5.1501 on transformer.h.2.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:47,395 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.5310 on transformer.h.3.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:49,658 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.3318 on transformer.h.4.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:52,102 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2190 on transformer.h.5.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:22:57,125 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.5143 on transformer.h.7.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:23:02,819 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2253 on transformer.h.10.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:23:04,282 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.4667 on transformer.h.10.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:23:05,096 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.5284 on transformer.h.11.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:23:06,708 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.3996 on transformer.h.11.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
-2026-10-12 01:23:06,932 [INFO] neuralops.compression_engine.quantization.huffman_coder: Compressor huffman finished: 48 compressed, 0 fallback, avg_err=1.0630, max_err_threshold=1.0000
-2026-10-12 01:23:06,952 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 93.2540
-2026-10-12 01:23:06,953 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 93.2540
-[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
-2026-10-12 01:23:07,912 [INFO] MambaKD: Pre-KD PPL for Module huffman_coder, Method C: 1170049.07
-2026-10-12 01:23:07,912 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 01:23:07,912 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 1170049.07 (same protocol)
-2026-10-12 01:23:07,912 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +1170012.86 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 01:23:07,913 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
-2026-10-12 01:23:09,059 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 1170049.07
-2026-10-12 01:23:09,062 [INFO] MambaKD: [C] COMPLETE | Pre: 1170049.07 -> Post: 1170049.07 | Recovery: 0.00% | VRAM: 581.99 MB | Time: 0.01s
-2026-10-12 01:23:11,558 [INFO] MambaKD: [QUALITY] distinct_2=0.66, repetition_3=0.05, train_ppl=1775249.55, test_ppl=1170049.07, overfit_gap=-605200.48, latency=213.7ms
-2026-10-12 01:23:11,563 [INFO] MambaKD: Saved all run details to results/kd_runs/huffman_coder/20261012_012229_bs4_seq256_lr3e-04_C
+2026-10-12 09:38:22,258 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 09:38:22,265 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 09:38:26,397 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 3.8651 on transformer.h.0.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:27,191 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.1222 on transformer.h.1.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:28,504 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.0968 on transformer.h.1.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:29,270 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2037 on transformer.h.2.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:29,889 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.9391 on transformer.h.2.mlp.c_fc exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:30,488 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 5.1501 on transformer.h.2.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:32,464 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.5310 on transformer.h.3.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:34,522 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.3318 on transformer.h.4.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:36,685 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2190 on transformer.h.5.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:41,146 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.5143 on transformer.h.7.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:46,069 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.2253 on transformer.h.10.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:47,311 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 1.4667 on transformer.h.10.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:48,028 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.5284 on transformer.h.11.attn.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:49,492 [WARNING] neuralops.compression_engine.quantization.huffman_coder: Huffman error 2.3996 on transformer.h.11.mlp.c_proj exceeded max_error 1.0000 (base max_err=1.0000)
+2026-10-12 09:38:49,697 [INFO] neuralops.compression_engine.quantization.huffman_coder: Compressor huffman finished: 48 compressed, 0 fallback, avg_err=1.0630, max_err_threshold=1.0000
+2026-10-12 09:38:49,710 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 93.2540
+2026-10-12 09:38:49,710 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 93.2540
+2026-10-12 09:38:50,563 [INFO] MambaKD: Pre-KD PPL for Module huffman_coder, Method C: 1170049.07
+2026-10-12 09:38:50,563 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 09:38:50,563 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 1170049.07 (same protocol)
+2026-10-12 09:38:50,563 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +1170012.86 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 09:38:50,564 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-12 09:38:51,111 [INFO] MambaKD: [C] Step 0/300 | Loss: 204178.5312...
+2026-10-12 09:38:51,274 [INFO] MambaKD: [C] Step 1/300 | Loss: 204178.5312 | LR: 1.50e-05
+2026-10-12 09:38:51,869 [INFO] MambaKD: [C] Step 1/300 | Loss: 203615.6094...
+2026-10-12 09:38:51,985 [INFO] MambaKD: [C] Step 2/300 | Loss: 203615.6094 | LR: 3.00e-05
+2026-10-12 09:38:52,473 [INFO] MambaKD: [C] Step 2/300 | Loss: 200245.9062...
+2026-10-12 09:38:52,590 [INFO] MambaKD: [C] Step 3/300 | Loss: 200245.9062 | LR: 4.50e-05
+2026-10-12 09:38:53,023 [INFO] MambaKD: [C] Step 3/300 | Loss: 202006.6562...
+2026-10-12 09:38:53,140 [INFO] MambaKD: [C] Step 4/300 | Loss: 202006.6562 | LR: 6.00e-05
+2026-10-12 09:38:53,593 [INFO] MambaKD: [C] Step 4/300 | Loss: 200694.7969...
+2026-10-12 09:38:53,708 [INFO] MambaKD: [C] Step 5/300 | Loss: 200694.7969 | LR: 7.50e-05
+2026-10-12 09:38:54,129 [INFO] MambaKD: [C] Step 5/300 | Loss: 199733.0156...
+2026-10-12 09:39:32,762 [INFO] MambaKD: [C] Step 50/300 | Loss: 199733.0156 | LR: 7.50e-04
+2026-10-12 09:39:33,278 [INFO] MambaKD: [C] Step 50/300 | Loss: 275.2314...
+2026-10-12 09:39:57,111 [INFO] MambaKD: [C] Step 100/300 | Loss: 275.2314 | LR: 1.50e-03
+2026-10-12 09:39:57,991 [INFO] MambaKD: [C] Step 100 Eval PPL: 7037.70
+2026-10-12 09:39:57,991 [WARNING] MambaKD: [C] Early stop triggered at step 100: PPL=7037.7
+2026-10-12 09:39:57,992 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 7037.70
+2026-10-12 09:39:57,992 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 09:39:58,149 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 9.1856 | LR: 1.50e-05
+2026-10-12 09:39:58,299 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 9.3694 | LR: 3.00e-05
+2026-10-12 09:39:58,449 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 9.3041 | LR: 4.50e-05
+2026-10-12 09:39:58,599 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 9.3619 | LR: 6.00e-05
+2026-10-12 09:39:58,749 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 9.1455 | LR: 7.50e-05
+2026-10-12 09:40:05,465 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 8.0948 | LR: 2.84e-04
+2026-10-12 09:40:12,900 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 8.0474 | LR: 1.96e-04
+2026-10-12 09:40:13,657 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 1976.36
+2026-10-12 09:40:21,132 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 7.6008 | LR: 8.20e-05
+2026-10-12 09:40:28,516 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 7.6365 | LR: 7.44e-06
+2026-10-12 09:40:29,181 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 1391.25
+2026-10-12 09:40:29,842 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 1391.25
+2026-10-12 09:40:29,855 [INFO] MambaKD: [C] [COMPLETE] Pre: 1170049.07
+  Stage 1 (KD):    7037.70  (kd_gain=+1163011.37)
+  Stage 2 (self):  1391.25  (self_gain=+5646.45)
+  Total:                  (total_gain=+1168657.82)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 7037.70 > 36.21)
+  Beat teacher after self? NO
+  Recovery: 99.88%
+  Time: 99.2s (Stage 1: 67.4s, Stage 2: 31.9s)
+2026-10-12 09:40:31,058 [INFO] MambaKD: [QUALITY] distinct_2=0.49, repetition_3=0.25, train_ppl=1645.65, test_ppl=1391.25, overfit_gap=-254.40, latency=8.3ms
+2026-10-12 09:40:31,071 [INFO] MambaKD: Saved all run details to results/kd_runs/huffman_coder/20261012_093814_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       | 1170049.07 | 1170049.07 |     0.0% |      0.0 |    582.0 |      YES |
+| C       | 1170049.07 |  7037.70 |  1391.25 | +1163011.37 | +5646.45 | +1168657.82 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-12 01:23:14,219 [INFO] MambaKD: 
+2026-10-12 09:40:36,518 [INFO] MambaKD: 
 ======================================================================
-2026-10-12 01:23:14,219 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-12 01:23:14,219 [INFO] MambaKD: ======================================================================
+2026-10-12 09:40:36,518 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 09:40:36,519 [INFO] MambaKD: ======================================================================

@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/mamba_shedder/20261012_032020_bs8_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/mamba_shedder/20261012_100701_bs8_seq256_lr3e-04_C

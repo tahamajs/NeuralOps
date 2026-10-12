@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\astro_quantizer\20261011_132417_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/astro_quantizer/20261012_082526_bs8_seq256_lr3e-04_C

@@ -1,0 +1,106 @@
+2026-10-12 07:15:00,154 [INFO] MambaKD: ======================================================================
+2026-10-12 07:15:00,154 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 07:15:00,154 [INFO] MambaKD: ======================================================================
+2026-10-12 07:15:00,154 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 07:15:00,154 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 07:15:00,154 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 07:15:06,908 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 07:15:07,140 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 07:15:07,785 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 07:15:08,010 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 07:15:08,234 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 07:15:08,461 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 07:15:09,993 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 07:15:10,720 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 07:15:11,201 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 07:15:11,428 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 07:15:22,124 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 07:15:28,198 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 07:15:29,188 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 07:15:29,958 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 07:15:30,224 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 07:15:30,500 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 07:15:30,734 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 07:15:30,976 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 07:15:31,638 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 07:15:31,638 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 07:15:31,872 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 07:15:32,133 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 07:15:32,268 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 07:15:32,268 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 07:15:32,269 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 07:15:32,356 [INFO] MambaKD: 
+======================================================================
+2026-10-12 07:15:32,356 [INFO] MambaKD: PROCESSING MODULE 1/1: token_compressed_attention
+2026-10-12 07:15:32,356 [INFO] MambaKD: ======================================================================
+2026-10-12 07:15:32,356 [INFO] MambaKD: 
+# Running method C for token_compressed_attention
+2026-10-12 07:15:32,784 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 07:15:32,785 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 07:15:33,015 [INFO] neuralops.core._attention_injectors: Successfully injected 'token_compressed_attention' into 12 transformer blocks.
+2026-10-12 07:15:33,270 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 131.4103
+2026-10-12 07:15:33,270 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 131.4103
+2026-10-12 07:15:35,303 [INFO] MambaKD: Pre-KD PPL for Module token_compressed_attention, Method C: 3820.99
+2026-10-12 07:15:35,304 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 07:15:35,304 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3820.99 (same protocol)
+2026-10-12 07:15:35,304 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3784.78 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 07:15:35,304 [INFO] MambaKD: set_train_scope (module): matched 96 target param tensors
+2026-10-12 07:15:35,795 [INFO] MambaKD: [C] Step 0/300 | Loss: 3737.1489...
+2026-10-12 07:15:36,025 [INFO] MambaKD: [C] Step 1/300 | Loss: 3737.1489 | LR: 1.50e-05
+2026-10-12 07:15:36,465 [INFO] MambaKD: [C] Step 1/300 | Loss: 3800.2354...
+2026-10-12 07:15:36,616 [INFO] MambaKD: [C] Step 2/300 | Loss: 3800.2354 | LR: 3.00e-05
+2026-10-12 07:15:37,140 [INFO] MambaKD: [C] Step 2/300 | Loss: 3762.9182...
+2026-10-12 07:15:37,288 [INFO] MambaKD: [C] Step 3/300 | Loss: 3762.9182 | LR: 4.50e-05
+2026-10-12 07:15:37,683 [INFO] MambaKD: [C] Step 3/300 | Loss: 3737.8467...
+2026-10-12 07:15:37,831 [INFO] MambaKD: [C] Step 4/300 | Loss: 3737.8467 | LR: 6.00e-05
+2026-10-12 07:15:38,382 [INFO] MambaKD: [C] Step 4/300 | Loss: 3782.5771...
+2026-10-12 07:15:38,530 [INFO] MambaKD: [C] Step 5/300 | Loss: 3782.5771 | LR: 7.50e-05
+2026-10-12 07:15:38,937 [INFO] MambaKD: [C] Step 5/300 | Loss: 3806.4834...
+2026-10-12 07:16:23,275 [INFO] MambaKD: [C] Step 50/300 | Loss: 3806.4834 | LR: 7.50e-04
+2026-10-12 07:16:23,805 [INFO] MambaKD: [C] Step 50/300 | Loss: 23.6607...
+2026-10-12 07:16:45,638 [INFO] MambaKD: [C] Step 100/300 | Loss: 23.6607 | LR: 1.50e-03
+2026-10-12 07:16:47,751 [INFO] MambaKD: [C] Step 100 Eval PPL: 2607.51
+2026-10-12 07:16:48,206 [INFO] MambaKD: [C] Step 100/300 | Loss: 19.3026...
+2026-10-12 07:17:14,448 [INFO] MambaKD: [C] Step 150/300 | Loss: 19.3026 | LR: 1.28e-03
+2026-10-12 07:17:14,857 [INFO] MambaKD: [C] Step 150/300 | Loss: 21.5071...
+2026-10-12 07:17:31,622 [INFO] MambaKD: [C] Step 200/300 | Loss: 21.5071 | LR: 7.50e-04
+2026-10-12 07:17:33,591 [INFO] MambaKD: [C] Step 200 Eval PPL: 2378.10
+2026-10-12 07:17:33,727 [INFO] MambaKD: [C] Step 200/300 | Loss: 23.8151...
+2026-10-12 07:18:09,137 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.8151 | LR: 2.20e-04
+2026-10-12 07:18:09,532 [INFO] MambaKD: [C] Step 250/300 | Loss: 27.1594...
+2026-10-12 07:18:31,085 [INFO] MambaKD: [C] Step 300/300 | Loss: 27.1594 | LR: 1.50e-04
+2026-10-12 07:18:32,974 [INFO] MambaKD: [C] Step 300 Eval PPL: 2170.27
+2026-10-12 07:18:32,975 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 2170.27
+2026-10-12 07:18:32,976 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 07:18:33,172 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 7.6376 | LR: 1.50e-05
+2026-10-12 07:18:33,364 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 7.5837 | LR: 3.00e-05
+2026-10-12 07:18:33,554 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 7.6017 | LR: 4.50e-05
+2026-10-12 07:18:33,744 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 7.5071 | LR: 6.00e-05
+2026-10-12 07:18:33,934 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 7.6799 | LR: 7.50e-05
+2026-10-12 07:18:42,446 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 7.5096 | LR: 2.84e-04
+2026-10-12 07:18:51,805 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 7.4140 | LR: 1.96e-04
+2026-10-12 07:18:53,683 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 1366.38
+2026-10-12 07:19:03,141 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 7.3084 | LR: 8.20e-05
+2026-10-12 07:19:12,496 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 7.0500 | LR: 7.44e-06
+2026-10-12 07:19:14,358 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 1204.78
+2026-10-12 07:19:16,226 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 1204.78
+2026-10-12 07:19:16,230 [INFO] MambaKD: [C] [COMPLETE] Pre: 3820.99
+  Stage 1 (KD):    2170.27  (kd_gain=+1650.72)
+  Stage 2 (self):  1204.78  (self_gain=+965.49)
+  Total:                  (total_gain=+2616.21)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 2170.27 > 36.21)
+  Beat teacher after self? NO
+  Recovery: 69.12%
+  Time: 220.9s (Stage 1: 177.6s, Stage 2: 43.2s)
+2026-10-12 07:19:20,026 [INFO] MambaKD: [QUALITY] distinct_2=0.24, repetition_3=0.60, train_ppl=1320.78, test_ppl=1204.78, overfit_gap=-116.00, latency=363.6ms
+2026-10-12 07:19:20,034 [INFO] MambaKD: Saved all run details to results/kd_runs/token_compressed_attention/20261012_071500_bs8_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |  3820.99 |  2170.27 |  1204.78 | +1650.72 |  +965.49 | +2616.21 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-12 07:19:24,442 [INFO] MambaKD: 
+======================================================================
+2026-10-12 07:19:24,442 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 07:19:24,442 [INFO] MambaKD: ======================================================================

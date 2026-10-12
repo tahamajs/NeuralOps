@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: soka_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        9885.7300
+  Post-KD PPL:       688.3200
+  Stage 1 (KD) PPL:  1309.3000
+  Stage 2 (Self) PPL:688.3200
+  KD Gain:           +8576.43
+  Self Gain:         +620.98
+  Total Gain:        +9197.41
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         19.0091
+  Recovery:          93.38%
+  Peak VRAM:         2710.99 MB
+  Train time:        147.38 s (Stage 1: 119.8s, Stage 2: 27.6s)
+  s/step:            0.2948
+  Loss (final):      26.3043
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8590
+  Repetition-3:      0.0000
+  Train PPL:         813.5400
+  Test PPL:          688.3200
+  Overfit Gap:       -125.22
+  Latency (mean):    197.56 ms
+  Latency (std):     6.02 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        078042a45f73
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=6.6509 | lr=1.74e-04
+  step   420 | loss=6.5279 | lr=1.50e-04
+  step   430 | loss=6.4011 | lr=1.27e-04
+  step   440 | loss=6.5595 | lr=1.04e-04
+  step   450 | loss=6.6854 | lr=8.20e-05
+  step   460 | loss=6.6290 | lr=6.19e-05
+  step   470 | loss=6.5567 | lr=4.40e-05
+  step   480 | loss=6.3680 | lr=2.87e-05
+  step   490 | loss=6.8352 | lr=1.64e-05
+  step   500 | loss=6.4732 | lr=7.44e-06

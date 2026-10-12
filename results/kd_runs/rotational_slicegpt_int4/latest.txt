@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/rotational_slicegpt_int4/20261012_012842_bs4_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/rotational_slicegpt_int4/20261012_103926_bs8_seq256_lr3e-04_C

@@ -1,12 +1,11 @@
 {
   "module": "soka_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 9849.52,
+  "status": "UNKNOWN",
+  "delta": null,
   "student_ppl": 9885.73,
-  "pre_ppl": 9885.73,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.356912"
+  "duration_sec": 171.6,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:05:33"
 }

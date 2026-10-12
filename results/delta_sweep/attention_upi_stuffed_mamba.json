@@ -1,0 +1,11 @@
+{
+  "module": "upi_stuffed_mamba",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 2105.39,
+  "duration_sec": 331.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 07:32:33"
+}

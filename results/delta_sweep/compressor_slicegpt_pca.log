@@ -1,93 +1,130 @@
-2026-10-12 02:00:20,668 [INFO] MambaKD: ======================================================================
-2026-10-12 02:00:20,668 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-12 02:00:20,668 [INFO] MambaKD: ======================================================================
-2026-10-12 02:00:20,668 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-12 02:00:20,668 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-12 02:00:20,668 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-12 02:00:21,205 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 02:00:21,448 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-2026-10-12 02:00:21,691 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 02:00:21,930 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-2026-10-12 02:00:22,183 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 02:00:22,424 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 02:00:22,596 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-12 02:00:22,832 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 02:00:22,930 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
-2026-10-12 02:00:23,175 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 02:00:23,816 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
-2026-10-12 02:00:24,181 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
-2026-10-12 02:00:24,420 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
-2026-10-12 02:00:24,968 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
-2026-10-12 02:00:25,218 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 02:00:25,485 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-10-12 02:00:25,731 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
-2026-10-12 02:00:25,978 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-10-12 02:00:27,440 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-12 02:00:27,440 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-12 02:00:27,680 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
-2026-10-12 02:00:27,924 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
-
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|██████████| 148/148 [00:00<00:00, 55873.72it/s]
-2026-10-12 02:00:28,087 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
-  cache[key] = torch.from_numpy(np_memmap)
-2026-10-12 02:00:28,087 [INFO] MambaKD: Using teacher baseline PPL: 36.21
-2026-10-12 02:00:28,087 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 02:00:28,855 [INFO] MambaKD: 
+2026-10-12 10:57:30,692 [INFO] MambaKD: ======================================================================
+2026-10-12 10:57:30,692 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 10:57:30,692 [INFO] MambaKD: ======================================================================
+2026-10-12 10:57:30,692 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 10:57:30,692 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 8 | Seq: 256
+2026-10-12 10:57:30,692 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 10:57:31,106 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 10:57:31,790 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 10:57:32,098 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 10:57:32,331 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 10:57:32,568 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 10:57:32,801 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 10:57:32,901 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 10:57:33,144 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 10:57:33,234 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 10:57:33,466 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 10:57:34,970 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 10:57:35,252 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 10:57:35,484 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 10:57:35,933 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 10:57:36,166 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 10:57:36,399 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 10:57:36,636 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 10:57:36,867 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 10:57:37,516 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 10:57:37,516 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 10:57:38,053 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 10:57:38,344 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 10:57:38,421 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 10:57:38,422 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 10:57:38,422 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 10:57:38,511 [INFO] MambaKD: 
 ======================================================================
-2026-10-12 02:00:28,855 [INFO] MambaKD: PROCESSING MODULE 1/1: slicegpt_pca
-2026-10-12 02:00:28,855 [INFO] MambaKD: ======================================================================
-2026-10-12 02:00:28,855 [INFO] MambaKD: 
+2026-10-12 10:57:38,511 [INFO] MambaKD: PROCESSING MODULE 1/1: slicegpt_pca
+2026-10-12 10:57:38,511 [INFO] MambaKD: ======================================================================
+2026-10-12 10:57:38,511 [INFO] MambaKD: 
 # Running method C for slicegpt_pca
-2026-10-12 02:00:30,237 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-12 02:00:30,238 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-12 02:00:32,587 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.0.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:34,179 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.0.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:34,249 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.1.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:35,738 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.1.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:35,808 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.2.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:37,146 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.2.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:37,268 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.3.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:38,762 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.3.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:38,886 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.4.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:41,006 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.4.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:41,122 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.5.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:43,516 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.5.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:43,625 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.6.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:46,014 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.6.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:46,175 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.7.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:48,768 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.7.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:48,881 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.8.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:51,389 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.8.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:51,501 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.9.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:53,325 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.9.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:53,393 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.10.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:55,384 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.10.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:55,569 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.11.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
-2026-10-12 02:00:58,424 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.11.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
-2026-10-12 02:00:58,501 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA (real): 24 layers factorized, avg recon error 0.6268, params 84934656 -> 80013312 (1.06x compression)
-2026-10-12 02:00:58,581 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 100.2741
-2026-10-12 02:00:58,581 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 100.2741
-[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
-[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
-2026-10-12 02:00:59,784 [INFO] MambaKD: Pre-KD PPL for Module slicegpt_pca, Method C: 4799.52
-2026-10-12 02:00:59,784 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-12 02:00:59,784 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 4799.52 (same protocol)
-2026-10-12 02:00:59,784 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +4763.31 (should be POSITIVE, e.g. +3 to +30)
-2026-10-12 02:00:59,785 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
-2026-10-12 02:01:01,408 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 4799.52
-2026-10-12 02:01:01,409 [INFO] MambaKD: [C] COMPLETE | Pre: 4799.52 -> Post: 4799.52 | Recovery: 0.00% | VRAM: 916.5 MB | Time: 0.0s
-2026-10-12 02:01:05,892 [INFO] MambaKD: [QUALITY] distinct_2=0.20, repetition_3=0.76, train_ppl=6474.31, test_ppl=4799.52, overfit_gap=-1674.79, latency=571.4ms
-2026-10-12 02:01:05,898 [INFO] MambaKD: Saved all run details to results/kd_runs/slicegpt_pca/20261012_020020_bs4_seq256_lr3e-04_C
+2026-10-12 10:57:38,751 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 10:57:38,752 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 10:57:39,716 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.0.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:40,247 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.0.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:40,289 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.1.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:40,774 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.1.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:40,814 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.2.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:41,299 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.2.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:41,341 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.3.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:41,818 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.3.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:41,859 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.4.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:42,345 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.4.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:42,387 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.5.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:42,888 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.5.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:42,931 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.6.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:43,443 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.6.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:43,485 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.7.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:43,992 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.7.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:44,035 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.8.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:44,554 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.8.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:44,600 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.9.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:45,100 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.9.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:45,142 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.10.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:45,646 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.10.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:45,691 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=538 on transformer.h.11.attn.c_proj would not reduce params (826368 >= 589824). Keeping dense.
+2026-10-12 10:57:46,201 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA: keep=768 on transformer.h.11.mlp.c_proj would not reduce params (2949120 >= 2359296). Keeping dense.
+2026-10-12 10:57:46,237 [INFO] neuralops.compression_engine.quantization.slicegpt_pca: SliceGPTPCA (real): 24 layers factorized, avg recon error 0.6267, params 84934656 -> 80013312 (1.06x compression)
+2026-10-12 10:57:46,267 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 86.0749
+2026-10-12 10:57:46,267 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 86.0749
+2026-10-12 10:57:47,009 [INFO] MambaKD: Pre-KD PPL for Module slicegpt_pca, Method C: 11173.25
+2026-10-12 10:57:47,009 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 10:57:47,009 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 11173.25 (same protocol)
+2026-10-12 10:57:47,009 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +11137.04 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 10:57:47,010 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+2026-10-12 10:57:47,529 [INFO] MambaKD: [C] Step 0/300 | Loss: 12.0848...
+2026-10-12 10:57:47,685 [INFO] MambaKD: [C] Step 1/300 | Loss: 12.0848 | LR: 1.50e-05
+2026-10-12 10:57:48,177 [INFO] MambaKD: [C] Step 1/300 | Loss: 12.2656...
+2026-10-12 10:57:48,295 [INFO] MambaKD: [C] Step 2/300 | Loss: 12.2656 | LR: 3.00e-05
+2026-10-12 10:57:48,719 [INFO] MambaKD: [C] Step 2/300 | Loss: 11.4329...
+2026-10-12 10:57:48,837 [INFO] MambaKD: [C] Step 3/300 | Loss: 11.4329 | LR: 4.50e-05
+2026-10-12 10:57:49,254 [INFO] MambaKD: [C] Step 3/300 | Loss: 10.3401...
+2026-10-12 10:57:49,372 [INFO] MambaKD: [C] Step 4/300 | Loss: 10.3401 | LR: 6.00e-05
+2026-10-12 10:57:49,732 [INFO] MambaKD: [C] Step 4/300 | Loss: 9.2917...
+2026-10-12 10:57:49,850 [INFO] MambaKD: [C] Step 5/300 | Loss: 9.2917 | LR: 7.50e-05
+2026-10-12 10:57:50,314 [INFO] MambaKD: [C] Step 5/300 | Loss: 8.2376...
+2026-10-12 10:58:15,946 [INFO] MambaKD: [C] Step 50/300 | Loss: 8.2376 | LR: 7.50e-04
+2026-10-12 10:58:16,435 [INFO] MambaKD: [C] Step 50/300 | Loss: 8.4843...
+2026-10-12 10:58:46,693 [INFO] MambaKD: [C] Step 100/300 | Loss: 8.4843 | LR: 1.50e-03
+2026-10-12 10:58:47,622 [INFO] MambaKD: [C] Step 100 Eval PPL: 205.40
+2026-10-12 10:58:48,351 [INFO] MambaKD: [C] Step 100/300 | Loss: 16.7823...
+2026-10-12 10:59:16,025 [INFO] MambaKD: [C] Step 150/300 | Loss: 16.7823 | LR: 1.28e-03
+2026-10-12 10:59:16,596 [INFO] MambaKD: [C] Step 150/300 | Loss: 19.1433...
+2026-10-12 10:59:44,009 [INFO] MambaKD: [C] Step 200/300 | Loss: 19.1433 | LR: 7.50e-04
+2026-10-12 10:59:44,990 [INFO] MambaKD: [C] Step 200 Eval PPL: 117.26
+2026-10-12 10:59:45,481 [INFO] MambaKD: [C] Step 200/300 | Loss: 21.4703...
+2026-10-12 11:00:13,015 [INFO] MambaKD: [C] Step 250/300 | Loss: 21.4703 | LR: 2.20e-04
+2026-10-12 11:00:13,469 [INFO] MambaKD: [C] Step 250/300 | Loss: 24.5297...
+2026-10-12 11:00:35,598 [INFO] MambaKD: [C] Step 300/300 | Loss: 24.5297 | LR: 1.50e-04
+2026-10-12 11:00:36,406 [INFO] MambaKD: [C] Step 300 Eval PPL: 91.19
+2026-10-12 11:00:36,407 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 91.19
+2026-10-12 11:00:36,408 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 11:00:36,567 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 4.4171 | LR: 1.50e-05
+2026-10-12 11:00:36,717 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 4.7349 | LR: 3.00e-05
+2026-10-12 11:00:36,868 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 4.5995 | LR: 4.50e-05
+2026-10-12 11:00:37,020 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.5458 | LR: 6.00e-05
+2026-10-12 11:00:37,171 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.4831 | LR: 7.50e-05
+2026-10-12 11:00:43,929 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 4.1776 | LR: 2.84e-04
+2026-10-12 11:00:51,351 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.3743 | LR: 1.96e-04
+2026-10-12 11:00:52,059 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 77.00
+2026-10-12 11:00:59,570 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 4.0205 | LR: 8.20e-05
+2026-10-12 11:01:06,995 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.5410 | LR: 7.44e-06
+2026-10-12 11:01:07,750 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 69.05
+2026-10-12 11:01:08,477 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 69.05
+2026-10-12 11:01:08,488 [INFO] MambaKD: [C] [COMPLETE] Pre: 11173.25
+  Stage 1 (KD):    91.19  (kd_gain=+11082.06)
+  Stage 2 (self):  69.05  (self_gain=+22.14)
+  Total:                  (total_gain=+11104.20)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 91.19 > 36.21)
+  Beat teacher after self? NO
+  Recovery: 99.71%
+  Time: 201.4s (Stage 1: 169.4s, Stage 2: 32.1s)
+2026-10-12 11:01:10,635 [INFO] MambaKD: [QUALITY] distinct_2=0.81, repetition_3=0.05, train_ppl=35.67, test_ppl=69.05, overfit_gap=33.38, latency=186.1ms
+2026-10-12 11:01:10,652 [INFO] MambaKD: Saved all run details to results/kd_runs/slicegpt_pca/20261012_105730_bs8_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |  4799.52 |  4799.52 |     0.0% |      0.0 |    916.5 |      YES |
+| C       | 11173.25 |    91.19 |    69.05 | +11082.06 |   +22.14 | +11104.20 |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-12 02:01:08,116 [INFO] MambaKD: 
+2026-10-12 11:01:16,745 [INFO] MambaKD: 
 ======================================================================
-2026-10-12 02:01:08,117 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-12 02:01:08,117 [INFO] MambaKD: ======================================================================
+2026-10-12 11:01:16,745 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 11:01:16,745 [INFO] MambaKD: ======================================================================

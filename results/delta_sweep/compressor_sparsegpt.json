@@ -1,12 +1,11 @@
 {
   "module": "sparsegpt",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 300.43,
-  "student_ppl": 44.22,
-  "pre_ppl": 336.65,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.357392"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 338.51,
+  "duration_sec": 187.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 11:08:26"
 }

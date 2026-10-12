@@ -1,0 +1,11 @@
+{
+  "module": "mqa",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1546.88,
+  "duration_sec": 162.4,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 03:58:41"
+}

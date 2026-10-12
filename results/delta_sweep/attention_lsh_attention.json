@@ -1,0 +1,11 @@
+{
+  "module": "lsh_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 2807.49,
+  "duration_sec": 228.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 03:30:25"
+}

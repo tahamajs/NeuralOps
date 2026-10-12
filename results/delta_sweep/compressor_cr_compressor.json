@@ -1,12 +1,11 @@
 {
   "module": "cr_compressor",
   "type": "compressor",
-  "status": "PASS",
-  "delta": 28132.27,
-  "student_ppl": 1188.44,
-  "pre_ppl": 28168.49,
-  "duration_sec": 0.0,
-  "retries_used": 0,
-  "error": "",
-  "timestamp": "2026-10-12T03:20:19.328327"
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 28182.2,
+  "duration_sec": 155.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:43:23"
 }

@@ -1,0 +1,11 @@
+{
+  "module": "performer_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": 2026.0,
+  "duration_sec": 118.4,
+  "retries_used": 1,
+  "error": "exit=1",
+  "timestamp": "2026-10-12 04:33:10"
+}
