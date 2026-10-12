@@ -321,9 +321,9 @@ class HuffmanCompressor(BaseCompressor):
         self,
         model: nn.Module,
         quantize_bits: int = 8,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
         target_attention_only: bool = False,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
