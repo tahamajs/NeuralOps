@@ -134,7 +134,7 @@ class AegisHybridConfig:
     lora_rank: int = 32
     dropout: float = 0.1
     use_adaptive_pruning: bool = False
-    gate_init_bias: float = 3.5   # Warm-start with ~90% local attention for stability
+    gate_init_bias: float = 0.0   # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock
     is_decoder: bool | None = None  # FIX 9: None = auto-detect
     use_global: bool = True
     kernel_feature_dim: int = 128
@@ -191,7 +191,8 @@ class FactorizedLinear(nn.Module):
 
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
-            self.lora_B = nn.Parameter(torch.randn(self.out_features, self.lora_rank, **fk) * 1e-4)
+            # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
+            self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_rank, **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -217,7 +218,7 @@ class FactorizedLinear(nn.Module):
                 nn.init.zeros_(self.up.bias)
             if self.lora_A is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
+                nn.init.zeros_(self.lora_B)
 
     def _current_versions(self) -> tuple[int, ...]:
         vs = [
@@ -258,10 +259,13 @@ class FactorizedLinear(nn.Module):
         out = self.up(latent_up)
 
         if self.lora_A is not None:
-            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
-            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
-            lora_out = F.linear(F.linear(x, a), b) * self.lora_scaling
-            out = out.to(orig_dtype) + lora_out
+            # Perform LoRA accumulation in float32 for mixed precision stability
+            x_f = x.float()
+            lora_out = (
+                F.linear(F.linear(x_f, self.lora_A.float()), self.lora_B.float())
+                * self.lora_scaling
+            )
+            out = out.to(orig_dtype) + lora_out.to(orig_dtype)
         return out.to(orig_dtype)
 
 
@@ -403,21 +407,26 @@ def _global_linear_attention(
     feature_map: KernelFeatureMap,
     token_valid: torch.Tensor | None,
 ) -> torch.Tensor:
-    Q_feat = feature_map(Q)
-    K_feat = feature_map(K)
+    with torch.autocast(device_type=Q.device.type, enabled=False):
+        Q_f = Q.float()
+        K_f = K.float()
+        V_f = V.float()
 
-    if token_valid is not None:
-        kv = token_valid[:, None, :, None].to(K_feat.dtype)
-        K_feat = K_feat * kv
-        V = V * kv
+        Q_feat = feature_map(Q_f).float()
+        K_feat = feature_map(K_f).float()
 
-    KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V.to(K_feat.dtype))
-    Z = K_feat.sum(dim=-2, keepdim=True)
+        if token_valid is not None:
+            kv = token_valid[:, None, :, None].float()
+            K_feat = K_feat * kv
+            V_f = V_f * kv
 
-    num = torch.matmul(Q_feat, KV)
-    den = torch.matmul(Q_feat, Z.transpose(-1, -2).contiguous()).clamp(min=1e-6)
-    out = num / den
-    return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
+        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V_f)
+        Z = K_feat.sum(dim=-2, keepdim=True)
+
+        num = torch.matmul(Q_feat, KV)
+        den = torch.matmul(Q_feat, Z.transpose(-1, -2).contiguous()).clamp(min=1e-6)
+        out = num / den
+        return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
 
 
 def _causal_linear_attention(
@@ -428,74 +437,78 @@ def _causal_linear_attention(
     token_valid: torch.Tensor | None,
     chunk_size: int = 64,
 ) -> torch.Tensor:
-    B, H, N, D = Q.shape
+    with torch.autocast(device_type=Q.device.type, enabled=False):
+        Q_f = Q.float()
+        K_f = K.float()
+        V_f = V.float()
+        B, H, N, D = Q_f.shape
 
-    Q_feat = feature_map(Q)
-    K_feat = feature_map(K)
+        Q_feat = feature_map(Q_f).float()
+        K_feat = feature_map(K_f).float()
 
-    if token_valid is not None:
-        kv = token_valid[:, None, :, None].to(K_feat.dtype)
-        K_feat = K_feat * kv
-        V = V * kv
+        if token_valid is not None:
+            kv = token_valid[:, None, :, None].float()
+            K_feat = K_feat * kv
+            V_f = V_f * kv
 
-    if N == 1:
-        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V.to(K_feat.dtype))
-        Z = K_feat.sum(dim=-2, keepdim=True)
-        num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-1, -2).contiguous()).clamp(min=1e-6)
-        out = num / den
-        return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
+        if N == 1:
+            KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V_f)
+            Z = K_feat.sum(dim=-2, keepdim=True)
+            num = torch.matmul(Q_feat, KV)
+            den = torch.matmul(Q_feat, Z.transpose(-1, -2).contiguous()).clamp(min=1e-6)
+            out = num / den
+            return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
 
-    # FIX 7: chunk_size adaptive to sequence
-    chunk_size = min(chunk_size, N)
-    pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+        # FIX 7: chunk_size adaptive to sequence
+        chunk_size = min(chunk_size, N)
+        pad_len = (chunk_size - (N % chunk_size)) % chunk_size
 
-    if pad_len > 0:
-        q_pad = F.pad(Q_feat, (0, 0, 0, pad_len))
-        k_pad = F.pad(K_feat, (0, 0, 0, pad_len))
-        v_pad = F.pad(V, (0, 0, 0, pad_len))
-    else:
-        q_pad, k_pad, v_pad = Q_feat, K_feat, V
+        if pad_len > 0:
+            q_pad = F.pad(Q_feat, (0, 0, 0, pad_len))
+            k_pad = F.pad(K_feat, (0, 0, 0, pad_len))
+            v_pad = F.pad(V_f, (0, 0, 0, pad_len))
+        else:
+            q_pad, k_pad, v_pad = Q_feat, K_feat, V_f
 
-    num_chunks = q_pad.shape[2] // chunk_size
-    q_c = q_pad.view(B, H, num_chunks, chunk_size, -1).float()
-    k_c = k_pad.view(B, H, num_chunks, chunk_size, -1).float()
-    v_c = v_pad.view(B, H, num_chunks, chunk_size, D).float()
+        num_chunks = q_pad.shape[2] // chunk_size
+        q_c = q_pad.view(B, H, num_chunks, chunk_size, -1)
+        k_c = k_pad.view(B, H, num_chunks, chunk_size, -1)
+        v_c = v_pad.view(B, H, num_chunks, chunk_size, D)
 
-    if pad_len > 0:
-        valid_mask = torch.ones(num_chunks, chunk_size, device=Q.device, dtype=torch.float32)
-        valid_mask[-1, chunk_size - pad_len:] = 0.0
-        v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
-        q_c = q_c * v_m
-        k_c = k_c * v_m
-        v_c = v_c * v_m
+        if pad_len > 0:
+            valid_mask = torch.ones(num_chunks, chunk_size, device=Q.device, dtype=torch.float32)
+            valid_mask[-1, chunk_size - pad_len:] = 0.0
+            v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
+            q_c = q_c * v_m
+            k_c = k_c * v_m
+            v_c = v_c * v_m
 
-    scores = torch.matmul(q_c, k_c.transpose(-2, -1))
-    causal_mask = torch.triu(
-        torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool),
-        diagonal=1,
-    )
-    scores = scores.masked_fill(causal_mask, 0.0)
+        scores = torch.matmul(q_c, k_c.transpose(-2, -1))
+        causal_mask = torch.triu(
+            torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool),
+            diagonal=1,
+        )
+        scores = scores.masked_fill(causal_mask, 0.0)
 
-    num_intra = torch.matmul(scores, v_c)
-    den_intra = scores.sum(dim=-1, keepdim=True)
+        num_intra = torch.matmul(scores, v_c)
+        den_intra = scores.sum(dim=-1, keepdim=True)
 
-    delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
-    delta_z = k_c.sum(dim=-2)
+        delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
+        delta_z = k_c.sum(dim=-2)
 
-    s_cumsum = torch.cumsum(delta_s, dim=2)
-    s_past = torch.cat([torch.zeros_like(delta_s[:, :, :1]), s_cumsum[:, :, :-1]], dim=2)
+        s_cumsum = torch.cumsum(delta_s, dim=2)
+        s_past = torch.cat([torch.zeros_like(delta_s[:, :, :1]), s_cumsum[:, :, :-1]], dim=2)
 
-    z_cumsum = torch.cumsum(delta_z, dim=2)
-    z_past = torch.cat([torch.zeros_like(delta_z[:, :, :1]), z_cumsum[:, :, :-1]], dim=2)
+        z_cumsum = torch.cumsum(delta_z, dim=2)
+        z_past = torch.cat([torch.zeros_like(delta_z[:, :, :1]), z_cumsum[:, :, :-1]], dim=2)
 
-    num_inter = torch.matmul(q_c, s_past)
-    den_inter = (q_c * z_past.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+        num_inter = torch.matmul(q_c, s_past)
+        den_inter = (q_c * z_past.unsqueeze(-2)).sum(dim=-1, keepdim=True)
 
-    denom = (den_intra + den_inter).clamp(min=1e-6)
-    out = (num_intra + num_inter) / denom
-    out = out.view(B, H, -1, D)[:, :, :N, :]
-    return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
+        denom = (den_intra + den_inter).clamp(min=1e-6)
+        out = (num_intra + num_inter) / denom
+        out = out.view(B, H, -1, D)[:, :, :N, :]
+        return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
 
 
 # ===========================================================================
@@ -605,9 +618,9 @@ class TriBranchHybridAttention(BaseAttention):
             seed=config.kernel_seed,
         )
 
-        # FIX 3: balanced fusion_beta init, override via env
-        _beta_init = _env_float("AEGIS_FUSION_BETA", config.gate_init_bias)
-        self.fusion_beta = nn.Parameter(
+        # FIX 3: zero-init fusion_gate to match GPT-2 exactly at step 0, avoiding KD shock.
+        _beta_init = _env_float("AEGIS_FUSION_BETA", getattr(config, "gate_init_bias", 0.0))
+        self.fusion_gate = nn.Parameter(
             torch.full((self.num_heads,), _beta_init), requires_grad=True
         )
 
@@ -619,6 +632,14 @@ class TriBranchHybridAttention(BaseAttention):
             self.copy_weights(pretrained_attn)
 
     # ---- aliases ----
+    @property
+    def fusion_beta(self) -> nn.Parameter:
+        return self.fusion_gate
+
+    @fusion_beta.setter
+    def fusion_beta(self, val: nn.Parameter) -> None:
+        self.fusion_gate = val
+
     @property
     def query(self): return self.q_proj
     @property
@@ -981,7 +1002,7 @@ class TriBranchHybridAttention(BaseAttention):
                 global_out = _global_linear_attention(
                     Q, K_full, V_full, self.kernel_map, token_valid,
                 )
-            beta = torch.sigmoid(self.fusion_beta).view(1, self.num_heads, 1, 1)
+            beta = torch.sigmoid(self.fusion_gate).view(1, self.num_heads, 1, 1)
             fused = beta * local_out + (1.0 - beta) * global_out
         else:
             fused = local_out
@@ -1032,7 +1053,7 @@ class TriBranchHybridAttention(BaseAttention):
             ("kernel_map", self.kernel_map),
         ):
             out[name] = sum(_sz(p) for p in m.parameters())
-        out["fusion_beta"] = _sz(self.fusion_beta)
+        out["fusion_gate"] = _sz(self.fusion_gate)
         out["total"] = sum(out.values())
         return out
 
