@@ -435,7 +435,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         self,
         model: nn.Module | None = None,
         rank: int = 8,
-        gamma: float = 1.0,
+        gamma: float = 5.0,
         lora_r: int = 4,
         lora_alpha: float = 8.0,
         max_error: float = 0.35,
@@ -854,7 +854,7 @@ def kronecker_tt_lora_factory(
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory for Kronecker-TT-LoRA compressor."""
     rank = rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 8))
-    gamma = _cfg_get(comp_config, "gamma", 1.0)
+    gamma = kwargs.pop("gamma", _cfg_get(comp_config, "gamma", 5.0))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 4))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 8.0))
     max_error = kwargs.pop(
