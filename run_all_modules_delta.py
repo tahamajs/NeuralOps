@@ -617,7 +617,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--model-name", default="gpt2")
     p.add_argument("--rank", type=int, default=32)
     p.add_argument("--methods", default="C")
-    p.add_argument("--batch-size", type=int, default=12)
+    p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--grad-accum-steps", type=int, default=1)
     p.add_argument("--recovery-steps", type=int, default=300)
     p.add_argument("--self-train-steps", type=int, default=200)
