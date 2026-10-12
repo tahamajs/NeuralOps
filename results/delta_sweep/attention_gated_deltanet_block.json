@@ -1,0 +1,11 @@
+{
+  "module": "gated_deltanet_block",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 2173.37,
+  "duration_sec": 265.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 23:27:25"
+}

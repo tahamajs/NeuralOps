@@ -1,0 +1,1 @@
+/mnt/d/SVD_linear_Attention/results/kd_runs/galerkin_attention/20261011_231957_bs12_seq256_lr3e-04_C

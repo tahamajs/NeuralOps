@@ -1,0 +1,11 @@
+{
+  "module": "full_attention",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 36.22,
+  "duration_sec": 228.9,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 23:07:44"
+}

@@ -22,3 +22,6 @@ dynamic_conv_attention,attention,UNKNOWN,,3355115.91,327.5,1,no delta parsed,202
 eat,attention,UNKNOWN,,13894.64,158.9,1,no delta parsed,2026-10-11 22:47:45
 eat_attention,attention,UNKNOWN,,7842.68,154.0,1,no delta parsed,2026-10-11 22:50:25
 expert_choice_moe,attention,UNKNOWN,,36.24,227.6,1,no delta parsed,2026-10-11 22:53:00
+hymba_transx,attention,ERROR,,100.35,511.8,1,exit=-9,2026-10-12 00:58:36
+inject_leka_v1,attention,ERROR,,,8.1,1,exit=-2,2026-10-12 01:07:09
+factorised_matrix_state,attention,ERROR,,,3.6,1,exit=-2,2026-10-12 01:08:17

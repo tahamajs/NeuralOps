@@ -1,0 +1,11 @@
+{
+  "module": "flash_attention3_fp8",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 36.22,
+  "duration_sec": 187.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-11 23:04:23"
+}

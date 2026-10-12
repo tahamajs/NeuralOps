@@ -1,0 +1,11 @@
+{
+  "module": "halo_regla",
+  "type": "attention",
+  "status": "TIMEOUT",
+  "delta": null,
+  "student_ppl": 69.38,
+  "duration_sec": 600.6,
+  "retries_used": 1,
+  "error": "exceeded 600s",
+  "timestamp": "2026-10-11 23:58:19"
+}

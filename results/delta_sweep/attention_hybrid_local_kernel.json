@@ -1,0 +1,11 @@
+{
+  "module": "hybrid_local_kernel",
+  "type": "attention",
+  "status": "TIMEOUT",
+  "delta": null,
+  "student_ppl": 4256.89,
+  "duration_sec": 600.7,
+  "retries_used": 1,
+  "error": "exceeded 600s",
+  "timestamp": "2026-10-12 00:48:34"
+}
