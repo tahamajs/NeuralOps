@@ -315,7 +315,7 @@ class TTLinearLayer(nn.Module):
         linear_layer: nn.Module,
         tt_rank: int = 16,
         num_factors: int = 2,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
         max_retries: int = 3,
         energy_threshold: float = 0.995,
         strict_rank: bool = False,
@@ -564,7 +564,7 @@ class TTCompressor(BaseCompressor):
         num_factors: int = 2,
         cfg: Any | None = None,
         target_layers: list[str] | None = None,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
         energy_threshold: float = 0.995,
         fallback_policy: str = "svd",  # 'svd' | 'original' | 'none'
         target_attention_only: bool = False,
@@ -904,7 +904,7 @@ def tt_compressor_factory(
         rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 16)),
     )
     num_factors = kwargs.pop("num_factors", _cfg_get(comp_config, "num_factors", 2))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     energy_threshold = kwargs.pop(
         "energy_threshold", _cfg_get(comp_config, "energy_threshold", 0.995)
     )
