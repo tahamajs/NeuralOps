@@ -1,14 +1,11 @@
 """
 Universal Rotary Position Embedding Attention (UnifiedRoPE).
-
-Fixes applied:
-  [FIX-1] Full KV-cache support (past_key_value → present_key_value).
-  [FIX-2] inject_unified_rope registered in ATTENTION_REGISTRY.
-  [FIX-3] RoPE offset consistency with past_len during decode.
-  [FIX-4] SDPA fast-path with bool mask (FlashAttention-2 compatible).
-  [FIX-5] Chunked cache pre-allocation (no repeated rebuilds).
-  [FIX-6] Correct return format for decoders vs encoders.
 """
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
 
 import logging
 import math
@@ -64,116 +61,6 @@ def _detect_decoder(
     return False
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-    unsqueeze_dim: int = 1,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies RoPE. Assumes cos/sin already sliced to correct positions."""
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    return q, k
-
-
-# ═══════════════════════════════════════════════════════════════════
-# LoRALinear
-# ═══════════════════════════════════════════════════════════════════
-class LoRALinear(nn.Module):
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 0,
-        lora_alpha: float = 1.0,
-        freeze_base: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ):
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.scaling = lora_alpha / max(1, lora_rank)
-
-        self.weight = nn.Parameter(torch.empty(out_features, in_features, **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features, **fk))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank, **fk))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_A.requires_grad = True
-            self.lora_B.requires_grad = True
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        w = self.weight.to(orig_dtype) if self.weight.dtype != orig_dtype else self.weight
-        b = (
-            self.bias.to(orig_dtype)
-            if (self.bias is not None and self.bias.dtype != orig_dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
-            bb = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.scaling
-        return out.to(orig_dtype)
 
 
 # ═══════════════════════════════════════════════════════════════════

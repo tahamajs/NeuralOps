@@ -4,6 +4,10 @@ Linformer Attention – Production-hardened with full multi-architecture support
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import logging
 import math
 from typing import Any
@@ -18,62 +22,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# RoPE (dtype-safe)
-# ===========================================================================
-
-
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"apply_rotary_pos_emb: cos/sin seq len {cos.shape[-2]} != q seq len {q.shape[-2]}"
-        )
-
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        cos_q = cos.to(q_rot.dtype)
-        sin_q = sin.to(q_rot.dtype)
-        cos_k = cos.to(k_rot.dtype)
-        sin_k = sin.to(k_rot.dtype)
-        q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-        k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        cos_q = cos[..., :head_dim].to(q.dtype)
-        sin_q = sin[..., :head_dim].to(q.dtype)
-        cos_k = cos[..., :head_dim].to(k.dtype)
-        sin_k = sin[..., :head_dim].to(k.dtype)
-        q = (q * cos_q) + (_rotate_half(q) * sin_q)
-        k = (k * cos_k) + (_rotate_half(k) * sin_k)
-
-    return q, k
 
 
 # ===========================================================================

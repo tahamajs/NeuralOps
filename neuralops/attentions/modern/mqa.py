@@ -4,20 +4,13 @@ Multi-Query Attention (MQA) — production implementation.
 Multi-Query Attention uses H_Q query heads but only 1 shared key/value head.
 This reduces KV-cache memory by H_Q × compared to standard MHA.
 
-Features:
-- Full weight copying from pretrained MHA/GQA models (head pooling)
-- LoRA-adapted projections for parameter-efficient fine-tuning
-- SDPA fast path with native MQA support
-- Full KV-cache support (tuple + DynamicCache)
-- RoPE support with past offset
-- Registry-registered injector
-- Reconstruction-error safety check
-- GQA-compatible (num_kv_heads = 1 by default)
-
-Supports causal & bidirectional, GQA, RoPE, and nested encoders.
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    LoRALinear,
+)
 
 import logging
 import math
@@ -68,91 +61,6 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         b = b.data
 
     return w, b
-
-
-# ===========================================================================
-# LoRALinear
-# ===========================================================================
-
-
-class LoRALinear(nn.Module):
-    """LoRA-augmented linear layer with frozen base weights."""
-
-    is_custom_attention: bool = False
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        fk = {"device": device, "dtype": dtype}
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.lora_rank = int(lora_rank)
-        self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
-
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
-        else:
-            self.register_parameter("bias", None)
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
-
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-            self.lora_B.requires_grad = True
-
-    def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
-                self.lora_A.requires_grad = True
-            if self.lora_B is not None:
-                self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
-        return out
 
 
 # ===========================================================================

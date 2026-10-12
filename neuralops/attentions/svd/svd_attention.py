@@ -33,6 +33,11 @@ Future Work:
 Registered as: "svd_seq", "svd_sequence", "svd_sequence_attention".
 """
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+    LoRALinear,
+)
+
 import logging
 import math
 from typing import Any
@@ -53,102 +58,8 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-    unsqueeze_dim: int = 1,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
-    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
-    return q_out, k_out
 
 
-class LoRALinear(nn.Module):
-    """Linear projection with frozen base weights and trainable LoRA adapters."""
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 0,
-        lora_alpha: float = 1.0,
-        freeze_base: bool = True,
-    ):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.scaling = lora_alpha / max(1, lora_rank)
-
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        else:
-            self.register_parameter("bias", None)
-
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
-            out = out + lora_out
-        return out
 
 
 @ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)

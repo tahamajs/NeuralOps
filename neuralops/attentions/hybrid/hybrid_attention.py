@@ -4,8 +4,6 @@ Hybrid softmax + linear attention with per-head gated fusion.
 Valid attention REPLACEMENT (not a compressor).
 Adds a small number of parameters (the gate) but reduces attention
 computation at long sequence lengths by routing some heads to linear attention.
-
-
 """
 
 from __future__ import annotations

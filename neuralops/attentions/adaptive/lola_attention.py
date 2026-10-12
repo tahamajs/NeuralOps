@@ -4,10 +4,13 @@ LoLA: Low-Rank Linear Attention with Sparse Caching.
 Combines factorized low-rank projections with selective multi-system cached
 retrieval, trainable LoRA residual adapters, frozen SVD base weights, GQA,
 RoPE, and causal decoding.
-
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    safe_mask_value as _safe_mask_value,
+)
 
 import logging
 import math
@@ -25,15 +28,6 @@ from neuralops.core.rope import apply_rotary_pos_emb
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def _safe_mask_value(dtype: torch.dtype) -> float:
-    if dtype in (torch.float16, torch.bfloat16):
-        return -1e4
-    return -1e9
 
 
 def _safe_softmax(scores: torch.Tensor, dim: int = -1) -> torch.Tensor:

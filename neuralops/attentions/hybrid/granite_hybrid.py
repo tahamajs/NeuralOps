@@ -5,27 +5,14 @@ Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and
 Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained
 weight transfer. Hardened across DistilBERT, RoBERTa, GPT-2, Qwen3.5.
 
-Fixes applied:
-  [FIX-1]  Mamba2 forward: vectorized parallel scan (no Python loop) — O(L) memory
-  [FIX-2]  Mamba2 forward: chunked scan for long sequences (bounded memory)
-  [FIX-2b] Mamba2: full cache support (past_state → next_state) for step-by-step inference
-  [FIX-3]  MoE: fp32 accumulation buffer, cast back to x.dtype at end
-  [FIX-4]  MoE: auxiliary load-balancing loss (Switch Transformer style)
-  [FIX-5]  MoE experts + router prefixed with `lora_` for KD optimizer detection
-  [FIX-6]  `lora_alpha`/`lora_moe_scale` initialized so Mamba+MoE start at zero contribution
-  [FIX-7]  Full KV-cache support (read + write + return present_key_value), including Mamba state
-  [FIX-8]  Final dropout after out_proj (matches GPT-2/teacher behavior)
-  [FIX-9]  `copy_weights` handles LoRA-wrapped projections properly
-  [FIX-10] Robust decoder detection
-  [FIX-11] Safe mask value using finfo.min for fp16/bf16
-  [FIX-12] `_rotate_half` imported from core.rope (no duplication)
-  [FIX-13] `repeat_kv` imported from core.gqa_utils (no duplication)
-  [FIX-14] Injector registered in ATTENTION_REGISTRY
-  [FIX-15] `__all__` exports
-  [FIX-16] Backward-compat aliases at module level
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    safe_mask_value as _safe_mask_value,
+    apply_rotary_pos_emb,
+)
 
 import logging
 import math
@@ -43,11 +30,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -77,60 +59,10 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def _safe_mask_value(dtype: torch.dtype) -> float:
-    """[FIX-11] Use finfo.min for fp16/bf16 instead of -1e4."""
-    if dtype in (torch.float16, torch.bfloat16):
-        return torch.finfo(dtype).min
-    return -1e9
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Apply RoPE. Uses canonical `_rotate_half` from core.rope."""
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
-
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-
-    if rotary_dim <= head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    else:
-        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
-        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
-        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
-
-    return q, k
 
 
-# =============================================================================
-# Mamba-2 (parallel scan) with full cache support
-# =============================================================================
 
 
 class Mamba2(nn.Module):
@@ -308,9 +240,6 @@ class Mamba2(nn.Module):
         return self.out_proj(y), running_h
 
 
-# =============================================================================
-# Mixture of Experts — with lora_ prefixes for KD optimizer
-# =============================================================================
 
 
 class MixtureOfExperts(nn.Module):
@@ -558,13 +487,9 @@ class GraniteHybridBlock(BaseAttention):
         tk = int(_get("top_k", kwargs.get("top_k", top_k)))
         self.moe = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
 
-        # ---- [FIX-5, FIX-6] Trainable fusion gates ----
-        # Note: `lora_alpha` here overrides the float set above (intentional:
-        # we want a trainable tensor for fusion).
         self.lora_alpha = nn.Parameter(torch.tensor(6.0))
         self.lora_moe_scale = nn.Parameter(torch.zeros(1))
 
-        # ---- [FIX] lora_gate: per-head gating Linear ----
         self.lora_gate = nn.Linear(self.dim, self.num_heads, bias=False)
         nn.init.normal_(self.lora_gate.weight, mean=0.0, std=1e-4)
 

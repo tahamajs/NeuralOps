@@ -6,6 +6,7 @@ Registered as 'tomoe' and 'tomoe_compressor'.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import inspect
 import logging
@@ -383,12 +384,6 @@ class ToMoELinear(nn.Module):
         return out.reshape(*orig_shape[:-1], self.out_features)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 class ToMoECompressor(BaseCompressor):

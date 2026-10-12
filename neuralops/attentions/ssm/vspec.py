@@ -9,6 +9,10 @@ Hardened for production use across diverse transformer architectures:
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import logging
 import math
 from typing import Any
@@ -45,49 +49,6 @@ def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> tor
     return x.mean(dim=1)
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies rotary position embeddings safely handling even or odd dimensions."""
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(1)
-        sin = sin.unsqueeze(0).unsqueeze(1)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    head_dim = q.shape[-1]
-    rotary_dim = 2 * (min(cos.shape[-1], head_dim) // 2)
-    if rotary_dim == 0:
-        return q, k
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.dtype)
-
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.dtype)
-
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-
-    return q, k
 
 
 class VariationalSpectralGate(nn.Module):

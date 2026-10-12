@@ -32,6 +32,10 @@ High-performance GPU implementation using OpenAI Triton language (tl) with:
 
 from __future__ import annotations
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import logging
 import math
 from typing import Any
@@ -56,37 +60,6 @@ try:
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-
-
-# ============================================================================
-# HELPER FUNCTIONS: RoPE
-# ============================================================================
-
-
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    rotary_dim = cos.shape[-1]
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-
-    q_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-
-    if q_pass.shape[-1] > 0:
-        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
-    return q_embed, k_embed
 
 
 # ============================================================================

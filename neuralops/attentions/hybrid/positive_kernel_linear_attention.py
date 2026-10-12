@@ -4,24 +4,13 @@ LEKAv1: Linear-time Efficient Kernel Attention.
 Approximates the attention kernel via Positive Feature Mapping (ELU + 1)
 to guarantee strict positivity and stable gradients, avoiding NaN denominator collapse.
 
-Fixes applied:
-  [FIX-1]  Full KV-cache support (read + concat + write + return present_key_value)
-  [FIX-2]  `pres_gate` → `lora_pres_gate` (KD optimizer detection)
-  [FIX-3]  `_causal_linear_attention` vectorized + KV-cache aware (past_len)
-  [FIX-4]  Padding mask uses N_kv (not N_q) — decode-safe
-  [FIX-5]  `_rotate_half` imported from core.rope
-  [FIX-6]  `repeat_kv` imported from core.gqa_utils
-  [FIX-7]  Robust decoder detection (kwargs + config + src.c_attn)
-  [FIX-8]  `get_token_valid_mask` from core.attention_mask
-  [FIX-9]  Injector registered in ATTENTION_REGISTRY (4 keys)
-  [FIX-10] Idempotency check in injector
-  [FIX-11] Denom clamp at 1e-5
-  [FIX-12] `__all__` exports
-  [FIX-13] Unified return format for decoder (2-tuple with past_kv)
-  [FIX-14] Safe handling of `past_key_value=None` sentinel `False`
 """
 
 from __future__ import annotations
+
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
 
 import logging
 import math
@@ -38,59 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# RoPE (dtype-safe)
-# ===========================================================================
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    if cos is None or sin is None:
-        return q, k
-
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-    elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
-
-    if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"apply_rotary_pos_emb: cos/sin seq len {cos.shape[-2]} != q seq len {q.shape[-2]}"
-        )
-
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
-
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        cos_q = cos.to(q_rot.dtype)
-        sin_q = sin.to(q_rot.dtype)
-        cos_k = cos.to(k_rot.dtype)
-        sin_k = sin.to(k_rot.dtype)
-        q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-        k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    else:
-        cos_q = cos[..., :head_dim].to(q.dtype)
-        sin_q = sin[..., :head_dim].to(q.dtype)
-        cos_k = cos[..., :head_dim].to(k.dtype)
-        sin_k = sin[..., :head_dim].to(k.dtype)
-        q = (q * cos_q) + (_rotate_half(q) * sin_q)
-        k = (k * cos_k) + (_rotate_half(k) * sin_k)
-
-    return q, k
 
 
 # ===========================================================================

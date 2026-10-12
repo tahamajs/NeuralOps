@@ -10,6 +10,10 @@ Hardened for production use across diverse transformer architectures:
 - Qwen / LLaMA (GQA with Rotary Position Embeddings)
 """
 
+from neuralops.core.attention_utils import (
+    apply_rotary_pos_emb,
+)
+
 import logging
 import math
 from typing import Any
@@ -59,32 +63,6 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-    unsqueeze_dim: int = 1,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
-    rotary_dim = rotary_dim - (rotary_dim % 2)
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-    cos = cos[..., :rotary_dim]
-    sin = sin[..., :rotary_dim]
-
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
-
-    q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-    k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
-    return q, k
 
 
 @ATTENTION_REGISTRY.register("svd_llm_v2_attention")

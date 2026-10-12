@@ -13,6 +13,7 @@ Registered canonically as 'adaptive_ranks' and 'adaptive_svd'.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -36,13 +37,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
-    """Safely extract configuration attribute from None, dict, or object."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _gelu_derivative_sq(y: torch.Tensor) -> torch.Tensor:

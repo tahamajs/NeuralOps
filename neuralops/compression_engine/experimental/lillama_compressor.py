@@ -11,6 +11,8 @@ Formulation:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _get_device, _is_conv1d
+from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -26,12 +28,6 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 _ATTN_NAMES = {
@@ -54,15 +50,8 @@ _ATTN_NAMES = {
 }
 
 
-def _get_device(model: nn.Module) -> torch.device:
-    """LL-FIX-03: safe device resolution."""
-    p = next(iter(model.parameters()), None)
-    return p.device if p is not None else torch.device("cpu")
 
 
-def _is_conv1d(module: nn.Module) -> bool:
-    cls = module.__class__.__name__.lower()
-    return "conv1d" in cls or hasattr(module, "nf")
 
 
 # ===========================================================================
