@@ -92,7 +92,15 @@ class UniversalAttentionWrapper(nn.Module):
         from neuralops.core.t5_compat import is_t5_model
 
         cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
-        is_t5 = getattr(self, "is_t5", False) or getattr(self._wrapped_attention, "is_t5", False) or is_t5_model(cfg) or key_value_states is not None or position_bias is not None or hasattr(self, "relative_attention_bias") or hasattr(self._wrapped_attention, "relative_attention_bias")
+        is_t5 = (
+            getattr(self, "is_t5", False)
+            or getattr(self._wrapped_attention, "is_t5", False)
+            or is_t5_model(cfg)
+            or key_value_states is not None
+            or position_bias is not None
+            or (getattr(self, "relative_attention_bias", None) is not None)
+            or (getattr(self._wrapped_attention, "relative_attention_bias", None) is not None)
+        )
 
         if is_t5:
             out, ret_pos_bias = self._forward_t5(
