@@ -19,6 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -654,9 +655,9 @@ class UnifiedRoPE(BaseAttention):
                     if pad is not None:
                         bool_mask = pad if bool_mask is None else (bool_mask & pad)
 
-                q_s = q.to(torch.float16) if q.dtype == torch.float32 else q
-                k_s = K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
-                v_s = V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
+                q_s = maybe_half(q)
+                k_s = maybe_half(K_full)
+                v_s = maybe_half(V_full)
 
                 out_sdp = F.scaled_dot_product_attention(
                     q_s, k_s, v_s,

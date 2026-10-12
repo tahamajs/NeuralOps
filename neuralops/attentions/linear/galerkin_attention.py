@@ -22,6 +22,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -754,9 +755,9 @@ class GalerkinAttention(BaseAttention):
             # GAL-FIX-03: only use SDPA when we don't need attn weights/head_mask
             if not output_attentions and head_mask is None:
                 try:
-                    _qs = Q.half() if Q.dtype == torch.float32 else Q
-                    _ks = K.half() if K.dtype == torch.float32 else K
-                    _vs = V.half() if V.dtype == torch.float32 else V
+                    _qs = maybe_half(Q)
+                    _ks = maybe_half(K)
+                    _vs = maybe_half(V)
                     _is_causal = N > 1
                     _sdpa_out = F.scaled_dot_product_attention(
                         _qs,
