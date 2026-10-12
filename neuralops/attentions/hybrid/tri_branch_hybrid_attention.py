@@ -607,7 +607,9 @@ class TriBranchHybridAttention(BaseAttention):
 
         # FIX 3: balanced fusion_beta init, override via env
         _beta_init = _env_float("AEGIS_FUSION_BETA", config.gate_init_bias)
-        self.fusion_beta = nn.Parameter(torch.full((self.num_heads,), _beta_init))
+        self.fusion_beta = nn.Parameter(
+            torch.full((self.num_heads,), _beta_init), requires_grad=False
+        )
 
         # storage accounting
         self._orig_storage_bytes = 0
