@@ -913,6 +913,8 @@ class HybridLocalKernelAttention(BaseAttention):
         output_hidden_states: bool | None = False,
         return_dict: bool | None = True,
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+            use_cache: bool | None = None,
+
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
@@ -1043,8 +1045,25 @@ class HybridLocalKernelAttention(BaseAttention):
             output = self.out_proj(out)
             output = self.dropout(output)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
-        return output.to(hidden_states.dtype), None
+        output = output.to(hidden_states.dtype)
 
+        # ---- HuggingFace-compatible return tuple ----
+        # Determine use_cache from arg or kwargs
+        _use_cache = use_cache
+        if _use_cache is None:
+            _use_cache = bool(kwargs.get("use_cache", False))
+
+        # Build the present KV tuple (unexpanded, so downstream concat works)
+        present = None
+        if _use_cache and not is_cross:
+            present = (K_new, V_new)
+
+        # Return tuple with correct length based on output_attentions
+        if output_attentions:
+            # GPT-2 expects (hidden, present, attn_weights) when use_cache=True
+            return (output, present, None)
+        else:
+            return (output, present)
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)
 
