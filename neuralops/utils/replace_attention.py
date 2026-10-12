@@ -27,6 +27,7 @@ class UniversalAttentionWrapper(nn.Module):
         self._wrapped_attention = inner_attn
         self.layer_name = layer_name
         self.return_tuple = return_tuple
+        self.is_t5 = False
 
     @property
     def inner(self) -> nn.Module:
@@ -91,7 +92,7 @@ class UniversalAttentionWrapper(nn.Module):
         from neuralops.core.t5_compat import is_t5_model
 
         cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
-        is_t5 = is_t5_model(cfg) or key_value_states is not None or position_bias is not None
+        is_t5 = getattr(self, "is_t5", False) or getattr(self._wrapped_attention, "is_t5", False) or is_t5_model(cfg) or key_value_states is not None or position_bias is not None or hasattr(self, "relative_attention_bias") or hasattr(self._wrapped_attention, "relative_attention_bias")
 
         if is_t5:
             out, ret_pos_bias = self._forward_t5(
@@ -563,6 +564,8 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
         from neuralops.core.t5_compat import is_t5_model
 
         if is_t5_model(config):
+            wrapped_attn.is_t5 = True
+            new_attn.is_t5 = True
             for attr in [
                 "has_relative_attention_bias",
                 "relative_attention_bias",
