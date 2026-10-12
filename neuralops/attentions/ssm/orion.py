@@ -27,6 +27,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
@@ -860,9 +861,9 @@ class ORIONAttention(BaseAttention):
 
         # Try SDPA
         try:
-            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
-            k_sdp = K.half() if K.dtype == torch.float32 else K
-            v_sdp = V.half() if V.dtype == torch.float32 else V
+            q_sdp = maybe_half(Q)
+            k_sdp = maybe_half(K)
+            v_sdp = maybe_half(V)
             bias_sdp = None
             if attn_bias is not None:
                 bias_sdp = attn_bias.to(q_sdp.dtype)

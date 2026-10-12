@@ -16,6 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -695,9 +696,9 @@ class SVDMamba(BaseAttention):
         attn_out = None
         if mask_bool is None and not output_attentions:
             try:
-                _qs = Q.half() if Q.dtype == torch.float32 else Q
-                _ks = K.half() if K.dtype == torch.float32 else K
-                _vs = V_attn.half() if V_attn.dtype == torch.float32 else V_attn
+                _qs = maybe_half(Q)
+                _ks = maybe_half(K)
+                _vs = maybe_half(V_attn)
                 _is_causal = getattr(self, "is_decoder", False) and seqlen > 1
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
