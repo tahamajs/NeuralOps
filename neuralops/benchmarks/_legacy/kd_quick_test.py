@@ -1360,9 +1360,9 @@ def run_kd_method(
 
     adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
     param_groups = []
-    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": args.learning_rate * 5.0})
+    if attn_mamba_params: param_groups.append({"params": attn_mamba_params, "lr": args.learning_rate})
     if other_params: param_groups.append({"params": other_params, "lr": args.learning_rate})
-    if adapter_params: param_groups.append({"params": adapter_params, "lr": args.learning_rate * 2.0})
+    if adapter_params: param_groups.append({"params": adapter_params, "lr": args.learning_rate})
 
     if not param_groups:
         for p in student.parameters():
