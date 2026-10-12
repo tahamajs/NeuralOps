@@ -134,7 +134,7 @@ class AegisHybridConfig:
     lora_rank: int = 32
     dropout: float = 0.1
     use_adaptive_pruning: bool = False
-    gate_init_bias: float = 2.2   # Warm-start with ~90% local attention for stability
+    gate_init_bias: float = 3.5   # Warm-start with ~90% local attention for stability
     is_decoder: bool | None = None  # FIX 9: None = auto-detect
     use_global: bool = True
     kernel_feature_dim: int = 128
@@ -608,7 +608,7 @@ class TriBranchHybridAttention(BaseAttention):
         # FIX 3: balanced fusion_beta init, override via env
         _beta_init = _env_float("AEGIS_FUSION_BETA", config.gate_init_bias)
         self.fusion_beta = nn.Parameter(
-            torch.full((self.num_heads,), _beta_init), requires_grad=False
+            torch.full((self.num_heads,), _beta_init), requires_grad=True
         )
 
         # storage accounting
