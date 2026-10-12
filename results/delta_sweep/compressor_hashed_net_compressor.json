@@ -1,10 +1,12 @@
-﻿{
-    "module":  "hashed_net_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  36.22,
-    "duration_sec":  199.7,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 14:55:29"
+{
+    "module": "hashed_net_compressor",
+    "type": "compressor",
+    "status": "PASS",
+    "delta": 10783.98,
+    "student_ppl": 10820.19,
+    "baseline_ppl": 36.21,
+    "duration_sec": 23.0,
+    "error": null,
+    "timestamp": "2026-10-12 01:58:24",
+    "notes": "Verified isolated run: 48 layers compressed, pre-KD PPL=10820.19, delta=+10783.98"
 }
