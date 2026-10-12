@@ -850,32 +850,37 @@ def measure_latency(
     inp = tokenizer("The quick brown fox", return_tensors="pt").to(device)
     amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
 
-    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
-        for _ in range(warmup):
-            _ = student.generate(
-                **inp,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-            if amp_enabled:
-                torch.cuda.synchronize()
+    latencies = []
+    try:
+        with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
+            for _ in range(warmup):
+                _ = student.generate(
+                    **inp,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
+                )
+                if amp_enabled:
+                    torch.cuda.synchronize()
 
-        latencies = []
-        for _ in range(n_runs):
-            if amp_enabled:
-                torch.cuda.synchronize()
-            t0 = time.perf_counter()
-            _ = student.generate(
-                **inp,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-            if amp_enabled:
-                torch.cuda.synchronize()
-            t1 = time.perf_counter()
-            latencies.append((t1 - t0) * 1000.0)
+            for _ in range(n_runs):
+                if amp_enabled:
+                    torch.cuda.synchronize()
+                t0 = time.perf_counter()
+                _ = student.generate(
+                    **inp,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False,
+                )
+                if amp_enabled:
+                    torch.cuda.synchronize()
+                t1 = time.perf_counter()
+                latencies.append((t1 - t0) * 1000.0)
+    except Exception as e:
+        LOG.warning("measure_latency failed: %s", e)
 
     mean_ms = round(float(np.mean(latencies)), 2) if latencies else 0.0
     std_ms = round(float(np.std(latencies)), 2) if latencies else 0.0
@@ -1995,8 +2000,16 @@ def main():
     # ---- System ----
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     cuda_capability = torch.cuda.get_device_capability(0)[0] if torch.cuda.is_available() else 0
-    parser.add_argument("--fp16", action="store_true", default=(cuda_capability >= 7), help="Enable FP16 mixed precision (default: True only for compute capability >= 7)")
-    parser.add_argument("--fp32", action="store_true", default=False, help="Force FP32 precision (disables FP16 and GradScaler)")
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="auto",
+        choices=["auto", "bfloat16", "float32", "float16", "bf16", "fp32", "fp16"],
+        help="Target precision: 'auto' (detects RTX 4070 -> bfloat16, GTX 1060 -> float32), 'bfloat16' / 'bf16', 'float32' / 'fp32', or 'float16' / 'fp16'",
+    )
+    parser.add_argument("--bf16", action="store_true", default=False, help="Force bfloat16 precision (ideal for RTX 4070 / Ada / Ampere)")
+    parser.add_argument("--fp32", action="store_true", default=False, help="Force float32 full precision (required for GTX 1060 / Pascal)")
+    parser.add_argument("--fp16", action="store_true", default=False, help="Enable float16 mixed precision (Turing / Volta)")
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
@@ -2016,8 +2029,27 @@ def main():
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
-    if getattr(args, "fp32", False) or cuda_capability < 7:
+    if getattr(args, "fp32", False) or args.dtype in ("float32", "fp32"):
         args.fp16 = False
+        args.bf16 = False
+        args.dtype = "float32"
+    elif getattr(args, "bf16", False) or args.dtype in ("bfloat16", "bf16"):
+        args.fp16 = False
+        args.fp32 = False
+        args.dtype = "bfloat16"
+    elif getattr(args, "fp16", False) or args.dtype in ("float16", "fp16"):
+        args.fp32 = False
+        args.bf16 = False
+        args.dtype = "float16"
+
+    # Resolve global AMP dtype
+    global_amp_dtype, global_use_scaler = _detect_amp_dtype(
+        requested_dtype=args.dtype,
+        requested_bf16=args.bf16,
+        requested_fp32=args.fp32,
+        requested_fp16=args.fp16,
+        device=args.device,
+    )
     
     # Flatten/split comma-separated module names if provided (e.g. --modules mod1,mod2)
     resolved_modules = []
@@ -2037,7 +2069,7 @@ def main():
     LOG.info("Multi-Module Knowledge Distillation Sweep")
     LOG.info("=" * 70)
     LOG.info("Model: %s | Modules: %d to process | Methods: %s", args.model_name, len(args.modules), args.methods)
-    LOG.info("Device: %s | FP16: %s | Batch: %d | Seq: %d", args.device, args.fp16, args.batch_size, args.seq_len)
+    LOG.info("Device: %s | Precision: %s (AMP: %s, Scaler: %s) | Batch: %d | Seq: %d", args.device, global_amp_dtype, global_amp_dtype != torch.float32, global_use_scaler, args.batch_size, args.seq_len)
     
     # ---- 1. Phase 0: Setup Once ----
     LOG.info("Loading tokenizer: %s", args.model_name)
@@ -2127,16 +2159,20 @@ def main():
                 LOG.info("Loading teacher model to build cache: %s", args.model_name)
                 teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
                 teacher.eval()
-                if args.fp16 and args.device.startswith("cuda"):
+                if global_amp_dtype == torch.float16 and args.device.startswith("cuda"):
                     teacher = teacher.half()
+                elif global_amp_dtype == torch.bfloat16 and args.device.startswith("cuda"):
+                    teacher = teacher.to(args.device)
+                else:
+                    teacher = teacher.float().to(args.device)
                 teacher.to(args.device)
                 LOG.info("Computing teacher baseline PPL...")
-                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args, amp_dtype=global_amp_dtype)
                 LOG.info("Building teacher cache at %s", cache_dir)
                 build_teacher_cache(
                     teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len,
                     args.cache_attn, args.max_train_texts, baseline_ppl, args.eval_max_tokens, eval_stride,
-                    eval_seq_len=args.seq_len, test_split_name=test_split_name
+                    eval_seq_len=args.seq_len, test_split_name=test_split_name, amp_dtype=global_amp_dtype,
                 )
                 teacher_cache = load_teacher_cache(cache_dir)
                 LOG.info("Teacher cache built. Evicting Teacher from VRAM to CPU to save memory...")
@@ -2146,11 +2182,15 @@ def main():
         LOG.info("Loading teacher model: %s", args.model_name)
         teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
         teacher.eval()
-        if args.fp16 and args.device.startswith("cuda"):
+        if global_amp_dtype == torch.float16 and args.device.startswith("cuda"):
             teacher = teacher.half()
+        elif global_amp_dtype == torch.bfloat16 and args.device.startswith("cuda"):
+            teacher = teacher.to(args.device)
+        else:
+            teacher = teacher.float().to(args.device)
         teacher.to(args.device)
         LOG.info("Computing teacher baseline PPL...")
-        baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+        baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args, amp_dtype=global_amp_dtype)
 
     LOG.info("Using teacher baseline PPL: %.2f", baseline_ppl)
     LOG.info(
