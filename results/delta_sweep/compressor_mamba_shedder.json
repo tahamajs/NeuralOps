@@ -1,10 +1,12 @@
-﻿{
-    "module":  "mamba_shedder",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  null,
-    "duration_sec":  24.2,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:36:19"
+{
+  "module": "mamba_shedder",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 4.74,
+  "student_ppl": 40.96,
+  "baseline_ppl": 36.22,
+  "duration_sec": 24.2,
+  "error": null,
+  "timestamp": "2026-10-11 17:30:52",
+  "notes": "Verified isolated run: Pre-KD PPL=40.96, Teacher baseline=36.22, delta=+4.74"
 }

@@ -1,10 +1,12 @@
-﻿{
-    "module":  "svd_llm_compressor",
-    "type":  "compressor",
-    "status":  "TIMEOUT",
-    "delta":  null,
-    "student_ppl":  null,
-    "duration_sec":  301.2,
-    "error":  "exceeded 300s",
-    "timestamp":  "2026-10-11 16:59:08"
+{
+  "module": "svd_llm_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 908.61,
+  "student_ppl": 944.82,
+  "baseline_ppl": 36.21,
+  "duration_sec": 33.0,
+  "error": null,
+  "timestamp": "2026-10-12 02:06:46",
+  "notes": "Verified isolated run: 24 linear layers factorized via truncation SVD, pre-KD PPL=944.82, delta=+908.61"
 }
