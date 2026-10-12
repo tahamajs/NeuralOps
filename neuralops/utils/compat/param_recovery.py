@@ -91,9 +91,7 @@ def _is_candidate_trainable_param(
     ):
         return True
 
-    if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
-        if (has_lora and any(d in n_low for d in ("classifier.", "pre_classifier.", "score."))) or not param.requires_grad:
-            return False
+    if any(h in n_low for h in ("score.", "score", "classifier.", "classifier", "classification_head", "pre_classifier", "pooler")):
         return True
 
     if any(
