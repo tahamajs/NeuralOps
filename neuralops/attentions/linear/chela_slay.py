@@ -506,7 +506,7 @@ class ChelaSlayAttention(BaseAttention):
         feature_dim: int = 128,
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
-        gate_init_bias: float = 8.0,  # FIXED: sigmoid(8.0)=0.9997 (99.97% dense fidelity at step 0)
+        gate_init_bias: float = 0.0,  # FIXED: sigmoid(8.0)=0.9997 (99.97% dense fidelity at step 0)
         chunk_size: int = 64,
         comp_config: Any | None = None,
         layer_id: int | None = None,
@@ -520,7 +520,7 @@ class ChelaSlayAttention(BaseAttention):
             kwargs.get("gate_init_bias")
             or _safe_getattr(comp_config, "gate_init_bias", None)
             or gate_init_bias,
-            8.0,
+            0.0,
         )
         self.chunk_size = _safe_int(
             kwargs.get("chunk_size")
