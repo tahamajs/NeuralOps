@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/aa_svd_compressor/20261012_154401_bs8_seq256_lr1e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/aa_svd_compressor/20261012_182915_bs8_seq256_lr3e-05_C

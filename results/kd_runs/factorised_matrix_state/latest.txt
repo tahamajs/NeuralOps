@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/factorised_matrix_state/20261011_225651_bs12_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/factorised_matrix_state/20261012_180005_bs8_seq256_lr3e-04_C

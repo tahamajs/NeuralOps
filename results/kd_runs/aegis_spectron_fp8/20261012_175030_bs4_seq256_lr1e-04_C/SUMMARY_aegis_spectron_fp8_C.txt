@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: aegis_spectron_fp8 / C
+================================================================================
+
+MODEL INFO:
+  Total params:      110.36 M
+  Trainable params:  2.38 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4856.2300
+  Post-KD PPL:       3523.3700
+  Stage 1 (KD) PPL:  3523.3700
+  Stage 2 (Self) PPL:3523.3700
+  KD Gain:           +1332.86
+  Self Gain:         +0.00
+  Total Gain:        +1332.86
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         97.3038
+  Recovery:          27.65%
+  Peak VRAM:         1665.83 MB
+  Train time:        46.56 s (Stage 1: 46.6s, Stage 2: 0.0s)
+  s/step:            2.3280
+  Loss (final):      7.5448
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.3367
+  Repetition-3:      0.6094
+  Train PPL:         3013.8400
+  Test PPL:          3523.3700
+  Overfit Gap:       509.53
+  Latency (mean):    873.85 ms
+  Latency (std):     7.78 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        4b230f0d85b5
+
+TRAINING HISTORY (last 10 steps):
+  step    10 | loss=6.3295 | lr=1.00e-05
+  step    11 | loss=5.9304 | lr=1.10e-05
+  step    12 | loss=5.9309 | lr=1.20e-05
+  step    13 | loss=5.6957 | lr=1.30e-05
+  step    14 | loss=5.8907 | lr=1.40e-05
+  step    15 | loss=6.2178 | lr=1.50e-05
+  step    16 | loss=6.4016 | lr=1.60e-05
+  step    17 | loss=6.8022 | lr=1.70e-05
+  step    18 | loss=7.5054 | lr=1.80e-05
+  step    19 | loss=7.7459 | lr=1.90e-05
