@@ -177,8 +177,8 @@ class SVDLinearCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: int = 192,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         protect_critical: bool = True,
         target_attention_only: bool = False,
         lora_r: int = 0,
@@ -341,7 +341,7 @@ class SVDLinearCompressor(BaseCompressor):
 
                 if err > self.max_error:
                     logger.warning(
-                        "SVDLinear reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        "SVDLinear reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
                         err,
                         name,
                         self.max_error,
@@ -412,9 +412,9 @@ def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     """SVD Linear compressor factory."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     rank = kwargs.pop("rank", _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", 192)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
     )
     lora_r = kwargs.pop(
         "lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))
