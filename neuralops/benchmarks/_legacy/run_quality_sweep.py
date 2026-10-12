@@ -63,6 +63,7 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
+from neuralops.core.amp_utils import amp_context
 from neuralops.eval_all_models_datasets import apply_module_to_model
 from neuralops.utils.compat import module_family_support, wrap_for_family
 from neuralops.utils.model_family import ModelAdapter, detect_family
@@ -838,7 +839,7 @@ def collect_and_export_full_metrics(
                 dummy_ids = torch.randint(10, 100, (1, test_len), device=dev)
                 dummy_mask = torch.ones((1, test_len), device=dev, dtype=torch.long)
                 with torch.inference_mode():
-                    with torch.autocast(device_type, dtype=torch.float16, enabled=fp16):
+                    with amp_context(device_type):
                         _ = model(input_ids=dummy_ids, attention_mask=dummy_mask)
                 scalability[f"L_{test_len}_vram_mb"] = round(
                     torch.cuda.max_memory_allocated(dev) / (1024 * 1024), 2
@@ -1265,7 +1266,7 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
         i = (step * batch_size) % len(train)
         x, y = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
         opt.zero_grad(set_to_none=True)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+        with amp_context("cuda"):
             loss = model(**x, labels=y).loss
         scaler.scale(loss).backward()
         scaler.step(opt)
@@ -1318,7 +1319,7 @@ def finetune_with_kd(
             cx, cy = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
 
         opt.zero_grad(set_to_none=True)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+        with amp_context("cuda"):
             student_out = model(**cx, labels=cy)
             student_logits = student_out.logits
             ce_loss = student_out.loss
