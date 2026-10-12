@@ -4,8 +4,8 @@
   "status": "ERROR",
   "delta": null,
   "student_ppl": null,
-  "duration_sec": 0.1,
+  "duration_sec": 15.4,
   "retries_used": 1,
   "error": "exit=1",
-  "timestamp": "2026-10-12 15:03:45"
+  "timestamp": "2026-10-12 18:43:29"
 }
