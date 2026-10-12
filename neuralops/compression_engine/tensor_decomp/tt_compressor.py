@@ -536,7 +536,8 @@ def _try_svd_fallback(
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("tt_compressor")
+# DEPRECATED: alias of kronecker_tt_lora
+# @COMPRESSOR_REGISTRY.register("tt_compressor")
 class TTCompressor(BaseCompressor):
     """
     Replaces Linear/Conv1D with TTLinearLayer when TT succeeds; otherwise
