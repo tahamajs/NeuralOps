@@ -1,0 +1,56 @@
+================================================================================
+RUN SUMMARY: aegis_hybrid / C
+================================================================================
+
+MODEL INFO:
+  Total params:      100.85 M
+  Trainable params:  2.36 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        3671.2000
+  Post-KD PPL:       3671.2000
+  Stage 1 (KD) PPL:  3671.2000
+  Stage 2 (Self) PPL:3671.2000
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         101.3584
+  Recovery:          0.00%
+  Peak VRAM:         1372.29 MB
+  Train time:        9.04 s (Stage 1: 9.0s, Stage 2: 0.0s)
+  s/step:            1.8080
+  Loss (final):      3.5205
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8538
+  Repetition-3:      0.0479
+  Train PPL:         2316.6600
+  Test PPL:          3671.2000
+  Overfit Gap:       1354.54
+  Latency (mean):    1516.35 ms
+  Latency (std):     71.31 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.12.15
+  Torch:             2.5.1+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce GTX 1060
+  Git commit:        4238670a68f5
+
+TRAINING HISTORY (last 10 steps):
+  step     0 | loss=7.4736 | lr=0.00e+00
+  step     1 | loss=6.0588 | lr=3.00e-06
+  step     2 | loss=5.4810 | lr=6.00e-06
+  step     3 | loss=4.2548 | lr=9.00e-06
+  step     4 | loss=3.5205 | lr=1.20e-05

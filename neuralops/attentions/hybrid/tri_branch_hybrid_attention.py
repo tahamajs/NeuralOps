@@ -1005,7 +1005,19 @@ class TriBranchHybridAttention(BaseAttention):
             final = self.out_proj(fused)
 
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
-        return final.to(hidden_states.dtype), (attn_local if output_attentions else None)
+        final = final.to(hidden_states.dtype)
+
+        # HuggingFace-compatible return tuple
+        # GPT-2 expects (hidden, present, attn_weights) when
+        # use_cache=True and output_attentions=True.
+        _use_cache = kwargs.get("use_cache", False) or (
+            past_key_value is not None and past_key_value is not False
+        )
+        present = (K_new, V_new) if _use_cache and not is_cross else None
+
+        if output_attentions:
+            return (final, present, attn_local)
+        return (final, present)
 
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
