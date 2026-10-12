@@ -18,6 +18,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -909,9 +910,9 @@ class REAPMoEAttention(BaseAttention):
         )
 
         if use_sdpa:
-            q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
-            k_sdp = K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
-            v_sdp = V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
+            q_sdp = maybe_half(q)
+            k_sdp = maybe_half(K_full)
+            v_sdp = maybe_half(V_full)
 
             attn_bias_sdp = None
             if attention_mask is not None:
