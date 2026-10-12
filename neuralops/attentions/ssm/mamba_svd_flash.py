@@ -397,7 +397,7 @@ class MambaSVDFlash(BaseAttention):
             if comp_config
             else bottleneck_dim
         )
-        self.ssm_fwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
+        self.ssm_fwd = SVDS6StateSpace(self.d_model, rank=min(16, self.rank), bottleneck_dim=bd)
 
         if not self.is_decoder:
             self.ssm_bwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
