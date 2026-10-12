@@ -18,6 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -533,9 +534,9 @@ class CrossAttention(BaseAttention):
         use_sdpa = (head_mask is None and not output_attentions)
         if use_sdpa:
             try:
-                _q = Q.half() if Q.dtype == torch.float32 else Q
-                _k = K_full.half() if K_full.dtype == torch.float32 else K_full
-                _v = V_full.half() if V_full.dtype == torch.float32 else V_full
+                _q = maybe_half(Q)
+                _k = maybe_half(K_full)
+                _v = maybe_half(V_full)
 
                 attn_bias = None
                 if eff_mask is not None:
