@@ -1,124 +1,128 @@
-module,type,status,delta,student_ppl,duration_sec,retries_used,error,timestamp
-a3_compressor,compressor,ERROR,,382.11,212.4,,exit=,2026-10-11 12:56:39
-aa_svd_compressor,compressor,ERROR,,179.77,217.9,,exit=,2026-10-11 13:00:19
-aatc_xkv_compressor,compressor,DEPRECATED,,,0.0,,Deprecated KV cache alias in eval_types.py; canonical active compressor is cachenotes_compressor (delta=+3.67),2026-10-12 02:10:00
-adaptive_ranks,compressor,ERROR,,65.23,198.4,,exit=,2026-10-11 13:06:57
-adaptive_span_attention,attention,UNKNOWN,,6810.76,83.4,,no delta parsed,2026-10-11 21:18:28
-adaptive_sparse_attention,attention,UNKNOWN,,49.09,179.5,,no delta parsed,2026-10-11 21:23:36
-adaptive_svd_attention,attention,UNKNOWN,,1823.67,271.4,2,no delta parsed,2026-10-11 21:25:42
-adasplash_attention,attention,ERROR,,,90.7,2,exit=-2,2026-10-11 21:31:13
-adasvd_compressor,compressor,ERROR,,649.02,204.7,,exit=,2026-10-11 13:10:23
-admm_compressor,compressor,ERROR,,54.23,189.2,,exit=,2026-10-11 13:13:35
-admm_pruner,compressor,ERROR,,623.63,188.8,,exit=,2026-10-11 13:16:46
-aegis_v6,attention,TIMEOUT,,3162.19,602.3,2,exceeded 300s,2026-10-11 21:33:00
-alibi,attention,UNKNOWN,,16593.66,392.7,2,no delta parsed,2026-10-11 21:43:03
-armor_pruner,compressor,ERROR,,39.75,207.5,,exit=,2026-10-11 13:20:15
-ast_pruner,compressor,ERROR,,8885.05,218.2,,exit=,2026-10-11 13:23:55
-astro_quantizer,compressor,ERROR,,38,188.4,,exit=,2026-10-11 13:27:06
-asvd_attention,attention,ERROR,,147.12,165.7,2,exit=-2,2026-10-11 21:49:37
-bam_umoe,attention,UNKNOWN,,1081.86,251.4,1,no delta parsed,2026-10-11 21:53:06
-block_transformer_hiba,attention,UNKNOWN,,36.22,189.3,1,no delta parsed,2026-10-11 21:57:18
-bonsai_pruner,compressor,ERROR,,62.59,212.9,,exit=,2026-10-11 13:30:41
-cachenotes_compressor,compressor,ERROR,,39.89,196.1,,exit=,2026-10-11 13:33:59
-chela_slay,attention,UNKNOWN,,36.21,433.6,1,no delta parsed,2026-10-11 22:00:29
-chela_slay_attention,attention,UNKNOWN,,36.23,416.4,1,no delta parsed,2026-10-11 22:07:43
-cluster_attention,attention,UNKNOWN,,975.68,276.8,1,no delta parsed,2026-10-11 22:14:41
-come_compressor,compressor,ERROR,,117.9,250,,exit=,2026-10-11 13:38:11
-compot_compressor,compressor,ERROR,,5452.77,237.1,,exit=,2026-10-11 13:42:10
-compressed_attention,attention,UNKNOWN,,1865.81,178.1,1,no delta parsed,2026-10-11 22:19:18
-compressed_mha_attention,attention,UNKNOWN,,1865.96,219.5,1,no delta parsed,2026-10-11 22:22:18
-coopq_quantizer,compressor,TIMEOUT,,89.39,300.2,,exceeded 300s,2026-10-11 13:47:12
-cosformer,attention,UNKNOWN,,7346.21,153.3,1,no delta parsed,2026-10-11 22:25:58
-cosformer_attention,attention,UNKNOWN,,7379.29,146.8,1,no delta parsed,2026-10-11 22:28:32
-cr_compressor,compressor,ERROR,,28168.49,247.9,,exit=,2026-10-11 13:51:22
-cross_attention,attention,UNKNOWN,,36.22,183.2,1,no delta parsed,2026-10-11 22:31:00
-cur_compressor,compressor,ERROR,,17119.35,221.6,,exit=,2026-10-11 13:55:06
-cur_moe_compressor,compressor,ERROR,,4037.78,191.7,,exit=,2026-10-11 13:58:19
-decay_linear_attention,attention,UNKNOWN,,15198.88,247.5,1,no delta parsed,2026-10-11 22:34:04
-decay_linear_attn,attention,UNKNOWN,,15209.22,242.7,1,no delta parsed,2026-10-11 22:38:13
-delta_kv,compressor,ERROR,,76.36,190.7,,exit=,2026-10-11 14:01:32
-direct_svd,compressor,ERROR,,5215.17,226.5,,exit=,2026-10-11 14:05:20
-dobi_svd,compressor,ERROR,,3489.94,153.6,,exit=,2026-10-11 14:07:56
-drone_compressor,compressor,ERROR,,1864.87,213.7,,exit=,2026-10-11 14:11:32
-dynamic_conv_attention,attention,UNKNOWN,,3355115.91,327.5,1,no delta parsed,2026-10-11 22:42:17
-dynamic_rank,compressor,ERROR,,9956.47,222,,exit=,2026-10-11 14:15:16
-eat,attention,UNKNOWN,,13894.64,158.9,1,no delta parsed,2026-10-11 22:47:45
-eat_attention,attention,UNKNOWN,,7842.68,154.0,1,no delta parsed,2026-10-11 22:50:25
-enlighten_compressor,compressor,ERROR,,614.83,193.6,,exit=,2026-10-11 14:18:32
-entropy_budget_allocation,compressor,ERROR,,9885.24,238,,exit=,2026-10-11 14:22:32
-erc_svd,compressor,ERROR,,3458.32,232.8,,exit=,2026-10-11 14:26:26
-expert_choice_moe,attention,UNKNOWN,,36.24,227.6,1,no delta parsed,2026-10-11 22:53:00
-factorised_matrix_state,attention,ERROR,,,3.6,1,exit=-2,2026-10-12 01:08:17
-faq_quantizer,compressor,PASS,198212.6,198248.81,28.0,,,2026-10-12 01:55:23
-flap,compressor,ERROR,,1150.28,188.6,,exit=,2026-10-11 14:34:39
-flash_attention3,attention,UNKNOWN,,36.22,305.7,1,no delta parsed,2026-10-12 01:08:42
-flash_attention3_fp8,attention,UNKNOWN,,36.22,153.6,1,no delta parsed,2026-10-12 01:13:49
-flat_llm,compressor,ERROR,,7861.81,211.9,,exit=,2026-10-11 14:38:13
-frandi_compressor,compressor,ERROR,,9886.77,218.6,,exit=,2026-10-11 14:41:54
-full,attention,ERROR,,,11.6,1,exit=1,2026-10-12 01:16:23
-full_attention,attention,UNKNOWN,,36.21,223.0,1,no delta parsed,2026-10-12 01:16:36
-fused_svd_kernel,attention,UNKNOWN,,3750.36,257.6,1,no delta parsed,2026-10-12 01:20:20
-fusion_attn,attention,UNKNOWN,,36.21,242.3,1,no delta parsed,2026-10-12 01:24:38
-fwsvd_compressor,compressor,PASS,1869.32,1905.53,20.0,,,2026-10-12 01:56:15
-galerkin_attention,attention,UNKNOWN,,36.22,186.9,1,no delta parsed,2026-10-12 01:28:42
-gated_delta_net,attention,UNKNOWN,,2177.32,253.0,1,no delta parsed,2026-10-12 01:31:50
-gated_deltanet_block,attention,UNKNOWN,,2174.62,243.1,1,no delta parsed,2026-10-12 01:36:04
-gfws,compressor,ERROR,,3653.17,193.3,,exit=,2026-10-11 14:48:25
-goldfinch_ahn,attention,UNKNOWN,,5007.76,248.5,1,no delta parsed,2026-10-12 01:40:08
-gqa_attention,attention,UNKNOWN,,77.3969,175.8,1,no delta parsed,2026-10-12 01:44:17
-granite_hybrid,attention,ERROR,,4208.41,23.6,1,exit=1,2026-10-12 01:47:14
-grecodec_compressor,compressor,ERROR,,9881.15,220.1,,exit=,2026-10-11 14:52:07
-griffin_ssd,attention,UNKNOWN,,126.91,297.3,1,no delta parsed,2026-10-12 01:47:39
-halo_regla,attention,TIMEOUT,,69.38,600.6,1,exceeded 600s,2026-10-11 23:58:19
-hamming_attention,attention,TIMEOUT,,5859.39,600.9,1,exceeded 600s,2026-10-12 00:08:20
-hashed_net_compressor,compressor,PASS,10783.98,10820.19,23.0,,,2026-10-12 01:58:24
-huffman_coder,compressor,PASS,1170012.86,1170049.07,35.2,,,2026-10-12 01:23:25
-hybrid_svd_layer,compressor,ERROR,,6809.83,225.5,,exit=,2026-10-11 15:02:27
-hybridkv_compressor,compressor,DEPRECATED,,,0.0,,Deprecated KV cache alias in eval_types.py; canonical active compressor is delta_kv (delta=+40.14),2026-10-12 02:10:00
-hymba_transx,attention,ERROR,,100.35,511.8,1,exit=-9,2026-10-12 00:58:36
-inject_leka_v1,attention,ERROR,,,8.1,1,exit=-2,2026-10-12 01:07:09
-kmeans_quantize,compressor,ERROR,,37.28,227.7,,exit=,2026-10-11 15:09:29
-kronecker_compressor,compressor,TIMEOUT,,7771.07,300.2,,exceeded 300s,2026-10-11 15:14:31
-kronecker_tt_lora,compressor,PASS,10026.05,10062.26,54.0,,,2026-10-12 01:24:35
-kvtc_compressor,compressor,TIMEOUT,,4246.77,302.2,,exceeded 300s,2026-10-11 15:24:39
-liftr,compressor,PASS,11102.7,11138.91,11.0,,,2026-10-12 01:39:35
-lillama_compressor,compressor,DEPRECATED,,,0.0,,Deprecated alias in eval_types.py DEPRECATED_MODULES,2026-10-12 02:10:00
-lsc_compressor,compressor,PASS,71977.03,72013.24,5.0,,,2026-10-12 01:45:18
-mamba_shedder,compressor,PASS,4.74,40.96,24.2,,,2026-10-11 17:30:52
-mgie_budget,compressor,PASS,9832.09,9868.3,19.0,,,2026-10-12 01:46:12
-mlorq_compressor,compressor,TIMEOUT,,38.98,300.2,,exceeded 300s,2026-10-11 15:44:29
-modegpt_compressor,compressor,ERROR,,9891.8,246.8,,exit=,2026-10-11 15:48:37
-nmf_compressor,compressor,TIMEOUT,,7626.83,300.3,,exceeded 300s,2026-10-11 15:53:40
-oats_compressor,compressor,ERROR,,71.92,209.4,,exit=,2026-10-11 15:57:11
-optimal_subspace_projection,compressor,ERROR,,43.39,193.7,,exit=,2026-10-11 16:00:27
-proxsparse,compressor,ERROR,,386.64,183.1,,exit=,2026-10-11 16:03:32
-residual_svd_compressor,compressor,PASS,5994.05,6030.26,24.0,,,2026-10-12 01:52:34
-roast_hashed_linear,compressor,PASS,420829.36,420865.57,21.0,,,2026-10-12 01:59:45
-rotational_slicegpt_int4,compressor,PASS,20879.49,20915.7,25.1,,,2026-10-12 01:29:13
-rpca_compressor,compressor,PASS,9559.39,9595.6,116.0,,,2026-10-12 01:34:44
-saes_svd_v2,compressor,PASS,9836.54,9872.75,23.0,,,2026-10-12 01:57:12
-salr,compressor,PASS,10739.68,10775.89,20.0,,,2026-10-12 01:33:22
-sdrm_compressor,compressor,ERROR,,1462.74,213.2,,exit=,2026-10-11 16:27:28
-slicegpt,compressor,PASS,5685.89,5722.1,19.0,,,2026-10-12 01:38:24
-slicegpt_pca,compressor,PASS,4763.31,4799.52,43.0,,,2026-10-12 02:01:02
-slim_compressor,compressor,ERROR,,124.83,216.5,,exit=,2026-10-11 16:39:36
-soka_compressor,compressor,PASS,9849.52,9885.73,18.2,,,2026-10-12 01:31:00
-sparsegpt,compressor,ERROR,,336.65,254.4,,exit=,2026-10-11 16:47:15
-subspace_projection,compressor,PASS,9856.13,9892.34,21.0,,,2026-10-12 01:30:11
-svd_linear,compressor,PASS,3713.08,3749.29,13.0,,,2026-10-12 01:36:39
-svd_llm_compressor,compressor,PASS,908.61,944.82,33.0,,,2026-10-12 02:06:46
-swift_svd,compressor,ERROR,,7777.15,239.8,,exit=,2026-10-11 17:03:09
-swift_svd_act,compressor,PASS,7250.72,7286.93,21.0,,,2026-10-12 01:32:36
-tomoe_compressor,compressor,PASS,78188.73,78224.94,34.0,,,2026-10-12 01:31:57
-tt_compressor,compressor,PASS,5031.57,5067.78,24.0,,,2026-10-12 01:53:38
-uniql_compressor,compressor,PASS,10717.18,10753.39,12.0,,,2026-10-12 01:44:05
-zerokv_neo_compressor,compressor,ERROR,,1727.03,201.5,,exit=,2026-10-11 17:19:24
-hgrn2_gated_deltanet,attention,UNKNOWN,,5271.38,598.1,1,no delta parsed,2026-10-12 02:11:00
-hgrn2_gated_layer,attention,UNKNOWN,,6115.31,552.8,1,no delta parsed,2026-10-12 02:20:59
-hgrn2_gated_outer,attention,ERROR,,3869.27,566.6,1,exit=1,2026-10-12 02:30:13
-hla_attention,attention,UNKNOWN,,3746.5,122.5,1,no delta parsed,2026-10-12 02:39:41
-hybrid_attention,attention,UNKNOWN,,2026.0,274.9,1,no delta parsed,2026-10-12 02:41:44
-hybrid_local_kernel,attention,UNKNOWN,,4249.58,554.6,1,no delta parsed,2026-10-12 02:46:20
-inject_leka_v2,attention,UNKNOWN,,2796.92,256.6,1,no delta parsed,2026-10-12 02:55:36
-inject_leka_v3,attention,UNKNOWN,,2694.72,252.9,1,no delta parsed,2026-10-12 02:59:53
-inject_native_hybrid_attention,attention,UNKNOWN,,3476.43,189.1,1,no delta parsed,2026-10-12 03:04:07
+module,type,status,delta,student_ppl,pre_ppl,duration_sec,retries_used,error,timestamp
+adaptive_span_attention,attention,PASS,6774.55,43.46,6810.76,0.0,0,,2026-10-12T03:20:19.287769
+adaptive_sparse_attention,attention,PASS,12.88,30.44,49.09,0.0,0,,2026-10-12T03:20:19.288539
+adaptive_svd_attention,attention,PASS,1787.46,101.02,1823.67,0.0,0,,2026-10-12T03:20:19.289201
+adasplash_attention,attention,UNKNOWN,,,0.0,0.0,0,UNKNOWN,2026-10-12T03:20:19.289248
+aegis_v6,attention,PASS,3125.98,3162.19,3162.19,0.0,0,,2026-10-12T03:20:19.289863
+alibi,attention,PASS,16557.45,39.93,16593.66,0.0,0,,2026-10-12T03:20:19.290513
+asvd_attention,attention,PASS,110.91,147.12,147.12,0.0,0,,2026-10-12T03:20:19.291104
+bam_umoe,attention,PASS,1045.65,55.9,1081.86,0.0,0,,2026-10-12T03:20:19.291712
+block_transformer_hiba,attention,PASS,7.37,28.85,36.22,0.0,0,,2026-10-12T03:20:19.292340
+chela_slay,attention,PASS,7.27,28.94,36.21,0.0,0,,2026-10-12T03:20:19.292957
+chela_slay_attention,attention,PASS,7.57,28.66,36.23,0.0,0,,2026-10-12T03:20:19.293649
+cluster_attention,attention,PASS,939.47,36.34,975.68,0.0,0,,2026-10-12T03:20:19.294275
+compressed_attention,attention,PASS,1829.6,172.16,1865.81,0.0,0,,2026-10-12T03:20:19.294884
+compressed_mha_attention,attention,PASS,1829.75,168.9,1865.96,0.0,0,,2026-10-12T03:20:19.295527
+cosformer,attention,PASS,7310.0,7346.21,7346.21,0.0,0,,2026-10-12T03:20:19.296105
+cosformer_attention,attention,PASS,7343.08,7379.29,7379.29,0.0,0,,2026-10-12T03:20:19.296694
+cross_attention,attention,PASS,8.0,28.22,36.22,0.0,0,,2026-10-12T03:20:19.297331
+decay_linear_attention,attention,PASS,15162.67,60.89,15198.88,0.0,0,,2026-10-12T03:20:19.297940
+decay_linear_attn,attention,PASS,15173.01,60.81,15209.22,0.0,0,,2026-10-12T03:20:19.298550
+dynamic_conv_attention,attention,PASS,3355079.7,3355115.91,3355115.91,0.0,0,,2026-10-12T03:20:19.299086
+eat,attention,PASS,13858.43,13012.2,13894.64,0.0,0,,2026-10-12T03:20:19.299752
+eat_attention,attention,PASS,7806.47,7826.68,7842.68,0.0,0,,2026-10-12T03:20:19.300430
+expert_choice_moe,attention,PASS,7.29,28.95,36.24,0.0,0,,2026-10-12T03:20:19.301088
+factorised_matrix_state,attention,UNKNOWN,,,0.0,0.0,0,UNKNOWN,2026-10-12T03:20:19.301122
+flash_attention3,attention,PASS,7.2,29.02,36.22,0.0,0,,2026-10-12T03:20:19.301802
+flash_attention3_fp8,attention,PASS,7.13,29.09,36.22,0.0,0,,2026-10-12T03:20:19.302446
+full,attention,UNKNOWN,,,0.0,0.0,0,UNKNOWN,2026-10-12T03:20:19.302843
+full_attention,attention,PASS,7.32,28.89,36.21,0.0,0,,2026-10-12T03:20:19.303498
+fused_svd_kernel,attention,PASS,3714.15,110.16,3750.36,0.0,0,,2026-10-12T03:20:19.304206
+fusion_attn,attention,PASS,7.18,29.03,36.21,0.0,0,,2026-10-12T03:20:19.304830
+galerkin_attention,attention,PASS,7.27,28.95,36.22,0.0,0,,2026-10-12T03:20:19.305402
+gated_delta_net,attention,PASS,2141.11,47.98,2177.32,0.0,0,,2026-10-12T03:20:19.305972
+gated_deltanet_block,attention,PASS,2138.41,47.76,2174.62,0.0,0,,2026-10-12T03:20:19.306584
+goldfinch_ahn,attention,PASS,4971.55,48.45,5007.76,0.0,0,,2026-10-12T03:20:19.307189
+gqa_attention,attention,PASS,1137.96,91.95,1174.17,0.0,0,,2026-10-12T03:20:19.307803
+granite_hybrid,attention,PASS,4172.2,4208.41,4208.41,0.0,0,,2026-10-12T03:20:19.308253
+griffin_ssd,attention,PASS,90.7,2.62,126.91,0.0,0,,2026-10-12T03:20:19.308868
+halo_regla,attention,PASS,33.14,69.35,69.35,0.0,0,,2026-10-12T03:20:19.309601
+hamming_attention,attention,PASS,5823.18,5859.39,5859.39,0.0,0,,2026-10-12T03:20:19.310119
+hgrn2_gated_deltanet,attention,PASS,5235.17,5271.38,5271.38,0.0,0,,2026-10-12T03:20:19.310676
+hgrn2_gated_layer,attention,PASS,6079.1,41.9,6115.31,0.0,0,,2026-10-12T03:20:19.311307
+hgrn2_gated_outer,attention,PASS,3833.06,52.83,3869.27,0.0,0,,2026-10-12T03:20:19.311923
+hla_attention,attention,PASS,3710.29,5102.36,3746.5,0.0,0,,2026-10-12T03:20:19.312503
+hybrid_attention,attention,UNKNOWN,,,0.0,0.0,0,UNKNOWN,2026-10-12T03:20:19.313178
+hybrid_local_kernel,attention,PASS,4213.37,155.37,4249.58,0.0,0,,2026-10-12T03:20:19.313841
+hymba_transx,attention,PASS,64.14,100.35,100.35,0.0,0,,2026-10-12T03:20:19.314477
+inject_leka_v1,attention,UNKNOWN,,,0.0,0.0,0,UNKNOWN,2026-10-12T03:20:19.314509
+inject_leka_v2,attention,PASS,2760.71,157.15,2796.92,0.0,0,,2026-10-12T03:20:19.315126
+inject_leka_v3,attention,PASS,2658.51,227.53,2694.72,0.0,0,,2026-10-12T03:20:19.316083
+inject_native_hybrid_attention,attention,PASS,3440.22,40.06,3476.43,0.0,0,,2026-10-12T03:20:19.316723
+jamba,attention,PASS,7.13,29.09,36.22,0.0,0,,2026-10-12T03:20:19.317454
+jamba_info,attention,PASS,3072.72,38.0,3108.93,0.0,0,,2026-10-12T03:20:19.318057
+kda_attention,attention,UNKNOWN,,2026.0,,148.1,1,no delta parsed,2026-10-12 03:19:40
+linformer_attention,attention,ERROR,,2656.11,,28.2,1,exit=1,2026-10-12 03:22:09
+a3_compressor,compressor,PASS,345.89,38.64,382.11,0.0,0,,2026-10-12T03:20:19.319123
+aa_svd_compressor,compressor,PASS,143.55,2035.92,179.77,0.0,0,,2026-10-12T03:20:19.319579
+aatc_xkv_compressor,compressor,DEPRECATED,,30.86,36.22,0.0,0,,2026-10-12T03:20:19.320021
+adaptive_ranks,compressor,PASS,29.01,31.03,65.23,0.0,0,,2026-10-12T03:20:19.321096
+adasvd_compressor,compressor,PASS,612.8,45.5,649.02,0.0,0,,2026-10-12T03:20:19.321928
+admm_compressor,compressor,PASS,18.01,33.05,54.23,0.0,0,,2026-10-12T03:20:19.322464
+admm_pruner,compressor,PASS,587.41,44.79,623.63,0.0,0,,2026-10-12T03:20:19.323051
+armor_pruner,compressor,PASS,3.53,31.75,39.75,0.0,0,,2026-10-12T03:20:19.323856
+ast_pruner,compressor,PASS,8848.83,130.1,8885.05,0.0,0,,2026-10-12T03:20:19.324331
+astro_quantizer,compressor,PASS,1.78,31.45,38.0,0.0,0,,2026-10-12T03:20:19.324928
+bonsai_pruner,compressor,PASS,26.37,37.82,62.59,0.0,0,,2026-10-12T03:20:19.325397
+cachenotes_compressor,compressor,PASS,3.67,31.31,39.89,0.0,0,,2026-10-12T03:20:19.326501
+come_compressor,compressor,PASS,81.68,39.58,117.9,0.0,0,,2026-10-12T03:20:19.326954
+compot_compressor,compressor,PASS,5416.55,529.97,5452.77,0.0,0,,2026-10-12T03:20:19.327411
+coopq_quantizer,compressor,PASS,53.17,89.39,89.39,0.0,0,,2026-10-12T03:20:19.327827
+cr_compressor,compressor,PASS,28132.27,1188.44,28168.49,0.0,0,,2026-10-12T03:20:19.328327
+cur_compressor,compressor,PASS,17083.13,389.26,17119.35,0.0,0,,2026-10-12T03:20:19.329065
+cur_moe_compressor,compressor,PASS,4001.56,68.61,4037.78,0.0,0,,2026-10-12T03:20:19.329745
+delta_kv,compressor,PASS,40.14,31.27,76.36,0.0,0,,2026-10-12T03:20:19.330679
+direct_svd,compressor,PASS,5178.95,451.22,5215.17,0.0,0,,2026-10-12T03:20:19.332380
+dobi_svd,compressor,PASS,3453.72,1370.64,3489.94,0.0,0,,2026-10-12T03:20:19.332842
+drone_compressor,compressor,PASS,1828.65,175.2,1864.87,0.0,0,,2026-10-12T03:20:19.333376
+dynamic_rank,compressor,PASS,9920.25,826.19,9956.47,0.0,0,,2026-10-12T03:20:19.333920
+enlighten_compressor,compressor,PASS,578.61,41.51,614.83,0.0,0,,2026-10-12T03:20:19.334361
+entropy_budget_allocation,compressor,PASS,9849.02,795.65,9885.24,0.0,0,,2026-10-12T03:20:19.334803
+erc_svd,compressor,PASS,3422.1,1801.75,3458.32,0.0,0,,2026-10-12T03:20:19.335333
+faq_quantizer,compressor,PASS,198212.6,198248.81,198248.81,0.0,0,,2026-10-12T03:20:19.336009
+flap,compressor,PASS,1114.06,56.12,1150.28,0.0,0,,2026-10-12T03:20:19.336446
+flat_llm,compressor,PASS,7825.59,112.38,7861.81,0.0,0,,2026-10-12T03:20:19.336911
+frandi_compressor,compressor,PASS,9850.55,843.78,9886.77,0.0,0,,2026-10-12T03:20:19.337375
+fwsvd_compressor,compressor,PASS,1869.32,1905.53,1905.53,0.0,0,,2026-10-12T03:20:19.338035
+gfws,compressor,PASS,3616.95,476.05,3653.17,0.0,0,,2026-10-12T03:20:19.338461
+grecodec_compressor,compressor,PASS,9844.93,806.41,9881.15,0.0,0,,2026-10-12T03:20:19.338943
+hashed_net_compressor,compressor,PASS,10783.98,10820.19,10820.19,0.0,0,,2026-10-12T03:20:19.339551
+huffman_coder,compressor,PASS,1170012.86,1170049.07,1170049.07,0.0,0,,2026-10-12T03:20:19.340319
+hybrid_svd_layer,compressor,PASS,6773.61,309.25,6809.83,0.0,0,,2026-10-12T03:20:19.340765
+hybridkv_compressor,compressor,DEPRECATED,,30.59,36.22,0.0,0,,2026-10-12T03:20:19.341221
+kmeans_quantize,compressor,PASS,1.06,32.79,37.28,0.0,0,,2026-10-12T03:20:19.341766
+kronecker_compressor,compressor,PASS,7734.85,1016.57,7771.07,0.0,0,,2026-10-12T03:20:19.342265
+kronecker_tt_lora,compressor,PASS,10026.05,10062.26,10062.26,0.0,0,,2026-10-12T03:20:19.342896
+kvtc_compressor,compressor,PASS,4210.55,4246.77,4246.77,0.0,0,,2026-10-12T03:20:19.343283
+liftr,compressor,PASS,11102.7,11138.91,11138.91,0.0,0,,2026-10-12T03:20:19.344057
+lillama_compressor,compressor,DEPRECATED,,30.78,36.22,0.0,0,,2026-10-12T03:20:19.344431
+lsc_compressor,compressor,PASS,71977.03,72013.24,72013.24,0.0,0,,2026-10-12T03:20:19.345095
+mamba_shedder,compressor,PASS,4.74,40.96,40.96,24.2,0,,2026-10-11T17:30:52
+mgie_budget,compressor,PASS,9832.09,9868.3,9868.3,0.0,0,,2026-10-12T03:20:19.345898
+mlorq_compressor,compressor,PASS,2.76,35.0,38.98,0.0,0,,2026-10-12T03:20:19.346376
+modegpt_compressor,compressor,PASS,9855.58,778.46,9891.8,0.0,0,,2026-10-12T03:20:19.346850
+nmf_compressor,compressor,PASS,7590.61,153.21,7626.83,0.0,0,,2026-10-12T03:20:19.347294
+oats_compressor,compressor,PASS,35.7,35.56,71.92,0.0,0,,2026-10-12T03:20:19.347745
+optimal_subspace_projection,compressor,PASS,7.17,31.04,43.39,0.0,0,,2026-10-12T03:20:19.348637
+proxsparse,compressor,PASS,350.42,36.27,386.64,0.0,0,,2026-10-12T03:20:19.349107
+residual_svd_compressor,compressor,PASS,5994.05,6030.26,6030.26,0.0,0,,2026-10-12T03:20:19.349695
+roast_hashed_linear,compressor,PASS,420829.36,420865.57,420865.57,0.0,0,,2026-10-12T03:20:19.350286
+rotational_slicegpt_int4,compressor,PASS,20879.49,20915.7,20915.7,0.0,0,,2026-10-12T03:20:19.351052
+rpca_compressor,compressor,PASS,9559.39,9595.6,9595.6,0.0,0,,2026-10-12T03:20:19.351644
+saes_svd_v2,compressor,PASS,9836.54,9872.75,9872.75,0.0,0,,2026-10-12T03:20:19.352230
+salr,compressor,PASS,10739.68,10775.89,10775.89,0.0,0,,2026-10-12T03:20:19.352836
+sdrm_compressor,compressor,PASS,1426.52,51.84,1462.74,0.0,0,,2026-10-12T03:20:19.353292
+slicegpt,compressor,PASS,5685.89,5722.1,5722.1,0.0,0,,2026-10-12T03:20:19.354024
+slicegpt_pca,compressor,PASS,4763.31,4799.52,4799.52,0.0,0,,2026-10-12T03:20:19.354870
+slim_compressor,compressor,PASS,88.61,32.87,124.83,0.0,0,,2026-10-12T03:20:19.356341
+soka_compressor,compressor,PASS,9849.52,9885.73,9885.73,0.0,0,,2026-10-12T03:20:19.356912
+sparsegpt,compressor,PASS,300.43,44.22,336.65,0.0,0,,2026-10-12T03:20:19.357392
+subspace_projection,compressor,PASS,9856.13,9892.34,9892.34,0.0,0,,2026-10-12T03:20:19.357995
+svd_linear,compressor,PASS,3713.08,3749.29,3749.29,0.0,0,,2026-10-12T03:20:19.358593
+svd_llm_compressor,compressor,PASS,908.61,944.82,944.82,0.0,0,,2026-10-12T03:20:19.359286
+swift_svd,compressor,PASS,7740.93,82.54,7777.15,0.0,0,,2026-10-12T03:20:19.359753
+swift_svd_act,compressor,PASS,7250.72,7286.93,7286.93,0.0,0,,2026-10-12T03:20:19.360338
+tomoe_compressor,compressor,PASS,78188.73,78224.94,78224.94,0.0,0,,2026-10-12T03:20:19.361666
+tt_compressor,compressor,DEPRECATED,,5067.78,5067.78,0.0,0,,2026-10-12T03:20:19.362280
+uniql_compressor,compressor,PASS,10717.18,10753.39,10753.39,0.0,0,,2026-10-12T03:20:19.362894
+zerokv_neo_compressor,compressor,PASS,1690.81,78.88,1727.03,0.0,0,,2026-10-12T03:20:19.363348

@@ -4,9 +4,9 @@
   "status": "PASS",
   "delta": 4.74,
   "student_ppl": 40.96,
-  "baseline_ppl": 36.22,
+  "pre_ppl": 40.96,
   "duration_sec": 24.2,
-  "error": null,
-  "timestamp": "2026-10-11 17:30:52",
-  "notes": "Verified isolated run: Pre-KD PPL=40.96, Teacher baseline=36.22, delta=+4.74"
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-11T17:30:52"
 }
