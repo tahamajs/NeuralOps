@@ -1,3 +1,5 @@
+from neuralops.data.glue_loader import get_num_labels_and_is_regression
+from neuralops.data.glue_loader import load_glue_local
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias
 
@@ -824,47 +826,6 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "rte": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-
-
-def load_glue_local(task_name: str) -> Any:
-    r"""Load GLUE benchmark dataset from local offline storage."""
-    from datasets import Dataset, DatasetDict
-
-    from neuralops.utils.paths import get_glue_dir
-
-    base_path = str(get_glue_dir())
-    task_path = os.path.join(base_path, task_name)
-    if not os.path.exists(task_path):
-        raise FileNotFoundError(f"Dataset not found: {task_path}")
-    splits = {}
-    for fname in os.listdir(task_path):
-        if fname.endswith(".parquet"):
-            split = fname.split("-")[0]
-            splits[split] = Dataset.from_parquet(os.path.join(task_path, fname))
-    if task_name == "mnli":
-        for extra in ["validation_matched", "validation_mismatched"]:
-            fpath = os.path.join(task_path, f"{extra}.parquet")
-            if os.path.exists(fpath):
-                splits[extra] = Dataset.from_parquet(fpath)
-    return DatasetDict(splits)
-
-
-def get_num_labels_and_is_regression(task: str) -> tuple[int, bool]:
-    r"""Return class count and regression indicator for GLUE task."""
-    if task == "stsb":
-        return 1, True
-    if task == "cola":
-        return 2, False
-    mapping = {
-        "sst2": 2,
-        "mrpc": 2,
-        "qqp": 2,
-        "mnli": 3,
-        "qnli": 2,
-        "rte": 2,
-        "wnli": 2,
-    }
-    return mapping[task], False
 
 
 def preprocess_function(

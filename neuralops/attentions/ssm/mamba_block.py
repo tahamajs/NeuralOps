@@ -6,6 +6,7 @@ Based on Gu & Dao, "Mamba: Linear-Time Sequence Modeling" (arXiv:2312.00752).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_return_format
 
 import logging
 import math
@@ -36,23 +37,6 @@ except Exception as _e:
     HAS_TRITON_MAMBA = False
 
 logger = logging.getLogger(__name__)
-
-
-# =========================================================================
-# Helpers
-# =========================================================================
-def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
-    """MB-12: choose output tuple layout for the host model."""
-    if is_nested:
-        return "bert"  # (out, attn_weights)  [2-tuple]
-    if source_attn is None:
-        return "llama"
-    cls = source_attn.__class__.__name__.lower()
-    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gpt_neo", "gpt_j")):
-        return "gpt2"
-    if hasattr(source_attn, "c_attn"):
-        return "gpt2"
-    return "llama"
 
 
 def _infer_d_model(

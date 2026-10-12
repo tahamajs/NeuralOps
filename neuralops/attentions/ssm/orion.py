@@ -17,6 +17,7 @@ Supports:
 """
 
 from __future__ import annotations
+from neuralops.core.common import temperature_softmax
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -40,25 +41,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ============================================================================
-# OR-FIX-01: temperature softmax (replaces broken ReLU-based softpick)
-# ============================================================================
-
-
-def temperature_softmax(
-    x: torch.Tensor,
-    dim: int = -1,
-    temperature: float = 1.0,
-) -> torch.Tensor:
-    """
-    Standard temperature softmax. Replaces the ReLU-based softpick that was
-    always-zero whenever max(x) <= 0 (e.g., fully-masked rows).
-    """
-    x_f = x.float()
-    temp = max(float(temperature), 1e-6)
-    return F.softmax(x_f / temp, dim=dim).to(x.dtype)
 
 
 # ============================================================================

@@ -3,6 +3,7 @@ Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_return_format
 from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
@@ -110,25 +111,6 @@ class SVDMambaSub(nn.Module):
 
         out = self.out_proj(ssm_out)
         return out, present_state
-
-
-def _detect_return_format(
-    source_attn: nn.Module | None, is_nested_encoder: bool
-) -> str:
-    if is_nested_encoder:
-        return "bert"
-    if source_attn is None:
-        return "llama"
-    cls = source_attn.__class__.__name__.lower()
-    if (
-        any(
-            k in cls
-            for k in ("gpt2", "gptne", "gptj", "gptneo", "gpt_neo", "gpt_j")
-        )
-        or hasattr(source_attn, "c_attn")
-    ):
-        return "gpt2"
-    return "llama"
 
 
 # ===========================================================================

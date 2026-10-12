@@ -26,6 +26,7 @@ Mathematical Mechanism:
 """
 
 from __future__ import annotations
+from neuralops.data.glue_loader import load_glue_local
 from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
@@ -1143,21 +1144,6 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "rte": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-
-
-def load_glue_local(task: str) -> Any:
-    from datasets import Dataset, DatasetDict
-
-    from neuralops.utils.paths import get_glue_dir
-
-    base = str(get_glue_dir())
-    path = os.path.join(base, task)
-    splits = {}
-    for f in os.listdir(path):
-        if f.endswith(".parquet"):
-            s = f.split("-")[0]
-            splits[s] = Dataset.from_parquet(os.path.join(path, f))
-    return DatasetDict(splits)
 
 
 def get_num_labels_and_type(task: str) -> tuple[int, bool]:

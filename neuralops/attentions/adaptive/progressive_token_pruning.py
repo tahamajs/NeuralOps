@@ -21,6 +21,7 @@ Consequences:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _find_layer_list
 
 import logging
 import math
@@ -690,35 +691,6 @@ class ProgressiveTokenPruning(BaseAttention):
                 return (attn_out, attn_weights)
             out = self.out_lin(attn_out)
             return (out, attn_weights)
-
-
-# ===========================================================================
-# Injection helper
-# ===========================================================================
-def _find_layer_list(model: nn.Module):
-    """Return (parent, attr_name, layer_list) or None."""
-    paths = [
-        ("distilbert", "transformer", "layer"),
-        ("roberta", "encoder", "layer"),
-        ("bert", "encoder", "layer"),
-        ("transformer", "h"),
-        ("model", "layers"),
-        ("encoder", "layer"),
-    ]
-    for path in paths:
-        obj = model
-        ok = True
-        for part in path:
-            obj = getattr(obj, part, None)
-            if obj is None:
-                ok = False
-                break
-        if ok and isinstance(obj, (nn.ModuleList, list)):
-            parent = model
-            for part in path[:-1]:
-                parent = getattr(parent, part)
-            return parent, path[-1], obj
-    return None
 
 
 def inject_progressive_token_pruning(
