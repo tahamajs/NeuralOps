@@ -1,0 +1,1 @@
+/mnt/d/SVD_linear_Attention/results/kd_runs/simple_ssm/20261012_173201_bs2_seq256_lr1e-04_C
