@@ -1,10 +1,12 @@
-﻿{
-    "module":  "slicegpt_pca",
-    "type":  "compressor",
-    "status":  "TIMEOUT",
-    "delta":  null,
-    "student_ppl":  null,
-    "duration_sec":  300.2,
-    "error":  "exceeded 300s",
-    "timestamp":  "2026-10-11 16:35:57"
+{
+    "module": "slicegpt_pca",
+    "type": "compressor",
+    "status": "PASS",
+    "delta": 4763.31,
+    "student_ppl": 4799.52,
+    "baseline_ppl": 36.21,
+    "duration_sec": 43.0,
+    "error": null,
+    "timestamp": "2026-10-12 02:01:02",
+    "notes": "Verified isolated run: 24 layers factorized, pre-KD PPL=4799.52, delta=+4763.31"
 }
