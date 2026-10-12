@@ -318,8 +318,9 @@ class RPCACompressor(BaseCompressor):
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(U_final.float(), V_final.float())
-        norm_orig = torch.norm(W, p="fro").clamp_min(1e-8)
-        rel_err = (torch.norm(W - W_rec, p="fro") / norm_orig).item()
+        W_dev = W.to(device=W_rec.device)
+        norm_orig = torch.norm(W_dev, p="fro").clamp_min(1e-8)
+        rel_err = (torch.norm(W_dev - W_rec, p="fro") / norm_orig).item()
 
         is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
         if is_invalid:
