@@ -49,7 +49,7 @@ def build_model_instance(
     num_layers: int = 2,
     vocab_size: int | None = None,
     seq_len: int = 32,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device | None = None,
 ) -> tuple[nn.Module, Any]:
     """Instantiate a baseline Transformer model and its configuration on the requested device.
 
@@ -160,7 +160,7 @@ def get_base_model_cached(
     hidden_size: int = 128,
     num_heads: int = 4,
     num_layers: int = 2,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device | None = None,
 ) -> tuple[nn.Module, Any]:
     """Retrieve an isolated base model instance via cached state_dict reconstruction.
 
@@ -483,7 +483,7 @@ def apply_module_to_model(
     module_name: str,
     module_type: str = "auto",
     rank: int = 16,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device | None = None,
     calibration_data: Any | None = None,
     calibration_loader: Any | None = None,
     tokenizer: Any | None = None,
@@ -503,6 +503,9 @@ def apply_module_to_model(
     Returns:
         Tuple of (patched_model, compression_ratio).
     """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     orig_params = sum(p.numel() for p in model.parameters())
 
     if not module_name or module_name.lower() in ("none", "baseline", "dense", "full"):
