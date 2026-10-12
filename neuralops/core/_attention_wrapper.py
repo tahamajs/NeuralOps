@@ -13,6 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import FactorizedLinear, _cfg_get
@@ -464,9 +465,9 @@ class ReplaceAttention(BaseAttention):
         # SDPA does not support returning attention weights or arbitrary head_mask
         if not output_attentions and head_mask is None:
             try:
-                q_sdpa = Q
-                k_sdpa = K
-                v_sdpa = V
+                q_sdpa = maybe_half(Q)
+                k_sdpa = maybe_half(K)
+                v_sdpa = maybe_half(V)
 
                 out_sdpa = F.scaled_dot_product_attention(
                     q_sdpa,

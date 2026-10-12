@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -745,9 +746,9 @@ class FUSIONATTN(BaseAttention):
 
         if use_sdpa:
             try:
-                _qs = q.half() if q.dtype == torch.float32 else q
-                _ks = k.half() if k.dtype == torch.float32 else k
-                _vs = v.half() if v.dtype == torch.float32 else v
+                _qs = maybe_half(q)
+                _ks = maybe_half(k)
+                _vs = maybe_half(v)
                 _out = F.scaled_dot_product_attention(
                     _qs,
                     _ks,
