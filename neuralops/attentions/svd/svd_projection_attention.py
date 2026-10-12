@@ -18,6 +18,7 @@ Fixes applied:
   5. GQA handled natively by SDPA (no manual repeat before SDPA).
   6. Cleaner forward pass with proper error handling.
 """
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -43,19 +44,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 

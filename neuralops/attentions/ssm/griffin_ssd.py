@@ -10,6 +10,7 @@ Production-Hardened v3 (SIMPLIFIED):
 """
 
 from __future__ import annotations
+from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -35,37 +36,10 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _env_flag(name: str, default: bool = False) -> bool:
-    v = os.environ.get(name, "")
-    return v.lower() in ("1", "true", "yes", "on") if v else default
 
 
-def _env_float(name: str, default: float) -> float:
-    v = os.environ.get(name, "")
-    try:
-        return float(v) if v else default
-    except ValueError:
-        return default
 
 
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        is_conv1d = (
-            module.__class__.__name__ == "Conv1D"
-            or base.__class__.__name__ == "Conv1D"
-            or (w.ndim == 2 and w.shape[0] < w.shape[1])
-        )
-        if is_conv1d:
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
 

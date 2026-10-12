@@ -4,6 +4,8 @@ ViG Attention: Vision GNN-inspired 2D Grid Linear Attention with Gated Fusion.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
     safe_mask_value as _safe_mask_value,
@@ -29,41 +31,6 @@ from neuralops.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
-# ═══════════════════════════════════════════════════════════════════
-# Helpers
-# ═══════════════════════════════════════════════════════════════════
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _detect_decoder(
-    config: Any,
-    is_decoder: bool | None,
-    old_attn: nn.Module | None,
-) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(
-            ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        ):
-            return True
-    if old_attn is not None:
-        if getattr(old_attn, "is_decoder", False) or hasattr(old_attn, "c_attn"):
-            return True
-        if "gpt" in old_attn.__class__.__name__.lower():
-            return True
-    return False
 
 
 

@@ -1,4 +1,5 @@
 """Architectural utilities and family-aware adapters for model compatibility."""
+from neuralops.core.common import repeat_kv
 
 from __future__ import annotations
 
@@ -14,25 +15,6 @@ from neuralops.utils.qwen_compat import QwenIncompatibleError
 logger = logging.getLogger(__name__)
 
 
-def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
-    """Expand grouped-query K/V heads: [B, Hkv, L, D] -> [B, H, L, D].
-
-    Args:
-        x: Input tensor of shape [B, Hkv, L, D].
-        n_rep: Replication factor.
-
-    Returns:
-        Expanded tensor of shape [B, Hkv * n_rep, L, D].
-    """
-    if n_rep <= 1:
-        return x
-    if x.dim() != 4:
-        raise ValueError(f"repeat_kv expects [B,H,L,D], got {tuple(x.shape)}")
-    return (
-        x[:, :, None, :, :]
-        .expand(x.size(0), x.size(1), n_rep, x.size(2), x.size(3))
-        .reshape(x.size(0), x.size(1) * n_rep, x.size(2), x.size(3))
-    )
 
 
 def init_output_scale(module: nn.Module, name: str = "output_scale") -> None:

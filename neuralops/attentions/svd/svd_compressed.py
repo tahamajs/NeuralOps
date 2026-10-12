@@ -1,3 +1,5 @@
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -45,12 +47,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 try:
@@ -164,20 +160,6 @@ def lagrangian_rank_allocation(
     return rank_dict
 
 
-def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if proj is None:
-        return None, None
-    if hasattr(proj, "base_layer"):
-        proj = proj.base_layer
-    w = getattr(proj, "weight", None)
-    b = getattr(proj, "bias", None)
-    if w is not None:
-        w = w.detach()
-        if hasattr(proj, "nf") or proj.__class__.__name__ == "Conv1D":
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.detach()
-    return w, b
 
 
 @ATTENTION_REGISTRY.register("svd_compressed", supports_causal=True, supports_gqa=True)

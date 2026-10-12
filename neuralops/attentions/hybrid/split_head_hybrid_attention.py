@@ -10,6 +10,7 @@ Architecture:
     split-head mechanism provides no benefit.
 
 """
+from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -33,43 +34,6 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _detect_decoder(
-    config: Any,
-    is_decoder: bool | None,
-    old_attn: nn.Module | None,
-) -> bool:
-    """V5-FIX-05: robust decoder detection, replaces the locals() hack."""
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        model_type = str(getattr(config, "model_type", "")).lower()
-        if model_type.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
-        ):
-            return True
-    if old_attn is not None:
-        if getattr(old_attn, "is_decoder", False):
-            return True
-        if hasattr(old_attn, "c_attn"):
-            return True
-        if "gpt" in old_attn.__class__.__name__.lower():
-            return True
-    return False
 
 
 # ===========================================================================

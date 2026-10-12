@@ -16,6 +16,7 @@ Supports:
 """
 
 from __future__ import annotations
+from neuralops.core.common import softpick
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -51,18 +52,6 @@ class PHANTOMConfig:
 
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    orig_dtype = x.dtype
-    x = x.float()
-    temp = max(temperature, 1e-4)
-    # Masked positions (future tokens) are <= -1000.0. Preserve mask while clamping unmasked values.
-    is_masked = x <= -1000.0
-    x_clamped = torch.where(
-        is_masked, torch.full_like(x, -1e4), torch.clamp(x, min=-50.0, max=10.0)
-    )
-    res = F.softmax(x_clamped / temp, dim=dim)
-    res = torch.nan_to_num(res, nan=0.0)
-    return res.to(orig_dtype)
 
 
 class FactorisedLinear_CUR(nn.Module):

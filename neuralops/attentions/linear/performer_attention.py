@@ -6,6 +6,7 @@ Production-hardened with full multi-architecture support.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -46,18 +47,6 @@ def _set_inject_depth(depth: int) -> None:
 
 
 _MAX_DEPTH = 4
-
-
-# ============================================================
-# Config resolution helpers (FIX 7)
-# ============================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Safely extract config attribute from None, dict, or object."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _resolve_config_value(

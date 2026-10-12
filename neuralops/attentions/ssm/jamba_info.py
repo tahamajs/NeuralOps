@@ -27,6 +27,7 @@ FIX 11: _format_output returns correct 2-tuple when attn_weights is None,
 """
 
 from __future__ import annotations
+from neuralops.core.common import _detect_decoder, repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -58,38 +59,8 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    if n_rep == 1:
-        return hidden_states
-    b, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        b, num_kv_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
 
 
-def _detect_decoder(
-    config: Any, is_decoder: bool | None, src_attn: nn.Module | None
-) -> bool:
-    if is_decoder is not None:
-        return bool(is_decoder)
-    if config is not None:
-        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
-            return True
-        mt = str(getattr(config, "model_type", "") or "").lower()
-        if mt.startswith((
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
-        )):
-            return True
-    if src_attn is not None:
-        if (
-            getattr(src_attn, "is_decoder", False)
-            or hasattr(src_attn, "c_attn")
-            or "gpt" in src_attn.__class__.__name__.lower()
-        ):
-            return True
-    return False
 
 
 def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:

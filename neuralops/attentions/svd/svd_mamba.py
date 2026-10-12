@@ -6,6 +6,8 @@ Hardened for production use across diverse transformer architectures:
 - GPT-2 (Causal Decoder with Conv1D)
 - Qwen / LLaMA (GQA with Rotary Position Embeddings)
 """
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias, repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -28,37 +30,10 @@ from neuralops.core.rope import _rotate_half
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if module is None:
-        return None, None
-    base = getattr(module, "base_layer", module)
-    w = getattr(base, "weight", None)
-    b = getattr(base, "bias", None)
-    if w is not None:
-        w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data.clone()
-    return w, b
 
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    if n_rep == 1:
-        return hidden_states
-    batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        batch, num_kv_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
 

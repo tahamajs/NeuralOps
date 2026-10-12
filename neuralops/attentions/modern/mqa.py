@@ -7,6 +7,8 @@ This reduces KV-cache memory by H_Q × compared to standard MHA.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     LoRALinear,
@@ -29,38 +31,6 @@ from neuralops.core.gqa_utils import repeat_kv
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    """Extract (weight, bias) from an arbitrary linear/Conv1D/LoRA-wrapped module."""
-    if module is None:
-        return None, None
-    if hasattr(module, "base_layer"):
-        module = module.base_layer
-    w = getattr(module, "weight", None)
-    b = getattr(module, "bias", None)
-    cls_name = module.__class__.__name__
-
-    if w is not None:
-        w = w.data
-        # GPT-2 style Conv1D has (in, out) layout → transpose to (out, in)
-        if hasattr(module, "nf") or "Conv1D" in cls_name:
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.data
-
-    return w, b
 
 
 # ===========================================================================

@@ -26,6 +26,7 @@ Mathematical Mechanism:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _unpack_weight_bias
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -210,25 +211,6 @@ class LowRankSparseLinear(nn.Module):
         return self.sparse_weight.abs().sum()
 
 
-def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    if proj is None:
-        return None, None
-    if hasattr(proj, "base_layer"):
-        proj = proj.base_layer
-    w = getattr(proj, "weight", None)
-    b = getattr(proj, "bias", None)
-    if w is not None:
-        w = w.detach()
-        cls_p = getattr(proj, "__class__", type(proj)).__name__
-        if (
-            hasattr(proj, "nf")
-            or "Conv1D" in cls_p
-            or (w.ndim == 2 and w.shape[0] < w.shape[1] and "Linear" not in cls_p)
-        ):
-            w = w.t().contiguous()
-    if b is not None:
-        b = b.detach()
-    return w, b
 
 
 # ======================================================================

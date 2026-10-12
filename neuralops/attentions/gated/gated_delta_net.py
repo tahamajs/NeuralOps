@@ -14,6 +14,8 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -46,28 +48,6 @@ except Exception as _e:
     MAX_REGISTER_DIM = 64
 
 
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    """Expand grouped key/value heads to match query heads."""
-    if n_rep == 1:
-        return hidden_states
-    b, h, s, d = hidden_states.shape
-    return (
-        hidden_states[:, :, None, :, :]
-        .expand(b, h, n_rep, s, d)
-        .reshape(b, h * n_rep, s, d)
-    )
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Read a config attribute, tolerating dict or object access."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 

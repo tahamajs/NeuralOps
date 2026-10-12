@@ -6,6 +6,8 @@ to intra-cluster tokens without materializing full [B, H, L, L] tensors.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _cfg_get
+from neuralops.core.common import FactorizedLoRALinear
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -25,95 +27,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# Config getter
-# ===========================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-# ===========================================================================
-# FactorizedLoRALinear (SVD-factorized + LoRA)
-# ===========================================================================
-
-
-class FactorizedLoRALinear(nn.Module):
-    """
-    SVD-factorized linear + LoRA adapter.
-    Forward: y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
-    Base (down, up) frozen; LoRA trainable.
-    """
-
-    is_custom_attention = False
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 64,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        bias: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
-        self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-
-        factory = {"device": device, "dtype": dtype}
-        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
-        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
-
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        return torch.matmul(self.up.weight, self.down.weight)
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return self.up.bias
-
-    def freeze_base_weights(self) -> None:
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-        if self.lora_A is not None:
-            self.lora_A.requires_grad = True
-        if self.lora_B is not None:
-            self.lora_B.requires_grad = True
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.up(self.down(x))
-        if self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out
 
 
 # ===========================================================================
