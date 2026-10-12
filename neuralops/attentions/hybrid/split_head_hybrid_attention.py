@@ -10,6 +10,7 @@ Architecture:
     split-head mechanism provides no benefit.
 
 """
+from neuralops.core.common import temperature_softmax
 from neuralops.core.common import _detect_decoder
 
 from neuralops.core.attention_utils import (
@@ -262,23 +263,6 @@ class FactorisedLinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
-
-
-# ===========================================================================
-# Attention primitives
-# ===========================================================================
-
-
-def temperature_softmax(
-    x: torch.Tensor,
-    dim: int = -1,
-    temperature: float = 1.0,
-) -> torch.Tensor:
-    """Softmax with temperature. Stable under fp32 computation (V5-FIX-08: renamed)."""
-    x_f = x.float()
-    if temperature <= 0 or temperature == 1.0:
-        return F.softmax(x_f, dim=dim).to(x.dtype)
-    return F.softmax(x_f / temperature, dim=dim).to(x.dtype)
 
 
 def local_window_attention(

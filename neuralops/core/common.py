@@ -807,6 +807,46 @@ def temperature_softmax(
     return F.softmax(x_f / temp, dim=dim).to(x.dtype)
 
 
+def _detect_return_format(source_attn: nn.Module | None, is_nested: bool = False) -> str:
+    """Choose output tuple layout for host model (bert, gpt2, llama, etc.)."""
+    if is_nested:
+        return "bert"
+    if source_attn is None:
+        return "llama"
+    cls_name = source_attn.__class__.__name__.lower()
+    if "bert" in cls_name or "distil" in cls_name:
+        return "bert"
+    if "gpt2" in cls_name or "gpt" in cls_name:
+        return "gpt2"
+    return "llama"
+
+
+def _find_layer_list(model: nn.Module) -> tuple[Any, str, Any] | None:
+    """Return (parent, attr_name, layer_list) for Transformer architectures or None."""
+    paths = [
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+    ]
+    for path in paths:
+        obj = model
+        ok = True
+        for part in path:
+            obj = getattr(obj, part, None)
+            if obj is None:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            parent = model
+            for part in path[:-1]:
+                parent = getattr(parent, part)
+            return parent, path[-1], obj
+    return None
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -826,6 +866,8 @@ __all__ = [
     "_read_past_kv",
     "FactorizedLoRALinear",
     "temperature_softmax",
+    "_detect_return_format",
+    "_find_layer_list",
 ]
 
 

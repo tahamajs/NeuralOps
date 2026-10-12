@@ -27,6 +27,7 @@ length. It works because:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _find_layer_list
 
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
@@ -758,34 +759,6 @@ class SinkAttention(BaseAttention):
         if updated_cache is not None or past_key_value is not None:
             return out, attn_weights, updated_cache
         return out, attn_weights
-
-
-# ===========================================================================
-# Injection helper
-# ===========================================================================
-def _find_layer_list(model: nn.Module):
-    paths = [
-        ("distilbert", "transformer", "layer"),
-        ("roberta", "encoder", "layer"),
-        ("bert", "encoder", "layer"),
-        ("transformer", "h"),
-        ("model", "layers"),
-        ("encoder", "layer"),
-    ]
-    for path in paths:
-        obj = model
-        ok = True
-        for part in path:
-            obj = getattr(obj, part, None)
-            if obj is None:
-                ok = False
-                break
-        if ok and isinstance(obj, (nn.ModuleList, list)):
-            parent = model
-            for part in path[:-1]:
-                parent = getattr(parent, part)
-            return parent, path[-1], obj
-    return None
 
 
 def inject_sink_attention(
