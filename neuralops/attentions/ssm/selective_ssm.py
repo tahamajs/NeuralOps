@@ -438,9 +438,11 @@ class SelectiveSSM(BaseAttention):
             y_bwd = torch.flip(y_bwd, [1]).contiguous()
             out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
 
-        if self.is_decoder:
-            return (out, present_state)
-        return (out, None)
+        _out_attn = bool(output_attentions or kwargs.get("output_attentions", False))
+        present = present_state if self.is_decoder else None
+        if _out_attn:
+            return (out, present, None)
+        return (out, present)
 
 
 SimpleSSM = SelectiveSSM
