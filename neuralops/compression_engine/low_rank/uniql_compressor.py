@@ -182,9 +182,9 @@ class UniQLCompressor(BaseCompressor):
         model: nn.Module,
         rank: int = 64,
         bits: int = 8,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
         max_retries: int = 3,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         target_attention_only: bool = False,
         quantize_bias: bool = False,
         **kwargs: Any,
@@ -195,7 +195,7 @@ class UniQLCompressor(BaseCompressor):
             rank = _cfg_get(cfg, "uniql_rank", _cfg_get(cfg, "rank", rank))
             bits = _cfg_get(cfg, "uniql_bits", _cfg_get(cfg, "bits", bits))
             max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
+                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error)
             )
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
