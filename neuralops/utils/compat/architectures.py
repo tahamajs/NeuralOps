@@ -1,7 +1,7 @@
 """Architectural utilities and family-aware adapters for model compatibility."""
+from __future__ import annotations
 from neuralops.core.common import repeat_kv
 
-from __future__ import annotations
 
 import logging
 from typing import Any

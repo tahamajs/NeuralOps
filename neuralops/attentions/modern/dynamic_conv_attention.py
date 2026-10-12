@@ -6,8 +6,8 @@ from its hidden representation. Complexity: O(B · N · H · K · d) with O(N·K
 memory — sub-quadratic in sequence length.
 
 """
-
 from __future__ import annotations
+
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _detect_decoder, _unpack_weight_bias
 
