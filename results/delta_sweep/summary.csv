@@ -72,13 +72,7 @@ griffin_ssd,attention,UNKNOWN,,126.91,297.3,1,no delta parsed,2026-10-12 01:47:3
 halo_regla,attention,TIMEOUT,,69.38,600.6,1,exceeded 600s,2026-10-11 23:58:19
 hamming_attention,attention,TIMEOUT,,5859.39,600.9,1,exceeded 600s,2026-10-12 00:08:20
 hashed_net_compressor,compressor,PASS,10783.98,10820.19,23.0,,,2026-10-12 01:58:24
-hgrn2_gated_deltanet,attention,TIMEOUT,,5271.38,600.7,1,exceeded 600s,2026-10-12 00:18:22
-hgrn2_gated_layer,attention,ERROR,,6081.86,125.2,1,exit=-9,2026-10-12 00:28:24
-hgrn2_gated_outer,attention,TIMEOUT,,3928.95,600.7,1,exceeded 600s,2026-10-12 00:30:30
-hla_attention,attention,ERROR,,3746.5,258.7,1,exit=-9,2026-10-12 00:40:32
 huffman_coder,compressor,PASS,1170012.86,1170049.07,35.2,,,2026-10-12 01:23:25
-hybrid_attention,attention,ERROR,,1120608.38,221.0,1,exit=-9,2026-10-12 00:44:52
-hybrid_local_kernel,attention,TIMEOUT,,4256.89,600.7,1,exceeded 600s,2026-10-12 00:48:34
 hybrid_svd_layer,compressor,ERROR,,6809.83,225.5,,exit=,2026-10-11 15:02:27
 hybridkv_compressor,compressor,DEPRECATED,,,0.0,,Deprecated KV cache alias in eval_types.py; canonical active compressor is delta_kv (delta=+40.14),2026-10-12 02:10:00
 hymba_transx,attention,ERROR,,100.35,511.8,1,exit=-9,2026-10-12 00:58:36
@@ -119,3 +113,12 @@ tomoe_compressor,compressor,PASS,78188.73,78224.94,34.0,,,2026-10-12 01:31:57
 tt_compressor,compressor,PASS,5031.57,5067.78,24.0,,,2026-10-12 01:53:38
 uniql_compressor,compressor,PASS,10717.18,10753.39,12.0,,,2026-10-12 01:44:05
 zerokv_neo_compressor,compressor,ERROR,,1727.03,201.5,,exit=,2026-10-11 17:19:24
+hgrn2_gated_deltanet,attention,UNKNOWN,,5271.38,598.1,1,no delta parsed,2026-10-12 02:11:00
+hgrn2_gated_layer,attention,UNKNOWN,,6115.31,552.8,1,no delta parsed,2026-10-12 02:20:59
+hgrn2_gated_outer,attention,ERROR,,3869.27,566.6,1,exit=1,2026-10-12 02:30:13
+hla_attention,attention,UNKNOWN,,3746.5,122.5,1,no delta parsed,2026-10-12 02:39:41
+hybrid_attention,attention,UNKNOWN,,2026.0,274.9,1,no delta parsed,2026-10-12 02:41:44
+hybrid_local_kernel,attention,UNKNOWN,,4249.58,554.6,1,no delta parsed,2026-10-12 02:46:20
+inject_leka_v2,attention,UNKNOWN,,2796.92,256.6,1,no delta parsed,2026-10-12 02:55:36
+inject_leka_v3,attention,UNKNOWN,,2694.72,252.9,1,no delta parsed,2026-10-12 02:59:53
+inject_native_hybrid_attention,attention,UNKNOWN,,3476.43,189.1,1,no delta parsed,2026-10-12 03:04:07
