@@ -254,13 +254,13 @@ class HybridAttention(BaseAttention):
             self.compress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
             self.decompress_proj.weight[:min_dim, :min_dim].fill_diagonal_(1.0)
 
-        # Per-head gate
+        # Per-head gate: freeze at warm-start (bias=4.0, ~98% standard attention) to prevent divergence
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
-
-        # Initialize gate with slight positive bias (bias=2.0, ~88% standard attention) for stable warm-start
         with torch.no_grad():
-            self.ensemble_gate.weight.normal_(mean=0.0, std=0.02)
-            self.ensemble_gate.bias.fill_(2.0)
+            self.ensemble_gate.weight.zero_()
+            self.ensemble_gate.bias.fill_(4.0)
+        self.ensemble_gate.weight.requires_grad = False
+        self.ensemble_gate.bias.requires_grad = False
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
