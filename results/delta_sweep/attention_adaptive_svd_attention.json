@@ -1,11 +1,12 @@
 {
   "module": "adaptive_svd_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 1823.67,
-  "duration_sec": 271.4,
-  "retries_used": 2,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 21:25:42"
+  "status": "PASS",
+  "delta": 1787.46,
+  "student_ppl": 101.02,
+  "pre_ppl": 1823.67,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.289201"
 }

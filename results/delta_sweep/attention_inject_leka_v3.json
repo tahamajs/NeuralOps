@@ -1,11 +1,12 @@
 {
   "module": "inject_leka_v3",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 2694.72,
-  "duration_sec": 252.9,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 02:59:53"
+  "status": "PASS",
+  "delta": 2658.51,
+  "student_ppl": 227.53,
+  "pre_ppl": 2694.72,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.316083"
 }

@@ -1,11 +1,12 @@
 {
   "module": "griffin_ssd",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 126.91,
-  "duration_sec": 297.3,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 01:47:39"
+  "status": "PASS",
+  "delta": 90.7,
+  "student_ppl": 2.62,
+  "pre_ppl": 126.91,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.308868"
 }

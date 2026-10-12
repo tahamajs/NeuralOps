@@ -1,10 +1,12 @@
-﻿{
-    "module":  "kmeans_quantize",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  37.28,
-    "duration_sec":  227.7,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:09:29"
+{
+  "module": "kmeans_quantize",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1.06,
+  "student_ppl": 32.79,
+  "pre_ppl": 37.28,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.341766"
 }

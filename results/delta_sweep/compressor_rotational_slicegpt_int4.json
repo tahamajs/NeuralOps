@@ -1,10 +1,12 @@
 {
-    "module": "rotational_slicegpt_int4",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 20879.49,
-    "student_ppl": 20915.7,
-    "duration_sec": 25.1,
-    "error": null,
-    "timestamp": "2026-10-12 01:29:13"
+  "module": "rotational_slicegpt_int4",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 20879.49,
+  "student_ppl": 20915.7,
+  "pre_ppl": 20915.7,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.351052"
 }

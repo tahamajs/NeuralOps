@@ -1,10 +1,12 @@
-﻿{
-    "module":  "flat_llm",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  7861.81,
-    "duration_sec":  211.9,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 14:38:13"
+{
+  "module": "flat_llm",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 7825.59,
+  "student_ppl": 112.38,
+  "pre_ppl": 7861.81,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.336911"
 }

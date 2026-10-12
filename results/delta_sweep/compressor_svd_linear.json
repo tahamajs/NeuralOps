@@ -1,12 +1,12 @@
 {
-    "module": "svd_linear",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 3713.08,
-    "student_ppl": 3749.29,
-    "baseline_ppl": 36.21,
-    "duration_sec": 13.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:36:39",
-    "notes": "Verified isolated run: pre-KD PPL=3749.29, delta=+3713.08"
+  "module": "svd_linear",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 3713.08,
+  "student_ppl": 3749.29,
+  "pre_ppl": 3749.29,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.358593"
 }

@@ -1,11 +1,12 @@
 {
   "module": "inject_native_hybrid_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 3476.43,
-  "duration_sec": 189.1,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 03:04:07"
+  "status": "PASS",
+  "delta": 3440.22,
+  "student_ppl": 40.06,
+  "pre_ppl": 3476.43,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.316723"
 }

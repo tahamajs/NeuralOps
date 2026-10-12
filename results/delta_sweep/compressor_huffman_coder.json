@@ -1,10 +1,12 @@
 {
-    "module": "huffman_coder",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 1170012.86,
-    "student_ppl": 1170049.07,
-    "duration_sec": 35.2,
-    "error": null,
-    "timestamp": "2026-10-12 01:23:25"
+  "module": "huffman_coder",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1170012.86,
+  "student_ppl": 1170049.07,
+  "pre_ppl": 1170049.07,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.340319"
 }

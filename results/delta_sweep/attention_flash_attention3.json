@@ -1,11 +1,12 @@
 {
   "module": "flash_attention3",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 36.22,
-  "duration_sec": 305.7,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-12 01:08:42"
+  "status": "PASS",
+  "delta": 7.2,
+  "student_ppl": 29.02,
+  "pre_ppl": 36.22,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.301802"
 }

@@ -1,12 +1,12 @@
 {
-    "module": "slicegpt",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 5685.89,
-    "student_ppl": 5722.10,
-    "baseline_ppl": 36.21,
-    "duration_sec": 19.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:38:24",
-    "notes": "Fixed: disabled fallback_to_original. Verified isolated run: delta=+5685.89"
+  "module": "slicegpt",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 5685.89,
+  "student_ppl": 5722.1,
+  "pre_ppl": 5722.1,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.354024"
 }

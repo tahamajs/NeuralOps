@@ -638,7 +638,8 @@ class LiLLaMADistiller(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("lillama_compressor")
+# DEPRECATED: alias in eval_types.DEPRECATED_MODULES
+# @COMPRESSOR_REGISTRY.register("lillama_compressor")
 def lillama_factory(
     model: Any,
     comp_config: Any = None,

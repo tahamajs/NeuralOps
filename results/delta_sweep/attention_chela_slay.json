@@ -1,11 +1,12 @@
 {
   "module": "chela_slay",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 36.21,
-  "duration_sec": 433.6,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 22:00:29"
+  "status": "PASS",
+  "delta": 7.27,
+  "student_ppl": 28.94,
+  "pre_ppl": 36.21,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.292957"
 }

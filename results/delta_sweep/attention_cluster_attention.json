@@ -1,11 +1,12 @@
 {
   "module": "cluster_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 975.68,
-  "duration_sec": 276.8,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 22:14:41"
+  "status": "PASS",
+  "delta": 939.47,
+  "student_ppl": 36.34,
+  "pre_ppl": 975.68,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.294275"
 }

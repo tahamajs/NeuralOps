@@ -1,12 +1,12 @@
 {
-    "module": "liftr",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 11102.70,
-    "student_ppl": 11138.91,
-    "baseline_ppl": 36.21,
-    "duration_sec": 11.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:39:35",
-    "notes": "LIFTR linearized 12 activations. Verified isolated run: delta=+11102.70"
+  "module": "liftr",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 11102.7,
+  "student_ppl": 11138.91,
+  "pre_ppl": 11138.91,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.344057"
 }

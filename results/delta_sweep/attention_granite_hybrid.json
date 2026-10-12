@@ -1,11 +1,12 @@
 {
   "module": "granite_hybrid",
   "type": "attention",
-  "status": "ERROR",
-  "delta": null,
+  "status": "PASS",
+  "delta": 4172.2,
   "student_ppl": 4208.41,
-  "duration_sec": 23.6,
-  "retries_used": 1,
-  "error": "exit=1",
-  "timestamp": "2026-10-12 01:47:14"
+  "pre_ppl": 4208.41,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.308253"
 }

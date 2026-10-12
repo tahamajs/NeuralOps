@@ -1,10 +1,12 @@
-﻿{
-    "module":  "oats_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  71.92,
-    "duration_sec":  209.4,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:57:11"
+{
+  "module": "oats_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 35.7,
+  "student_ppl": 35.56,
+  "pre_ppl": 71.92,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.347745"
 }

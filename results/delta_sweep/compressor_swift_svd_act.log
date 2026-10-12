@@ -1,139 +1,69 @@
-2026-10-11 17:03:29,353 [INFO] MambaKD: ======================================================================
-2026-10-11 17:03:29,356 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 17:03:29,357 [INFO] MambaKD: ======================================================================
-2026-10-11 17:03:29,357 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 17:03:29,358 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 17:03:29,359 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 17:03:29,777 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 17:03:29,781 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 17:03:29,783 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 17:03:33,432 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 17:03:33,435 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 17:03:33,640 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 17:03:33,641 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 17:03:33,642 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 17:03:34,224 [INFO] MambaKD: 
+2026-10-12 01:32:06,279 [INFO] MambaKD: ======================================================================
+2026-10-12 01:32:06,279 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 01:32:06,279 [INFO] MambaKD: ======================================================================
+2026-10-12 01:32:06,279 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 01:32:06,279 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-12 01:32:06,279 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 01:32:06,871 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:32:07,193 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 01:32:07,449 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:32:07,809 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 01:32:08,114 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:32:08,366 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:32:08,476 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 01:32:08,723 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:32:08,877 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 01:32:09,126 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:32:09,783 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:32:10,080 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 01:32:10,333 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 01:32:10,993 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 01:32:11,245 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:32:11,498 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:32:11,755 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 01:32:12,018 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:32:12,718 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 01:32:12,719 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 01:32:12,975 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:32:13,233 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 11730.10it/s]
+2026-10-12 01:32:13,331 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+2026-10-12 01:32:13,332 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 01:32:13,332 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:32:13,442 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 17:03:34,226 [INFO] MambaKD: PROCESSING MODULE 1/1: swift_svd_act
-2026-10-11 17:03:34,226 [INFO] MambaKD: ======================================================================
-2026-10-11 17:03:34,227 [INFO] MambaKD: 
+2026-10-12 01:32:13,443 [INFO] MambaKD: PROCESSING MODULE 1/1: swift_svd_act
+2026-10-12 01:32:13,443 [INFO] MambaKD: ======================================================================
+2026-10-12 01:32:13,443 [INFO] MambaKD: 
 # Running method C for swift_svd_act
-2026-10-11 17:03:34,541 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 17:03:34,545 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 17:03:36,597 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:36,732 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:36,886 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:37,035 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:37,188 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:37,332 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:37,502 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:37,628 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:37,757 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:37,910 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:38,070 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:38,180 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:38,326 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:38,492 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:38,644 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:38,777 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:38,915 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,091 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,234 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,364 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:39,499 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,660 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,814 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:39,968 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:40,114 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:40,283 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:40,440 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:40,592 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:40,727 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:40,901 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:41,055 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:41,188 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:41,319 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:41,495 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:41,652 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:41,798 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:41,937 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,099 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,248 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,389 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:42,532 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,689 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,868 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:42,998 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:43,169 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:43,299 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:43,467 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x768)
-2026-10-11 17:03:43,604 [WARNING] neuralops.compression_engine.svd.swift_svd_act: SwiftSVDActivation SVD failure: mat1 and mat2 shapes cannot be multiplied (32x1 and 32x3072)
-2026-10-11 17:03:43,650 [INFO] neuralops.compression_engine.svd.swift_svd_act: Swift-SVD-ACT: 0 compressed, 48 fallback, avg_err=0.0000, storage_ratio=1.00x
-2026-10-11 17:03:43,841 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
-2026-10-11 17:03:43,842 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
-2026-10-11 17:03:48,337 [INFO] MambaKD: Pre-KD PPL for Module swift_svd_act, Method C: 36.22
-2026-10-11 17:03:48,339 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 17:03:48,339 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
-2026-10-11 17:03:48,340 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 17:03:48,340 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
-2026-10-11 17:03:48,341 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 17:03:48,708 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.7299...
-2026-10-11 17:03:48,958 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.7299 | LR: 1.50e-05
-2026-10-11 17:03:49,080 [INFO] MambaKD: [C] Step 1/300 | Loss: 2.2809...
-2026-10-11 17:03:49,205 [INFO] MambaKD: [C] Step 2/300 | Loss: 2.2809 | LR: 3.00e-05
-2026-10-11 17:03:49,333 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.8322...
-2026-10-11 17:03:49,454 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8322 | LR: 4.50e-05
-2026-10-11 17:03:49,567 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.8175...
-2026-10-11 17:03:49,686 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8175 | LR: 6.00e-05
-2026-10-11 17:03:49,805 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.8420...
-2026-10-11 17:03:49,927 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.8420 | LR: 7.50e-05
-2026-10-11 17:03:50,042 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.6262...
-2026-10-11 17:04:00,793 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.6262 | LR: 7.50e-04
-2026-10-11 17:04:00,909 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3752...
-2026-10-11 17:04:12,673 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3752 | LR: 1.50e-03
-2026-10-11 17:04:17,109 [INFO] MambaKD: [C] Step 100 Eval PPL: 41.26
-2026-10-11 17:04:17,183 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.6160...
-2026-10-11 17:04:28,432 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.6160 | LR: 1.28e-03
-2026-10-11 17:04:28,547 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.3809...
-2026-10-11 17:04:39,270 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.3809 | LR: 7.50e-04
-2026-10-11 17:04:44,090 [INFO] MambaKD: [C] Step 200 Eval PPL: 40.67
-2026-10-11 17:04:44,206 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.4558...
-2026-10-11 17:04:56,258 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.4558 | LR: 2.20e-04
-2026-10-11 17:04:56,365 [INFO] MambaKD: [C] Step 250/300 | Loss: 23.5928...
-2026-10-11 17:05:07,295 [INFO] MambaKD: [C] Step 300/300 | Loss: 23.5928 | LR: 1.50e-04
-2026-10-11 17:05:11,888 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.16
-2026-10-11 17:05:11,890 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.16
-2026-10-11 17:05:11,891 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 17:05:12,069 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7609 | LR: 1.50e-05
-2026-10-11 17:05:12,245 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9253 | LR: 3.00e-05
-2026-10-11 17:05:12,419 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.8840 | LR: 4.50e-05
-2026-10-11 17:05:12,591 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0620 | LR: 6.00e-05
-2026-10-11 17:05:12,760 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0817 | LR: 7.50e-05
-2026-10-11 17:05:20,424 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.4735 | LR: 2.84e-04
-2026-10-11 17:05:29,050 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 4.0145 | LR: 1.96e-04
-2026-10-11 17:05:33,493 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.14
-2026-10-11 17:05:41,921 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.3046 | LR: 8.20e-05
-2026-10-11 17:05:50,429 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.2958 | LR: 7.44e-06
-2026-10-11 17:05:54,974 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.19
-2026-10-11 17:05:59,619 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.19
-2026-10-11 17:05:59,621 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
-2026-10-11 17:05:59,621 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
-  Stage 1 (KD):    37.16  (kd_gain=-0.94)
-  Stage 2 (self):  30.19  (self_gain=+6.97)
-  Total:                  (total_gain=+6.03)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 37.16 > 36.22)
-  Beat teacher after self? YES
-  Recovery: NaN
-  Time: 131.1s (Stage 1: 83.4s, Stage 2: 47.7s)
-2026-10-11 17:06:14,853 [INFO] MambaKD: [QUALITY] distinct_2=0.92, repetition_3=0.02, train_ppl=20.73, test_ppl=30.19, overfit_gap=9.46, latency=1787.7ms
-2026-10-11 17:06:14,865 [INFO] MambaKD: Saved all run details to results\kd_runs\swift_svd_act\20261011_170329_bs4_seq256_lr3e-04_C
+2026-10-12 01:32:14,068 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 01:32:14,070 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 01:32:20,452 [INFO] neuralops.compression_engine.svd.swift_svd_act: Swift-SVD-ACT: 48 compressed, 0 fallback, avg_err=0.9767, storage_ratio=17.71x
+2026-10-12 01:32:20,505 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 103.3594
+2026-10-12 01:32:20,505 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 103.3594
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-10-12 01:32:21,857 [INFO] MambaKD: Pre-KD PPL for Module swift_svd_act, Method C: 7286.93
+2026-10-12 01:32:21,857 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:32:21,857 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 7286.93 (same protocol)
+2026-10-12 01:32:21,857 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +7250.72 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 01:32:21,858 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+2026-10-12 01:32:22,979 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 7286.93
+2026-10-12 01:32:22,981 [INFO] MambaKD: [C] COMPLETE | Pre: 7286.93 -> Post: 7286.93 | Recovery: 0.00% | VRAM: 564.93 MB | Time: 0.0s
+2026-10-12 01:32:25,344 [INFO] MambaKD: [QUALITY] distinct_2=0.78, repetition_3=0.02, train_ppl=8225.37, test_ppl=7286.93, overfit_gap=-938.44, latency=244.2ms
+2026-10-12 01:32:25,346 [INFO] MambaKD: Saved all run details to results/kd_runs/swift_svd_act/20261012_013206_bs4_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
+| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    36.22 |    37.16 |    30.19 |    -0.94 |    +6.97 |    +6.03 |
+| C       |  7286.93 |  7286.93 |     0.0% |      0.0 |    564.9 |      YES |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 17:06:20,703 [INFO] MambaKD: 
+2026-10-12 01:32:27,171 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 17:06:20,706 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 17:06:20,707 [INFO] MambaKD: ======================================================================
+2026-10-12 01:32:27,171 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 01:32:27,171 [INFO] MambaKD: ======================================================================

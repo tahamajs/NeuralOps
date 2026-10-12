@@ -1,10 +1,12 @@
-﻿{
-    "module":  "coopq_quantizer",
-    "type":  "compressor",
-    "status":  "TIMEOUT",
-    "delta":  null,
-    "student_ppl":  89.39,
-    "duration_sec":  300.2,
-    "error":  "exceeded 300s",
-    "timestamp":  "2026-10-11 13:47:12"
+{
+  "module": "coopq_quantizer",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 53.17,
+  "student_ppl": 89.39,
+  "pre_ppl": 89.39,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.327827"
 }

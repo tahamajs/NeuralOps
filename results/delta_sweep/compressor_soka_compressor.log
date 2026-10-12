@@ -1,138 +1,68 @@
-2026-10-11 16:40:00,412 [INFO] MambaKD: ======================================================================
-2026-10-11 16:40:00,414 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
-2026-10-11 16:40:00,415 [INFO] MambaKD: ======================================================================
-2026-10-11 16:40:00,416 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
-2026-10-11 16:40:00,417 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
-2026-10-11 16:40:00,417 [INFO] MambaKD: Loading tokenizer: gpt2
-2026-10-11 16:40:00,892 [INFO] MambaKD: Loading WikiText-2 dataset...
-2026-10-11 16:40:00,896 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
-2026-10-11 16:40:00,900 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
-2026-10-11 16:40:04,971 [INFO] MambaKD: Training chunks: (412, 256)
-2026-10-11 16:40:04,973 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
-2026-10-11 16:40:05,186 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_4992e55e035c. (Skipping teacher model load completely!)
-2026-10-11 16:40:05,187 [INFO] MambaKD: Using teacher baseline PPL: 36.22
-2026-10-11 16:40:05,188 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 16:40:05,801 [INFO] MambaKD: 
+2026-10-12 01:30:30,250 [INFO] MambaKD: ======================================================================
+2026-10-12 01:30:30,250 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 01:30:30,250 [INFO] MambaKD: ======================================================================
+2026-10-12 01:30:30,250 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 01:30:30,251 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 4 | Seq: 256
+2026-10-12 01:30:30,251 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 01:30:30,683 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:30:30,919 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 01:30:31,168 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:30:31,448 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 01:30:31,700 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:30:31,943 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:30:32,084 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 01:30:32,357 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:30:32,450 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 01:30:32,686 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:30:33,354 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 01:30:33,661 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 01:30:33,896 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 01:30:34,547 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 01:30:34,795 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:30:35,030 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:30:35,269 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 01:30:35,511 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 01:30:36,727 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 01:30:36,728 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 01:30:36,962 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 01:30:37,219 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 7117.55it/s]
+2026-10-12 01:30:37,349 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1152: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+2026-10-12 01:30:37,350 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 01:30:37,350 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:30:37,441 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 16:40:05,801 [INFO] MambaKD: PROCESSING MODULE 1/1: soka_compressor
-2026-10-11 16:40:05,802 [INFO] MambaKD: ======================================================================
-2026-10-11 16:40:05,802 [INFO] MambaKD: 
+2026-10-12 01:30:37,441 [INFO] MambaKD: PROCESSING MODULE 1/1: soka_compressor
+2026-10-12 01:30:37,441 [INFO] MambaKD: ======================================================================
+2026-10-12 01:30:37,441 [INFO] MambaKD: 
 # Running method C for soka_compressor
-2026-10-11 16:40:06,116 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
-2026-10-11 16:40:06,120 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
-2026-10-11 16:40:07,221 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8617 on transformer.h.0.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,294 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.7469 on transformer.h.0.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,371 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9067 on transformer.h.0.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,437 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8776 on transformer.h.0.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,495 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8660 on transformer.h.1.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,551 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.7236 on transformer.h.1.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,612 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8907 on transformer.h.1.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,671 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8817 on transformer.h.1.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,729 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8834 on transformer.h.2.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,782 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8478 on transformer.h.2.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,857 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8796 on transformer.h.2.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,923 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8796 on transformer.h.2.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:07,989 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8905 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,043 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8619 on transformer.h.3.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,103 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9021 on transformer.h.3.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,162 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8733 on transformer.h.3.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,220 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8855 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,274 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8572 on transformer.h.4.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,333 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8959 on transformer.h.4.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,392 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8866 on transformer.h.4.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,449 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8934 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,503 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8660 on transformer.h.5.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,563 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8994 on transformer.h.5.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,623 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8965 on transformer.h.5.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,681 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9046 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,736 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8548 on transformer.h.6.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,794 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9002 on transformer.h.6.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,854 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9023 on transformer.h.6.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,912 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9056 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:08,964 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8620 on transformer.h.7.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,022 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9030 on transformer.h.7.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,082 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9082 on transformer.h.7.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,139 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9182 on transformer.h.8.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,196 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8676 on transformer.h.8.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,256 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9085 on transformer.h.8.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,315 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9099 on transformer.h.8.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,374 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9271 on transformer.h.9.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,428 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8949 on transformer.h.9.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,487 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9078 on transformer.h.9.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,546 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9170 on transformer.h.9.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,605 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9216 on transformer.h.10.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,658 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8878 on transformer.h.10.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,716 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9026 on transformer.h.10.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,775 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9187 on transformer.h.10.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,833 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9177 on transformer.h.11.attn.c_attn exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,890 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.7560 on transformer.h.11.attn.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:09,948 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.8911 on transformer.h.11.mlp.c_fc exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:10,007 [WARNING] neuralops.compression_engine.low_rank.soka_compressor: SoKA reconstruction error 0.9094 on transformer.h.11.mlp.c_proj exceeded threshold 0.5000. Skipping.
-2026-10-11 16:40:10,253 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 0.0000
-2026-10-11 16:40:10,255 [INFO] MambaKD: [DIAG] [OK] Initial student state verified (diff=0.0000)
-2026-10-11 16:40:14,988 [INFO] MambaKD: Pre-KD PPL for Module soka_compressor, Method C: 36.22
-2026-10-11 16:40:14,988 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
-2026-10-11 16:40:14,989 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 36.22 (same protocol)
-2026-10-11 16:40:14,989 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +0.00 (should be POSITIVE, e.g. +3 to +30)
-2026-10-11 16:40:14,989 [WARNING] MambaKD: [WARN] Student pre-KD PPL <= teacher baseline PPL (delta=+0.00 <= 0). Injected module slightly regularizes attention. Continuing...
-2026-10-11 16:40:14,990 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
-2026-10-11 16:40:15,306 [INFO] MambaKD: [C] Step 0/300 | Loss: 1.7051...
-2026-10-11 16:40:15,538 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.7051 | LR: 1.50e-05
-2026-10-11 16:40:15,655 [INFO] MambaKD: [C] Step 1/300 | Loss: 1.8748...
-2026-10-11 16:40:15,783 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.8748 | LR: 3.00e-05
-2026-10-11 16:40:15,893 [INFO] MambaKD: [C] Step 2/300 | Loss: 1.7804...
-2026-10-11 16:40:16,017 [INFO] MambaKD: [C] Step 3/300 | Loss: 1.7804 | LR: 4.50e-05
-2026-10-11 16:40:16,131 [INFO] MambaKD: [C] Step 3/300 | Loss: 2.2752...
-2026-10-11 16:40:16,253 [INFO] MambaKD: [C] Step 4/300 | Loss: 2.2752 | LR: 6.00e-05
-2026-10-11 16:40:16,365 [INFO] MambaKD: [C] Step 4/300 | Loss: 1.7886...
-2026-10-11 16:40:16,490 [INFO] MambaKD: [C] Step 5/300 | Loss: 1.7886 | LR: 7.50e-05
-2026-10-11 16:40:16,609 [INFO] MambaKD: [C] Step 5/300 | Loss: 2.3101...
-2026-10-11 16:40:27,845 [INFO] MambaKD: [C] Step 50/300 | Loss: 2.3101 | LR: 7.50e-04
-2026-10-11 16:40:27,974 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.3329...
-2026-10-11 16:40:40,029 [INFO] MambaKD: [C] Step 100/300 | Loss: 6.3329 | LR: 1.50e-03
-2026-10-11 16:40:44,653 [INFO] MambaKD: [C] Step 100 Eval PPL: 40.66
-2026-10-11 16:40:44,768 [INFO] MambaKD: [C] Step 100/300 | Loss: 14.5049...
-2026-10-11 16:40:56,470 [INFO] MambaKD: [C] Step 150/300 | Loss: 14.5049 | LR: 1.28e-03
-2026-10-11 16:40:56,591 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.4578...
-2026-10-11 16:41:08,473 [INFO] MambaKD: [C] Step 200/300 | Loss: 17.4578 | LR: 7.50e-04
-2026-10-11 16:41:13,288 [INFO] MambaKD: [C] Step 200 Eval PPL: 42.24
-2026-10-11 16:41:13,420 [INFO] MambaKD: [C] Step 200/300 | Loss: 20.5956...
-2026-10-11 16:41:25,261 [INFO] MambaKD: [C] Step 250/300 | Loss: 20.5956 | LR: 2.20e-04
-2026-10-11 16:41:25,399 [INFO] MambaKD: [C] Step 250/300 | Loss: 24.1365...
-2026-10-11 16:41:37,691 [INFO] MambaKD: [C] Step 300/300 | Loss: 24.1365 | LR: 1.50e-04
-2026-10-11 16:41:42,310 [INFO] MambaKD: [C] Step 300 Eval PPL: 37.46
-2026-10-11 16:41:42,312 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 37.46
-2026-10-11 16:41:42,313 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
-2026-10-11 16:41:42,494 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 3.7119 | LR: 1.50e-05
-2026-10-11 16:41:42,680 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 3.9235 | LR: 3.00e-05
-2026-10-11 16:41:42,869 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 3.9685 | LR: 4.50e-05
-2026-10-11 16:41:43,053 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 4.0003 | LR: 6.00e-05
-2026-10-11 16:41:43,234 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 4.0652 | LR: 7.50e-05
-2026-10-11 16:41:51,072 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 3.5410 | LR: 2.84e-04
-2026-10-11 16:41:59,767 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 3.9910 | LR: 1.96e-04
-2026-10-11 16:42:06,335 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 31.75
-2026-10-11 16:42:15,299 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 3.2851 | LR: 8.20e-05
-2026-10-11 16:42:24,451 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 3.3320 | LR: 7.44e-06
-2026-10-11 16:42:29,228 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 30.57
-2026-10-11 16:42:33,944 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 30.57
-2026-10-11 16:42:33,946 [WARNING] MambaKD: Invalid recovery denominator: pre=36.22, baseline=36.22. Setting recovery=NaN.
-2026-10-11 16:42:33,947 [INFO] MambaKD: [C] [COMPLETE] Pre: 36.22
-  Stage 1 (KD):    37.46  (kd_gain=-1.24)
-  Stage 2 (self):  30.57  (self_gain=+6.89)
-  Total:                  (total_gain=+5.65)
-  Teacher baseline: 36.22
-  Aligned with teacher? NO (post_stage1 37.46 > 36.22)
-  Beat teacher after self? YES
-  Recovery: NaN
-  Time: 138.9s (Stage 1: 87.2s, Stage 2: 51.6s)
-2026-10-11 16:42:51,033 [INFO] MambaKD: [QUALITY] distinct_2=0.86, repetition_3=0.06, train_ppl=21.15, test_ppl=30.57, overfit_gap=9.42, latency=1825.3ms
-2026-10-11 16:42:51,044 [INFO] MambaKD: Saved all run details to results\kd_runs\soka_compressor\20261011_164000_bs4_seq256_lr3e-04_C
+2026-10-12 01:30:38,153 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 01:30:38,154 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 01:30:41,702 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 132.3157
+2026-10-12 01:30:41,702 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 132.3157
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-10-12 01:30:42,715 [INFO] MambaKD: Pre-KD PPL for Module soka_compressor, Method C: 9885.73
+2026-10-12 01:30:42,715 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 01:30:42,715 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 9885.73 (same protocol)
+2026-10-12 01:30:42,715 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +9849.52 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 01:30:42,716 [INFO] MambaKD: set_train_scope (module): matched 0 target param tensors
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1387: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+2026-10-12 01:30:43,673 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 9888.72
+2026-10-12 01:30:43,674 [INFO] MambaKD: [C] COMPLETE | Pre: 9885.73 -> Post: 9888.72 | Recovery: -0.03% | VRAM: 575.19 MB | Time: 0.0s
+2026-10-12 01:30:45,816 [INFO] MambaKD: [QUALITY] distinct_2=0.78, repetition_3=0.02, train_ppl=11655.14, test_ppl=9888.72, overfit_gap=-1766.42, latency=209.7ms
+2026-10-12 01:30:45,819 [INFO] MambaKD: Saved all run details to results/kd_runs/soka_compressor/20261012_013030_bs4_seq256_lr3e-04_C
 +---------+----------+----------+----------+----------+----------+----------+
-| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
+| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |
 +---------+----------+----------+----------+----------+----------+----------+
-| C       |    36.22 |    37.46 |    30.57 |    -1.24 |    +6.89 |    +5.65 |
+| C       |  9885.73 |  9888.72 |    -0.0% |      0.0 |    575.2 |      YES |
 +---------+----------+----------+----------+----------+----------+----------+
-2026-10-11 16:42:57,195 [INFO] MambaKD: 
+2026-10-12 01:30:48,069 [INFO] MambaKD: 
 ======================================================================
-2026-10-11 16:42:57,197 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
-2026-10-11 16:42:57,198 [INFO] MambaKD: ======================================================================
+2026-10-12 01:30:48,069 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 01:30:48,069 [INFO] MambaKD: ======================================================================

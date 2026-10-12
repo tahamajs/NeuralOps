@@ -1,10 +1,12 @@
-﻿{
-    "module":  "frandi_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  9886.77,
-    "duration_sec":  218.6,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 14:41:54"
+{
+  "module": "frandi_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 9850.55,
+  "student_ppl": 843.78,
+  "pre_ppl": 9886.77,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.337375"
 }

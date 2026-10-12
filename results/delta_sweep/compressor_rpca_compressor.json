@@ -1,12 +1,12 @@
 {
-    "module": "rpca_compressor",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 9559.39,
-    "student_ppl": 9595.60,
-    "baseline_ppl": 36.21,
-    "duration_sec": 116.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:34:44",
-    "notes": "Fixed device mismatch (cuda/cpu). Verified isolated run: pre-KD PPL=9595.60, delta=+9559.39"
+  "module": "rpca_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 9559.39,
+  "student_ppl": 9595.6,
+  "pre_ppl": 9595.6,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.351644"
 }

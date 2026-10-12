@@ -1,11 +1,12 @@
 {
   "module": "compressed_attention",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 1865.81,
-  "duration_sec": 178.1,
-  "retries_used": 1,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 22:19:18"
+  "status": "PASS",
+  "delta": 1829.6,
+  "student_ppl": 172.16,
+  "pre_ppl": 1865.81,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.294884"
 }

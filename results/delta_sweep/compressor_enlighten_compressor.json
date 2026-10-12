@@ -1,10 +1,12 @@
-﻿{
-    "module":  "enlighten_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  614.83,
-    "duration_sec":  193.6,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 14:18:32"
+{
+  "module": "enlighten_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 578.61,
+  "student_ppl": 41.51,
+  "pre_ppl": 614.83,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.334361"
 }

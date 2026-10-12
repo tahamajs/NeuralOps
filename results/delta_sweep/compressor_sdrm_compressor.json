@@ -1,10 +1,12 @@
-﻿{
-    "module":  "sdrm_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  1462.74,
-    "duration_sec":  213.2,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 16:27:28"
+{
+  "module": "sdrm_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1426.52,
+  "student_ppl": 51.84,
+  "pre_ppl": 1462.74,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.353292"
 }

@@ -1,12 +1,12 @@
 {
-    "module": "mgie_budget",
-    "type": "compressor",
-    "status": "PASS",
-    "delta": 9832.09,
-    "student_ppl": 9868.30,
-    "baseline_ppl": 36.21,
-    "duration_sec": 19.0,
-    "error": null,
-    "timestamp": "2026-10-12 01:46:12",
-    "notes": "Verified isolated run: pre-KD PPL=9868.30, delta=+9832.09"
+  "module": "mgie_budget",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 9832.09,
+  "student_ppl": 9868.3,
+  "pre_ppl": 9868.3,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.345898"
 }

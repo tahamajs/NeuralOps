@@ -1,10 +1,12 @@
-﻿{
-    "module":  "modegpt_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  9891.8,
-    "duration_sec":  246.8,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 15:48:37"
+{
+  "module": "modegpt_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 9855.58,
+  "student_ppl": 778.46,
+  "pre_ppl": 9891.8,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.346850"
 }

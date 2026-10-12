@@ -1,11 +1,12 @@
 {
   "module": "alibi",
   "type": "attention",
-  "status": "UNKNOWN",
-  "delta": null,
-  "student_ppl": 16593.66,
-  "duration_sec": 392.7,
-  "retries_used": 2,
-  "error": "no delta parsed",
-  "timestamp": "2026-10-11 21:43:03"
+  "status": "PASS",
+  "delta": 16557.45,
+  "student_ppl": 39.93,
+  "pre_ppl": 16593.66,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.290513"
 }

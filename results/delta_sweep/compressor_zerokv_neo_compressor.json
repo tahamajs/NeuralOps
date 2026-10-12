@@ -1,10 +1,12 @@
-﻿{
-    "module":  "zerokv_neo_compressor",
-    "type":  "compressor",
-    "status":  "ERROR",
-    "delta":  null,
-    "student_ppl":  1727.03,
-    "duration_sec":  201.5,
-    "error":  "exit=",
-    "timestamp":  "2026-10-11 17:19:24"
+{
+  "module": "zerokv_neo_compressor",
+  "type": "compressor",
+  "status": "PASS",
+  "delta": 1690.81,
+  "student_ppl": 78.88,
+  "pre_ppl": 1727.03,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.363348"
 }
