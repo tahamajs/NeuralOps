@@ -49,7 +49,7 @@ class ToMoELinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 16.0,
         freeze_experts: bool = True,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
     ):
         super().__init__()
 
@@ -428,7 +428,7 @@ class ToMoECompressor(BaseCompressor):
         model: nn.Module,
         num_experts: int = 4,
         top_k: int = 2,
-        max_error: float = 0.20,
+        max_error: float = 1.0,
         lora_r: int = 0,
         lora_alpha: float = 16.0,
         freeze_experts: bool = True,
@@ -444,7 +444,7 @@ class ToMoECompressor(BaseCompressor):
             )
             top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
             max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
+                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error)
             )
             lora_r = _cfg_get(cfg, "lora_r", _cfg_get(cfg, "tomoe_lora_r", lora_r))
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
