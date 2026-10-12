@@ -65,11 +65,12 @@ def _init_orthogonal_spectral(
     """Orthogonal + spectral-normalized initialization directly on target device."""
     rows, cols = shape_2d
     # Create on target device in fp32 for numerical stability during QR/SVD.
-    flat = torch.empty((rows, cols), dtype=torch.float32, device=device)
     if rows >= cols:
+        flat = torch.empty((rows, cols), dtype=torch.float32, device=device)
         nn.init.orthogonal_(flat)
     else:
-        nn.init.orthogonal_(flat.t().contiguous())
+        flat = torch.empty((cols, rows), dtype=torch.float32, device=device)
+        nn.init.orthogonal_(flat)
         flat = flat.t().contiguous()
     try:
         s_vals = torch.linalg.svdvals(flat)
