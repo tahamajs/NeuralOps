@@ -702,23 +702,10 @@ class TriBranchHybridAttention(BaseAttention):
             US = U[:, :r] @ torch.diag(S[:r])
             proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
 
-            # LoRA init with small residual
+            # Standard stable LoRA init: lora_A kaiming, lora_B zero so initial ΔW = 0
             if proj.lora_A is not None and proj.lora_B is not None and proj.lora_rank > 0:
-                W_svd = proj.up.weight.float() @ proj.down.weight.float()
-                R = W - W_svd
-                # FIX 1: scale residual by 1/lora_scaling to compensate forward scaling
-                R = R / max(proj.lora_scaling, 1e-6)
-                try:
-                    U_r, S_r, Vh_r = torch.linalg.svd(R, full_matrices=False)
-                    r_lora = min(proj.lora_rank, U_r.size(1), Vh_r.size(0))
-                    proj.lora_A.data.zero_()
-                    proj.lora_B.data.zero_()
-                    proj.lora_A.data[:r_lora, :].copy_(Vh_r[:r_lora, :].to(proj.lora_A.dtype))
-                    proj.lora_B.data[:, :r_lora].copy_(
-                        (U_r[:, :r_lora] @ torch.diag(S_r[:r_lora])).to(proj.lora_B.dtype)
-                    )
-                except Exception:
-                    pass
+                nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
+                proj.lora_B.data.zero_()
 
             if b is not None and proj.up.bias is not None:
                 n = min(b.numel(), proj.up.bias.numel())
