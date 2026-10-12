@@ -549,7 +549,7 @@
     "regla_attention_class": "regla_attention",
     "regla_class": "regla_attention",
     "regla_inject": "regla_attention",
-    "res_svd": "residual_svd_attention",
+    "res_svd": "residual_svd_compressor",
     "res_svd_attention": "residual_svd_attention",
     "res_svd_inject": "residual_svd_attention",
     "ressvd": "residual_svd_attention",
