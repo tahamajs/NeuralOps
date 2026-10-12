@@ -270,7 +270,7 @@ class FAQQuantizer(BaseCompressor):
         self,
         model: nn.Module,
         tokenizer: Any | None = None,
-        bits: int = 4,
+        bits: int = 3,
         calibration_texts: list[str] | None = None,
         calibration_data: Any | None = None,
         alpha: float = 0.5,
@@ -779,7 +779,7 @@ class FAQQuantizer(BaseCompressor):
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 4)))
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 3)))
     alpha = kwargs.pop(
         "alpha", _cfg_get(comp_config, "faq_alpha", _cfg_get(comp_config, "alpha", 0.5))
     )
