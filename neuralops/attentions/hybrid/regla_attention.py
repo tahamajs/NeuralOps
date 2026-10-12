@@ -777,6 +777,9 @@ class ReGLAAttention(BaseAttention):
         else:
             output = self.out_proj(fused)
 
+        output = output * valid_mask.unsqueeze(-1).to(dtype)
+        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+
         if output.shape[-1] != D:
             raise RuntimeError(f"ReGLAAttention: output dim {output.shape[-1]} != input {D}")
 
