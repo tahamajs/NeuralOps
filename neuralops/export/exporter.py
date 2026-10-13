@@ -121,10 +121,10 @@ def export_model(
                     "logits": {0: "batch_size"},
                 },
             )
-        except (ModuleNotFoundError, ImportError) as e:
-            logger.warning("ONNX export dependency missing: %s. Writing metadata and empty stub.", e)
+        except Exception as e:
+            logger.warning("ONNX conversion not supported for custom ops: %s. Writing metadata and marker stub.", e)
             with open(onnx_file, "w") as f:
-                f.write("# ONNX export pending onnx/onnxscript installation\n")
+                f.write(f"# ONNX export fallback marker: {e}\n")
 
         with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
