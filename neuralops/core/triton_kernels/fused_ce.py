@@ -18,7 +18,13 @@ except ImportError:
     TRITON_AVAILABLE = False
 
 
-@triton.jit
+def _jit_guard(fn):
+    if triton is not None and hasattr(triton, "jit"):
+        return triton.jit(fn)
+    return fn
+
+
+@_jit_guard
 def _fused_cross_entropy_fwd_kernel(
     logits_ptr,
     targets_ptr,

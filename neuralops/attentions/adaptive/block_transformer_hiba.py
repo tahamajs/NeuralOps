@@ -936,9 +936,11 @@ class BlockTransformerHIBA(BaseAttention):
                 ).unsqueeze(0).unsqueeze(0)
                 scores = scores + causal_mask
 
-            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+            if valid_mask is not None:
+                scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
 
             # Safe softmax
+
             m = scores.amax(dim=-1, keepdim=True)
             m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
             exp_s = torch.exp((scores - m_safe).clamp(max=0.0))
