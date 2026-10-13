@@ -30,6 +30,8 @@ def _handle_deprecated(name: str) -> str:
     while k in _DEPRECATED_ALIASES and k not in visited:
         visited.add(k)
         new_name = _DEPRECATED_ALIASES[k]
+        if new_name is None:
+            raise ValueError(f"Module '{name}' has been deprecated and disabled.")
         warnings.warn(
             f"'{name}' is deprecated. Use '{new_name}' instead.",
             DeprecationWarning,
@@ -305,7 +307,10 @@ class Registry:
         return self.resolve(key)
 
     def __contains__(self, key: str) -> bool:
-        k = _handle_deprecated(key)
+        try:
+            k = _handle_deprecated(key)
+        except ValueError:
+            return False
         self._try_lazy_load(k)
         return k.lower() in self._dict
 
