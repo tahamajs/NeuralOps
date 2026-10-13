@@ -92,7 +92,7 @@ from neuralops.core.registry import (
     is_helper_module,
     is_module_declared_compatible,
 )
-from neuralops.eval_all_models_datasets import apply_module_to_model
+from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
 
 # ---------------------------------------------------------------------------
 # Logging

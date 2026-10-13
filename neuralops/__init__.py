@@ -273,3 +273,17 @@ from neuralops.api import (
     get_compressor_class,
 )
 
+from neuralops.attentions.linear.gla_attention import GLAttention
+from neuralops.core.registry import ATTENTION_REGISTRY
+
+__all__ = [
+    "GLAttention",
+    "replace_attention",
+    "compress",
+    "list_attentions",
+    "list_compressors",
+    "get_attention_class",
+    "get_compressor_class",
+    "ATTENTION_REGISTRY",
+]
+
