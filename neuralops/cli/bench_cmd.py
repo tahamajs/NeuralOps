@@ -2,6 +2,7 @@
 import argparse
 import sys
 import subprocess
+import torch
 
 
 def cmd_bench(args):
