@@ -547,24 +547,7 @@ class FUSIONATTN(BaseAttention):
     # ------------------------------------------------------------------
     # KV-cache helpers
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(past_key_value: Any | None, layer_idx: int = 0):
-        if past_key_value is None:
-            return None, None
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            keys = past_key_value.key_cache
-            vals = past_key_value.value_cache
-            if len(keys) == 0:
-                return None, None
-            idx = min(layer_idx, len(keys) - 1)
-            k, v = keys[idx], vals[idx]
-            if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-                return k, v
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
-                return k, v
-        return None, None
+    _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
     def _normalize_valid_mask(mask, B: int, N: int, device: torch.device) -> torch.Tensor | None:

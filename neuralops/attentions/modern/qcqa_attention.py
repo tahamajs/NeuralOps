@@ -437,19 +437,8 @@ class QCQAAttention(BaseAttention):
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(past_key_value: Any, layer_idx: int):
-        """Return (past_k, past_v) with shape (B, N_past, H_kv, d) or (None, None)."""
-        if past_key_value is None:
-            return None, None
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            return past_key_value[0], past_key_value[1]
-        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
-            return past_key_value.key_cache[idx], past_key_value.value_cache[idx]
-        return None, None
+    _read_past_kv = staticmethod(_read_past_kv)
 
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
