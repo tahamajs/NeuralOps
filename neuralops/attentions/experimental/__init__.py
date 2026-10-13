@@ -15,3 +15,6 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.experimental import template_attention

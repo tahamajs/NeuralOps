@@ -147,3 +147,17 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.sparse import adaptive_sparse_attention
+from neuralops.attentions.sparse import bam_umoe
+from neuralops.attentions.sparse import cluster_attention
+from neuralops.attentions.sparse import expert_choice_moe
+from neuralops.attentions.sparse import hamming_attention
+from neuralops.attentions.sparse import lsh_attention
+from neuralops.attentions.sparse import moba_attention
+from neuralops.attentions.sparse import moe_deltakv_paged
+from neuralops.attentions.sparse import nsa_attention
+from neuralops.attentions.sparse import padre_attention
+from neuralops.attentions.sparse import reap_moe
+from neuralops.attentions.sparse import routing_attention

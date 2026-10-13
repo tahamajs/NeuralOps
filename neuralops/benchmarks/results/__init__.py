@@ -59,3 +59,13 @@ __all__ = [
     "generate_reproduction_command",
     "generate_reproduction_script",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.results import dedup
+from neuralops.benchmarks.results import git_sync
+from neuralops.benchmarks.results import hf_sync
+from neuralops.benchmarks.results import index
+from neuralops.benchmarks.results import reproduce
+from neuralops.benchmarks.results import saver
+from neuralops.benchmarks.results import schema
+from neuralops.benchmarks.results import summarizer

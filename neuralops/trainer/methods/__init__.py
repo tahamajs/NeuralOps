@@ -50,3 +50,12 @@ __all__ = [
     "apply_rdrop",
     "apply_r3f",
 ]
+
+# Auto-wired package members
+from neuralops.trainer.methods import fisher
+from neuralops.trainer.methods import gelora
+from neuralops.trainer.methods import llrd
+from neuralops.trainer.methods import lora
+from neuralops.trainer.methods import mixout
+from neuralops.trainer.methods import rdrop_r3f
+from neuralops.trainer.methods import registry

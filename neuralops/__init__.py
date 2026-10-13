@@ -237,3 +237,28 @@ def __getattr__(name: str) -> Any:
 def __dir__() -> list[str]:
     """Execute __dir__ operation."""
     return sorted(list(globals().keys()) + __all__)
+
+# Auto-wired package members
+from neuralops import analysis
+from neuralops import attentions
+from neuralops import benchmarks
+from neuralops import cli
+from neuralops import compression_engine
+from neuralops import config
+from neuralops import core
+from neuralops import data
+from neuralops import evaluation
+from neuralops import experiment_logging
+from neuralops import experiment_utils
+from neuralops import inference
+from neuralops import integrations
+from neuralops import models
+from neuralops import results_saver
+from neuralops import runners
+from neuralops import tests
+from neuralops import tracking
+from neuralops import trainer
+from neuralops import training
+from neuralops import utils
+from neuralops import __main__
+from neuralops import main

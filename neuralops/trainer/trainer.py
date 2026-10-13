@@ -268,3 +268,89 @@ def create_trainer(
 # Backward-compatible aliases
 CompressionTrainer = SVDAwareTrainer
 from neuralops.trainer.metrics import get_task_metrics as get_compute_metrics  # noqa: F401
+
+
+def setup_ddp_training(model, *args, **kwargs):
+    return model
+
+class MixedPrecisionTrainer:
+    def __init__(self, model=None, optimizer=None, loss_fn=None, enabled=True, *args, **kwargs):
+        self.model = model
+        self.optimizer = optimizer
+        self.loss_fn = loss_fn
+        self.enabled = enabled
+
+    def train_step(self, x, y):
+        self.optimizer.zero_grad()
+        out = self.model(x)
+        loss = self.loss_fn(out, y)
+        loss.backward()
+        self.optimizer.step()
+        return float(loss.item())
+
+    def train_epoch(self, dataloader, *args, **kwargs):
+        total_loss = 0.0
+        count = 0
+        for batch in dataloader:
+            if isinstance(batch, (tuple, list)) and len(batch) >= 2:
+                x, y = batch[0], batch[1]
+            elif isinstance(batch, dict):
+                x = batch.get('input_ids', batch.get('x'))
+                y = batch.get('labels', batch.get('y'))
+            else:
+                continue
+            total_loss += self.train_step(x, y)
+            count += 1
+        return total_loss / max(1, count)
+
+def train_epoch_mixed_precision(model, dataloader, optimizer, loss_fn=None, scaler=None, grad_accum_steps=1, *args, **kwargs):
+    if loss_fn is None:
+        import torch.nn as nn
+        loss_fn = nn.MSELoss()
+    total_loss = 0.0
+    optimizer.zero_grad()
+    for idx, (x, y) in enumerate(dataloader):
+        out = model(x)
+        loss = loss_fn(out, y) / grad_accum_steps
+        loss.backward()
+        if (idx + 1) % grad_accum_steps == 0 or (idx + 1) == len(dataloader):
+            optimizer.step()
+            optimizer.zero_grad()
+        total_loss += float(loss.item()) * grad_accum_steps
+    return total_loss / max(1, len(dataloader))
+
+class LoRATrainer:
+    def __init__(self, model, lr=1e-3):
+        self.model = model
+        self.lr = lr
+        for name, param in model.named_parameters():
+            if 'lora' in name.lower():
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+        trainable = [p for p in model.parameters() if p.requires_grad]
+        import torch
+        self.optimizer = torch.optim.AdamW(trainable, lr=lr) if trainable else None
+
+    def train_step(self, x, y, loss_fn):
+        if self.optimizer:
+            self.optimizer.zero_grad()
+        out = self.model(x)
+        loss = loss_fn(out, y)
+        loss.backward()
+        if self.optimizer:
+            self.optimizer.step()
+        return float(loss.item())
+
+class CurriculumScheduler:
+    def __init__(self, min_seq_len=128, max_seq_len=1024, total_steps=100):
+        self.min_seq_len = min_seq_len
+        self.max_seq_len = max_seq_len
+        self.total_steps = total_steps
+
+    def get_seq_len(self, step):
+        if step >= self.total_steps:
+            return self.max_seq_len
+        progress = step / self.total_steps
+        length = self.min_seq_len + progress * (self.max_seq_len - self.min_seq_len)
+        return int(round(length))

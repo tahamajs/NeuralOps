@@ -142,3 +142,25 @@ __all__ += [
     "PolyLoss",
     "ContrastiveLoss",
 ]
+
+# Auto-wired package members
+from neuralops.trainer import methods
+from neuralops.trainer import optimizers
+from neuralops.trainer import base_trainer
+from neuralops.trainer import callbacks
+from neuralops.trainer import custom_loop_trainer
+from neuralops.trainer import hf_trainer
+from neuralops.trainer import hyperopt
+from neuralops.trainer import losses
+from neuralops.trainer import metrics
+from neuralops.trainer import optimizers
+from neuralops.trainer import registry
+from neuralops.trainer import results_manager
+from neuralops.trainer import rl_trainer
+from neuralops.trainer import schedulers
+from neuralops.trainer import train_lra
+from neuralops.trainer import trainer
+from neuralops.trainer import trainer_factory
+from neuralops.trainer import trainer_svd
+from neuralops.trainer import unsloth_trainer
+from neuralops.trainer import utils

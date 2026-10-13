@@ -123,3 +123,15 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.adaptive import adaptive_span_attention
+from neuralops.attentions.adaptive import block_transformer_hiba
+from neuralops.attentions.adaptive import eat
+from neuralops.attentions.adaptive import infini_attention
+from neuralops.attentions.adaptive import lola_attention
+from neuralops.attentions.adaptive import progressive_token_pruning
+from neuralops.attentions.adaptive import sink_attention
+from neuralops.attentions.adaptive import span_expanded_attention
+from neuralops.attentions.adaptive import squeezing_heads_distill
+from neuralops.attentions.adaptive import token_compressed_attention

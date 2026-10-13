@@ -19,3 +19,10 @@ __all__ = [
     "auto_setup",
     "ResultsManager",
 ]
+
+# Auto-wired package members
+from neuralops.experiment_logging import callbacks
+from neuralops.experiment_logging import config
+from neuralops.experiment_logging import integration
+from neuralops.experiment_logging import logger
+from neuralops.experiment_logging import tracker
