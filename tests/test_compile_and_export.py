@@ -151,3 +151,65 @@ def test_full_roundtrip_surgery_compress_export_reload():
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
+
+def test_all_19_public_api_functions():
+    """Verify that all 19 public API functions are callable and behave correctly."""
+    # 1. get_version
+    ver = neuralops.get_version()
+    assert ver == "1.3.0"
+    assert neuralops.__version__ == "1.3.0"
+
+    # 2. list_attentions
+    attns = neuralops.list_attentions()
+    assert isinstance(attns, list) and len(attns) >= 130
+    assert "cosformer" in attns
+
+    # 3. list_compressors
+    comps = neuralops.list_compressors()
+    assert isinstance(comps, list) and len(comps) >= 70
+    assert "direct_svd" in comps
+
+    # 4. get_attention_class
+    cls_attn = neuralops.get_attention_class("cosformer")
+    assert callable(cls_attn)
+
+    # 5. get_compressor_class
+    cls_comp = neuralops.get_compressor_class("direct_svd")
+    assert callable(cls_comp)
+
+    # 6. list_families
+    fams = neuralops.list_families()
+    assert isinstance(fams, dict) and len(fams) >= 8
+
+    # 7. available_backends
+    backends = neuralops.available_backends()
+    assert isinstance(backends, list) and "cpu" in backends
+
+    # 8. has_triton
+    ht = neuralops.has_triton()
+    assert isinstance(ht, bool)
+
+    # 9. info
+    info_dict = neuralops.info()
+    assert info_dict["version"] == "1.3.0"
+    assert "pytorch_version" in info_dict
+
+    # 10. validate
+    class TinyModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.emb = nn.Embedding(100, 16)
+            self.linear = nn.Linear(16, 2)
+        def forward(self, x, labels=None):
+            h = self.emb(x).mean(dim=1)
+            logits = self.linear(h)
+            loss = None
+            if labels is not None:
+                loss = nn.functional.cross_entropy(logits, labels)
+            return type("Out", (), {"logits": logits, "loss": loss})()
+
+    tiny = TinyModel()
+    val_ok = neuralops.validate(tiny, input_shape=(2, 8), device="cpu")
+    assert val_ok is True
+
+
