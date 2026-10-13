@@ -132,8 +132,8 @@ class GroupedQueryAttention(BaseAttention):
                 resolved_kv_heads = int(kwargs_kv)
 
         # اگر مشخص نشده بود یا برابر با کل هدها بود، به نسبت ۴ برابر فشرده شود
-        if resolved_kv_heads is None or resolved_kv_heads >= self.num_heads:
-            resolved_kv_heads = max(1, self.num_heads // 4)
+        if resolved_kv_heads is None:
+            resolved_kv_heads = self.num_heads
 
         self.num_kv_heads = int(resolved_kv_heads)
         self._num_kv_heads_source = "gqa_compressed"
@@ -197,7 +197,7 @@ class GroupedQueryAttention(BaseAttention):
                 _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)),
             )
         )
-        self.freeze_base = self.lora_rank > 0
+        self.freeze_base = False
         # ---- projections ----
         self.query = LoRALinear(
             self.hidden_size,
