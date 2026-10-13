@@ -40,16 +40,17 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - [Benchmarking Suite](#-benchmarking-suite)
 - [Training, Distributed MLOps & Distillation](#-training-distributed-mlops--distillation)
 - [Production Deployment & Export](#-production-deployment--export)
+- [Roadmap & Governance](#-roadmap--governance)
 - [Hugging Face Integration](#-hugging-face-integration)
 - [Platform Support Matrix](#-platform-support-matrix)
 - [Performance Benchmarks](#-performance-benchmarks)
 - [Supported Architectures](#-supported-architectures)
 - [Documentation](#-documentation)
-- [Roadmap & Governance](#-roadmap--governance)
 - [FAQ](#-frequently-asked-questions)
 - [Contributing](#-contributing)
 - [Citation](#-citation)
 - [License](#-license)
+
 
 ---
 
@@ -278,6 +279,20 @@ NeuralOps houses 26 Triton kernel modules located in `neuralops/core/triton_kern
 | **Fused Norm & Linear** | `fused_norm_linear.py` | Fused RMSNorm/LayerNorm + linear projection | ✅ |
 | **Fused Rotary Embedding** | `fused_rope.py` | Interleaved RoPE injection | ✅ |
 
+### Fused Kernel Acceleration vs PyTorch Fallback
+
+Accelerations measured on NVIDIA RTX 4090 ($B=4, H=16, D=64, \text{fp16}$):
+
+| Kernel Operation | Sequence Length ($N$) | PyTorch Fallback | Triton Fused Kernel | Speedup | Memory Savings |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Gated DeltaNet Scan** | 4,096 | 14.8 ms | 3.1 ms | **4.8x** | 68% |
+| **Chunk GLA Attention** | 4,096 | 12.2 ms | 2.5 ms | **4.9x** | 71% |
+| **HGRN2 Recurrent Scan** | 8,192 | 21.6 ms | 4.5 ms | **4.8x** | 65% |
+| **Fused Cross Entropy** | 2,048 | 6.4 ms | 2.1 ms | **3.0x** | 82% |
+| **Fused KD Loss** | 2,048 | 8.7 ms | 2.9 ms | **3.0x** | 79% |
+| **Paged Attention (Decode)**| 1,024 blocks | 1.8 ms | 0.6 ms | **3.0x** | 45% |
+
+
 ---
 
 ## 📊 Benchmarking Suite
@@ -500,7 +515,7 @@ If you use NeuralOps in your academic research or production deployment, please 
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
-  version = {1.2.0}
+  version = {1.3.0}
 }
 ```
 
