@@ -1,224 +1,390 @@
-module,type,status,delta,student_ppl,duration_sec,retries_used,error,timestamp
-adaptive_span_attention,attention,PASS,+6767.30,43.46,0.0,0,,2026-10-12T03:20:19.287769
-adaptive_sparse_attention,attention,PASS,+18.65,30.44,0.0,0,,2026-10-12T03:20:19.288539
-adaptive_svd_attention,attention,PASS,+1722.65,101.02,0.0,0,,2026-10-12T03:20:19.289201
-aegis_v6,attention,PASS,3125.98,3162.19,0.0,0,,2026-10-12T03:20:19.289863
-alibi,attention,PASS,+16553.73,39.93,0.0,0,,2026-10-12T03:20:19.290513
-asvd_attention,attention,PASS,110.91,147.12,0.0,0,,2026-10-12T03:20:19.291104
-bam_umoe,attention,PASS,+1025.96,55.90,0.0,0,,2026-10-12T03:20:19.291712
-block_transformer_hiba,attention,PASS,+7.37,28.85,0.0,0,,2026-10-12T03:20:19.292340
-chela_slay,attention,PASS,+7.27,28.94,0.0,0,,2026-10-12T03:20:19.292957
-chela_slay_attention,attention,PASS,+7.57,28.66,0.0,0,,2026-10-12T03:20:19.293649
-cluster_attention,attention,PASS,+939.34,36.34,0.0,0,,2026-10-12T03:20:19.294275
-compressed_attention,attention,PASS,+1693.65,172.16,0.0,0,,2026-10-12T03:20:19.294884
-compressed_mha_attention,attention,PASS,+1697.06,168.90,0.0,0,,2026-10-12T03:20:19.295527
-cosformer,attention,PASS,+3.87,243.1500,0.0,0,,2026-10-12T03:20:19.296105
-cosformer_attention,attention,PASS,+3.87,243.1500,0.0,0,,2026-10-12T03:20:19.296694
-cross_attention,attention,PASS,+8.00,28.22,0.0,0,,2026-10-12T03:20:19.297331
-decay_linear_attention,attention,PASS,+15137.99,60.89,0.0,0,,2026-10-12T03:20:19.297940
-decay_linear_attn,attention,PASS,+15148.41,60.81,0.0,0,,2026-10-12T03:20:19.298550
-dynamic_conv_attention,attention,PASS,3355079.7,3355115.91,0.0,0,,2026-10-12T03:20:19.299086
-eat,attention,PASS,+882.44,13012.20,0.0,0,,2026-10-12T03:20:19.299752
-eat_attention,attention,PASS,+16.00,7826.68,0.0,0,,2026-10-12T03:20:19.300430
-expert_choice_moe,attention,PASS,+7.29,28.95,0.0,0,,2026-10-12T03:20:19.301088
-factorised_matrix_state,attention,PASS,+24430.56,737.6900,0.0,0,,2026-10-12T03:20:19.301122
-flash_attention3,attention,PASS,+7.20,29.02,0.0,0,,2026-10-12T03:20:19.301802
-flash_attention3_fp8,attention,PASS,+7.13,29.09,0.0,0,,2026-10-12T03:20:19.302446
-full,attention,DEPRECATED,,,0.0,0,Deprecated alias of full_attention (canonical is PASS delta=7.32),2026-10-12T03:20:19.302843
-full_attention,attention,PASS,+7.32,28.89,0.0,0,,2026-10-12T03:20:19.303498
-fused_svd_kernel,attention,PASS,+3640.20,110.16,0.0,0,,2026-10-12T03:20:19.304206
-fusion_attn,attention,PASS,+7.18,29.03,0.0,0,,2026-10-12T03:20:19.304830
-galerkin_attention,attention,PASS,+7.27,28.95,0.0,0,,2026-10-12T03:20:19.305402
-gated_delta_net,attention,PASS,+2129.34,47.98,0.0,0,,2026-10-12T03:20:19.305972
-gated_deltanet_block,attention,PASS,+2126.86,47.76,0.0,0,,2026-10-12T03:20:19.306584
-goldfinch_ahn,attention,PASS,+4959.31,48.45,0.0,0,,2026-10-12T03:20:19.307189
-gqa_attention,attention,PASS,+1082.22,91.95,0.0,0,,2026-10-12T03:20:19.307803
-granite_hybrid,attention,PASS,4172.2,4208.41,0.0,0,,2026-10-12T03:20:19.308253
-griffin_ssd,attention,PASS,+124.29,2.62,0.0,0,,2026-10-12T03:20:19.308868
-halo_regla,attention,PASS,33.14,69.35,0.0,0,,2026-10-12T03:20:19.309601
-hamming_attention,attention,PASS,5823.18,5859.39,0.0,0,,2026-10-12T03:20:19.310119
-hgrn2_gated_deltanet,attention,PASS,5235.17,5271.38,0.0,0,,2026-10-12T03:20:19.310676
-hgrn2_gated_layer,attention,PASS,+6073.41,41.90,0.0,0,,2026-10-12T03:20:19.311307
-hgrn2_gated_outer,attention,PASS,+3816.44,52.83,0.0,0,,2026-10-12T03:20:19.311923
-hla_attention,attention,PASS,+42.50,5102.36,0.0,0,,2026-10-12T03:20:19.312503
-hybrid_attention,attention,PASS,+5.86,135.2500,0.0,0,,2026-10-12T03:20:19.313178
-hybrid_local_kernel,attention,PASS,+4094.21,155.37,0.0,0,,2026-10-12T03:20:19.313841
-hymba_transx,attention,PASS,64.14,100.35,0.0,0,,2026-10-12T03:20:19.314477
-inject_leka_v1,attention,PASS,+297.86,1649.3600,0.0,0,,2026-10-12T03:20:19.314509
-inject_leka_v2,attention,PASS,+2639.77,157.15,0.0,0,,2026-10-12T03:20:19.315126
-inject_leka_v3,attention,PASS,+2467.19,227.53,0.0,0,,2026-10-12T03:20:19.316083
-inject_native_hybrid_attention,attention,PASS,+3436.37,40.06,0.0,0,,2026-10-12T03:20:19.316723
-jamba,attention,PASS,+7.13,29.09,0.0,0,,2026-10-12T03:20:19.317454
-jamba_info,attention,PASS,+3070.93,38.00,0.0,0,,2026-10-12T03:20:19.318057
-kda_attention,attention,PASS,+19125.40,11435.1900,148.1,1,,2026-10-12 03:19:40
-linformer_attention,attention,PASS,+2199.98,305.71,28.2,1,,2026-10-12 03:22:09
-aatc_xkv_compressor,compressor,PASS,+5.36,30.86,0.0,0,,2026-10-12T03:20:19.320021
-hybridkv_compressor,compressor,PASS,+5.63,30.59,0.0,0,,2026-10-12T03:20:19.341221
-lola_attention,attention,PASS,+3600.66,149.86,280.6,1,,2026-10-12 03:22:38
-lora_attention,attention,PASS,+7.27,28.94,184.8,1,,2026-10-12 03:27:20
-lsh_attention,attention,PASS,+2655.26,152.23,228.9,1,,2026-10-12 03:30:25
-mamba_block,attention,PASS,+4519.35,110.15,284.5,1,,2026-10-12 03:34:15
-mamba_svd_flash,attention,DEPRECATED,,,12.4,1,Deprecated in eval_types.py,2026-10-12 03:39:01
-minimal_nova,attention,PASS,+3598.76,150.19,159.7,1,,2026-10-12 03:39:14
-minimal_svd,attention,PASS,+3599.98,149.94,163.1,1,,2026-10-12 03:41:55
-mixattention_moska,attention,PASS,+7.14,29.08,164.0,1,,2026-10-12 03:44:39
-mla_attention,attention,PASS,+1111.76,161.97,159.7,1,,2026-10-12 03:47:24
-moba_attention,attention,PASS,+7.16,29.06,202.3,1,,2026-10-12 03:50:05
-moe_deltakv_paged,attention,PASS,+1719.90,10.76,311.5,1,,2026-10-12 03:53:28
-mqa,attention,PASS,+1346.23,200.65,162.4,1,,2026-10-12 03:58:41
-naive_svd,attention,PASS,+3640.42,109.94,155.0,1,,2026-10-12 04:01:24
-nasc_attention,attention,PASS,+576.70,39.62,463.7,1,,2026-10-12 04:04:00
-nexus,attention,PASS,+221.97,141.6800,207.0,1,,2026-10-12 04:11:45
-nsa_attention,attention,PASS,+6.75,29.32,210.3,1,,2026-10-12 04:15:13
-nystrom_attention,attention,PASS,+6.99,29.22,178.8,1,,2026-10-12 04:18:44
-optimized_hybrid_attention,attention,PASS,+5274.24,48.72,214.9,1,,2026-10-12 04:21:44
-orion,attention,PASS,+3162.74,183.29,262.6,1,,2026-10-12 04:25:20
-padre_attention,attention,PASS,+246.13,32.27,205.2,1,,2026-10-12 04:29:43
-performer_attention,attention,PASS,+27436.91,174.62,118.4,1,,2026-10-12 04:33:10
-phantom,attention,PASS,+3855.69,248.41,361.4,1,,2026-10-12 04:35:09
-primal_attention,attention,PASS,+99.49,53.53,234.9,1,,2026-10-12 04:41:11
-progressive_token_pruning,attention,PASS,+14.19,34.87,191.2,1,,2026-10-12 04:45:07
-projection_factorized_attn,attention,PASS,+3594.42,153.33,167.6,1,,2026-10-12 04:48:20
-qcqa_attention,attention,PASS,+10.52,29.18,185.2,1,,2026-10-12 04:51:08
-rala_attention,attention,PASS,+13755.05,10479.1900,513.2,1,,2026-10-12 04:54:14
-rala_compressor,attention,DEPRECATED,,2026.0,528.6,1,Deprecated alias of rala_attention (canonical is PASS delta=+13755.05),2026-10-12 05:02:49
-reap_moe,attention,PASS,+44284.04,992.52,210.2,1,,2026-10-12 05:11:38
-regla_attention,attention,PASS,+35.10,2995.70,600.2,1,,2026-10-12 05:15:10
-residual_svd_attention,attention,PASS,+3541.54,207.51,204.5,1,,2026-10-12 05:25:11
-routing_attention,attention,PASS,+1703.23,167.35,346.0,1,,2026-10-12 05:28:36
-rpc_attention,attention,PASS,+2748.03,138.99,265.3,1,,2026-10-12 05:34:23
-salt_attention,attention,PASS,+1525.60,298.20,210.5,1,,2026-10-12 05:38:50
-samba_m3,attention,PASS,+84.16,33.02,351.5,1,,2026-10-12 05:42:21
-samba_moe,attention,PASS,+701.57,35.96,385.5,1,,2026-10-12 05:48:14
-selective_ssm,attention,PASS,+2621.06,2795.1900,600.5,1,,2026-10-12 05:54:40
-simple_ssm,attention,PASS,+2105.93,2785.1400,600.5,1,,2026-10-12 06:04:42
-sink_attention,attention,PASS,+681.38,159.30,175.7,1,,2026-10-12 06:14:43
-soa_attn,attention,PASS,+1274.36,112.25,191.2,1,,2026-10-12 06:17:40
-spectraformer_attention,attention,PASS,+6514.58,9980.01,140.6,1,,2026-10-12 06:20:52
-spectron,attention,PASS,+1720.86,102.51,183.8,1,,2026-10-12 06:23:14
-spectron_fp8,attention,PASS,+1300.36,3563.9800,600.5,1,,2026-10-12 06:26:19
-split_head_hybrid,attention,PASS,+3080.32,175.70,491.3,1,,2026-10-12 06:36:20
-svd_compressed,attention,PASS,+3600.74,150.07,212.9,1,,2026-10-12 06:44:32
-svd_linear_attention,attention,PASS,+3600.25,149.90,159.1,1,,2026-10-12 06:48:06
-svd_linear_decay,attention,PASS,+3599.84,148.47,164.1,1,,2026-10-12 06:50:46
-svd_llm_v2_attention,attention,PASS,+3601.67,150.20,174.2,1,,2026-10-12 06:53:32
-svd_mamba,attention,PASS,+113.82,49.5800,600.5,1,,2026-10-12 06:56:27
-svd_projection_attention,attention,PASS,+3600.09,149.98,172.6,1,,2026-10-12 07:06:28
-svd_seq,attention,PASS,+279.18,3191.60,122.6,1,,2026-10-12 07:09:22
-template_attention,attention,PASS,+3072.16,832.96,208.3,1,,2026-10-12 07:11:26
-token_compressed_attention,attention,PASS,+2616.21,1204.78,272.1,1,,2026-10-12 07:14:55
-tri_branch_hybrid,attention,PASS,+12.82,3658.2000,172.2,1,,2026-10-12 07:19:28
-triton_cosformer,attention,PASS,+23097.85,103.04,191.4,1,,2026-10-12 07:22:21
-triton_svd_linear_attention,attention,PASS,+1494.62,148.96,223.6,1,,2026-10-12 07:25:34
-unified_rope,attention,PASS,+3016.66,919.33,193.3,1,,2026-10-12 07:29:18
-upi_stuffed_mamba,attention,PASS,+1785.84,319.55,331.3,1,,2026-10-12 07:32:33
-vig_attention,attention,PASS,+372.77,49.92,506.8,1,,2026-10-12 07:38:05
-vspec,attention,PASS,+2947.59,151.96,242.0,1,,2026-10-12 07:46:33
-wgqa_attention,attention,PASS,+1082.89,91.69,195.4,1,,2026-10-12 07:50:36
-xattention,attention,PASS,+13.64,32.51,243.0,1,,2026-10-12 07:53:52
-zeros_attention,attention,PASS,+41600.55,803.5800,252.0,1,,2026-10-12 07:57:56
-a3_compressor,compressor,PASS,+344.34,37.83,171.4,1,,2026-10-12 08:02:09
-aa_svd_compressor,compressor,PASS,+112.87,66.9300,157.7,1,,2026-10-12 08:05:02
-adaptive_ranks,compressor,PASS,+33.94,31.27,193.2,1,,2026-10-12 08:07:40
-adasvd_compressor,compressor,PASS,+599.20,44.23,166.8,1,,2026-10-12 08:10:55
-admm_compressor,compressor,PASS,+1159.76,45.40,173.8,1,,2026-10-12 08:13:43
-admm_pruner,compressor,PASS,+579.66,44.10,163.4,1,,2026-10-12 08:16:37
-armor_pruner,compressor,PASS,+8.58,31.15,177.9,1,,2026-10-12 08:19:22
-ast_pruner,compressor,PASS,+8822.86,114.11,179.5,1,,2026-10-12 08:22:21
-astro_quantizer,compressor,PASS,+6.89,31.12,183.9,1,,2026-10-12 08:25:21
-bonsai_pruner,compressor,PASS,+25.42,37.19,188.0,1,,2026-10-12 08:28:26
-cachenotes_compressor,compressor,PASS,+8.49,31.42,175.6,1,,2026-10-12 08:31:35
-come_compressor,compressor,PASS,+78.92,38.99,174.8,1,,2026-10-12 08:34:32
-compot_compressor,compressor,PASS,+4991.40,461.54,161.1,1,,2026-10-12 08:37:28
-coopq_quantizer,compressor,PASS,+56.84,32.54,192.4,1,,2026-10-12 08:40:10
-cr_compressor,compressor,PASS,+27080.43,1101.77,155.3,1,,2026-10-12 08:43:23
-cur_compressor,compressor,PASS,+16779.90,333.39,166.3,1,,2026-10-12 08:45:59
-cur_moe_compressor,compressor,PASS,+3980.20,58.33,162.0,1,,2026-10-12 08:48:47
-delta_kv,compressor,PASS,+44.64,31.74,182.3,1,,2026-10-12 08:51:30
-direct_svd,compressor,PASS,+4825.02,389.66,158.8,1,,2026-10-12 08:54:33
-dobi_svd,compressor,PASS,+2032.03,1457.89,98.0,1,,2026-10-12 08:57:13
-drone_compressor,compressor,PASS,+1707.73,157.51,204.7,1,,2026-10-12 08:58:52
-dynamic_rank,compressor,PASS,+9241.83,714.57,149.8,1,,2026-10-12 09:02:18
-enlighten_compressor,compressor,PASS,+574.03,40.85,169.5,1,,2026-10-12 09:04:49
-entropy_budget_allocation,compressor,PASS,+9209.62,676.11,152.6,1,,2026-10-12 09:07:39
-erc_svd,compressor,PASS,+1792.78,1665.59,162.6,1,,2026-10-12 09:10:13
-faq_quantizer,compressor,PASS,+197455.37,760.19,216.6,1,,2026-10-12 09:12:56
-flap,compressor,PASS,+1094.82,55.24,191.8,1,,2026-10-12 09:16:34
-flat_llm,compressor,PASS,+7754.30,104.54,165.2,1,,2026-10-12 09:19:47
-frandi_compressor,compressor,PASS,+9203.64,683.41,167.3,1,,2026-10-12 09:22:33
-fwsvd_compressor,compressor,PASS,+1760.08,145.45,156.8,1,,2026-10-12 09:25:21
-gfws,compressor,PASS,+3217.56,433.01,208.2,1,,2026-10-12 09:27:59
-grecodec_compressor,compressor,PASS,+9193.23,683.99,189.1,1,,2026-10-12 09:31:28
-hashed_net_compressor,compressor,PASS,+6910.60,3927.01,210.0,1,,2026-10-12 09:34:39
-huffman_coder,compressor,PASS,+1168657.82,1391.25,149.2,1,,2026-10-12 09:38:09
-hybrid_svd_layer,compressor,PASS,+6554.10,255.66,165.8,1,,2026-10-12 09:40:40
-kmeans_quantize,compressor,PASS,+4.68,32.60,187.7,1,,2026-10-12 09:43:27
-kronecker_compressor,compressor,PASS,+6900.09,870.50,205.5,1,,2026-10-12 09:46:35
-kronecker_tt_lora,compressor,PASS,+9011.34,1123.92,235.0,1,,2026-10-12 09:50:02
-kvtc_compressor,compressor,PASS,+4099.64,152.77,196.7,1,,2026-10-12 09:53:58
-liftr,compressor,PASS,+10521.29,617.62,174.9,1,,2026-10-12 09:57:15
-lillama_compressor,compressor,PASS,+5.79,30.42,211.1,1,,2026-10-12 10:00:11
-lsc_compressor,compressor,PASS,+70421.93,1591.31,193.6,1,,2026-10-12 10:03:44
-mamba_shedder,compressor,PASS,+593.70,59.59,194.3,1,,2026-10-12 10:06:58
-mgie_budget,compressor,PASS,+9160.16,708.59,170.9,1,,2026-10-12 10:10:13
-mlorq_compressor,compressor,PASS,+4.43,34.82,212.8,1,,2026-10-12 10:13:05
-modegpt_compressor,compressor,PASS,+9237.63,654.71,165.8,1,,2026-10-12 10:16:39
-nmf_compressor,compressor,PASS,+8033.83,136.78,252.5,1,,2026-10-12 10:19:26
-oats_compressor,compressor,PASS,+35.65,35.57,216.5,1,,2026-10-12 10:23:40
-optimal_subspace_projection,compressor,PASS,+11.34,31.41,190.8,1,,2026-10-12 10:27:17
-proxsparse,compressor,PASS,+351.25,35.39,175.8,1,,2026-10-12 10:30:29
-residual_svd_compressor,compressor,PASS,+5268.49,760.73,240.0,1,,2026-10-12 10:33:26
-roast_hashed_linear,compressor,PASS,+523456.35,20064.83,114.5,1,,2026-10-12 10:37:27
-rotational_slicegpt_int4,compressor,PASS,+10987.61,3693.25,120.5,1,,2026-10-12 10:39:22
-rpca_compressor,compressor,PASS,+8915.41,669.45,194.6,1,,2026-10-12 10:41:24
-saes_svd_v2,compressor,PASS,+9177.54,695.21,195.0,1,,2026-10-12 10:44:39
-salr,compressor,PASS,+9707.56,1068.33,191.3,1,,2026-10-12 10:47:55
-sdrm_compressor,compressor,PASS,+1414.24,48.53,187.2,1,,2026-10-12 10:51:08
-slicegpt,compressor,PASS,+5547.26,174.84,190.1,1,,2026-10-12 10:54:16
-slicegpt_pca,compressor,PASS,+11104.20,69.05,232.2,1,,2026-10-12 10:57:27
-slim_compressor,compressor,PASS,+92.21,32.60,251.7,1,,2026-10-12 11:01:20
-soka_compressor,compressor,PASS,+9197.41,688.32,171.6,1,,2026-10-12 11:05:33
-sparsegpt,compressor,PASS,+294.84,43.67,187.9,1,,2026-10-12 11:08:26
-subspace_projection,compressor,PASS,+9260.85,631.49,163.1,1,,2026-10-12 11:11:34
-svd_linear,compressor,PASS,+3602.40,147.52,206.2,1,,2026-10-12 11:14:19
-svd_llm_compressor,compressor,PASS,+794.81,149.49,209.1,1,,2026-10-12 11:17:46
-swift_svd,compressor,PASS,+7700.01,75.27,196.1,1,,2026-10-12 11:21:16
-swift_svd_act,compressor,PASS,+6556.37,730.56,190.0,1,,2026-10-12 11:24:33
-tomoe_compressor,compressor,PASS,+25575.40,206.67,215.4,1,,2026-10-12 11:27:44
-tt_compressor,compressor,DEPRECATED,,,12.8,1,Deprecated alias of kronecker_tt_lora,2026-10-12 11:31:20
-uniql_compressor,compressor,PASS,+8321.67,2431.72,179.2,1,,2026-10-12 11:31:34
-zerokv_neo_compressor,compressor,PASS,+1658.56,68.20,164.8,1,,2026-10-12 11:34:35
-aegis_v1,attention,DEPRECATED,,,600.9,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 14:13:16
-aegis_v2,attention,DEPRECATED,,,600.9,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 14:23:18
-gated_linear_attention,attention,PASS,+14444.21,762.0300,18.1,1,,2026-10-12 18:43:10
-gated_linear_attn,attention,PASS,+14458.35,749.2100,15.4,1,,2026-10-12 18:43:29
-hgrn2_outer,attention,PASS,+740.02,3159.5600,22.5,1,,2026-10-12 18:43:45
-svd_linear,attention,PASS,+2270.52,1481.8000,14.3,1,,2026-10-12 18:44:09
-aegis_v3,attention,DEPRECATED,,,300.8,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 18:56:15
-aegis_v4,attention,DEPRECATED,,,300.6,1,Deprecated alias of hybrid_local_kernel (canonical is PASS delta=4094.21),2026-10-12 19:01:17
-aegis_v5,attention,DEPRECATED,,,47.2,1,Deprecated alias of split_head_hybrid (canonical is PASS delta=368.57),2026-10-12 19:06:18
-aegis_hybrid,attention,DEPRECATED,,,30.8,1,Deprecated alias of tri_branch_hybrid,2026-10-12 19:20:24
-aegis_spectron_fp8,attention,DEPRECATED,,,9.8,1,Deprecated alias of spectron_fp8,2026-10-12 19:20:55
-adasplash_attention,attention,PASS,+2.16,41.0500,91.4,1,,2026-10-12 19:28:46
-kd_cosformer_C_20261012_205039,cosformer__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:52:06.288469+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,32.77,-1.14,100.0,,2894.31,9bf4f09ba940ab1d
-kd_cosformer_attention_C_20261012_205225,cosformer_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:53:51.448258+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,finetune,,,,32.76,-0.98,100.0,,2894.63,4469ac7497ff0382
-kd_tri_branch_hybrid_C_20261012_205626,tri_branch_hybrid__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T20:57:26.575506+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,finetune,,,,4007.32,-336.18,-9.25,,2829.53,5041c2d3885a6be4
-kd_cosformer_C_20261012_220706,cosformer__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T22:07:35.521397+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,36.44,0.01,28.13,,6566.51,643a52839479a745
-kd_cosformer_C_20261012_220805,cosformer__gpt2__wikitext2__rank32__8563a57c260b,2026-10-12T22:08:47.218500+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,36.16,-0.01,0.0,,7446.92,ffc0e1ff5309471b
-<<<<<<< HEAD
-kd_block_transformer_hiba_C_20261012_222648,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:29:10.660803+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,64.07,12.26,30.57,,5399.57,e9a5084fc4950658
-kd_block_transformer_hiba_C_20261012_222933,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:32:02.421555+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,63.51,12.82,31.96,,5399.82,68552e03da76a158
-kd_block_transformer_hiba_C_20261012_223236,block_transformer_hiba__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:34:49.643346+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,64.67,11.47,28.73,,5935.74,bb2d31f65645135d
-kd_svd_linear_attn_C_20261012_224655,svd_linear_attn__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:49:01.783671+00:00,success,svd_linear_attn,attention,gpt2,wikitext2,32,finetune,,,,393.67,2935.76,90.37,,5570.63,ecf90c04e2ea3556
-kd_qcqa_attention_C_20261012_225935,qcqa_attention__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T23:01:04.980015+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,finetune,,,,38.38,1.32,37.93,,5755.56,bbc7874e83e9dfd0
-=======
-kd_svd_linear_attn_C_20261012_221239,svd_linear_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T22:14:53.823354+00:00,success,svd_linear_attn,attention,gpt2,wikitext2,32,finetune,,,,164.46,3463.98,96.57,,5382.41,3d73222c78c616e8
-kd_svd_linear_inject_C_20261012_221506,svd_linear_inject__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T22:17:23.509685+00:00,success,svd_linear_inject,attention,gpt2,wikitext2,32,finetune,,,,165.92,3460.17,96.52,,5382.41,e7062faf4c0ffe62
-kd_block_transformer_hiba_C_20261012_222945,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:30:29.708063+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,63.84,12.49,31.13,,5152.62,260a7e32a869553f
-kd_eat_C_20261012_230143,eat__gpt2__wikitext2__rank32__3dbf5f5dbe1e,2026-10-12T23:02:13.393587+00:00,success,eat,attention,gpt2,wikitext2,32,finetune,,,,36.52,0.04,11.43,,3325.47,dbd3fe328deb2179
-kd_eat_attention_C_20261012_230233,eat_attention__gpt2__wikitext2__rank32__3dbf5f5dbe1e,2026-10-12T23:03:03.074722+00:00,success,eat_attention,attention,gpt2,wikitext2,32,finetune,,,,36.51,0.02,6.25,,3325.47,a1ac54cd11e27fe5
-kd_qcqa_attention_C_20261012_230139,qcqa_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T23:04:11.946533+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,finetune,,,,38.91,0.94,25.82,,4788.46,a84a1bd688000522
->>>>>>> eef02d50ae (add results)
-kd_gqa_attention_C_20261013_010935,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:11:44.130408+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,finetune,,,,246.99,604.25,81.02,,5923.52,93f5ba273999f0df
-kd_gqa_attention_C_20261013_011359,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:15:09.483455+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,finetune,,,,244.4,605.85,81.26,,5923.52,d395e599099f7839
-kd_gla_attention_C_20261013_061527,gla_attention__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-13T06:19:21.065287+00:00,success,gla_attention,attention,gpt2,wikitext2,32,finetune,,,,544.39,1154907.58,99.96,,3807.35,6a127a0c8ec660ff
+run_id,run_key,timestamp,status,module,module_type,model,dataset,rank,accuracy,f1,loss,duration_s,peak_vram_mb,pre_ppl,post_ppl,post_ppl_stage1,post_ppl_stage2,recovery_pct,kd_gain,train_duration_s
+kd_mla_C_20261010_013033,mla__gpt2__wikitext2__rank32__61b7b96d0ca8,2026-10-09T22:04:57.512416+00:00,success,mla,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3965.64,,,,,,,
+kd_mla_C_20261010_013556,mla__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T22:10:31.782937+00:00,success,mla,attention,gpt2,wikitext2,64,0.0,0.0,0.0,0.0,3967.32,,,,,,,
+kd_mqa_C_20261010_014240,mqa__gpt2__wikitext2__rank64__c5550b404380,2026-10-09T22:18:04.519155+00:00,success,mqa,attention,gpt2,wikitext2,64,0.0,0.0,0.0,0.0,3969.73,,,,,,,
+kd_nha_C_20261010_021101,nha__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:48:35.487282+00:00,success,nha,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3379.77,,,,,,,
+kd_qcqa_C_20261010_022350,qcqa__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T22:59:08.033113+00:00,success,qcqa,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3378.86,,,,,,,
+kd_dynamic_conv_attention_C_20261010_023805,dynamic_conv_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-09T23:13:19.573164+00:00,success,dynamic_conv_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3382.08,,,,,,,
+kd_wgqa_C_20261010_041834,wgqa__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-10T00:49:36.219182+00:00,success,wgqa,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3376.89,,,,,,,
+kd_regla_attention_C_20261010_042753,regla_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-10T01:07:28.514894+00:00,failed,regla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3426.29,,,,,,,
+kd_gated_hybrid_kernel_C_20261010_053735,gated_hybrid_kernel__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-10T02:22:32.219986+00:00,success,gated_hybrid_kernel,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2964.97,,,,,,,
+kd_mixattention_moska_inject_C_20261010_065508,mixattention_moska_inject__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-10T03:30:17.330135+00:00,success,mixattention_moska_inject,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2234.24,,,,,,,
+kd_decay_linear_attn_C_20261010_173642,decay_linear_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-10T14:12:38.790985+00:00,success,decay_linear_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3381.03,,,,,,,
+kd_adaptive_span_attention_C_20261010_174641,adaptive_span_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-10T14:23:12.959294+00:00,success,adaptive_span_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3379.72,,,,,,,
+kd_eat_C_20261010_181305,eat__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-10T14:49:02.478503+00:00,success,eat,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3379.34,,,,,,,
+kd_adaptive_span_attention_C_20261010_195527,adaptive_span_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:29:30.960676+00:00,success,adaptive_span_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3378.22,,,,,,,
+kd_block_transformer_hiba_C_20261010_195951,block_transformer_hiba__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:32:44.170878+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3413.84,,,,,,,
+kd_progressive_token_pruning_C_20261010_200304,progressive_token_pruning__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:36:27.464002+00:00,success,progressive_token_pruning,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3379.23,,,,,,,
+kd_eat_C_20261010_200647,eat__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:40:28.064170+00:00,success,eat,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3445.3,,,,,,,
+kd_lola_attention_C_20261010_201048,lola_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:45:24.632880+00:00,success,lola_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3310.73,,,,,,,
+kd_squeezing_heads_distill_C_20261010_201616,squeezing_heads_distill__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:49:29.535095+00:00,success,squeezing_heads_distill,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3376.84,,,,,,,
+kd_sink_attention_C_20261010_202031,sink_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-10T16:53:31.235957+00:00,success,sink_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3377.71,,,,,,,
+kd_gqa_attention_C_20261011_122655,gqa_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T08:57:58.088547+00:00,success,gqa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1108.59,,,,,,,
+kd_samba_m3_C_20261011_122827,samba_m3__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:03:45.296022+00:00,success,samba_m3,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1210.04,,,,,,,
+kd_hybrid_attention_C_20261011_123434,hybrid_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:05:59.599209+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1189.35,,,,,,,
+kd_fused_svd_kernel_C_20261011_123628,fused_svd_kernel__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:10:38.483716+00:00,success,fused_svd_kernel,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1061.64,,,,,,,
+kd_adaptive_sparse_attention_C_20261011_124112,adaptive_sparse_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:13:10.906173+00:00,success,adaptive_sparse_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1146.94,,,,,,,
+kd_adaptive_span_attention_C_20261011_124348,adaptive_span_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:15:10.009732+00:00,success,adaptive_span_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1146.93,,,,,,,
+kd_triton_svd_linear_attention_C_20261011_124604,triton_svd_linear_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:17:16.260843+00:00,success,triton_svd_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1092.89,,,,,,,
+kd_a3_compressor_C_20261011_125323,a3_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:26:32.008349+00:00,success,a3_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2426.55,,,,,,,
+kd_aa_svd_compressor_C_20261011_125700,aa_svd_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:30:11.926980+00:00,success,aa_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2426.68,,,,,,,
+kd_aatc_xkv_compressor_C_20261011_130041,aatc_xkv_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:33:29.455172+00:00,success,aatc_xkv_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2708.26,,,,,,,
+kd_adaptive_ranks_C_20261011_130357,adaptive_ranks__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:36:49.980111+00:00,success,adaptive_ranks,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.83,,,,,,,
+kd_adasvd_compressor_C_20261011_130719,adasvd_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:40:16.182539+00:00,success,adasvd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2457.99,,,,,,,
+kd_cosformer_C_20261011_131019,cosformer__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:41:43.785145+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1186.38,,,,,,,
+kd_admm_compressor_C_20261011_131045,admm_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:43:27.939489+00:00,success,admm_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2523.88,,,,,,,
+kd_admm_pruner_C_20261011_131352,admm_pruner__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:46:38.656857+00:00,success,admm_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2523.01,,,,,,,
+kd_adaptive_sparse_attention_C_20261011_131548,adaptive_sparse_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:47:37.806328+00:00,success,adaptive_sparse_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1146.94,,,,,,,
+kd_armor_pruner_C_20261011_131707,armor_pruner__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:50:08.193452+00:00,success,armor_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2238.62,,,,,,,
+kd_ast_pruner_C_20261011_132034,ast_pruner__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:53:48.090003+00:00,success,ast_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2628.98,,,,,,,
+kd_adaptive_sparse_attention_C_20261011_132348,adaptive_sparse_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T09:55:40.129274+00:00,success,adaptive_sparse_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1146.94,,,,,,,
+kd_astro_quantizer_C_20261011_132417,astro_quantizer__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T09:56:58.917367+00:00,success,astro_quantizer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2519.06,,,,,,,
+kd_bonsai_pruner_C_20261011_132725,bonsai_pruner__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:00:33.885122+00:00,success,bonsai_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2633.95,,,,,,,
+kd_cachenotes_compressor_C_20261011_133059,cachenotes_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:03:52.013151+00:00,success,cachenotes_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2522.14,,,,,,,
+kd_a3_compressor_C_20261011_133627,a3_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T10:07:04.617863+00:00,success,a3_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1075.47,,,,,,,
+kd_come_compressor_C_20261011_133417,come_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:08:03.764926+00:00,success,come_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2182.04,,,,,,,
+kd_compot_compressor_C_20261011_133833,compot_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:12:02.595935+00:00,success,compot_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2068.37,,,,,,,
+kd_cr_compressor_C_20261011_134731,cr_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:21:14.492834+00:00,success,cr_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2057.62,,,,,,,
+kd_cur_compressor_C_20261011_135141,cur_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:24:58.155610+00:00,success,cur_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2371.76,,,,,,,
+kd_cur_moe_compressor_C_20261011_135524,cur_moe_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:28:12.024769+00:00,success,cur_moe_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2502.42,,,,,,,
+kd_delta_kv_C_20261011_135839,delta_kv__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:31:25.008671+00:00,success,delta_kv,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2521.48,,,,,,,
+kd_direct_svd_C_20261011_140151,direct_svd__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:35:13.234554+00:00,success,direct_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2086.64,,,,,,,
+kd_dobi_svd_C_20261011_140538,dobi_svd__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:37:48.797106+00:00,success,dobi_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2103.61,,,,,,,
+kd_drone_compressor_C_20261011_140815,drone_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:41:24.613548+00:00,success,drone_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2153.95,,,,,,,
+kd_dynamic_rank_C_20261011_141151,dynamic_rank__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:45:08.477904+00:00,success,dynamic_rank,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2048.16,,,,,,,
+kd_enlighten_compressor_C_20261011_141536,enlighten_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:48:23.196178+00:00,success,enlighten_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2520.94,,,,,,,
+kd_entropy_budget_allocation_C_20261011_141900,entropy_budget_allocation__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:52:24.066244+00:00,success,entropy_budget_allocation,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2049.83,,,,,,,
+kd_erc_svd_C_20261011_142252,erc_svd__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T10:56:18.904003+00:00,success,erc_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2030.89,,,,,,,
+kd_flap_C_20261011_143148,flap__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:04:31.872494+00:00,success,flap,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2515.47,,,,,,,
+kd_flat_llm_C_20261011_143458,flat_llm__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:08:05.821548+00:00,success,flat_llm,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2378.88,,,,,,,
+kd_frandi_compressor_C_20261011_143831,frandi_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:11:46.127594+00:00,success,frandi_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2051.58,,,,,,,
+kd_fwsvd_compressor_C_20261011_144213,fwsvd_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:15:02.659637+00:00,success,fwsvd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2514.99,,,,,,,
+kd_gfws_C_20261011_144529,gfws__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:18:17.680698+00:00,success,gfws,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2517.72,,,,,,,
+kd_grecodec_compressor_C_20261011_144844,grecodec_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:21:59.635372+00:00,success,grecodec_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2050.87,,,,,,,
+kd_hashed_net_compressor_C_20261011_145226,hashed_net_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:25:21.603744+00:00,success,hashed_net_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2515.76,,,,,,,
+kd_huffman_coder_C_20261011_145548,huffman_coder__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:28:32.066668+00:00,success,huffman_coder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.76,,,,,,,
+kd_hybrid_svd_layer_C_20261011_145859,hybrid_svd_layer__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:32:19.083727+00:00,success,hybrid_svd_layer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2148.7,,,,,,,
+kd_hybridkv_compressor_C_20261011_150245,hybridkv_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:35:32.031046+00:00,success,hybridkv_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.77,,,,,,,
+kd_kmeans_quantize_C_20261011_150558,kmeans_quantize__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:39:21.743378+00:00,success,kmeans_quantize,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2201.29,,,,,,,
+kd_kronecker_compressor_C_20261011_150946,kronecker_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T11:44:24.356861+00:00,success,kronecker_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2086.52,,,,,,,
+kd_lillama_compressor_C_20261011_152959,lillama_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:02:39.004841+00:00,success,lillama_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.76,,,,,,,
+kd_lsc_compressor_C_20261011_153303,lsc_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:05:46.291956+00:00,success,lsc_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2517.76,,,,,,,
+kd_mgie_budget_C_20261011_153637,mgie_budget__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:09:19.525529+00:00,success,mgie_budget,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2528.95,,,,,,,
+kd_mlorq_compressor_C_20261011_153944,mlorq_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:14:22.277858+00:00,success,mlorq_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2147.76,,,,,,,
+kd_modegpt_compressor_C_20261011_154446,modegpt_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:18:29.915806+00:00,success,modegpt_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2048.72,,,,,,,
+kd_oats_compressor_C_20261011_155401,oats_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:27:03.294222+00:00,success,oats_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2515.7,,,,,,,
+kd_optimal_subspace_projection_C_20261011_155731,optimal_subspace_projection__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:30:19.909802+00:00,success,optimal_subspace_projection,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2517.31,,,,,,,
+kd_proxsparse_C_20261011_160045,proxsparse__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:33:25.217091+00:00,success,proxsparse,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2522.64,,,,,,,
+kd_residual_svd_compressor_C_20261011_160355,residual_svd_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:36:44.179146+00:00,success,residual_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.76,,,,,,,
+kd_roast_hashed_linear_C_20261011_160710,roast_hashed_linear__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:39:56.583504+00:00,success,roast_hashed_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.6,,,,,,,
+kd_rotational_slicegpt_int4_C_20261011_161023,rotational_slicegpt_int4__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:43:17.108295+00:00,success,rotational_slicegpt_int4,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2517.31,,,,,,,
+kd_rpca_compressor_C_20261011_161343,rpca_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:46:47.388294+00:00,success,rpca_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2519.72,,,,,,,
+kd_saes_svd_v2_C_20261011_161716,saes_svd_v2__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:50:12.123863+00:00,success,saes_svd_v2,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.51,,,,,,,
+kd_salr_C_20261011_162045,salr__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:53:45.183865+00:00,success,salr,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2520.1,,,,,,,
+kd_sdrm_compressor_C_20261011_162415,sdrm_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T12:57:20.081292+00:00,success,sdrm_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2435.26,,,,,,,
+kd_slicegpt_C_20261011_162752,slicegpt__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:00:47.774600+00:00,success,slicegpt,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.29,,,,,,,
+kd_slim_compressor_C_20261011_163620,slim_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:09:28.169039+00:00,success,slim_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2521.82,,,,,,,
+kd_soka_compressor_C_20261011_164000,soka_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:12:51.155979+00:00,success,soka_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.01,,,,,,,
+kd_sparsegpt_C_20261011_164320,sparsegpt__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:17:07.428542+00:00,success,sparsegpt,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2520.1,,,,,,,
+kd_subspace_projection_C_20261011_164739,subspace_projection__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:20:21.800833+00:00,success,subspace_projection,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.07,,,,,,,
+kd_svd_linear_C_20261011_165050,svd_linear__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:23:56.089341+00:00,success,svd_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.85,,,,,,,
+kd_swift_svd_C_20261011_165933,swift_svd__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:33:01.959040+00:00,success,swift_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2290.95,,,,,,,
+kd_swift_svd_act_C_20261011_170329,swift_svd_act__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:36:14.954932+00:00,success,swift_svd_act,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2515.88,,,,,,,
+kd_tomoe_compressor_C_20261011_170640,tomoe_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:39:29.307264+00:00,success,tomoe_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2542.55,,,,,,,
+kd_tt_compressor_C_20261011_170955,tt_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:42:45.365843+00:00,success,tt_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2516.76,,,,,,,
+kd_uniql_compressor_C_20261011_171310,uniql_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:45:53.392239+00:00,success,uniql_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.6,,,,,,,
+kd_zerokv_neo_compressor_C_20261011_171620,zerokv_neo_compressor__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T13:49:15.491096+00:00,success,zerokv_neo_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2518.47,,,,,,,
+kd_mamba_shedder_C_20261011_173052,mamba_shedder__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T14:01:32.733150+00:00,success,mamba_shedder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1056.01,,,,,,,
+kd_adaptive_span_attention_C_20261011_173212,adaptive_span_attention__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-11T14:03:49.910024+00:00,success,adaptive_span_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1146.93,,,,,,,
+kd_a3_compressor_C_20261011_173646,a3_compressor__gpt2__wikitext2__rank16__69bee2323159,2026-10-11T14:08:28.977241+00:00,success,a3_compressor,attention,gpt2,wikitext2,16,0.0,0.0,0.0,0.0,2535.92,,,,,,,
+kd_a3_compressor_C_20261011_194359,a3_compressor__gpt2__wikitext2__rank16__cd6f052521ab,2026-10-11T19:45:38.140818+00:00,success,a3_compressor,attention,gpt2,wikitext2,16,0.0,0.0,0.0,0.0,2200.91,,,,,,,
+kd_adaptive_span_attention_C_20261011_211708,adaptive_span_attention__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-11T21:18:24.874191+00:00,success,adaptive_span_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2214.71,,,,,,,
+kd_adaptive_sparse_attention_C_20261011_212039,adaptive_sparse_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-11T21:23:32.691121+00:00,success,adaptive_sparse_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3406.3,,,,,,,
+kd_adaptive_svd_attention_C_20261011_212735,adaptive_svd_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-11T21:30:10.477834+00:00,success,adaptive_svd_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3340.96,,,,,,,
+kd_alibi_C_20261011_214306,alibi__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T21:46:15.896234+00:00,success,alibi,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4688.13,,,,,,,
+kd_alibi_C_20261011_214624,alibi__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T21:49:33.432078+00:00,success,alibi,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4696.03,,,,,,,
+kd_bam_umoe_C_20261011_215309,bam_umoe__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T21:57:14.942433+00:00,success,bam_umoe,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4542.8,,,,,,,
+kd_block_transformer_hiba_C_20261011_215721,block_transformer_hiba__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:00:25.210601+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4650.15,,,,,,,
+kd_chela_slay_C_20261011_220031,chela_slay__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:07:39.869658+00:00,success,chela_slay,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4603.44,,,,,,,
+kd_chela_slay_attention_C_20261011_220746,chela_slay_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:14:37.078859+00:00,success,chela_slay_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4602.83,,,,,,,
+kd_cluster_attention_C_20261011_221444,cluster_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:19:15.049662+00:00,success,cluster_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4602.29,,,,,,,
+kd_compressed_attention_C_20261011_221922,compressed_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:22:13.249812+00:00,success,compressed_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4523.74,,,,,,,
+kd_compressed_mha_attention_C_20261011_222221,compressed_mha_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:25:53.782218+00:00,success,compressed_mha_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4525.85,,,,,,,
+kd_cosformer_C_20261011_222602,cosformer__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:28:28.958631+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4669.19,,,,,,,
+kd_cosformer_attention_C_20261011_222835,cosformer_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:30:56.610724+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4669.19,,,,,,,
+kd_cross_attention_C_20261011_223103,cross_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:34:00.591493+00:00,success,cross_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4602.35,,,,,,,
+kd_decay_linear_attention_C_20261011_223408,decay_linear_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:38:09.087963+00:00,success,decay_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4604.27,,,,,,,
+kd_decay_linear_attn_C_20261011_223816,decay_linear_attn__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:42:13.157494+00:00,success,decay_linear_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4603.69,,,,,,,
+kd_dynamic_conv_attention_C_20261011_224219,dynamic_conv_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:47:41.273187+00:00,success,dynamic_conv_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4605.16,,,,,,,
+kd_eat_C_20261011_224748,eat__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:50:21.540948+00:00,success,eat,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4667.36,,,,,,,
+kd_eat_attention_C_20261011_225028,eat_attention__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:52:56.432843+00:00,success,eat_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4668.24,,,,,,,
+kd_expert_choice_moe_C_20261011_225303,expert_choice_moe__gpt2__wikitext2__rank32__7521714c81c8,2026-10-11T22:56:45.072992+00:00,success,expert_choice_moe,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4664.15,,,,,,,
+kd_flash_attention3_C_20261012_010847,flash_attention3__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:13:41.231835+00:00,success,flash_attention3,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.77,,,,,,,
+kd_flash_attention3_fp8_C_20261012_011352,flash_attention3_fp8__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:16:15.501855+00:00,success,flash_attention3_fp8,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.27,,,,,,,
+kd_full_attention_C_20261012_011639,full_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:20:09.635037+00:00,success,full_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.97,,,,,,,
+kd_huffman_coder_C_20261012_012229,huffman_coder__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:23:11.604272+00:00,success,huffman_coder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,581.99,,,,,,,
+kd_kronecker_tt_lora_C_20261012_012336,kronecker_tt_lora__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:24:30.324287+00:00,success,kronecker_tt_lora,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,920.87,,,,,,,
+kd_fused_svd_kernel_C_20261012_012024,fused_svd_kernel__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:24:30.175094+00:00,success,fused_svd_kernel,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2824.84,,,,,,,
+kd_rotational_slicegpt_int4_C_20261012_012444,rotational_slicegpt_int4__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:24:55.248869+00:00,success,rotational_slicegpt_int4,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,581.99,,,,,,,
+kd_fusion_attn_C_20261012_012442,fusion_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:28:34.044237+00:00,success,fusion_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2838.69,,,,,,,
+kd_rotational_slicegpt_int4_C_20261012_012842,rotational_slicegpt_int4__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:29:04.534260+00:00,success,rotational_slicegpt_int4,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,837.73,,,,,,,
+kd_subspace_projection_C_20261012_012942,subspace_projection__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:29:58.453435+00:00,success,subspace_projection,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,582.41,,,,,,,
+kd_soka_compressor_C_20261012_013030,soka_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:30:45.838839+00:00,success,soka_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,575.19,,,,,,,
+kd_galerkin_attention_C_20261012_012844,galerkin_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:31:40.818595+00:00,success,galerkin_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.65,,,,,,,
+kd_tomoe_compressor_C_20261012_013112,tomoe_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:31:44.739382+00:00,success,tomoe_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,750.24,,,,,,,
+kd_swift_svd_act_C_20261012_013206,swift_svd_act__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:32:25.366061+00:00,success,swift_svd_act,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,564.93,,,,,,,
+kd_salr_C_20261012_013249,salr__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:33:06.337374+00:00,success,salr,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,554.96,,,,,,,
+kd_rpca_compressor_C_20261012_013335,rpca_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:34:40.944636+00:00,success,rpca_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,530.86,,,,,,,
+kd_gated_delta_net_C_20261012_013153,gated_delta_net__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:35:56.973721+00:00,success,gated_delta_net,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3002.04,,,,,,,
+kd_svd_linear_C_20261012_013620,svd_linear__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:36:37.460341+00:00,success,svd_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,590.35,,,,,,,
+kd_slicegpt_C_20261012_013800,slicegpt__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:38:20.738616+00:00,success,slicegpt,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,854.21,,,,,,,
+kd_uniql_compressor_C_20261012_013908,uniql_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:39:26.433621+00:00,success,uniql_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,581.99,,,,,,,
+kd_liftr_C_20261012_013917,liftr__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:39:33.441882+00:00,success,liftr,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,581.99,,,,,,,
+kd_gated_deltanet_block_C_20261012_013607,gated_deltanet_block__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:40:00.225524+00:00,success,gated_deltanet_block,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2998.87,,,,,,,
+kd_uniql_compressor_C_20261012_014333,uniql_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:44:01.361189+00:00,success,uniql_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,541.85,,,,,,,
+kd_goldfinch_ahn_C_20261012_014011,goldfinch_ahn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:44:12.193149+00:00,success,goldfinch_ahn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2899.36,,,,,,,
+kd_lsc_compressor_C_20261012_014506,lsc_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:45:20.418003+00:00,success,lsc_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,879.71,,,,,,,
+kd_mgie_budget_C_20261012_014547,mgie_budget__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:46:08.476259+00:00,success,mgie_budget,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,852.14,,,,,,,
+kd_gqa_attention_C_20261012_014421,gqa_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:47:06.060934+00:00,success,gqa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2813.47,,,,,,,
+kd_griffin_ssd_C_20261012_014742,griffin_ssd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T01:52:28.654077+00:00,success,griffin_ssd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.14,,,,,,,
+kd_residual_svd_compressor_C_20261012_015210,residual_svd_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:52:32.515902+00:00,success,residual_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,506.9,,,,,,,
+kd_tt_compressor_C_20261012_015314,tt_compressor__gpt2__wikitext2__rank32__cf433ea6f321,2026-10-12T01:53:36.715013+00:00,success,tt_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,618.89,,,,,,,
+kd_hgrn2_gated_deltanet_C_20261012_021105,hgrn2_gated_deltanet__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:20:46.116024+00:00,success,hgrn2_gated_deltanet,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3324.79,,,,,,,
+kd_hgrn2_gated_layer_C_20261012_022114,hgrn2_gated_layer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:30:00.979022+00:00,success,hgrn2_gated_layer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3127.15,,,,,,,
+kd_hla_attention_C_20261012_023945,hla_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:41:38.823884+00:00,success,hla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2870.27,,,,,,,
+kd_hybrid_attention_C_20261012_024149,hybrid_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:46:11.683501+00:00,failed,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3189.88,,,,,,,
+kd_hybrid_local_kernel_C_20261012_024624,hybrid_local_kernel__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:55:30.354587+00:00,success,hybrid_local_kernel,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2822.13,,,,,,,
+kd_inject_leka_v2_C_20261012_025540,inject_leka_v2__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T02:59:47.475595+00:00,success,inject_leka_v2,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2822.78,,,,,,,
+kd_inject_leka_v3_C_20261012_025958,inject_leka_v3__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:04:01.919505+00:00,success,inject_leka_v3,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2817.22,,,,,,,
+kd_inject_native_hybrid_attention_C_20261012_030411,inject_native_hybrid_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:07:12.456452+00:00,success,inject_native_hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2845.87,,,,,,,
+kd_jamba_C_20261012_030721,jamba__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:13:41.570516+00:00,success,jamba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3079.86,,,,,,,
+kd_jamba_info_C_20261012_031350,jamba_info__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:19:34.266625+00:00,success,jamba_info,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2922.44,,,,,,,
+kd_kda_attention_C_20261012_031942,kda_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:21:59.419890+00:00,failed,kda_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2873.57,,,,,,,
+kd_mamba_shedder_C_20261012_032020,mamba_shedder__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:24:26.927188+00:00,success,mamba_shedder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3007.86,,,,,,,
+kd_lola_attention_C_20261012_032242,lola_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:27:12.800653+00:00,success,lola_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2784.54,,,,,,,
+kd_lora_attention_C_20261012_032724,lora_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:30:15.825874+00:00,success,lora_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2843.27,,,,,,,
+kd_lsh_attention_C_20261012_033029,lsh_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:34:06.736337+00:00,success,lsh_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2813.89,,,,,,,
+kd_mamba_block_C_20261012_033420,mamba_block__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:38:51.320795+00:00,success,mamba_block,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3316.31,,,,,,,
+kd_minimal_nova_C_20261012_033918,minimal_nova__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:41:46.738262+00:00,success,minimal_nova,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2785.79,,,,,,,
+kd_minimal_svd_C_20261012_034159,minimal_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:44:29.489146+00:00,success,minimal_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2788.41,,,,,,,
+kd_mixattention_moska_C_20261012_034444,mixattention_moska__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:47:14.080961+00:00,success,mixattention_moska,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2871.52,,,,,,,
+kd_mla_attention_C_20261012_034729,mla_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:49:55.691667+00:00,success,mla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2809.81,,,,,,,
+kd_moba_attention_C_20261012_035009,moba_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:53:22.634670+00:00,success,moba_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2868.3,,,,,,,
+kd_moe_deltakv_paged_C_20261012_035333,moe_deltakv_paged__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T03:58:34.992114+00:00,success,moe_deltakv_paged,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.09,,,,,,,
+kd_mqa_C_20261012_035845,mqa__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:01:15.906130+00:00,success,mqa,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2808.91,,,,,,,
+kd_naive_svd_C_20261012_040129,naive_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:03:51.230810+00:00,success,naive_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2792.15,,,,,,,
+kd_nexus_C_20261012_041149,nexus__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:15:04.885947+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.23,,,,,,,
+kd_nsa_attention_C_20261012_041517,nsa_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:18:35.773472+00:00,success,nsa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2842.15,,,,,,,
+kd_nystrom_attention_C_20261012_041848,nystrom_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:21:35.150585+00:00,success,nystrom_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.77,,,,,,,
+kd_optimized_hybrid_attention_C_20261012_042149,optimized_hybrid_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:25:12.021190+00:00,success,optimized_hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2839.87,,,,,,,
+kd_orion_C_20261012_042524,orion__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:29:37.248071+00:00,success,orion,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2784.72,,,,,,,
+kd_padre_attention_C_20261012_042948,padre_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:33:01.510026+00:00,success,padre_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.77,,,,,,,
+kd_phantom_C_20261012_043514,phantom__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:41:05.782763+00:00,success,phantom,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2782.72,,,,,,,
+kd_primal_attention_C_20261012_044116,primal_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:44:57.659554+00:00,success,primal_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2839.02,,,,,,,
+kd_progressive_token_pruning_C_20261012_044512,progressive_token_pruning__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:48:09.959614+00:00,success,progressive_token_pruning,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.78,,,,,,,
+kd_projection_factorized_attn_C_20261012_044824,projection_factorized_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:50:59.179593+00:00,success,projection_factorized_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2780.86,,,,,,,
+kd_qcqa_attention_C_20261012_045113,qcqa_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T04:54:04.980296+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.3,,,,,,,
+kd_rala_attention_C_20261012_045419,rala_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:02:43.196045+00:00,failed,rala_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2843.75,,,,,,,
+kd_rala_compressor_C_20261012_050253,rala_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:11:32.892674+00:00,failed,rala_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2843.0,,,,,,,
+kd_reap_moe_C_20261012_051143,reap_moe__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:15:04.029476+00:00,success,reap_moe,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2886.52,,,,,,,
+kd_regla_attention_C_20261012_051514,regla_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:25:04.621083+00:00,success,regla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2885.28,,,,,,,
+kd_residual_svd_attention_C_20261012_052515,residual_svd_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:28:26.485634+00:00,success,residual_svd_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2775.47,,,,,,,
+kd_routing_attention_C_20261012_052841,routing_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:34:17.612751+00:00,success,routing_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2785.84,,,,,,,
+kd_rpc_attention_C_20261012_053428,rpc_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:38:40.222639+00:00,success,rpc_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2785.77,,,,,,,
+kd_salt_attention_C_20261012_053854,salt_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:42:13.209037+00:00,success,salt_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2869.42,,,,,,,
+kd_samba_m3_C_20261012_054226,samba_m3__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:48:07.907132+00:00,success,samba_m3,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2909.74,,,,,,,
+kd_samba_moe_C_20261012_054818,samba_moe__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T05:54:34.202941+00:00,success,samba_moe,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3150.09,,,,,,,
+kd_sink_attention_C_20261012_061448,sink_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:17:30.659266+00:00,success,sink_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2836.77,,,,,,,
+kd_soa_attn_C_20261012_061745,soa_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:20:42.281184+00:00,success,soa_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2794.8,,,,,,,
+kd_spectraformer_attention_C_20261012_062057,spectraformer_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:23:05.944500+00:00,success,spectraformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.82,,,,,,,
+kd_spectron_C_20261012_062318,spectron__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:26:10.782160+00:00,success,spectron,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2786.47,,,,,,,
+kd_split_head_hybrid_C_20261012_063625,split_head_hybrid__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:44:26.847728+00:00,success,split_head_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2862.16,,,,,,,
+kd_svd_compressed_C_20261012_064437,svd_compressed__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:47:57.469911+00:00,success,svd_compressed,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2780.77,,,,,,,
+kd_svd_linear_attention_C_20261012_064811,svd_linear_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:50:37.806553+00:00,success,svd_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2780.44,,,,,,,
+kd_svd_linear_decay_C_20261012_065051,svd_linear_decay__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:53:23.306379+00:00,success,svd_linear_decay,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2779.81,,,,,,,
+kd_svd_llm_v2_attention_C_20261012_065336,svd_llm_v2_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T06:56:18.014233+00:00,success,svd_llm_v2_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2823.76,,,,,,,
+kd_svd_projection_attention_C_20261012_070633,svd_projection_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:09:13.771990+00:00,success,svd_projection_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2781.04,,,,,,,
+kd_svd_seq_C_20261012_070926,svd_seq__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:11:16.743498+00:00,success,svd_seq,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2842.34,,,,,,,
+kd_template_attention_C_20261012_071130,template_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:14:46.243399+00:00,success,template_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2845.43,,,,,,,
+kd_token_compressed_attention_C_20261012_071500,token_compressed_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:19:20.136612+00:00,success,token_compressed_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.42,,,,,,,
+kd_tri_branch_hybrid_C_20261012_071933,tri_branch_hybrid__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:22:13.469215+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2827.08,,,,,,,
+kd_triton_cosformer_C_20261012_072226,triton_cosformer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:25:25.639540+00:00,success,triton_cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3090.62,,,,,,,
+kd_triton_svd_linear_attention_C_20261012_072538,triton_svd_linear_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:29:09.606300+00:00,success,triton_svd_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2870.5,,,,,,,
+kd_unified_rope_C_20261012_072923,unified_rope__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:32:24.218820+00:00,success,unified_rope,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2883.53,,,,,,,
+kd_upi_stuffed_mamba_C_20261012_073237,upi_stuffed_mamba__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:37:55.661083+00:00,success,upi_stuffed_mamba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2853.21,,,,,,,
+kd_vig_attention_C_20261012_073810,vig_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:46:24.479315+00:00,success,vig_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2875.38,,,,,,,
+kd_vspec_C_20261012_074638,vspec__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:50:30.374329+00:00,success,vspec,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2786.13,,,,,,,
+kd_wgqa_attention_C_20261012_075041,wgqa_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:53:43.676764+00:00,success,wgqa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2813.72,,,,,,,
+kd_xattention_C_20261012_075357,xattention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T07:57:47.098408+00:00,success,xattention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2870.8,,,,,,,
+kd_zeros_attention_C_20261012_075801,zeros_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:02:00.424750+00:00,failed,zeros_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2836.22,,,,,,,
+kd_a3_compressor_C_20261012_080214,a3_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:04:52.982548+00:00,success,a3_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3030.83,,,,,,,
+kd_aa_svd_compressor_C_20261012_080506,aa_svd_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:07:31.122767+00:00,success,aa_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3015.04,,,,,,,
+kd_adaptive_ranks_C_20261012_080745,adaptive_ranks__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:10:45.543535+00:00,success,adaptive_ranks,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3092.04,,,,,,,
+kd_adasvd_compressor_C_20261012_081100,adasvd_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:13:33.611128+00:00,success,adasvd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3045.55,,,,,,,
+kd_admm_compressor_C_20261012_081347,admm_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:16:29.043289+00:00,success,admm_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3091.98,,,,,,,
+kd_admm_pruner_C_20261012_081642,admm_pruner__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:19:13.079004+00:00,success,admm_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3093.81,,,,,,,
+kd_armor_pruner_C_20261012_081926,armor_pruner__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:22:11.507186+00:00,success,armor_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2866.83,,,,,,,
+kd_ast_pruner_C_20261012_082225,ast_pruner__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:25:12.812787+00:00,success,ast_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3252.76,,,,,,,
+kd_astro_quantizer_C_20261012_082526,astro_quantizer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:28:17.813166+00:00,success,astro_quantizer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3096.44,,,,,,,
+kd_bonsai_pruner_C_20261012_082831,bonsai_pruner__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:31:25.651084+00:00,success,bonsai_pruner,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3258.12,,,,,,,
+kd_cachenotes_compressor_C_20261012_083140,cachenotes_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:34:23.073833+00:00,success,cachenotes_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3095.39,,,,,,,
+kd_come_compressor_C_20261012_083436,come_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:37:18.312610+00:00,success,come_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2780.27,,,,,,,
+kd_compot_compressor_C_20261012_083732,compot_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:40:01.488330+00:00,success,compot_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2701.06,,,,,,,
+kd_coopq_quantizer_C_20261012_084014,coopq_quantizer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:43:17.412879+00:00,success,coopq_quantizer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3083.15,,,,,,,
+kd_cr_compressor_C_20261012_084328,cr_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:45:51.167913+00:00,success,cr_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2688.31,,,,,,,
+kd_cur_compressor_C_20261012_084604,cur_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:48:37.917053+00:00,success,cur_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2959.42,,,,,,,
+kd_cur_moe_compressor_C_20261012_084851,cur_moe_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:51:21.028433+00:00,success,cur_moe_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3067.92,,,,,,,
+kd_delta_kv_C_20261012_085134,delta_kv__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:54:24.195803+00:00,success,delta_kv,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3096.28,,,,,,,
+kd_direct_svd_C_20261012_085437,direct_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:57:04.246684+00:00,success,direct_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2710.46,,,,,,,
+kd_dobi_svd_C_20261012_085718,dobi_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T08:58:44.062805+00:00,success,dobi_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2734.43,,,,,,,
+kd_drone_compressor_C_20261012_085857,drone_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:02:08.796332+00:00,success,drone_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2782.99,,,,,,,
+kd_dynamic_rank_C_20261012_090222,dynamic_rank__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:04:39.597524+00:00,success,dynamic_rank,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2677.94,,,,,,,
+kd_enlighten_compressor_C_20261012_090453,enlighten_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:07:30.699346+00:00,success,enlighten_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3095.31,,,,,,,
+kd_entropy_budget_allocation_C_20261012_090744,entropy_budget_allocation__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:10:03.823156+00:00,success,entropy_budget_allocation,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2677.11,,,,,,,
+kd_erc_svd_C_20261012_091018,erc_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:12:45.543739+00:00,success,erc_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2661.12,,,,,,,
+kd_faq_quantizer_C_20261012_091301,faq_quantizer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:16:24.966586+00:00,success,faq_quantizer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2850.52,,,,,,,
+kd_flap_C_20261012_091639,flap__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:19:37.841163+00:00,success,flap,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3095.92,,,,,,,
+kd_flat_llm_C_20261012_091951,flat_llm__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:22:24.242741+00:00,success,flat_llm,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2962.16,,,,,,,
+kd_frandi_compressor_C_20261012_092238,frandi_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:25:12.461193+00:00,success,frandi_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2677.69,,,,,,,
+kd_fwsvd_compressor_C_20261012_092526,fwsvd_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:27:49.009398+00:00,success,fwsvd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2784.43,,,,,,,
+kd_gfws_C_20261012_092804,gfws__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:31:18.664309+00:00,success,gfws,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3087.12,,,,,,,
+kd_grecodec_compressor_C_20261012_093133,grecodec_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:34:29.483707+00:00,success,grecodec_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2681.24,,,,,,,
+kd_hashed_net_compressor_C_20261012_093443,hashed_net_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:38:00.284904+00:00,success,hashed_net_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3249.52,,,,,,,
+kd_huffman_coder_C_20261012_093814,huffman_coder__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:40:31.222760+00:00,success,huffman_coder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3094.01,,,,,,,
+kd_hybrid_svd_layer_C_20261012_094044,hybrid_svd_layer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:43:17.323174+00:00,success,hybrid_svd_layer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2762.69,,,,,,,
+kd_kmeans_quantize_C_20261012_094331,kmeans_quantize__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:46:26.368406+00:00,success,kmeans_quantize,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2836.28,,,,,,,
+kd_kronecker_compressor_C_20261012_094640,kronecker_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:49:52.288122+00:00,success,kronecker_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2713.74,,,,,,,
+kd_kronecker_tt_lora_C_20261012_095007,kronecker_tt_lora__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:53:49.045154+00:00,success,kronecker_tt_lora,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.56,,,,,,,
+kd_kvtc_compressor_C_20261012_095402,kvtc_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T09:57:05.633409+00:00,success,kvtc_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2741.48,,,,,,,
+kd_liftr_C_20261012_095720,liftr__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:00:03.098492+00:00,success,liftr,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3094.38,,,,,,,
+kd_lillama_compressor_C_20261012_100016,lillama_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:03:34.727165+00:00,success,lillama_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3095.75,,,,,,,
+kd_lsc_compressor_C_20261012_100348,lsc_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:06:49.280532+00:00,success,lsc_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3122.29,,,,,,,
+kd_mamba_shedder_C_20261012_100701,mamba_shedder__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:10:04.374102+00:00,success,mamba_shedder,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3007.86,,,,,,,
+kd_mgie_budget_C_20261012_101016,mgie_budget__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:12:55.585126+00:00,success,mgie_budget,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2683.31,,,,,,,
+kd_mlorq_compressor_C_20261012_101309,mlorq_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:16:31.122613+00:00,success,mlorq_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2798.96,,,,,,,
+kd_modegpt_compressor_C_20261012_101643,modegpt_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:19:17.850926+00:00,success,modegpt_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2679.36,,,,,,,
+kd_cosformer_C_20261012_102028,cosformer__gpt2__wikitext2__rank32__aec56a631d53,2026-10-12T10:21:11.643731+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1672.57,,,,,,,
+kd_nmf_compressor_C_20261012_101929,nmf_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:23:30.004908+00:00,success,nmf_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2879.31,,,,,,,
+kd_oats_compressor_C_20261012_102342,oats_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:27:08.617032+00:00,success,oats_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3089.74,,,,,,,
+kd_optimal_subspace_projection_C_20261012_102720,optimal_subspace_projection__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:30:19.658768+00:00,success,optimal_subspace_projection,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3094.38,,,,,,,
+kd_proxsparse_C_20261012_103033,proxsparse__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:33:16.444712+00:00,success,proxsparse,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3095.17,,,,,,,
+kd_cosformer_C_20261012_103329,cosformer__gpt2__wikitext2__rank32__aec56a631d53,2026-10-12T10:34:18.195513+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1672.57,,,,,,,
+kd_cosformer_C_20261012_103440,cosformer__gpt2__wikitext2__rank32__db7d51484bae,2026-10-12T10:36:12.090603+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1672.57,,,,,,,
+kd_residual_svd_compressor_C_20261012_103329,residual_svd_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:37:16.913953+00:00,success,residual_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2676.9,,,,,,,
+kd_roast_hashed_linear_C_20261012_103730,roast_hashed_linear__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:39:13.755818+00:00,success,roast_hashed_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2827.01,,,,,,,
+kd_rotational_slicegpt_int4_C_20261012_103926,rotational_slicegpt_int4__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:41:14.983222+00:00,success,rotational_slicegpt_int4,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2820.69,,,,,,,
+kd_rpca_compressor_C_20261012_104128,rpca_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:44:30.739083+00:00,success,rpca_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2681.69,,,,,,,
+kd_saes_svd_v2_C_20261012_104443,saes_svd_v2__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:47:44.914720+00:00,success,saes_svd_v2,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2678.11,,,,,,,
+kd_salr_C_20261012_104759,salr__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:50:58.809247+00:00,success,salr,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2685.55,,,,,,,
+kd_sdrm_compressor_C_20261012_105111,sdrm_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:54:06.538450+00:00,success,sdrm_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3014.16,,,,,,,
+kd_slicegpt_C_20261012_105419,slicegpt__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T10:57:18.064087+00:00,success,slicegpt,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2937.89,,,,,,,
+kd_slicegpt_pca_C_20261012_105730,slicegpt_pca__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:01:10.881447+00:00,success,slicegpt_pca,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3075.51,,,,,,,
+kd_slim_compressor_C_20261012_110124,slim_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:05:23.818292+00:00,success,slim_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3092.88,,,,,,,
+kd_soka_compressor_C_20261012_110537,soka_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:08:17.173984+00:00,success,soka_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2710.99,,,,,,,
+kd_sparsegpt_C_20261012_110830,sparsegpt__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:11:25.220559+00:00,success,sparsegpt,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3098.32,,,,,,,
+kd_subspace_projection_C_20261012_111139,subspace_projection__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:14:09.888201+00:00,success,subspace_projection,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2677.69,,,,,,,
+kd_svd_linear_C_20261012_111423,svd_linear__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:17:37.271895+00:00,success,svd_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2779.31,,,,,,,
+kd_svd_llm_compressor_C_20261012_111750,svd_llm_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:21:06.500998+00:00,success,svd_llm_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2777.07,,,,,,,
+kd_swift_svd_C_20261012_112120,swift_svd__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:24:24.283154+00:00,success,swift_svd,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2892.41,,,,,,,
+kd_swift_svd_act_C_20261012_112437,swift_svd_act__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:27:34.986758+00:00,success,swift_svd_act,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2681.86,,,,,,,
+kd_tomoe_compressor_C_20261012_112748,tomoe_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:31:14.902795+00:00,success,tomoe_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3134.32,,,,,,,
+kd_uniql_compressor_C_20261012_113138,uniql_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:34:24.118122+00:00,success,uniql_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2688.07,,,,,,,
+kd_zerokv_neo_compressor_C_20261012_113439,zerokv_neo_compressor__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T11:37:11.481558+00:00,success,zerokv_neo_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3096.19,,,,,,,
+kd_aegis_hybrid_C_20261012_140011,aegis_hybrid__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T14:03:05.288212+00:00,success,aegis_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2827.22,,,,,,,
+kd_kda_attention_C_20261012_145024,kda_attention__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T14:50:45.151519+00:00,success,kda_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2872.57,,,,,,,
+kd_nasc_attention_C_20261012_145103,nasc_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T14:51:55.523811+00:00,success,nasc_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2835.87,,,,,,,
+kd_performer_attention_C_20261012_145201,performer_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T14:52:26.389562+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2874.52,,,,,,,
+kd_rala_attention_C_20261012_145231,rala_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T14:54:09.603509+00:00,success,rala_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2840.0,,,,,,,
+kd_zeros_attention_C_20261012_145415,zeros_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T14:54:42.564009+00:00,success,zeros_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.34,,,,,,,
+kd_performer_attention_C_20261012_145455,performer_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T14:55:35.245913+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2871.57,,,,,,,
+kd_performer_attention_C_20261012_145700,performer_attention__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T14:57:31.861129+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2874.52,,,,,,,
+kd_performer_attention_C_20261012_145829,performer_attention__gpt2__wikitext2__rank32__e671b08c9835,2026-10-12T14:58:57.436135+00:00,failed,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2873.52,,,,,,,
+kd_hybrid_attention_C_20261012_150145,hybrid_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T15:02:05.150313+00:00,failed,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3184.26,,,,,,,
+kd_hybrid_attention_C_20261012_150648,hybrid_attention__gpt2__wikitext2__rank32__9f9cb97d6a1c,2026-10-12T15:07:20.996984+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3187.51,,,,,,,
+kd_hybrid_attention_C_20261012_151211,hybrid_attention__gpt2__wikitext2__rank32__012e6e75edc6,2026-10-12T15:13:00.317590+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2913.73,,,,,,,
+kd_gated_linear_attention_C_20261012_152028,gated_linear_attention__gpt2__wikitext2__rank32__028cb348ee38,2026-10-12T15:23:13.482326+00:00,success,gated_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.34,,,,,,,
+kd_linformer_attention_C_20261012_152149,linformer_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T15:26:13.803165+00:00,success,linformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2818.92,,,,,,,
+kd_nasc_attention_C_20261012_152824,nasc_attention__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T15:29:24.169643+00:00,success,nasc_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2834.99,,,,,,,
+kd_performer_attention_C_20261012_152929,performer_attention__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T15:30:04.467050+00:00,failed,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2869.2,,,,,,,
+kd_performer_attention_C_20261012_153438,performer_attention__gpt2__wikitext2__rank32__e877b5c579cc,2026-10-12T15:36:25.174270+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2873.52,,,,,,,
+kd_performer_attention_C_20261012_153757,performer_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T15:38:36.737900+00:00,failed,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2872.02,,,,,,,
+kd_nasc_attention_C_20261012_153046,nasc_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T15:40:40.590699+00:00,success,nasc_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2835.99,,,,,,,
+kd_performer_attention_C_20261012_154112,performer_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T15:42:08.850944+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2872.65,,,,,,,
+kd_performer_attention_C_20261012_154135,performer_attention__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T15:43:18.821352+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2869.2,,,,,,,
+kd_aa_svd_compressor_C_20261012_154401,aa_svd_compressor__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T15:45:10.216116+00:00,success,aa_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3016.67,,,,,,,
+kd_tri_branch_hybrid_C_20261012_154558,tri_branch_hybrid__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T15:47:43.568486+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2827.53,,,,,,,
+kd_performer_attention_C_20261012_154838,performer_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T15:52:16.246906+00:00,success,performer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2872.65,,,,,,,
+kd_tri_branch_hybrid_C_20261012_155123,tri_branch_hybrid__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T15:52:54.082325+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2828.53,,,,,,,
+kd_tt_compressor_C_20261012_160649,tt_compressor__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T16:08:55.342744+00:00,success,tt_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3002.31,,,,,,,
+kd_svd_mamba_C_20261012_161624,svd_mamba__gpt2__wikitext2__rank32__3bfc278effef,2026-10-12T16:21:18.960084+00:00,success,svd_mamba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1710.45,,,,,,,
+kd_gated_linear_attention_C_20261012_162312,gated_linear_attention__gpt2__wikitext2__rank32__0c248687fd69,2026-10-12T16:24:36.351809+00:00,success,gated_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1672.32,,,,,,,
+kd_svd_linear_C_20261012_162801,svd_linear__gpt2__wikitext2__rank32__0c248687fd69,2026-10-12T16:30:27.920059+00:00,success,svd_linear,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1612.13,,,,,,,
+kd_hgrn2_outer_C_20261012_163242,hgrn2_outer__gpt2__wikitext2__rank32__0c248687fd69,2026-10-12T16:35:01.906992+00:00,success,hgrn2_outer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1685.67,,,,,,,
+kd_mamba_svd_flash_C_20261012_163552,mamba_svd_flash__gpt2__wikitext2__rank32__aec56a631d53,2026-10-12T16:54:03.820894+00:00,success,mamba_svd_flash,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1829.25,,,,,,,
+kd_aatc_xkv_compressor_C_20261012_165839,aatc_xkv_compressor__gpt2__wikitext2__rank32__fd3892069e2e,2026-10-12T17:07:19.515257+00:00,success,aatc_xkv_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2044.95,,,,,,,
+kd_hybridkv_compressor_C_20261012_170830,hybridkv_compressor__gpt2__wikitext2__rank32__0c248687fd69,2026-10-12T17:09:12.645679+00:00,success,hybridkv_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2029.77,,,,,,,
+kd_aegis_hybrid_C_20261012_171540,aegis_hybrid__gpt2__wikitext2__rank32__598e9ec0410c,2026-10-12T17:17:01.854323+00:00,success,aegis_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1646.1,,,,,,,
+kd_aegis_hybrid_C_20261012_171733,aegis_hybrid__gpt2__wikitext2__rank32__a417dfca682c,2026-10-12T17:18:40.128276+00:00,success,aegis_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1647.54,,,,,,,
+kd_nexus_C_20261012_172210,nexus__gpt2__wikitext2__rank32__71480ce428cb,2026-10-12T17:23:25.638712+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2839.61,,,,,,,
+kd_nexus_C_20261012_172350,nexus__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T17:28:38.846514+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.86,,,,,,,
+kd_selective_ssm_C_20261012_172255,selective_ssm__gpt2__wikitext2__rank32__b386fa38f2a1,2026-10-12T17:30:07.630433+00:00,success,selective_ssm,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3064.51,,,,,,,
+kd_nexus_C_20261012_173140,nexus__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T17:36:35.743390+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2839.11,,,,,,,
+kd_simple_ssm_C_20261012_173201,simple_ssm__gpt2__wikitext2__rank32__b386fa38f2a1,2026-10-12T17:38:44.622479+00:00,success,simple_ssm,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3072.23,,,,,,,
+kd_nexus_C_20261012_173727,nexus__gpt2__wikitext2__rank32__891a463069c8,2026-10-12T17:40:07.463366+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.86,,,,,,,
+kd_regla_attention_C_20261012_174117,regla_attention__gpt2__wikitext2__rank32__a417dfca682c,2026-10-12T17:43:22.565260+00:00,success,regla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1698.62,,,,,,,
+kd_aegis_v1_C_20261012_174600,aegis_v1__gpt2__wikitext2__rank32__0e4165a7790b,2026-10-12T17:46:57.077109+00:00,success,aegis_v1,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1634.07,,,,,,,
+kd_spectron_fp8_C_20261012_174702,spectron_fp8__gpt2__wikitext2__rank32__0e4165a7790b,2026-10-12T17:48:12.907366+00:00,success,spectron_fp8,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1665.58,,,,,,,
+kd_aegis_v2_C_20261012_174906,aegis_v2__gpt2__wikitext2__rank32__0e4165a7790b,2026-10-12T17:50:23.565296+00:00,success,aegis_v2,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1634.57,,,,,,,
+kd_nexus_C_20261012_174928,nexus__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T17:51:46.446841+00:00,success,nexus,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2841.81,,,,,,,
+kd_aegis_spectron_fp8_C_20261012_175030,aegis_spectron_fp8__gpt2__wikitext2__rank32__0e4165a7790b,2026-10-12T17:52:26.124970+00:00,success,aegis_spectron_fp8,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1665.83,,,,,,,
+kd_regla_attention_C_20261012_175157,regla_attention__gpt2__wikitext2__rank32__f2ff2781fdda,2026-10-12T17:55:49.445609+00:00,success,regla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2887.34,,,,,,,
+kd_zeros_attention_C_20261012_175401,zeros_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T17:56:14.936344+00:00,success,zeros_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2838.69,,,,,,,
+kd_cosformer_C_20261012_175600,cosformer__gpt2__wikitext2__rank32__a417dfca682c,2026-10-12T17:57:53.688296+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1711.37,,,,,,,
+kd_adasplash_attention_C_20261012_175829,adasplash_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T17:59:53.057199+00:00,success,adasplash_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2838.27,,,,,,,
+kd_tri_branch_hybrid_C_20261012_175800,tri_branch_hybrid__gpt2__wikitext2__rank32__a417dfca682c,2026-10-12T17:59:57.800907+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1647.92,,,,,,,
+kd_factorised_matrix_state_C_20261012_180005,factorised_matrix_state__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T18:01:45.153965+00:00,success,factorised_matrix_state,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2837.41,,,,,,,
+kd_hla_attention_C_20261012_180007,hla_attention__gpt2__wikitext2__rank32__2afc05292547,2026-10-12T18:01:53.741094+00:00,success,hla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2871.27,,,,,,,
+kd_hybrid_attention_C_20261012_180205,hybrid_attention__gpt2__wikitext2__rank32__2afc05292547,2026-10-12T18:04:26.749196+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2920.11,,,,,,,
+kd_inject_leka_v1_C_20261012_180236,inject_leka_v1__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T18:06:01.364549+00:00,success,inject_leka_v1,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,4012.09,,,,,,,
+kd_hybrid_attention_C_20261012_181323,hybrid_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T18:15:00.665308+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2915.48,,,,,,,
+kd_aa_svd_compressor_C_20261012_182915,aa_svd_compressor__gpt2__wikitext2__rank32__5d1f08771ffa,2026-10-12T18:30:24.409314+00:00,success,aa_svd_compressor,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2882.92,,,,,,,
+kd_hybrid_attention_C_20261012_183253,hybrid_attention__gpt2__wikitext2__rank32__7bb0cac5bca0,2026-10-12T18:34:43.573996+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2918.86,,,,,,,
+kd_cosformer_C_20261012_184610,cosformer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T18:49:18.727691+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.81,,,,,,,
+kd_cosformer_attention_C_20261012_184610,cosformer_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T18:52:07.184928+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2882.15,,,,,,,
+kd_cosformer_C_20261012_185336,cosformer__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T18:56:45.149565+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2897.01,,,,,,,
+kd_cosformer_attention_C_20261012_185336,cosformer_attention__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T18:59:33.024091+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2882.05,,,,,,,
+kd_cosformer_C_20261012_190100,cosformer__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T19:02:30.146201+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2892.44,,,,,,,
+kd_cosformer_attention_C_20261012_190100,cosformer_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T19:03:45.260900+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2878.27,,,,,,,
+kd_cosformer_C_20261012_191402,cosformer__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T19:15:25.271457+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.31,,,,,,,
+kd_hla_attention_C_20261012_192436,hla_attention__gpt2__wikitext2__rank32__b54923dabf70,2026-10-12T19:25:02.088298+00:00,success,hla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2871.27,,,,,,,
+kd_cosformer_C_20261012_193044,cosformer__gpt2__wikitext2__rank32__2afc05292547,2026-10-12T19:31:38.264593+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2892.44,,,,,,,
+kd_cosformer_attention_C_20261012_193044,cosformer_attention__gpt2__wikitext2__rank32__2afc05292547,2026-10-12T19:32:23.856724+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2884.56,,,,,,,
+kd_gated_linear_attention_C_20261012_193525,gated_linear_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T19:36:06.954139+00:00,success,gated_linear_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2842.67,,,,,,,
+kd_gated_linear_attn_C_20261012_193525,gated_linear_attn__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T19:36:40.836034+00:00,success,gated_linear_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2836.62,,,,,,,
+kd_hgrn2_outer_C_20261012_193525,hgrn2_outer__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T19:37:52.677835+00:00,success,hgrn2_outer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2863.79,,,,,,,
+kd_tri_branch_hybrid_C_20261012_194340,tri_branch_hybrid__gpt2__wikitext2__rank32__3616d2a89670,2026-10-12T19:44:07.812143+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1608.23,,,,,,,
+kd_cosformer_C_20261012_194632,cosformer__gpt2__wikitext2__rank32__aa5650487d1d,2026-10-12T19:46:59.436436+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.2,,,,,,,
+kd_cosformer_attention_C_20261012_194632,cosformer_attention__gpt2__wikitext2__rank32__aa5650487d1d,2026-10-12T19:47:17.462928+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2882.82,,,,,,,
+kd_tri_branch_hybrid_C_20261012_194849,tri_branch_hybrid__gpt2__wikitext2__rank32__6edf48e3db94,2026-10-12T19:49:23.917113+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1606.73,,,,,,,
+kd_cosformer_C_20261012_194951,cosformer__gpt2__wikitext2__rank32__f6c1484cba91,2026-10-12T19:50:15.170403+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2896.9,,,,,,,
+kd_cosformer_attention_C_20261012_194951,cosformer_attention__gpt2__wikitext2__rank32__f6c1484cba91,2026-10-12T19:50:32.008799+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2885.96,,,,,,,
+kd_cosformer_C_20261012_195104,cosformer__gpt2__wikitext2__rank32__aa5650487d1d,2026-10-12T19:51:30.080593+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2896.9,,,,,,,
+kd_cosformer_attention_C_20261012_195104,cosformer_attention__gpt2__wikitext2__rank32__aa5650487d1d,2026-10-12T19:51:56.772092+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2890.66,,,,,,,
+kd_tri_branch_hybrid_C_20261012_195121,tri_branch_hybrid__gpt2__wikitext2__rank32__6edf48e3db94,2026-10-12T19:52:18.154959+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,1606.73,,,,,,,
+kd_cosformer_C_20261012_195506,cosformer__gpt2__wikitext2__rank32__012e6e75edc6,2026-10-12T19:55:31.977960+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2896.9,,,,,,,
+kd_hybrid_attention_C_20261012_202619,hybrid_attention__gpt2__wikitext2__rank32__7bb0cac5bca0,2026-10-12T20:27:33.451345+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2915.48,,,,,,,
+kd_hybrid_attention_C_20261012_203143,hybrid_attention__gpt2__wikitext2__rank32__7bb0cac5bca0,2026-10-12T20:33:20.830582+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2915.61,,,,,,,
+kd_hybrid_attention_C_20261012_203557,hybrid_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T20:37:38.929958+00:00,success,hybrid_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2920.48,,,,,,,
+kd_cosformer_C_20261012_205039,cosformer__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:52:06.288469+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.31,,,,,,,
+kd_cosformer_attention_C_20261012_205225,cosformer_attention__gpt2__wikitext2__rank32__e43c08757e55,2026-10-12T20:53:51.448258+00:00,success,cosformer_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2894.63,,,,,,,
+kd_tri_branch_hybrid_C_20261012_205626,tri_branch_hybrid__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T20:57:26.575506+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,2829.53,,,,,,,
+kd_cosformer_C_20261012_220706,cosformer__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T22:07:35.521397+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,6566.51,,,,,,,
+kd_cosformer_C_20261012_220805,cosformer__gpt2__wikitext2__rank32__8563a57c260b,2026-10-12T22:08:47.218500+00:00,success,cosformer,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,7446.92,,,,,,,
+kd_block_transformer_hiba_C_20261012_222648,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:29:10.660803+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,5399.57,,,,,,,
+kd_block_transformer_hiba_C_20261012_222933,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:32:02.421555+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,5399.82,,,,,,,
+kd_block_transformer_hiba_C_20261012_223236,block_transformer_hiba__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:34:49.643346+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,5935.74,,,,,,,
+kd_svd_linear_attn_C_20261012_224655,svd_linear_attn__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:49:01.783671+00:00,success,svd_linear_attn,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,5570.63,,,,,,,
+kd_qcqa_attention_C_20261012_225935,qcqa_attention__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T23:01:04.980015+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,5755.56,,,,,,,
+kd_gqa_attention_C_20261013_010935,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:11:44.130408+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,0.0,0.0,0.0,0.0,5923.52,,,,,,,
+kd_gqa_attention_C_20261013_011359,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:15:09.483455+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,0.0,0.0,0.0,0.0,5923.52,,,,,,,
+kd_gla_attention_C_20261013_061527,gla_attention__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-13T06:19:21.065287+00:00,success,gla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3807.35,,,,,,,
