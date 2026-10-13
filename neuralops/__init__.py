@@ -274,7 +274,20 @@ from neuralops.api import (
 )
 
 from neuralops.attentions.linear.gla_attention import GLAttention
+from neuralops.attentions.linear.cosformer import CosformerAttention
+from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
+from neuralops.attentions.gated.decay_linear_attention import DecayLinearAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.exceptions import (
+    NeuralOpsError, ConfigError, WeightCopyError, BackendError, NumericalError
+)
+from neuralops.core.backend import available_backends
+
+def inject_gla(model, **kwargs):
+    """Replace all standard attention layers with GLA. Convenience wrapper."""
+    from neuralops.attentions.linear.gla_attention import GLAttention as _GLA
+    from neuralops.core._attention_surgery import replace_attention_in_model
+    return replace_attention_in_model(model, _GLA, **kwargs)
 
 def create_attention(name: str, **kwargs):
     cls = ATTENTION_REGISTRY.get(name)
@@ -284,6 +297,10 @@ def create_attention(name: str, **kwargs):
 
 __all__ = [
     "GLAttention",
+    "CosformerAttention",
+    "SVDLinearAttention",
+    "DecayLinearAttention",
+    "inject_gla",
     "replace_attention",
     "create_attention",
     "compress",
@@ -292,5 +309,11 @@ __all__ = [
     "get_attention_class",
     "get_compressor_class",
     "ATTENTION_REGISTRY",
+    "NeuralOpsError",
+    "ConfigError",
+    "WeightCopyError",
+    "BackendError",
+    "NumericalError",
+    "available_backends",
 ]
 
