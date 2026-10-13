@@ -1,38 +1,39 @@
-name: ✨ Feature Request & New Attention Proposal
-description: Propose a new attention paradigm, compression algorithm, or enhancement
-labels: ["enhancement", "research"]
+name: Feature / Architecture Request
+description: Propose a new attention mechanism, compression engine, Triton kernel, or framework feature
+title: "[Feature]: "
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Propose a new attention mechanism, compression engine, or Triton kernel optimization.
+        We welcome proposals for new research papers, attention variants, model compression methods, and system optimizations!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Motivation / Paper Reference
+      description: What is the paper reference (arXiv link), algorithm, or architectural bottleneck you would like to address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution / Interface
+      description: Describe how this should be integrated into NeuralOps (e.g., registry category, CLI flags, fallback behavior).
+    validations:
+      required: true
+
   - type: dropdown
-    id: proposal_type
+    id: category
     attributes:
-      label: Proposal Type
+      label: Target Component
       options:
-        - Novel Attention Mechanism
-        - Compression & Quantization Engine
-        - Hardware / Triton Kernel Optimization
-        - Benchmark Dataset / Metric Integration
+        - Attention Mechanism (`neuralops/attentions/`)
+        - Compression Engine (`neuralops/compression_engine/`)
+        - Triton Kernel (`neuralops/core/triton_kernels/`)
+        - Production Export / Serving (`neuralops/export/`)
+        - MLOps & Benchmarks (`neuralops/benchmarks/`)
+        - Documentation / Examples
     validations:
       required: true
-  - type: input
-    id: title_summary
-    attributes:
-      label: Theoretical Paradigm Name
-      placeholder: e.g. Quantum-Spectral-Mamba-v2
-    validations:
-      required: true
-  - type: textarea
-    id: motivation
-    attributes:
-      label: Motivation & Theoretical Rationale
-      description: Why is this module needed and what computational / memory complexity does it improve?
-    validations:
-      required: true
-  - type: textarea
-    id: math_formulation
-    attributes:
-      label: Mathematical Formulation
-      description: KaTeX / LaTeX mathematical equations of the proposed mechanism.
