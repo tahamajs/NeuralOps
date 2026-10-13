@@ -23,7 +23,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 # ── FLA availability ────────────────────────────────────────────
-FLA_AVAILABLE = False  # TEMPORARY — for debugging
+FLA_AVAILABLE = True
 
 if FLA_AVAILABLE:
     try:
@@ -36,11 +36,10 @@ else:
     chunk_gla = None
 
 
-# DEPRECATED: numerically unstable when injected into pretrained GPT-2
-# @ATTENTION_REGISTRY.register("gla_attention",
-#                               supports_causal=True,
-#                               supports_bidirectional=False,
-#                               supports_gqa=False)
+@ATTENTION_REGISTRY.register("gla_attention",
+                              supports_causal=True,
+                              supports_bidirectional=False,
+                              supports_gqa=False)
 class GLAttention(BaseAttention):
     """
     Gated Linear Attention with FLA Triton backend.
@@ -107,17 +106,13 @@ class GLAttention(BaseAttention):
         # After 500 tokens: 0.9994^500 ≈ 0.75 (long context)
         with torch.no_grad():
             self.gate_W2.bias.fill_(120.0)
-            # ← CHANGE: make gate constant
-            self.gate_W1.weight.zero_()   # NOT normal_(0.0, 0.02)
+            self.gate_W1.weight.normal_(0.0, 0.02)
 
         # ── Output norm per head (critical for numerical stability) ──
         # Each head's output has magnitude ≈ N (linear attention grows
         # with sequence length). RMSNorm brings it back to ~1.
         # Reference: FLA's fla/layers/gla.py — GLA layer uses o_norm.
         self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
-
-        # Learnable output scale
-        self.output_scale = nn.Parameter(torch.tensor(1.0 / math.sqrt(512)))
 
         # FLA kernel
         self._fla_kernel = chunk_gla if self.use_fla else None
@@ -207,7 +202,7 @@ class GLAttention(BaseAttention):
 
                 out, _ = self._fla_kernel(
                     Q_f, K_f, V_f, g_f,
-                    scale=1.0,   # Step 3a: remove self.scale
+                    scale=self.scale,       # ← RESTORE self.scale
                     output_final_state=False,
                 )
                 out = out.to(hidden_states.dtype)
@@ -217,8 +212,9 @@ class GLAttention(BaseAttention):
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
 
-        # Step 3b: In forward, after compute:
-        out = out * self.output_scale
+        # ── RMSNorm per head (matches FLA's GLA reference) ──
+        # out shape: (B, N, H, d) → apply RMSNorm over last dim (d)
+        out = self.o_norm(out)
 
         # Reshape to (B, N, H*d) and project
         out = out.contiguous().view(B, N, self.all_head_size)
@@ -275,7 +271,7 @@ class GLAttention(BaseAttention):
             decay = torch.exp(diff_log.clamp(max=0.0))           # (B, L, L, H)
 
             qk = torch.einsum("bihd,bjhd->bijh", q, k)           # (B, L, L, H)
-            scores = qk * decay                                   # Step 3a: removed self.scale
+            scores = qk * decay * self.scale                      # ← RESTORE self.scale
             scores = scores.permute(0, 3, 1, 2)                    # (B, H, L, L)
             scores = scores.masked_fill(~causal, 0.0)
             intra = torch.einsum("bhij,bjhd->bihd", scores, v)     # (B, L, H, d)
@@ -290,7 +286,7 @@ class GLAttention(BaseAttention):
             weights = torch.exp(
                 (g_end.unsqueeze(1) - b_log).clamp(max=0.0)
             )
-            k_w = k * weights.unsqueeze(-1)                        # Step 3a: removed self.scale
+            k_w = k * weights.unsqueeze(-1) * self.scale           # ← RESTORE self.scale
             kv = torch.einsum("blhd,blhe->bhde", k_w, v)           # (B, H, d, d)
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
