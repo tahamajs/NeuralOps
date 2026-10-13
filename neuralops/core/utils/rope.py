@@ -8,8 +8,16 @@ __all__ = ["rotate_half", "_rotate_half", "apply_rotary_pos_emb", "broadcast_cos
 
 def rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dims of the input."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    d = x.shape[-1]
+    if d % 2 == 1:
+        half = d // 2
+        x1 = x[..., :half]
+        x2 = x[..., half : 2 * half]
+        tail = x[..., 2 * half :]
+        return torch.cat((-x2, x1, tail), dim=-1)
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half:]
     return torch.cat((-x2, x1), dim=-1)
 
 
