@@ -454,13 +454,23 @@ class BenchmarkOrchestrator:
                 line = line.strip()
                 if not line:
                     continue
-                d = json.loads(line)
+                mod_val = d.get("module")
+                mod_name = mod_val.get("name") if isinstance(mod_val, dict) else mod_val
+                mod_type = mod_val.get("type") if isinstance(mod_val, dict) else "unknown"
+
+                mdl_val = d.get("model")
+                mdl_name = mdl_val.get("name") if isinstance(mdl_val, dict) else mdl_val
+
+                ds_val = d.get("dataset")
+                ds_name = ds_val.get("name") if isinstance(ds_val, dict) else ds_val
+
+                cfg_val = d.get("config") or {}
                 row = {
-                    "module": d.get("module", {}).get("name"),
-                    "type": d.get("module", {}).get("type"),
-                    "model": d.get("model", {}).get("name"),
-                    "dataset": d.get("dataset", {}).get("name"),
-                    "rank": d.get("config", {}).get("rank"),
+                    "module": mod_name,
+                    "type": mod_type,
+                    "model": mdl_name,
+                    "dataset": ds_name,
+                    "rank": cfg_val.get("rank"),
                     "status": d.get("status"),
                 }
                 metrics = d.get("metrics") or {}
