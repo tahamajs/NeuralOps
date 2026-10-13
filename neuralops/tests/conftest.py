@@ -1,6 +1,10 @@
 """Shared pytest fixtures for neuralops test suite."""
 from __future__ import annotations
 
+import sys
+if "numpy" in sys.modules:
+    import numpy  # noqa: F401
+
 import os
 from pathlib import Path
 
