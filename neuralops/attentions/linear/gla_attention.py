@@ -100,9 +100,12 @@ class GLAttention(BaseAttention):
         self.gate_W1 = nn.Linear(self.dim, gate_rank, bias=False)
         self.gate_W2 = nn.Linear(gate_rank, self.num_heads, bias=True)
 
-        # ── FIX 4: bias = 48.0 → sigmoid(3) ≈ 0.952 ──
+        # ── FIX 4: bias = 120 → logsigmoid(120/16) = -0.00055 ──
+        # per-token decay = exp(-0.00055) ≈ 0.9994
+        # After 128 tokens: 0.9994^128 ≈ 0.93 (state preserved)
+        # After 500 tokens: 0.9994^500 ≈ 0.75 (long context)
         with torch.no_grad():
-            self.gate_W2.bias.fill_(48.0)
+            self.gate_W2.bias.fill_(120.0)
             self.gate_W1.weight.normal_(0.0, 0.02)
 
         # FLA kernel
@@ -202,6 +205,9 @@ class GLAttention(BaseAttention):
                 out = self._pytorch_gla_stable(Q, K, V, g)
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
+
+        # ✅ ADD THIS: normalize output magnitude to match softmax
+        out = out / math.sqrt(N)
 
         out = out.contiguous().view(B, N, self.all_head_size)
         return self.out_proj(out), None
