@@ -14,10 +14,9 @@ python -m neuralops.benchmarks.cli run \
     --all-attn \
     --device cuda \
     --epochs 1 \
-    --batch-size 8 \
-    --grad-accum-steps 2 \
+    --batch-size 16 \
     --lr 2e-5 \
-    --max-samples 5000 \
-    --max-eval-samples 872 \
-    --timeout-s 1800 \
+    --max-samples 1500 \
+    --max-eval-samples 300 \
+    --timeout-s 600 \
     2>&1 | tee ~/roberta_benchmark_fast.log

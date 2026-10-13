@@ -37,6 +37,8 @@ class BenchmarkConfig:
     kd_alpha: float = 0.5
     recovery_steps: int = 50
     max_samples: Optional[int] = None
+    max_eval_samples: Optional[int] = None
+    grad_accum_steps: int = 1
     trust_remote_code: bool = True
     hf_token: Optional[str] = None
     language: Optional[str] = None
