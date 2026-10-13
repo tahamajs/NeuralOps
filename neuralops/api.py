@@ -554,8 +554,10 @@ def info() -> Dict[str, Any]:
         "backends": available_backends(),
         "has_triton": has_triton(),
         "torch_version": torch.__version__,
+        "pytorch_version": torch.__version__,
         "cuda_available": torch.cuda.is_available(),
     }
+
 
 
 __all__ = [

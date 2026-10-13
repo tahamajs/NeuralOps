@@ -1014,7 +1014,7 @@ class SplitHeadHybridAttention(BaseAttention):
             # Adaptive gate (V5-FIX-10): blend local heads with global mean.
             if self.blend_logits is not None:
                 global_mean = ctx_global.mean(dim=1, keepdim=True)  # (B, 1, N, D)
-                clamped_logits = torch.clamp(self.blend_logits, -5.0, 5.0)
+                clamped_logits = torch.clamp(self.blend_logits, -10.0, 10.0)
                 gate_local = torch.sigmoid(
                     clamped_logits.view(1, Hl, 1, 1) + self.gate_bias
                 )  # (1, Hl, 1, 1)

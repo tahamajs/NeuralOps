@@ -792,7 +792,8 @@ class TriBranchHybridAttention(BaseAttention):
                 global_out = _global_linear_attention(
                     Q, K_full, V_full, self.kernel_map, token_valid,
                 )
-            beta = torch.sigmoid(self.fusion_gate).view(1, self.num_heads, 1, 1)
+            clamped_gate = torch.clamp(self.fusion_gate, -10.0, 10.0)
+            beta = torch.sigmoid(clamped_gate).view(1, self.num_heads, 1, 1)
             fused = beta * local_out + (1.0 - beta) * global_out
         else:
             fused = local_out
