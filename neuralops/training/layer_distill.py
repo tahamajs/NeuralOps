@@ -68,3 +68,31 @@ class LayerAttentionDistillLoss(nn.Module):
             total_loss = total_loss + layer_loss
 
         return self.weight * (total_loss / max(num_layers, 1))
+
+
+class LayerDistillScheduler:
+    """
+    Schedules the auxiliary loss weight over training.
+    Stage 1 (0 - warmup_steps): weight = max_weight
+    Stage 2 (warmup_steps - end): weight = max_weight * (1 - progress) + final_weight * progress
+    """
+
+    def __init__(
+        self,
+        warmup_steps: int = 2000,
+        total_steps: int = 10000,
+        max_weight: float = 0.5,
+        final_weight: float = 0.0,
+    ):
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.max_weight = max_weight
+        self.final_weight = final_weight
+
+    def get_weight(self, step: int) -> float:
+        if step < self.warmup_steps:
+            return self.max_weight
+        progress = (step - self.warmup_steps) / max(1, self.total_steps - self.warmup_steps)
+        progress = min(1.0, max(0.0, progress))
+        return self.max_weight * (1.0 - progress) + self.final_weight * progress
+
