@@ -99,12 +99,17 @@ class GLAttention(BaseAttention):
         self.gate_W1 = nn.Linear(self.dim, gate_rank, bias=False)
         self.gate_W2 = nn.Linear(gate_rank, self.num_heads, bias=True)
 
-        # Warmup initialization:
-        # bias = 48.0 -> logsigmoid(48 / 16) = logsigmoid(3.0) ≈ -0.0485
-        # exp(-0.0485) ≈ 0.9526 (state retention ~95% per token at step 0)
         with torch.no_grad():
-            self.gate_W2.bias.fill_(48.0)
-            self.gate_W1.weight.normal_(0.0, 0.02)
+            # bias=16 → logsigmoid(16/16) = logsigmoid(1) = -0.3133
+            # per-token decay = exp(-0.3133) = 0.731
+            # steady-state |S| = 1/(1-0.731) = 3.72  (vs 1666 for bias=120)
+            # After 256 tokens: 0.731^256 ≈ 2e-34 (state fully recycled)
+            # This matches GPT-2's effective attention span (~128-256 tokens)
+            self.gate_W2.bias.fill_(16.0)
+            self.gate_W1.weight.normal_(0.0, 0.02)   # keep random, NOT zero
+
+        # ── Output norm per head (critical for numerical stability) ──
+        self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
 
         self._fla_kernel = chunk_gla if self.use_fla else None
         if self._fla_kernel is not None:
@@ -212,7 +217,10 @@ class GLAttention(BaseAttention):
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
 
-        # 4. Out projection (RMSNorm bypassed to preserve pretrained weight scale)
+        # 4. RMSNorm per head (essential for stable magnitude)
+        out = self.o_norm(out)  # (B, N, H, d)
+
+        # 5. Out projection
         out = out.contiguous().view(B, N, self.all_head_size)
         return self.out_proj(out), None
 
