@@ -20,6 +20,7 @@ from transformers import (
     DistilBertForSequenceClassification,
     GPT2Config,
     GPT2LMHeadModel,
+    GPT2ForSequenceClassification,
     RobertaConfig,
     RobertaForSequenceClassification,
     T5Config,
@@ -117,8 +118,13 @@ def build_model_instance(
             n_layer=num_layers,
             n_head=num_heads,
             n_positions=512,
+            num_labels=num_labels,
+            pad_token_id=0,
         )
-        model = GPT2LMHeadModel(cfg)
+        if num_labels > 0:
+            model = GPT2ForSequenceClassification(cfg)
+        else:
+            model = GPT2LMHeadModel(cfg)
     elif family == "distilbert":
         cfg = DistilBertConfig(
             vocab_size=vocab_size,
