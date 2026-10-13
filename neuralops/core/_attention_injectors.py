@@ -25,7 +25,6 @@ from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.model_family import ModelAdapter, detect_family
 from neuralops.utils.qwen_compat import QwenIncompatibleError
-from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -389,6 +388,7 @@ def _wrap_and_replace_layer(
         or family == "gpt"
         or layer_name.endswith(".attn")
     )
+    from neuralops.utils.replace_attention import UniversalAttentionWrapper
     wrapped_attn = UniversalAttentionWrapper(
         new_attn, layer_name=layer_name, return_tuple=return_tuple
     )
