@@ -1,4 +1,0 @@
-Model,Module,Status,Accuracy (%),Threshold (%),Elapsed (s)
-DistilBERT,a3,PASS_NO_COMPRESSION,90.14,56.0,44.6
-RoBERTa,a3,PASS_NO_COMPRESSION,81.19,56.0,57.1
-GPT-2,a3,PASS_NO_COMPRESSION,49.08,56.0,56.4

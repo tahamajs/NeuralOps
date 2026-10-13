@@ -1,3 +1,0 @@
-2026-09-14 19:40:27,265 [INFO] QwenQualitySweep: GPU VRAM: 2.32 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
-2026-09-14 19:40:27,265 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 2.32 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
-memory allocation of 1600000 bytes failed

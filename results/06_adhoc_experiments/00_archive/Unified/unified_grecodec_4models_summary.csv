@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,GreCoDeC Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.71%,90.71%,+0.00%,0.9099,PASS_NO_COMPRESSION,0,1.00x,174.8 MB,397.3
-roberta,0,94.38%,94.38%,+0.00%,0.9445,PASS_NO_COMPRESSION,0,1.00x,292.7 MB,285.4
-gpt2,15,N/A,89.33%,N/A,0.8942,PASS_NO_COMPRESSION,0,1.00x,382.1 MB,333.0

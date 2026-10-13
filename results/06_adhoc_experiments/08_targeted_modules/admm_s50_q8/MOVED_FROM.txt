@@ -1,1 +1,0 @@
-Originally at: results/admm_s50_q8

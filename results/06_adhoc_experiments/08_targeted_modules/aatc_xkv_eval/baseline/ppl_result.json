@@ -1,8 +1,0 @@
-{
-  "module": "none",
-  "model_path": "Qwen/Qwen2.5-0.5B",
-  "dataset": "wikitext2",
-  "perplexity": 12.540411949157715,
-  "seq_len": 1024,
-  "stride": 512
-}

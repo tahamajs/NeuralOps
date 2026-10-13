@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,Swift-SVD Activation Aware Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.48%,+0.00%,0.9077,PASS,0,1.00x,311.2 MB,22.2
-roberta,0,75.11%,72.02%,-3.09%,0.7724,PASS,0,1.00x,301.7 MB,32.6
-gpt2,0,60.78%,60.09%,-0.69%,0.6463,PASS,1,1.00x,637.3 MB,30.2

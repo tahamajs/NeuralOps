@@ -1,3 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-full,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,6.98,793.19,23426.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T10:09:26.610942
-aegis_spectron_fp8,PASS,58.83,0.6913,0.5367,0.6423,0.5824,0.6673,55.53,643.49,5217.46,124441344,100037460,1520688,1.2439,19.61,0.0,0,0,,,12,1179648,,adapted_gpt,2026-09-15T10:10:22.408494
