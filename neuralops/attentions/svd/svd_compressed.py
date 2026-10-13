@@ -1,3 +1,5 @@
+from neuralops.utils.metrics import compute_metrics
+from neuralops.data.preprocessing import preprocess_function
 from neuralops.data.glue_loader import get_num_labels_and_is_regression
 from neuralops.data.glue_loader import load_glue_local
 from neuralops.core.common import _cfg_get
@@ -826,41 +828,6 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "rte": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-
-
-def preprocess_function(
-    examples: Any,
-    tokenizer: Any,
-    sent1_key: str,
-    sent2_key: str | None,
-    max_length: int,
-    is_regression: bool,
-) -> dict[str, Any]:
-    r"""Preprocess and tokenize dataset sequence examples."""
-    if sent2_key is None:
-        t = tokenizer(
-            examples[sent1_key],
-            truncation=True,
-            padding="max_length",
-            max_length=max_length,
-        )
-    else:
-        t = tokenizer(
-            examples[sent1_key],
-            examples[sent2_key],
-            truncation=True,
-            padding="max_length",
-            max_length=max_length,
-        )
-    t["labels"] = [float(l) for l in examples["label"]] if is_regression else examples["label"]
-    return t
-
-
-def compute_metrics(eval_pred: Any) -> dict[str, float]:
-    r"""Compute classification evaluation accuracy."""
-    logits, labels = eval_pred
-    preds = logits.argmax(-1)
-    return {"accuracy": float((preds == labels).mean().item())}
 
 
 # =============================================================================

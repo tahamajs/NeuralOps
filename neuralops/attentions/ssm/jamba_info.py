@@ -27,6 +27,7 @@ FIX 11: _format_output returns correct 2-tuple when attn_weights is None,
 """
 
 from __future__ import annotations
+from neuralops.core.cache_utils import read_cache as _read_cache
 from neuralops.core.common import _detect_return_format
 from neuralops.core.common import _detect_decoder, repeat_kv
 
@@ -58,38 +59,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
-
-
-def _read_cache(
-    past_key_value: Any,
-) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
-    if past_key_value is None:
-        return None, None, None, 0
-    if isinstance(past_key_value, (tuple, list)):
-        if len(past_key_value) == 0:
-            return None, None, None, 0
-        first = past_key_value[0]
-        if isinstance(first, (tuple, list)):
-            entry = past_key_value[0]
-            return entry[0], entry[1], entry[2], entry[0].shape[-2]
-        if len(past_key_value) >= 3:
-            return (
-                past_key_value[0],
-                past_key_value[1],
-                past_key_value[2],
-                past_key_value[0].shape[-2],
-            )
-    if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-        k1 = past_key_value.key_cache[0]
-        k2 = past_key_value.key_cache[1] if len(past_key_value.key_cache) > 1 else k1
-        v = (
-            past_key_value.value_cache[0]
-            if hasattr(past_key_value, "value_cache") and past_key_value.value_cache
-            else None
-        )
-        if k1 is not None:
-            return k1, k2, v, k1.shape[-2]
-    return None, None, None, 0
 
 
 # ===========================================================================
