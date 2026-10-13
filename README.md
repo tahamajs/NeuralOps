@@ -111,17 +111,21 @@ python -m neuralops.benchmarks verify
 
 ## Quick Start
 
-### Recipe 1: 3-Line Attention Surgery
+### Recipe 1: 3-Line Attention Surgery & Compression
 
-Replace quadratic attention in existing HuggingFace models with subquadratic SVD Linear Attention:
+Replace quadratic attention in existing HuggingFace models with subquadratic SVD Linear Attention or compress layers directly with `neuralops`:
 
 ```python
 import torch
 from transformers import AutoModelForSequenceClassification
-from neuralops.utils.replace_attention import replace_attention
+import neuralops
 
+# 1. Drop-in attention replacement
 model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
-model = replace_attention(model, "svd_linear_attention", svd_rank=128)
+model = neuralops.replace_attention(model, "svd_linear_attention", rank=128)
+
+# 2. Or compress model weights with SVD / pruning
+model = neuralops.compress(model, method="direct_svd", rank=32)
 
 inputs = torch.randint(0, 1000, (2, 64))
 outputs = model(inputs)
