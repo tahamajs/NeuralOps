@@ -24,6 +24,12 @@ from neuralops.core.triton_kernels import (
     sparse_attn,
     state_update,
 )
+from neuralops.core.triton_kernels.op_registry import (
+    compilable_linear_attn,
+    compilable_sparse_attn,
+    compilable_low_rank,
+    register_custom_op_meta_shape,
+)
 from neuralops.core.triton_kernels._common import (
     HAS_TRITON,
     gqa_pytorch_fallback,
