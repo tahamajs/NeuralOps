@@ -610,4 +610,17 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
     else:
         print(f"Successfully replaced {replaced_count} attention layers with '{attention_key}'.")
 
+    # Track surgery metadata on model
+    meta_entry = {
+        "op": "replace",
+        "type": str(attention_key) if attention_key is not None else getattr(new_attention_cls, "__name__", "custom"),
+        "kwargs": {
+            "layer_indices": layer_indices,
+            **kwargs,
+        },
+    }
+    if not hasattr(model, "_neuralops_metadata"):
+        model._neuralops_metadata = []
+    model._neuralops_metadata.append(meta_entry)
+
     return model

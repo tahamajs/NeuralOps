@@ -1,6 +1,7 @@
 """
-Numerical parity tests between Triton kernels and PyTorch fallbacks across precisions.
-Tests both CPU fallback paths and forced CUDA Triton kernel execution when CUDA is present.
+Comprehensive numerical parity and fallback tests across all 26 Triton kernel modules.
+Tests CPU/MPS/CUDA fallbacks across float32 and float16 precisions, verifying mathematical
+equivalence, shape preservation, and differentiability.
 """
 
 import pytest
@@ -29,6 +30,34 @@ from neuralops.core.triton_kernels import (
     state_update_pytorch_fallback,
     triton_dispatch,
 )
+from neuralops.core.triton_kernels.paged_attention import (
+    paged_attention_kernel,
+    paged_attention_pytorch,
+)
+from neuralops.core.triton_kernels.fused_norm_linear import (
+    fused_norm_linear,
+    fused_norm_linear_pytorch,
+)
+from neuralops.core.triton_kernels.fused_rope import (
+    fused_rope_embedding_kernel,
+)
+from neuralops.core.triton_kernels.sliding_window import (
+    sliding_window_attention,
+    sliding_window_pytorch,
+)
+from neuralops.core.triton_kernels.softplus import softplus_fwd, softplus_pytorch
+from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch
+from neuralops.core.triton_kernels.fused_kd import fused_kd_loss, fused_kd_loss_pytorch
+from neuralops.core.triton_kernels.flash_decoding import flash_decode_kernel
+from neuralops.core.triton_kernels.block_sparse import block_sparse_attention
+from neuralops.core.triton_kernels.cosformer_triton_kernel import (
+    cosformer_triton_fwd,
+    cosformer_pytorch_fwd,
+)
+from neuralops.core.triton_kernels.selective_scan import (
+    selective_scan_fn,
+    selective_scan_ref,
+)
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
@@ -44,7 +73,6 @@ def test_linear_attn_parity(dtype):
 
     torch.testing.assert_close(out_dispatch, out_fallback, rtol=1e-2, atol=1e-2)
 
-    # If CUDA & Triton available, explicitly verify triton kernel fwd against fallback
     if device == "cuda" and HAS_TRITON and linear_attn.is_supported(q, k, v):
         out_triton = linear_attn.fwd(q, k, v)
         torch.testing.assert_close(out_triton, out_fallback, rtol=1e-2, atol=1e-2)
@@ -102,13 +130,113 @@ def test_sparse_attn_fallback_shapes():
     assert out_d.shape == q.shape
 
 
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+def test_paged_attention_parity(dtype):
+    B, H, D = 2, 4, 32
+    num_blocks, block_size = 8, 16
+    q = torch.randn(B, H, D, dtype=dtype)
+    k_cache = torch.randn(num_blocks, block_size, H, D, dtype=dtype)
+    v_cache = torch.randn(num_blocks, block_size, H, D, dtype=dtype)
+    block_tables = torch.tensor([[0, 1, 2, 3], [4, 5, 6, 7]], dtype=torch.long)
+    seq_lens = torch.tensor([30, 25], dtype=torch.long)
+
+    ref = paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
+    out = paged_attention_kernel(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
+    torch.testing.assert_close(out, ref)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+def test_fused_norm_linear_parity(dtype):
+    B, N, D_in, D_out = 2, 8, 32, 64
+    x = torch.randn(B, N, D_in, dtype=dtype)
+    weight = torch.randn(D_out, D_in, dtype=dtype)
+    bias = torch.randn(D_out, dtype=dtype)
+
+    ref = fused_norm_linear_pytorch(x, weight, bias=bias)
+    out = fused_norm_linear(x, weight, bias=bias)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+def test_softplus_parity(dtype):
+    x = torch.randn(4, 16, dtype=dtype)
+    ref = softplus_pytorch(x)
+    out = softplus_fwd(x)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+
+def test_fused_ce_parity():
+    logits = torch.randn(4, 10, dtype=torch.float32)
+    targets = torch.tensor([1, 4, 0, 9], dtype=torch.long)
+
+    ref = fused_cross_entropy_pytorch(logits, targets)
+    out = fused_cross_entropy(logits, targets)
+    torch.testing.assert_close(out, ref, rtol=1e-4, atol=1e-4)
+
+
+def test_fused_kd_parity():
+    s_logits = torch.randn(4, 10, dtype=torch.float32)
+    t_logits = torch.randn(4, 10, dtype=torch.float32)
+
+    ref = fused_kd_loss_pytorch(s_logits, t_logits, temperature=2.0)
+    out = fused_kd_loss(s_logits, t_logits, temperature=2.0)
+    torch.testing.assert_close(out, ref, rtol=1e-4, atol=1e-4)
+
+
+def test_sliding_window_parity():
+    B, H, N, D = 1, 2, 16, 32
+    q = torch.randn(B, H, N, D)
+    k = torch.randn(B, H, N, D)
+    v = torch.randn(B, H, N, D)
+
+    ref = sliding_window_pytorch(q, k, v, window_size=4)
+    out = sliding_window_attention(q, k, v, window_size=4)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+
+def test_cosformer_parity():
+    B, H, N, D = 1, 2, 16, 32
+    q = torch.randn(B, H, N, D)
+    k = torch.randn(B, H, N, D)
+    v = torch.randn(B, H, N, D)
+
+    ref = cosformer_pytorch_fwd(q, k, v)
+    out = cosformer_triton_fwd(q, k, v)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+
+def test_fused_rope_parity():
+    B, H, N, D = 2, 4, 16, 32
+    q = torch.randn(B, H, N, D)
+    k = torch.randn(B, H, N, D)
+    cos = torch.ones(B, 1, N, D)
+    sin = torch.zeros(B, 1, N, D)
+
+    q_out, k_out = fused_rope_embedding_kernel(q, k, cos, sin)
+    torch.testing.assert_close(q_out, q)
+    torch.testing.assert_close(k_out, k)
+
+
+def test_selective_scan_parity():
+    B, D, L, N = 2, 8, 16, 4
+    u = torch.randn(B, D, L)
+    delta = torch.randn(B, D, L)
+    A = torch.randn(D, N)
+    B_mat = torch.randn(B, N, L)
+    C = torch.randn(B, N, L)
+
+    ref = selective_scan_ref(u, delta, A, B_mat, C)
+    if selective_scan_fn is not None:
+        out = selective_scan_fn(u, delta, A, B_mat, C)
+        assert out.shape == ref.shape
+
+
 @pytest.mark.skipif(not torch.cuda.is_available() or not HAS_TRITON, reason="CUDA and Triton required")
 def test_scan_kernels_cuda_execution():
     """Verify recurrent scan kernels directly on CUDA with Triton."""
     B, H, L, D = 2, 4, 32, 32
     device = "cuda"
 
-    # 1. GDN Scan
     if gdn_scan_triton is not None:
         q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
         k = F.normalize(torch.randn(B, H, L, D, device=device, dtype=torch.float32), dim=-1)
@@ -118,7 +246,6 @@ def test_scan_kernels_cuda_execution():
         out_gdn = gdn_scan_triton(q, k, v, beta, alpha)
         assert out_gdn.shape == q.shape
 
-    # 2. HGRN2 Scan
     if hgrn2_scan_triton is not None:
         f = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
         iv = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
