@@ -37,7 +37,8 @@ def test_decay_linear_attention_init_and_forward_basic():
     cfg = MockConfig()
     attn = DecayLinearAttention(config=cfg)
     x = torch.randn(2, 8, 64)
-    out, weights = attn(x, output_attentions=True)
+    res = attn(x, output_attentions=True)
+    out = res[0]
     assert out.shape == (2, 8, 64)
 
 def test_decay_linear_attention_none_config():
