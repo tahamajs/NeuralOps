@@ -70,6 +70,7 @@ def load_dataset_by_name(
     tokenizer: Any,
     max_length: int = 128,
     split: str = "validation",
+    max_samples: int | None = None,
 ) -> Dataset:
     """
     Load dataset by name from local cache or HuggingFace hub.
@@ -82,6 +83,11 @@ def load_dataset_by_name(
         # We allow datasets library to check cache first without verbose network timeout spam
         os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
+    if max_samples is None:
+        env_samples = os.environ.get("NEURALOPS_MAX_SAMPLES")
+        if env_samples and env_samples.isdigit() and int(env_samples) > 0:
+            max_samples = int(env_samples)
+
     name_clean = name.lower().replace("glue_", "")
     from datasets import load_dataset
 
@@ -89,6 +95,9 @@ def load_dataset_by_name(
     if name_clean in GLUE_TASKS:
         cfg = GLUE_TASKS[name_clean]
         raw_ds = load_dataset("glue", name_clean, split=split)
+        if max_samples is not None and max_samples < len(raw_ds):
+            raw_ds = raw_ds.select(range(max_samples))
+            LOG.info("Subsampled %s split '%s' to %d samples", name_clean, split, len(raw_ds))
         c1, c2 = cfg["cols"]
 
         texts1 = list(raw_ds[c1])
@@ -140,9 +149,26 @@ def make_dataloader(
     dataset: Dataset,
     batch_size: int = 32,
     shuffle: bool = False,
+    num_workers: int | None = None,
 ) -> DataLoader:
-    """Wrap standard Dataset in PyTorch DataLoader."""
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    """Create a DataLoader tuned for GPU training.
+
+    On Linux, num_workers=4 allows parallel data prep while the GPU
+    is computing. pin_memory=True enables DMA transfers.
+    """
+    if num_workers is None:
+        import platform
+        num_workers = 4 if platform.system() == "Linux" else 0
+
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=torch.cuda.is_available(),
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=2 if num_workers > 0 else None,
+    )
 
 
 def load_glue_dataset(task_name: str, tokenizer: Any, max_length: int = 128, split: str = "validation") -> Dataset:
