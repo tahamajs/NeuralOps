@@ -247,7 +247,8 @@ class GLAttention(BaseAttention):
         dtype = q.dtype
 
         num_chunks = (N + chunk_size - 1) // chunk_size
-        state = torch.zeros(B, H, D, D, device=device, dtype=torch.float32)
+        compute_dtype = torch.float64 if dtype == torch.float64 else torch.float32
+        state = torch.zeros(B, H, D, D, device=device, dtype=compute_dtype)
         outputs = []
         causal_mask = torch.tril(
             torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool)
@@ -258,10 +259,10 @@ class GLAttention(BaseAttention):
             end = min(start + chunk_size, N)
             L = end - start
 
-            q_c = q[:, :, start:end].float()
-            k_c = k[:, :, start:end].float()
-            v_c = v[:, :, start:end].float()
-            g_c = log_gate[:, :, start:end].float()
+            q_c = q[:, :, start:end].to(compute_dtype)
+            k_c = k[:, :, start:end].to(compute_dtype)
+            v_c = v[:, :, start:end].to(compute_dtype)
+            g_c = log_gate[:, :, start:end].to(compute_dtype)
 
             g_cumsum = torch.cumsum(g_c, dim=-1)
 
