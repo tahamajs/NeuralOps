@@ -137,6 +137,7 @@ class UniversalAttentionWrapper(nn.Module):
                 **kwargs,
             ),
             lambda: self._wrapped_attention(hidden_states, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask),
             lambda: self._wrapped_attention(hidden_states),
         ]
 
@@ -148,6 +149,7 @@ class UniversalAttentionWrapper(nn.Module):
             except TypeError as e:
                 last_err = e
                 continue
+
 
         if out is None:
             if last_err is not None:

@@ -5,6 +5,10 @@ __pycache__/
 */__pycache__/
 *.py[cod]
 *.pyo
+**/*.pyc
+*.pyc
+
+
 *.pyd
 .Python
 *.egg-info/
@@ -196,8 +200,6 @@ Codes/neuralops-agent/
 # ============================================================
 experiments/
 **/experiments/
-!Codes/framework/experiments/
-!Codes/framework/experiments/**
 benchmark_results/
 **/benchmark_results/
 # !results/
@@ -283,8 +285,6 @@ env/
 # ═══════════════════════════════════════════════
 # Test & Benchmark Outputs (Allow Results & Paper Artifacts)
 # ═══════════════════════════════════════════════
-!results/
-!results/**
 # Keep heavy checkpoints/weights outside git
 results/**/*.pt
 results/**/*.bin
@@ -398,16 +398,10 @@ launcher.bat
 !CODE_OF_CONDUCT.md
 !ROADMAP.md
 !CONTRIBUTING.md
-!docs/
 *.pyc
 ./**/*.pyc
 !docs/**
-!tests/
-!tests/**
-!neuralops/
-!neuralops/**
-!scripts/
-!scripts/**
-__pycache__/
+*/__pycache__/**/*
 *.py[cod]
 *$py.class
+neuralops/*/__pycache__/*.pyc

@@ -540,13 +540,16 @@ class NASCAttention(BaseAttention):
             num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)  # [B, H, L, d]
             Z = torch.cumsum(phi_K, dim=2)
             den = (phi_Q * Z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
-            return (num / den).to(Q.dtype)
+            res = (num / den).to(Q.dtype)
+            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
         else:
             KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
             den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-4)
-            return (num / den).to(Q.dtype)
+            res = (num / den).to(Q.dtype)
+            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
+
 
     def forward(
         self,

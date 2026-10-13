@@ -3,7 +3,7 @@ Unified Custom Op and Torch.compile Compatibility Registry for NeuralOps Triton 
 
 Provides seamless support for `torch.compile(model, fullgraph=False)` without graph breaks:
   1. Uses PyTorch >= 2.4 `torch.library.custom_op` and `register_fake` when available.
-  2. Provides automatic FakeTensor / Meta shape propagation.
+  2. Provides automatic FakeTensor / Meta shape propagation across all 26 kernel modules.
   3. Falls back gracefully on older PyTorch versions or non-CUDA environments.
 """
 
@@ -42,7 +42,6 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_linear_attn.register_fake
         def _op_linear_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-            # Output matches (B, H, N, D_v)
             return torch.empty_like(v)
 
         # 2. Sparse Attention Op
@@ -61,7 +60,6 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
 
         @_op_low_rank.register_fake
         def _op_low_rank_fake(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
-            # (..., in_dim) @ U (in_dim, rank) @ V (rank, out_dim) -> (..., out_dim)
             out_shape = list(x.shape[:-1]) + [V.shape[-1]]
             return x.new_empty(out_shape)
 
@@ -76,6 +74,89 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             k_out = k.repeat_interleave(ratio, dim=1) if k.dim() >= 3 and k.shape[1] == num_kv_heads else k
             v_out = v.repeat_interleave(ratio, dim=1) if v.dim() >= 3 and v.shape[1] == num_kv_heads else v
             return k_out, v_out
+
+        # 5. GDN Scan Op
+        @torch.library.custom_op("neuralops::gdn_scan", mutates_args=())
+        def _op_gdn_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor, alpha: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+            if gdn_scan_triton is not None and q.is_cuda and q.dtype in (torch.float16, torch.bfloat16):
+                try:
+                    return gdn_scan_triton(q, k, v, beta, alpha)
+                except Exception:
+                    pass
+            from neuralops.core.triton_kernels.gdn_scan import gdn_scan_torch
+            return gdn_scan_torch(q, k, v, beta, alpha)
+
+        @_op_gdn_scan.register_fake
+        def _op_gdn_scan_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor, alpha: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(v)
+
+        # 6. GLA Scan Op
+        @torch.library.custom_op("neuralops::gla_scan", mutates_args=())
+        def _op_gla_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.gla_scan import gla_scan_triton
+            if gla_scan_triton is not None and q.is_cuda and q.dtype in (torch.float16, torch.bfloat16):
+                try:
+                    return gla_scan_triton(q, k, v, g)
+                except Exception:
+                    pass
+            from neuralops.core.triton_kernels.gla_scan import gla_scan_torch
+            return gla_scan_torch(q, k, v, g)
+
+        @_op_gla_scan.register_fake
+        def _op_gla_scan_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(v)
+
+        # 7. HGRN2 Scan Op
+        @torch.library.custom_op("neuralops::hgrn2_scan", mutates_args=())
+        def _op_hgrn2_scan(f: torch.Tensor, iv: torch.Tensor, res_clip: float = 1.0) -> torch.Tensor:
+            from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
+            if hgrn2_scan_triton is not None and f.is_cuda and f.dtype in (torch.float16, torch.bfloat16):
+                try:
+                    return hgrn2_scan_triton(f, iv, res_clip=res_clip)
+                except Exception:
+                    pass
+            from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_torch
+            return hgrn2_scan_torch(f, iv, res_clip=res_clip)
+
+        @_op_hgrn2_scan.register_fake
+        def _op_hgrn2_scan_fake(f: torch.Tensor, iv: torch.Tensor, res_clip: float = 1.0) -> torch.Tensor:
+            return torch.empty_like(iv)
+
+        # 8. State Update Op
+        @torch.library.custom_op("neuralops::state_update", mutates_args=())
+        def _op_state_update(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> torch.Tensor:
+            return triton_dispatch("state_update", u, delta, A, B, C)
+
+        @_op_state_update.register_fake
+        def _op_state_update_fake(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(u)
+
+        # 9. Softplus Op
+        @torch.library.custom_op("neuralops::softplus", mutates_args=())
+        def _op_softplus(x: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.softplus import softplus_fwd
+            if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+                try:
+                    return softplus_fwd(x)
+                except Exception:
+                    pass
+            return F.softplus(x)
+
+        @_op_softplus.register_fake
+        def _op_softplus_fake(x: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(x)
+
+        # 10. Fused Norm Linear Op
+        @torch.library.custom_op("neuralops::fused_norm_linear", mutates_args=())
+        def _op_fused_norm_linear(x: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor], eps: float = 1e-5) -> torch.Tensor:
+            normed = F.layer_norm(x, (x.shape[-1],), eps=eps)
+            return F.linear(normed, weight, bias)
+
+        @_op_fused_norm_linear.register_fake
+        def _op_fused_norm_linear_fake(x: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor], eps: float = 1e-5) -> torch.Tensor:
+            out_shape = list(x.shape[:-1]) + [weight.shape[0]]
+            return x.new_empty(out_shape)
 
         _CUSTOM_OPS_REGISTERED = True
     except Exception as exc:
