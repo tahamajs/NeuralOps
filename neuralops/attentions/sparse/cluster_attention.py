@@ -753,12 +753,16 @@ class ClusterAttention(BaseAttention):
                 K_num = min(max(1, self.num_clusters), L)
 
                 # 1. Cluster Queries into K centroids with padding mask filtering
+                # K-means argmin is non-differentiable → detach centroids so backward
+                # does NOT flow through the argmin path (which produces NaN grads).
                 centroids, cluster_ids, counts = self._kmeans_cluster(
-                    Q, K_num, self.n_iters, valid_mask=valid_mask_2d
+                    Q.detach(), K_num, self.n_iters, valid_mask=valid_mask_2d
                 )
+                centroids = torch.nan_to_num(centroids, nan=0.0).detach()
 
                 # 2. Centroid-to-Key Global Cross-Attention [B, H, K, L]
                 scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
+                scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
                 scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
                 attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(
                     dtype
@@ -767,6 +771,7 @@ class ClusterAttention(BaseAttention):
 
                 # Centroid values: [B, H, K, Dh]
                 V_cent = torch.matmul(attn_cent, V)
+                V_cent = torch.nan_to_num(V_cent, nan=0.0)
 
                 # 3. Differentiable Query-to-Centroid soft assignment with learned sharpening & context gathering [B, H, L, Dh]
                 scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
@@ -782,8 +787,6 @@ class ClusterAttention(BaseAttention):
                 assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
                 attn_assign = attn_assign / assign_denom
                 attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
-                # Guard V_cent against NaN from empty-cluster centroids
-                V_cent = torch.nan_to_num(V_cent, nan=0.0)
                 global_context = torch.matmul(attn_assign, V_cent)
                 global_context = torch.nan_to_num(global_context, nan=0.0)
 
