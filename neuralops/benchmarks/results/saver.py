@@ -275,7 +275,10 @@ def save_all_formats(
     save_csv_index(result, csv_path)
 
     parquet_path = out_dir / "results.parquet"
-    save_parquet_index(result, parquet_path)
+    try:
+        save_parquet_index(result, parquet_path)
+    except Exception as e:
+        LOG.warning("Failed to update parquet index: %s", e)
 
     # Record saved paths into result artifact metadata
     result.artifacts.json_file = str(json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path)
