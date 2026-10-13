@@ -2,50 +2,48 @@ name: CI
 
 on:
   push:
-    branches: [main, ablation]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-        extra: ["cpu"]
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[${{ matrix.extra }},dev]"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -e ".[cpu,dev,mlops]"
 
-      - name: Lint
-        run: ruff check neuralops/ --output-format=github
+    - name: Lint with ruff
+      run: |
+        ruff check neuralops tests
 
-      - name: Test
-        run: pytest neuralops/tests/ -v -m "not slow and not gpu" --tb=short
-        continue-on-error: false
+    - name: Run unit & parity tests with coverage
+      run: |
+        pytest tests/ -v --cov=neuralops --cov-report=xml --cov-report=term -p no:cacheprovider
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install build twine
-      - run: python -m build
-      - run: twine check dist/*
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Dry-run verification and planning suite
+      run: |
+        python -m neuralops.benchmarks verify
+        python -m neuralops.benchmarks plan --all-attn
