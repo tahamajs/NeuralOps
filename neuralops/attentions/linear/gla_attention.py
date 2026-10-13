@@ -115,6 +115,9 @@ class GLAttention(BaseAttention):
         # Reference: FLA's fla/layers/gla.py — GLA layer uses o_norm.
         self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
 
+        # Learnable output scale
+        self.output_scale = nn.Parameter(torch.tensor(1.0 / math.sqrt(512)))
+
         # FLA kernel
         self._fla_kernel = chunk_gla if self.use_fla else None
         if self._fla_kernel is not None:
@@ -203,7 +206,7 @@ class GLAttention(BaseAttention):
 
                 out, _ = self._fla_kernel(
                     Q_f, K_f, V_f, g_f,
-                    scale=self.scale,   # FIX 3: consistent scale
+                    scale=1.0,   # Step 3a: remove self.scale
                     output_final_state=False,
                 )
                 out = out.to(hidden_states.dtype)
@@ -213,9 +216,8 @@ class GLAttention(BaseAttention):
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
 
-        # ── RMSNorm per head (matches FLA's GLA reference) ──
-        # out shape: (B, N, H, d) → apply RMSNorm over last dim (d)
-        # out = self.o_norm(out)   # ← COMMENT OUT for now
+        # Step 3b: In forward, after compute:
+        out = out * self.output_scale
 
         # Reshape to (B, N, H*d) and project
         out = out.contiguous().view(B, N, self.all_head_size)
@@ -272,7 +274,7 @@ class GLAttention(BaseAttention):
             decay = torch.exp(diff_log.clamp(max=0.0))           # (B, L, L, H)
 
             qk = torch.einsum("bihd,bjhd->bijh", q, k)           # (B, L, L, H)
-            scores = qk * decay * self.scale                      # FIX 3: scale
+            scores = qk * decay                                   # Step 3a: removed self.scale
             scores = scores.permute(0, 3, 1, 2)                    # (B, H, L, L)
             scores = scores.masked_fill(~causal, 0.0)
             intra = torch.einsum("bhij,bjhd->bihd", scores, v)     # (B, L, H, d)
@@ -287,8 +289,7 @@ class GLAttention(BaseAttention):
             weights = torch.exp(
                 (g_end.unsqueeze(1) - b_log).clamp(max=0.0)
             )
-            # ✅ Apply scale (1/√d) so inter-chunk matches intra-chunk
-            k_w = k * weights.unsqueeze(-1) * self.scale           # ← ADD self.scale
+            k_w = k * weights.unsqueeze(-1)                        # Step 3a: removed self.scale
             kv = torch.einsum("blhd,blhe->bhde", k_w, v)           # (B, H, d, d)
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
