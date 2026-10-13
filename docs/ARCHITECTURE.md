@@ -96,7 +96,49 @@ NeuralOps provides 26 fused Triton kernel modules in `neuralops.core.triton_kern
 
 ## 5. Model Compression & Production Export Pipeline
 
-The compression engine operates through structured factorization passes:
-- **Low-Rank Factorization**: Decomposes weight matrix $W \in \mathbb{R}^{m \times n}$ into $U \in \mathbb{R}^{m \times r}$ and $V \in \mathbb{R}^{r \times n}$.
-- **Adaptive SVD (ASVD)**: Allocates per-layer ranks dynamically based on singular value energy distribution.
-- **Export & Round-Trip**: Saves model weights to `model.safetensors` alongside `neuralops_config.json`. The `load_model()` factory reconstructs the exact layer substitutions and parameter mappings on reload.
+The compression engine operates through structured factorization and quantization passes:
+- **Low-Rank Factorization**: Decomposes weight matrix $W \in \mathbb{R}^{m \times n}$ into $U \in \mathbb{R}^{m \times r}$ and $V \in \mathbb{R}^{r \times n}$ with rank $r \ll \min(m, n)$.
+- **Adaptive SVD (ASVD)**: Allocates per-layer ranks dynamically based on singular value energy distribution and activation Hessian traces.
+- **Quantization Engines**: Activation-aware weight quantization (AWQ), second-order Hessian error feedback (GPTQ), and outlier feature migration (SmoothQuant).
+- **Pruning**: Activation-norm weighted pruning (Wanda) and structured feature distillation.
+- **Export & Round-Trip**: Saves model weights to `model.safetensors` alongside `neuralops_config.json`. The `load_model()` factory reconstructs the exact layer substitutions and parameter mappings on reload without requiring explicit external configurations.
+
+---
+
+## 6. Serving Runtimes & Inference Adapters
+
+NeuralOps exposes native adapters for modern high-throughput LLM inference engines:
+- **`VLLMAdapter`**: Wraps transplanted models for execution within vLLM worker engines. Binds `paged_attention` Triton kernels to manage non-contiguous block memory tables for KV caches.
+- **`TGIAdapter`**: Hugging Face Text Generation Inference runtime configuration exporter.
+- **`PagedKVCache`**: Memory-mapped KV buffer allocating dynamic physical blocks across variable-length request batches, eliminating internal memory fragmentation.
+- **`ContinuousBatcher`**: High-efficiency request scheduler managing dynamic iteration-level batching.
+
+```mermaid
+flowchart LR
+    A[Incoming Token Stream] --> B[ContinuousBatcher]
+    B --> C[PagedKVCache]
+    C --> D[NeuralOps Model Surgery Layer]
+    D --> E[Triton Paged Attention Kernel]
+    E --> F[Generated Logits]
+```
+
+---
+
+## 7. Distributed Training & Telemetry Architecture
+
+The training subsystem (`neuralops.training` / `neuralops.trainer`) unifies multi-GPU optimization and multi-backend metrics:
+- **Distributed Backends**: Automatic detection and orchestration of PyTorch DDP, FSDP, and DeepSpeed ZeRO-2/3 execution.
+- **Unified Telemetry (`neuralops.tracking`)**: Seamless step-level logging routing to WandB, MLflow, TensorBoard, CSV, and streaming JSON Lines.
+- **Advanced Manifold Optimizers**:
+  - `Muon`: Orthogonal momentum update via 5th-order Newton-Schulz polynomial iterations.
+  - `RiemannianStiefelOptimizer`: Tangent-space gradient projection with QR-decomposition retraction for orthogonal low-rank projection bases.
+
+---
+
+## 8. Verification, Parity & Quality Gates
+
+Every component in NeuralOps satisfies rigorous verification protocols before deployment:
+- **Numerical Parity**: Forward outputs must match reference implementations with $\Delta \le 1\times 10^{-4}$ in FP16 / BF16.
+- **Gradient Preservation**: Backward passes during autograd training must correctly propagate without `NaN` or `Inf` accumulation.
+- **Fallback Integrity**: Under zero-GPU conditions (macOS, CI runners, edge servers), 100% of operators execute cleanly on CPU/MPS with zero test skips.
+
