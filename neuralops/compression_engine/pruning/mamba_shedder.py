@@ -149,7 +149,8 @@ class MambaShedderPrunedLinear(nn.Module):
             dtype=h.dtype,
             device=h.device,
         )
-        out.scatter_(-1, self.keep_idx.expand(*x.shape[:-1], -1), h)
+        idx = self.keep_idx.to(device=h.device)
+        out.scatter_(-1, idx.expand(*x.shape[:-1], -1), h)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
