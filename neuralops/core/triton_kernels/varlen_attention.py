@@ -10,9 +10,10 @@ def varlen_attention_pytorch(
     v: torch.Tensor,
     cu_seqlens_q: torch.Tensor,
     cu_seqlens_k: torch.Tensor,
-    _max_seqlen_q: int = 0,
-    _max_seqlen_k: int = 0,
+    max_seqlen_q: int = 0,
+    max_seqlen_k: int = 0,
     causal: bool = False,
+    **kwargs,
 ) -> torch.Tensor:
     """PyTorch fallback for varlen attention.
     
