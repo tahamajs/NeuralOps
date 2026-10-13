@@ -106,3 +106,25 @@ Next-generation asynchronous distributed model surgery and planetary-scale conte
 3. **Reproducibility First**: All benchmark runs record complete environment manifests, RNG seeds, and telemetry to immutable `.jsonl` artifacts.
 4. **Zero-Stall Fallbacks**: Hardware feature absence (Triton, CUDA, AVX) must never terminate execution; the runtime must gracefully downgrade to the fastest mathematically sound alternative.
 
+---
+
+## Hardware Tiering & Optimization Roadmap
+
+| Hardware Target | Compute Architecture | Current Support Tier (v1.3.0) | Target Tier (v1.4.0 - v2.0.0) | Acceleration Strategy |
+| :--- | :--- | :---: | :---: | :--- |
+| **NVIDIA Hopper / Blackwell** | SM90 / SM100 | Tier 1 (FP16/BF16 Triton) | Tier 1+ (FP8 Tensor Core) | Native TMA & Warp Group Matrix Multiply (WGMMA) |
+| **NVIDIA Ada Lovelace / Ampere** | SM89 / SM86 | Tier 1 (Full Triton) | Tier 1 (Tuned Autotuner) | Block-chunked shared memory optimization |
+| **AMD ROCm (MI300 / MI250)** | CDNA3 / CDNA2 | Tier 2 (Triton AMD) | Tier 1 (HipBLASLt + Triton) | Matrix core tiling & fused attention kernels |
+| **Apple Silicon (M-Series)** | Metal MPS | Tier 2 (PyTorch MPS) | Tier 1 (Metal Shading Language) | Custom MSL threadgroup associative scan shaders |
+| **Intel Data Center GPU Max** | Xe-HPC / Xe-HPG | Tier 3 (PyTorch Fallback) | Tier 2 (IPEX / SYCL) | Intel Extension for PyTorch custom op integration |
+| **CPU Servers (x86_64 / ARM)** | AVX-512 / SVE2 | Tier 2 (Vectorized PyTorch) | Tier 2+ (OneDNN / OpenVINO) | OpenMP multi-threaded parallel reduction loops |
+
+---
+
+## Ecosystem Integration Roadmap
+
+- **Hugging Face Transformers**: Direct integration into AutoModel architecture registry and pipeline hub models.
+- **vLLM / TensorRT-LLM**: Custom memory-paged attention kernels for subquadratic attention inference servers.
+- **LangChain / LlamaIndex**: First-class memory-efficient context window management adapters for RAG pipelines.
+- **MLflow & Weights & Biases**: Native rich media logging plugins with interactive attention entropy heatmaps.
+
