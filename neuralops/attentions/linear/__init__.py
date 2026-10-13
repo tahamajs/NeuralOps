@@ -212,5 +212,9 @@ from neuralops.attentions.linear import spectraformer_attention
 from neuralops.attentions.linear import spectron
 from neuralops.attentions.linear import tlinformer_attention
 from neuralops.attentions.linear import tpa_attention
-from neuralops.attentions.linear import triton_cosformer
 from neuralops.attentions.linear import gla_attention
+from neuralops.attentions.linear.gla_attention import GLAttention
+
+if "GLAttention" not in __all__:
+    __all__.append("GLAttention")
+globals()["GLAttention"] = GLAttention
