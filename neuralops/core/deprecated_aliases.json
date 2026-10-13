@@ -711,5 +711,6 @@
   "squeezing_heads_distill": "gqa_attention",
   "tlinformer_attention": "linformer_attention",
   "tpa_attention": "cross_attention",
-  "span_expanded_attention": "adaptive_span_attention"
+  "span_expanded_attention": "adaptive_span_attention",
+  "gla_attention": null
 }
