@@ -807,6 +807,10 @@ def inject_rpc(
             **kwargs,
         )
 
+        p = next(src.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
