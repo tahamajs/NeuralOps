@@ -36,10 +36,11 @@ else:
     chunk_gla = None
 
 
-@ATTENTION_REGISTRY.register("gla_attention",
-                              supports_causal=True,
-                              supports_bidirectional=False,
-                              supports_gqa=False)
+# DEPRECATED: numerically unstable when injected into pretrained GPT-2
+# @ATTENTION_REGISTRY.register("gla_attention",
+#                               supports_causal=True,
+#                               supports_bidirectional=False,
+#                               supports_gqa=False)
 class GLAttention(BaseAttention):
     """
     Gated Linear Attention with FLA Triton backend.
