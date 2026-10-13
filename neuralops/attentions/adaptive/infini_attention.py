@@ -265,7 +265,7 @@ class Jamba2Block(BaseAttention):
 
         # ---- Decoder detection ----
         self.is_decoder = _detect_decoder(
-            config, kwargs.get("is_decoder"), source_attn, kwargs
+            config, kwargs.get("is_decoder"), source_attn
         )
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False

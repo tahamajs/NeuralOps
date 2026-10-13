@@ -648,7 +648,14 @@ class JambaInfoBlock(BaseAttention):
         device = x.device
 
         # ---- Read cache ----
-        past_k1, past_k2, past_v, past_len = _read_cache(past_key_value)
+        past_k1, past_k2, past_v, past_len = None, None, None, 0
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 3 and not isinstance(past_key_value[0], (tuple, list)):
+                past_k1, past_k2, past_v = past_key_value[0], past_key_value[1], past_key_value[2]
+                past_len = past_k1.shape[-2] if past_k1 is not None else 0
+            else:
+                pk, pv, past_len, _ = _read_cache(past_key_value, self.layer_idx)
+                past_k1, past_k2, past_v = pk, pk, pv
 
         # ---- QKV projections ----
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
