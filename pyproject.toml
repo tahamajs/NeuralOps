@@ -173,12 +173,17 @@ Changelog = "https://github.com/tahamajs/SVD_linear_Attention/blob/main/CHANGELO
 where = ["."]
 include = ["neuralops*"]
 exclude = [
+    "tests*",
     "neuralops.tests*",
     "neuralops.benchmarks._legacy*",
     "neuralops._archive*",
     "neuralops.core._archive*",
     "neuralops.attentions._legacy*",
     "neuralops.compression_engine._legacy*",
+    "scripts*",
+    "docs*",
+    "results*",
+    "benchmarks*",
 ]
 
 [tool.setuptools.package-data]
