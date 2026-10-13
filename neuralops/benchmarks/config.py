@@ -39,6 +39,13 @@ class BenchmarkConfig:
     max_samples: Optional[int] = None
     max_eval_samples: Optional[int] = None
     grad_accum_steps: int = 1
+    # MLOps & Distributed Training
+    tracker: str = "none"  # none, wandb, mlflow, tensorboard, all
+    project_name: str = "neuralops"
+    run_name: Optional[str] = None
+    log_interval: int = 10
+    distributed_backend: str = "none"  # none, ddp, fsdp, deepspeed
+    mixed_precision: str = "no"  # no, fp16, bf16
     trust_remote_code: bool = True
     hf_token: Optional[str] = None
     language: Optional[str] = None
