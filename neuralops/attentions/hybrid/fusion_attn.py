@@ -829,7 +829,7 @@ class FUSIONATTN(BaseAttention):
         )
 
         if not is_cross_attention:
-            past_k_probe, _ = self._read_past_kv(past_key_value, self.layer_idx)
+            past_k_probe, _, _ = self._read_past_kv(past_key_value, self.layer_idx)
             past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
 
             if position_embeddings is not None and isinstance(position_embeddings, tuple):
@@ -852,7 +852,7 @@ class FUSIONATTN(BaseAttention):
                         sin = sin[..., past_len : past_len + N, :]
                     q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
 
-        past_k, past_v = self._read_past_kv(past_key_value, self.layer_idx)
+        past_k, past_v, _ = self._read_past_kv(past_key_value, self.layer_idx)
         if past_k is not None and not is_cross_attention:
             k_cat = torch.cat([past_k, k_new], dim=-2)
             v_cat = torch.cat([past_v, v_new], dim=-2)

@@ -743,14 +743,14 @@ class TriBranchHybridAttention(BaseAttention):
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
-            past_k_probe, _ = self._read_past_kv(past_key_value, layer_idx)
+            past_k_probe, _, _ = self._read_past_kv(past_key_value, layer_idx)
             past_len_rope = 0 if past_k_probe is None else past_k_probe.shape[-2]
             cos = cos[..., past_len_rope : past_len_rope + N, :]
             sin = sin[..., past_len_rope : past_len_rope + N, :]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
 
         # KV cache
-        past_k, past_v = self._read_past_kv(past_key_value, layer_idx)
+        past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx)
         if past_k is not None and not is_cross:
             K_cat = torch.cat([past_k, K_new], dim=-2)
             V_cat = torch.cat([past_v, V_new], dim=-2)
