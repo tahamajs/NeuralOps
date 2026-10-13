@@ -1,4 +1,4 @@
-from neuralops.utils.metrics import compute_metrics
+from neuralops.trainer.metrics import get_task_metrics as compute_metrics
 from neuralops.data.preprocessing import preprocess_function
 from neuralops.data.glue_loader import get_num_labels_and_is_regression
 from neuralops.data.glue_loader import load_glue_local

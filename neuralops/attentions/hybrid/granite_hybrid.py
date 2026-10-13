@@ -508,54 +508,7 @@ class GraniteHybridBlock(BaseAttention):
     # ------------------------------------------------------------------
     # KV-cache helpers  — [FIX-7] includes Mamba state
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(
-        past_key_value: Any, layer_idx: int
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int, torch.Tensor | None]:
-        """Return (past_k, past_v, past_len, past_mamba_state)."""
-        if past_key_value is None or past_key_value is False:
-            return None, None, 0, None
-
-        # Hybrid tuple: (k, v, mamba_state)
-        if isinstance(past_key_value, (tuple, list)):
-            if len(past_key_value) == 0:
-                return None, None, 0, None
-            first = past_key_value[0]
-            # Nested per-layer cache
-            if isinstance(first, (tuple, list)):
-                if layer_idx < len(past_key_value):
-                    entry = past_key_value[layer_idx]
-                    if not isinstance(entry, (tuple, list)) or len(entry) < 2 or entry[0] is None:
-                        return None, None, 0, None
-                    k, v = entry[0], entry[1]
-                    m_state = entry[2] if len(entry) >= 3 else None
-                    return k, v, k.shape[-2], m_state
-                return None, None, 0, None
-            # Flat tuple (k, v) or (k, v, mamba_state)
-            k = past_key_value[0]
-            v = past_key_value[1] if len(past_key_value) > 1 else None
-            m_state = past_key_value[2] if len(past_key_value) >= 3 else None
-            if k is None:
-                return None, None, 0, m_state
-            return k, v, k.shape[-2], m_state
-
-        # DynamicCache-like object
-        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-            if layer_idx < len(past_key_value.key_cache):
-                k = past_key_value.key_cache[layer_idx]
-                if k is None:
-                    return None, None, 0, None
-                v = None
-                if hasattr(past_key_value, "value_cache") and layer_idx < len(past_key_value.value_cache):
-                    v = past_key_value.value_cache[layer_idx]
-                m_state = getattr(past_key_value, "_mamba_states", None)
-                if isinstance(m_state, list) and layer_idx < len(m_state):
-                    m_state = m_state[layer_idx]
-                else:
-                    m_state = None
-                return k, v, k.shape[-2], m_state
-
-        return None, None, 0, None
+    _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
     def _write_past_kv(

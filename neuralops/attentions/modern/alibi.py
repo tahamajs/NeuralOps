@@ -233,40 +233,7 @@ class ALiBiAttention(BaseAttention):
     # ------------------------------------------------------------------
     # KV-Cache helpers
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(
-        past_key_value: Any,
-        layer_idx: int,
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
-        if past_key_value is None or past_key_value is False:
-            return None, None, 0
-
-        # HF DynamicCache
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            kc, vc = past_key_value.key_cache, past_key_value.value_cache
-            if len(kc) == 0 or layer_idx >= len(kc):
-                return None, None, 0
-            k = kc[layer_idx]
-            v = vc[layer_idx] if layer_idx < len(vc) else None
-            if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
-
-        # (k, v) tuple
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
-
-        # Nested tuple
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) > 0:
-            first = past_key_value[0]
-            if isinstance(first, (tuple, list)) and layer_idx < len(past_key_value):
-                entry = past_key_value[layer_idx]
-                if len(entry) >= 2 and entry[0] is not None:
-                    return entry[0], entry[1], entry[0].shape[-2]
-        return None, None, 0
+    _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
     def _write_past_kv(

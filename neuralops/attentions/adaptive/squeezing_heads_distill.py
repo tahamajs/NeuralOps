@@ -651,25 +651,8 @@ class SqueezingHeadsDistiller(BaseAttention):
     # ------------------------------------------------------------------
     # KV-cache reader (tuple + HF DynamicCache)
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(past_key_value: Any, layer_idx: int = 0):
-        if past_key_value is None:
-            return None, None, 0
-        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
-            k = past_key_value.key_cache[idx]
-            v = past_key_value.value_cache[idx]
-            return k, v, k.shape[-2]
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            if k is None:
-                return None, None, 0
-            return k, v, k.shape[-2]
-        return None, None, 0
+    _read_past_kv = staticmethod(_read_past_kv)
 
-    # ------------------------------------------------------------------
-    # FIX-01: GQA gather helper
-    # ------------------------------------------------------------------
     def _gather_kept_kv(
         self,
         k: torch.Tensor,
