@@ -213,3 +213,4 @@ from neuralops.attentions.linear import spectron
 from neuralops.attentions.linear import tlinformer_attention
 from neuralops.attentions.linear import tpa_attention
 from neuralops.attentions.linear import triton_cosformer
+from neuralops.attentions.linear import gla_attention
