@@ -118,3 +118,7 @@ from neuralops.utils import qwen_compat
 from neuralops.utils import replace_attention
 from neuralops.utils import results_saver
 from neuralops.utils import seed
+
+# Expose replace_attention function directly
+from neuralops.utils.replace_attention import replace_attention
+
