@@ -1,43 +1,60 @@
-# NeuralOps Architecture & System Design
+# Architecture & Design
 
-NeuralOps is designed around clear separation of concerns across multiple layers:
+## System Hierarchy
+NeuralOps is structured into core modular layers:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│             Pretrained Backbone (HF Models)            │
-│         BERT, RoBERTa, DistilBERT, GPT-2, LLaMA        │
-└───────────────────────────┬────────────────────────────┘
-                            │
-               ┌────────────┴────────────┐
-               ▼                         ▼
- ┌───────────────────────────┐ ┌───────────────────────────┐
- │    ATTENTION REGISTRY     │ │   COMPRESSION REGISTRY    │
- │       (130 Modules)       │ │       (73 Engines)        │
- ├───────────────────────────┤ ├───────────────────────────┤
- │ • Linear, Kernel, Cosform │ │ • ASVD, SliceGPT, Wanda   │
- │ • Sliding Window, GQA     │ │ • GPTQ, AWQ, SmoothQuant  │
- │ • SVD Factorized Attention│ │ • KV Cache Compressors    │
- └─────────────┬─────────────┘ └─────────────┬─────────────┘
-               │                             │
-               └──────────────┬──────────────┘
-                              ▼
- ┌─────────────────────────────────────────────────────────┐
- │               Triton Kernels & Hardware                 │
- │ • 19 Hand-Written Triton Kernels (GPU)                  │
- │ • 100% PyTorch CPU/MPS Fallbacks (macOS, Windows, CPU)  │
- └────────────────────────────┬────────────────────────────┘
-                              ▼
- ┌─────────────────────────────────────────────────────────┐
- │             Evaluation, Benchmarks & Serving            │
- │ • Universal Sweep CLI (speed, accuracy, memory, Pareto) │
- │ • High-Throughput InferenceEngine & Continuous Batcher  │
- └─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    NeuralOps Public APIs                    │
+│    (neuralops.main, eval_all_models_datasets, eval_pipeline)│
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+       ┌───────────────────────┴───────────────────────┐
+       ▼                                               ▼
+┌──────────────────────────────┐        ┌──────────────────────────────┐
+│     Attention Modules        │        │     Compression Engines      │
+│  (130 Canonical Mechanisms)  │        │   (72 Compression Models)    │
+│  - Adaptive (10)             │        │  - SVD / Adaptive SVD        │
+│  - Linear / Kernel (15)      │        │  - Tensor Decomposition      │
+│  - Modern / GQA (11)         │        │  - Pruning / Sparsification  │
+│  - Gated / DeltaNet (8)      │        │  - Quantization / FP8        │
+│  - Hybrid / Sliding (15)     │        └──────────────┬───────────────┘
+│  - Sparse / MoE (12)         │                       │
+│  - SSM / Recurrent (19)      │                       │
+│  - SVD Projections (17)      │                       │
+│  - Fast Kernels / Dense (23) │                       │
+└──────────────┬───────────────┘                       │
+               │                                       │
+               └───────────────────────┬───────────────┘
+                                       ▼
+                       ┌──────────────────────────────┐
+                       │     neuralops.core.utils     │
+                       │  - rope, gqa, masks, config  │
+                       │  - lora, shared helpers      │
+                       └──────────────┬───────────────┘
+                                      ▼
+                       ┌──────────────────────────────┐
+                       │  Underlying PyTorch / CUDA   │
+                       └──────────────────────────────┘
 ```
 
-## Layer Separation
-
-1. **`core/`**: Dynamic module registries (`ATTENTION_REGISTRY`, `COMPRESSOR_REGISTRY`), Triton kernels, and architecture detection adapters.
-2. **`attentions/`**: Self-contained attention mechanism implementations across 11 families.
-3. **`compression_engine/`**: Post-training compression algorithms across 7 families.
-4. **`benchmarks/`**: Unified CLI harness, execution orchestration, and metric aggregations.
-5. **`inference/`**: High-concurrency autoregressive generation runtime with speculative decoding and continuous batching.
+## Attention Data Flow
+```
+Host Transformer Layer
+         │
+         ▼
+[Input Hidden States: (B, S, D)]
+         │
+         ├──> [Q, K, V Projections (Dense or SVD Low-Rank)]
+         │
+         ├──> [RoPE / Position Encoding (core.utils.rope)]
+         │
+         ├──> [GQA Group Expansion if MQA/GQA (core.utils.gqa)]
+         │
+         ├──> [Attention Kernel: Causal / Linear / Sparse / Hybrid]
+         │
+         ├──> [Mask Handling (core.utils.masks)]
+         │
+         ▼
+[Output Projection (O_proj)] ──> [Residual & LayerNorm]
+```
