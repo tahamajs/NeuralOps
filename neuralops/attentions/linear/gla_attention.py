@@ -225,6 +225,73 @@ class GLAttention(BaseAttention):
         out = out.contiguous().view(B, N, self.all_head_size)
         return self.out_proj(out), None
 
+    def _chunked_gla_forward(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        log_gate: torch.Tensor,
+        chunk_size: int = 64,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Chunked GLA forward — parallelizable, memory O(N*d).
+        Mathematically identical to naive recurrent GLA.
+        q, k, v: (B, H, N, D)
+        log_gate: (B, H, N)
+        Returns:
+            output: (B, H, N, D)
+            final_state: (B, H, D, D)
+        """
+        B, H, N, D = q.shape
+        device = q.device
+        dtype = q.dtype
+
+        num_chunks = (N + chunk_size - 1) // chunk_size
+        state = torch.zeros(B, H, D, D, device=device, dtype=torch.float32)
+        outputs = []
+        causal_mask = torch.tril(
+            torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool)
+        )
+
+        for c in range(num_chunks):
+            start = c * chunk_size
+            end = min(start + chunk_size, N)
+            L = end - start
+
+            q_c = q[:, :, start:end].float()
+            k_c = k[:, :, start:end].float()
+            v_c = v[:, :, start:end].float()
+            g_c = log_gate[:, :, start:end].float()
+
+            g_cumsum = torch.cumsum(g_c, dim=-1)
+
+            # 1. Inter-chunk contribution from past state
+            decay_inter = g_cumsum.exp()
+            q_inter = q_c * decay_inter.unsqueeze(-1)
+            o_inter = torch.einsum("bhld,bhde->bhle", q_inter, state)
+
+            # 2. Intra-chunk contribution
+            g_diff = g_cumsum.unsqueeze(-1) - g_cumsum.unsqueeze(-2)
+            decay_intra = g_diff.exp() * causal_mask[:L, :L].float()
+            qk = torch.einsum("bhld,bhsd->bhls", q_c, k_c)
+            attn = qk * decay_intra
+            o_intra = torch.einsum("bhls,bhsd->bhld", attn, v_c)
+
+            outputs.append((o_inter + o_intra).to(dtype))
+
+            # 3. State update
+            g_last = g_cumsum[:, :, -1:]
+            decay_state = g_last.exp().unsqueeze(-1)
+            state = state * decay_state
+
+            decay_kv = (g_last - g_cumsum).exp()
+            v_weighted = v_c * decay_kv.unsqueeze(-1)
+            kv_chunk = torch.einsum("bhld,bhle->bhde", k_c, v_weighted)
+            state = state + kv_chunk
+
+        out = torch.cat(outputs, dim=2)
+        return out, state
+
     def _pytorch_gla_stable(
         self,
         Q: torch.Tensor,
