@@ -1,3 +1,6 @@
+import torch
+
+
 def _broadcast_cos_sin(
     cos: torch.Tensor, sin: torch.Tensor, q: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
