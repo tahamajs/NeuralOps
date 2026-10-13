@@ -485,6 +485,53 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
         return dq, dk, dv, dbeta, dalpha
 
 
+def gdn_scan_pytorch(q, k, v, beta, alpha):
+    """
+    Pure PyTorch reference implementation for Gated DeltaNet scan.
+    Runs identically on CPU, Apple Silicon MPS, or CUDA.
+    Shapes:
+        q, k, v: [B, H, L, D]
+        beta, alpha: [B, H, L] or [B, H, L, D]
+    """
+    B, H, L, D = q.shape
+    device = q.device
+    dtype = q.dtype
+
+    # Ensure beta, alpha are broadcastable to (B, H, L)
+    if beta.dim() == 4:
+        beta = beta[..., 0]
+    if alpha.dim() == 4:
+        alpha = alpha[..., 0]
+
+    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    ys = []
+
+    for t in range(L):
+        q_t = q[:, :, t, :].float()  # (B, H, D)
+        k_t = k[:, :, t, :].float()  # (B, H, D)
+        v_t = v[:, :, t, :].float()  # (B, H, D)
+        b_t = beta[:, :, t].float().unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+        a_t = alpha[:, :, t].float()  # (B, H)
+
+        # inter_v_t = k_t @ S_{t-1}
+        # k_t: (B, H, 1, D) @ S: (B, H, D, D) -> (B, H, 1, D)
+        inter_v_t = torch.matmul(k_t.unsqueeze(-2), S).squeeze(-2)
+        err_t = v_t - inter_v_t
+        norm_sq_t = (k_t * k_t).sum(dim=-1)
+        step_t = (a_t / torch.clamp(1.0 + norm_sq_t, min=1.0)).unsqueeze(-1).unsqueeze(-1)
+
+        # S_t = beta_t * S_{t-1} + step_t * (k_t^T @ err_t)
+        # k_t: (B, H, D, 1), err_t: (B, H, 1, D) -> (B, H, D, D)
+        outer_prod = torch.matmul(k_t.unsqueeze(-1), err_t.unsqueeze(-2))
+        S = b_t * S + step_t * outer_prod
+
+        # y_t = q_t @ S_t
+        y_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+        ys.append(y_t)
+
+    return torch.stack(ys, dim=2).to(dtype)
+
+
 def gdn_scan_triton(q, k, v, beta, alpha):
     """Triton-accelerated Gated DeltaNet scan. head_dim must be <= 64."""
     B, H, L, D = q.shape
@@ -500,4 +547,14 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
 
 
-__all__ = ['gdn_scan_triton']
+def gdn_scan(q, k, v, beta, alpha):
+    """Dispatches GDN scan to Triton GPU kernel when suitable, else PyTorch fallback."""
+    if torch.cuda.is_available() and q.is_cuda and hasattr(triton, "jit"):
+        try:
+            return gdn_scan_triton(q, k, v, beta, alpha)
+        except Exception:
+            pass
+    return gdn_scan_pytorch(q, k, v, beta, alpha)
+
+
+__all__ = ['gdn_scan_triton', 'gdn_scan_pytorch', 'gdn_scan']

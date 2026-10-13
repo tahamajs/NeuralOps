@@ -143,6 +143,12 @@ def _build_parser() -> argparse.ArgumentParser:
     exp_p.add_argument("--format", choices=["safetensors", "onnx", "torchscript"], default="safetensors", help="Export format")
     exp_p.add_argument("--output-dir", type=str, default="exported_model", help="Directory for exported artifacts")
 
+    # 8. doctor
+    subparsers.add_parser("doctor", help="Run comprehensive diagnostics on environment and registrations")
+
+    # 9. info
+    subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
+
     return parser
 
 
@@ -353,6 +359,12 @@ def main(argv: list[str] | None = None) -> int:
     elif args.subcommand == "resume":
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
+    elif args.subcommand == "doctor":
+        from neuralops.cli.doctor import cmd_doctor
+        return cmd_doctor()
+    elif args.subcommand == "info":
+        from neuralops.cli.info import cmd_info
+        return cmd_info()
 
     return 0
 

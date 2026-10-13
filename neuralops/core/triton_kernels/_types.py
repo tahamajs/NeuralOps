@@ -52,11 +52,29 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
         logger.info("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
 
 
+FORWARD_ONLY_KERNELS: set[str] = {
+    "sliding_window",
+    "fused_rope",
+    "fused_ce",
+    "cosformer",
+    "cosformer_triton_kernel",
+    "paged_attention",
+    "flash_decoding",
+    "softplus",
+    "varlen_attention",
+    "block_sparse",
+    "fused_kd",
+    "fused_norm_linear",
+    "gqa",
+}
+
+
 def check_triton_suitability(
     tensor: torch.Tensor,
     kernel_name: str,
     head_dim: int | None = None,
     seq_len: int | None = None,
+    supports_backward: bool = True,
 ) -> tuple[bool, str | None]:
     """Validate whether the input tensor satisfies all requirements for Triton execution."""
     if not HAS_TRITON:
@@ -85,6 +103,14 @@ def check_triton_suitability(
             False,
             f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}",
         )
+
+    # If the kernel does not support autograd backward, fallback if gradients are requested
+    if not supports_backward or kernel_name in FORWARD_ONLY_KERNELS:
+        if getattr(tensor, "requires_grad", False) or torch.is_grad_enabled():
+            return (
+                False,
+                f"kernel '{kernel_name}' is forward-only but gradient computation is enabled",
+            )
 
     return True, None
 
