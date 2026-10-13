@@ -87,3 +87,37 @@ class FusedCrossEntropyLoss(nn.Module):
 
         # Fallback to PyTorch native for stability / autograd
         return F.cross_entropy(logits, targets, ignore_index=self.ignore_index, reduction=self.reduction)
+
+
+def fused_cross_entropy_pytorch(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    ignore_index: int = -100,
+    reduction: str = "mean",
+) -> torch.Tensor:
+    """Pure PyTorch fallback reference for cross-entropy."""
+    orig_shape = logits.shape
+    if logits.dim() > 2:
+        logits = logits.reshape(-1, orig_shape[-1])
+        targets = targets.reshape(-1)
+    return F.cross_entropy(logits, targets, ignore_index=ignore_index, reduction=reduction)
+
+
+def fused_cross_entropy(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    ignore_index: int = -100,
+    reduction: str = "mean",
+) -> torch.Tensor:
+    """
+    Fused cross-entropy loss with automatic Triton GPU / PyTorch fallback.
+    """
+    fn = FusedCrossEntropyLoss(ignore_index=ignore_index, reduction=reduction)
+    return fn(logits, targets)
+
+
+__all__ = [
+    "FusedCrossEntropyLoss",
+    "fused_cross_entropy",
+    "fused_cross_entropy_pytorch",
+]
