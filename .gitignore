@@ -2,6 +2,7 @@
 # Python
 # ============================================================
 __pycache__/
+*/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -386,3 +387,27 @@ launcher.bat
 /get_registry_counts.py
 /process_dedup.py
 /verify_bucket_fixes.py
+
+# ============================================================
+# Explicitly Track Governance, CI, Docs, Tests & Source Code
+# ============================================================
+!.github/
+!.github/**
+!CHANGELOG.md
+!SECURITY.md
+!CODE_OF_CONDUCT.md
+!ROADMAP.md
+!CONTRIBUTING.md
+!docs/
+*.pyc
+./**/*.pyc
+!docs/**
+!tests/
+!tests/**
+!neuralops/
+!neuralops/**
+!scripts/
+!scripts/**
+__pycache__/
+*.py[cod]
+*$py.class

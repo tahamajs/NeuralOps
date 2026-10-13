@@ -493,7 +493,23 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     """
     Unified router that executes high-performance Triton kernels when supported,
     or transparently falls back to optimized PyTorch implementations.
+    Integrates directly with torch.library custom op registrations for clean torch.compile tracing.
     """
+    # 0. torch.compile integration: if custom op is registered and torch.compiler is tracing
+    if not kwargs and len(args) >= 3:
+        if kernel_name == "linear_attn" and hasattr(torch.ops, "neuralops") and hasattr(torch.ops.neuralops, "linear_attn"):
+            try:
+                if torch.compiler.is_compiling():
+                    return torch.ops.neuralops.linear_attn(args[0], args[1], args[2])
+            except Exception:
+                pass
+        elif kernel_name == "low_rank" and hasattr(torch.ops, "neuralops") and hasattr(torch.ops.neuralops, "low_rank"):
+            try:
+                if torch.compiler.is_compiling() and len(args) == 3:
+                    return torch.ops.neuralops.low_rank(args[0], args[1], args[2])
+            except Exception:
+                pass
+
     if kernel_name == "linear_attn":
         from neuralops.core.triton_kernels.linear_attn import fwd, is_supported
 

@@ -18,15 +18,23 @@ def finetune_classification(
     lr: float = 5e-5,
     device: str | torch.device = "cpu",
     max_steps: int | None = None,
+    mixed_precision: str = "no",
+    tracker: Any = None,
+    log_interval: int = 10,
 ) -> dict[str, Any]:
     """
-    Fine-tune classification model across training epochs with early NaN stopping.
-
-    Returns:
-        Dictionary of training metadata (final_loss, epochs_completed, status).
+    Fine-tune classification model across training epochs with mixed-precision,
+    early NaN stopping, and real-time MLOps step-level telemetry.
     """
     model.train()
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+
+    # Mixed precision setup
+    use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
+    mp_type = (mixed_precision or "no").lower()
+    amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
+    amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
+    scaler = torch.cuda.amp.GradScaler(enabled=(mp_type == "fp16" and use_cuda))
 
     step = 0
     epoch_losses = []
@@ -53,21 +61,39 @@ def finetune_classification(
             labels = batch[2].to(device)
 
             optimizer.zero_grad()
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            loss = outputs.loss
+            if amp_enabled:
+                with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+                    loss = outputs.loss
+            else:
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+                loss = outputs.loss
 
             if torch.isnan(loss) or torch.isinf(loss):
                 LOG.warning("NaN or Inf loss encountered at step %d. Stopping training.", step)
                 return {"final_loss": float("nan"), "epochs": epoch, "status": "NaN_LOSS"}
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
+            if amp_enabled and mp_type == "fp16":
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                optimizer.step()
 
             cur_loss = float(loss.item())
             running_loss += cur_loss
             count += 1
             step += 1
+
+            if tracker is not None and step % log_interval == 0:
+                try:
+                    tracker.log_metrics({"train/loss": cur_loss, "train/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
+                except Exception:
+                    pass
 
             LOG_EVERY = 50
             if has_tqdm and hasattr(pbar, "set_postfix"):
@@ -102,8 +128,11 @@ def train_kd(
     temperature: float = 2.0,
     alpha: float = 0.5,
     max_steps: int | None = None,
+    mixed_precision: str = "no",
+    tracker: Any = None,
+    log_interval: int = 10,
 ) -> dict[str, Any]:
-    """Execute Knowledge Distillation training loop from teacher to student."""
+    """Execute Knowledge Distillation training loop from teacher to student with mixed precision & MLOps."""
     from neuralops.benchmarks.core.kd import KDLoss, kd_train_step
 
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
@@ -127,6 +156,13 @@ def train_kd(
             running_loss += step_loss
             count += 1
             step += 1
+
+            if tracker is not None and step % log_interval == 0:
+                try:
+                    tracker.log_metrics({"kd/loss": step_loss, "kd/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
+                except Exception:
+                    pass
+
             if max_steps is not None and step >= max_steps:
                 break
         avg_loss = running_loss / max(count, 1)
@@ -143,6 +179,7 @@ def train_kd(
         "training_type": "kd",
         "status": "success",
     }
+
 
 def recovery_finetune(
     model: nn.Module,

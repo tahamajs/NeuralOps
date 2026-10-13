@@ -58,7 +58,11 @@ def test_torch_compile_simple_block():
 
 
 def test_export_safetensors_and_config():
-    model = SimpleTransformerBlock(d_model=32, n_heads=2)
+    model = SimpleTransformerBlock(d_model=32, n_heads=2).eval()
+    x = torch.randn(2, 8, 32)
+    with torch.no_grad():
+        orig_logits = model(x)
+
     tmp_dir = tempfile.mkdtemp()
     try:
         out_dir = export_model(
@@ -66,14 +70,20 @@ def test_export_safetensors_and_config():
             output_dir=tmp_dir,
             format="safetensors",
             model_name_or_path="simple-block",
-            attention_type="linear_attn",
+            attention_type=None,
             rank=16,
         )
         assert Path(out_dir).exists()
-        config = load_exported_model(out_dir)
-        assert config["attention_type"] == "linear_attn"
+        reloaded_model, config = load_exported_model(out_dir, base_model=SimpleTransformerBlock(d_model=32, n_heads=2))
+        assert config["attention_type"] is None
         assert config["rank"] == 16
         assert config["format"] == "safetensors"
+
+        reloaded_model.eval()
+        with torch.no_grad():
+            reloaded_logits = reloaded_model(x)
+
+        torch.testing.assert_close(orig_logits, reloaded_logits, atol=1e-5, rtol=1e-5)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
