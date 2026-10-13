@@ -27,6 +27,7 @@ Thank you for your interest in contributing to **NeuralOps**! We welcome contrib
 4. **Verify your local installation**:
    ```bash
    python -m neuralops.benchmarks verify
+   python -m neuralops info
    pytest tests/ -v
    ```
 
@@ -36,10 +37,17 @@ Thank you for your interest in contributing to **NeuralOps**! We welcome contrib
 
 All attention mechanisms inherit from standard PyTorch `nn.Module` and are registered in `ATTENTION_REGISTRY`.
 
-1. Create your attention class in `neuralops/attentions/<category>/<module_name>.py`.
-2. Ensure your module accepts `(hidden_size, num_heads, ...)` and implements `forward(hidden_states, attention_mask=None, ...)` returning `(output, Optional[attn_weights])`.
-3. Register the module using the `@register_attention` decorator:
+1. **Create your module file** in the appropriate category under `neuralops/attentions/<category>/<module_name>.py`:
+   - `adaptive/`, `dense/`, `experimental/`, `fast_kernels/`, `gated/`, `hybrid/`, `linear/`, `modern/`, `sparse/`, `ssm/`, `svd/`.
+
+2. **Implement standard signatures**:
+   - The constructor must accept `(hidden_size: int, num_heads: int, **kwargs)`.
+   - The `forward` method must accept `(hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs)` and return a tuple `(output: torch.Tensor, Optional[torch.Tensor])`.
+
+3. **Register the module using `@register_attention`**:
    ```python
+   from torch import nn
+   import torch
    from neuralops.core.registry import register_attention
 
    @register_attention(
@@ -52,48 +60,71 @@ All attention mechanisms inherit from standard PyTorch `nn.Module` and are regis
    class MyFastAttention(nn.Module):
        def __init__(self, hidden_size: int, num_heads: int, **kwargs):
            super().__init__()
-           ...
+           self.hidden_size = hidden_size
+           self.num_heads = num_heads
+           self.head_dim = hidden_size // num_heads
+           self.q_proj = nn.Linear(hidden_size, hidden_size)
+           self.k_proj = nn.Linear(hidden_size, hidden_size)
+           self.v_proj = nn.Linear(hidden_size, hidden_size)
+           self.out_proj = nn.Linear(hidden_size, hidden_size)
 
-       def forward(self, hidden_states, attention_mask=None, **kwargs):
-           ...
-           return output, None
+       def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = None, **kwargs):
+           # Custom linear or kernel attention computation
+           out = self.out_proj(hidden_states)
+           return out, None
    ```
-4. Expose your module in `neuralops/attentions/__init__.py`.
+
+4. **Add module export in `neuralops/attentions/__init__.py`**.
+5. **Verify count consistency**: Run `python scripts/utils/verify_readme_counts.py`.
 
 ---
 
 ## 🗜️ Adding a New Compression Engine
 
-Compressors reduce weight matrices or KV states and are registered in `COMPRESSOR_REGISTRY`:
+Compressors reduce weight matrices or KV caches and are registered in `COMPRESSOR_REGISTRY`:
 
-1. Implement your compressor in `neuralops/compression_engine/<method>.py`.
-2. Register the engine using `@register_compressor`:
+1. **Implement your compressor** under `neuralops/compression_engine/<family>/<method>.py`:
+   - `low_rank/`, `svd/`, `tensor_decomp/`, `pruning/`, `quantization/`, `kv_cache/`.
+
+2. **Implement the compression interface**:
    ```python
+   import torch.nn as nn
    from neuralops.core.registry import register_compressor
 
-   @register_compressor(name="my_svd_engine")
-   class MySVDEngine:
-       def compress_layer(self, layer: nn.Linear, rank: int, **kwargs) -> nn.Module:
-           ...
-           return factorized_module
+   @register_compressor(name="my_custom_svd")
+   class MyCustomSVDCompressor:
+       def __init__(self, rank: int = 32, **kwargs):
+           self.rank = rank
+
+       def compress(self, model: nn.Module, **kwargs) -> nn.Module:
+           for name, module in model.named_modules():
+               if isinstance(module, nn.Linear):
+                   # Factorize into U and V
+                   pass
+           return model
    ```
+
+3. **Add unit tests** in `tests/test_compile_and_export.py` or `neuralops/tests/`.
 
 ---
 
 ## ⚡ Writing Triton Kernels with Mandatory PyTorch Fallbacks
 
-Every custom Triton kernel module added to `neuralops/core/triton_kernels/` **must** satisfy these rules:
-1. Include a mathematically identical PyTorch CPU/MPS fallback function.
-2. Route execution through capability checks (`HAS_TRITON`, CUDA tensor check, fp16/bf16 check).
-3. Register a FakeTensor / meta shape function in `neuralops/core/triton_kernels/op_registry.py` so `torch.compile` traces cleanly without graph breaks.
-4. Add numerical parity tests in `tests/test_triton_parity.py` comparing the Triton kernel and PyTorch fallback across `fp32` and `fp16`.
+Every custom Triton kernel module added to `neuralops/core/triton_kernels/` **must** satisfy these strict engineering rules:
+1. **Deterministic Fallback**: Must provide a mathematically equivalent PyTorch CPU/MPS reference implementation.
+2. **Capability Check**: Must query `check_triton_suitability(tensor, kernel_name)` before attempting Triton JIT compilation.
+3. **torch.compile Support**: Must register FakeTensor / Meta-device shapes in `neuralops/core/triton_kernels/op_registry.py`.
+4. **Autograd Differentiability**: Computational kernels used in training must implement `torch.autograd.Function` with `.backward()` support or fall back to PyTorch autograd.
+5. **Parity Tests**: Must include test cases in `tests/test_triton_parity.py` comparing the Triton kernel against the fallback across `fp32` and `fp16`.
 
 ---
 
-## 📋 Pull Request Checklist
+## 📋 Pull Request & Code Quality Checklist
 
 Before submitting a Pull Request, ensure that:
-- [ ] Code is formatted and linted: `ruff check neuralops tests`
-- [ ] Tests pass: `pytest tests/ -v`
-- [ ] Any new CLI options or parameters are documented in `docs/` and docstrings.
-- [ ] New components do not introduce breaking changes to existing registry keys or legacy aliases.
+- [ ] Code is formatted and passes linting: `ruff check neuralops tests`
+- [ ] Full test suite passes: `pytest tests/ -v`
+- [ ] In-package tests pass: `pytest neuralops/tests/analysis/ neuralops/tests/config/ neuralops/tests/data/ neuralops/tests/models/`
+- [ ] Registry counts match: `python scripts/utils/verify_readme_counts.py`
+- [ ] No hardcoded local paths (`/home/user`, `D:/`, etc.) exist in the code.
+- [ ] Working tree is clean and commits follow conventional commit standards (`feat:`, `fix:`, `docs:`, `chore:`).
