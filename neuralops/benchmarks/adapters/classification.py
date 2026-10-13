@@ -94,11 +94,15 @@ class ClassificationAdapter:
         self.model_meta = get_model_metadata(self.model, model_cfg)
 
         # 3. Tokenize datasets
+        max_train_samples = getattr(self, "max_samples", None) or self.extra_kwargs.get("max_samples")
+        max_eval_samples = self.extra_kwargs.get("max_eval_samples")
+
         tokenized_train = load_dataset_by_name(
             self.dataset_name,
             tokenizer=self.tokenizer,
             max_length=self.max_length,
             split="train",
+            max_samples=max_train_samples,
         )
         # Determine eval split
         eval_split = "validation"
@@ -108,6 +112,7 @@ class ClassificationAdapter:
                 tokenizer=self.tokenizer,
                 max_length=self.max_length,
                 split="validation",
+                max_samples=max_eval_samples,
             )
         except Exception:
             eval_split = "test"
@@ -116,6 +121,7 @@ class ClassificationAdapter:
                 tokenizer=self.tokenizer,
                 max_length=self.max_length,
                 split="test",
+                max_samples=max_eval_samples,
             )
 
         self.dataset_meta = get_dataset_metadata(
