@@ -1,0 +1,26 @@
+[
+  {
+    "category": "Model",
+    "name": "forward+backward",
+    "status": "\u2705",
+    "value": null,
+    "notes": "[]",
+    "timestamp": "2026-10-13T10:18:31.121821"
+  },
+  {
+    "category": "Data",
+    "name": "SST-2 dataset",
+    "status": "\u2705",
+    "value": "67349 train",
+    "notes": "",
+    "timestamp": "2026-10-13T10:18:46.639343"
+  },
+  {
+    "category": "Training",
+    "name": "overfit_test",
+    "status": "\u274c",
+    "value": null,
+    "notes": "",
+    "timestamp": "2026-10-13T10:18:55.205679"
+  }
+]

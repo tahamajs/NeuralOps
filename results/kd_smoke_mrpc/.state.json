@@ -1,0 +1,10 @@
+{
+  "completed": [
+    "naive_svd",
+    "sink_attention"
+  ],
+  "in_progress": null,
+  "config_hash": "6b9a62eee86c2fa7",
+  "started_at": "2026-10-13T12:02:38Z",
+  "last_update": "2026-10-13T12:06:04Z"
+}
