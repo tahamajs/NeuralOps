@@ -197,7 +197,7 @@ class GroupedQueryAttention(BaseAttention):
                 _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)),
             )
         )
-        self.freeze_base = False
+        self.freeze_base = bool(kwargs.get("freeze_base", self.lora_rank > 0))
         # ---- projections ----
         self.query = LoRALinear(
             self.hidden_size,
