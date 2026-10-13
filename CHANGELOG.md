@@ -106,9 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Knowledge distillation (KD) benchmark engine supporting temperature scaling and teacher-student logits matching.
 - Initial model surgery injection for LLaMA and Mistral transformer backbones.
 - Support for mixed-precision FP16 and BF16 inference pipelines.
+- Multi-dataset data loaders for GLUE benchmark suites (SST-2, MNLI, QQP, QNLI, RTE, CoLA, MRPC, STSB).
+- Learning rate schedulers with warm-restarts and cosine decay for low-rank adapter fine-tuning.
 
 ### Changed
 - Refactored attention registry to record bidirectional, causal, and cross-attention capability metadata.
+- Standardized logging format across all runner pipelines with timestamps and progress metrics.
 
 ---
 
@@ -118,6 +121,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial public release of NeuralOps on GitHub and PyPI.
 - Drop-in attention replacement engine (`neuralops.replace_attention`) for Hugging Face Transformers.
 - SVD and low-rank compression pipeline (`neuralops.compress`).
-- Basic benchmark runner across 8 supported transformer architectures.
+- Basic benchmark runner across 8 supported transformer architectures (BERT, RoBERTa, DistilBERT, GPT-2, LLaMA, Mistral, Qwen2, T5).
 - Standard evaluators for GLUE classification benchmark tasks.
+- Baseline configuration files and YAML hyperparameter specifications.
+- Automated weight transplantation from standard multi-head self-attention projections to factorized low-rank weights.
+- Early stopping criteria based on validation cross-entropy and task accuracy.
+
 
