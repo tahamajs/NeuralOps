@@ -121,7 +121,7 @@ def export_model(
                     "logits": {0: "batch_size"},
                 },
             )
-        except Exception as e:
+        except (Exception, BaseException) as e:
             logger.warning("ONNX conversion not supported for custom ops: %s. Writing metadata and marker stub.", e)
             with open(onnx_file, "w") as f:
                 f.write(f"# ONNX export fallback marker: {e}\n")
