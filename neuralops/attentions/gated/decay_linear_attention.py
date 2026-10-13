@@ -149,7 +149,7 @@ class DecayLinearAttention(BaseAttention):
         if hidden_size is None and d_model is not None:
             hidden_size = d_model
         if hidden_size is None:
-            hidden_size = _cfg_get("hidden_size", _cfg_get("dim", None))
+            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "n_embd", _cfg_get(config, "d_model", None))))
             if hidden_size is None and source_attn is not None:
                 out_layer = getattr(
                     source_attn,
@@ -173,7 +173,7 @@ class DecayLinearAttention(BaseAttention):
         if num_heads is None:
             num_heads = kwargs.get("num_attention_heads")
         if num_heads is None:
-            num_heads = _cfg_get("num_attention_heads", _cfg_get("num_heads", None))
+            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_head", None)))
             if num_heads is None and source_attn is not None:
                 num_heads = getattr(
                     source_attn,
@@ -192,7 +192,7 @@ class DecayLinearAttention(BaseAttention):
         self.num_heads: int = int(num_heads)
 
         # --- Resolve head_dim ---
-        resolved_head_dim = _cfg_get("head_dim", None)
+        resolved_head_dim = _cfg_get(config, "head_dim", None)
         if resolved_head_dim is None and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
         if (
@@ -207,7 +207,7 @@ class DecayLinearAttention(BaseAttention):
         self.head_dim: int = int(resolved_head_dim)
 
         # --- Resolve num_kv_heads (GQA) ---
-        kv_heads = _cfg_get("num_key_value_heads", None)
+        kv_heads = _cfg_get(config, "num_key_value_heads", None)
         if kv_heads is None and source_attn is not None:
             kv_heads = getattr(
                 source_attn,
@@ -244,13 +244,13 @@ class DecayLinearAttention(BaseAttention):
         self.layer_idx: int = int(resolved_layer_id)
 
         # --- LoRA config ---
-        self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        self.lora_rank: int = int(_cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha: float = float(_cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = self.lora_rank > 0
 
         # --- Decoder / nested-encoder detection ---
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
-        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
+        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = (
             "gpt",
             "qwen",
