@@ -15,6 +15,7 @@ Hybrid sparse attention with:
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (

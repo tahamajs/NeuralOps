@@ -4,6 +4,7 @@ LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks.
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import FactorizedLoRALinear, _detect_decoder, softpick
 
 from neuralops.core.attention_utils import (
