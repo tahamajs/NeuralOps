@@ -1,1 +1,1 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/samba_m3/20261012_054226_bs8_seq256_lr3e-04_C
+/mnt/d/SVD_linear_Attention/results/kd_runs/samba_m3/20261013_080551_bs4_seq256_lr1e-04_C
