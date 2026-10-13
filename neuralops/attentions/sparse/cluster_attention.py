@@ -772,13 +772,20 @@ class ClusterAttention(BaseAttention):
                 scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
                 empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)  # [B, H, 1, K]
                 scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
+                # Clamp scores to avoid -inf/-inf → NaN in backward for fully-masked rows
+                scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
                 temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
                 attn_assign = torch.nan_to_num(
                     F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
                 ).to(dtype)
-                assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
+                # Guard denominator with eps to prevent NaN in backward (zero-sum padding rows)
+                assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
                 attn_assign = attn_assign / assign_denom
+                attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
+                # Guard V_cent against NaN from empty-cluster centroids
+                V_cent = torch.nan_to_num(V_cent, nan=0.0)
                 global_context = torch.matmul(attn_assign, V_cent)
+                global_context = torch.nan_to_num(global_context, nan=0.0)
 
                 # 4. Optional Local Sliding Window Attention
                 if self.window_size > 0 and self.window_size < L:
