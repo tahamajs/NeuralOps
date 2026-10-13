@@ -108,6 +108,12 @@ class GLAttention(BaseAttention):
             self.gate_W2.bias.fill_(120.0)
             self.gate_W1.weight.normal_(0.0, 0.02)
 
+        # ── Output norm per head (critical for numerical stability) ──
+        # Each head's output has magnitude ≈ N (linear attention grows
+        # with sequence length). RMSNorm brings it back to ~1.
+        # Reference: FLA's fla/layers/gla.py — GLA layer uses o_norm.
+        self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
+
         # FLA kernel
         self._fla_kernel = chunk_gla if self.use_fla else None
         if self._fla_kernel is not None:
@@ -206,9 +212,11 @@ class GLAttention(BaseAttention):
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
 
-        # ✅ ADD THIS: normalize output magnitude to match softmax
-        out = out / math.sqrt(N)
+        # ── RMSNorm per head (matches FLA's GLA reference) ──
+        # out shape: (B, N, H, d) → apply RMSNorm over last dim (d)
+        out = self.o_norm(out)  # (B, N, H, d)
 
+        # Reshape to (B, N, H*d) and project
         out = out.contiguous().view(B, N, self.all_head_size)
         return self.out_proj(out), None
 
@@ -275,11 +283,11 @@ class GLAttention(BaseAttention):
             #       + sum_j exp(b_log_end - b_log_j) * k_j^T v_j
             g_end = b_log[:, -1, :]                                # (B, H)
             decay_total = g_end.exp()                              # (B, H)
-            # weights_j = exp(b_log_end - b_log_j) for j in chunk
             weights = torch.exp(
                 (g_end.unsqueeze(1) - b_log).clamp(max=0.0)
-            )                                                       # (B, L, H)
-            k_w = k * weights.unsqueeze(-1)                        # (B, L, H, d)
+            )
+            # ✅ Apply scale (1/√d) so inter-chunk matches intra-chunk
+            k_w = k * weights.unsqueeze(-1) * self.scale           # ← ADD self.scale
             kv = torch.einsum("blhd,blhe->bhde", k_w, v)           # (B, H, d, d)
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
