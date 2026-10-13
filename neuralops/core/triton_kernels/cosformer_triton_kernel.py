@@ -113,3 +113,51 @@ def cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=True):
         BLOCK_D=BLOCK_D,
     )
     return out
+
+
+def cosformer_pytorch_fwd(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    is_causal: bool = False,
+    eps: float = 1e-4,
+) -> torch.Tensor:
+    """Pure PyTorch cosformer reference forward pass."""
+    B, H, N, D = q.shape
+    device = q.device
+    dtype = q.dtype
+    m = torch.arange(N, device=device, dtype=torch.float32) * (3.141592653589793 / (2.0 * N))
+    cos_m = torch.cos(m).view(1, 1, N, 1).to(dtype)
+    sin_m = torch.sin(m).view(1, 1, N, 1).to(dtype)
+
+    q_cos = q * cos_m
+    q_sin = q * sin_m
+    k_cos = k * cos_m
+    k_sin = k * sin_m
+
+    scores = torch.matmul(q_cos, k_cos.transpose(-2, -1)) + torch.matmul(q_sin, k_sin.transpose(-2, -1))
+    if is_causal:
+        mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+        scores = scores.masked_fill(~mask.view(1, 1, N, N), 0.0)
+
+    denom = scores.sum(dim=-1, keepdim=True).clamp(min=eps)
+    weights = scores / denom
+    return torch.matmul(weights, v)
+
+
+def cosformer_triton_fwd(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    is_causal: bool = False,
+    eps: float = 1e-4,
+) -> torch.Tensor:
+    """Dispatches cosformer forward pass."""
+    return cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
+
+
+__all__ = [
+    "cosformer_global_triton",
+    "cosformer_triton_fwd",
+    "cosformer_pytorch_fwd",
+]
