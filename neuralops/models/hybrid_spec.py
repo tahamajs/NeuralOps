@@ -6,10 +6,25 @@ compact dictionaries or lists of dictionaries.
 
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass, field
 
 
-__all__ = ["normalize_hybrid_spec", "get_layer_spec"]
+__all__ = ["HybridAttentionSpec", "normalize_hybrid_spec", "get_layer_spec"]
+
+
+@dataclass
+class HybridAttentionSpec:
+    """Specification for heterogeneous per-layer attention mechanisms."""
+
+    layer_map: dict[int, str] = field(default_factory=dict)
+    default_attention: str = "full_attention"
+
+    def to_list(self, num_layers: int) -> list[dict[str, Any]]:
+        specs = []
+        for i in range(num_layers):
+            attn_type = self.layer_map.get(i, self.default_attention)
+            specs.append({"layers": [i], "type": attn_type})
+        return specs
 
 
 def normalize_hybrid_spec(
@@ -46,9 +61,13 @@ def normalize_hybrid_spec(
         # Uniform single type across all layers
         return [{"type": spec} for _ in range(num_layers)]
 
-    specs_list: list[dict[str, Any]]
-    if isinstance(spec, dict):
-        specs_list = [spec]
+    if isinstance(spec, HybridAttentionSpec):
+        specs_list = spec.to_list(num_layers)
+    elif isinstance(spec, dict):
+        if any(isinstance(k, int) for k in spec.keys()):
+            specs_list = [{"layers": [k], "type": v} for k, v in spec.items()]
+        else:
+            specs_list = [spec]
     elif isinstance(spec, (list, tuple)):
         specs_list = list(spec)
     else:

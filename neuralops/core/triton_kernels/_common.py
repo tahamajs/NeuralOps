@@ -56,86 +56,13 @@ from neuralops.core.triton_kernels._types import (
     BLOCK_SIZE,
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,
+    FORWARD_ONLY_KERNELS,
     check_triton_suitability,
     log_fallback_reason,
 )
 from neuralops.core.triton_kernels.autotuner import Autotuner, autotune_kernel
 
-_WARNED_REASONS: set[str] = set()
 
-
-def log_fallback_reason(kernel_name: str, reason: str) -> None:
-    """Log the fallback reason once per unique (kernel, reason) pair."""
-    key = f"{kernel_name}:{reason}"
-    if key not in _WARNED_REASONS:
-        _WARNED_REASONS.add(key)
-        logger.info("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
-
-
-FORWARD_ONLY_KERNELS: set[str] = {
-    "sliding_window",
-    "fused_rope",
-    "fused_ce",
-    "cosformer",
-    "cosformer_triton_kernel",
-    "paged_attention",
-    "flash_decoding",
-    "softplus",
-    "varlen_attention",
-    "block_sparse",
-    "fused_kd",
-    "fused_norm_linear",
-    "gqa",
-}
-
-
-def check_triton_suitability(
-    tensor: torch.Tensor,
-    kernel_name: str,
-    head_dim: int | None = None,
-    seq_len: int | None = None,
-    supports_backward: bool = True,
-) -> tuple[bool, str | None]:
-    """
-    Validate whether the input tensor satisfies all requirements for Triton execution.
-    Returns (is_suitable, failure_reason).
-    """
-    if not HAS_TRITON:
-        return False, "triton package is not installed"
-
-    if not torch.cuda.is_available():
-        return False, "CUDA is not available on this system"
-
-    if not tensor.is_cuda:
-        return False, f"tensor is on {tensor.device}, expected CUDA"
-
-    if tensor.dtype not in (torch.float16, torch.bfloat16):
-        return (
-            False,
-            f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
-        )
-
-    if head_dim is not None and head_dim not in SUPPORTED_HEAD_DIMS:
-        return (
-            False,
-            f"head dimension {head_dim} not in supported set {SUPPORTED_HEAD_DIMS}",
-        )
-
-    if seq_len is not None and seq_len > MAX_TRITON_SEQ_LEN:
-        return (
-            False,
-            f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}",
-        )
-
-    # Route forward-only kernels to differentiable PyTorch fallback during training/autograd
-    if not supports_backward or kernel_name in FORWARD_ONLY_KERNELS:
-        if getattr(tensor, "requires_grad", False) or torch.is_grad_enabled():
-            return (
-                False,
-                f"kernel '{kernel_name}' is forward-only but gradient computation is enabled",
-            )
-
-    return True, None
 
 
 # ===========================================================================
@@ -664,3 +591,22 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
             f"Unknown triton kernel: '{kernel_name}'. Supported kernels: "
             "['linear_attn', 'sparse_attn', 'low_rank', 'state_update', 'gqa']"
         )
+
+
+__all__ = [
+    "HAS_TRITON",
+    "BLOCK_SIZE",
+    "MAX_TRITON_SEQ_LEN",
+    "SUPPORTED_HEAD_DIMS",
+    "FORWARD_ONLY_KERNELS",
+    "check_triton_suitability",
+    "log_fallback_reason",
+    "triton_dispatch",
+    "linear_attn_pytorch_fallback",
+    "sparse_attn_pytorch_fallback",
+    "low_rank_pytorch_fallback",
+    "state_update_pytorch_fallback",
+    "gqa_pytorch_fallback",
+    "Autotuner",
+    "autotune_kernel",
+]
