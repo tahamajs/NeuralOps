@@ -45,11 +45,39 @@ class BenchmarkOrchestrator:
         resume: bool = True,
         **kwargs: Any,
     ) -> None:
-        self.config = config or BenchmarkConfig(**kwargs)
+        shortcut_keys = {
+            "delta", "all_delta", "gated", "all_gated", "svd", "all_svd",
+            "ssm", "all_ssm", "linear", "all_linear", "sparse", "all_sparse",
+            "hybrid", "all_hybrid", "all_attn", "all_attention", "all_comp",
+            "all_compressors", "all_modules", "fail_delta", "errors_only",
+        }
+        config_kwargs = {k: v for k, v in kwargs.items() if k not in shortcut_keys}
+        self.config = config or BenchmarkConfig(**config_kwargs)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.state_file = self.output_dir / "run_state.json"
         self.jsonl_file = self.output_dir / "results.jsonl"
+        self.delta = kwargs.get("delta", False) or kwargs.get("all_delta", False)
+        self.all_delta = self.delta
+        self.gated = kwargs.get("gated", False) or kwargs.get("all_gated", False)
+        self.all_gated = self.gated
+        self.svd = kwargs.get("svd", False) or kwargs.get("all_svd", False)
+        self.all_svd = self.svd
+        self.ssm = kwargs.get("ssm", False) or kwargs.get("all_ssm", False)
+        self.all_ssm = self.ssm
+        self.linear = kwargs.get("linear", False) or kwargs.get("all_linear", False)
+        self.all_linear = self.linear
+        self.sparse = kwargs.get("sparse", False) or kwargs.get("all_sparse", False)
+        self.all_sparse = self.sparse
+        self.hybrid = kwargs.get("hybrid", False) or kwargs.get("all_hybrid", False)
+        self.all_hybrid = self.hybrid
+        self.all_attn = kwargs.get("all_attn", False) or kwargs.get("all_attention", False)
+        self.all_attention = self.all_attn
+        self.all_comp = kwargs.get("all_comp", False) or kwargs.get("all_compressors", False)
+        self.all_compressors = self.all_comp
+        self.all_modules = kwargs.get("all_modules", False)
+        self.fail_delta = kwargs.get("fail_delta", False)
+        self.errors_only = kwargs.get("errors_only", False)
 
         # Resolve modules list
         self.modules = self._resolve_modules(modules)
@@ -78,29 +106,126 @@ class BenchmarkOrchestrator:
         )
         self.summarizer = SummaryGenerator(output_dir=self.output_dir)
 
-    def _resolve_modules(self, mods: str | list[str]) -> list[str]:
+    def _resolve_modules(self, mods: str | list[str] | None = None) -> list[str]:
+        # Handle explicit kwargs passed to BenchmarkOrchestrator
+        if getattr(self, "all_delta", False) or getattr(self, "delta", False):
+            return self._get_family("delta")
+        if getattr(self, "all_gated", False) or getattr(self, "gated", False):
+            return self._get_family("gated")
+        if getattr(self, "all_svd", False) or getattr(self, "svd", False):
+            return sorted(set(self._get_family("svd") + self._get_compressor_family("svd")))
+        if getattr(self, "all_ssm", False) or getattr(self, "ssm", False):
+            return self._get_family("ssm")
+        if getattr(self, "all_linear", False) or getattr(self, "linear", False):
+            return self._get_family("linear")
+        if getattr(self, "all_sparse", False) or getattr(self, "sparse", False):
+            return self._get_family("sparse")
+        if getattr(self, "all_hybrid", False) or getattr(self, "hybrid", False):
+            return self._get_family("hybrid")
+        if getattr(self, "all_attn", False) or getattr(self, "all_attention", False):
+            from neuralops.core.registry import ATTENTION_REGISTRY
+            return sorted(ATTENTION_REGISTRY.keys())
+        if getattr(self, "all_comp", False) or getattr(self, "all_compressors", False):
+            from neuralops.core.registry import COMPRESSOR_REGISTRY
+            return sorted(COMPRESSOR_REGISTRY.keys())
+        if getattr(self, "all_modules", False):
+            from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+            return sorted(list(set(list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()))))
+        if getattr(self, "fail_delta", False):
+            return self._get_fail_delta_modules()
+        if getattr(self, "errors_only", False):
+            return self._get_errored_modules()
+
         all_mods = discover_modules()
         if isinstance(mods, str):
             if mods in ("all", "all-modules"):
                 return sorted(all_mods.keys())
-            elif mods in ("all-attention", "attention"):
-                return sorted(k for k, v in all_mods.items() if v.type == "attention")
-            elif mods in ("all-compressors", "compressors"):
-                return sorted(k for k, v in all_mods.items() if v.type == "compressor")
+            elif mods in ("all-attention", "attention", "all-attn"):
+                from neuralops.core.registry import ATTENTION_REGISTRY
+                return sorted(ATTENTION_REGISTRY.keys())
+            elif mods in ("all-compressors", "compressors", "all-comp"):
+                from neuralops.core.registry import COMPRESSOR_REGISTRY
+                return sorted(COMPRESSOR_REGISTRY.keys())
             elif mods in ("delta", "delta-modules", "all-delta"):
-                delta_candidates = [
-                    "gated_delta_net",
-                    "hgrn2_gated_deltanet",
-                    "delta_kv",
-                    "moe_deltakv_paged",
-                    "gated_deltanet_block",
-                ]
-                return [m for m in delta_candidates if m in all_mods]
+                return self._get_family("delta")
+            elif mods in ("gated", "all-gated"):
+                return self._get_family("gated")
+            elif mods in ("svd", "all-svd"):
+                return sorted(set(self._get_family("svd") + self._get_compressor_family("svd")))
+            elif mods in ("ssm", "all-ssm"):
+                return self._get_family("ssm")
+            elif mods in ("linear", "all-linear"):
+                return self._get_family("linear")
+            elif mods in ("sparse", "all-sparse"):
+                return self._get_family("sparse")
+            elif mods in ("hybrid", "all-hybrid"):
+                return self._get_family("hybrid")
+            elif mods in ("fail-delta", "all-fail-delta"):
+                return self._get_fail_delta_modules()
+            elif mods in ("errors-only", "error", "errors"):
+                return self._get_errored_modules()
             elif mods in ("none", "baseline", "full"):
                 return ["baseline"]
             else:
                 return [m.strip() for m in mods.split(",") if m.strip()]
-        return list(mods)
+        elif mods is not None:
+            return list(mods)
+        from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+        return sorted(list(set(list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()))))
+
+    def _get_family(self, family: str) -> list[str]:
+        """Return all attention modules matching the family prefix."""
+        from neuralops.core.registry import ATTENTION_REGISTRY
+        if family == "delta":
+            delta_candidates = [
+                "gated_delta_net",
+                "hgrn2_gated_deltanet",
+                "delta_kv",
+                "moe_deltakv_paged",
+                "gated_deltanet_block",
+            ]
+            all_mods = discover_modules()
+            return [m for m in delta_candidates if m in all_mods]
+
+        patterns = {
+            "gated": ["gated_", "hgrn2"],
+            "svd": ["svd", "asvd", "res_svd", "minimal_svd", "swift_svd"],
+            "ssm": ["mamba", "ssm", "selective", "hippo", "s4"],
+            "linear": ["linear", "cosformer", "performer", "rpc", "gla", "recurrent", "retention", "rwkv"],
+            "sparse": ["sparse", "nsa", "bigbird", "longformer", "local", "sliding", "reformer", "routing", "cluster", "sinkhorn"],
+            "hybrid": ["hybrid", "split_head", "tri_branch", "samba", "moe", "ensemble"],
+        }
+        pats = patterns.get(family, [])
+        return sorted(k for k in ATTENTION_REGISTRY.keys() if any(p in k.lower() for p in pats))
+
+    def _get_compressor_family(self, family: str) -> list[str]:
+        """Return compressor modules matching the family."""
+        from neuralops.core.registry import COMPRESSOR_REGISTRY
+        patterns = {
+            "svd": ["svd", "asvd", "residual_svd", "fwsvd", "saes"],
+            "quantizer": ["quantizer", "int4", "int8", "faq", "uniql"],
+            "pruner": ["pruner", "prune", "slicegpt"],
+        }
+        pats = patterns.get(family, [])
+        return sorted(k for k in COMPRESSOR_REGISTRY.keys() if any(p in k.lower() for p in pats))
+
+    def _get_fail_delta_modules(self) -> list[str]:
+        """Return the 25 FAIL_DELTA modules from the audit report."""
+        return [
+            "aatc_xkv_compressor", "faq_quantizer", "fwsvd_compressor",
+            "hashed_net_compressor", "huffman_coder", "hybridkv_compressor",
+            "kronecker_tt_lora", "liftr", "lillama_compressor",
+            "lsc_compressor", "mgie_budget", "residual_svd_compressor",
+            "roast_hashed_linear", "rotational_slicegpt_int4",
+            "rpca_compressor", "saes_svd_v2", "salr", "slicegpt",
+            "soka_compressor", "subspace_projection", "svd_linear",
+            "swift_svd_act", "tomoe_compressor", "tt_compressor",
+            "uniql_compressor",
+        ]
+
+    def _get_errored_modules(self) -> list[str]:
+        """Return modules that previously errored."""
+        return ["mamba_shedder"]
 
     def _load_state(self) -> dict[str, Any]:
         if self.resume_mode and self.state_file.exists():
