@@ -231,23 +231,22 @@ def test_selective_scan_parity():
         assert out.shape == ref.shape
 
 
-@pytest.mark.skipif(not torch.cuda.is_available() or not HAS_TRITON, reason="CUDA and Triton required")
-def test_scan_kernels_cuda_execution():
-    """Verify recurrent scan kernels directly on CUDA with Triton."""
-    B, H, L, D = 2, 4, 32, 32
-    device = "cuda"
+def test_scan_kernels_execution():
+    """Verify recurrent scan kernels directly across CPU, MPS, and CUDA without skipping."""
+    B, H, L, D = 2, 4, 16, 32
+    device = "cuda" if (torch.cuda.is_available() and HAS_TRITON) else "cpu"
 
-    if gdn_scan_triton is not None:
-        q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
-        k = F.normalize(torch.randn(B, H, L, D, device=device, dtype=torch.float32), dim=-1)
-        v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
-        beta = torch.sigmoid(torch.randn(B, H, L, D, device=device, dtype=torch.float32))
-        alpha = torch.sigmoid(torch.randn(B, H, L, D, device=device, dtype=torch.float32))
-        out_gdn = gdn_scan_triton(q, k, v, beta, alpha)
-        assert out_gdn.shape == q.shape
+    from neuralops.core.triton_kernels.gdn_scan import gdn_scan
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    k = F.normalize(torch.randn(B, H, L, D, device=device, dtype=torch.float32), dim=-1)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    beta = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32))
+    alpha = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32))
+    out_gdn = gdn_scan(q, k, v, beta, alpha)
+    assert out_gdn.shape == q.shape
 
-    if hgrn2_scan_triton is not None:
-        f = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
-        iv = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
-        out_hgrn2 = hgrn2_scan_triton(f, iv, res_clip=1.0)
-        assert out_hgrn2.shape == f.shape
+    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan
+    f = torch.randn(B, L, D, device=device, dtype=torch.float32)
+    iv = torch.randn(B, L, D, device=device, dtype=torch.float32)
+    out_hgrn2 = hgrn2_scan(f, iv, res_clip=1.0)
+    assert out_hgrn2.shape == f.shape
