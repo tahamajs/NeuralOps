@@ -142,12 +142,34 @@ def _build_keep_mask(
             causal = k_idx <= q_idx
         mask = causal.unsqueeze(0).unsqueeze(0)  # (1, 1, N_q, N_k)
 
+    def _combine(am: torch.Tensor) -> torch.Tensor:
+        nonlocal mask
+        if am.dim() == 2:
+            am_b = am[:, None, None, :]
+        elif am.dim() == 3:
+            am_b = am.unsqueeze(1) if am.shape[1] != N_q else am[:, None, :, :]
+        elif am.dim() == 4:
+            am_b = am
+        else:
+            return (
+                mask
+                if mask is not None
+                else torch.ones((B, 1, N_q, N_k), device=device, dtype=torch.bool)
+            )
+
+        if am_b.dtype != torch.bool:
+            if am_b.max() <= 1.0 and am_b.min() >= 0.0:
+                am_b = am_b.bool()
+            else:
+                am_b = am_b > -1e3
+        return am_b
+
     if attention_mask is not None:
-        am = _normalize_mask(attention_mask, B, N_q, N_k, device)
+        am = _combine(attention_mask)
         mask = am if mask is None else (mask & am)
 
     if encoder_attention_mask is not None:
-        em = _normalize_mask(encoder_attention_mask, B, N_q, N_k, device)
+        em = _combine(encoder_attention_mask)
         mask = em if mask is None else (mask & em)
 
     return mask
