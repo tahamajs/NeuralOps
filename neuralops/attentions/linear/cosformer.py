@@ -355,9 +355,8 @@ class CosformerAttention(BaseAttention):
 
 
     def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
-        # Explicitly run global cosformer linear attention in float32 without autocast
-        # to avoid FP16 matmul overflow (scores * V > 65504 -> inf -> NaN gradients).
-        with torch.cuda.amp.autocast(enabled=False):
+        device_type = "cuda" if device.type == "cuda" else "cpu"
+        with torch.amp.autocast(device_type=device_type, enabled=False):
             Q_cos = Q_cos.float()
             Q_sin = Q_sin.float()
             K_cos = K_cos.float()
