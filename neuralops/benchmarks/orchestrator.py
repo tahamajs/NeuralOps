@@ -454,6 +454,7 @@ class BenchmarkOrchestrator:
                 line = line.strip()
                 if not line:
                     continue
+                d = json.loads(line)
                 mod_val = d.get("module")
                 mod_name = mod_val.get("name") if isinstance(mod_val, dict) else mod_val
                 mod_type = mod_val.get("type") if isinstance(mod_val, dict) else "unknown"
