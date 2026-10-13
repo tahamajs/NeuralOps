@@ -1,34 +1,96 @@
-# Research Hub deployment
+# Production Deployment & Inference Serving Guide
 
-The GitHub Pages site is the static `Docs/` application. Its generated catalog unifies guides, verification reports, benchmark results, interactive studios, architecture specifications, research deep dives, and framework references. The deployment workflow also builds the optional frontend studio into `Docs/app/` and copies the framework Markdown sources so every catalog entry remains readable after publishing.
+NeuralOps provides production export utilities and serving adapters designed for high-throughput inference runtimes.
 
-## Local preview
+---
 
-From the repository root:
+## 1. Exporting Models via Python API
 
-```bash
-python generate_catalog.py
-python -m http.server 8080 --directory Docs
+Export models to Safetensors, ONNX, or TorchScript with a single call:
+
+```python
+import neuralops
+from transformers import AutoModel
+
+# 1. Load and modify base model
+model = AutoModel.from_pretrained("distilbert-base-uncased")
+model = neuralops.replace_attention(model, "cosformer")
+model = neuralops.compress(model, method="adasvd", rank=32)
+
+# 2. Export model for production deployment
+out_dir = neuralops.export_model(
+    model=model,
+    output_dir="./distilbert_cosformer_adasvd",
+    format="safetensors",  # or "onnx", "torchscript"
+    model_name_or_path="distilbert-base-uncased",
+    attention_type="cosformer",
+    compression_method="adasvd",
+    rank=32,
+)
+print(f"Model exported to {out_dir}")
 ```
 
-Open <http://127.0.0.1:8080/>. The catalog is generated deterministically from `Docs/content/` and should be committed whenever documentation files are added or renamed.
+### Generated Files in Export Directory
+- `model.safetensors`: Serialized model tensor weights.
+- `neuralops_config.json`: Metadata capturing attention type, compression method, and rank for exact architecture reconstruction.
+- `config.json`: Original Hugging Face model configuration.
 
-## Experiment telemetry
+---
 
-The hub is static by default and reports telemetry as offline. To connect it to a compatible experiment server, set `window.FRAMEWORK_API_BASE` before loading `app.js`, for example:
+## 2. Exporting via Command-Line Interface
 
-```html
-<script>window.FRAMEWORK_API_BASE = 'https://experiments.example.com';</script>
-<script src="app.js"></script>
-```
-
-The server should expose `/api/stats` and `/results/all_histories.json`. The UI accepts both the legacy GPU array response and the named object form (`gpu_util`, `mem_used_mb`). Keep CORS enabled for the deployed Pages origin and do not embed private-network addresses in the published site.
-
-## CI and Pages checks
-
-The repository workflows regenerate and verify `Docs/catalog.json`, build the frontend studio, serve the resulting `_site/`, and probe the published catalog plus representative Markdown pages. Run the same catalog check locally with:
+You can export models directly from the terminal without writing Python code:
 
 ```bash
-python generate_catalog.py
-git diff --exit-code -- Docs/catalog.json
+# Export to Safetensors
+neuralops export \
+  --model distilbert-base-uncased \
+  --attn cosformer \
+  --comp adasvd \
+  --rank 32 \
+  --format safetensors \
+  --output-dir ./exported_model
+
+# Export to ONNX (with deterministic fallback execution)
+neuralops export \
+  --model distilbert-base-uncased \
+  --attn linear_attn \
+  --format onnx \
+  --output-dir ./exported_onnx
+```
+
+---
+
+## 3. Acceleration with `torch.compile`
+
+All 26 NeuralOps Triton kernels and subquadratic modules are registered with custom op meta kernels, allowing full compilation without graph breaks:
+
+```python
+import torch
+import neuralops
+from transformers import AutoModel
+
+model = AutoModel.from_pretrained("distilbert-base-uncased")
+model = neuralops.replace_attention(model, "linear_attn")
+
+# Compile with PyTorch 2.x Inductor backend
+compiled_model = torch.compile(model, mode="reduce-overhead")
+
+# Inference with compiled speedups
+inputs = torch.randint(0, 1000, (1, 128))
+with torch.no_grad():
+    outputs = compiled_model(inputs)
+```
+
+---
+
+## 4. Serving with vLLM
+
+NeuralOps provides adapters to integrate custom subquadratic attention with vLLM's paged memory tables:
+
+```python
+from neuralops.export.serving import VLLMAdapter
+
+# Register custom attention layer with vLLM's attention dispatcher
+VLLMAdapter.register_attention_backend("cosformer", model.transformer.layer[0].attention)
 ```

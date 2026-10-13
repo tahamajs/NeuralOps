@@ -1,45 +1,55 @@
-name: 🐛 Bug Report
-description: Report a bug or numerical instability in an attention mechanism or compression engine
-labels: ["bug", "triage"]
+name: Bug Report
+description: Report a defect, error, or unexpected behavior in NeuralOps
+title: "[Bug]: "
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting an issue in the SVD & Linear Attention Framework!
-  - type: dropdown
-    id: module_type
-    attributes:
-      label: Module Category
-      description: Which part of the framework is affected?
-      options:
-        - Attention Mechanism (`Codes/framework/attentions/`)
-        - Compression Engine (`Codes/framework/compression_engine/`)
-        - Documentation / Web UI (`Docs/`)
-        - Benchmark & Evaluation Suite
-    validations:
-      required: true
-  - type: input
-    id: module_name
-    attributes:
-      label: Module Name
-      description: e.g. `mamba_svd_flash`, `rotational_slicegpt_int4`, `aegis_spectron_fp8`
-      placeholder: e.g. aegis_v6
-    validations:
-      required: true
+        Thank you for reporting an issue! Please verify your setup using `python -m neuralops.benchmarks verify` before submitting.
+
   - type: textarea
     id: description
     attributes:
-      label: Description & Reproduction Steps
-      description: Provide clear steps or a minimal script to reproduce the bug.
-      placeholder: |
-        1. Instantiate module with config: ...
-        2. Execute forward pass with shape [B, L, D] = ...
-        3. Observed error or NaN/Inf output ...
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
     validations:
       required: true
+
+  - type: input
+    id: module_name
+    attributes:
+      label: Affected Module / Component
+      description: E.g., `cosformer`, `adasvd`, `compilable_linear_attn`, `neuralops export`
+    validations:
+      required: false
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Execution Backend
+      options:
+        - CUDA (NVIDIA GPU)
+        - ROCm (AMD GPU)
+        - Apple Silicon (MPS)
+        - CPU
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal Reproduction Code
+      description: A minimal, self-contained Python script or CLI command that reproduces the problem.
+      render: python
+    validations:
+      required: true
+
   - type: textarea
     id: environment
     attributes:
-      label: Environment Info
-      description: PyTorch version, CUDA/ROCm, OS, GPU model
-      placeholder: PyTorch 2.4, CUDA 12.4, NVIDIA H100 / A100, Ubuntu 22.04
+      label: Environment & Verification Output
+      description: Paste the output of `python -m neuralops.benchmarks verify` or `python -c "import torch, neuralops; print(torch.__version__, neuralops.__version__)"`.
+      render: shell
+    validations:
+      required: true
