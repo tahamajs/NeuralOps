@@ -333,6 +333,12 @@ class BenchmarkOrchestrator:
                         "seed",
                         "eval_only",
                         "timeout_s",
+                        "task",
+                        "training_type",
+                        "kd_teacher",
+                        "kd_temperature",
+                        "kd_alpha",
+                        "recovery_steps",
                     }
                 }
                 res = execute_single(
