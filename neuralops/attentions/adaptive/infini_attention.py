@@ -3,6 +3,7 @@ Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
 """
 
 from __future__ import annotations
+from neuralops.core.cache_utils import read_cache as _read_cache
 from neuralops.core.common import _detect_return_format
 from neuralops.core.common import _detect_decoder
 
@@ -111,60 +112,6 @@ class SVDMambaSub(nn.Module):
 
         out = self.out_proj(ssm_out)
         return out, present_state
-
-
-# ===========================================================================
-# Cache I/O helpers
-# ===========================================================================
-def _read_cache(
-    past_key_value: Any, layer_idx: int
-) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any | None]:
-    """[JAMBA-FIX-07] Robust cache read across formats."""
-    if past_key_value is None:
-        return None, None, 0, None
-
-    if isinstance(past_key_value, (tuple, list)):
-        if len(past_key_value) == 0:
-            return None, None, 0, None
-        first = past_key_value[0]
-        if isinstance(first, (tuple, list)):
-            # List-of-tuples format
-            if layer_idx < len(past_key_value):
-                entry = past_key_value[layer_idx]
-                k, v = entry[0], entry[1]
-                m = entry[2] if len(entry) > 2 else None
-                if isinstance(k, torch.Tensor):
-                    return k, v, k.shape[-2], m
-            return None, None, 0, None
-        else:
-            # Single-layer tuple format
-            if isinstance(first, torch.Tensor):
-                k, v = past_key_value[0], past_key_value[1]
-                m = past_key_value[2] if len(past_key_value) > 2 else None
-                return k, v, k.shape[-2], m
-            return None, None, 0, None
-
-    # HF DynamicCache-style
-    if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-        if layer_idx < len(past_key_value.key_cache):
-            k = past_key_value.key_cache[layer_idx]
-            v = (
-                past_key_value.value_cache[layer_idx]
-                if hasattr(past_key_value, "value_cache")
-                and layer_idx < len(past_key_value.value_cache)
-                else None
-            )
-            m = None
-            if (
-                hasattr(past_key_value, "mamba_state")
-                and past_key_value.mamba_state
-                and layer_idx < len(past_key_value.mamba_state)
-            ):
-                m = past_key_value.mamba_state[layer_idx]
-            if k is not None:
-                return k, v, k.shape[-2], m
-
-    return None, None, 0, None
 
 
 def _write_cache(

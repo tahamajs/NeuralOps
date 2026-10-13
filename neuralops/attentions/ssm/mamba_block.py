@@ -6,6 +6,7 @@ Based on Gu & Dao, "Mamba: Linear-Time Sequence Modeling" (arXiv:2312.00752).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _infer_d_model
 from neuralops.core.common import _detect_return_format
 
 import logging
@@ -37,53 +38,6 @@ except Exception as _e:
     HAS_TRITON_MAMBA = False
 
 logger = logging.getLogger(__name__)
-
-
-def _infer_d_model(
-    config: Any | None,
-    source_attn: nn.Module | None,
-    target: nn.Module | None,
-    kwargs: dict[str, Any],
-) -> int:
-    """MB-11: robust dimension inference with explicit error on failure."""
-    # 1. explicit kwargs
-    for key in ("d_model", "hidden_size", "dim", "n_embd"):
-        v = kwargs.get(key)
-        if isinstance(v, int) and v > 0:
-            return v
-
-    # 2. config
-    if config is not None:
-        for key in ("hidden_size", "d_model", "dim", "n_embd"):
-            v = getattr(config, key, None)
-            if isinstance(v, int) and v > 0:
-                return v
-
-    # 3. source attention
-    if source_attn is not None:
-        for attr in ("out_proj", "out_lin", "o_proj", "dense", "c_proj"):
-            mod = getattr(source_attn, attr, None)
-            if mod is not None and hasattr(mod, "out_features"):
-                return int(mod.out_features)
-        for attr in ("q_proj", "q_lin", "query", "c_attn"):
-            mod = getattr(source_attn, attr, None)
-            if mod is not None and hasattr(mod, "in_features"):
-                return int(mod.in_features)
-        for attr in ("hidden_size", "embed_dim", "dim"):
-            v = getattr(source_attn, attr, None)
-            if isinstance(v, int) and v > 0:
-                return v
-
-    # 4. target layer
-    if target is not None:
-        for attr in ("hidden_size", "d_model", "dim"):
-            v = getattr(target, attr, None)
-            if isinstance(v, int) and v > 0:
-                return v
-
-    raise ValueError(
-        "MambaBlock: could not infer d_model. Pass d_model= or hidden_size= explicitly."
-    )
 
 
 # =========================================================================

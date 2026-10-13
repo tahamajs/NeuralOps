@@ -26,6 +26,7 @@ Mathematical Mechanism:
 """
 
 from __future__ import annotations
+from neuralops.utils.metrics import compute_metrics
 from neuralops.data.glue_loader import load_glue_local
 from neuralops.core.common import _unpack_weight_bias
 
@@ -1167,11 +1168,6 @@ def preprocess(examples, tokenizer, s1, s2, max_len, is_reg):
         )
     t["labels"] = [float(l) for l in examples["label"]] if is_reg else examples["label"]
     return t
-
-
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    return {"accuracy": float((logits.argmax(-1) == labels).mean().item())}
 
 
 __all__ = [
