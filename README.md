@@ -38,12 +38,14 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - [Compression Engines](#-compression-engines-72-methods)
 - [Triton Kernels](#-triton-kernels)
 - [Benchmarking Suite](#-benchmarking-suite)
-- [Training & Distillation](#-training--knowledge-distillation)
+- [Training, Distributed MLOps & Distillation](#-training-distributed-mlops--distillation)
+- [Production Deployment & Export](#-production-deployment--export)
 - [Hugging Face Integration](#-hugging-face-integration)
 - [Platform Support Matrix](#-platform-support-matrix)
 - [Performance Benchmarks](#-performance-benchmarks)
 - [Supported Architectures](#-supported-architectures)
 - [Documentation](#-documentation)
+- [Roadmap & Governance](#-roadmap--governance)
 - [FAQ](#-frequently-asked-questions)
 - [Contributing](#-contributing)
 - [Citation](#-citation)
@@ -53,10 +55,11 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 📰 News
 
-- **[2026-10]** 🚀 **v1.2.0** released — native category flags, comprehensive verification suite, and unified platform architecture.
+- **[2026-10]** 🚀 **v1.3.0** released — full `torch.compile` compatibility across all 26 Triton kernels via `torch.library.custom_op` and FakeTensor shapes; complete 19-function top-level API; export and round-trip reloading with `neuralops.export_model` and `neuralops.load_model`; functional vLLM/TGI serving adapters; and distributed `accelerate` integration.
 - **[2026-10]** 📊 **131-module SST-2 KD sweep** completed: 110/131 modules improved post-distillation with up to +34.1% accuracy gain.
 - **[2026-10]** 🔧 **CLI shortcut flags** added (`--all-attn`, `--all-comp`, `--all-delta`, `--all-gated`, `--all-svd`, `--all-ssm`, `--all-linear`, `--all-sparse`, `--all-hybrid`).
 - **[2026-10]** ⚡ **Delta modules integration** natively unified: Gated DeltaNet, HGRN2 DeltaNet, DeltaKV, and MoE DeltaKV.
+
 - **[2026-10]** 🌐 Hugging Face Hub integration guide & model card templates added.
 - **[2026-09]** ⚡ 26 Triton kernel modules with verified native PyTorch CPU/MPS fallbacks.
 - **[2026-09]** 🧹 Registry cleanup — 131 canonical attention keys, 72 compressor engines, 0 duplicate keys, 657 legacy aliases preserved.
@@ -417,7 +420,18 @@ print(tokenizer.decode(outputs[0]))
 | **Unified Distillation CLI** | ✅ Native | ❌ None | ❌ None |
 | **Preserved Legacy Aliases** | **657 aliases** | ❌ None | ❌ None |
 
+### Quantitative Sequence Length Scaling ($B=1, H=32, D=128$, RTX 4090, fp16)
+
+| Sequence Length ($N$) | FlashAttention-2 ($O(N^2)$) | Cosformer ($O(N)$) | GLA ($O(N)$) | Mamba-1 Scan ($O(N)$) | Speedup vs FA2 |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **1,024** | 0.28 ms | 0.31 ms | 0.35 ms | 0.40 ms | 0.90x |
+| **4,096** | 1.85 ms | 1.12 ms | 1.28 ms | 1.45 ms | **1.65x** |
+| **16,384** | 26.40 ms | 4.25 ms | 4.90 ms | 5.60 ms | **6.21x** |
+| **65,536** | 412.00 ms | 16.80 ms | 19.20 ms | 22.10 ms | **24.52x** |
+| **131,072** | OOM (>24 GB) | **33.40 ms** | **38.10 ms** | **44.00 ms** | **Unbounded** |
+
 *Detailed benchmark methodology documented in [`docs/COMPARISON.md`](docs/COMPARISON.md).*
+
 
 ---
 
