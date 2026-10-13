@@ -7,6 +7,7 @@ Three-branch attention with spectral entropy routing:
   3. Linear state recurrence (O(N*D), chunked, numerically stable)
 
 """
+from neuralops.core.common import FactorizedLinear
 from neuralops.core.common import _detect_decoder
 
 import logging
@@ -106,92 +107,6 @@ class AegisSpectronFP8Config:
         self.is_decoder = bool(kwargs.get("is_decoder", False))
         self.fp8_format = str(kwargs.get("fp8_format", "e4m3"))
         self.chunk_size = int(kwargs.get("chunk_size", 64))
-
-
-# ===========================================================================
-# FactorizedLinear
-# ===========================================================================
-
-
-class FactorizedLinear(nn.Module):
-    is_custom_attention = True
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 128,
-        lora_rank: int = 32,
-        bias: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
-        self.lora_alpha = 32.0
-        self.lora_rank = (
-            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
-        )
-
-        factory_kwargs = {"device": device, "dtype": dtype}
-        self.lin1 = nn.Linear(self.in_features, self.rank, bias=False, **factory_kwargs)
-        self.lin2 = nn.Linear(self.rank, self.out_features, bias=bias, **factory_kwargs)
-
-        self.lin1.weight.requires_grad = False
-        self.lin2.weight.requires_grad = False
-        if self.lin2.bias is not None:
-            self.lin2.bias.requires_grad = False
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **factory_kwargs)
-            )
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self.reset_parameters()
-
-    def reset_parameters(self) -> None:
-        with torch.no_grad():
-            nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
-            nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
-            if self.lin2.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
-                bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-                nn.init.uniform_(self.lin2.bias, -bound, bound)
-            if self.lora_A is not None:
-                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        w = torch.matmul(self.lin2.weight, self.lin1.weight)
-        if self.lora_A is not None:
-            w = w + torch.matmul(self.lora_B, self.lora_A)
-        return w
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return self.lin2.bias
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        x_down = x.to(self.lin1.weight.dtype)
-        latent = self.lin1(x_down)
-        latent_up = latent.to(self.lin2.weight.dtype)
-        out = self.lin2(latent_up)
-        if self.lora_A is not None:
-            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
-            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
-            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b) * (self.lora_alpha / self.lora_rank)
-        return out.to(orig_dtype)
 
 
 # ===========================================================================

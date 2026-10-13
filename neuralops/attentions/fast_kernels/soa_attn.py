@@ -11,6 +11,7 @@ Architecture:
 """
 
 from __future__ import annotations
+from neuralops.core.common import FactorizedLinear
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _read_past_kv
 
@@ -64,43 +65,6 @@ def _write_past_kv(
             return (k, v)
 
     return (k_new, v_new)
-
-
-
-
-# ===========================================================================
-# FactorizedLinear (property view for inspection)
-# ===========================================================================
-class FactorizedLinear(nn.Module):
-    """View-only wrapper exposing down/up pair as a single linear module."""
-
-    def __init__(self, down: nn.Linear, up: nn.Linear) -> None:
-        super().__init__()
-        self.down = down
-        self.up = up
-
-    @property
-    def weight(self) -> torch.Tensor:
-        return torch.matmul(self.up.weight, self.down.weight)
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return getattr(self.up, "bias", None)
-
-    @property
-    def in_features(self) -> int:
-        return self.down.in_features
-
-    @property
-    def out_features(self) -> int:
-        return self.up.out_features
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        x_down = x.to(self.down.weight.dtype)
-        latent = self.down(x_down)
-        latent_up = latent.to(self.up.weight.dtype)
-        return self.up(latent_up).to(orig_dtype)
 
 
 # ===========================================================================
