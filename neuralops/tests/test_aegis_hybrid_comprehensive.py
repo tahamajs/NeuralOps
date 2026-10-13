@@ -37,7 +37,8 @@ def test_aegis_hybrid_init_and_forward_basic():
     cfg = MockConfig()
     attn = AegisHybridAttention(config=cfg)
     x = torch.randn(2, 8, 64)
-    out, weights = attn(x, output_attentions=True)
+    res = attn(x, output_attentions=True)
+    out = res[0]
     assert out.shape == (2, 8, 64)
 
 def test_aegis_hybrid_none_config():
