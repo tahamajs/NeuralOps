@@ -77,6 +77,12 @@ def replace_attention(
     if layers is not None:
         call_kwargs["layer_indices"] = layers
 
+    hybrid_spec = kwargs.get("hybrid_spec", None)
+    if hybrid_spec is not None:
+        from neuralops.models.hybrid_spec import normalize_hybrid_spec
+        norm_spec = normalize_hybrid_spec(hybrid_spec)
+        call_kwargs["hybrid_spec"] = norm_spec
+
     out_model = inject_attention(
         model=model,
         attention_type=attn_name,

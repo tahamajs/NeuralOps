@@ -246,9 +246,43 @@ class _HGRN2ScanFn(torch.autograd.Function):
         return df, div, None
 
 
+def hgrn2_scan_pytorch(f: torch.Tensor, iv: torch.Tensor, res_clip: float | None = None) -> torch.Tensor:
+    """
+    Pure PyTorch reference implementation for HGRN2 selective scan.
+    Recurrence: h_t = f_t * h_{t-1} + iv_t
+    """
+    B, L, D = f.shape
+    device = f.device
+    dtype = f.dtype
+
+    # Transpose to (B, D, L) for sequential time step iteration
+    h = torch.zeros((B, D), device=device, dtype=torch.float32)
+    ys = []
+
+    for t in range(L):
+        f_t = f[:, t, :].float()
+        iv_t = iv[:, t, :].float()
+        h = f_t * h + iv_t
+        if res_clip is not None and res_clip > 0:
+            h = torch.clamp(h, -float(res_clip), float(res_clip))
+        ys.append(h)
+
+    return torch.stack(ys, dim=1).to(dtype)
+
+
 def hgrn2_scan_triton(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
     """Triton HGRN2 selective scan. f, iv: (B, L, D). Returns h: (B, L, D)."""
     return _HGRN2ScanFn.apply(f, iv, res_clip)
 
 
-__all__ = ['hgrn2_scan_triton']
+def hgrn2_scan(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
+    """Dispatches HGRN2 scan to Triton GPU kernel when suitable, else PyTorch fallback."""
+    if torch.cuda.is_available() and f.is_cuda and hasattr(triton, "jit"):
+        try:
+            return hgrn2_scan_triton(f, iv, res_clip=res_clip)
+        except Exception:
+            pass
+    return hgrn2_scan_pytorch(f, iv, res_clip=res_clip)
+
+
+__all__ = ['hgrn2_scan_triton', 'hgrn2_scan_pytorch', 'hgrn2_scan']

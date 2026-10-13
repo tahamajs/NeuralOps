@@ -102,7 +102,6 @@ from .checkpoint import CheckpointManager  # noqa: E402
 from neuralops.utils import compat
 from neuralops.utils import architecture
 from neuralops.utils import attention_profiler
-from neuralops.utils import attention_utils
 from neuralops.utils import checkpoint
 from neuralops.utils import compat
 from neuralops.utils import config
