@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any
+import os
 
 import torch
 import torch.nn as nn
@@ -847,6 +848,32 @@ def _find_layer_list(model: nn.Module) -> tuple[Any, str, Any] | None:
     return None
 
 
+def _infer_d_model(
+    config: Any = None,
+    source_attn: nn.Module | None = None,
+    d_model: int | None = None,
+    **kwargs: Any,
+) -> int:
+    """Infer hidden dimension d_model from config, source attention module, or kwargs."""
+    if d_model is not None:
+        return int(d_model)
+    if kwargs.get("hidden_size") is not None:
+        return int(kwargs["hidden_size"])
+    if config is not None:
+        for attr in ("hidden_size", "d_model", "dim", "n_embd"):
+            val = getattr(config, attr, None)
+            if val is not None:
+                return int(val)
+    if source_attn is not None:
+        for proj_name in ("q_proj", "q_lin", "c_attn", "query", "in_proj", "dense"):
+            proj = getattr(source_attn, proj_name, None)
+            if proj is not None and hasattr(proj, "in_features"):
+                return int(proj.in_features)
+            if proj is not None and hasattr(proj, "weight") and proj.weight.ndim == 2:
+                return int(proj.weight.shape[1])
+    return 768
+
+
 __all__ = [
     "_cfg_get",
     "repeat_kv",
@@ -868,6 +895,7 @@ __all__ = [
     "temperature_softmax",
     "_detect_return_format",
     "_find_layer_list",
+    "_infer_d_model",
 ]
 
 
