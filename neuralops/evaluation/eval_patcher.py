@@ -529,13 +529,13 @@ def apply_module_to_model(
             module_type = "attention"
         elif module_name in COMPRESSOR_REGISTRY:
             module_type = "compressor"
-    else:
-        import importlib.util
+        else:
+            import importlib.util
 
-        if importlib.util.find_spec(f"neuralops.compression_engine.{module_name}"):
-            module_type = "compressor"
-        elif importlib.util.find_spec(f"neuralops.attentions.{module_name}"):
-            module_type = "attention"
+            if importlib.util.find_spec(f"neuralops.compression_engine.{module_name}"):
+                module_type = "compressor"
+            elif importlib.util.find_spec(f"neuralops.attentions.{module_name}"):
+                module_type = "attention"
 
     if module_type == "attention":
         model = _apply_attention_module(model, module_name, rank, device)
