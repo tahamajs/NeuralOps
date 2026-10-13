@@ -785,8 +785,9 @@ class VSpecAttention(BaseAttention):
                     self.rotary_emb,
                     kwargs.get("position_ids"),
                 )
-            except Exception as e:
-                logger.warning(f"maybe_apply_rotary failed: {e}")
+            except (RuntimeError, TypeError, ValueError) as e:
+                from neuralops.utils.logging_config import warn_once
+                warn_once("vspec_rotary_failed", "maybe_apply_rotary failed: %s", e)
 
         # GQA expansion
         if self.kv_repeat > 1:

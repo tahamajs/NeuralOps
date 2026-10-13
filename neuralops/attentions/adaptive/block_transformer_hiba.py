@@ -893,7 +893,8 @@ class BlockTransformerHIBA(BaseAttention):
                     attn_bias = None
                     if valid_mask is not None and not valid_mask.all():
                         causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S-L)
-                        attn_bias = attn_bias.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), bias_val)
+                        attn_bias = torch.zeros((1, 1, L, S), device=q.device, dtype=q.dtype)
+                        attn_bias = attn_bias.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
                     _qs = maybe_half(q)
                     _ks = maybe_half(k)
                     _vs = maybe_half(v)
@@ -920,8 +921,9 @@ class BlockTransformerHIBA(BaseAttention):
 
                     return out.to(hidden_states.dtype), None
 
-                except Exception as e:
-                    logger.warning("HIBA dense SDPA failed, using manual: %s", e)
+                except (RuntimeError, NotImplementedError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once("hiba_dense_sdpa", "HIBA dense SDPA failed, using manual fallback: %s", e)
 
             # ─── Manual path (either head_mask given, attn needed, or SDPA failed) ───
             scale = 1.0 / math.sqrt(self.head_dim)
