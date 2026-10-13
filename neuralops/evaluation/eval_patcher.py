@@ -518,10 +518,11 @@ def apply_module_to_model(
         logger.warning("Module %s is DEPRECATED; skipping.", module_name)
         return model, 1.0
 
-    if module_name in ATTENTION_REGISTRY:
-        module_type = "attention"
-    elif module_name in COMPRESSOR_REGISTRY:
-        module_type = "compressor"
+    if module_type not in ("attention", "compressor"):
+        if module_name in ATTENTION_REGISTRY:
+            module_type = "attention"
+        elif module_name in COMPRESSOR_REGISTRY:
+            module_type = "compressor"
     else:
         import importlib.util
 
