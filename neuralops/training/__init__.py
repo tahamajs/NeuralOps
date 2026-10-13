@@ -6,3 +6,10 @@ sys.modules['neuralops.training.trainer'] = trainer
 
 # Auto-wired package members
 from neuralops.training import checkpointing
+
+try:
+    from neuralops.training.layer_distill import LayerAttentionDistillLoss, LayerDistillScheduler
+    __all__ = ["checkpoint_selective", "SelectiveCheckpointModule", "LayerAttentionDistillLoss", "LayerDistillScheduler"]
+except ImportError:
+    __all__ = ["checkpoint_selective", "SelectiveCheckpointModule"]
+
