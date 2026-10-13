@@ -697,10 +697,28 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     return w, b
 
 
-def _read_past_kv(past_key_value: Any, layer_idx: int) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-    """Read past Key and Value from DynamicCache or tuple cache formats."""
-    if past_key_value is None:
-        return None, None
+def _read_past_kv(past_key_value: Any, layer_idx: int = 0) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+    """Read past Key, Value, and length from DynamicCache, list, or tuple cache formats."""
+    if past_key_value is None or past_key_value is False:
+        return None, None, 0
+
+    k, v = None, None
+    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
+        kc, vc = past_key_value.key_cache, past_key_value.value_cache
+        if len(kc) > 0 and layer_idx < len(kc):
+            k = kc[layer_idx]
+            v = vc[layer_idx] if layer_idx < len(vc) else None
+    elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) > 0:
+        if isinstance(past_key_value[0], (tuple, list)):
+            if layer_idx < len(past_key_value):
+                entry = past_key_value[layer_idx]
+                if isinstance(entry, (tuple, list)) and len(entry) >= 2:
+                    k, v = entry[0], entry[1]
+        elif len(past_key_value) >= 2:
+            k, v = past_key_value[0], past_key_value[1]
+
+    past_len = k.shape[-2] if (k is not None and hasattr(k, "shape") and k.dim() >= 2) else 0
+    return k, v, past_len
 
     if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
         keys = past_key_value.key_cache

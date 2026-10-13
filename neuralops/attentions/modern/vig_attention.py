@@ -376,6 +376,16 @@ class ViGAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
+                # Copy LoRA adapter weights if present on source projection
+                src_proj = getattr(old_attn, f"{key}_proj", getattr(old_attn, key, None))
+                if src_proj is not None and hasattr(target, "lora_A") and target.lora_A is not None:
+                    if hasattr(src_proj, "lora_A") and src_proj.lora_A is not None:
+                        target.lora_A.data.copy_(src_proj.lora_A.data)
+                    if hasattr(src_proj, "lora_B") and src_proj.lora_B is not None:
+                        target.lora_B.data.copy_(src_proj.lora_B.data)
+                    if hasattr(src_proj, "lora_scaling"):
+                        target.lora_scaling = float(src_proj.lora_scaling)
+
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
 
@@ -542,7 +552,7 @@ class ViGAttention(BaseAttention):
         v_new = self.v_proj(kv_input).view(B, N_kv_new, H_kv, Dh).transpose(1, 2).contiguous()
 
         # ---- Read past KV ----
-        past_k, past_v = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None)
+        past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None, 0)
         past_len = past_k.shape[-2] if past_k is not None else 0
 
         # ---- RoPE ----
