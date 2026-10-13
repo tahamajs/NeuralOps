@@ -26,7 +26,7 @@ Mathematical Mechanism:
 """
 
 from __future__ import annotations
-from neuralops.utils.metrics import compute_metrics
+from neuralops.trainer.metrics import get_task_metrics as compute_metrics
 from neuralops.data.glue_loader import load_glue_local
 from neuralops.core.common import _unpack_weight_bias
 

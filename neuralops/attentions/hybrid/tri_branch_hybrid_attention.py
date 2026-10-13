@@ -696,22 +696,8 @@ class TriBranchHybridAttention(BaseAttention):
                 return m
         return None
 
-    @staticmethod
-    def _read_past_kv(past_key_value, layer_idx=0):
-        if past_key_value is None:
-            return None, None
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            if not past_key_value.key_cache:
-                return None, None
-            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
-            return past_key_value.key_cache[idx], past_key_value.value_cache[idx]
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            return past_key_value[0], past_key_value[1]
-        return None, None
+    _read_past_kv = staticmethod(_read_past_kv)
 
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
