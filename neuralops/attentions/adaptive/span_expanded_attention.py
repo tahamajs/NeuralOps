@@ -596,7 +596,9 @@ class SpanExpandedAttention(BaseAttention):
                 .unsqueeze(0).expand(B, -1)
             )
             if past_pos is None and past_k is not None and past_k.shape[-2] >= self.expansion_span:
-                logger.warning(
+                from neuralops.utils.logging_config import warn_once
+                warn_once(
+                    "span_expanded_cache_sat",
                     "SpanExpandedAttention: cache length has saturated at "
                     "expansion_span=%d but no position tracking is available. "
                     "RoPE positions may be incorrect. Provide position_ids or "

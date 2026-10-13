@@ -657,22 +657,25 @@ class AdaptiveSparseAttention(BaseAttention):
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    logger.warning("RoPE embedding failed on (probe_t, pos_ids): %s", e)
+                except (RuntimeError, TypeError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once("rope_probe_pos", "RoPE embedding failed on (probe_t, pos_ids): %s", e)
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    logger.warning("RoPE embedding failed on (probe_t, seq_len): %s", e)
+                except (RuntimeError, TypeError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once("rope_probe_seq", "RoPE embedding failed on (probe_t, seq_len): %s", e)
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    logger.warning("RoPE embedding failed on (probe_t): %s", e)
+                except (RuntimeError, TypeError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once("rope_probe", "RoPE embedding failed on (probe_t): %s", e)
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 

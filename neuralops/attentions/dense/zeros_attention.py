@@ -391,9 +391,9 @@ class ZeroSAttention(BaseAttention):
                         self.rotary_emb,
                         kwargs.get("position_ids"),
                     )
-                except Exception as e:
-                    print(f"copy_weights failed: {e}")
-                    logger.warning(f"copy_weights failed: {e}")
+                except (RuntimeError, TypeError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once("zeros_rotary_failed", "zeros_attention rotary failed: %s", e)
 
         # GQA repeat
         if self.kv_repeat > 1:
