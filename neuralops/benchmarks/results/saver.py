@@ -115,13 +115,17 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
         "dataset": result.dataset.get("name", "") if isinstance(result.dataset, dict) else str(result.dataset),
         "rank": result.config.get("rank", 0) if isinstance(result.config, dict) else 0,
         "training_type": getattr(result, "training_type", "finetune"),
+        "pre_ppl": (result.metrics or {}).get("pre_ppl", ""),
+        "post_ppl": (result.metrics or {}).get("post_ppl", ""),
+        "post_ppl_stage1": (result.metrics or {}).get("post_ppl_stage1", ""),
+        "post_ppl_stage2": (result.metrics or {}).get("post_ppl_stage2", ""),
         "accuracy": (result.metrics or {}).get("accuracy", ""),
         "f1": (result.metrics or {}).get("f1", ""),
         "loss": (result.metrics or {}).get("loss", ""),
         "perplexity": (result.metrics or {}).get("post_ppl") or (result.metrics or {}).get("perplexity", ""),
         "kd_gain": (result.metrics or {}).get("kd_gain", ""),
         "recovery_pct": (result.metrics or {}).get("recovery_pct", ""),
-        "duration_s": (result.resources or {}).get("duration_s", ""),
+        "duration_s": (result.resources or {}).get("duration_s", "") or (result.resources or {}).get("train_duration_s", ""),
         "peak_vram_mb": (result.resources or {}).get("peak_vram_mb", ""),
         "checksum": getattr(result, "checksum", ""),
     }
@@ -150,7 +154,16 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
     f1_str = f"{f1:.4f}" if isinstance(f1, (int, float)) else "N/A"
     loss = (result.metrics or {}).get("loss")
     loss_str = f"{loss:.4f}" if isinstance(loss, (int, float)) else "N/A"
-    dur = (result.resources or {}).get("duration_s", 0.0)
+    pre_ppl = (result.metrics or {}).get("pre_ppl")
+    pre_ppl_str = f"{pre_ppl:.2f}" if isinstance(pre_ppl, (int, float)) else "N/A"
+    post_ppl = (result.metrics or {}).get("post_ppl")
+    post_ppl_str = f"{post_ppl:.2f}" if isinstance(post_ppl, (int, float)) else "N/A"
+    rec_pct = (result.metrics or {}).get("recovery_pct")
+    rec_pct_str = f"{rec_pct:.2f}%" if isinstance(rec_pct, (int, float)) else "N/A"
+    kd_gain = (result.metrics or {}).get("kd_gain")
+    kd_gain_str = f"{kd_gain:+.2f}" if isinstance(kd_gain, (int, float)) else "N/A"
+
+    dur = (result.resources or {}).get("duration_s", 0.0) or (result.resources or {}).get("train_duration_s", 0.0)
     vram = (result.resources or {}).get("peak_vram_mb", 0.0)
 
     content = f"""# Benchmark Run Summary: {mod_name}
@@ -167,12 +180,16 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 | **Model** | `{mdl_name}` |
 | **Dataset** | `{ds_name}` |
 | **Rank** | `{rk}` |
-| **Epochs** | `{result.config.get('epochs', 1)}` |
+| **Training Type** | `{getattr(result, 'training_type', 'finetune')}` |
 | **Batch Size** | `{result.config.get('batch_size', 32)}` |
 
 ## Primary Metrics
 | Metric | Value |
 |---|---|
+| **Pre-KD Perplexity** | {pre_ppl_str} |
+| **Post-KD Perplexity** | {post_ppl_str} |
+| **Recovery %** | {rec_pct_str} |
+| **KD Gain** | {kd_gain_str} |
 | **Accuracy** | {acc_str} |
 | **F1 Score** | {f1_str} |
 | **Loss** | {loss_str} |
@@ -204,10 +221,17 @@ def save_parquet_index(result: BenchmarkResult, parquet_path: Path | str) -> Pat
         "model": str(result.model.get("name", "") if isinstance(result.model, dict) else result.model),
         "dataset": str(result.dataset.get("name", "") if isinstance(result.dataset, dict) else result.dataset),
         "rank": int(result.config.get("rank", 0) if isinstance(result.config, dict) else 0),
+        "training_type": str(getattr(result, "training_type", "finetune")),
+        "pre_ppl": float((result.metrics or {}).get("pre_ppl") or 0.0),
+        "post_ppl": float((result.metrics or {}).get("post_ppl") or 0.0),
+        "post_ppl_stage1": float((result.metrics or {}).get("post_ppl_stage1") or 0.0),
+        "post_ppl_stage2": float((result.metrics or {}).get("post_ppl_stage2") or 0.0),
+        "recovery_pct": float((result.metrics or {}).get("recovery_pct") or 0.0),
+        "kd_gain": float((result.metrics or {}).get("kd_gain") or 0.0),
         "accuracy": float((result.metrics or {}).get("accuracy") or 0.0),
         "f1": float((result.metrics or {}).get("f1") or 0.0),
         "loss": float((result.metrics or {}).get("loss") or 0.0),
-        "duration_s": float((result.resources or {}).get("duration_s") or 0.0),
+        "duration_s": float((result.resources or {}).get("duration_s") or (result.resources or {}).get("train_duration_s") or 0.0),
         "peak_vram_mb": float((result.resources or {}).get("peak_vram_mb") or 0.0),
     }
 
