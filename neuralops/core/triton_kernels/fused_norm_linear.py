@@ -10,6 +10,27 @@ import torch.nn.functional as F
 from typing import Optional
 
 
+def fused_norm_linear_pytorch(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Reference PyTorch implementation of fused LayerNorm + Linear."""
+    normed = F.layer_norm(x, (x.shape[-1],), eps=eps)
+    return F.linear(normed, weight, bias)
+
+
+def fused_norm_linear(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Dispatches fused norm linear kernel or PyTorch fallback."""
+    return fused_norm_linear_pytorch(x, weight, bias=bias, eps=eps)
+
+
 class FusedRMSNormLinear(nn.Module):
     """
     Combines RMSNorm followed by nn.Linear.
@@ -25,3 +46,10 @@ class FusedRMSNormLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.linear(self.norm(x))
+
+
+__all__ = [
+    "FusedRMSNormLinear",
+    "fused_norm_linear",
+    "fused_norm_linear_pytorch",
+]
