@@ -29,7 +29,7 @@ FLA_AVAILABLE = True
 
 try:
     from fla.ops.gla import chunk_gla
-except ImportError:
+except Exception:
     chunk_gla = None
     FLA_AVAILABLE = False
     logger.warning("chunk_gla unavailable — using PyTorch fallback")
@@ -358,3 +358,15 @@ class GLAttention(BaseAttention):
 
         out = torch.cat(out_chunks, dim=1)
         return out.to(Q.dtype)
+
+
+def _chunked_gla_forward(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    log_gate: torch.Tensor,
+    chunk_size: int = 64,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Module-level function for chunked GLA forward pass."""
+    dummy = GLAttention(hidden_size=q.shape[-1] * q.shape[1], num_heads=q.shape[1]).to(q.device)
+    return dummy._chunked_gla_forward(q, k, v, log_gate, chunk_size)
