@@ -22,13 +22,23 @@ def finetune_classification(
     distributed_backend: str = "none",
     tracker: Any = None,
     log_interval: int = 10,
+    optimizer_name: str = "adamw",
 ) -> dict[str, Any]:
     """
     Fine-tune classification model across training epochs with mixed-precision,
-    early NaN stopping, and real-time MLOps step-level telemetry.
+    manifold/orthogonal optimizers (Muon, Stiefel, Riemannian), early NaN stopping,
+    and real-time MLOps step-level telemetry.
     """
     model.train()
-    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+    opt_lower = (optimizer_name or "adamw").lower()
+    if opt_lower == "muon":
+        from neuralops.trainer.optimizers.muon import create_muon_adamw_optimizer
+        optimizer = create_muon_adamw_optimizer(model, lr_muon=lr, lr_adamw=lr)
+    elif opt_lower in ("stiefel", "riemannian"):
+        from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
+        optimizer = create_riemannian_stiefel(model, lr=lr)
+    else:
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
     # Distributed backend wrapping via accelerate
     dist_backend = (distributed_backend or "none").lower()

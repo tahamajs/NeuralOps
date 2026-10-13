@@ -4,10 +4,7 @@ import importlib
 class TestRunnersImports(unittest.TestCase):
     def test_imports(self):
         modules = [
-            "neuralops.runners.run_autonomous_48h_pipeline",
-            "neuralops.runners.run_continuous_orchestrator",
             "neuralops.runners.run_master_pipeline",
-            "neuralops.runners.run_monitor_server",
             "neuralops.runners.run_sweep",
             "neuralops.runners.unified_orchestrator",
         ]

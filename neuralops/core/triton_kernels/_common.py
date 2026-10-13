@@ -51,13 +51,15 @@ try:
 except Exception:
     pass
 
-
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
-MAX_TRITON_SEQ_LEN: int = 4096
+# Wire _types and autotuner into _common namespace
+from neuralops.core.triton_kernels._types import (
+    BLOCK_SIZE,
+    MAX_TRITON_SEQ_LEN,
+    SUPPORTED_HEAD_DIMS,
+    check_triton_suitability,
+    log_fallback_reason,
+)
+from neuralops.core.triton_kernels.autotuner import Autotuner, autotune_kernel
 
 _WARNED_REASONS: set[str] = set()
 
@@ -70,11 +72,29 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
         logger.info("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
 
 
+FORWARD_ONLY_KERNELS: set[str] = {
+    "sliding_window",
+    "fused_rope",
+    "fused_ce",
+    "cosformer",
+    "cosformer_triton_kernel",
+    "paged_attention",
+    "flash_decoding",
+    "softplus",
+    "varlen_attention",
+    "block_sparse",
+    "fused_kd",
+    "fused_norm_linear",
+    "gqa",
+}
+
+
 def check_triton_suitability(
     tensor: torch.Tensor,
     kernel_name: str,
     head_dim: int | None = None,
     seq_len: int | None = None,
+    supports_backward: bool = True,
 ) -> tuple[bool, str | None]:
     """
     Validate whether the input tensor satisfies all requirements for Triton execution.
@@ -108,18 +128,12 @@ def check_triton_suitability(
         )
 
     # Route forward-only kernels to differentiable PyTorch fallback during training/autograd
-    FORWARD_ONLY_KERNELS = {
-        "sliding_window",
-        "fused_rope",
-        "fused_ce",
-        "cosformer",
-        "paged_attention",
-        "flash_decoding",
-        "softplus",
-    }
-    if kernel_name in FORWARD_ONLY_KERNELS:
+    if not supports_backward or kernel_name in FORWARD_ONLY_KERNELS:
         if getattr(tensor, "requires_grad", False) or torch.is_grad_enabled():
-            return False, f"kernel '{kernel_name}' is forward-only but gradient computation is enabled"
+            return (
+                False,
+                f"kernel '{kernel_name}' is forward-only but gradient computation is enabled",
+            )
 
     return True, None
 
