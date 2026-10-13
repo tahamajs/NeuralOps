@@ -579,7 +579,9 @@ class SelectiveMamba(BaseAttention):
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
         if head_mask is not None:
-            logger.warning(
+            from neuralops.utils.logging_config import warn_once
+            warn_once(
+                "upi_head_mask_ignored",
                 "SelectiveMamba does not use head_mask (SSM has no heads). Ignoring head_mask."
             )
 

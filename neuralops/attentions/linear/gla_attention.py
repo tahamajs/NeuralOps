@@ -212,8 +212,9 @@ class GLAttention(BaseAttention):
                     output_final_state=False,
                 )
                 out = out.to(hidden_states.dtype)
-            except Exception as e:
-                logger.warning(f"FLA failed with {e}; switching to PyTorch fallback")
+            except (RuntimeError, NotImplementedError, ValueError) as e:
+                from neuralops.utils.logging_config import warn_once
+                warn_once("gla_fla_fallback", "FLA failed with %s; switching to PyTorch fallback", e)
                 out = self._pytorch_gla_stable(Q, K, V, g)
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
