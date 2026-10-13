@@ -262,3 +262,14 @@ from neuralops import training
 from neuralops import utils
 from neuralops import __main__
 from neuralops import main
+
+# Direct User-Facing Functional API
+from neuralops.api import (
+    replace_attention,
+    compress,
+    list_attentions,
+    list_compressors,
+    get_attention_class,
+    get_compressor_class,
+)
+
