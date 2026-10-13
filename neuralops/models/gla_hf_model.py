@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-from transformers import PretrainedConfig, PreTrainedModel
+from transformers import PretrainedConfig, PreTrainedModel, GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from neuralops.attentions.linear.gla_attention import GLAttention
@@ -66,8 +66,10 @@ class GLABlock(nn.Module):
         return hidden_states
 
 
-class GLAModel(PreTrainedModel):
+class GLAModel(PreTrainedModel, GenerationMixin):
     config_class = GLAConfig
+    base_model_prefix = "gla"
+    main_input_name = "input_ids"
 
     def __init__(self, config: GLAConfig):
         super().__init__(config)
@@ -76,6 +78,21 @@ class GLAModel(PreTrainedModel):
         self.h = nn.ModuleList([GLABlock(config) for _ in range(config.num_hidden_layers)])
         self.ln_f = nn.LayerNorm(config.hidden_size, eps=1e-5)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+
+    def prepare_inputs_for_generation(
+        self,
+        input_ids,
+        past_key_values=None,
+        attention_mask=None,
+        **kwargs,
+    ):
+        return {
+            "input_ids": input_ids,
+            "past_key_values": past_key_values,
+            "attention_mask": attention_mask,
+            "use_cache": False,
+            **kwargs,
+        }
 
     def forward(
         self,
