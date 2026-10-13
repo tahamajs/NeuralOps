@@ -125,11 +125,11 @@ class GLAttention(BaseAttention):
         if src is None:
             return
 
-        # Handle GPT-2 fused c_attn
+        # Handle GPT-2 fused c_attn (Conv1D: weight is [in_features, 3 * out_features])
         if hasattr(src, "c_attn") and src.c_attn is not None:
+            is_conv1d = "Conv1D" in type(src.c_attn).__name__
             c_w = src.c_attn.weight.data
-            # Handle Conv1D transposed weight format
-            if c_w.shape[0] < c_w.shape[1]:
+            if is_conv1d or c_w.shape[0] < c_w.shape[1]:
                 c_w = c_w.t()
             sz = c_w.size(0) // 3
             with torch.no_grad():
@@ -143,8 +143,9 @@ class GLAttention(BaseAttention):
                     self.v_proj.bias.copy_(c_b[2 * sz :])
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
+                is_conv1d_proj = "Conv1D" in type(src.c_proj).__name__
                 o_w = src.c_proj.weight.data
-                if o_w.shape[0] < o_w.shape[1]:
+                if is_conv1d_proj or o_w.shape[0] < o_w.shape[1]:
                     o_w = o_w.t()
                 with torch.no_grad():
                     self.out_proj.weight.copy_(o_w)
