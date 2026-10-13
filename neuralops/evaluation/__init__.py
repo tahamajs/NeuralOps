@@ -2,6 +2,7 @@
 
 from neuralops.trainer import metrics
 from neuralops.trainer.metrics import get_task_metrics
+from .eval_pipeline import probe_optimal_batch_size
 
 from .ab_testing import ABTester, ABTestResult
 from .fairness import FairnessEvaluator, FairnessReport
@@ -22,6 +23,7 @@ except ImportError:
 __all__ = [
     "metrics",
     "get_task_metrics",
+    "probe_optimal_batch_size",
     "ABTester",
     "ABTestResult",
     "FairnessEvaluator",
