@@ -4,6 +4,7 @@ set -e
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=4
+ulimit -n 65535 2>/dev/null || ulimit -n 4096 2>/dev/null || true
 
 cd ~/Project
 source .venv/bin/activate
