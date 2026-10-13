@@ -5,15 +5,28 @@ Multi-head bidirectional & causal linear recurrent attention with data-dependent
 exponential decay gating, ELU+1 feature maps, denominator normalization, and 
 pretrained weight transfer.
 
+Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
+- Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT)
+- Strict Frobenius norm verification (>= 1e-4) for all projections
+- Grouped Query Attention (GQA) with kv_head_size projections and repeat_kv
+- Rotary Position Embedding (RoPE) support with partial-coordinate slicing
+- Strict causal masking for decoder models (forward-only recurrence)
+- Nested encoder detection to bypass out_proj in inner self-attention
+- Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
+- True O(L) linear complexity recurrence without O(L^2) memory footprint
+- Numerically stable FP32 state accumulation with nan_to_num protection
+- Safe injection factory returning None on extraction failures
+- Full cross-attention support
+- Full KV-cache support for autoregressive generation
+- KD-compatible gate naming (lora_ prefix)
+- Proper scaling and decay range for local + global context
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv, repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from neuralops.core.utils.config import _cfg_get
+from neuralops.core.utils.lora import LoRALinear
+from neuralops.core.utils.rope import apply_rotary_pos_emb, rotate_half, _rotate_half
+from neuralops.core.utils.gqa import repeat_kv
 
 import logging
 import math
@@ -39,6 +52,47 @@ except Exception:
     HAS_TRITON_DECAY = False
 
 logger = logging.getLogger(__name__)
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
+
+
+
+
+# ===========================================================================
+# KV-cache helpers
+# ===========================================================================
+def _read_past_kv(past_key_value: Any, layer_idx: int):
+    r"""Reads past K, V from either a tuple or a DynamicCache-style object."""
+    if past_key_value is None:
+        return None, None
+
+    # HF DynamicCache-style
+    if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
+        keys = past_key_value.key_cache
+        vals = past_key_value.value_cache
+        if len(keys) == 0:
+            return None, None
+        idx = min(layer_idx, len(keys) - 1)
+        k, v = keys[idx], vals[idx]
+        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
+            return k, v
+        return None, None
+
+    # Tuple / list style
+    if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+        k, v = past_key_value[0], past_key_value[1]
+        if isinstance(k, torch.Tensor) and isinstance(v, torch.Tensor):
+            return k, v
+
+    return None, None
+
+
+# ===========================================================================
+# LoRALinear
+# ===========================================================================
 
 
 # ===========================================================================
@@ -89,13 +143,6 @@ class DecayLinearAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        def _cfg_get(k: str, default: Any = None) -> Any:
-            for obj in (config, comp_config):
-                if obj is not None and hasattr(obj, k):
-                    val = getattr(obj, k)
-                    if val is not None:
-                        return val
-            return kwargs.get(k, default)
 
         # --- Resolve hidden_size ---
         hidden_size = kwargs.get("hidden_size")
