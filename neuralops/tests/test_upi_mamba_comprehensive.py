@@ -209,9 +209,9 @@ def test_upi_mamba_is_selective():
 
     # Verify B_t and C_t projections are input-dependent
     x_proj_out1 = m.x_proj(x1)
-    _, B_t1, C_t1 = torch.split(x_proj_out1, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+    _, B_t1, C_t1 = torch.split(x_proj_out1, [m.dt_rank, m.d_state, m.d_state], dim=-1)
     x_proj_out2 = m.x_proj(x2)
-    _, B_t2, C_t2 = torch.split(x_proj_out2, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+    _, B_t2, C_t2 = torch.split(x_proj_out2, [m.dt_rank, m.d_state, m.d_state], dim=-1)
 
     assert not torch.allclose(B_t1[0, 5], B_t2[0, 5]), "B_t must be input-dependent"
     assert not torch.allclose(C_t1[0, 5], C_t2[0, 5]), "C_t must be input-dependent"
