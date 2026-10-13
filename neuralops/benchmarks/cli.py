@@ -210,12 +210,14 @@ def handle_results(args: argparse.Namespace) -> None:
 
 def handle_run(args: argparse.Namespace) -> None:
     mods = "all"
+    module_arg = getattr(args, "module", None)
+    modules_arg = getattr(args, "modules", None)
     if args.no_compression:
         mods = "baseline"
-    elif args.module:
-        mods = [args.module]
-    elif args.modules:
-        mods = [m.strip() for m in args.modules.split(",")]
+    elif module_arg:
+        mods = [module_arg]
+    elif modules_arg:
+        mods = [m.strip() for m in modules_arg.split(",")]
 
     ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
