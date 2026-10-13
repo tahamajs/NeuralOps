@@ -94,13 +94,17 @@ def compress(
     """
     from neuralops.core.compression_pipeline import compress_model
 
-    config = {
+    comp_step = {
         "method": method,
         "rank": rank,
         **kwargs,
     }
     if layers is not None:
-        config["layer_indices"] = layers
+        comp_step["layer_indices"] = layers
+
+    config = {
+        "compressors": [comp_step],
+    }
 
     return compress_model(model=model, config=config)
 
