@@ -662,7 +662,7 @@ def inject_unified_rope(
             return False
 
         if _already_injected(old_attn):
-            return None
+            return old_attn
 
         src = old_attn
         if src is None:
@@ -675,7 +675,7 @@ def inject_unified_rope(
         if src is None:
             return None
         if _already_injected(src):
-            return None
+            return src
 
         if model_config is None:
             model_config = getattr(target, "config", None) or getattr(src, "config", None)
