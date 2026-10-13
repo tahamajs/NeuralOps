@@ -1,6 +1,6 @@
 # NeuralOps v1.3.0 Quickstart Guide
 
-`NeuralOps` is a high-performance framework for subquadratic attention mechanisms, model compression engines, and accelerated Triton kernel operations. It integrates seamlessly with PyTorch and HuggingFace Transformers.
+`NeuralOps` is an industrial-strength framework for subquadratic attention mechanisms, model compression engines, and accelerated Triton kernel operations. It integrates seamlessly with PyTorch and HuggingFace Transformers with zero code rewrite.
 
 ---
 
@@ -18,93 +18,139 @@ pip install neuralops[cuda]
 # Production export tools (Safetensors, ONNX, ONNXRuntime)
 pip install neuralops[export]
 
-# Full suite including MLOps (WandB, MLflow) and visualization
+# Full suite including MLOps (WandB, MLflow, Accelerate) and serving
 pip install neuralops[all]
 ```
 
-To verify your installation:
+To verify your installation and detected hardware backends:
 
 ```bash
 python -c "import neuralops; print(neuralops.info())"
 ```
 
+Output:
+```json
+{
+  "version": "1.3.0",
+  "attentions_count": 131,
+  "compressors_count": 72,
+  "backends": ["cpu", "cuda", "triton"],
+  "has_triton": true,
+  "torch_version": "2.x",
+  "cuda_available": true
+}
+```
+
 ---
 
-## 2. Drop-in Attention Surgery (1 Line of Code)
+## 2. The 19-Function Public API
 
-Transform any standard Transformer (BERT, RoBERTa, DistilBERT, GPT-2, LLaMA, Mistral, Qwen2, T5) into an efficient subquadratic model with `neuralops.replace_attention`:
+NeuralOps 1.3.0 exposes 19 canonical, fully-typed functions directly under the top-level `neuralops` namespace:
+
+### Model & Export (4 Functions)
+- `neuralops.replace_attention(model, attention="cosformer", rank=None, copy_weights=True, layers=None, **kwargs)`: Replaces multi-head attention blocks with subquadratic variants while automatically recording surgery history in `model._neuralops_metadata`.
+- `neuralops.compress(model, method="direct_svd", rank=32, layers=None, **kwargs)`: Compresses linear/attention weights using SVD, low-rank factorization, or pruning.
+- `neuralops.export_model(model, output_dir, format="safetensors", **kwargs)`: Exports the modified model to disk, persisting `neuralops_config.json` containing complete surgery metadata alongside weights.
+- `neuralops.load_model(export_dir, base_model=None)`: Loads an exported artifact and automatically replays all surgery and compression operations before loading weights.
+
+### Module Discovery (5 Functions)
+- `neuralops.list_attentions() -> list[str]`: Returns a sorted list of all 131 registered canonical attention modules.
+- `neuralops.list_compressors() -> list[str]`: Returns a sorted list of all 72 registered compression engines.
+- `neuralops.get_attention_class(name: str) -> type`: Retrieves the module class from `ATTENTION_REGISTRY`.
+- `neuralops.get_compressor_class(name: str) -> type`: Retrieves the compressor class from `COMPRESSOR_REGISTRY`.
+- `neuralops.list_families() -> dict[str, list[str]]`: Groups attention mechanisms and compressors into canonical families (linear, gated, SSM, sparse, hybrid, SVD, pruning, quantization).
+
+### Runners & Execution (5 Functions)
+- `neuralops.train(model, dataset, epochs=3, lr=2e-5, **kwargs)`: Fine-tunes a model on classification or sequence tasks with mixed precision and early-stopping.
+- `neuralops.distill(student, teacher, dataset, epochs=3, lr=2e-5, **kwargs)`: Runs teacher-student Knowledge Distillation (KD) with temperature-scaled KL loss.
+- `neuralops.evaluate(model, dataset="sst2", **kwargs)`: Evaluates task performance, throughput, latency, and memory footprint.
+- `neuralops.benchmark(module="cosformer", model="distilbert-base-uncased", dataset="sst2", **kwargs)`: Executes an isolated single benchmark run with watchdog timeouts.
+- `neuralops.benchmark_all(modules="all", models="distilbert-base-uncased", dataset="sst2", **kwargs)`: Orchestrates multi-module sweeps and outputs structured CSV/Parquet summaries.
+
+### Utils & Diagnostics (5 Functions)
+- `neuralops.info() -> dict[str, Any]`: Returns system diagnostics, active device, and registration counts.
+- `neuralops.available_backends() -> list[str]`: Lists available hardware backends (`["cpu", "cuda", "mps", "triton"]`).
+- `neuralops.has_triton() -> bool`: Returns `True` if Triton GPU kernel compilation is supported.
+- `neuralops.validate(model, input_shape=(2, 32), device="cpu") -> bool`: Checks model device movement, forward output shapes, NaN/Inf absence, and backward gradient flow.
+- `neuralops.get_version() -> str`: Returns release version `"1.3.0"`.
+
+---
+
+## 3. The 3-Line Model Surgery Workflow
+
+Transform any standard Transformer (LLaMA, Mistral, Qwen2, GPT-2, DistilBERT, RoBERTa, BERT, T5) into an efficient subquadratic model in 3 lines:
 
 ```python
 import torch
 from transformers import AutoModelForCausalLM
 import neuralops
 
-# 1. Load your pretrained model
+# Line 1: Load base pretrained model
 model = AutoModelForCausalLM.from_pretrained("gpt2")
 
-# 2. Drop-in replace attention with Cosformer (O(N) linear complexity)
+# Line 2: Drop-in replace attention with subquadratic Cosformer
 model = neuralops.replace_attention(model, "cosformer")
 
-# 3. Model is immediately ready for inference or fine-tuning
-input_ids = torch.randint(0, 50257, (2, 256))
-outputs = model(input_ids)
-print("Logits shape:", outputs.logits.shape)
+# Line 3: Forward pass with linear O(N) complexity
+output = model(torch.randint(0, 50257, (2, 512)))
+print("Logits shape:", output.logits.shape)
 ```
 
-NeuralOps automatically:
-- Preserves rotary positional embeddings (RoPE) and Grouped-Query Attention (GQA).
-- Transplants original weights when compatible (`copy_weights=True`).
-- Attaches surgery metadata onto `model._neuralops_metadata` for export and reloading.
+NeuralOps automatically handles:
+- Positional embeddings: Preserves RoPE for LLaMA, Mistral, and Qwen2.
+- GQA: Automatically aligns query and key-value head counts (`num_key_value_heads`).
+- Weight transplant: Slices and copies projection weights (`W_q`, `W_k`, `W_v`, `W_o`) with zero shape mismatch errors.
 
 ---
 
-## 3. Deep Model Compression
+## 4. Deep Model Compression & Factorization
 
-Compress weight matrices using singular value decomposition (SVD), low-rank factorization, or pruning:
+Compress transformer linear projections and attention modules using truncated SVD or low-rank adapters:
 
 ```python
-import neuralops
 from transformers import AutoModelForSequenceClassification
+import neuralops
 
-# Load sequence classification model
+# 1. Load classification model
 model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
 
-# Compress using AdaSVD with rank 32
-compressed_model = neuralops.compress(model, method="adasvd", rank=32)
+# 2. Compress weights using Direct SVD with rank 32
+model = neuralops.compress(model, method="direct_svd", rank=32)
 
-# Inspect compression metadata
-print("Surgery metadata:", compressed_model._neuralops_metadata)
+# 3. Validate gradient flow and forward pass
+assert neuralops.validate(model, input_shape=(2, 64), device="cpu")
+print("Surgery metadata history:", model._neuralops_metadata)
 ```
 
 ---
 
-## 4. Production Export & Round-Trip Reloading
+## 5. Production Export & Reloading
 
-Export your modified model to production formats (`safetensors`, `onnx`, `torchscript`) with automatic architecture configuration persistence:
+Persist modified models and reload them without writing bespoke reconstruction code:
 
 ```python
 import neuralops
 
-# Export model with embedded neuralops_config.json
+# 1. Export model to Safetensors with neuralops_config.json
 export_dir = neuralops.export_model(
-    model=compressed_model,
-    output_dir="./exports/distilbert-adasvd",
+    model=model,
+    output_dir="./exports/distilbert-svd32",
     format="safetensors",
 )
 
-# Reload model from disk without manual configuration typing
+# 2. Reconstruct model and reload weights seamlessly
 reloaded_model = neuralops.load_model(export_dir)
 reloaded_model.eval()
 ```
 
 ---
 
-## 5. Benchmarking & CLI Execution
+## 6. Benchmarking via CLI
 
-NeuralOps provides an industrial-grade benchmark orchestrator with automated OOM recovery, timeout guards, and metric persistence:
+NeuralOps provides an extensive command-line interface for running experiments:
 
 ```bash
-# Run a single attention benchmark on SST-2
+# Run isolated benchmark on SST-2
 python -m neuralops.benchmarks run \
     --module cosformer \
     --model distilbert-base-uncased \
@@ -112,63 +158,9 @@ python -m neuralops.benchmarks run \
     --epochs 3 \
     --batch-size 32
 
-# Run an SVD compressor benchmark with recovery fine-tuning
-python -m neuralops.benchmarks run \
-    --module direct_svd \
-    --model distilbert-base-uncased \
-    --dataset sst2 \
-    --rank 64 \
-    --training-type recovery
+# Plan a grid sweep across all linear attention mechanisms
+python -m neuralops.benchmarks plan --all-linear --model distilbert-base-uncased
 
-# Verify environment, registries, and Triton kernels
+# Verify system readiness and kernel fallbacks
 python -m neuralops.benchmarks verify
-
-# Display tabular summaries of all benchmark runs
-python -m neuralops.benchmarks results --summary
-```
-
----
-
-## 6. Training, Knowledge Distillation & MLOps
-
-Fine-tune student models or train with teacher-student Knowledge Distillation (KD) using mixed precision (`fp16`/`bf16`) and telemetry:
-
-```python
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-import neuralops
-
-# Create synthetic dummy data for demonstration
-train_data = TensorDataset(
-    torch.randint(0, 1000, (64, 128)),
-    torch.ones(64, 128, dtype=torch.long),
-    torch.randint(0, 2, (64,)),
-)
-train_loader = DataLoader(train_data, batch_size=16)
-
-# Fine-tune model
-metrics = neuralops.train(
-    model=model,
-    train_loader=train_loader,
-    epochs=1,
-    lr=2e-5,
-    mixed_precision="fp16" if torch.cuda.is_available() else "no",
-)
-print("Training results:", metrics)
-```
-
----
-
-## 7. Serving with vLLM and TGI
-
-Prepare your customized models for high-throughput serving:
-
-```python
-from neuralops.export.serving import VLLMAdapter, TGIAdapter
-
-# Wrap attention module with paged KV cache handling for vLLM
-paged_module = VLLMAdapter.wrap_forward_for_paged_kv(model.transformer.h[0].attn)
-
-# Prepare model and generate serving config for Text Generation Inference (TGI)
-tgi_ready_model = TGIAdapter.prepare_for_tgi(model, output_dir="./serving_tgi")
 ```

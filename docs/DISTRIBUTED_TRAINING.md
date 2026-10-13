@@ -1,55 +1,37 @@
-# Distributed Training & MLOps Infrastructure Guide (v1.3.0)
+# Distributed Training, Knowledge Distillation & MLOps Guide (v1.3.0)
 
-NeuralOps supports multi-GPU distributed fine-tuning, knowledge distillation, and recovery campaigns across Distributed Data Parallel (DDP), Fully Sharded Data Parallel (FSDP), and DeepSpeed, paired with real-time MLOps telemetry.
+NeuralOps delivers a unified distributed training architecture designed to train, recover, and distill subquadratic attention architectures and compressed transformer models across multi-GPU and multi-node clusters.
 
 ---
 
-## 1. MLOps Experiment Tracking Architecture
+## 1. Overview of the Training Engine
 
-NeuralOps abstracts telemetry logging into a unified backend interface (`BaseTracker`) that streams training loss, evaluation accuracy, parameter counts, compression ratios, and VRAM consumption in real-time.
+Replacing full multi-head attention with low-rank or linear attention mechanisms typically leads to initial performance drops (referred to as initialization shock). To recover or exceed the teacher model's original accuracy, NeuralOps provides three coordinated training strategies:
 
-Supported backends:
-- **Weights & Biases (`wandb`)**: Live dashboards, metric charts, parameter configurations.
-- **MLflow (`mlflow`)**: Experiment versioning, artifact tracking, run tagging.
-- **TensorBoard (`tensorboard`)**: Local visualization without network access.
-- **Multiplexed (`all`)**: Simultaneous dual-broadcast to WandB, MLflow, and TensorBoard.
-- **Local Disk (`none`)**: Deterministic append-only JSONL files saved to `results/runs/<run_id>.json`.
+1. **Recovery Fine-Tuning**: Standard task fine-tuning on downstream datasets (e.g., GLUE SST-2, MNLI, QQP) using AdamW with cosine learning rate scheduling and early NaN stopping.
+2. **Knowledge Distillation (KD)**: Soft-target distillation where student models learn to match dense teacher output distributions via temperature-scaled Kullback-Leibler (KL) divergence and cross-entropy loss.
+3. **LoRA Recovery**: Freezes factorized base weights and trains lightweight Low-Rank Adapters ($r=16, \alpha=32$) to adapt to the compressed manifold rapidly.
 
-### CLI Invocation
-```bash
-# Stream run metrics to Weights & Biases
-python -m neuralops.benchmarks run \
-  --model roberta-base \
-  --dataset sst2 \
-  --module cosformer \
-  --tracker wandb \
-  --project-name "subquadratic-attention-benchmark" \
-  --run-name "roberta-cosformer-sst2"
+---
 
-# Track compression sweep across both MLflow and TensorBoard
-python -m neuralops.benchmarks run \
-  --model distilbert-base-uncased \
-  --dataset mnli \
-  --module direct_svd \
-  --rank 32 \
-  --tracker all \
-  --project-name "svd-compression-campaign"
+## 2. Multi-GPU Distributed Training via Accelerate
+
+NeuralOps integrates directly with Hugging Face `accelerate`, abstracting away distributed boilerplate and supporting Distributed Data Parallel (DDP), Fully Sharded Data Parallel (FSDP), and DeepSpeed.
+
+### Automatic Fallback Behavior
+If the `--distributed-backend` flag is set to `accelerate`, NeuralOps checks for the package's presence. If `accelerate` is missing, NeuralOps logs a warning and transparently falls back to single-device execution without crashing:
+```text
+[WARNING] Distributed backend 'accelerate' requested but 'accelerate' package is not installed. Falling back to single-device execution.
 ```
 
----
+When present, `Accelerator` automatically wraps:
+- Model (`model = accelerator.prepare(model)`)
+- Optimizer (`optimizer = accelerator.prepare(optimizer)`)
+- DataLoaders (`train_loader = accelerator.prepare(train_loader)`)
 
-## 2. Distributed Execution Backends
-
-NeuralOps incorporates `accelerate.Accelerator` inside its training execution loop (`neuralops.benchmarks.core.training.finetune_classification` and `neuralops.benchmarks.executor.execute_benchmark`), enabling zero-code multi-GPU scaling.
-
-### Supported Distributed Strategies:
-1. **DDP (DistributedDataParallel)**: Standard multi-GPU data parallelism across single or multi-node clusters.
-2. **FSDP (Fully Sharded Data Parallel)**: Model, optimizer, and gradient sharding for large 7B+ decoder backbones.
-3. **DeepSpeed (ZeRO-Stage 2 & ZeRO-Stage 3)**: CPU offloading and partitioned parameter updates.
-
-### Multi-GPU Launch Syntax:
+### CLI Distributed Launch
 ```bash
-# Launch multi-GPU sweep using Accelerate
+# Launch a 4-GPU distributed sweep using Accelerate and DDP
 accelerate launch \
   --num_processes 4 \
   --mixed_precision bf16 \
@@ -58,34 +40,128 @@ accelerate launch \
   --dataset wikitext2 \
   --module gla_attention \
   --distributed-backend ddp \
-  --mixed-precision bf16 \
-  --batch-size 8
+  --batch-size 8 \
+  --epochs 3
+```
 
-# Using torchrun directly
-torchrun --nproc_per_node=4 -m neuralops.benchmarks run \
-  --model roberta-base \
-  --dataset sst2 \
-  --module cosformer \
-  --distributed-backend ddp \
-  --mixed-precision fp16
+### Programmatic Python Usage
+```python
+import neuralops
+from transformers import AutoModelForSequenceClassification
+from torch.utils.data import DataLoader, TensorDataset
+import torch
+
+# 1. Create model and perform attention surgery
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+model = neuralops.replace_attention(model, "cosformer")
+
+# 2. Prepare synthetic dataset
+dataset = TensorDataset(
+    torch.randint(0, 1000, (256, 128)),
+    torch.randint(0, 2, (256,)),
+)
+train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+# 3. Distributed training with automatic accelerator wrapping
+metrics = neuralops.train(
+    model=model,
+    dataset=train_loader,
+    epochs=3,
+    lr=2e-5,
+    mixed_precision="fp16" if torch.cuda.is_available() else "no",
+    distributed_backend="accelerate",
+)
+print("Training metrics:", metrics)
 ```
 
 ---
 
-## 3. Mixed Precision Configuration
+## 3. Knowledge Distillation (KD) Engine
 
-NeuralOps implements transparent Automatic Mixed Precision (AMP) with dynamic gradient scaling:
+Knowledge Distillation is critical for achieving high accuracy with subquadratic attention blocks. NeuralOps provides a dedicated KD loss formulation:
 
-- `--mixed-precision no`: Pure 32-bit float execution (default for CPU/MPS or numerical reference checks).
-- `--mixed-precision fp16`: 16-bit float training using `torch.amp.autocast(device_type="cuda", dtype=torch.float16)` and `torch.cuda.amp.GradScaler` to prevent underflow.
-- `--mixed-precision bf16`: Brain float 16 for Ampere, Ada Lovelace, and Hopper architectures, providing 8 bits of dynamic range without requiring a gradient scaler.
+$$\mathcal{L}_{\text{KD}} = (1 - \alpha) \mathcal{L}_{\text{CE}}(y_{\text{student}}, y_{\text{true}}) + \alpha \cdot T^2 \cdot \mathcal{D}_{\text{KL}}\left(\sigma\left(\frac{z_{\text{student}}}{T}\right) \parallel \sigma\left(\frac{z_{\text{teacher}}}{T}\right)\right)$$
+
+Where:
+- $T$ is the temperature scaling factor (default: $2.0$).
+- $\alpha$ is the balance weight between hard and soft targets (default: $0.5$).
+
+### Python KD Invocation
+```python
+import neuralops
+from transformers import AutoModelForSequenceClassification
+
+# Load dense teacher and initialized student
+teacher = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+student = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+student = neuralops.replace_attention(student, "cosformer")
+
+# Execute distillation loop
+kd_metrics = neuralops.distill(
+    student=student,
+    teacher=teacher,
+    dataset=train_loader,
+    epochs=3,
+    lr=5e-5,
+    temperature=2.0,
+    alpha=0.5,
+)
+print("Distillation metrics:", kd_metrics)
+```
+
+### CLI Distillation Sweep
+```bash
+# Run distillation across all delta-rule modules
+neuralops run \
+  --all-delta \
+  --training-type kd \
+  --kd-teacher distilbert-base-uncased-finetuned-sst-2-english \
+  --dataset sst2 \
+  --epochs 3
+```
 
 ---
 
-## 4. Multi-Server GPU Cluster Management
+## 4. MLOps Telemetry & Logging Integration
 
-When executing large matrix sweeps across remote GPU servers (e.g., Server 1 / `tahoora` and Server 2):
+NeuralOps supports real-time step-level and epoch-level telemetry streaming to leading MLOps backends:
 
-1. **VRAM Safety Checks**: Pre-run health checks automatically query `torch.cuda.mem_get_info()`. If available VRAM is below 500 MB, the run logs a warning to avoid disrupting concurrent tmux sessions.
-2. **Deterministic Process Isolation**: Each benchmark process creates an isolated temporary directory and executes inside a threaded worker with a hard wall-clock timeout (`--timeout-s 1800`), ensuring that hung kernels do not freeze GPU nodes.
-3. **Resumable State**: Results are flushed immediately to disk (`results/runs/`) after each run. If a job is preempted or terminated, executing with `--resume` skips already-completed module/dataset tuples automatically.
+| Backend | Flag | Features |
+| :--- | :--- | :--- |
+| **Weights & Biases** | `--tracker wandb` | Live loss curves, VRAM tracking, parameter histograms, artifacts |
+| **MLflow** | `--tracker mlflow` | Metric history, run parameters, model registry tags |
+| **TensorBoard** | `--tracker tensorboard` | Local scalar graphs without network requirements |
+| **Multiplexed** | `--tracker all` | Broadcasts simultaneously to WandB, MLflow, and TensorBoard |
+| **Local Disk** | `--tracker none` | Deterministic append-only JSONL files saved to `results/runs/` |
+
+### Setting up Weights & Biases (WandB)
+```bash
+# Stream benchmark runs directly to WandB project
+neuralops run \
+  --module cosformer \
+  --model distilbert-base-uncased \
+  --dataset sst2 \
+  --tracker wandb \
+  --project-name "subquadratic-attention-benchmarks" \
+  --run-name "distilbert-cosformer-run-1"
+```
+
+In Python:
+```python
+metrics = neuralops.train(
+    model=model,
+    dataset=train_loader,
+    epochs=3,
+    tracker="wandb",
+    project_name="neuralops-experiments",
+)
+```
+
+---
+
+## 5. Fault Tolerance & Automatic Recovery
+
+Long-running sweeps across multi-GPU nodes incorporate automatic failure mitigation:
+- **NaN/Inf Watchdog**: Automatically aborts diverging runs and restores the best epoch checkpoint.
+- **OOM Protection**: Detects GPU Out-Of-Memory errors, flushes the CUDA cache with `torch.cuda.empty_cache()`, and logs hardware status.
+- **Resumable Executions**: Run directories persist progress. Interrupted sweeps can be resumed instantly with `neuralops resume --output-dir results/`.
