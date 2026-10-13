@@ -10,7 +10,7 @@ and interactive visualization.
 import importlib
 from typing import Any
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import importlib.machinery
 import importlib.util
@@ -268,15 +268,26 @@ from neuralops import main
 
 # Direct User-Facing Functional API
 from neuralops.api import (
+    load_model,
     replace_attention,
     compress,
+    export_model,
+    load_exported_model,
     list_attentions,
     list_compressors,
     get_attention_class,
     get_compressor_class,
-    export_model,
-    load_exported_model,
-    load_model,
+    list_families,
+    train,
+    distill,
+    evaluate,
+    benchmark,
+    benchmark_all,
+    info,
+    available_backends,
+    has_triton,
+    validate,
+    get_version,
 )
 
 from neuralops.attentions.linear.gla_attention import GLAttention
@@ -287,7 +298,6 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.exceptions import (
     NeuralOpsError, ConfigError, WeightCopyError, BackendError, NumericalError
 )
-from neuralops.core.backend import available_backends
 
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
@@ -302,28 +312,40 @@ def create_attention(name: str, **kwargs):
     return cls(**kwargs)
 
 __all__ = [
+    "__version__",
+    "load_model",
+    "replace_attention",
+    "compress",
+    "export_model",
+    "load_exported_model",
+    "list_attentions",
+    "list_compressors",
+    "get_attention_class",
+    "get_compressor_class",
+    "list_families",
+    "train",
+    "distill",
+    "evaluate",
+    "benchmark",
+    "benchmark_all",
+    "info",
+    "available_backends",
+    "has_triton",
+    "validate",
+    "get_version",
     "GLAttention",
     "CosformerAttention",
     "SVDLinearAttention",
     "DecayLinearAttention",
     "inject_gla",
-    "replace_attention",
     "create_attention",
-    "compress",
-    "export_model",
-    "load_exported_model",
-    "load_model",
-    "list_attentions",
-    "list_compressors",
-    "get_attention_class",
-    "get_compressor_class",
     "ATTENTION_REGISTRY",
     "NeuralOpsError",
     "ConfigError",
     "WeightCopyError",
     "BackendError",
     "NumericalError",
-    "available_backends",
 ]
+
 
 

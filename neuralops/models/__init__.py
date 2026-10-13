@@ -83,3 +83,7 @@ try:
 except Exception as exc:
     logger.debug("GLA Auto registration note: %s", exc)
 
+from neuralops.export.exporter import load_model
+__all__ += ["load_model"]
+
+
