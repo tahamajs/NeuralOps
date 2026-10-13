@@ -429,21 +429,7 @@ class NativeHybridAttention(BaseAttention):
         
         return out.to(dtype)
 
-    @staticmethod
-    def _read_past_kv(past_key_value: Any, layer_idx: int):
-        if past_key_value is None:
-            return None, None, 0
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            return (k, v, k.shape[-2]) if k is not None else (None, None, 0)
-        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
-            k = past_key_value.key_cache[idx]
-            if k is None:
-                return None, None, 0
-            v = past_key_value.value_cache[idx] if hasattr(past_key_value, "value_cache") and idx < len(past_key_value.value_cache) else None
-            return k, v, k.shape[-2]
-        return None, None, 0
+    _read_past_kv = staticmethod(_read_past_kv)
 
     def forward(
         self,

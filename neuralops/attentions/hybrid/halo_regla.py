@@ -240,38 +240,7 @@ class HALOReGLAAttention(BaseAttention):
     # KV-cache helpers  — [FIX-1, FIX-16]
     # Returns: (k, v, past_len, linear_state)
     # ------------------------------------------------------------------
-    @staticmethod
-    def _read_past_kv(
-        past_key_value: Any, layer_idx: int
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any]:
-        if past_key_value is None or past_key_value is False:
-            return None, None, 0, None
-
-        # HF DynamicCache
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
-            kc, vc = past_key_value.key_cache, past_key_value.value_cache
-            if len(kc) == 0 or layer_idx >= len(kc):
-                return None, None, 0, None
-            k = kc[layer_idx]
-            v = vc[layer_idx] if layer_idx < len(vc) else None
-            if k is None:
-                return None, None, 0, None
-            lin_state = getattr(past_key_value, "_linear_states", None)
-            if isinstance(lin_state, list) and layer_idx < len(lin_state):
-                lin_state = lin_state[layer_idx]
-            else:
-                lin_state = None
-            return k, v, k.shape[-2], lin_state
-
-        # (k, v) or (k, v, linear_state) tuple
-        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-            k, v = past_key_value[0], past_key_value[1]
-            lin_state = past_key_value[2] if len(past_key_value) >= 3 else None
-            if k is None:
-                return None, None, 0, lin_state
-            return k, v, k.shape[-2], lin_state
-
-        return None, None, 0, None
+    _read_past_kv = staticmethod(_read_past_kv)
 
     @staticmethod
     def _write_past_kv(
