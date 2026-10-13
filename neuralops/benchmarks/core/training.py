@@ -69,8 +69,10 @@ def finetune_classification(
             count += 1
             step += 1
 
+            LOG_EVERY = 50
             if has_tqdm and hasattr(pbar, "set_postfix"):
-                pbar.set_postfix({"loss": f"{cur_loss:.4f}", "avg_loss": f"{running_loss / count:.4f}"})
+                if step % LOG_EVERY == 0 or (len(train_loader) and count == len(train_loader)):
+                    pbar.set_postfix({"loss": f"{cur_loss:.4f}", "avg_loss": f"{running_loss / count:.4f}"})
 
             if max_steps is not None and step >= max_steps:
                 break
