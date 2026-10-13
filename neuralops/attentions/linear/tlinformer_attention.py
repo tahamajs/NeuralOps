@@ -18,12 +18,9 @@ Complexity: O(N · r · d) for encoders, O(N² · d) for decoders (dense fallbac
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from neuralops.core.utils.lora import LoRALinear
+from neuralops.core.utils.rope import apply_rotary_pos_emb, rotate_half, _rotate_half
+from neuralops.core.utils.config import _cfg_get
 
 import logging
 import math
@@ -37,20 +34,23 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
-try:
-    from neuralops.core.gqa_utils import repeat_kv
-except ImportError:
+from neuralops.core.utils.gqa import repeat_kv
 
-    def repeat_kv(h, n_rep):
-        if n_rep == 1:
-            return h
-        B, H, S, D = h.shape
-        return h[:, :, None].expand(B, H, n_rep, S, D).reshape(B, H * n_rep, S, D)
 
 
 logger = logging.getLogger(__name__)
 
 
+
+
+# ===========================================================================
+# RoPE helpers
+# ===========================================================================
+
+
+# ===========================================================================
+# LoRALinear
+# ===========================================================================
 
 
 # DEPRECATED: Identity projection under causal LM masking.
