@@ -9,6 +9,8 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/tahamajs/SVD_linear_Attention/branch/main/graph/badge.svg)](https://codecov.io/gh/tahamajs/SVD_linear_Attention)
+[![PyTorch 2.x](https://img.shields.io/badge/PyTorch-2.x%20torch.compile-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/SVD_linear_Attention/)
 [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-neuralops-yellow)](https://huggingface.co/tahamajs/distilbert-svd-attention)
 [![PyPI - Wheel](https://img.shields.io/pypi/wheel/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -164,6 +166,36 @@ neuralops run --all-delta --training-type kd --dataset sst2 --device cuda
 neuralops resume --output-dir results/sweep
 ```
 
+### Recipe 5: Export & `torch.compile` Acceleration
+Compile with PyTorch 2.x without graph breaks, and export for production serving:
+
+```python
+import torch
+import neuralops
+from transformers import AutoModel
+
+# 1. Attention surgery
+model = AutoModel.from_pretrained("distilbert-base-uncased")
+model = neuralops.replace_attention(model, "cosformer")
+
+# 2. Compile without graph breaks using custom op meta kernels
+compiled_model = torch.compile(model, mode="reduce-overhead")
+
+# 3. Export to Safetensors with architecture metadata for serving
+neuralops.export_model(
+    model=model,
+    output_dir="./distilbert_cosformer",
+    format="safetensors",
+    attention_type="cosformer",
+    rank=32,
+)
+```
+
+Or directly via CLI:
+```bash
+neuralops export --model distilbert-base-uncased --attn cosformer --format safetensors --output-dir ./prod_model
+```
+
 ---
 
 ## 🏗️ Architecture Overview
@@ -293,12 +325,12 @@ Results from evaluating all 131 attention mechanisms under knowledge distillatio
 
 ---
 
-## 🎓 Training & Knowledge Distillation
+## 🎓 Training, Distributed MLOps & Distillation
 
-NeuralOps features built-in trainers for standard fine-tuning, knowledge distillation from a teacher model, and post-compression recovery:
+NeuralOps features built-in trainers for standard fine-tuning, knowledge distillation from a teacher model, and post-compression recovery, natively integrated with distributed training (DDP / FSDP) and experiment trackers (Weights & Biases, MLflow, TensorBoard):
 
 ```bash
-# Knowledge distillation from a full BERT teacher to compressed student
+# Multi-GPU Knowledge distillation with Weights & Biases telemetry
 neuralops run --all-delta \
   --model distilbert-base-uncased \
   --dataset sst2 \
@@ -306,29 +338,37 @@ neuralops run --all-delta \
   --kd-teacher bert-base-uncased \
   --kd-temperature 2.0 \
   --kd-alpha 0.5 \
-  --epochs 3 \
-  --batch-size 32 \
-  --lr 2e-5 \
+  --distributed-backend ddp \
+  --mixed-precision bf16 \
+  --tracker wandb \
+  --project-name "subquadratic-attention-kd" \
   --device cuda
 ```
 
-Using the Python API:
+See [docs/DISTRIBUTED_TRAINING.md](docs/DISTRIBUTED_TRAINING.md) for full configuration details.
 
-```python
-from neuralops.benchmarks import Runner
+---
 
-runner = Runner(
-    modules="all-delta",
-    models="distilbert-base-uncased",
-    datasets="sst2",
-    training_type="kd",
-    kd_teacher="bert-base-uncased",
-    device="cuda",
-)
+## 🚢 Production Deployment & Export
 
-for result in runner.stream():
-    print(f"[{result.status.upper()}] {result.module} - Accuracy: {result.accuracy:.4f}")
-```
+Export models to production artifact formats and serve in high-throughput clusters:
+
+- **Safetensors with Surgery Metadata**: Export weights with `neuralops_config.json` containing exact layer-wise surgery and compression parameters.
+- **ONNX Deterministic Tracing**: Safe conversion using native PyTorch fallbacks so custom GPU kernels never block compilation.
+- **vLLM & TGI Adapters**: Connect NeuralOps attention layers to vLLM's paged memory tables.
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for step-by-step export and serving instructions.
+
+---
+
+## 🗺️ Roadmap & Governance
+
+We follow open-source engineering standards and semantic versioning:
+- **[ROADMAP.md](ROADMAP.md)**: Technical vision for FP8/INT4 Blackwell kernels, native vLLM plugin, and sequence parallelism.
+- **[CHANGELOG.md](CHANGELOG.md)**: Detailed historical release notes and upgrade guides.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Developer guide for registering attention modules and Triton kernels.
+- **[SECURITY.md](SECURITY.md)**: Supported versions and vulnerability disclosure policy.
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Contributor Covenant Code of Conduct.
 
 ---
 
