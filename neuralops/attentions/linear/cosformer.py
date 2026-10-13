@@ -286,7 +286,11 @@ class CosformerAttention(BaseAttention):
                             )
                     out_d = min(tw.size(0), w_to_use.size(0))
                     in_d = min(tw.size(1), w_to_use.size(1))
-                    tw.data[:out_d, :in_d].copy_(w_to_use[:out_d, :in_d].to(tw.dtype))
+                    if tw.shape != (w_to_use.size(0), w_to_use.size(1)) and min(w_to_use.shape) == min(tw.shape):
+                        target_mod.weight = nn.Parameter(w_to_use.to(tw.dtype))
+                        tw = target_mod.weight
+                    else:
+                        tw.data[:out_d, :in_d].copy_(w_to_use[:out_d, :in_d].to(tw.dtype))
 
                     if b is not None and getattr(target_mod, "bias", None) is not None:
                         tb = target_mod.bias
