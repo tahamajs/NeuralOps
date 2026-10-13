@@ -4,6 +4,7 @@ warnings.warn(
     "neuralops.core.rope is deprecated. Use neuralops.core.utils.rope.",
     DeprecationWarning,
     stacklevel=2,
+)
 import torch
 from neuralops.core.utils.rope import *  # noqa: F401,F403
 from neuralops.core.utils.rope import (  # noqa: F401
