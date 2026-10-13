@@ -221,3 +221,4 @@ kd_qcqa_attention_C_20261012_230139,qcqa_attention__gpt2__wikitext2__rank32__d5d
 >>>>>>> eef02d50ae (add results)
 kd_gqa_attention_C_20261013_010935,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:11:44.130408+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,finetune,,,,246.99,604.25,81.02,,5923.52,93f5ba273999f0df
 kd_gqa_attention_C_20261013_011359,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:15:09.483455+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,finetune,,,,244.4,605.85,81.26,,5923.52,d395e599099f7839
+kd_gla_attention_C_20261013_061527,gla_attention__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-13T06:19:21.065287+00:00,success,gla_attention,attention,gpt2,wikitext2,32,finetune,,,,544.39,1154907.58,99.96,,3807.35,6a127a0c8ec660ff
