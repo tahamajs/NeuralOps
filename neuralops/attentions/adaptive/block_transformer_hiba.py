@@ -608,8 +608,9 @@ class BlockTransformerHIBA(BaseAttention):
             )
 
         # Padding mask on K side
-        pad_k_intra = ~valid_blk.unsqueeze(1).unsqueeze(-2)  # (B, 1, NB, 1, bs)
-        intra_scores = intra_scores.masked_fill(pad_k_intra, -1e4)
+        if valid_blk is not None and not valid_blk.all():
+            pad_k_intra = ~valid_blk.unsqueeze(1).unsqueeze(-2)  # (B, 1, NB, 1, bs)
+            intra_scores = intra_scores.masked_fill(pad_k_intra, -1e4)
 
         # ---- Inter-block: sparse top-k (per query block) ----
         # Since top-k selection differs per query block, we loop over query blocks
@@ -670,8 +671,9 @@ class BlockTransformerHIBA(BaseAttention):
             nb_scores = torch.matmul(q_b, k_nb.transpose(-1, -2)) * scale
 
             # Mask invalid neighbors
-            pad_nb = ~valid_nb.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N_nb)
-            nb_scores = nb_scores.masked_fill(pad_nb, -1e4)
+            if valid_nb is not None and not valid_nb.all():
+                pad_nb = ~valid_nb.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N_nb)
+                nb_scores = nb_scores.masked_fill(pad_nb, -1e4)
 
             # ---- Top-k selection ----
             k_keep = min(self.top_k_inter, N_nb)
@@ -936,7 +938,7 @@ class BlockTransformerHIBA(BaseAttention):
                 ).unsqueeze(0).unsqueeze(0)
                 scores = scores + causal_mask
 
-            if valid_mask is not None:
+            if valid_mask is not None and not valid_mask.all():
                 scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
 
             # Safe softmax
