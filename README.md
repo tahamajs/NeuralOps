@@ -333,11 +333,14 @@ Results from evaluating all 131 attention mechanisms under knowledge distillatio
 | **ERROR** | **12** | **9.2%** | Shape or runtime incompatibility with sequence classification head |
 
 **Top 5 Accuracy Improvements Post-Distillation:**
-1. `bam_umoe`: **49.50% → 83.60%** (+34.10%)
-2. `aegis_spectron_fp8`: **49.50% → 83.14%** (+33.64%)
-3. `aegis_v6`: **49.50% → 82.57%** (+33.07%)
-4. `adaptive_svd_attention`: **49.50% → 79.93%** (+30.43%)
-5. `adasplash_attention`: **91.50% → 92.78%** (+1.28%)
+
+| Rank | Attention Module | Pre-KD Accuracy | Post-KD Accuracy | Gain (Δ) | Architectural Category |
+| :---: | :--- | :---: | :---: | :---: | :--- |
+| **1** | `bam_umoe` | 49.50% | **83.60%** | **+34.10%** | Hybrid MoE Attention |
+| **2** | `aegis_spectron_fp8` | 49.50% | **83.14%** | **+33.64%** | Quantized Hybrid Attention |
+| **3** | `aegis_v6` | 49.50% | **82.57%** | **+33.07%** | Gated Hybrid Attention |
+| **4** | `adaptive_svd_attention` | 49.50% | **79.93%** | **+30.43%** | Low-Rank SVD Attention |
+| **5** | `adasplash_attention` | 91.50% | **92.78%** | **+1.28%** | Adaptive Gated Splash Attention |
 
 *Full records saved in [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv).*
 
