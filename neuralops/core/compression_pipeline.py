@@ -46,9 +46,15 @@ class CompressionPipeline:
             merged_cfg = {**self.config, **comp_cfg}
             merged_cfg.pop("compressors", None)
             compressor = compressor_cls(self.model, **merged_cfg)
-            self.model, stats = compressor.compress()
-            if stats:
-                logger.info("%s", compressor.summary())
+            if hasattr(compressor, "compress") and callable(compressor.compress):
+                self.model, stats = compressor.compress()
+                if stats and hasattr(compressor, "summary"):
+                    logger.info("%s", compressor.summary())
+            elif isinstance(compressor, tuple) and len(compressor) == 2:
+                self.model, stats = compressor
+            else:
+                self.model = compressor
+                stats = {}
 
         return self.model
 
