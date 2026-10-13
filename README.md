@@ -2,7 +2,7 @@
 
 ### **High-Performance Attention Mechanisms & Model Compression for PyTorch**
 
-> 159 attention mechanisms · 73 compression engines · 19 Triton kernels · 8 transformer architectures
+> 130 canonical attention mechanisms · 73 compression engines · 19 Triton kernels · 8 transformer architectures
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -50,7 +50,7 @@
 
 ## Key Highlights
 
-- **159 Attention Mechanisms**: Canonical linear, sparse, gated, hybrid, SSM, and SVD factorized attention layers.
+- **130 Canonical Attention Mechanisms**: Canonical linear, sparse, gated, hybrid, SSM, and SVD factorized attention layers.
 - **73 Model Compressors**: SVD truncation, activation-calibrated decomposition (ASVD/AdaSVD), structured pruning, and quantization.
 - **21 Fused Triton Kernels**: Highly optimized GPU execution with seamless, transparent PyTorch CPU/MPS fallbacks.
 - **Universal Architecture Surgery**: Drop-in zero-shot attention replacement across popular Transformer models.
@@ -130,7 +130,7 @@ print("Logits shape:", outputs.logits.shape)
 
 ### Recipe 2: Native HuggingFace Transformers AutoModel & Generation
 
-Construct, train, and generate text with native `AutoModelForCausalLM` and `AutoConfig` using any of the 159 attention mechanisms:
+Construct, train, and generate text with native `AutoModelForCausalLM` and `AutoConfig` using any of the 130 canonical attention mechanisms:
 
 ```python
 import torch
@@ -198,7 +198,7 @@ graph TD
 
 ## 🧠 Models
 
-### Attention Mechanism Zoo (159)
+### Attention Mechanism Zoo (130)
 
 | # | Key | Class | Module | Causal | GQA | RoPE | Description |
 |---:|---|---|---|:---:|:---:|:---:|---|
@@ -496,7 +496,7 @@ attention_cls = ATTENTION_REGISTRY.get("cosformer")
 compressor_cls = COMPRESSOR_REGISTRY.get("slicegpt")
 
 # Check registered counts
-print(len(ATTENTION_REGISTRY))   # 159
+print(len(ATTENTION_REGISTRY))   # 130
 print(len(COMPRESSOR_REGISTRY))  # 73
 ```
 
