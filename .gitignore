@@ -359,3 +359,4 @@ results/baseline_check/**/*.bin
 
 *.datresults/_ARCHIVE/
 results/_archive/
+results/kd_cache/
