@@ -23,7 +23,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 # ── FLA availability ────────────────────────────────────────────
-FLA_AVAILABLE = True
+FLA_AVAILABLE = False  # TEMPORARY — for debugging
 
 if FLA_AVAILABLE:
     try:
@@ -106,7 +106,8 @@ class GLAttention(BaseAttention):
         # After 500 tokens: 0.9994^500 ≈ 0.75 (long context)
         with torch.no_grad():
             self.gate_W2.bias.fill_(120.0)
-            self.gate_W1.weight.normal_(0.0, 0.02)
+            # ← CHANGE: make gate constant
+            self.gate_W1.weight.zero_()   # NOT normal_(0.0, 0.02)
 
         # ── Output norm per head (critical for numerical stability) ──
         # Each head's output has magnitude ≈ N (linear attention grows
@@ -214,7 +215,7 @@ class GLAttention(BaseAttention):
 
         # ── RMSNorm per head (matches FLA's GLA reference) ──
         # out shape: (B, N, H, d) → apply RMSNorm over last dim (d)
-        out = self.o_norm(out)  # (B, N, H, d)
+        # out = self.o_norm(out)   # ← COMMENT OUT for now
 
         # Reshape to (B, N, H*d) and project
         out = out.contiguous().view(B, N, self.all_head_size)
