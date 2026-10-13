@@ -416,13 +416,28 @@ class FactorizedLinear(nn.Module):
         call. Cache it if you need it in a hot loop.
         """
         w = torch.matmul(self.lin2.weight, self.lin1.weight)
-        if self.lora_A is not None:
+        if self.lora_A is not None and self.lora_B is not None:
             w = w + torch.matmul(self.lora_B, self.lora_A)
         return w
 
     def effective_bias(self) -> torch.Tensor | None:
         """Return the bias vector (if any)."""
         return self.lin2.bias
+
+    @property
+    def down(self) -> nn.Linear:
+        return self.lin1
+
+    @property
+    def up(self) -> nn.Linear:
+        return self.lin2
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.lin2(self.lin1(x))
+        if self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        return out
+
     @classmethod
     def from_linear(
         cls,
