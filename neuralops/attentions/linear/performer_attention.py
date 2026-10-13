@@ -829,8 +829,9 @@ class PerformerAttention(BaseAttention):
             z = z + k_c.sum(dim=2)
 
         num = torch.cat(num_list, dim=2)
-        den = torch.cat(den_list, dim=2).clamp(min=1e-5)
-        return (num / den).to(dtype)
+        den = torch.cat(den_list, dim=2).clamp(min=1e-6) + self.eps
+        out = (num / den).to(dtype)
+        return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
     # ------------------------------------------------------------
     def _forward_bidirectional(
@@ -852,8 +853,9 @@ class PerformerAttention(BaseAttention):
         KV = torch.matmul(Kf.transpose(-2, -1), Vf)
         K_sum = Kf.sum(dim=-2, keepdim=True)
         num = torch.matmul(Qf, KV)
-        den = torch.matmul(Qf, K_sum.transpose(-2, -1)) + self.eps
-        return (num / den).to(dtype)
+        den = torch.matmul(Qf, K_sum.transpose(-2, -1)).clamp(min=1e-6) + self.eps
+        out = (num / den).to(dtype)
+        return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
 
 # ============================================================
