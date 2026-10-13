@@ -127,7 +127,10 @@ def get_cached_tokenized_dataset(
     def _tokenize_split(
         split_name: str,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        raw_ds = load_dataset("glue", dataset_name.lower(), split=split_name)
+        try:
+            raw_ds = load_dataset("nyu-mll/glue", dataset_name.lower(), split=split_name)
+        except Exception:
+            raw_ds = load_dataset("glue", dataset_name.lower(), split=split_name)
 
         def tok_fn(ex):
             args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
