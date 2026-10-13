@@ -127,7 +127,64 @@ def _get_module_class(name: str, registry_type: str = "attention"):
         raise RuntimeError(
             f"Module '{name}' not found in {registry_type}_REGISTRY"
         )
-    return reg.get(name)
+def inject_lora_into_ffn(model, lora_rank=16, lora_alpha=32):
+    """
+    Replace every nn.Linear inside transformer.h[*].mlp with a LoRA-
+    wrapped Linear. Base weights stay frozen; only LoRA A/B matrices
+    are trainable.
+
+    Returns list of newly created LoRA parameter objects.
+    """
+    import torch.nn as nn
+
+    class LoRALinear(nn.Module):
+        def __init__(self, base, rank, alpha):
+            super().__init__()
+            self.base = base
+            self.rank = rank
+            self.alpha = alpha
+            # freeze base
+            for p in self.base.parameters():
+                p.requires_grad = False
+            if hasattr(base, "in_features"):
+                in_f = base.in_features
+                out_f = base.out_features
+            elif hasattr(base, "weight"):
+                # Conv1D in transformers has weight shape (in_features, out_features)
+                in_f = base.weight.shape[0]
+                out_f = base.weight.shape[1]
+            else:
+                in_f = base.nx
+                out_f = base.nf
+            self.lora_A = nn.Parameter(torch.zeros(rank, in_f))
+            self.lora_B = nn.Parameter(torch.zeros(out_f, rank))
+            nn.init.kaiming_uniform_(self.lora_A, a=5 ** 0.5)
+            nn.init.zeros_(self.lora_B)
+            self.scaling = alpha / rank
+
+        def forward(self, x):
+            base_out = self.base(x)
+            lora_out = (x @ self.lora_A.t()) @ self.lora_B.t() * self.scaling
+            return base_out + lora_out
+
+    new_params = []
+    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+        for block in model.transformer.h:
+            mlp = getattr(block, "mlp", None)
+            if mlp is None:
+                continue
+            # GPT-2 MLP has c_fc and c_proj (Linear or Conv1D)
+            for attr in ("c_fc", "c_proj"):
+                if hasattr(mlp, attr):
+                    orig = getattr(mlp, attr)
+                    if isinstance(orig, (nn.Linear, nn.Module)) and not isinstance(orig, LoRALinear):
+                        wrapped = LoRALinear(orig, lora_rank, lora_alpha)
+                        setattr(mlp, attr, wrapped)
+                        new_params.append(wrapped.lora_A)
+                        new_params.append(wrapped.lora_B)
+
+    print(f"[LoRA] Injected into {len(new_params)//2} FFN linears")
+    return new_params
 
 
 LOG = logging.getLogger("MambaKD")
@@ -1652,19 +1709,44 @@ def run_kd_method(
         s2_lr = getattr(args, "self_train_lr", None) or args.learning_rate
         LOG.info(f"[{method_name}] Starting Stage 2 (self-training, CE-only) for {self_train_steps} steps (LR={s2_lr:.2e})...")
 
-        # Ensure train mode and at least some trainable params for Stage 2
+        # ═══════════════════════════════════════════════════════════════
+        #  STAGE 2 PREP: Inject LoRA into FFN
+        # ═══════════════════════════════════════════════════════════════
+        LOG.info("[STAGE2-PREP] Injecting LoRA into FFN of all blocks...")
+        lora_params = inject_lora_into_ffn(student, lora_rank=16, lora_alpha=32)
+
+        # Move to device and dtype
+        for p in lora_params:
+            p.data = p.data.to(device).to(amp_dtype if amp_dtype != torch.float32 else torch.float32)
+            p.requires_grad = True
+
+        # Ensure attention params are STILL trainable
+        for name, p in student.named_parameters():
+            if "attn" in name:
+                p.requires_grad = True
+
+        # Sanity check: verify attention and LoRA params trainable
+        attn_trainable = 0
+        ffn_lora_trainable = 0
+        for name, p in student.named_parameters():
+            if "attn" in name and p.requires_grad:
+                attn_trainable += p.numel()
+            if "lora_" in name and p.requires_grad:
+                ffn_lora_trainable += p.numel()
+        LOG.info(f"[SANITY] attention trainable: {attn_trainable:,}")
+        LOG.info(f"[SANITY] LoRA trainable:       {ffn_lora_trainable:,}")
+
+        # Ensure train mode and rebuild optimizer for Stage 2
         student.train()
         stage2_params = [p for p in student.parameters() if p.requires_grad]
-        if not stage2_params:
-            LOG.warning(f"[{method_name}] Stage 2: no trainable params found – re-enabling attention/lora params.")
-            for name, p in student.named_parameters():
-                if any(k in name.lower() for k in ["attn", "lora", "adapter", "mamba", "ssm"]):
-                    p.requires_grad = True
-            stage2_params = [p for p in student.parameters() if p.requires_grad]
+        n_trainable = sum(p.numel() for p in stage2_params)
+        LOG.info(f"[STAGE2-PREP] Trainable params now: {n_trainable:,}")
+
         stage2_optimizer = torch.optim.AdamW(
             stage2_params,
             lr=s2_lr,
             weight_decay=0.01,
+            betas=(0.9, 0.95),
             fused=True
         )
         # Use a fresh scaler for Stage 2 to avoid GradScaler state corruption from Stage 1
@@ -1674,8 +1756,9 @@ def run_kd_method(
         stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             stage2_optimizer,
             T_max=self_train_steps,
-            eta_min=1e-7,
+            eta_min=1e-6,
         )
+        LOG.info("[STAGE2-PREP] Optimizer rebuilt with LoRA params")
 
         warmup_s2 = getattr(args, "self_train_warmup", 20)
         s2_step = 0
