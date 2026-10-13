@@ -381,6 +381,25 @@ def execute_single(
             run_id, duration_s, train_duration_s, eval_metrics
         )
 
+        # MLOps Telemetry & Logging
+        tracker_type = kwargs.get("tracker", "none")
+        if tracker_type and tracker_type != "none":
+            try:
+                from neuralops.benchmarks.loggers import create_tracker
+                tracker = create_tracker(
+                    tracker_type=tracker_type,
+                    project_name=kwargs.get("project_name", "neuralops"),
+                    run_name=f"{module}_{model}_{dataset}_{run_id[:8]}",
+                    output_dir=out_dir,
+                    config=config_dict,
+                )
+                tracker.log_params(config_dict)
+                log_payload = {**eval_metrics, **resources_dict}
+                tracker.log_metrics({k: float(v) for k, v in log_payload.items() if isinstance(v, (int, float))})
+                tracker.finish()
+            except Exception as tracker_err:
+                run_logger.debug("MLOps tracker logging failed: %s", tracker_err)
+
         return BenchmarkResult(
             run_id=run_id,
             run_name=f"{module}_{model}_{dataset}",
