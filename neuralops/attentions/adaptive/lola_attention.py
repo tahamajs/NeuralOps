@@ -4,13 +4,28 @@ LoLA: Low-Rank Linear Attention with Sparse Caching.
 Combines factorized low-rank projections with selective multi-system cached
 retrieval, trainable LoRA residual adapters, frozen SVD base weights, GQA,
 RoPE, and causal decoding.
+
+Architecture:
+    * Factorized low-rank Q/K/V/O projections (SVD-initialized)
+    * LoRA residual adapters on frozen base weights
+    * Multi-system streaming cache (recent / sparse / low-rank subspace)
+    * Cache used only during autoregressive decode (N_q == 1)
+
+Fixes applied:
+    [LOLA-FIX-01]  Cache dimension safety: only enabled for N_q == 1 decode
+    [LOLA-FIX-02]  Ring-buffer cache (no per-step cat+clone)
+    [LOLA-FIX-03]  SVD on CPU (cuSolver unreliable on some GPU shapes)
+    [LOLA-FIX-04]  Causal mask preserved with cache
+    [LOLA-FIX-05]  dtype-safe: FP32 only for softmax
+    [LOLA-FIX-06]  Safe softmax via max-subtraction
+    [LOLA-FIX-07]  Robust cache read from past_key_value (optional)
+    [LOLA-FIX-08]  Idempotency + recursion guards in injector
+    [LOLA-FIX-09]  __all__ declaration
 """
 
 from __future__ import annotations
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-)
+from neuralops.core.utils.config import _cfg_get
+from neuralops.core.utils.masks import _safe_mask_value
 
 import logging
 import math
@@ -28,6 +43,11 @@ from neuralops.core.rope import apply_rotary_pos_emb
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
 
 
 def _safe_softmax(scores: torch.Tensor, dim: int = -1) -> torch.Tensor:
@@ -475,12 +495,6 @@ class LoLAAttention(BaseAttention):
     ) -> None:
         cfg = config if config is not None else model_config
 
-        def _cfg_get(name: str, fallback: Any) -> Any:
-            if cfg is not None:
-                val = getattr(cfg, name, None)
-                if val is not None:
-                    return val
-            return fallback
 
         actual_rank = rank if rank is not None else _cfg_get("rank", 32)
         try:
