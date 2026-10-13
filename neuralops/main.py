@@ -64,25 +64,25 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 # Mirror and cache defaults
-if "HF_ENDPOINT" not in os.environ:
-    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+# Do not override HF_ENDPOINT or HF cache dirs if user/environment already set them
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-# Point to local cache if present — checked in priority order, first match wins
-_potential_caches = [
-    _CODES.parent / "cache",  # <project>/cache  (local override)
-    Path.home() / ".cache" / "huggingface" / "hub",  # ~/.cache/hf/hub  (standard)
-    Path.home() / ".cache" / "huggingface",  # ~/.cache/hf
-]
-for pc in _potential_caches:
-    if pc.exists():
-        os.environ["HF_HOME"] = str(pc)
-        os.environ["HF_HUB_CACHE"] = str(pc)
-        os.environ["TRANSFORMERS_CACHE"] = str(pc)
-        break
+# Point to local cache if present and not already configured in os.environ
+if "HF_HOME" not in os.environ:
+    _potential_caches = [
+        _CODES.parent / "cache",  # <project>/cache  (local override)
+        Path.home() / ".cache" / "huggingface" / "hub",  # ~/.cache/hf/hub  (standard)
+        Path.home() / ".cache" / "huggingface",  # ~/.cache/hf
+    ]
+    for pc in _potential_caches:
+        if pc.exists() and os.access(pc, os.W_OK):
+            os.environ["HF_HOME"] = str(pc)
+            os.environ["HF_HUB_CACHE"] = str(pc)
+            os.environ["TRANSFORMERS_CACHE"] = str(pc)
+            break
 
 # ---------------------------------------------------------------------------
 # Lazy heavy imports (torch / transformers loaded only when needed)
