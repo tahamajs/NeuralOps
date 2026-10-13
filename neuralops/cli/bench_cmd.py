@@ -24,12 +24,16 @@ def cmd_bench(args):
         print("Error: --module or --target is required.", file=sys.stderr)
         return 1
 
+    from neuralops.core.registry import ATTENTION_REGISTRY
+    mod_type = "attention" if target in ATTENTION_REGISTRY else "compressor"
+
     if mode == "kd":
         # Safe legacy KD test invocation
         cmd = [
             sys.executable,
             "neuralops/benchmarks/_legacy/kd_quick_test.py",
             "--modules", target,
+            "--type", mod_type,
             "--model_name", model,
             "--rank", str(rank),
             "--methods", "C",
