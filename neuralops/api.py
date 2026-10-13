@@ -29,10 +29,11 @@ from neuralops.core.attention_utils import inject_attention
 
 def replace_attention(
     model: nn.Module,
-    attention: str,
+    attention: Optional[str] = None,
     rank: Optional[int] = None,
     copy_weights: bool = True,
     layers: Optional[List[int]] = None,
+    attention_type: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
     """Drop-in replace attention layers in any PyTorch / HuggingFace model.
@@ -55,9 +56,12 @@ def replace_attention(
         >>> model = AutoModelForCausalLM.from_pretrained("gpt2")
         >>> model = neuralops.replace_attention(model, "cosformer")
     """
-    if attention not in ATTENTION_REGISTRY:
+    attn_name = attention or attention_type
+    if not attn_name:
+        raise ValueError("Must specify attention or attention_type.")
+    if attn_name not in ATTENTION_REGISTRY:
         raise ValueError(
-            f"Unknown attention module {attention}. "
+            f"Unknown attention module {attn_name}. "
             f"Use neuralops.list_attentions() to see all {len(ATTENTION_REGISTRY)} available modules."
         )
 
@@ -66,7 +70,7 @@ def replace_attention(
 
     return inject_attention(
         model=model,
-        attention_type=attention,
+        attention_type=attn_name,
         rank=rank,
         copy_weights=copy_weights,
         **kwargs,
