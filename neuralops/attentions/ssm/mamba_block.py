@@ -77,7 +77,7 @@ class MambaBlock(nn.Module):
 
         # ---- d_model inference (MB-11) ----
         if d_model is None:
-            d_model = _infer_d_model(config, kwargs.get("source_attn"), None, kwargs)
+            d_model = _infer_d_model(config, kwargs.get("source_attn"), None, **kwargs)
         self.d_model = int(d_model)
 
         # ---- Dimensions ----
@@ -820,7 +820,7 @@ def inject_mamba(
 
     # ---- d_model inference (MB-11) ----
     try:
-        d_model = _infer_d_model(cfg, src_attn, target, kwargs)
+        d_model = _infer_d_model(cfg, src_attn, None, **kwargs)
     except ValueError as e:
         logger.error("inject_mamba: %s", e)
         return None
