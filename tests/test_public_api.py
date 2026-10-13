@@ -109,7 +109,7 @@ def test_validation_and_backends():
     class SimpleToyModel(nn.Module):
         def __init__(self):
             super().__init__()
-            self.emb = nn.Embedding(100, 32)
+            self.emb = nn.Embedding(1000, 32)
             self.lin = nn.Linear(32, 100)
 
         def forward(self, input_ids, labels=None):
