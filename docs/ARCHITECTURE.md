@@ -12,7 +12,7 @@ NeuralOps is designed around clear separation of concerns across multiple layers
                ▼                         ▼
  ┌───────────────────────────┐ ┌───────────────────────────┐
  │    ATTENTION REGISTRY     │ │   COMPRESSION REGISTRY    │
- │       (159 Modules)       │ │       (73 Engines)        │
+ │       (130 Modules)       │ │       (73 Engines)        │
  ├───────────────────────────┤ ├───────────────────────────┤
  │ • Linear, Kernel, Cosform │ │ • ASVD, SliceGPT, Wanda   │
  │ • Sliding Window, GQA     │ │ • GPTQ, AWQ, SmoothQuant  │

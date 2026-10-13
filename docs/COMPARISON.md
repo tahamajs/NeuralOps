@@ -19,7 +19,7 @@
 ## Unique Features
 
 NeuralOps is unique in combining:
-1. **Massive attention library** (159 mechanisms)
+1. **Massive attention library** (130 mechanisms)
 2. **Complete compression suite** (73 engines)
 3. **Zero-shot module injection** across 8 architectures
 4. **Unified benchmark CLI**

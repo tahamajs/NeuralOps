@@ -1,9 +1,9 @@
 # NeuralOps Complete API Reference (v1.2.0)
 
-This reference documents all registered Attention mechanisms (159) and Compression modules (73).
+This reference documents all registered Attention mechanisms (130) and Compression modules (73).
 
 ## Table of Contents
-- [Attention Mechanisms (159)](#attention-mechanisms)
+- [Attention Mechanisms (130)](#attention-mechanisms)
 - [Compression Modules (73)](#compression-modules)
 
 ---
