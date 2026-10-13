@@ -1,0 +1,5 @@
+cosformer: stuck at pre-KD accuracy (91.50% -> 91.74%)
+cross_attention: stuck at pre-KD accuracy (92.00% -> 91.63%)
+inject_native_hybrid_attention: stuck at pre-KD accuracy (91.50% -> 91.86%)
+nasc_attention: stuck at pre-KD accuracy (90.00% -> 90.48%)
+routing_attention: stuck at pre-KD accuracy (52.50% -> 52.41%)
