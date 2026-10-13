@@ -4,6 +4,7 @@ Quality and Capacity-Aware Grouped Query Attention (QCQA).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _detect_decoder
 

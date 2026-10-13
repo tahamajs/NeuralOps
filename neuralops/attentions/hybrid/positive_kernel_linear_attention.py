@@ -7,6 +7,7 @@ to guarantee strict positivity and stable gradients, avoiding NaN denominator co
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
 
 from neuralops.core.attention_utils import (
