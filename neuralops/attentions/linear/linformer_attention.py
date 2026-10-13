@@ -520,9 +520,9 @@ class LinformerAttention(BaseAttention):
                 return w, b
             if src_out > out_target and src_out % out_target == 0:
                 rep = src_out // out_target
-                w = w.view(out_target, rep, -1).mean(dim=1)
+                w = w.reshape(out_target, rep, -1).mean(dim=1)
                 if b is not None:
-                    b = b.view(out_target, rep).mean(dim=1)
+                    b = b.reshape(out_target, rep).mean(dim=1)
             elif src_out < out_target and out_target % src_out == 0:
                 rep = out_target // src_out
                 w = w.repeat(rep, 1)
@@ -744,7 +744,7 @@ class LinformerAttention(BaseAttention):
 
         if head_mask is not None:
             if head_mask.dim() == 1:
-                hm = head_mask.view(1, -1, 1, 1)
+                hm = head_mask.reshape(1, -1, 1, 1)
             elif head_mask.dim() == 2:
                 hm = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
@@ -756,7 +756,7 @@ class LinformerAttention(BaseAttention):
         context = torch.matmul(attn, V_proj.to(attn.dtype))
         if valid_mask is not None:
             context = context * mask_expanded
-        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        context = context.transpose(1, 2).contiguous().reshape(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
