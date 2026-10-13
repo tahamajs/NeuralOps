@@ -4,8 +4,10 @@ GLA Attention — Gated Linear Attention with FLA Triton backend.
 Reference: Yang et al., "Gated Linear Attention Transformers with
 Hardware-Efficient Training", ICML 2024.
 
-Numerically stable chunked implementation. Falls back to pure PyTorch
-when FLA is unavailable.
+Optimized for Model Surgery:
+- Compatible with pretrained weight shapes and projection scales.
+- Uses FLA's chunk_gla Triton kernel when available.
+- Features a mathematically aligned, stable PyTorch fallback.
 """
 from __future__ import annotations
 
@@ -22,35 +24,32 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# ── FLA availability ────────────────────────────────────────────
+# ── FLA availability check ──────────────────────────────────────────
 FLA_AVAILABLE = True
 
-if FLA_AVAILABLE:
-    try:
-        from fla.ops.gla import chunk_gla
-    except ImportError:
-        chunk_gla = None
-        FLA_AVAILABLE = False
-        logger.warning("chunk_gla unavailable — using PyTorch fallback")
-else:
+try:
+    from fla.ops.gla import chunk_gla
+except ImportError:
     chunk_gla = None
+    FLA_AVAILABLE = False
+    logger.warning("chunk_gla unavailable — using PyTorch fallback")
 
 
-@ATTENTION_REGISTRY.register("gla_attention",
-                              supports_causal=True,
-                              supports_bidirectional=False,
-                              supports_gqa=False)
+@ATTENTION_REGISTRY.register(
+    "gla_attention",
+    supports_causal=True,
+    supports_bidirectional=False,
+    supports_gqa=False,
+)
 class GLAttention(BaseAttention):
     """
-    Gated Linear Attention with FLA Triton backend.
+    Gated Linear Attention layer with FLA backend.
 
     Recurrence:
-        S_t = exp(g_t) * S_{t-1} + K_t^T V_t
+        S_t = exp(g_t) * S_{t-1} + (K_t / sqrt(d))^T @ V_t
         O_t = Q_t @ S_t
 
-    g_t = logsigmoid(gate_logits / tau)  ← log decay
-
-    Gate init bias = 48.0 → alpha ≈ 0.95 at startup.
+    where g_t = logsigmoid(gate_logits / tau) <= 0
     """
 
     def __init__(
@@ -96,54 +95,49 @@ class GLAttention(BaseAttention):
         self.v_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.out_proj = nn.Linear(self.all_head_size, self.dim, bias=True)
 
-        # Low-rank gate
+        # Low-rank data-dependent gate
         self.gate_W1 = nn.Linear(self.dim, gate_rank, bias=False)
         self.gate_W2 = nn.Linear(gate_rank, self.num_heads, bias=True)
 
-        # ── FIX 4: bias = 120 → logsigmoid(120/16) = -0.00055 ──
-        # per-token decay = exp(-0.00055) ≈ 0.9994
-        # After 128 tokens: 0.9994^128 ≈ 0.93 (state preserved)
-        # After 500 tokens: 0.9994^500 ≈ 0.75 (long context)
+        # Warmup initialization:
+        # bias = 48.0 -> logsigmoid(48 / 16) = logsigmoid(3.0) ≈ -0.0485
+        # exp(-0.0485) ≈ 0.9526 (state retention ~95% per token at step 0)
         with torch.no_grad():
-            self.gate_W2.bias.fill_(120.0)
+            self.gate_W2.bias.fill_(48.0)
             self.gate_W1.weight.normal_(0.0, 0.02)
 
-        # ── Output norm per head (critical for numerical stability) ──
-        # Each head's output has magnitude ≈ N (linear attention grows
-        # with sequence length). RMSNorm brings it back to ~1.
-        # Reference: FLA's fla/layers/gla.py — GLA layer uses o_norm.
-        self.o_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
-
-        # FLA kernel
         self._fla_kernel = chunk_gla if self.use_fla else None
         if self._fla_kernel is not None:
             logger.info("GLAttention: FLA chunk_gla loaded (Tensor Core)")
         else:
-            logger.info("GLAttention: PyTorch fallback")
+            logger.info("GLAttention: PyTorch fallback loaded")
 
         if old_attn is not None:
             self.copy_weights(old_attn)
 
     def copy_weights(self, src: nn.Module) -> None:
+        """Copies pretrained weights from standard attention projections."""
         if src is None:
             return
 
-        # GPT-2 fused c_attn
+        # Handle GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_w = src.c_attn.weight.data
+            # Handle Conv1D transposed weight format
             if c_w.shape[0] < c_w.shape[1]:
                 c_w = c_w.t()
             sz = c_w.size(0) // 3
             with torch.no_grad():
                 self.q_proj.weight.copy_(c_w[:sz, :])
-                self.k_proj.weight.copy_(c_w[sz:2*sz, :])
-                self.v_proj.weight.copy_(c_w[2*sz:, :])
-                c_b = src.c_attn.bias.data if src.c_attn.bias is not None else None
-                if c_b is not None:
+                self.k_proj.weight.copy_(c_w[sz : 2 * sz, :])
+                self.v_proj.weight.copy_(c_w[2 * sz :, :])
+                if src.c_attn.bias is not None:
+                    c_b = src.c_attn.bias.data
                     self.q_proj.bias.copy_(c_b[:sz])
-                    self.k_proj.bias.copy_(c_b[sz:2*sz])
-                    self.v_proj.bias.copy_(c_b[2*sz:])
-            if hasattr(src, "c_proj"):
+                    self.k_proj.bias.copy_(c_b[sz : 2 * sz])
+                    self.v_proj.bias.copy_(c_b[2 * sz :])
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
                 o_w = src.c_proj.weight.data
                 if o_w.shape[0] < o_w.shape[1]:
                     o_w = o_w.t()
@@ -152,6 +146,7 @@ class GLAttention(BaseAttention):
                     if src.c_proj.bias is not None:
                         self.out_proj.bias.copy_(src.c_proj.bias.data)
         else:
+            # Handle separate linear projections (LLaMA style)
             aliases = {
                 "q_proj": ["q_proj", "query", "q_lin"],
                 "k_proj": ["k_proj", "key", "k_lin"],
@@ -166,9 +161,11 @@ class GLAttention(BaseAttention):
                         with torch.no_grad():
                             if src_mod.weight.shape == target.weight.shape:
                                 target.weight.copy_(src_mod.weight.data)
-                                if (hasattr(src_mod, "bias")
-                                        and src_mod.bias is not None
-                                        and target.bias is not None):
+                                if (
+                                    hasattr(src_mod, "bias")
+                                    and src_mod.bias is not None
+                                    and target.bias is not None
+                                ):
                                     target.bias.copy_(src_mod.bias.data)
                         break
 
@@ -176,47 +173,46 @@ class GLAttention(BaseAttention):
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> tuple[torch.Tensor, None]:
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        # ── FIX 2: stable gate log ──
-        # g = log(sigmoid(logits / tau)) = logsigmoid(logits / tau)
+        # 1. Gate calculation directly in log-space: logsigmoid(logits) <= 0
         gate_logits = self.gate_W2(self.gate_W1(hidden_states))  # (B, N, H)
-        g = F.logsigmoid(gate_logits / self.gate_tau)             # (B, N, H)
+        g = F.logsigmoid(gate_logits / self.gate_tau)           # (B, N, H)
 
-        # Projections
+        # 2. Projections
         Q = self.q_proj(hidden_states).view(B, N, H, d)
         K = self.k_proj(hidden_states).view(B, N, H, d)
         V = self.v_proj(hidden_states).view(B, N, H, d)
 
-        # ── FLA path ──
+        # 3. Execution backend
         if self._fla_kernel is not None:
             try:
                 Q_f = Q.to(torch.bfloat16)
                 K_f = K.to(torch.bfloat16)
                 V_f = V.to(torch.bfloat16)
-                # FLA expects g shape [B, T, H, K] and in log space
+                # FLA expects g with shape [B, N, H, d]
                 g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16)
 
                 out, _ = self._fla_kernel(
-                    Q_f, K_f, V_f, g_f,
-                    scale=self.scale,       # ← RESTORE self.scale
+                    Q_f,
+                    K_f,
+                    V_f,
+                    g_f,
+                    scale=self.scale,
                     output_final_state=False,
                 )
                 out = out.to(hidden_states.dtype)
             except Exception as e:
-                logger.warning(f"FLA failed: {e}; using PyTorch fallback")
+                logger.warning(f"FLA failed with {e}; switching to PyTorch fallback")
                 out = self._pytorch_gla_stable(Q, K, V, g)
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
 
-        # ── RMSNorm per head (matches FLA's GLA reference) ──
-        # out shape: (B, N, H, d) → apply RMSNorm over last dim (d)
-        out = self.o_norm(out)
-
-        # Reshape to (B, N, H*d) and project
+        # 4. Out projection (RMSNorm bypassed to preserve pretrained weight scale)
         out = out.contiguous().view(B, N, self.all_head_size)
         return self.out_proj(out), None
 
@@ -228,10 +224,9 @@ class GLAttention(BaseAttention):
         g: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Numerically stable chunked GLA. All math in log space where needed.
-
+        Mathematically aligned chunked GLA fallback with stable cumsum log-decay.
         Q, K, V: (B, N, H, d)
-        g:       (B, N, H)  log of forget gate (per-token per-head), <= 0
+        g:       (B, N, H) <= 0
         """
         B, N, H, d = Q.shape
         chunk_size = 64
@@ -249,45 +244,37 @@ class GLAttention(BaseAttention):
             end = min(start + chunk_size, N)
             L = end - start
 
-            q = Q[:, start:end].float()          # (B, L, H, d)
-            k = K[:, start:end].float()
-            v = V[:, start:end].float()
-            g_c = g[:, start:end].float()         # (B, L, H)
+            # Pre-apply scale to Q for unified scaling across chunk paths
+            q = (Q[:, start:end] * self.scale).float()  # (B, L, H, d)
+            k = K[:, start:end].float()                 # (B, L, H, d)
+            v = V[:, start:end].float()                 # (B, L, H, d)
+            g_c = g[:, start:end].float()               # (B, L, H)
 
-            # Cumulative log-decay from chunk start
-            b_log = torch.cumsum(g_c, dim=1)      # (B, L, H), each <= 0
-
+            b_log = torch.cumsum(g_c, dim=1)            # (B, L, H), cumulative decay <= 0
             causal = causal_full[:L, :L]
 
-            # ── Inter-chunk: O_inter_i = q_i * exp(b_log_i) @ S ──
-            q_b = q * b_log.exp().unsqueeze(-1)   # (B, L, H, d)
-            inter = torch.einsum("blhd,bhde->blhe", q_b, S)   # (B, L, H, d)
+            # ── Inter-chunk contribution ──
+            q_b = q * b_log.exp().unsqueeze(-1)         # (B, L, H, d)
+            inter = torch.einsum("blhd,bhde->blhe", q_b, S)
 
-            # ── Intra-chunk: causal GLA ──
-            # diff_log[b,i,j,h] = b_log[b,i,h] - b_log[b,j,h]
-            # for i >= j, this is sum of gates from j+1 to i (<= 0)
+            # ── Intra-chunk contribution ──
             diff_log = b_log.unsqueeze(2) - b_log.unsqueeze(1)  # (B, L, L, H)
-            # clamp to <= 0 to prevent exp overflow from numerical noise
-            decay = torch.exp(diff_log.clamp(max=0.0))           # (B, L, L, H)
+            decay = torch.exp(diff_log.clamp(max=0.0))
 
-            qk = torch.einsum("bihd,bjhd->bijh", q, k)           # (B, L, L, H)
-            scores = qk * decay * self.scale                      # ← RESTORE self.scale
-            scores = scores.permute(0, 3, 1, 2)                    # (B, H, L, L)
+            qk = torch.einsum("bihd,bjhd->bijh", q, k)          # (B, L, L, H)
+            scores = (qk * decay).permute(0, 3, 1, 2)           # (B, H, L, L)
             scores = scores.masked_fill(~causal, 0.0)
-            intra = torch.einsum("bhij,bjhd->bihd", scores, v)     # (B, L, H, d)
+            intra = torch.einsum("bhij,bjhd->bihd", scores, v)  # (B, L, H, d)
 
             out[:, start:end] = inter + intra
 
             # ── State update ──
-            # S_new = exp(b_log_end) * S_old
-            #       + sum_j exp(b_log_end - b_log_j) * k_j^T v_j
-            g_end = b_log[:, -1, :]                                # (B, H)
-            decay_total = g_end.exp()                              # (B, H)
-            weights = torch.exp(
-                (g_end.unsqueeze(1) - b_log).clamp(max=0.0)
-            )
-            k_w = k * weights.unsqueeze(-1) * self.scale           # ← RESTORE self.scale
-            kv = torch.einsum("blhd,blhe->bhde", k_w, v)           # (B, H, d, d)
+            g_end = b_log[:, -1, :]                             # (B, H)
+            decay_total = g_end.exp()                           # (B, H)
+            weights = torch.exp((g_end.unsqueeze(1) - b_log).clamp(max=0.0))
+
+            k_w = k * weights.unsqueeze(-1)                     # (B, L, H, d)
+            kv = torch.einsum("blhd,blhe->bhde", k_w, v)        # (B, H, d, d)
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
 
