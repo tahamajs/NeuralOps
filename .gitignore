@@ -1,130 +1,90 @@
 # ============================================================
-# Python
+# Python & Bytecode
 # ============================================================
 __pycache__/
 */__pycache__/
+**/*/__pycache__/
 *.py[cod]
+*$py.class
 *.pyo
-**/*.pyc
 *.pyc
-
-
 *.pyd
 .Python
-*.egg-info/
+
+# Distribution / Packaging
 dist/
 build/
 eggs/
+.eggs/
+*.egg-info/
 *.egg
-audit/
-results/_tmp/
-results/_archive/
-results/**/*.bak
-results/**/*.err
+develop-eggs/
+downloads/
+parts/
+sdist/
+var/
+wheels/
+.installed.cfg
 
-
-# Virtual environments
+# Virtual Environments
 venv/
 .venv/
 env/
 .env/
-*.env
-*.env.local
 soa_env/
+.conda/
+ENV/
 
-# Jupyter Notebooks
-.ipynb_checkpoints/
-*.ipynb
-
-# pytest
+# ============================================================
+# Testing, Coverage & Type Checking
+# ============================================================
 .pytest_cache/
 htmlcov/
 .coverage
+.coverage.*
 coverage.xml
-
-# mypy
 .mypy_cache/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Translations
-*.mo
-*.pot
-
-# Sphinx
-docs/_build/
+.ruff_cache/
+.trunk/
 
 # ============================================================
-# Django
+# Jupyter Notebooks & Caches
 # ============================================================
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-mediafiles/
-staticfiles/
+.ipynb_checkpoints/
+*.ipynb
+cache/
+**/cache/
+.cache/
+~/.cache/
 
 # ============================================================
-# Node.js / React / Vite
+# Editors, OS & Filesystem Metadata
 # ============================================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.next/
-dist/
-
-# ============================================================
-# Model Artifacts & Datasets
-# ============================================================
-/models/
-/datasets/
-!/datasets/.gitkeep
-**/smart_adaptive_final_model/
-**/temp_finetune/
-**/models_cache/
-*.pt
-*.pth
-*.tar.gz
-*.onnx
-*.data
-*.safetensors
-*.bin
-*.h5
-
-# ============================================================
-# Large data files
-# ============================================================
-*.parquet
-*.arrow
-*.feather
-
-# ============================================================
-# MasterHttpRelayVPN testing
-# ============================================================
-MasterHttpRelayVPN-python_testing/
-
-# ============================================================
-# IDE & Editor
-# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
+*.code-workspace
+
+# Temporary & Backup files
+*.bak
+*.backup
+*.old
+*.tmp
+*.temp
+*.patch
 
 # ============================================================
-# Docker
-# ============================================================
-docker-compose.override.yml
-
-# ============================================================
-# Environment & Secrets
+# Environment Variables & Secrets
 # ============================================================
 .env
 .env.*
@@ -132,38 +92,93 @@ docker-compose.override.yml
 *.secret
 *.key
 *.pem
+.git-credentials
 
 # ============================================================
-# OS files
+# Logs & Runtime Outputs
 # ============================================================
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+sweep_forever.log
+paper_artifacts_forever.log
+sweep_service.log
+results/*.log
+*/**/*.log
+celerybeat-schedule
+celerybeat.pid
 
 # ============================================================
-# Backups
+# Heavy Model Checkpoints, Weights & Datasets
 # ============================================================
-*.bak
-*.backup
-*.old
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.onnx
+*.h5
+*.data
+*.parquet
+*.arrow
+*.feather
+*.tar.gz
+*.zip
+*.rar
+*.bundle
+
+models/
+**/models/
+datasets/
+**/datasets/
+!datasets/.gitkeep
+checkpoints/
+**/checkpoints/
+runs/
+**/runs/
+outputs/
+**/outputs/
+experiments/
+**/experiments/
+benchmark_results/
+**/benchmark_results/
+test_experiments/
+**/test_experiments/
+test_results/
+**/test_results/
+
+# Specific temp run folders
+**/smart_adaptive_final_model/
+**/temp_finetune/
+**/models_cache/
+kaggle_deploy_temp/
+results_kaggle_gpu/
+archive_cleanup_*/
+temp_modules_docs/
 
 # ============================================================
-# Misc
+# Node.js, Frontend & Django Subsystems
 # ============================================================
-*.tmp
-*.temp
+node_modules/
+.next/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+Codes/MasterHttpRelayVPN/
+Codes/django_api/
+Codes/frontend/
+Codes/neuralops-agent/
+MasterHttpRelayVPN-python_testing/
 
 # ============================================================
-# LaTeX
+# LaTeX Build Artifacts
 # ============================================================
 *.aux
 *.lof
-*.log
 *.lot
 *.flg
 *.out
@@ -181,227 +196,45 @@ desktop.ini
 *.synctex.gz
 *.synctex(busy)
 *.xdv
-*.pdf
 *.dvi
 *.ps
-*.synctex.gz\.fls
-
 
 # ============================================================
-# Standalone Subsystems & Web Applications
-# ============================================================
-Codes/MasterHttpRelayVPN/
-Codes/django_api/
-Codes/frontend/
-Codes/neuralops-agent/
-
-# ============================================================
-# Experiments, Results & Checkpoint Artifacts
-# ============================================================
-experiments/
-**/experiments/
-benchmark_results/
-**/benchmark_results/
-# !results/
-# !results/**
-!submissions/
-!submissions/**
-!paper/**/*.pdf
-!submissions/**/*.pdf
-!Docs/results/
-!Docs/results/**
-test_experiments/
-**/test_experiments/
-test_results/
-
-# Local cleanup archives (kept outside version control)
-archive_cleanup_*/
-**/test_results/
-runs/
-**/runs/
-!papers/**/runs/**
-!results/**/runs/**
-outputs/
-**/outputs/
-checkpoints/
-**/checkpoints/
-cache/
-**/cache/
-*.ckpt
-test_marker.txt
-# Kaggle deploy temporary files and output artifacts
-Codes/framework/kaggle_deploy_*/
-kaggle_deploy_temp/
-results_kaggle_gpu/
-
-
-*.zip
-*.tar.gz
-*.rar
-*.bundle
-*.bin
-*.safetensors
-*.pt
-*.pth
-.git-credentials
-.huggingfaceignore
-results/all_compressors_gpu_summary.csv
-
-# Temporary combined modules and documentation folder
-temp_modules_docs/
-
-
-
-results/*.log
-*/**/*.log
-*.pdf
-
-# ═══════════════════════════════════════════════
-# Python
-# ═══════════════════════════════════════════════
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
-.conda/
-
-# ═══════════════════════════════════════════════
-# Test & Benchmark Outputs (Allow Results & Paper Artifacts)
-# ═══════════════════════════════════════════════
-# Keep heavy checkpoints/weights outside git
-results/**/*.pt
-results/**/*.bin
-results/**/*.safetensors
-benchmark_logs/
-logs/*
-!logs/isolated/
-!logs/isolated/*
-!logs/isolated_results/
-!logs/isolated_results/*
-
-# ═══════════════════════════════════════════════
-# Paper artifacts (Track generated tables, figures, metrics, cards)
-# ═══════════════════════════════════════════════
-!papers/
-!papers/**
-papers/modules/*/runs/**/*.pt
-papers/modules/*/runs/**/*.bin
-papers/modules/*/runs/**/*.safetensors
-
-# ═══════════════════════════════════════════════
-# Model checkpoints
-# ═══════════════════════════════════════════════
-*.pt
-*.pth
-*.ckpt
-*.safetensors
-*.bin
-checkpoints/
-
-# ═══════════════════════════════════════════════
-# Runtime logs
-# ═══════════════════════════════════════════════
-sweep_forever.log
-paper_artifacts_forever.log
-sweep_service.log
-*.jsonl
-
-# ═══════════════════════════════════════════════
-# Temporary / debug files
-# ═══════════════════════════════════════════════
-*.tmp
-*.bak
-*.swp
-*~
-.DS_Store
-Thumbs.db
-
-# ═══════════════════════════════════════════════
-# Ad-hoc test scripts
-# ═══════════════════════════════════════════════
-check_nha.py
-check_nha2.py
-check_svd_count.py
-fix_gen.py
-# test_*.py
-debug_*.py
-
-# ═══════════════════════════════════════════════
-# IDE
-# ═══════════════════════════════════════════════
-.vscode/
-.idea/
-*.code-workspace
-
-paper/_PROGRESS.md
-
-/thesis_final
-results/.DS_Store
-results/baseline_check/**/*.pt  
-results/baseline_check/**/*.bin  
-
-
-*.datresults/_ARCHIVE/
-results/_archive/
-results/kd_cache/
-
-# Temporary working files and scripts
-_modules_tmp.json
-tmp.txt
-*.patch
-progress.md
-*_ORIGINAL.csv
-all_modules.txt
-module_list.txt
-modules_*_to_*.txt
-launcher.bat
-*.log
-**Linear
-/module_*.csv
-/parallel_results.json
-/sweep_*_results.json
-/delta_check_results.json
-/canonical_*_modules.json
-/run_all_sst2_kd_benchmark*.py
-/run_all_modules_delta.*
-/run_modules_*.py
-/test_gla_inject.py
-/generate_inventory.py
-/get_registry_counts.py
-/process_dedup.py
-/verify_bucket_fixes.py
-
-# ============================================================
-# Explicitly Track Governance, CI, Docs, Tests & Source Code
+# Explicit Inclusions: Always Track Source, Docs, CI & Governance
 # ============================================================
 !.github/
 !.github/**
+!neuralops/
+!neuralops/**/*.py
+!neuralops/**/*.json
+!neuralops/**/*.jsonc
+!neuralops/**/*.yaml
+!neuralops/**/*.yml
+!neuralops/**/*.typed
+!tests/
+!tests/**/*.py
+!docs/
+!docs/**
+!README.md
 !CHANGELOG.md
+!CONTRIBUTING.md
 !SECURITY.md
 !CODE_OF_CONDUCT.md
 !ROADMAP.md
-!CONTRIBUTING.md
-*.pyc
-./**/*.pyc
-!docs/**
-*/__pycache__/**/*
+!pyproject.toml
+!pytest.ini
+!setup.py
+
+# ============================================================
+# Absolute Overrides: Never Track Bytecode, Cache or Logs
+# ============================================================
+**/__pycache__/
+__pycache__/
 *.py[cod]
+*.pyc
+*.pyo
 *$py.class
-neuralops/*/__pycache__/*.pyc
+*.log
+*.jsonl
+audit/
+academic/
