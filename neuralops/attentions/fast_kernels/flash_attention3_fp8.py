@@ -742,8 +742,10 @@ class FlashAttention3FP8(BaseAttention):
                         )
                     else:
                         out = out_tensor.contiguous().view(B, L, self.all_head_size)
-                except Exception as e:
-                    logger.warning(
+                except (RuntimeError, NotImplementedError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+                    warn_once(
+                        "fa3_fp8_execution_fallback",
                         f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA."
                     )
                     out = None

@@ -345,7 +345,7 @@ class KDRunner:
             student = AutoModelForSequenceClassification.from_pretrained(
                 self.config.teacher
             )
-            student, _ = apply_module_to_model(
+            student, compression_ratio = apply_module_to_model(
                 student, module_name, rank=self.config.rank, device=self.device
             )
             student = student.to(self.device)
@@ -373,6 +373,18 @@ class KDRunner:
                     p.requires_grad = True
                 trainable = [p for p in student.parameters() if p.requires_grad]
 
+            # Record parameter stats
+            total_params = sum(p.numel() for p in student.parameters())
+            trainable_params = sum(p.numel() for p in trainable)
+            result["total_params_m"] = round(total_params / 1e6, 3)
+            result["trainable_params_m"] = round(trainable_params / 1e6, 3)
+            result["compression_ratio"] = round(compression_ratio, 3) if compression_ratio else 1.0
+            result["kd_steps"] = self.config.kd_steps
+            result["effective_batch_size"] = self.config.effective_batch_size
+            result["learning_rate"] = self.config.kd_lr
+            result["temperature"] = self.config.temperature
+            result["alpha"] = self.config.alpha
+
             optimizer = AdamW(trainable, lr=self.config.kd_lr, weight_decay=0.01)
             scaler = GradScaler("cuda", enabled=(self.config.use_fp16 and self.device == "cuda"))
 
@@ -383,6 +395,8 @@ class KDRunner:
             best_step = 0
             train_iter = iter(train_loader)
             accum = self.config.grad_accum_steps
+            eval_history = []
+            final_loss_val = None
 
             for step in range(1, self.config.kd_steps + 1):
                 if self.interrupted:
@@ -405,6 +419,7 @@ class KDRunner:
                     student_out = student(**batch)
                     loss = self._kd_loss(student_out.logits, teacher_logits, batch["labels"])
 
+                final_loss_val = round(loss.item(), 4)
                 scaler.scale(loss / accum).backward()
 
                 if step % accum == 0:
@@ -416,6 +431,11 @@ class KDRunner:
 
                 if step % self.config.eval_every == 0 or step == self.config.kd_steps:
                     acc = self.evaluate(student, val_pre_loader)
+                    eval_history.append({
+                        "step": step,
+                        "loss": final_loss_val,
+                        "acc": round(acc * 100, 2),
+                    })
                     logger.info(
                         "  [%s] step %d/%d: loss=%.4f acc=%.2f%%",
                         module_name,
@@ -435,6 +455,8 @@ class KDRunner:
 
             result["best_kd_acc"] = round(best_acc * 100, 2)
             result["best_step"] = best_step
+            result["final_loss"] = final_loss_val
+            result["eval_history"] = eval_history
 
             # 5. Evaluate best checkpoint on full validation set
             if best_state is not None:
@@ -443,6 +465,10 @@ class KDRunner:
             final_acc = self.evaluate(student, val_full_loader)
             result["final_kd_acc"] = round(final_acc * 100, 2)
             result["delta_vs_pre"] = round((final_acc - pre_acc) * 100, 2)
+            result["delta_vs_best"] = round((final_acc - best_acc) * 100, 2)
+
+            if torch.cuda.is_available():
+                result["peak_vram_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
 
             if result["status"] != "INTERRUPTED":
                 if final_acc > pre_acc + 0.005:
