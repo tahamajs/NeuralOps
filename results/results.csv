@@ -388,3 +388,5 @@ kd_qcqa_attention_C_20261012_225935,qcqa_attention__gpt2__wikitext2__rank32__711
 kd_gqa_attention_C_20261013_010935,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:11:44.130408+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,0.0,0.0,0.0,0.0,5923.52,,,,,,,
 kd_gqa_attention_C_20261013_011359,gqa_attention__gpt2__wikitext2__rank4__3ed289e2842b,2026-10-13T01:15:09.483455+00:00,success,gqa_attention,attention,gpt2,wikitext2,4,0.0,0.0,0.0,0.0,5923.52,,,,,,,
 kd_gla_attention_C_20261013_061527,gla_attention__gpt2__wikitext2__rank32__83684b7fc6b8,2026-10-13T06:19:21.065287+00:00,success,gla_attention,attention,gpt2,wikitext2,32,0.0,0.0,0.0,0.0,3807.35,,,,,,,
+kd_gla_attention_C_20261013_094812,gla_attention__gpt2__wikitext2__rank16__b381722cc5f0,2026-10-13T09:48:43.903633+00:00,success,gla_attention,attention,gpt2,wikitext2,16,finetune,3946.45,2172.47,5105.51,2172.47,,,,2172.47,-1159.06,45.37,11.69,2110.56,da252059070a627e
+kd_samba_m3_C_20261013_080551,samba_m3__gpt2__wikitext2__rank32__ad54c054afc2,2026-10-13T09:55:32.867579+00:00,success,samba_m3,attention,gpt2,wikitext2,32,finetune,,,,41.03,80.36,94.38,,3397.98,64557dad8069f243
