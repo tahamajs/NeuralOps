@@ -40,15 +40,19 @@ def export_model(
     recorded_metadata = getattr(model, "_neuralops_metadata", None)
     if recorded_metadata:
         for entry in recorded_metadata:
-            action = entry.get("action")
-            if action == "replace_attention" and attention_type is None:
-                attention_type = entry.get("attention_type")
-                if rank is None and entry.get("rank") is not None:
-                    rank = entry.get("rank")
-            elif action == "compress" and compression_method is None:
-                compression_method = entry.get("compression_method")
-                if rank is None and entry.get("rank") is not None:
-                    rank = entry.get("rank")
+            op_action = entry.get("op") or entry.get("action")
+            target_type = entry.get("type") or entry.get("attention_type") or entry.get("compression_method")
+            entry_kwargs = entry.get("kwargs", {})
+            entry_rank = entry_kwargs.get("rank") if isinstance(entry_kwargs, dict) else entry.get("rank")
+
+            if op_action in ("replace", "replace_attention") and attention_type is None:
+                attention_type = target_type
+                if rank is None and entry_rank is not None:
+                    rank = entry_rank
+            elif op_action in ("compress", "compression") and compression_method is None:
+                compression_method = target_type
+                if rank is None and entry_rank is not None:
+                    rank = entry_rank
 
     # If model has config with name_or_path, infer base_model
     base_name = model_name_or_path or getattr(model, "name_or_path", None)
@@ -62,6 +66,7 @@ def export_model(
         "attention_type": attention_type,
         "compression_method": compression_method,
         "rank": rank,
+        "_neuralops_metadata": recorded_metadata or [],
         "surgery_history": recorded_metadata or [],
         "framework": "neuralops",
         "pytorch_version": torch.__version__,
@@ -186,17 +191,28 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             "cannot be loaded without an explicit base_model instance passed to load_exported_model."
         )
 
-    # 2. Re-apply attention surgery if recorded
+    # 2. Re-apply recorded operations sequentially from metadata if present
     import neuralops
-    attn_type = meta.get("attention_type")
-    rank = meta.get("rank")
-    if attn_type:
-        model = neuralops.replace_attention(model, attention=attn_type, rank=rank)
+    metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
+    if metadata_ops:
+        for entry in metadata_ops:
+            op_action = entry.get("op") or entry.get("action")
+            op_type = entry.get("type") or entry.get("attention_type") or entry.get("compression_method")
+            op_kwargs = dict(entry.get("kwargs", {}))
+            if op_action in ("replace", "replace_attention") and op_type:
+                model = neuralops.replace_attention(model, attention=op_type, **op_kwargs)
+            elif op_action in ("compress", "compression") and op_type:
+                model = neuralops.compress(model, method=op_type, **op_kwargs)
+    else:
+        # Fallback to single attention and compression keys
+        attn_type = meta.get("attention_type")
+        rank = meta.get("rank")
+        if attn_type:
+            model = neuralops.replace_attention(model, attention=attn_type, rank=rank)
 
-    # 3. Re-apply model compression if recorded
-    comp_method = meta.get("compression_method")
-    if comp_method:
-        model = neuralops.compress(model, method=comp_method, rank=rank)
+        comp_method = meta.get("compression_method")
+        if comp_method:
+            model = neuralops.compress(model, method=comp_method, rank=rank)
 
     # 4. Load weights
     safetensors_path = dir_path / "model.safetensors"

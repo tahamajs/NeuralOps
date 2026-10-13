@@ -19,6 +19,7 @@ def finetune_classification(
     device: str | torch.device = "cpu",
     max_steps: int | None = None,
     mixed_precision: str = "no",
+    distributed_backend: str = "none",
     tracker: Any = None,
     log_interval: int = 10,
 ) -> dict[str, Any]:
@@ -29,12 +30,24 @@ def finetune_classification(
     model.train()
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
+    # Distributed backend wrapping via accelerate
+    dist_backend = (distributed_backend or "none").lower()
+    if dist_backend in ("ddp", "fsdp", "deepspeed"):
+        try:
+            from accelerate import Accelerator
+            accelerator = Accelerator(mixed_precision=mixed_precision if mixed_precision in ("fp16", "bf16") else "no")
+            model, optimizer, train_loader = accelerator.prepare(model, optimizer, train_loader)
+            device = accelerator.device
+        except Exception as e:
+            LOG.warning("Distributed backend '%s' requested but Accelerate initialization failed: %s. Using local device.", dist_backend, e)
+
     # Mixed precision setup
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
     amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
     scaler = torch.cuda.amp.GradScaler(enabled=(mp_type == "fp16" and use_cuda))
+
 
     step = 0
     epoch_losses = []
@@ -244,6 +257,7 @@ def train_with_training_type(
                 device=device,
                 max_steps=max_steps,
                 mixed_precision=mixed_precision,
+                distributed_backend=kwargs.get("distributed_backend", "none"),
                 tracker=tracker,
                 log_interval=log_interval,
             )
@@ -285,6 +299,7 @@ def train_with_training_type(
             device=device,
             max_steps=max_steps,
             mixed_precision=mixed_precision,
+            distributed_backend=kwargs.get("distributed_backend", "none"),
             tracker=tracker,
             log_interval=log_interval,
         )
