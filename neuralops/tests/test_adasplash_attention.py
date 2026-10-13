@@ -195,7 +195,8 @@ class TestForwardShapes:
     def test_output_attentions(self):
         attn = self._make_attn()
         x = torch.randn(1, 6, 64)
-        out, weights = attn(x, output_attentions=True)
+        res = attn(x, output_attentions=True)
+        out = res[0]
         assert out.shape == (1, 6, 64)
 
     def test_with_attention_mask(self):
