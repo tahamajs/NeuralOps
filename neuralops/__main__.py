@@ -39,7 +39,10 @@ def build_parser():
 
     # bench
     p_bench = sub.add_parser("bench", help="Run benchmarks on any module")
-    p_bench.add_argument("--module", "--target", dest="module", required=True, help="Module key from registry")
+    p_bench.add_argument("--module", "--target", dest="module", required=False, default=None, help="Module key from registry")
+    p_bench.add_argument("--all-attention", action="store_true", help="Benchmark all 130 attention mechanisms")
+    p_bench.add_argument("--all-compressors", action="store_true", help="Benchmark all 72 compression engines")
+    p_bench.add_argument("--all", action="store_true", help="Benchmark all attention and compressor modules (202 total)")
     p_bench.add_argument("--mode", choices=["eval", "kd"], default="eval", help="Benchmark mode: eval (pipeline) or kd (distillation)")
     p_bench.add_argument("--model", default="gpt2", help="Base model architecture (default: gpt2)")
     p_bench.add_argument("--dataset", default="sst2", help="Dataset name (default: sst2)")
@@ -50,6 +53,8 @@ def build_parser():
     p_bench.add_argument("--self_train_steps", type=int, default=20, help="Stage 2 self train steps")
     p_bench.add_argument("--learning_rate", type=float, default=3e-4, help="Learning rate")
     p_bench.add_argument("--device", default="cuda", help="Target device (cuda or cpu)")
+    p_bench.add_argument("--output-dir", "--output_dir", default=None, help="Directory to save sweep benchmark results")
+    p_bench.add_argument("--parallel", type=int, default=1, help="Parallel execution workers")
 
     # train
     p_train = sub.add_parser("train", help="Train a model")
