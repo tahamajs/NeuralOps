@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,SpectralMamba Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.94%,90.71%,-0.23%,0.9111,PASS,0,0.86x,378.1 MB,20.1
-roberta,0,75.46%,50.92%,-24.54%,0.6748,PASS_LOW,0,0.81x,749.8 MB,27.7
-gpt2,0,57.91%,51.03%,-6.88%,0.6753,PASS_LOW,0,0.85x,650.5 MB,29.1

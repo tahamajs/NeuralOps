@@ -1,5 +1,0 @@
-Model,Exit Code,Baseline Acc,Tensor Train (TT) Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,1,90.71%,49.77%,-40.94%,0.1673,PASS_NO_COMPRESSION,0,0.90x,391.2 MB,0.1
-roberta,1,78.56%,50.92%,-27.64%,0.6748,PASS_LOW,0,0.90x,715.6 MB,0.0
-gpt2,1,87.84%,87.61%,-0.23%,0.8741,PASS,48,0.97x,426.3 MB,0.1
-qwen3_5,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,0.1

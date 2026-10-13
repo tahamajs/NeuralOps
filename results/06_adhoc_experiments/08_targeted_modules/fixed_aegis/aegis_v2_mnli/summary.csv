@@ -1,2 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-aegis_v2,PASS,58.1,0.5713,0.5713,0.5925,0.5786,0.915,65.66,810.72,7633.52,124647939,134824995,0,1.0,0.0,0.0,0,0,,,60,1179648,,adapted_roberta,2026-09-18T22:07:33.023593

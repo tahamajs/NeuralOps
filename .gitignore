@@ -357,4 +357,5 @@ results/baseline_check/**/*.pt
 results/baseline_check/**/*.bin  
 
 
-*.dat
+*.datresults/_ARCHIVE/
+results/_archive/

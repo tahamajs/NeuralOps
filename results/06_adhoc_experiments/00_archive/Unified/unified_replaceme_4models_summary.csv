@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,ReplaceMe Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,82.00%,-8.48%,0.8363,PASS,0,1.24x,280.5 MB,16.3
-roberta,0,75.11%,80.62%,+5.51%,0.8302,PASS,0,1.12x,325.0 MB,23.0
-gpt2,0,60.78%,56.77%,-4.01%,0.6808,PASS,0,1.12x,573.6 MB,20.9

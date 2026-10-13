@@ -1,2 +1,0 @@
-Model,Exit Code,Baseline Acc,TPAttention Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.71%,75.00%,-15.71%,0.6997,PASS_NO_COMPRESSION,0,1.00x,605.7 MB,275.7

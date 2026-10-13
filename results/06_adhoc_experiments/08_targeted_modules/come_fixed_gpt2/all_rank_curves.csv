@@ -1,5 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-128,come,CRASH,0.0,0.0,0.0,0.0,1.0,0.0,0,0,165.2,0,0
-256,come,FAIL_PPL_DIVERGED,0.0,0.0,4.692315260554617,1620.63037109375,1.0403,3.88,1,0,196.48,124439808,119613697
-64,come,CRASH,0.0,0.0,0.0,0.0,1.0,0.0,0,0,165.6,0,0
-384,come,CRASH,0.0,0.0,0.0,0.0,1.0,0.0,0,0,117.8,0,0

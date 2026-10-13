@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,FRanDI Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.71%,90.94%,+0.23%,0.9125,PASS_NO_COMPRESSION,0,1.00x,174.3 MB,123.6
-roberta,0,94.38%,93.46%,-0.92%,0.9372,PASS_NO_COMPRESSION,0,1.00x,292.2 MB,154.6
-gpt2,0,89.33%,87.84%,-1.49%,0.8838,PASS_NO_COMPRESSION,0,1.00x,384.0 MB,155.4

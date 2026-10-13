@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,YourCustomAttention Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,89.91%,-0.57%,0.9033,PASS,0,0.99x,329.6 MB,19.1
-roberta,0,75.11%,58.37%,-16.74%,0.6857,PASS,0,0.94x,377.7 MB,26.8
-gpt2,0,60.78%,51.26%,-9.52%,0.6763,PASS_LOW,0,0.99x,569.8 MB,26.9
