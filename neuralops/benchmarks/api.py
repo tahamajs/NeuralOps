@@ -64,6 +64,13 @@ class Runner:
         timeout_s: int = 1800,
         **kwargs: Any,
     ) -> None:
+        shortcut_keys = {
+            "delta", "all_delta", "gated", "all_gated", "svd", "all_svd",
+            "ssm", "all_ssm", "linear", "all_linear", "sparse", "all_sparse",
+            "hybrid", "all_hybrid", "all_attn", "all_attention", "all_comp",
+            "all_compressors", "all_modules", "fail_delta", "errors_only",
+        }
+        config_kwargs = {k: v for k, v in kwargs.items() if k not in shortcut_keys}
         self.config = BenchmarkConfig(
             model=models[0] if isinstance(models, list) and models else (models if isinstance(models, str) else "distilbert-base-uncased"),
             dataset=datasets[0] if isinstance(datasets, list) and datasets else (datasets if isinstance(datasets, str) else "sst2"),
@@ -75,7 +82,7 @@ class Runner:
             seq_len=seq_len,
             max_length=seq_len,
             timeout_s=timeout_s,
-            **kwargs,
+            **config_kwargs,
         )
         self.orchestrator = BenchmarkOrchestrator(
             config=self.config,
