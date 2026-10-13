@@ -129,12 +129,6 @@ def replace_attention_in_model(
     return model
 
 
-@ATTENTION_REGISTRY.register("replace_inject")
-@ATTENTION_REGISTRY.register("replace_attention_inject")
-@ATTENTION_REGISTRY.register("inject_replace")
-@ATTENTION_REGISTRY.register("inject_replace_attention")
-@ATTENTION_REGISTRY.register("replace")
-@ATTENTION_REGISTRY.register("replace_attention")
 def inject_replace(
     layer: Any = None,
     model: Any = None,
