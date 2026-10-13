@@ -400,6 +400,119 @@ def _svd_factorize_weights(
                 )
 
 
+# ===========================================================================
+# RoPE & GQA Backbone Surgery Hooks (LLaMA, Mistral, Qwen2)
+# ===========================================================================
+
+def adapt_decoder_attention_forward(
+    module: nn.Module,
+    *args: Any,
+    **kwargs: Any,
+) -> tuple[torch.Tensor, torch.Tensor | None, Any | None]:
+    """
+    Safely adapts forward calls from LLaMA, Mistral, and Qwen2 decoder backbones.
+
+    Handles `position_embeddings`, `position_ids`, `past_key_value`, and standardizes
+    return tuples to `(attn_output, attn_weights, past_key_value)` preventing unpacking crashes.
+    """
+    # 1. Extract inputs
+    hidden_states = args[0] if len(args) > 0 else kwargs.pop("hidden_states", kwargs.pop("query", None))
+    attention_mask = args[1] if len(args) > 1 else kwargs.pop("attention_mask", kwargs.pop("mask", None))
+
+    position_ids = kwargs.pop("position_ids", None)
+    position_embeddings = kwargs.pop("position_embeddings", None)
+    past_key_value = kwargs.pop("past_key_value", None)
+    output_attentions = kwargs.pop("output_attentions", False)
+    use_cache = kwargs.pop("use_cache", False)
+
+    # 2. Forward dispatch to injected module
+    out = None
+    call_attempts = [
+        lambda: module(
+            hidden_states,
+            attention_mask=attention_mask,
+            position_embeddings=position_embeddings,
+            position_ids=position_ids,
+            past_key_value=past_key_value,
+            output_attentions=output_attentions,
+            use_cache=use_cache,
+            **kwargs,
+        ),
+        lambda: module(
+            hidden_states,
+            attention_mask=attention_mask,
+            position_embeddings=position_embeddings,
+            past_key_value=past_key_value,
+            output_attentions=output_attentions,
+            **kwargs,
+        ),
+        lambda: module(
+            hidden_states,
+            attention_mask=attention_mask,
+            output_attentions=output_attentions,
+            **kwargs,
+        ),
+        lambda: module(hidden_states, attention_mask=attention_mask, **kwargs),
+        lambda: module(hidden_states, **kwargs),
+    ]
+
+    last_err = None
+    for attempt in call_attempts:
+        try:
+            out = attempt()
+            break
+        except TypeError as e:
+            last_err = e
+            continue
+
+    if out is None:
+        if last_err is not None:
+            raise last_err
+        raise RuntimeError(f"Failed to execute forward on injected module {type(module).__name__}")
+
+    # 3. Format return tuple strictly as (attn_output, attn_weights, past_key_value)
+    if isinstance(out, tuple):
+        attn_out = out[0]
+        if len(out) >= 3:
+            attn_weights = out[1]
+            past_kv = out[2]
+        elif len(out) == 2:
+            # If module returned (out, present/weights)
+            attn_weights = out[1] if output_attentions else None
+            past_kv = out[1] if not output_attentions else None
+        else:
+            attn_weights = None
+            past_kv = None
+    else:
+        attn_out = out
+        attn_weights = None
+        past_kv = None
+
+    return (attn_out, attn_weights, past_kv)
+
+
+def apply_backbone_surgery_hooks(
+    model: nn.Module,
+    model_type: str = "llama",
+) -> None:
+    """
+    Hooks RoPE & GQA backbone decoders (LLaMA, Mistral, Qwen2) to ensure
+    injected modules handle position_embeddings, position_ids, and return tuples safely.
+    """
+    mtype = model_type.lower()
+    if mtype not in ("llama", "mistral", "qwen", "qwen2", "qwen2_5", "qwen3_5"):
+        return
+
+    for name, module in model.named_modules():
+        leaf = name.split(".")[-1].lower()
+        if leaf in ("self_attn", "attention", "attn"):
+            # Ensure module has supports_gqa and supports_rope attributes if not set
+            if not hasattr(module, "supports_gqa"):
+                setattr(module, "supports_gqa", True)
+            if not hasattr(module, "supports_rope"):
+                setattr(module, "supports_rope", True)
+
+
 __all__ = [
     "PROJ_REGEX_PATTERNS",
     "FUSED_QKV_REGEX",
@@ -410,4 +523,6 @@ __all__ = [
     "_copy_projection_weights",
     "split_and_set_qkv_weights",
     "_svd_factorize_weights",
+    "adapt_decoder_attention_forward",
+    "apply_backbone_surgery_hooks",
 ]
