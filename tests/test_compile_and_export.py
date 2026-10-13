@@ -198,7 +198,7 @@ def test_all_19_public_api_functions():
     class TinyModel(nn.Module):
         def __init__(self):
             super().__init__()
-            self.emb = nn.Embedding(100, 16)
+            self.emb = nn.Embedding(1000, 16)
             self.linear = nn.Linear(16, 2)
         def forward(self, x, labels=None):
             h = self.emb(x).mean(dim=1)
@@ -211,5 +211,6 @@ def test_all_19_public_api_functions():
     tiny = TinyModel()
     val_ok = neuralops.validate(tiny, input_shape=(2, 8), device="cpu")
     assert val_ok is True
+
 
 
