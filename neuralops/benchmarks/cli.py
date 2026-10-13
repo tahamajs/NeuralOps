@@ -64,6 +64,13 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--max-samples", type=int, default=None, help="Limit training set to N samples. Default: full dataset. Use 5000 for fast sweeps on slow GPUs.")
     run_p.add_argument("--max-eval-samples", type=int, default=None, help="Limit eval set to N samples.")
     run_p.add_argument("--grad-accum-steps", type=int, default=1, help="Gradient accumulation steps")
+    # MLOps & Distributed Training
+    run_p.add_argument("--tracker", choices=["none", "wandb", "mlflow", "tensorboard", "all"], default="none", help="Experiment tracking backend")
+    run_p.add_argument("--project-name", type=str, default="neuralops", help="MLOps project/experiment name")
+    run_p.add_argument("--run-name", type=str, default=None, help="MLOps run name")
+    run_p.add_argument("--log-interval", type=int, default=10, help="Logging step interval")
+    run_p.add_argument("--distributed-backend", choices=["none", "ddp", "fsdp", "deepspeed"], default="none", help="Distributed training backend")
+    run_p.add_argument("--mixed-precision", choices=["no", "fp16", "bf16"], default="no", help="Mixed precision mode")
     run_p.add_argument("--no-trust-remote-code", action="store_true", help="Disable trust_remote_code for HF models")
     run_p.add_argument("--hf-token", type=str, default=None, help="Hugging Face API token for gated/private models")
     run_p.add_argument("--language", type=str, default=None, help="Language code for multilingual datasets/metrics")
@@ -126,6 +133,15 @@ def _build_parser() -> argparse.ArgumentParser:
     res_show.add_argument("--output-dir", type=str, default="results", help="Output directory")
     res_show.add_argument("--summary", action="store_true", help="Display summary table")
     res_show.add_argument("--latest", action="store_true", help="Show latest result details")
+
+    # 7. export
+    exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
+    exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
+    exp_p.add_argument("--attn", "--attention", dest="attn", type=str, default=None, help="Attention mechanism to inject")
+    exp_p.add_argument("--comp", "--compressor", dest="comp", type=str, default=None, help="Compression engine to apply")
+    exp_p.add_argument("--rank", type=int, default=64, help="Rank for attention or compression")
+    exp_p.add_argument("--format", choices=["safetensors", "onnx", "torchscript"], default="safetensors", help="Export format")
+    exp_p.add_argument("--output-dir", type=str, default="exported_model", help="Directory for exported artifacts")
 
     return parser
 
@@ -262,6 +278,12 @@ def handle_run(args: argparse.Namespace) -> None:
         max_samples=args.max_samples,
         max_eval_samples=args.max_eval_samples,
         grad_accum_steps=args.grad_accum_steps,
+        tracker=args.tracker,
+        project_name=args.project_name,
+        run_name=args.run_name,
+        log_interval=args.log_interval,
+        distributed_backend=args.distributed_backend,
+        mixed_precision=args.mixed_precision,
         trust_remote_code=not args.no_trust_remote_code,
         hf_token=args.hf_token,
         language=args.language,
@@ -283,6 +305,31 @@ def handle_run(args: argparse.Namespace) -> None:
         print(f"{status_symbol} [{res.status.upper()}] {mod_name} on {mdl_name}/{ds_name}")
 
 
+def handle_export(args: argparse.Namespace) -> None:
+    from transformers import AutoModel
+    import neuralops
+    print(f"Loading base model '{args.model}'...")
+    model = AutoModel.from_pretrained(args.model)
+    if args.attn:
+        print(f"Applying attention replacement: '{args.attn}' (rank={args.rank})...")
+        model = neuralops.replace_attention(model, attention=args.attn, rank=args.rank)
+    if args.comp:
+        print(f"Applying model compression: '{args.comp}' (rank={args.rank})...")
+        model = neuralops.compress(model, method=args.comp, rank=args.rank)
+
+    from neuralops.export.exporter import export_model
+    out = export_model(
+        model=model,
+        output_dir=args.output_dir,
+        format=args.format,
+        model_name_or_path=args.model,
+        attention_type=args.attn,
+        compression_method=args.comp,
+        rank=args.rank,
+    )
+    print(f"[+] Successfully exported model to {out}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -301,6 +348,8 @@ def main(argv: list[str] | None = None) -> int:
         handle_results(args)
     elif args.subcommand == "run":
         handle_run(args)
+    elif args.subcommand == "export":
+        handle_export(args)
     elif args.subcommand == "resume":
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
