@@ -412,6 +412,65 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
         return du, ddelta, dA, dB, dC, dD, None
 
 
+def selective_scan_ref(
+    u: torch.Tensor,
+    delta: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    C: torch.Tensor,
+    D: torch.Tensor | None = None,
+    delta_softplus: bool = True,
+) -> torch.Tensor:
+    """
+    Pure PyTorch selective scan reference implementation.
+    Handles shapes:
+        u:     (B, D, L) or (B, L, D)
+        delta: (B, D, L) or (B, L, D)
+        A:     (D, N)
+        B:     (B, N, L) or (B, L, N)
+        C:     (B, N, L) or (B, L, N)
+        D:     (D,) optional
+    """
+    is_bdl = False
+    if u.dim() == 3 and B.dim() == 3 and u.shape[1] == A.shape[0] and B.shape[1] == A.shape[1]:
+        # Layout is (B, D, L) and (B, N, L)
+        is_bdl = True
+        u = u.permute(0, 2, 1)  # -> (B, L, D)
+        delta = delta.permute(0, 2, 1)
+        B = B.permute(0, 2, 1)  # -> (B, L, N)
+        C = C.permute(0, 2, 1)  # -> (B, L, N)
+
+    B_size, L_size, D_dim = u.shape
+    N_state = A.shape[1]
+    device = u.device
+    dtype = u.dtype
+
+    if delta_softplus:
+        delta = torch.nn.functional.softplus(delta)
+
+    # Discretization
+    # delta: (B, L, D), A: (D, N) -> delta_A: (B, L, D, N)
+    delta_A = torch.exp(delta.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0))
+    # delta: (B, L, D), u: (B, L, D), B: (B, L, N) -> delta_B_u: (B, L, D, N)
+    delta_B_u = (delta * u).unsqueeze(-1) * B.unsqueeze(2)
+
+    # Sequential scan over L
+    h = torch.zeros(B_size, D_dim, N_state, device=device, dtype=torch.float32)
+    ys = []
+    for l in range(L_size):
+        h = delta_A[:, l] * h + delta_B_u[:, l]
+        # y_t = sum_N(h_t * C_t): C[:, l]: (B, N) -> (B, 1, N)
+        y_l = (h * C[:, l].unsqueeze(1)).sum(dim=-1)  # (B, D)
+        if D is not None:
+            y_l = y_l + u[:, l] * D
+        ys.append(y_l)
+
+    y = torch.stack(ys, dim=1).to(dtype)  # (B, L, D)
+    if is_bdl:
+        y = y.permute(0, 2, 1)  # -> (B, D, L)
+    return y
+
+
 def selective_scan_fn(
     u: torch.Tensor,
     delta: torch.Tensor,
@@ -422,16 +481,30 @@ def selective_scan_fn(
     delta_softplus: bool = True,
 ) -> torch.Tensor:
     """
-    Triton selective scan functional interface.
-    Shapes:
-        u:     (B, L, D)
-        delta: (B, L, D)
-        A:     (D, N)
-        B:     (B, L, N)
-        C:     (B, L, N)
-        D:     (D,) optional
+    Triton selective scan functional interface with automatic layout handling and PyTorch fallback.
     """
-    return TritonSelectiveScanFunction.apply(u, delta, A, B, C, D, delta_softplus)
+    is_bdl = False
+    if u.dim() == 3 and B.dim() == 3 and u.shape[1] == A.shape[0] and B.shape[1] == A.shape[1]:
+        is_bdl = True
+        u_in = u.permute(0, 2, 1).contiguous()
+        delta_in = delta.permute(0, 2, 1).contiguous()
+        B_in = B.permute(0, 2, 1).contiguous()
+        C_in = C.permute(0, 2, 1).contiguous()
+    else:
+        u_in, delta_in, B_in, C_in = u, delta, B, C
+
+    if torch.cuda.is_available() and u.is_cuda and hasattr(triton, "jit"):
+        out = TritonSelectiveScanFunction.apply(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
+    else:
+        out = selective_scan_ref(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
+
+    if is_bdl:
+        out = out.permute(0, 2, 1).contiguous()
+    return out
 
 
-__all__ = ['TritonSelectiveScanFunction', 'selective_scan_fn']
+__all__ = [
+    'TritonSelectiveScanFunction',
+    'selective_scan_fn',
+    'selective_scan_ref',
+]

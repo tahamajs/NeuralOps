@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 
-__all__ = ["flash_decoding_attention", "flash_decoding_pytorch"]
+__all__ = ["flash_decoding_attention", "flash_decoding_pytorch", "flash_decode_kernel"]
 
 
 if HAS_TRITON and tl is not None:
@@ -89,3 +89,6 @@ def flash_decoding_attention(
 ) -> torch.Tensor:
     """Dispatches split-KV flash decoding."""
     return flash_decoding_pytorch(q, k, v, chunk_size=chunk_size)
+
+
+flash_decode_kernel = flash_decoding_attention
