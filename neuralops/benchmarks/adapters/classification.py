@@ -215,10 +215,14 @@ class ClassificationAdapter:
                 kd_temperature=self.extra_kwargs.get("kd_temperature", 2.0),
                 kd_alpha=self.extra_kwargs.get("kd_alpha", 0.5),
                 recovery_steps=self.extra_kwargs.get("recovery_steps", 50),
+                mixed_precision=self.extra_kwargs.get("mixed_precision", "no"),
+                tracker=self.extra_kwargs.get("tracker_instance"),
+                log_interval=self.extra_kwargs.get("log_interval", 10),
             )
             train_duration_s = round(time.perf_counter() - train_t_start, 2)
             if teacher_model is not None:
                 del teacher_model
+
 
         # Baseline evaluation
         eval_metrics = evaluate_classification(

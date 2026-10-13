@@ -54,6 +54,8 @@ def kd_train_step(
     optimizer: torch.optim.Optimizer,
     kd_loss_fn: KDLoss,
     device: str | torch.device = "cuda",
+    mixed_precision: str = "no",
+    scaler: Any = None,
 ) -> float:
     """
     Execute a single gradient update step using knowledge distillation from teacher to student.
@@ -65,6 +67,8 @@ def kd_train_step(
         optimizer: Student parameter optimizer.
         kd_loss_fn: KDLoss instance.
         device: Active device.
+        mixed_precision: "no", "fp16", or "bf16".
+        scaler: GradScaler instance for fp16.
 
     Returns:
         Scalar training loss value.
@@ -76,21 +80,41 @@ def kd_train_step(
     attention_mask = batch[1].to(device)
     labels = batch[2].to(device) if len(batch) > 2 else None
 
-    with torch.no_grad():
-        teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask)
-        teacher_logits = teacher_outputs.logits
-
-    student_outputs = student(input_ids=input_ids, attention_mask=attention_mask)
-    student_logits = student_outputs.logits
-
-    loss = kd_loss_fn(student_logits, teacher_logits, labels=labels)
+    use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
+    mp_type = (mixed_precision or "no").lower()
+    amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
+    amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
 
     optimizer.zero_grad()
-    loss.backward()
-    torch.nn.utils.clip_grad_norm_(student.parameters(), max_norm=1.0)
-    optimizer.step()
+    if amp_enabled:
+        with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
+            with torch.no_grad():
+                teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask)
+                teacher_logits = teacher_outputs.logits
+            student_outputs = student(input_ids=input_ids, attention_mask=attention_mask)
+            student_logits = student_outputs.logits
+            loss = kd_loss_fn(student_logits, teacher_logits, labels=labels)
+    else:
+        with torch.no_grad():
+            teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask)
+            teacher_logits = teacher_outputs.logits
+        student_outputs = student(input_ids=input_ids, attention_mask=attention_mask)
+        student_logits = student_outputs.logits
+        loss = kd_loss_fn(student_logits, teacher_logits, labels=labels)
+
+    if amp_enabled and mp_type == "fp16" and scaler is not None:
+        scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(student.parameters(), max_norm=1.0)
+        scaler.step(optimizer)
+        scaler.update()
+    else:
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(student.parameters(), max_norm=1.0)
+        optimizer.step()
 
     return float(loss.item())
+
 
 
 def build_teacher_cache(

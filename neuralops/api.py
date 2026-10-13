@@ -25,7 +25,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 import neuralops.attentions  # noqa: F401 - ensure registrations
 import neuralops.compression_engine  # noqa: F401 - ensure registrations
 from neuralops.core.attention_utils import inject_attention
-from neuralops.export.exporter import export_model, load_exported_model
+from neuralops.export.exporter import export_model, load_exported_model, load_model
 
 
 def replace_attention(
@@ -69,13 +69,33 @@ def replace_attention(
     if layers is not None:
         kwargs["layer_indices"] = layers
 
-    return inject_attention(
+    out_model = inject_attention(
         model=model,
         attention_type=attn_name,
         rank=rank,
         copy_weights=copy_weights,
         **kwargs,
     )
+
+    # Attach surgery metadata onto model instance and config
+    meta_entry = {
+        "action": "replace_attention",
+        "attention_type": attn_name,
+        "rank": rank,
+        "copy_weights": copy_weights,
+        "layers": layers,
+        "kwargs": kwargs,
+    }
+    if not hasattr(out_model, "_neuralops_metadata"):
+        out_model._neuralops_metadata = []
+    out_model._neuralops_metadata.append(meta_entry)
+
+    if hasattr(out_model, "config") and hasattr(out_model.config, "to_dict"):
+        if not hasattr(out_model.config, "neuralops_history"):
+            out_model.config.neuralops_history = []
+        out_model.config.neuralops_history.append(meta_entry)
+
+    return out_model
 
 
 def compress(
@@ -111,7 +131,27 @@ def compress(
         "compressors": [comp_step],
     }
 
-    return compress_model(model=model, config=config)
+    out_model = compress_model(model=model, config=config)
+
+    # Attach compression metadata onto model instance and config
+    meta_entry = {
+        "action": "compress",
+        "compression_method": method,
+        "rank": rank,
+        "layers": layers,
+        "kwargs": kwargs,
+    }
+    if not hasattr(out_model, "_neuralops_metadata"):
+        out_model._neuralops_metadata = []
+    out_model._neuralops_metadata.append(meta_entry)
+
+    if hasattr(out_model, "config") and hasattr(out_model.config, "to_dict"):
+        if not hasattr(out_model.config, "neuralops_history"):
+            out_model.config.neuralops_history = []
+        out_model.config.neuralops_history.append(meta_entry)
+
+    return out_model
+
 
 
 def list_attentions() -> List[str]:
