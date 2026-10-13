@@ -87,6 +87,15 @@ class BenchmarkOrchestrator:
                 return sorted(k for k, v in all_mods.items() if v.type == "attention")
             elif mods in ("all-compressors", "compressors"):
                 return sorted(k for k, v in all_mods.items() if v.type == "compressor")
+            elif mods in ("delta", "delta-modules", "all-delta"):
+                delta_candidates = [
+                    "gated_delta_net",
+                    "hgrn2_gated_deltanet",
+                    "delta_kv",
+                    "moe_deltakv_paged",
+                    "gated_deltanet_block",
+                ]
+                return [m for m in delta_candidates if m in all_mods]
             elif mods in ("none", "baseline", "full"):
                 return ["baseline"]
             else:
