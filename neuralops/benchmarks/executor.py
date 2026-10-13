@@ -358,7 +358,15 @@ def execute_single(
         worker_thread.join(timeout=effective_timeout)
 
         if worker_thread.is_alive():
-            # Hard timeout occurred
+            # Hard timeout occurred - attempt adapter cleanup and VRAM reclaim
+            if adapter is not None:
+                try:
+                    adapter.cleanup()
+                except Exception:
+                    pass
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
             duration_s = time.perf_counter() - start_t
             end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             timeout_msg = (
