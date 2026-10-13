@@ -43,13 +43,18 @@ def cmd_bench(args):
         return subprocess.call(cmd)
     else:
         from neuralops.evaluation.eval_pipeline import evaluate_single_combination_opt
+        from neuralops.core.registry import ATTENTION_REGISTRY
+        mod_type = "attention" if target in ATTENTION_REGISTRY else "compressor"
+        dev = torch.device(device)
         res = evaluate_single_combination_opt(
-            model_name=model,
-            attention_module=target,
-            dataset_name=dataset,
+            track="cli_bench",
+            module_name=target,
+            module_type=mod_type,
+            model_family=model,
+            dataset=dataset,
             rank=rank,
-            device=device,
+            device=dev,
         )
         print("\nBenchmark completed successfully:")
-        print(res)
+        print(res.to_dict() if hasattr(res, "to_dict") else res)
         return 0
