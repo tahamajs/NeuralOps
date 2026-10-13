@@ -98,3 +98,23 @@ __all__ = [
     "gla_scan_triton",
     "hgrn2_scan_triton",
 ]
+
+# Auto-wired package members
+from neuralops.core.triton_kernels import _common
+from neuralops.core.triton_kernels import _types
+from neuralops.core.triton_kernels import autotuner
+from neuralops.core.triton_kernels import block_sparse
+from neuralops.core.triton_kernels import cosformer_triton_kernel
+from neuralops.core.triton_kernels import elementwise
+from neuralops.core.triton_kernels import flash_decoding
+from neuralops.core.triton_kernels import fused_rope
+from neuralops.core.triton_kernels import gqa
+from neuralops.core.triton_kernels import linear_attn
+from neuralops.core.triton_kernels import low_rank
+from neuralops.core.triton_kernels import paged_attention
+from neuralops.core.triton_kernels import selective_scan
+from neuralops.core.triton_kernels import sliding_window
+from neuralops.core.triton_kernels import softplus
+from neuralops.core.triton_kernels import sparse_attn
+from neuralops.core.triton_kernels import state_update
+from neuralops.core.triton_kernels import varlen_attention

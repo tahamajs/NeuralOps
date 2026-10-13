@@ -23,3 +23,6 @@ __all__ = [
     "compute_task_metrics",
     "METRIC_REGISTRY",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.metrics import evaluator

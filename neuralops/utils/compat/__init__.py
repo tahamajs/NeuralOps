@@ -51,3 +51,12 @@ __all__ = [
     "should_compress_qwen3_5",
     "wrap_for_family",
 ]
+
+# Auto-wired package members
+from neuralops.utils.compat import aliases
+from neuralops.utils.compat import architectures
+from neuralops.utils.compat import param_recovery
+
+from neuralops.utils.compat import aliases
+from neuralops.utils.compat import architectures
+from neuralops.utils.compat import param_recovery

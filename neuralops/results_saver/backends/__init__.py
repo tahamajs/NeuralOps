@@ -7,3 +7,6 @@ Available backends
 ------------------
 - huggingface  : Upload run artifacts to Hugging Face Hub (optional dependency)
 """
+
+# Auto-wired package members
+from neuralops.results_saver.backends import huggingface

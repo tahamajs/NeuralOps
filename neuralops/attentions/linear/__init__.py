@@ -195,3 +195,21 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.linear import chela_slay
+from neuralops.attentions.linear import cosformer
+from neuralops.attentions.linear import galerkin_attention
+from neuralops.attentions.linear import linformer_attention
+from neuralops.attentions.linear import nasc_attention
+from neuralops.attentions.linear import nystrom_attention
+from neuralops.attentions.linear import performer_attention
+from neuralops.attentions.linear import primal_attention
+from neuralops.attentions.linear import rala_attention
+from neuralops.attentions.linear import rpc_attention
+from neuralops.attentions.linear import spectra_v2
+from neuralops.attentions.linear import spectraformer_attention
+from neuralops.attentions.linear import spectron
+from neuralops.attentions.linear import tlinformer_attention
+from neuralops.attentions.linear import tpa_attention
+from neuralops.attentions.linear import triton_cosformer

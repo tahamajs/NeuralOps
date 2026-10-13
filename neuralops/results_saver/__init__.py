@@ -19,3 +19,11 @@ __all__ = [
     "save_trajectories_parquet",
     "sqlite_file_lock",
 ]
+
+# Auto-wired package members
+from neuralops.results_saver import backends
+from neuralops.results_saver import pipeline
+from neuralops.results_saver import storage
+from neuralops.results_saver import writers
+from neuralops.results_saver import config
+from neuralops.results_saver import saver

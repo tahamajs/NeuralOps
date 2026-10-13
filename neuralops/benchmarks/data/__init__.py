@@ -25,3 +25,6 @@ __all__ = [
     "ParquetDatasetLoader",
     "DATASET_LOADER_REGISTRY",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.data import loader

@@ -133,3 +133,16 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.modern import alibi
+from neuralops.attentions.modern import cross_attention
+from neuralops.attentions.modern import dynamic_conv_attention
+from neuralops.attentions.modern import gqa_attention
+from neuralops.attentions.modern import mla_attention
+from neuralops.attentions.modern import mqa
+from neuralops.attentions.modern import nha_attention
+from neuralops.attentions.modern import qcqa_attention
+from neuralops.attentions.modern import unified_rope
+from neuralops.attentions.modern import vig_attention
+from neuralops.attentions.modern import wgqa_attention

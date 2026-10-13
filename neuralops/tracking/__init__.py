@@ -22,3 +22,8 @@ __all__ = [
     "WANDB_BACKEND",
     "MLFLOW_BACKEND",
 ]
+
+# Auto-wired package members
+from neuralops.tracking import backends
+from neuralops.tracking import callbacks
+from neuralops.tracking import tracker

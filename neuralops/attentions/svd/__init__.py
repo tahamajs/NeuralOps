@@ -255,3 +255,26 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.svd import adaptive_svd_attention
+from neuralops.attentions.svd import asvd_attention
+from neuralops.attentions.svd import compressed_attention
+from neuralops.attentions.svd import compressed_mha_attention
+from neuralops.attentions.svd import factorised_matrix_state
+from neuralops.attentions.svd import fused_svd_kernel
+from neuralops.attentions.svd import lora_attention
+from neuralops.attentions.svd import minimal_nova
+from neuralops.attentions.svd import minimal_svd
+from neuralops.attentions.svd import naive_svd
+from neuralops.attentions.svd import projection_factorized_attn
+from neuralops.attentions.svd import residual_svd_attention
+from neuralops.attentions.svd import salt_attention
+from neuralops.attentions.svd import svd_attention
+from neuralops.attentions.svd import svd_compressed
+from neuralops.attentions.svd import svd_linear_attention
+from neuralops.attentions.svd import svd_linear_decay
+from neuralops.attentions.svd import svd_llm_v2_attention
+from neuralops.attentions.svd import svd_mamba
+from neuralops.attentions.svd import svd_projection_attention
+from neuralops.attentions.svd import triton_svd_linear_attention

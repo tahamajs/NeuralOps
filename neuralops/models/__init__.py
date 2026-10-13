@@ -70,3 +70,13 @@ def _register_with_transformers() -> None:
 
 
 _register_with_transformers()
+
+# Auto-wired package members
+from neuralops.models import configuration
+from neuralops.models import hub
+from neuralops.models import hybrid_spec
+from neuralops.models import modeling
+from neuralops.models import modeling_block
+from neuralops.models import modeling_mlp
+from neuralops.models import modeling_norm
+from neuralops.models import modeling_rope

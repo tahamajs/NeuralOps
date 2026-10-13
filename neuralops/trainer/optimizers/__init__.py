@@ -51,3 +51,14 @@ __all__ = [
     "create_lamb",
     "create_lars",
 ]
+
+# Auto-wired package members
+from neuralops.trainer.optimizers import factory
+from neuralops.trainer.optimizers import muon
+from neuralops.trainer.optimizers import riemannian
+from neuralops.trainer.optimizers import stiefel
+
+from neuralops.trainer.optimizers import factory
+from neuralops.trainer.optimizers import muon
+from neuralops.trainer.optimizers import riemannian
+from neuralops.trainer.optimizers import stiefel

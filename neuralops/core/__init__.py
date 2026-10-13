@@ -95,3 +95,46 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = list(_MODULE_MAP.keys())
+
+# Auto-wired package members
+from neuralops.core import autograd
+from neuralops.core import triton_kernels
+from neuralops.core import utils
+from neuralops.core import _attention_extractors
+from neuralops.core import _attention_helpers
+from neuralops.core import _attention_injectors
+from neuralops.core import _attention_surgery
+from neuralops.core import _attention_wrapper
+from neuralops.core import adapters
+from neuralops.core import amp_utils
+from neuralops.core import architecture
+from neuralops.core import attention_mask
+from neuralops.core import attention_utils
+from neuralops.core import base
+from neuralops.core import cache_utils
+from neuralops.core import common
+from neuralops.core import compression_engine
+from neuralops.core import compression_pipeline
+from neuralops.core import config
+from neuralops.core import cuda_graph
+from neuralops.core import fused_norm_attention
+from neuralops.core import gqa_utils
+from neuralops.core import legacy_ensemble
+from neuralops.core import memory
+from neuralops.core import metrics
+from neuralops.core import model_family
+from neuralops.core import model_utils
+from neuralops.core import model_wrapper
+from neuralops.core import multi_mode_benchmark
+from neuralops.core import pruning_utils
+from neuralops.core import quantized_attention
+from neuralops.core import registry
+from neuralops.core import replace_attention
+from neuralops.core import rope
+from neuralops.core import selective_scan
+from neuralops.core import snapshot_restore
+from neuralops.core import svd_utils
+from neuralops.core import t5_compat
+from neuralops.core import triton_linear_attn
+from neuralops.core import triton_sparse_attn
+from neuralops.core import utils

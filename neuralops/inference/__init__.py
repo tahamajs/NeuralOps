@@ -18,3 +18,7 @@ __all__ = [
     "beam_search_generate",
     "ContinuousBatcher",
 ]
+
+# Auto-wired package members
+from neuralops.inference import engine
+from neuralops.inference import paged_cache

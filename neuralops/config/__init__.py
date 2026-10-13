@@ -49,3 +49,15 @@ __all__ = [
     "DatasetConfig",
     "load_config",
 ]
+
+# Auto-wired package members
+from neuralops.config import compression_config
+from neuralops.config import config
+from neuralops.config import data_config
+from neuralops.config import experiment_config
+from neuralops.config import hardware_config
+from neuralops.config import loader
+from neuralops.config import method_config
+from neuralops.config import model_config
+from neuralops.config import sweep_config
+from neuralops.config import training_config
