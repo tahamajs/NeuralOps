@@ -4,7 +4,7 @@
 
 | Feature | NeuralOps | FlashAttention | FLA | xformers | vLLM |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| **Attention mechanisms** | 159 | 1 (FA2/FA3) | ~30 | ~15 | ~5 |
+| **Attention mechanisms** | 130 (+713 aliases) | 1 (FA2/FA3) | ~30 | ~15 | ~5 |
 | **Compression engines** | 73 | ❌ | ❌ | ❌ | ❌ |
 | **Triton kernels** | 16 | ✅ | ✅ | ⚠️ | ✅ |
 | **CPU fallback** | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
@@ -27,7 +27,7 @@ NeuralOps is unique in combining:
 
 ## When to use NeuralOps
 
-- ✅ **Research on new attention mechanisms** — 159 baselines ready
+- ✅ **Research on new attention mechanisms** — 130 canonical baselines ready (+713 aliases)
 - ✅ **Model compression experiments** — 73 engines ready
 - ✅ **Benchmarking attention variants** — unified CLI
 - ✅ **Zero-shot model surgery** — inject into any HF model

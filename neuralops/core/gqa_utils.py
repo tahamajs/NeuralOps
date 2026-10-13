@@ -7,3 +7,5 @@ warnings.warn(
 )
 from neuralops.core.utils.gqa import *  # noqa: F401,F403
 from neuralops.core.utils.gqa import repeat_kv  # noqa: F401
+
+repeat_kv_optimized = repeat_kv
