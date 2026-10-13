@@ -1,6 +1,9 @@
 """Unified CLI for neuralops benchmarking suite."""
 from __future__ import annotations
 
+import os
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import platform
 import sys
@@ -58,8 +61,9 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--kd-temperature", type=float, default=2.0, help="Softmax temperature for KD")
     run_p.add_argument("--kd-alpha", type=float, default=0.5, help="Balance between task loss and distillation loss")
     run_p.add_argument("--recovery-steps", type=int, default=50, help="Number of recovery steps after compression")
-    run_p.add_argument("--task", type=str, default=None, help="Target task type (e.g., classification, summarization, qa, lm)")
-    run_p.add_argument("--max-samples", type=int, default=None, help="Limit number of dataset samples")
+    run_p.add_argument("--max-samples", type=int, default=None, help="Limit training set to N samples. Default: full dataset. Use 5000 for fast sweeps on slow GPUs.")
+    run_p.add_argument("--max-eval-samples", type=int, default=None, help="Limit eval set to N samples.")
+    run_p.add_argument("--grad-accum-steps", type=int, default=1, help="Gradient accumulation steps")
     run_p.add_argument("--no-trust-remote-code", action="store_true", help="Disable trust_remote_code for HF models")
     run_p.add_argument("--hf-token", type=str, default=None, help="Hugging Face API token for gated/private models")
     run_p.add_argument("--language", type=str, default=None, help="Language code for multilingual datasets/metrics")
@@ -254,8 +258,10 @@ def handle_run(args: argparse.Namespace) -> None:
         kd_temperature=args.kd_temperature,
         kd_alpha=args.kd_alpha,
         recovery_steps=args.recovery_steps,
-        task=args.task,
+        task=getattr(args, "task", None),
         max_samples=args.max_samples,
+        max_eval_samples=args.max_eval_samples,
+        grad_accum_steps=args.grad_accum_steps,
         trust_remote_code=not args.no_trust_remote_code,
         hf_token=args.hf_token,
         language=args.language,
