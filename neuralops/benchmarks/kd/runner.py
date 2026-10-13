@@ -343,7 +343,7 @@ class KDRunner:
         try:
             # 1. Load clean student and inject module
             student = AutoModelForSequenceClassification.from_pretrained(
-                self.config.teacher, num_labels=2
+                self.config.teacher
             )
             student, _ = apply_module_to_model(
                 student, module_name, rank=self.config.rank, device=self.device
@@ -481,7 +481,7 @@ class KDRunner:
         # Load teacher once in evaluation mode
         logger.info("Loading teacher model: %s", self.config.teacher)
         teacher = AutoModelForSequenceClassification.from_pretrained(
-            self.config.teacher, num_labels=2
+            self.config.teacher
         ).to(self.device).eval()
         for p in teacher.parameters():
             p.requires_grad = False
