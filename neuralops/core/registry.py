@@ -239,13 +239,19 @@ class Registry:
 
     def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
-        k = _handle_deprecated(key)
+        try:
+            k = _handle_deprecated(key)
+        except ValueError:
+            return None
         self._try_lazy_load(k)
         return self._dict.get(k.lower())
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
-        k = _handle_deprecated(key)
+        try:
+            k = _handle_deprecated(key)
+        except ValueError as e:
+            raise KeyError(str(e)) from e
         self._try_lazy_load(k)
         k_lower = k.lower()
         if k_lower not in self._dict:
