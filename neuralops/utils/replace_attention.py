@@ -486,26 +486,24 @@ def _try_instantiate(
     )
 
 
-def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any:
+def replace_attention(model, attention_key=None, layer_indices=None, new_attention_cls=None, **kwargs) -> Any:
     """
-    Replace attention modules in a model with a registered attention block.
-
-    Args:
-        model: A PyTorch model (typically a Hugging Face transformer)
-        attention_key: String key registered in ATTENTION_REGISTRY
-        layer_indices: Optional list of layer indices to replace (0-indexed).
-                       If None, replace all attention layers.
-        **kwargs: Additional arguments passed to the attention block constructor.
-
-    Returns:
-        Model with attention layers replaced.
+    Replace attention modules in a model with a registered attention block or class.
     """
-    attn_fn = ATTENTION_REGISTRY.get(attention_key)
-    if attn_fn is None:
-        raise ValueError(
-            f"Attention key '{attention_key}' not found in registry. "
-            f"Available: {list(ATTENTION_REGISTRY.keys())}"
-        )
+    if new_attention_cls is not None:
+        attn_fn = new_attention_cls
+    elif attention_key is not None:
+        if isinstance(attention_key, type) or callable(attention_key):
+            attn_fn = attention_key
+        else:
+            attn_fn = ATTENTION_REGISTRY.get(attention_key)
+            if attn_fn is None:
+                raise ValueError(
+                    f"Attention key '{attention_key}' not found in registry. "
+                    f"Available: {list(ATTENTION_REGISTRY.keys())}"
+                )
+    else:
+        raise ValueError("Either 'attention_key' or 'new_attention_cls' must be provided.")
 
     if not hasattr(model, "config"):
         raise AttributeError("Model does not have a 'config' attribute.")

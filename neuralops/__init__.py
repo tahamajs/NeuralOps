@@ -276,9 +276,16 @@ from neuralops.api import (
 from neuralops.attentions.linear.gla_attention import GLAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
+def create_attention(name: str, **kwargs):
+    cls = ATTENTION_REGISTRY.get(name)
+    if cls is None:
+        raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
+    return cls(**kwargs)
+
 __all__ = [
     "GLAttention",
     "replace_attention",
+    "create_attention",
     "compress",
     "list_attentions",
     "list_compressors",
