@@ -783,9 +783,10 @@ def inject_routing(
             **kwargs,
         )
 
-        p = next(src.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
+        if hasattr(src, "parameters") and callable(src.parameters):
+            p = next(src.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
 
         # Attach to parent layer
         if hasattr(target, "attention"):
