@@ -1,11 +1,21 @@
 {
   "module": "svd_linear_attn",
   "type": "attention",
+<<<<<<< HEAD
   "status": "ERROR",
   "delta": null,
   "student_ppl": null,
-  "duration_sec": 0.1,
+  "duration_sec": 223.8,
   "retries_used": 1,
   "error": "exit=1",
-  "timestamp": "2026-10-12 15:03:49"
+  "timestamp": "2026-10-12 22:36:31"
+=======
+  "status": "PASS",
+  "delta": 3608.18,
+  "student_ppl": 164.46,
+  "duration_sec": 144.3,
+  "retries_used": 1,
+  "error": "",
+  "timestamp": "2026-10-12 22:12:37"
+>>>>>>> eef02d50ae (add results)
 }

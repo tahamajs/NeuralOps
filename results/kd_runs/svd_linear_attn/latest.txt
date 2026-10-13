@@ -1,0 +1,5 @@
+<<<<<<< HEAD
+/home/tahoora/Project/results/kd_runs/svd_linear_attn/20261012_224655_bs8_seq256_lr3e-04_C
+=======
+/mnt/d/SVD_linear_Attention/results/kd_runs/svd_linear_attn/20261012_221239_bs8_seq256_lr3e-04_C
+>>>>>>> eef02d50ae (add results)

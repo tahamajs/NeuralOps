@@ -1,0 +1,176 @@
+<<<<<<< HEAD
+2026-10-12 22:36:35,299 [INFO] MambaKD: ======================================================================
+2026-10-12 22:36:35,299 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 22:36:35,299 [INFO] MambaKD: ======================================================================
+2026-10-12 22:36:35,300 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 22:36:35,300 [INFO] MambaKD: Device: cuda | Precision: torch.float32 (AMP: False, Scaler: False) | Batch: 8 | Seq: 256
+2026-10-12 22:36:35,300 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 22:36:36,076 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 22:36:41,964 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 22:36:41,964 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 22:36:43,759 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_5b35dcb63813. (Skipping teacher model load completely!)
+2026-10-12 22:36:43,762 [INFO] MambaKD: Using teacher baseline PPL: 36.22
+2026-10-12 22:36:43,762 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 22:36:44,198 [INFO] MambaKD: 
+======================================================================
+2026-10-12 22:36:44,198 [INFO] MambaKD: PROCESSING MODULE 1/1: svd_linear_attn
+2026-10-12 22:36:44,198 [INFO] MambaKD: ======================================================================
+2026-10-12 22:36:44,200 [INFO] MambaKD: 
+# Running method C for svd_linear_attn
+2026-10-12 22:36:44,502 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 22:36:44,505 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 22:36:50,702 [INFO] neuralops.core._attention_injectors: Successfully injected 'svd_linear_attn' into 12 transformer blocks.
+2026-10-12 22:36:50,798 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 95.8096
+2026-10-12 22:36:50,799 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 95.8096
+2026-10-12 22:36:50,799 [INFO] MambaKD: [GPU DETECT] Detected GTX 1060 / Pascal architecture (nvidia geforce gtx 1060, CC 6.1). Enforcing float32 precision.
+2026-10-12 22:36:50,799 [INFO] MambaKD: [AMP] GPU=NVIDIA GeForce GTX 1060 | cap=(6, 1) | amp_dtype=torch.float32 | use_scaler=False
+2026-10-12 22:36:54,462 [INFO] MambaKD: Pre-KD PPL for Module svd_linear_attn, Method C: 3753.80
+2026-10-12 22:36:54,462 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.22 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 22:36:54,462 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3753.80 (same protocol)
+2026-10-12 22:36:54,462 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3717.58 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 22:36:54,462 [INFO] MambaKD: [ADAPTIVE] pre_ppl=3753.80 > 500, escalating train_scope: module → attention
+2026-10-12 22:36:54,463 [INFO] MambaKD: set_train_scope (attention): matched 312 target param tensors
+2026-10-12 22:36:54,508 [INFO] MambaKD: [ADAPTIVE] pre_ppl=3753.80 > 500, reducing LR: 3.00e-04 → 3.00e-05
+2026-10-12 22:36:55,381 [WARNING] MambaKD: [C] CUDA OOM! Halving sequence length to 128...
+2026-10-12 22:36:55,973 [INFO] MambaKD: [C] Step 0/300 | Loss: 8.3523...
+2026-10-12 22:36:56,216 [INFO] MambaKD: [C] Step 1/300 | Loss: 8.3523 | LR: 3.00e-07
+2026-10-12 22:36:56,669 [INFO] MambaKD: [C] Step 1/300 | Loss: 8.2997...
+2026-10-12 22:36:56,892 [INFO] MambaKD: [C] Step 2/300 | Loss: 8.2997 | LR: 6.00e-07
+2026-10-12 22:36:57,751 [INFO] MambaKD: [C] Step 2/300 | Loss: 8.8543...
+2026-10-12 22:36:57,982 [INFO] MambaKD: [C] Step 3/300 | Loss: 8.8543 | LR: 9.00e-07
+2026-10-12 22:36:58,796 [INFO] MambaKD: [C] Step 3/300 | Loss: 8.1780...
+2026-10-12 22:36:59,023 [INFO] MambaKD: [C] Step 4/300 | Loss: 8.1780 | LR: 1.20e-06
+2026-10-12 22:36:59,692 [INFO] MambaKD: [C] Step 4/300 | Loss: 6.6225...
+2026-10-12 22:36:59,916 [INFO] MambaKD: [C] Step 5/300 | Loss: 6.6225 | LR: 1.50e-06
+2026-10-12 22:37:00,603 [INFO] MambaKD: [C] Step 5/300 | Loss: 6.9946...
+2026-10-12 22:37:44,722 [INFO] MambaKD: [C] Step 50/300 | Loss: 6.9946 | LR: 1.50e-05
+2026-10-12 22:37:47,503 [INFO] MambaKD: [C] Step 50/300 | Loss: 9.1343...
+2026-10-12 22:38:21,241 [INFO] MambaKD: [C] Step 100/300 | Loss: 9.1343 | LR: 3.00e-05
+2026-10-12 22:38:25,338 [INFO] MambaKD: [C] Step 100 Eval PPL: 519.81
+2026-10-12 22:38:25,603 [INFO] MambaKD: [C] Step 100/300 | Loss: 16.9502...
+2026-10-12 22:38:49,039 [INFO] MambaKD: [C] Step 150/300 | Loss: 16.9502 | LR: 2.56e-05
+2026-10-12 22:38:49,270 [INFO] MambaKD: [C] Step 150/300 | Loss: 19.0992...
+2026-10-12 22:39:12,039 [INFO] MambaKD: [C] Step 200/300 | Loss: 19.0992 | LR: 1.50e-05
+2026-10-12 22:39:15,775 [INFO] MambaKD: [C] Step 200 Eval PPL: 358.07
+2026-10-12 22:39:16,088 [INFO] MambaKD: [C] Step 200/300 | Loss: 21.5456...
+2026-10-12 22:39:39,175 [INFO] MambaKD: [C] Step 250/300 | Loss: 21.5456 | LR: 4.39e-06
+2026-10-12 22:39:39,408 [INFO] MambaKD: [C] Step 250/300 | Loss: 25.0205...
+2026-10-12 22:40:02,117 [INFO] MambaKD: [C] Step 300/300 | Loss: 25.0205 | LR: 3.00e-06
+2026-10-12 22:40:05,851 [INFO] MambaKD: [C] Step 300 Eval PPL: 345.96
+2026-10-12 22:40:05,851 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 345.96
+2026-10-12 22:40:05,852 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 22:40:06,583 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 5.7155 | LR: 1.50e-05
+=======
+2026-10-12 22:12:39,837 [INFO] MambaKD: ======================================================================
+2026-10-12 22:12:39,837 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-12 22:12:39,837 [INFO] MambaKD: ======================================================================
+2026-10-12 22:12:39,837 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-12 22:12:39,837 [INFO] MambaKD: Device: cuda | Precision: torch.bfloat16 (AMP: True, Scaler: False) | Batch: 8 | Seq: 256
+2026-10-12 22:12:39,837 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-12 22:12:40,358 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-10-12 22:12:40,586 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 22:12:40,816 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 22:12:41,049 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 22:12:41,279 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-10-12 22:12:41,517 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 22:12:41,754 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 22:12:41,860 [INFO] MambaKD: Loading WikiText-2 dataset...
+2026-10-12 22:12:42,093 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 22:12:42,224 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md?%2Fdatasets%2FSalesforce%2Fwikitext%2Fresolve%2Fmain%2FREADME.md=&etag=%222a4fec2bc8df76c9d4da1c8e8865b625eb221c76%22 "HTTP/1.1 200 OK"
+2026-10-12 22:12:42,469 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 22:12:43,129 [INFO] httpx2: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-10-12 22:12:43,463 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-10-12 22:12:43,785 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-10-12 22:12:44,539 [INFO] httpx2: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-10-12 22:12:44,794 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 22:12:45,027 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-10-12 22:12:45,257 [INFO] httpx2: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-10-12 22:12:45,488 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-10-12 22:12:46,125 [INFO] MambaKD: Training chunks: (412, 256)
+2026-10-12 22:12:46,127 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+2026-10-12 22:12:46,353 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/gpt2 "HTTP/1.1 307 Temporary Redirect"
+2026-10-12 22:12:46,587 [INFO] httpx2: HTTP Request: GET https://huggingface.co/api/models/openai-community/gpt2 "HTTP/1.1 200 OK"
+2026-10-12 22:12:46,652 [INFO] MambaKD: Loading existing teacher cache from results/kd_cache/gpt2_dff13c765d39. (Skipping teacher model load completely!)
+2026-10-12 22:12:46,652 [INFO] MambaKD: Using teacher baseline PPL: 36.21
+2026-10-12 22:12:46,652 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 22:12:46,761 [INFO] MambaKD: 
+======================================================================
+2026-10-12 22:12:46,761 [INFO] MambaKD: PROCESSING MODULE 1/1: svd_linear_attn
+2026-10-12 22:12:46,761 [INFO] MambaKD: ======================================================================
+2026-10-12 22:12:46,762 [INFO] MambaKD: 
+# Running method C for svd_linear_attn
+2026-10-12 22:12:47,004 [INFO] neuralops.attentions.gated.gated_delta_net: GDN: Triton scan available
+2026-10-12 22:12:47,004 [INFO] neuralops.attentions.gated.hgrn2_gated_layer: HGRN2: Triton scan available
+2026-10-12 22:12:49,220 [INFO] neuralops.core._attention_injectors: Successfully injected 'svd_linear_attn' into 12 transformer blocks.
+2026-10-12 22:12:49,303 [INFO] MambaKD: [DIAG] Max logit diff (student vs teacher) BEFORE training: 104.4253
+2026-10-12 22:12:49,303 [WARNING] MambaKD: [DIAG] [WARN] Large pre-training diff: 104.4253
+2026-10-12 22:12:49,304 [INFO] MambaKD: [GPU DETECT] Detected RTX 4070 / Ada-Ampere architecture (nvidia geforce rtx 4070 laptop gpu, CC 8.9). Using bfloat16 mixed precision.
+2026-10-12 22:12:49,304 [INFO] MambaKD: [AMP] GPU=NVIDIA GeForce RTX 4070 Laptop GPU | cap=(8, 9) | amp_dtype=torch.bfloat16 | use_scaler=False
+2026-10-12 22:12:50,568 [INFO] MambaKD: Pre-KD PPL for Module svd_linear_attn, Method C: 3772.64
+2026-10-12 22:12:50,568 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 36.21 (dataset=test, max_tokens=15000, stride=128, seq_len=256)
+2026-10-12 22:12:50,568 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 3772.64 (same protocol)
+2026-10-12 22:12:50,568 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +3736.43 (should be POSITIVE, e.g. +3 to +30)
+2026-10-12 22:12:50,568 [INFO] MambaKD: [ADAPTIVE] pre_ppl=3772.64 > 500, escalating train_scope: module → attention
+2026-10-12 22:12:50,569 [INFO] MambaKD: set_train_scope (attention): matched 312 target param tensors
+2026-10-12 22:12:50,604 [INFO] MambaKD: [ADAPTIVE] pre_ppl=3772.64 > 500, reducing LR: 3.00e-04 → 3.00e-05
+2026-10-12 22:12:51,058 [INFO] MambaKD: [C] Step 0/300 | Loss: 7.4786...
+2026-10-12 22:12:51,183 [INFO] MambaKD: [C] Step 1/300 | Loss: 7.4786 | LR: 3.00e-07
+2026-10-12 22:12:51,476 [INFO] MambaKD: [C] Step 1/300 | Loss: 8.3135...
+2026-10-12 22:12:51,570 [INFO] MambaKD: [C] Step 2/300 | Loss: 8.3135 | LR: 6.00e-07
+2026-10-12 22:12:51,735 [INFO] MambaKD: [C] Step 2/300 | Loss: 8.0786...
+2026-10-12 22:12:51,828 [INFO] MambaKD: [C] Step 3/300 | Loss: 8.0786 | LR: 9.00e-07
+2026-10-12 22:12:51,977 [INFO] MambaKD: [C] Step 3/300 | Loss: 7.4292...
+2026-10-12 22:12:52,070 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.4292 | LR: 1.20e-06
+2026-10-12 22:12:52,227 [INFO] MambaKD: [C] Step 4/300 | Loss: 7.4687...
+2026-10-12 22:12:52,321 [INFO] MambaKD: [C] Step 5/300 | Loss: 7.4687 | LR: 1.50e-06
+2026-10-12 22:12:52,538 [INFO] MambaKD: [C] Step 5/300 | Loss: 7.0255...
+2026-10-12 22:13:11,778 [INFO] MambaKD: [C] Step 50/300 | Loss: 7.0255 | LR: 1.50e-05
+2026-10-12 22:13:12,138 [INFO] MambaKD: [C] Step 50/300 | Loss: 9.0462...
+2026-10-12 22:13:29,090 [INFO] MambaKD: [C] Step 100/300 | Loss: 9.0462 | LR: 3.00e-05
+2026-10-12 22:13:30,451 [INFO] MambaKD: [C] Step 100 Eval PPL: 497.17
+2026-10-12 22:13:30,607 [INFO] MambaKD: [C] Step 100/300 | Loss: 17.1229...
+2026-10-12 22:13:42,799 [INFO] MambaKD: [C] Step 150/300 | Loss: 17.1229 | LR: 2.56e-05
+2026-10-12 22:13:42,936 [INFO] MambaKD: [C] Step 150/300 | Loss: 19.2488...
+2026-10-12 22:13:55,314 [INFO] MambaKD: [C] Step 200/300 | Loss: 19.2488 | LR: 1.50e-05
+2026-10-12 22:13:56,553 [INFO] MambaKD: [C] Step 200 Eval PPL: 330.97
+2026-10-12 22:13:56,691 [INFO] MambaKD: [C] Step 200/300 | Loss: 21.8642...
+2026-10-12 22:14:07,767 [INFO] MambaKD: [C] Step 250/300 | Loss: 21.8642 | LR: 4.39e-06
+2026-10-12 22:14:07,892 [INFO] MambaKD: [C] Step 250/300 | Loss: 24.7948...
+2026-10-12 22:14:18,748 [INFO] MambaKD: [C] Step 300/300 | Loss: 24.7948 | LR: 3.00e-06
+2026-10-12 22:14:19,904 [INFO] MambaKD: [C] Step 300 Eval PPL: 308.66
+2026-10-12 22:14:19,905 [INFO] MambaKD: [C] [STAGE1-DONE] KD finished. post_ppl_stage1 = 308.66
+2026-10-12 22:14:19,905 [INFO] MambaKD: [C] Starting Stage 2 (self-training, CE-only) for 200 steps (LR=3.00e-04)...
+2026-10-12 22:14:20,050 [INFO] MambaKD: [C] [STAGE2] Step 1/200 | CE Loss: 5.4911 | LR: 1.50e-05
+2026-10-12 22:14:20,184 [INFO] MambaKD: [C] [STAGE2] Step 2/200 | CE Loss: 5.5709 | LR: 3.00e-05
+2026-10-12 22:14:20,317 [INFO] MambaKD: [C] [STAGE2] Step 3/200 | CE Loss: 5.3339 | LR: 4.50e-05
+2026-10-12 22:14:20,450 [INFO] MambaKD: [C] [STAGE2] Step 4/200 | CE Loss: 5.1695 | LR: 6.00e-05
+2026-10-12 22:14:20,584 [INFO] MambaKD: [C] [STAGE2] Step 5/200 | CE Loss: 5.5816 | LR: 7.50e-05
+2026-10-12 22:14:26,556 [INFO] MambaKD: [C] [STAGE2] Step 50/200 | CE Loss: 5.1086 | LR: 2.84e-04
+2026-10-12 22:14:33,130 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | CE Loss: 5.1025 | LR: 1.96e-04
+2026-10-12 22:14:34,509 [INFO] MambaKD: [C] [STAGE2] Step 100/200 | Eval PPL: 188.68
+2026-10-12 22:14:41,144 [INFO] MambaKD: [C] [STAGE2] Step 150/200 | CE Loss: 4.5490 | LR: 8.20e-05
+2026-10-12 22:14:47,720 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | CE Loss: 4.2568 | LR: 7.44e-06
+2026-10-12 22:14:49,013 [INFO] MambaKD: [C] [STAGE2] Step 200/200 | Eval PPL: 164.46
+2026-10-12 22:14:50,168 [INFO] MambaKD: [C] [STAGE2-DONE] post_ppl_stage2 = 164.46
+2026-10-12 22:14:50,179 [INFO] MambaKD: [C] [COMPLETE] Pre: 3772.64
+  Stage 1 (KD):    308.66  (kd_gain=+3463.98)
+  Stage 2 (self):  164.46  (self_gain=+144.20)
+  Total:                  (total_gain=+3608.18)
+  Teacher baseline: 36.21
+  Aligned with teacher? NO (post_stage1 308.66 > 36.21)
+  Beat teacher after self? NO
+  Recovery: 96.57%
+  Time: 119.6s (Stage 1: 89.3s, Stage 2: 30.3s)
+2026-10-12 22:14:51,594 [INFO] MambaKD: [GPU DETECT] Detected RTX 4070 / Ada-Ampere architecture (nvidia geforce rtx 4070 laptop gpu, CC 8.9). Using bfloat16 mixed precision.
+2026-10-12 22:14:53,606 [INFO] MambaKD: [QUALITY] distinct_2=0.82, repetition_3=0.03, train_ppl=74.56, test_ppl=164.46, overfit_gap=89.90, latency=331.2ms
+2026-10-12 22:14:53,619 [INFO] MambaKD: Saved all run details to results/kd_runs/svd_linear_attn/20261012_221239_bs8_seq256_lr3e-04_C
++---------+----------+----------+----------+----------+----------+----------+
+| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |
++---------+----------+----------+----------+----------+----------+----------+
+| C       |  3772.64 |   308.66 |   164.46 | +3463.98 |  +144.20 | +3608.18 |
++---------+----------+----------+----------+----------+----------+----------+
+2026-10-12 22:14:58,683 [INFO] MambaKD: 
+======================================================================
+2026-10-12 22:14:58,683 [INFO] MambaKD: SWEEP COMPLETELY FINISHED!
+2026-10-12 22:14:58,683 [INFO] MambaKD: ======================================================================
+>>>>>>> eef02d50ae (add results)

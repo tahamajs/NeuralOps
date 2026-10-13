@@ -1,4 +1,35 @@
+<<<<<<< HEAD
+/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py:1230: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:206.)
+  cache[key] = torch.from_numpy(np_memmap)
+Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py:1525: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+  c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py:1536: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+  t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
 Traceback (most recent call last):
-  File "/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py", line 23, in <module>
-    import numpy as np
-ModuleNotFoundError: No module named 'numpy'
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2252, in <module>
+    main()
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 2216, in main
+    result = run_kd_method(
+             ^^^^^^^^^^^^^^
+  File "/home/tahoora/Project/neuralops/benchmarks/_legacy/kd_quick_test.py", line 1713, in run_kd_method
+    loss_scaled.backward()
+  File "/home/tahoora/Project/.venv/lib/python3.12/site-packages/torch/_tensor.py", line 581, in backward
+    torch.autograd.backward(
+  File "/home/tahoora/Project/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 347, in backward
+    _engine_run_backward(
+  File "/home/tahoora/Project/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 392.00 MiB. GPU 0 has a total capacity of 5.92 GiB of which 97.62 MiB is free. Including non-PyTorch memory, this process has 5.82 GiB memory in use. Of the allocated memory 5.25 GiB is allocated by PyTorch, and 464.08 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+=======
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 6496.40it/s]
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1230: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  cache[key] = torch.from_numpy(np_memmap)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1525: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+  c_logits = torch.from_numpy(np.array(teacher_cache["logits"][batch_slice])).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+/mnt/d/SVD_linear_Attention/neuralops/benchmarks/_legacy/kd_quick_test.py:1536: DeprecationWarning: __array__ implementation doesn't accept a copy keyword, so passing copy=False failed. __array__ must implement 'dtype' and 'copy' keyword arguments. To learn more, see the migration guide https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword
+  t_gpu = torch.from_numpy(np.array(t)).pin_memory().to(device, non_blocking=True)[:, :current_seq_len, :]
+>>>>>>> eef02d50ae (add results)

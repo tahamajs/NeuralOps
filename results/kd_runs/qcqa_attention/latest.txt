@@ -1,1 +1,5 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/qcqa_attention/20261012_045113_bs8_seq256_lr3e-04_C
+<<<<<<< HEAD
+/home/tahoora/Project/results/kd_runs/qcqa_attention/20261012_225935_bs8_seq256_lr3e-04_C
+=======
+/mnt/d/SVD_linear_Attention/results/kd_runs/qcqa_attention/20261012_230139_bs8_seq256_lr3e-04_C
+>>>>>>> eef02d50ae (add results)

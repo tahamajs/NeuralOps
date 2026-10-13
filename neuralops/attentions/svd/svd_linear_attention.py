@@ -190,7 +190,10 @@ class SVDLinear(nn.Module):
             nn.init.ones_(self.norm_weight)
         if self.lora_A is not None and self.lora_B is not None:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B) # حتماً باید صفر باشد
+            self.lora_B.requires_grad = True
+            
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
@@ -1069,21 +1072,21 @@ class SVDLinearAttention(BaseAttention):
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
 
         if is_causal_attn:
+            L, S = q.shape[-2], k.shape[-2]
             causal_mask = (
                 torch.triu(
                     torch.full(
-                        (q.shape[-2], k.shape[-2]),
+                        (L, S),
                         float("-inf"),
                         device=scores.device,
-                        dtype=torch.float32,
+                        dtype=scores.dtype,
                     ),
-                    diagonal=1,
+                    diagonal=1 + (S - L), # <--- جبران شیفتِ KV Cache
                 )
                 .unsqueeze(0)
                 .unsqueeze(0)
             )
             scores = scores + causal_mask
-
         if mask is not None:
             scores = apply_attention_mask(scores, mask)
 

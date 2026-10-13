@@ -1,0 +1,17 @@
+{
+  "python_version": "3.12.15 (main, Oct  1 2026, 15:41:07) [GCC 15.2.0]",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "torch_version": "2.5.1+cu124",
+  "cuda_version": "12.4",
+  "cudnn_version": 90100,
+  "gpu_name": "NVIDIA GeForce GTX 1060",
+  "gpu_count": 1,
+  "gpu_total_memory_gb": 6.36,
+  "numpy_version": "2.5.4",
+  "timestamp": "2026-10-12T20:32:15.088251",
+  "transformers_version": "4.46.3",
+  "datasets_version": "3.1.0",
+  "git_commit": "0d365d9f33dff13fb6e60127f954116799d62054",
+  "git_branch": "main",
+  "git_dirty": true
+}
