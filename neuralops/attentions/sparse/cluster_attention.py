@@ -1,4 +1,4 @@
-"""
+r"""
 ClusterFormer: Token Clustering Attention Module.
 
 Groups queries into $K$ semantic cluster centroids via fast differentiable $K$-means
