@@ -21,11 +21,20 @@ def _build_parser() -> argparse.ArgumentParser:
     # 1. run
     run_p = subparsers.add_parser("run", help="Run benchmark(s)")
     run_p.add_argument("--module", type=str, default=None, help="Single module name")
-    run_p.add_argument("--modules", type=str, default=None, help="Comma-separated module names")
-    run_p.add_argument("--all-attention", action="store_true", help="Run all 159 attention modules")
-    run_p.add_argument("--all-compressors", action="store_true", help="Run all 73 compressors")
-    run_p.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true", help="Run all delta modules (gated_delta_net, hgrn2_gated_deltanet, delta_kv, etc.)")
-    run_p.add_argument("--all", action="store_true", help="Run all 232 modules")
+    # Module selection shortcuts
+    grp_run = run_p.add_argument_group("Module selection shortcuts")
+    grp_run.add_argument("--all-attn", "--all-attention", dest="all_attn", action="store_true", help="Run every registered attention module")
+    grp_run.add_argument("--all-comp", "--all-compressors", dest="all_comp", action="store_true", help="Run every registered compressor module")
+    grp_run.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true", help="Run all delta rule modules")
+    grp_run.add_argument("--all-gated", "--gated", dest="all_gated", action="store_true", help="Run all gated attention modules")
+    grp_run.add_argument("--all-svd", "--svd", dest="all_svd", action="store_true", help="Run all SVD-based modules (attention + compressor)")
+    grp_run.add_argument("--all-ssm", "--ssm", dest="all_ssm", action="store_true", help="Run all SSM / state-space modules")
+    grp_run.add_argument("--all-linear", "--linear", dest="all_linear", action="store_true", help="Run all linear attention modules")
+    grp_run.add_argument("--all-sparse", "--sparse", dest="all_sparse", action="store_true", help="Run all sparse attention modules")
+    grp_run.add_argument("--all-hybrid", "--hybrid", dest="all_hybrid", action="store_true", help="Run all hybrid attention modules")
+    grp_run.add_argument("--all-modules", "--all", dest="all_modules", action="store_true", help="Run EVERY registered module")
+    grp_run.add_argument("--fail-delta", dest="fail_delta", action="store_true", help="Run the 25 FAIL_DELTA modules from the audit report")
+    grp_run.add_argument("--errors-only", dest="errors_only", action="store_true", help="Run only modules that previously errored")
     run_p.add_argument("--no-compression", action="store_true", help="Run baseline uncompressed model")
     run_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model")
     run_p.add_argument("--models", type=str, default=None, help="Comma-separated target models")
@@ -76,10 +85,20 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
     plan_p.add_argument("--module", type=str, default=None)
     plan_p.add_argument("--modules", type=str, default=None)
-    plan_p.add_argument("--all-attention", action="store_true")
-    plan_p.add_argument("--all-compressors", action="store_true")
-    plan_p.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true")
-    plan_p.add_argument("--all", action="store_true")
+    # Module selection shortcuts
+    grp_plan = plan_p.add_argument_group("Module selection shortcuts")
+    grp_plan.add_argument("--all-attn", "--all-attention", dest="all_attn", action="store_true", help="Run every registered attention module")
+    grp_plan.add_argument("--all-comp", "--all-compressors", dest="all_comp", action="store_true", help="Run every registered compressor module")
+    grp_plan.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true", help="Run all delta rule modules")
+    grp_plan.add_argument("--all-gated", "--gated", dest="all_gated", action="store_true", help="Run all gated attention modules")
+    grp_plan.add_argument("--all-svd", "--svd", dest="all_svd", action="store_true", help="Run all SVD-based modules (attention + compressor)")
+    grp_plan.add_argument("--all-ssm", "--ssm", dest="all_ssm", action="store_true", help="Run all SSM / state-space modules")
+    grp_plan.add_argument("--all-linear", "--linear", dest="all_linear", action="store_true", help="Run all linear attention modules")
+    grp_plan.add_argument("--all-sparse", "--sparse", dest="all_sparse", action="store_true", help="Run all sparse attention modules")
+    grp_plan.add_argument("--all-hybrid", "--hybrid", dest="all_hybrid", action="store_true", help="Run all hybrid attention modules")
+    grp_plan.add_argument("--all-modules", "--all", dest="all_modules", action="store_true", help="Run EVERY registered module")
+    grp_plan.add_argument("--fail-delta", dest="fail_delta", action="store_true", help="Run the 25 FAIL_DELTA modules from the audit report")
+    grp_plan.add_argument("--errors-only", dest="errors_only", action="store_true", help="Run only modules that previously errored")
     plan_p.add_argument("--model", type=str, default="distilbert-base-uncased")
     plan_p.add_argument("--models", type=str, default=None)
     plan_p.add_argument("--all-models", action="store_true")
@@ -122,20 +141,23 @@ def handle_list(args: argparse.Namespace) -> None:
 
 
 def handle_plan(args: argparse.Namespace) -> None:
-    # Resolve modules count
-    mod_count = 1
-    if args.all:
-        mod_count = len(ATTENTION_REGISTRY) + len(COMPRESSOR_REGISTRY)
-    elif args.all_attention:
-        mod_count = len(ATTENTION_REGISTRY)
-    elif args.all_compressors:
-        mod_count = len(COMPRESSOR_REGISTRY)
-    elif getattr(args, "all_delta", False):
-        from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
-        orch = BenchmarkOrchestrator(modules="all-delta")
-        mod_count = len(orch.modules)
-    elif args.modules:
-        mod_count = len(args.modules.split(","))
+    from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
+    orch = BenchmarkOrchestrator(
+        modules=args.modules or args.module or "all",
+        delta=getattr(args, "all_delta", False),
+        gated=getattr(args, "all_gated", False),
+        svd=getattr(args, "all_svd", False),
+        ssm=getattr(args, "all_ssm", False),
+        linear=getattr(args, "all_linear", False),
+        sparse=getattr(args, "all_sparse", False),
+        hybrid=getattr(args, "all_hybrid", False),
+        all_attn=getattr(args, "all_attn", False),
+        all_comp=getattr(args, "all_comp", False),
+        all_modules=getattr(args, "all_modules", False),
+        fail_delta=getattr(args, "fail_delta", False),
+        errors_only=getattr(args, "errors_only", False),
+    )
+    mod_count = len(orch.modules)
 
     models_count = 10 if args.all_models else (len(args.models.split(",")) if args.models else 1)
     datasets_count = 22 if args.all_datasets else (len(args.datasets.split(",")) if args.datasets else 1)
@@ -194,12 +216,6 @@ def handle_run(args: argparse.Namespace) -> None:
         mods = [args.module]
     elif args.modules:
         mods = [m.strip() for m in args.modules.split(",")]
-    elif args.all_attention:
-        mods = "all-attention"
-    elif args.all_compressors:
-        mods = "all-compressors"
-    elif getattr(args, "all_delta", False):
-        mods = "all-delta"
 
     ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
@@ -207,6 +223,18 @@ def handle_run(args: argparse.Namespace) -> None:
 
     runner = Runner(
         modules=mods,
+        delta=getattr(args, "all_delta", False),
+        gated=getattr(args, "all_gated", False),
+        svd=getattr(args, "all_svd", False),
+        ssm=getattr(args, "all_ssm", False),
+        linear=getattr(args, "all_linear", False),
+        sparse=getattr(args, "all_sparse", False),
+        hybrid=getattr(args, "all_hybrid", False),
+        all_attn=getattr(args, "all_attn", False),
+        all_comp=getattr(args, "all_comp", False),
+        all_modules=getattr(args, "all_modules", False),
+        fail_delta=getattr(args, "fail_delta", False),
+        errors_only=getattr(args, "errors_only", False),
         models=models,
         datasets=datasets,
         ranks=ranks,
