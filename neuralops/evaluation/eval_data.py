@@ -129,7 +129,10 @@ def get_dataset_batch(
 
                 config = GLUE_TASK_CONFIG[ds]
                 k1, k2 = config["keys"]
-                val_data = load_dataset("glue", ds, split="validation")
+                try:
+                    val_data = load_dataset("nyu-mll/glue", ds, split="validation")
+                except Exception:
+                    val_data = load_dataset("glue", ds, split="validation")
 
                 def tok_fn(ex: dict[str, Any]) -> Any:
                     """Execute tok_fn operation."""
@@ -277,7 +280,10 @@ def build_calibration_loader(
         from datasets import load_dataset
 
         if ds in GLUE_DATASETS:
-            raw = load_dataset("glue", ds, split=f"train[:{n_samples}]")
+            try:
+                raw = load_dataset("nyu-mll/glue", ds, split=f"train[:{n_samples}]")
+            except Exception:
+                raw = load_dataset("glue", ds, split=f"train[:{n_samples}]")
             text_cols = [c for c in raw.column_names if c not in ("label", "idx")]
             if not text_cols:
                 return None, None, None
