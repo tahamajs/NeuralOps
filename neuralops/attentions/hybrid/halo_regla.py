@@ -237,11 +237,19 @@ class HALOReGLAAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-    # ------------------------------------------------------------------
-    # KV-cache helpers  — [FIX-1, FIX-16]
-    # Returns: (k, v, past_len, linear_state)
-    # ------------------------------------------------------------------
-    _read_past_kv = staticmethod(_read_past_kv)
+    @staticmethod
+    def _read_past_kv(
+        past_key_value: Any, layer_idx: int = 0
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any]:
+        """Read past Key, Value, past_len, and linear_state from cache."""
+        k, v, past_len = _read_past_kv(past_key_value, layer_idx)
+        linear_state = None
+        if past_key_value is not None:
+            if hasattr(past_key_value, "_linear_states") and layer_idx < len(past_key_value._linear_states):
+                linear_state = past_key_value._linear_states[layer_idx]
+            elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 3:
+                linear_state = past_key_value[2]
+        return k, v, past_len, linear_state
 
     @staticmethod
     def _write_past_kv(
