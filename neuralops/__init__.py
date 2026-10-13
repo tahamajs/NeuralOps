@@ -274,6 +274,9 @@ from neuralops.api import (
     list_compressors,
     get_attention_class,
     get_compressor_class,
+    export_model,
+    load_exported_model,
+    load_model,
 )
 
 from neuralops.attentions.linear.gla_attention import GLAttention
@@ -307,6 +310,9 @@ __all__ = [
     "replace_attention",
     "create_attention",
     "compress",
+    "export_model",
+    "load_exported_model",
+    "load_model",
     "list_attentions",
     "list_compressors",
     "get_attention_class",
@@ -319,4 +325,5 @@ __all__ = [
     "NumericalError",
     "available_backends",
 ]
+
 

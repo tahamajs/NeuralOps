@@ -36,17 +36,38 @@ def export_model(
     out_path.mkdir(parents=True, exist_ok=True)
     fmt = format.lower().strip()
 
+    # Automatically inspect model metadata if not explicitly provided
+    recorded_metadata = getattr(model, "_neuralops_metadata", None)
+    if recorded_metadata:
+        for entry in recorded_metadata:
+            action = entry.get("action")
+            if action == "replace_attention" and attention_type is None:
+                attention_type = entry.get("attention_type")
+                if rank is None and entry.get("rank") is not None:
+                    rank = entry.get("rank")
+            elif action == "compress" and compression_method is None:
+                compression_method = entry.get("compression_method")
+                if rank is None and entry.get("rank") is not None:
+                    rank = entry.get("rank")
+
+    # If model has config with name_or_path, infer base_model
+    base_name = model_name_or_path or getattr(model, "name_or_path", None)
+    if not base_name and hasattr(model, "config") and hasattr(model.config, "_name_or_path"):
+        base_name = model.config._name_or_path
+
     # Build architecture and surgery metadata
     meta = {
         "format": fmt,
-        "base_model": model_name_or_path or getattr(model, "name_or_path", "unknown"),
+        "base_model": base_name or "unknown",
         "attention_type": attention_type,
         "compression_method": compression_method,
         "rank": rank,
+        "surgery_history": recorded_metadata or [],
         "framework": "neuralops",
         "pytorch_version": torch.__version__,
         "extra_kwargs": kwargs,
     }
+
 
     if fmt == "safetensors":
         try:
@@ -195,4 +216,11 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
     return model, meta
 
 
-__all__ = ["export_model", "load_exported_model"]
+def load_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = None) -> nn.Module:
+    """Convenience function to load and return the reconstructed NeuralOps model instance directly."""
+    model, _ = load_exported_model(export_dir, base_model=base_model)
+    return model
+
+
+__all__ = ["export_model", "load_exported_model", "load_model"]
+

@@ -296,6 +296,22 @@ def execute_single(
 
     # 2. Select and execute Adapter with timeout enforcement
     adapter = None
+    tracker_instance = None
+    tracker_type = kwargs.get("tracker", "none")
+    if tracker_type and tracker_type != "none":
+        try:
+            from neuralops.benchmarks.loggers import create_tracker
+            tracker_instance = create_tracker(
+                tracker_type=tracker_type,
+                project_name=kwargs.get("project_name", "neuralops"),
+                run_name=f"{module}_{model}_{dataset}_{run_id[:8]}",
+                output_dir=out_dir,
+                config=config_dict,
+            )
+            tracker_instance.log_params(config_dict)
+        except Exception as tracker_init_err:
+            run_logger.debug("MLOps tracker initialization failed: %s", tracker_init_err)
+
     try:
         adapter = _select_adapter(
             module_name=module_name,
@@ -312,6 +328,7 @@ def execute_single(
             seed=seed,
             eval_only=eval_only,
             task=task,
+            tracker_instance=tracker_instance,
             **kwargs,
         )
 
@@ -323,6 +340,7 @@ def execute_single(
                 nonlocal run_output
                 run_output = adapter.run()
             except BaseException as ex:
+
                 exec_error.append(ex)
 
         worker_thread = threading.Thread(target=target_worker, daemon=True)
@@ -382,23 +400,14 @@ def execute_single(
         )
 
         # MLOps Telemetry & Logging
-        tracker_type = kwargs.get("tracker", "none")
-        if tracker_type and tracker_type != "none":
+        if tracker_instance is not None:
             try:
-                from neuralops.benchmarks.loggers import create_tracker
-                tracker = create_tracker(
-                    tracker_type=tracker_type,
-                    project_name=kwargs.get("project_name", "neuralops"),
-                    run_name=f"{module}_{model}_{dataset}_{run_id[:8]}",
-                    output_dir=out_dir,
-                    config=config_dict,
-                )
-                tracker.log_params(config_dict)
                 log_payload = {**eval_metrics, **resources_dict}
-                tracker.log_metrics({k: float(v) for k, v in log_payload.items() if isinstance(v, (int, float))})
-                tracker.finish()
+                tracker_instance.log_metrics({k: float(v) for k, v in log_payload.items() if isinstance(v, (int, float))})
+                tracker_instance.finish()
             except Exception as tracker_err:
                 run_logger.debug("MLOps tracker logging failed: %s", tracker_err)
+
 
         return BenchmarkResult(
             run_id=run_id,

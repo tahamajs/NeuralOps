@@ -45,6 +45,13 @@ except ImportError:
     )
     tl = None
 
+# Ensure torch.library custom ops and meta kernels are loaded
+try:
+    import neuralops.core.triton_kernels.op_registry  # noqa: F401
+except Exception:
+    pass
+
+
 
 # ---------------------------------------------------------------------------
 # Constants

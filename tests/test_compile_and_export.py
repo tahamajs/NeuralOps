@@ -110,3 +110,44 @@ def test_export_onnx_and_torchscript():
         assert Path(ts_file).exists()
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def test_full_roundtrip_surgery_compress_export_reload():
+    """Verify end-to-end: surgery -> compress -> export_model -> load_model parity."""
+    from transformers import AutoConfig, AutoModelForSequenceClassification
+
+    config = AutoConfig.from_pretrained("distilbert-base-uncased", num_labels=2)
+    model = AutoModelForSequenceClassification.from_config(config).eval()
+
+    # 1. Surgery
+    model = neuralops.replace_attention(model, "cosformer")
+    assert hasattr(model, "_neuralops_metadata")
+    assert len(model._neuralops_metadata) >= 1
+
+    # 2. Compress
+    model = neuralops.compress(model, method="direct_svd", rank=16)
+    assert len(model._neuralops_metadata) >= 2
+
+    # Dummy inputs
+    dummy_input = torch.randint(0, 1000, (1, 16))
+    with torch.no_grad():
+        orig_out = model(dummy_input).logits
+
+    # 3. Export
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        # Note: export_model should automatically infer metadata from model._neuralops_metadata
+        out_dir = neuralops.export_model(model, tmp_dir, format="safetensors")
+        assert Path(out_dir).exists()
+
+        # 4. Reload via neuralops.load_model with base architecture
+        base_fresh = AutoModelForSequenceClassification.from_config(config).eval()
+        reloaded = neuralops.load_model(out_dir, base_model=base_fresh).eval()
+
+        with torch.no_grad():
+            reloaded_out = reloaded(dummy_input).logits
+
+        torch.testing.assert_close(orig_out, reloaded_out, atol=1e-5, rtol=1e-5)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
