@@ -7,15 +7,55 @@ Chunk-based causal token compression with differentiable selection.
 WHY v4?
 ═══════════════════════════════════════════════════════════════════════════
 
+v3 had three CRITICAL bugs:
+
+  1. CAUSALITY VIOLATION in `_compute_token_importance`
+       The sampled attention used to score tokens had NO causal mask.
+       Query 0 attended to future tokens during prefill → autoregressive
+       property broken.
+
+  2. STE GRADIENT EXPLOSION
+       Adding `0.01 * (ste_norm - ste_norm.detach())` to a softmax
+       distribution produces near-zero but non-zero forward perturbation,
+       and injects meaningless gradients into `score_net`.
+
+  3. RoPE FREEZE during generation
+       `past_len` was inferred from `past_key_value[0].shape[-2]`. Once the
+       cache was compressed, the physical length saturated at `k_keep`,
+       freezing all future RoPE positions at the same index → gibberish.
+
+v4 fixes all three:
+
+  ✅ Chunk-based causal top-k
+       Split the sequence into chunks of size C. Inside each chunk,
+       select the top-k tokens independently. Future tokens cannot
+       influence past chunk selections. Causal-safe by construction.
+
+  ✅ STE via multiplication
+       The STE mask multiplies the attention weights instead of being
+       added. Gradient flows to `score_net` through a clean path.
+
+  ✅ Absolute position tracking
+       `position_ids` is always honored. If missing, a running absolute
+       counter (`seen_tokens`) is maintained on the cache. RoPE always
+       receives correct absolute positions.
+
+  ✅ KV-cache correctness
+       Both tuple caches and HF DynamicCache are updated properly with
+       the ORIGINAL (uncompressed) K/V for correctness. Compression is
+       applied at attention time only.
+
+  ✅ CLS + local window preservation
+       Token 0 is force-kept. The last `local_window` tokens are force-kept
+       inside each chunk for causal decoding.
+
+═══════════════════════════════════════════════════════════════════════════
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from neuralops.core.utils.lora import LoRALinear
+from neuralops.core.utils.rope import apply_rotary_pos_emb, rotate_half, _rotate_half
+from neuralops.core.utils.config import _cfg_get
 
 import logging
 import math
@@ -30,24 +70,23 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
 
-try:
-    from neuralops.core.gqa_utils import repeat_kv
-except ImportError:
+from neuralops.core.utils.gqa import repeat_kv
 
-    def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-        if n_rep == 1:
-            return hidden_states
-        b, h, s, d = hidden_states.shape
-        return (
-            hidden_states[:, :, None, :, :]
-            .expand(b, h, n_rep, s, d)
-            .reshape(b, h * n_rep, s, d)
-        )
 
 
 logger = logging.getLogger(__name__)
 
 
+
+
+# ===========================================================================
+# RoPE (absolute-position aware)
+# ===========================================================================
+
+
+# ===========================================================================
+# LoRALinear
+# ===========================================================================
 
 
 # ===========================================================================
