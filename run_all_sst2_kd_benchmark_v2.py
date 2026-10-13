@@ -71,7 +71,7 @@ def get_args():
 
 def load_data(args, tokenizer):
     log.info("Loading SST-2 dataset...")
-    ds = load_dataset(args.dataset, args.task)
+    ds = load_dataset('nyu-mll/glue', args.task)
     
     def tok(ex):
         return tokenizer(ex["sentence"], truncation=True, max_length=128)
