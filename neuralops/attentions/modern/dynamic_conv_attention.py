@@ -459,6 +459,11 @@ class DynamicConvAttention(BaseAttention):
                 valid = m > -1e4
             else:
                 valid = m > 0
+            # Guarantee valid is always 2-D (B, N) — squeeze() can collapse to 1-D when N==1
+            if valid.dim() == 1:
+                valid = valid.unsqueeze(1)  # (B,) → (B, 1)
+            elif valid.dim() > 2:
+                valid = valid.reshape(B, -1)[..., -N:]
             pad_valid = torch.ones(B, K - 1, device=device, dtype=torch.bool)
             valid_full = torch.cat([pad_valid, valid], dim=1)  # (B, K-1+N)
             valid_window = valid_full.unfold(1, K, 1)  # (B, N, K)
