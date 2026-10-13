@@ -141,10 +141,8 @@ def parse_args() -> BenchmarkConfig:
 
 def main() -> None:
     """CLI execution entrypoint."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-    )
+    from neuralops.utils.logging_config import configure_logging
+    configure_logging(level="INFO", dedup=True)
     config = parse_args()
     runner = KDRunner(config)
     runner.run()
