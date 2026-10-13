@@ -1,46 +1,65 @@
-# NeuralOps Technical Roadmap
+# NeuralOps Strategic Roadmap
 
-This roadmap outlines the major architectural milestones and development objectives for **NeuralOps** — the unified open-source framework for subquadratic attention and deep model compression.
+This document outlines the architectural roadmap, development milestones, and release strategy for **NeuralOps** (`SVD_linear_Attention`).
 
 ---
 
-## 🗺️ Version Roadmap
+## Current Release: v1.3.0 (October 2026) — Complete Consolidation
 
-### ✅ v1.0 — Foundation & Unification (June 2026)
-- [x] Initial public release on PyPI.
-- [x] Core drop-in attention replacement engine (`neuralops.replace_attention`).
-- [x] SVD and low-rank compression pipeline (`neuralops.compress`).
-- [x] Zero-shot attention surgery across 8 transformer architectures.
+The v1.3.0 release completes the fundamental consolidation of all subquadratic attention kernels, model compression algorithms, serving runtimes, and training engines:
 
-### ✅ v1.1 — Triton Acceleration & Benchmarking (September 2026)
-- [x] First fused Triton kernels: `fused_rope`, `gdn_scan`, `gla_scan`, `hgrn2_scan`, `fms_scan`.
-- [x] Knowledge Distillation (KD) teacher-student training engine.
-- [x] Multi-dataset benchmark sweep infrastructure.
+- **131 Attention Mechanisms** verified across 8 taxonomic families.
+- **72 Model Compression Engines** spanning SVD, pruning, quantization, and KV-cache compression.
+- **26 Triton Kernel Modules** with universal CPU/MPS fallbacks.
+- **19-Function Canonical Top-Level API** (`neuralops`).
+- **Full `torch.compile` Compatibility** with custom op Meta/FakeTensor registrations.
+- **Serving Adapters** for vLLM and TGI runtimes.
+- **Zero-Shot Attention Injection** across 8 transformer architectures (BERT, RoBERTa, DistilBERT, GPT-2, LLaMA, Mistral, Qwen2, T5).
+- **Advanced Manifold Optimizers**: `Muon` (Newton-Schulz orthogonalization) and `RiemannianStiefelOptimizer`.
 
-### ✅ v1.2 — Unified CLI & Registry Polish (October 2026)
-- [x] Single entrypoint CLI (`neuralops run`, `plan`, `list`, `verify`, `resume`, `results`).
-- [x] Formalized 131 canonical attention mechanisms and 72 model compression engines.
-- [x] Deprecated 657 legacy aliases with backward-compatible dynamic redirection.
-- [x] Full root directory consolidation.
+---
 
-### 🚀 v1.3 — Production MLOps & Compilation (Current Release - October 2026)
-- [x] **`torch.compile` Compatibility**: Zero graph-break custom op wrappers and Meta/FakeTensor shape registration (`neuralops/core/triton_kernels/op_registry.py`).
-- [x] **Production Export Subsystem**: `neuralops export` generating Safetensors with `neuralops_config.json`, deterministic CPU ONNX, and TorchScript.
-- [x] **Enterprise MLOps**: Integrated Weights & Biases, MLflow, and TensorBoard experiment tracking.
-- [x] **Serving Adapters**: Native hooks for vLLM paged KV cache tables and TGI container runtimes.
-- [x] **Parity Test Suite**: Strict numerical parity verification between Triton kernels and PyTorch fallbacks across FP32, FP16, and BF16.
+## v1.4.0 (Q1 2027) — Long-Context Scaling & Parallel Attention
 
-### 🔮 v1.4 — Native FP8 / INT4 Quantization & Blackwell Architecture (Q1 2027)
-- [ ] Native FP8 (E4M3 / E5M2) GEMM and attention kernels for NVIDIA Hopper & Blackwell (H100, H200, B200).
-- [ ] 4-bit block-wise quantization with Triton dequantization fusion.
-- [ ] Native AMD ROCm CDNA3 / ROCm 6.x Triton kernel tuning and autotuner matrix cache.
+### Objectives
+- **Chunkwise Parallel Linear Attention**: Scale causal recurrent kernels across multiple GPUs using Megatron-style context parallelism for sequences exceeding 128k tokens.
+- **Selective State Scan v2**: Multi-head associative scan optimizations for Mamba-2 and Griffin architectures.
+- **Full GLUE & LRA Publication Sweeps**: Comprehensive empirical Pareto frontiers across all 131 attention mechanisms.
+- **Automated Hyperparameter Tuner**: Bayesian search integration with Ray Tune for layerwise hybrid allocation.
 
-### 🔮 v1.5 — Native vLLM Plugin & GGUF Quantization Export (Q2 2027)
-- [ ] First-class vLLM plugin package (`vllm-plugin-neuralops`) enabling instant serving of any of the 131 subquadratic attention models in high-throughput clusters.
-- [ ] Direct export to GGUF format for llama.cpp, Ollama, and local edge deployment.
-- [ ] AWQ and GPTQ co-compression support alongside SVD rank reduction.
+### Planned Deliverables
+- `neuralops.parallel.ContextParallelAttention` module.
+- Full Long Range Arena (LRA) benchmarking scripts (ListOps, Text, Retrieval, Image, Pathfinder).
+- Pre-trained checkpoints for subquadratic LLaMA-3-8B and Mistral-7B published to Hugging Face Hub.
 
-### 🔮 v2.0 — Distributed Sequence Parallelism & Ultra-Long Context (Q3-Q4 2027)
-- [ ] DeepSpeed Ulysses and Ring Attention sequence parallelism for 1M+ token context lengths.
-- [ ] Unified hybrid attention compiler (automatically discovering optimal layer-wise mixtures of linear, sliding window, and full attention).
-- [ ] Fully asynchronous, pipeline-parallel knowledge distillation across multi-node clusters.
+---
+
+## v1.5.0 (Q2 2027) — Hardware & Edge Expansion
+
+### Objectives
+- **Intel XPU & Apple Metal Shaders**: Native Metal performance shaders for macOS Apple Silicon.
+- **Native vLLM C++ Custom Op Plugin**: Zero-overhead paged KV cache integration directly within the vLLM C++ runtime.
+- **Quantization-Aware Training (QAT)**: Fused FP8 and INT4 low-rank factorizations for NVIDIA Blackwell GPUs.
+- **GGUF Export Pipeline**: Standalone quantized export format for local edge execution via llama.cpp.
+
+### Planned Deliverables
+- `neuralops.export.export_gguf(...)` factory.
+- Metal-accelerated scan kernels for Apple M-series chips.
+- Blackwell FP8 tensor core attention kernels.
+
+---
+
+## v2.0.0 (Q4 2027) — Major Architectural Evolution
+
+### Objectives
+- **1M+ Token Sequence Parallelism**: Ring-attention hybrid linear scans.
+- **Strict Type-Safe Specification**: Removal of legacy deprecated aliases in favor of static type checking.
+- **Native Asynchronous Distributed Benchmarking**: Fault-tolerant multi-node benchmark coordinator.
+
+---
+
+## Guiding Architectural Principles
+
+1. **Deterministic Portability**: Every GPU-accelerated kernel must have a byte-for-byte or mathematically equivalent PyTorch fallback that executes identically on CPU and Apple Silicon.
+2. **Zero Overhead Surgery**: Attention transplantation and weight surgery must never disrupt the parent model's forward signature or Hugging Face compatibility.
+3. **Reproducibility First**: All benchmark runs record complete environment manifests, RNG seeds, and telemetry to immutable `.jsonl` artifacts.
