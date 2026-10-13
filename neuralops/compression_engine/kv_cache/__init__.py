@@ -75,3 +75,11 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.kv_cache import aatc_xkv_compressor
+from neuralops.compression_engine.kv_cache import cachenotes_compressor
+from neuralops.compression_engine.kv_cache import delta_kv
+from neuralops.compression_engine.kv_cache import hybridkv_compressor
+from neuralops.compression_engine.kv_cache import kvtc_compressor
+from neuralops.compression_engine.kv_cache import zerokv_neo_compressor

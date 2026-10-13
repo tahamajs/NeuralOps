@@ -100,3 +100,15 @@ __all__ += [
     "bayesian_signed_rank_test",
     "run_full_statistical_analysis",
 ]
+
+# Auto-wired package members
+from neuralops.analysis import comparison
+from neuralops.analysis import module_analysis
+from neuralops.analysis import generate_all_modules_analysis
+from neuralops.analysis import generate_sweep_publication_artifacts
+from neuralops.analysis import layerwise_analyzer
+from neuralops.analysis import metrics
+from neuralops.analysis import model_comparison
+from neuralops.analysis import plotting
+from neuralops.analysis import report_generator
+from neuralops.analysis import utils

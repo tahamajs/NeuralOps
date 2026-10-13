@@ -156,3 +156,16 @@ for _sub in _SUBPACKAGES:
                         __all__.append(_attr)
     except Exception as _e:
         logger.debug(f"Failed importing subpackage {_sub}: {_e}")
+
+# Auto-wired package members
+from neuralops.attentions import adaptive
+from neuralops.attentions import dense
+from neuralops.attentions import experimental
+from neuralops.attentions import fast_kernels
+from neuralops.attentions import gated
+from neuralops.attentions import hybrid
+from neuralops.attentions import linear
+from neuralops.attentions import modern
+from neuralops.attentions import sparse
+from neuralops.attentions import ssm
+from neuralops.attentions import svd

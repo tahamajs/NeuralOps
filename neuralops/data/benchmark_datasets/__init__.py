@@ -48,3 +48,12 @@ __all__ = [
     "_generate_synthetic_lambada",
     "_generate_synthetic_glue",
 ]
+
+# Auto-wired package members
+from neuralops.data.benchmark_datasets import loaders
+from neuralops.data.benchmark_datasets import manifest
+from neuralops.data.benchmark_datasets import synthetic
+
+from neuralops.data.benchmark_datasets import loaders
+from neuralops.data.benchmark_datasets import manifest
+from neuralops.data.benchmark_datasets import synthetic

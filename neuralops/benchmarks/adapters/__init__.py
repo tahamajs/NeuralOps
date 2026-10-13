@@ -11,3 +11,9 @@ __all__ = [
     "ZeroShotAdapter",
     "RulerAdapter",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.adapters import classification
+from neuralops.benchmarks.adapters import perplexity
+from neuralops.benchmarks.adapters import ruler
+from neuralops.benchmarks.adapters import zeroshot

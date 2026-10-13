@@ -45,3 +45,10 @@ __all__ = [
     "render_csv_export",
     "render_json_export",
 ]
+
+# Auto-wired package members
+from neuralops.runners.monitor import endpoints
+from neuralops.runners.monitor import rendering
+from neuralops.runners.monitor import server
+from neuralops.runners.monitor import stats
+from neuralops.runners.monitor import telemetry

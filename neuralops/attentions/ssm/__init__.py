@@ -207,3 +207,22 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.ssm import goldfinch_ahn
+from neuralops.attentions.ssm import griffin_ssd
+from neuralops.attentions.ssm import hymba_transx
+from neuralops.attentions.ssm import jamba
+from neuralops.attentions.ssm import jamba_info
+from neuralops.attentions.ssm import mamba_block
+from neuralops.attentions.ssm import mamba_svd_flash
+from neuralops.attentions.ssm import nexus
+from neuralops.attentions.ssm import orion
+from neuralops.attentions.ssm import phantom
+from neuralops.attentions.ssm import samba_m3
+from neuralops.attentions.ssm import samba_moe
+from neuralops.attentions.ssm import selective_ssm
+from neuralops.attentions.ssm import simple_ssm
+from neuralops.attentions.ssm import spectral_mamba
+from neuralops.attentions.ssm import upi_stuffed_mamba
+from neuralops.attentions.ssm import vspec

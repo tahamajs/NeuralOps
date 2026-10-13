@@ -46,3 +46,12 @@ __all__ = [
     "bootstrap_ci",
     "fdr_correction",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.core import arguments
+from neuralops.benchmarks.core import data_loader
+from neuralops.benchmarks.core import evaluation
+from neuralops.benchmarks.core import kd
+from neuralops.benchmarks.core import model_loader
+from neuralops.benchmarks.core import stats
+from neuralops.benchmarks.core import training

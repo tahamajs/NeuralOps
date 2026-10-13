@@ -95,3 +95,26 @@ __all__ += [
 
 # Checkpoint utilities
 from .checkpoint import CheckpointManager  # noqa: E402
+
+# Auto-wired package members
+from neuralops.utils import compat
+from neuralops.utils import architecture
+from neuralops.utils import attention_profiler
+from neuralops.utils import attention_utils
+from neuralops.utils import checkpoint
+from neuralops.utils import compat
+from neuralops.utils import config
+from neuralops.utils import device
+from neuralops.utils import helpers
+from neuralops.utils import hf_git_exporter
+from neuralops.utils import layer_norm_fix
+from neuralops.utils import logger
+from neuralops.utils import lora
+from neuralops.utils import metrics
+from neuralops.utils import model_family
+from neuralops.utils import paths
+from neuralops.utils import profiler
+from neuralops.utils import qwen_compat
+from neuralops.utils import replace_attention
+from neuralops.utils import results_saver
+from neuralops.utils import seed

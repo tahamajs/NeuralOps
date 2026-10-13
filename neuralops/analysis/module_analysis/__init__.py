@@ -48,3 +48,10 @@ __all__ = [
     "run_all_modules_analysis",
     "main",
 ]
+
+# Auto-wired package members
+from neuralops.analysis.module_analysis import aggregators
+from neuralops.analysis.module_analysis import constants
+from neuralops.analysis.module_analysis import main
+from neuralops.analysis.module_analysis import parsers
+from neuralops.analysis.module_analysis import reporters

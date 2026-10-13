@@ -63,3 +63,10 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.fast_kernels import adasplash_attention
+from neuralops.attentions.fast_kernels import flash_attention3
+from neuralops.attentions.fast_kernels import flash_attention3_fp8
+from neuralops.attentions.fast_kernels import soa_attn
+from neuralops.attentions.fast_kernels import xattention

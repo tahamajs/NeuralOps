@@ -219,3 +219,23 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.svd import aa_svd_compressor
+from neuralops.compression_engine.svd import adaptive_ranks
+from neuralops.compression_engine.svd import adasvd_compressor
+from neuralops.compression_engine.svd import direct_svd
+from neuralops.compression_engine.svd import dobi_svd
+from neuralops.compression_engine.svd import dynamic_rank
+from neuralops.compression_engine.svd import entropy_budget_allocation
+from neuralops.compression_engine.svd import erc_svd
+from neuralops.compression_engine.svd import fwsvd_compressor
+from neuralops.compression_engine.svd import gfws_d_compressor
+from neuralops.compression_engine.svd import hybrid_svd_layer
+from neuralops.compression_engine.svd import optimal_subspace_projection
+from neuralops.compression_engine.svd import residual_svd_compressor
+from neuralops.compression_engine.svd import saes_svd_v2
+from neuralops.compression_engine.svd import subspace_projection
+from neuralops.compression_engine.svd import svd_linear
+from neuralops.compression_engine.svd import swift_svd
+from neuralops.compression_engine.svd import swift_svd_act

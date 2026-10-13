@@ -27,3 +27,7 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.dense import full_attention
+from neuralops.attentions.dense import zeros_attention

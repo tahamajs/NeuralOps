@@ -31,3 +31,6 @@ __all__ = [
     "T5FamilyAdapter",
     "MODEL_ADAPTER_REGISTRY",
 ]
+
+# Auto-wired package members
+from neuralops.benchmarks.models import loader

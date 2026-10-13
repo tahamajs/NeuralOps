@@ -85,3 +85,22 @@ __all__ += [
     "generate_zipfian_markov_tokens",
     "compute_empirical_entropy",
 ]
+
+# Auto-wired package members
+from neuralops.data import benchmark_datasets
+from neuralops.data import augmentation
+from neuralops.data import base
+from neuralops.data import benchmark_datasets
+from neuralops.data import cached_tensors
+from neuralops.data import custom
+from neuralops.data import custom_loader
+from neuralops.data import dataset_discovery
+from neuralops.data import dataset_loader
+from neuralops.data import glue
+from neuralops.data import glue_loader
+from neuralops.data import multi_choice
+from neuralops.data import prepare_datasets
+from neuralops.data import preprocessing
+from neuralops.data import synthetic_generator
+from neuralops.data import task_mapper
+from neuralops.data import validation

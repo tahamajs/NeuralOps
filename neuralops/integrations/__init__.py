@@ -15,3 +15,8 @@ __all__ = [
     "get_deepspeed_config",
     "apply_fsdp_wrapping",
 ]
+
+# Auto-wired package members
+from neuralops.integrations import distributed_compile
+from neuralops.integrations import hf_automodel
+from neuralops.integrations import serving
