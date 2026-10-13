@@ -4,6 +4,7 @@ Aegis-Hybrid Attention — Production-Hardened (v3).
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import FactorizedLinear
 from neuralops.core.common import _detect_decoder, _env_flag, _env_float
 

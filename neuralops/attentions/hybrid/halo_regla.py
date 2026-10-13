@@ -7,6 +7,7 @@ Architecture: Hybrid Dense Softmax + Linear Attention with adaptive per-head gat
 """
 
 from __future__ import annotations
+from neuralops.core.common import _read_past_kv
 from neuralops.core.common import _cfg_get
 from neuralops.core.common import _unpack_weight_bias
 
