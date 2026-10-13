@@ -113,6 +113,14 @@ benchmark = [
     "pandas>=2.0.0",
 ]
 
+# MLOps & Experiment Tracking
+mlops = [
+    "wandb>=0.16.0",
+    "mlflow>=2.10.0",
+    "tensorboard>=2.15.0",
+    "accelerate>=0.28.0",
+]
+
 # Development
 dev = [
     "pytest>=7.4.0",
