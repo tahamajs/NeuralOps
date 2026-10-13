@@ -500,7 +500,7 @@ class QCQAAttention(BaseAttention):
             k_new = k_rot.permute(0, 2, 1, 3).contiguous()
 
         # ---- KV cache ----
-        past_k, past_v = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None)
+        past_k, past_v, _ = self._read_past_kv(past_key_value, layer_idx) if not is_cross else (None, None, 0)
 
         if past_k is not None and past_v is not None and not is_cross:
             K_cat = torch.cat([past_k.to(k_new.dtype), k_new], dim=1)
