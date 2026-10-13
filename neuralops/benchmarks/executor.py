@@ -260,6 +260,16 @@ def execute_single(
                 timed_out=False,
             )
 
+    # Distributed backend checking via accelerate
+    dist_backend = (kwargs.get("distributed_backend") or kwargs.get("distributed") or "none").lower()
+    if dist_backend in ("accelerate", "ddp", "fsdp", "deepspeed"):
+        try:
+            import accelerate
+            run_logger.info("Distributed acceleration backend '%s' detected (accelerate %s).", dist_backend, getattr(accelerate, "__version__", ""))
+        except ImportError:
+            run_logger.warning("Distributed backend '%s' requested but 'accelerate' package is not installed. Falling back to single-device execution.", dist_backend)
+            kwargs["distributed_backend"] = "none"
+
     target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     if mod_dict.get("requires_cuda", False) and not torch.cuda.is_available() and target_device == "cpu":
         duration_s = time.perf_counter() - start_t
