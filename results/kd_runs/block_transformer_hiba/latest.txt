@@ -1,1 +1,5 @@
-/mnt/d/SVD_linear_Attention/results/kd_runs/block_transformer_hiba/20261011_215721_bs12_seq256_lr3e-04_C
+<<<<<<< HEAD
+/home/tahoora/Project/results/kd_runs/block_transformer_hiba/20261012_223236_bs8_seq256_lr3e-04_C
+=======
+/mnt/d/SVD_linear_Attention/results/kd_runs/block_transformer_hiba/20261012_222945_bs8_seq256_lr3e-04_C
+>>>>>>> eef02d50ae (add results)

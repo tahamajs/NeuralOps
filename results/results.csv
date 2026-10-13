@@ -205,3 +205,17 @@ kd_cosformer_attention_C_20261012_205225,cosformer_attention__gpt2__wikitext2__r
 kd_tri_branch_hybrid_C_20261012_205626,tri_branch_hybrid__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T20:57:26.575506+00:00,success,tri_branch_hybrid,attention,gpt2,wikitext2,32,finetune,,,,4007.32,-336.18,-9.25,,2829.53,5041c2d3885a6be4
 kd_cosformer_C_20261012_220706,cosformer__gpt2__wikitext2__rank32__f6cb061edc56,2026-10-12T22:07:35.521397+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,36.44,0.01,28.13,,6566.51,643a52839479a745
 kd_cosformer_C_20261012_220805,cosformer__gpt2__wikitext2__rank32__8563a57c260b,2026-10-12T22:08:47.218500+00:00,success,cosformer,attention,gpt2,wikitext2,32,finetune,,,,36.16,-0.01,0.0,,7446.92,ffc0e1ff5309471b
+<<<<<<< HEAD
+kd_block_transformer_hiba_C_20261012_222648,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:29:10.660803+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,64.07,12.26,30.57,,5399.57,e9a5084fc4950658
+kd_block_transformer_hiba_C_20261012_222933,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:32:02.421555+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,63.51,12.82,31.96,,5399.82,68552e03da76a158
+kd_block_transformer_hiba_C_20261012_223236,block_transformer_hiba__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:34:49.643346+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,64.67,11.47,28.73,,5935.74,bb2d31f65645135d
+kd_svd_linear_attn_C_20261012_224655,svd_linear_attn__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T22:49:01.783671+00:00,success,svd_linear_attn,attention,gpt2,wikitext2,32,finetune,,,,393.67,2935.76,90.37,,5570.63,ecf90c04e2ea3556
+kd_qcqa_attention_C_20261012_225935,qcqa_attention__gpt2__wikitext2__rank32__7117f8a94578,2026-10-12T23:01:04.980015+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,finetune,,,,38.38,1.32,37.93,,5755.56,bbc7874e83e9dfd0
+=======
+kd_svd_linear_attn_C_20261012_221239,svd_linear_attn__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T22:14:53.823354+00:00,success,svd_linear_attn,attention,gpt2,wikitext2,32,finetune,,,,164.46,3463.98,96.57,,5382.41,3d73222c78c616e8
+kd_svd_linear_inject_C_20261012_221506,svd_linear_inject__gpt2__wikitext2__rank32__7cdc20fee34c,2026-10-12T22:17:23.509685+00:00,success,svd_linear_inject,attention,gpt2,wikitext2,32,finetune,,,,165.92,3460.17,96.52,,5382.41,e7062faf4c0ffe62
+kd_block_transformer_hiba_C_20261012_222945,block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T22:30:29.708063+00:00,success,block_transformer_hiba,attention,gpt2,wikitext2,32,finetune,,,,63.84,12.49,31.13,,5152.62,260a7e32a869553f
+kd_eat_C_20261012_230143,eat__gpt2__wikitext2__rank32__3dbf5f5dbe1e,2026-10-12T23:02:13.393587+00:00,success,eat,attention,gpt2,wikitext2,32,finetune,,,,36.52,0.04,11.43,,3325.47,dbd3fe328deb2179
+kd_eat_attention_C_20261012_230233,eat_attention__gpt2__wikitext2__rank32__3dbf5f5dbe1e,2026-10-12T23:03:03.074722+00:00,success,eat_attention,attention,gpt2,wikitext2,32,finetune,,,,36.51,0.02,6.25,,3325.47,a1ac54cd11e27fe5
+kd_qcqa_attention_C_20261012_230139,qcqa_attention__gpt2__wikitext2__rank32__d5ddb9bfdae7,2026-10-12T23:04:11.946533+00:00,success,qcqa_attention,attention,gpt2,wikitext2,32,finetune,,,,38.91,0.94,25.82,,4788.46,a84a1bd688000522
+>>>>>>> eef02d50ae (add results)

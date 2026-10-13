@@ -1,0 +1,152 @@
+{
+  "run_metadata": {
+    "run_id": "kd_block_transformer_hiba_C_20261012_203444",
+    "run_name": "kd_block_transformer_hiba_gpt2_C",
+    "timestamp_start": "2026-10-12T20:36:02.917384+00:00",
+    "timestamp_end": "2026-10-12T20:36:02.917395+00:00",
+    "wall_clock_duration_s": 0.0,
+    "total_duration_s": 0.0,
+    "training_duration_s": 0.0,
+    "evaluation_duration_s": 0.0,
+    "git_commit": "0d365d9f33dff13fb6e60127f954116799d62054",
+    "git_commit_short": "0d365d9f33",
+    "git_branch": "main",
+    "git_dirty": true,
+    "git_diff": ".../attentions/adaptive/adaptive_span_attention.py |     16 +-\n .../attentions/adaptive/block_transformer_hiba.py  |     22 +-\n neuralops/attentions/adaptive/infini_attention.py  |      8 +-\n neuralops/attentions/adaptive/lola_attention.py    |     23 +-\n .../adaptive/progressive_token_pruning.py          |     27 +-\n neuralops/attentions/adaptive/sink_attention.py    |     27 +-\n .../attentions/adaptive/span_expanded_attention.py |      8 +-\n .../attentions/adaptive/squeezing_heads_distill.py |      8 +-\n .../adaptive/token_compressed_attention.py         |      8 +-\n neuralops/attentions/dense/full_attention.py       |     22 +-\n neuralops/attentions/dense/zeros_attention.py      |      8 +-\n .../attentions/experimental/template_attention.py  |     42 +-\n .../attentions/fast_kernels/flash_attention3.py    |     20 +-\n .../fast_kernels/flash_attention3_fp8.py           |     20 +-\n neuralops/attentions/fast_kernels/soa_attn.py      |     24 +-\n neuralops/attentions/fast_kernels/xattention.py    |      8 +-\n .../attentions/gated/decay_linear_attention.py     |     48 +-\n neuralops/attentions/gated/gated_delta_net.py      |     30 +-\n neuralops/attentions/gated/hgrn2_gated_deltanet.py |     27 +-\n neuralops/attentions/gated/hgrn2_gated_layer.py    |     10 +-\n neuralops/attentions/gated/hgrn2_gated_outer.py    |      8 +-\n neuralops/attentions/gated/hla_attention.py        |      8 +-\n neuralops/attentions/gated/kda_attention.py        |      8 +-\n neuralops/attentions/hybrid/fusion_attn.py         |     56 +-\n neuralops/attentions/hybrid/granite_hybrid.py      |     28 +-\n neuralops/attentions/hybrid/halo_regla.py          |     19 +-\n neuralops/attentions/hybrid/hybrid_attention.py    |      9 +-\n .../attentions/hybrid/landmark_local_attention.py  |     17 +-\n neuralops/attentions/hybrid/mixattention_moska.py  |     16 +-\n .../hybrid/optimized_hybrid_attention.py           |      8 +-\n .../hybrid/positive_kernel_linear_attention.py     |      8 +-\n .../hybrid/refined_landmark_attention.py           |     17 +-\n .../attentions/hybrid/spectron_fp8_attention.py    |     11 +-\n .../hybrid/split_head_hybrid_attention.py          |      8 +-\n neuralops/attentions/linear/chela_slay.py          |     25 +-\n neuralops/attentions/linear/galerkin_attention.py  |     18 +-\n neuralops/attentions/linear/nasc_attention.py      |     29 +-\n neuralops/attentions/linear/nystrom_attention.py   |     20 +-\n neuralops/attentions/linear/performer_attention.py |     17 +-\n neuralops/attentions/linear/primal_attention.py    |      8 +-\n neuralops/attentions/linear/rala_attention.py      |     25 +-\n neuralops/attentions/linear/rpc_attention.py       |     17 +-\n neuralops/attentions/linear/spectra_v2.py          |     36 +-\n .../attentions/linear/spectraformer_attention.py   |      8 +-\n neuralops/attentions/linear/spectron.py            |     28 +-\n .../attentions/linear/tlinformer_attention.py      |     18 +-\n neuralops/attentions/linear/tpa_attention.py       |      8 +-\n neuralops/attentions/modern/alibi.py               |     27 +-\n neuralops/attentions/modern/cross_attention.py     |     45 +-\n .../attentions/modern/dynamic_conv_attention.py    |     46 +-\n neuralops/attentions/modern/gqa_attention.py       |     45 +-\n neuralops/attentions/modern/mla_attention.py       |     25 +-\n neuralops/attentions/modern/mqa.py                 |     26 +-\n neuralops/attentions/modern/nha_attention.py       |     24 +-\n neuralops/attentions/modern/qcqa_attention.py      |     35 +-\n neuralops/attentions/modern/unified_rope.py        |      8 +-\n neuralops/attentions/modern/vig_attention.py       |     27 +-\n neuralops/attentions/modern/wgqa_attention.py      |     18 +-\n .../attentions/sparse/adaptive_sparse_attention.py |      8 +-\n neuralops/attentions/sparse/cluster_attention.py   |      8 +-\n neuralops/attentions/sparse/expert_choice_moe.py   |     10 +-\n neuralops/attentions/sparse/hamming_attention.py   |     32 +-\n neuralops/attentions/sparse/lsh_attention.py       |      9 +-\n neuralops/attentions/sparse/moba_attention.py      |     29 +-\n neuralops/attentions/sparse/moe_deltakv_paged.py   |      8 +-\n neuralops/attentions/sparse/nsa_attention.py       |     22 +-\n neuralops/attentions/sparse/padre_attention.py     |      8 +-\n neuralops/attentions/sparse/routing_attention.py   |     25 +-\n neuralops/attentions/ssm/goldfinch_ahn.py          |     16 +-\n neuralops/attentions/ssm/griffin_ssd.py            |     19 +-\n neuralops/attentions/ssm/hymba_transx.py           |     16 +-\n neuralops/attentions/ssm/jamba_info.py             |      8 +-\n neuralops/attentions/ssm/mamba_svd_flash.py        |     16 +-\n neuralops/attentions/ssm/nexus.py                  |      8 +-\n neuralops/attentions/ssm/orion.py                  |     17 +-\n neuralops/attentions/ssm/phantom.py                |     25 +-\n neuralops/attentions/ssm/samba_m3.py               |     19 +-\n neuralops/attentions/ssm/selective_ssm.py          |     28 +-\n neuralops/attentions/ssm/simple_ssm.py             |      9 +-\n neuralops/attentions/ssm/spectral_mamba.py         |     18 +-\n neuralops/attentions/ssm/vspec.py                  |     12 +-\n neuralops/attentions/svd/adaptive_svd_attention.py |      8 +-\n neuralops/attentions/svd/asvd_attention.py         |     12 +-\n .../attentions/svd/factorised_matrix_state.py      |     20 +-\n neuralops/attentions/svd/lora_attention.py         |     22 +-\n neuralops/attentions/svd/minimal_nova.py           |      8 +-\n neuralops/attentions/svd/minimal_svd.py            |      8 +-\n neuralops/attentions/svd/residual_svd_attention.py |     14 +-\n neuralops/attentions/svd/salt_attention.py         |     33 +-\n neuralops/attentions/svd/svd_attention.py          |      8 +-\n neuralops/attentions/svd/svd_compressed.py         |     46 +-\n neuralops/attentions/svd/svd_linear_attention.py   |     33 +-\n neuralops/attentions/svd/svd_llm_v2_attention.py   |     20 +-\n neuralops/attentions/svd/svd_mamba.py              |     18 +-\n .../attentions/svd/svd_projection_attention.py     |     33 +-\n neuralops/benchmarks/_legacy/kd_quick_test.py      |     54 +-\n neuralops/utils/replace_attention.py               |     59 +-\n results/delta_sweep/attention_aegis_hybrid.err     |     27 +\n results/delta_sweep/attention_aegis_hybrid.json    |      4 +-\n results/delta_sweep/attention_aegis_hybrid.log     |     48 +\n .../delta_sweep/attention_aegis_spectron_fp8.err   |     54 +-\n .../delta_sweep/attention_aegis_spectron_fp8.json  |      6 +-\n .../delta_sweep/attention_aegis_spectron_fp8.log   |     46 +-\n results/delta_sweep/attention_aegis_v1.err         |     16 +-\n results/delta_sweep/attention_aegis_v1.json        |      8 +-\n results/delta_sweep/attention_aegis_v1.log         |    125 +-\n results/delta_sweep/attention_aegis_v2.err         |     16 +-\n results/delta_sweep/attention_aegis_v2.json        |      8 +-\n results/delta_sweep/attention_aegis_v2.log         |    133 +-\n results/delta_sweep/attention_aegis_v3.json        |      8 +-\n results/delta_sweep/attention_aegis_v3.log         |     86 +-\n results/delta_sweep/attention_aegis_v4.err         |     22 +-\n results/delta_sweep/attention_aegis_v4.json        |      8 +-\n results/delta_sweep/attention_aegis_v4.log         |    100 +-\n results/delta_sweep/attention_aegis_v5.err         |     15 +-\n results/delta_sweep/attention_aegis_v5.json        |      6 +-\n results/delta_sweep/attention_aegis_v5.log         |     30 -\n .../attention_factorised_matrix_state.err          |     74 +-\n .../attention_factorised_matrix_state.json         |     11 +-\n .../attention_factorised_matrix_state.log          |     73 -\n results/delta_sweep/attention_full.err             |     18 +-\n results/delta_sweep/attention_full.json            |     11 +-\n results/delta_sweep/attention_full.log             |     37 -\n .../attention_gated_linear_attention.err           |     21 +-\n .../attention_gated_linear_attention.json          |      4 +-\n .../attention_gated_linear_attention.log           |     49 -\n .../delta_sweep/attention_gated_linear_attn.err    |     43 +-\n .../delta_sweep/attention_gated_linear_attn.json   |      4 +-\n .../delta_sweep/attention_gated_linear_attn.log    |     30 -\n results/delta_sweep/attention_hgrn2_outer.err      |     43 +-\n results/delta_sweep/attention_hgrn2_outer.json     |      4 +-\n results/delta_sweep/attention_hgrn2_outer.log      |     30 -\n results/delta_sweep/attention_hybrid_attention.err |     17 +-\n .../delta_sweep/attention_hybrid_attention.json    |     11 +-\n results/delta_sweep/attention_hybrid_attention.log |     73 -\n results/delta_sweep/attention_inject_leka_v1.err   |     23 +-\n results/delta_sweep/attention_inject_leka_v1.json  |     11 +-\n results/delta_sweep/attention_inject_leka_v1.log   |    150 -\n results/delta_sweep/attention_kda_attention.err    |     17 +-\n results/delta_sweep/attention_kda_attention.json   |     10 +-\n results/delta_sweep/attention_kda_attention.log    |     97 -\n results/delta_sweep/attention_nexus.err            |     17 +-\n results/delta_sweep/attention_nexus.json           |     10 +-\n results/delta_sweep/attention_nexus.log            |    102 -\n results/delta_sweep/attention_rala_attention.err   |     17 +-\n results/delta_sweep/attention_rala_attention.json  |     10 +-\n results/delta_sweep/attention_rala_attention.log   |     97 -\n results/delta_sweep/attention_rala_compressor.err  |     17 +-\n results/delta_sweep/attention_rala_compressor.json |     10 +-\n results/delta_sweep/attention_rala_compressor.log  |     97 -\n results/delta_sweep/attention_selective_ssm.err    |     19 +-\n results/delta_sweep/attention_selective_ssm.json   |     10 +-\n results/delta_sweep/attention_selective_ssm.log    |   2345 -\n results/delta_sweep/attention_simple_ssm.err       |     19 +-\n results/delta_sweep/attention_simple_ssm.json      |     10 +-\n results/delta_sweep/attention_simple_ssm.log       |   2251 -\n results/delta_sweep/attention_spectron_fp8.err     |     19 +-\n results/delta_sweep/attention_spectron_fp8.json    |     10 +-\n results/delta_sweep/attention_spectron_fp8.log     |     78 -\n results/delta_sweep/attention_svd_linear.err       |     23 +-\n results/delta_sweep/attention_svd_linear.json      |      6 +-\n results/delta_sweep/attention_svd_linear.log       |     25 -\n results/delta_sweep/attention_svd_linear_attn.err  |      6 +-\n results/delta_sweep/attention_svd_linear_attn.json |      4 +-\n .../delta_sweep/attention_svd_linear_inject.err    |      6 +-\n .../delta_sweep/attention_svd_linear_inject.json   |      4 +-\n results/delta_sweep/attention_svd_mamba.err        |     19 +-\n results/delta_sweep/attention_svd_mamba.json       |     10 +-\n results/delta_sweep/attention_svd_mamba.log        |     75 -\n .../delta_sweep/attention_tri_branch_hybrid.err    |     17 +-\n .../delta_sweep/attention_tri_branch_hybrid.json   |     10 +-\n .../delta_sweep/attention_tri_branch_hybrid.log    |     97 -\n results/delta_sweep/attention_zeros_attention.err  |     17 +-\n results/delta_sweep/attention_zeros_attention.json |     10 +-\n results/delta_sweep/attention_zeros_attention.log  |     68 -\n .../delta_sweep/compressor_aa_svd_compressor.err   |     41 +-\n .../delta_sweep/compressor_aa_svd_compressor.json  |     10 +-\n .../delta_sweep/compressor_aa_svd_compressor.log   |    115 +-\n results/delta_sweep/summary.csv                    |     54 +-\n results/kd_runs/block_transformer_hiba/latest.txt  |      2 +-\n results/kd_runs/registry.json                      | 845649 +-----------------\n results/results.csv                                |      1 +\n results/results.parquet                            |    Bin 29106 -> 29163 bytes\n 183 files changed, 2594 insertions(+), 852416 deletions(-)",
+    "session_id": "0cf81b8d-0f01-4ba7-a126-5ce592172a4c",
+    "parent_run_id": null
+  },
+  "module": {
+    "name": "block_transformer_hiba",
+    "type": "attention",
+    "rank": 32
+  },
+  "model": {
+    "name": "gpt2"
+  },
+  "dataset": {
+    "name": "wikitext2",
+    "task_type": "language_modeling"
+  },
+  "config": {
+    "method": "C",
+    "rank": 32,
+    "training_type": "kd",
+    "recovery_steps": 50,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": 256
+  },
+  "environment": {
+    "python_version": "3.12.15",
+    "python_executable": "/home/tahoora/Project/.venv/bin/python",
+    "platform": "Linux",
+    "platform_version": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_model": "",
+    "cpu_count": 8,
+    "ram_gb": 0.0,
+    "gpu_model": "NVIDIA GeForce GTX 1060",
+    "gpu_count": 1,
+    "gpu_vram_gb": 5.92,
+    "cuda_version": "12.4",
+    "cudnn_version": "90100",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1",
+    "transformers_version": "4.46.3",
+    "datasets_version": "3.1.0",
+    "triton_version": "3.1.0",
+    "numpy_version": "2.5.4",
+    "pandas_version": "3.0.6",
+    "scipy_version": "1.18.1",
+    "neuralops_version": "0.1.0",
+    "all_installed_packages": {},
+    "env_vars_used": {
+      "TORCH_CUDA_ARCH_LIST": "6.1",
+      "CUDA_LAUNCH_BLOCKING": "0",
+      "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128",
+      "HF_HOME": "/home/tahoora/.cache/huggingface",
+      "HF_ENDPOINT": "https://hf-mirror.com",
+      "CUDA_MODULE_LOADING": "LAZY"
+    }
+  },
+  "hardware_usage": {
+    "peak_vram_mb": 0.0,
+    "avg_vram_mb": 0.0,
+    "peak_ram_mb": 0.0,
+    "gpu_utilization_avg": null,
+    "gpu_temperature_max": null,
+    "gpu_power_avg": null
+  },
+  "training_history": {},
+  "metrics": {
+    "pre_ppl": 36.21,
+    "post_ppl": 36.21,
+    "post_ppl_stage1": 36.21,
+    "post_ppl_stage2": 36.21,
+    "kd_gain": 0.0,
+    "recovery_pct": 0.0
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": null,
+    "baseline_f1": null,
+    "baseline_loss": null,
+    "accuracy_drop": null,
+    "f1_drop": null,
+    "loss_increase": null,
+    "compression_ratio": 1.0,
+    "speedup_ratio": 1.0,
+    "params_reduction_pct": 0.0
+  },
+  "resources": {
+    "peak_vram_mb": 2469.93,
+    "train_duration_s": 50.7
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timed_out": false,
+  "timeout_s": 1800,
+  "retry_count": 0,
+  "max_retries": 2,
+  "reproducibility": {
+    "random_seed": 42,
+    "cublas_workspace_config": ":4096:8",
+    "torch_deterministic": false,
+    "torch_benchmark": false,
+    "env_vars_hash": "",
+    "reproduction_command": "",
+    "reproduction_script": "",
+    "expected_duration_s": 0.0,
+    "expected_peak_vram_mb": 0.0
+  },
+  "artifacts": {
+    "log_file": "",
+    "jsonl_file": "",
+    "json_file": "",
+    "plot_files": [],
+    "checkpoint_files": [],
+    "git_push_url": ""
+  },
+  "push_info": {
+    "pushed_to_git": false,
+    "pushed_to_hf": false,
+    "git_remote_url": "",
+    "hf_repo_id": "",
+    "hf_commit_hash": "",
+    "push_timestamp": ""
+  },
+  "training_type": "finetune",
+  "kd_config": {},
+  "recovery_config": {},
+  "baseline_metrics": {},
+  "delta_metrics": {},
+  "checksum": "268c0bfdf4409830",
+  "run_id": "kd_block_transformer_hiba_C_20261012_203444",
+  "run_name": "kd_block_transformer_hiba_gpt2_C",
+  "timestamp_start": "2026-10-12T20:36:02.917384+00:00",
+  "timestamp_end": "2026-10-12T20:36:02.917395+00:00",
+  "git_commit": "0d365d9f33dff13fb6e60127f954116799d62054",
+  "git_dirty": true,
+  "run_key": "block_transformer_hiba__gpt2__wikitext2__rank32__d5ddb9bfdae7"
+}
