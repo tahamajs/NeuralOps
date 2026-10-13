@@ -56,6 +56,7 @@ from neuralops.core.registry import (
     ATTENTION_REGISTRY,
     COMPRESSOR_REGISTRY,
 )
+from neuralops.core.amp_utils import amp_context
 
 
 def _detect_amp_dtype(
@@ -910,7 +911,7 @@ def measure_latency(
 
     latencies = []
     try:
-        with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
+        with torch.no_grad(), amp_context("cuda" if amp_enabled else "cpu"):
             for _ in range(warmup):
                 _ = student.generate(
                     **inp,
