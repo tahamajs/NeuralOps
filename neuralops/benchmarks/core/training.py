@@ -138,6 +138,10 @@ def train_kd(
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
     optimizer = AdamW(student.parameters(), lr=lr, weight_decay=0.01)
 
+    use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
+    mp_type = (mixed_precision or "no").lower()
+    scaler = torch.cuda.amp.GradScaler(enabled=(mp_type == "fp16" and use_cuda))
+
     step = 0
     epoch_losses = []
 
@@ -152,6 +156,8 @@ def train_kd(
                 optimizer=optimizer,
                 kd_loss_fn=kd_loss_fn,
                 device=device,
+                mixed_precision=mixed_precision,
+                scaler=scaler,
             )
             running_loss += step_loss
             count += 1
@@ -187,6 +193,9 @@ def recovery_finetune(
     steps: int = 50,
     lr: float = 5e-5,
     device: str | torch.device = "cpu",
+    mixed_precision: str = "no",
+    tracker: Any = None,
+    log_interval: int = 10,
 ) -> dict[str, Any]:
     """Execute fixed number of recovery fine-tuning steps after compression."""
     return finetune_classification(
@@ -196,6 +205,9 @@ def recovery_finetune(
         lr=lr,
         device=device,
         max_steps=steps,
+        mixed_precision=mixed_precision,
+        tracker=tracker,
+        log_interval=log_interval,
     )
 
 
@@ -210,6 +222,9 @@ def train_with_training_type(
     teacher: nn.Module | None = None,
     kd_temperature: float = 2.0,
     kd_alpha: float = 0.5,
+    mixed_precision: str = "no",
+    tracker: Any = None,
+    log_interval: int = 10,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Execute training according to configured training_type ('none', 'finetune', 'kd', 'recovery', 'lora')."""
@@ -228,6 +243,9 @@ def train_with_training_type(
                 lr=lr,
                 device=device,
                 max_steps=max_steps,
+                mixed_precision=mixed_precision,
+                tracker=tracker,
+                log_interval=log_interval,
             )
         return train_kd(
             student=model,
@@ -239,6 +257,9 @@ def train_with_training_type(
             temperature=kd_temperature,
             alpha=kd_alpha,
             max_steps=max_steps,
+            mixed_precision=mixed_precision,
+            tracker=tracker,
+            log_interval=log_interval,
         )
 
     elif t_type in ("recovery", "fast_recovery"):
@@ -249,6 +270,9 @@ def train_with_training_type(
             steps=steps,
             lr=lr,
             device=device,
+            mixed_precision=mixed_precision,
+            tracker=tracker,
+            log_interval=log_interval,
         )
 
     else:
@@ -260,7 +284,11 @@ def train_with_training_type(
             lr=lr,
             device=device,
             max_steps=max_steps,
+            mixed_precision=mixed_precision,
+            tracker=tracker,
+            log_interval=log_interval,
         )
+
 
 
 __all__ = [
