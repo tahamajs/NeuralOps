@@ -86,3 +86,12 @@ for _sub in _SUBPACKAGES:
                         __all__.append(_attr)
     except Exception as _e:
         logger.debug(f"Failed importing subpackage {_sub}: {_e}")
+
+# Auto-wired package members
+from neuralops.compression_engine import experimental
+from neuralops.compression_engine import kv_cache
+from neuralops.compression_engine import low_rank
+from neuralops.compression_engine import pruning
+from neuralops.compression_engine import quantization
+from neuralops.compression_engine import svd
+from neuralops.compression_engine import tensor_decomp

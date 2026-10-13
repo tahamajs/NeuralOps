@@ -99,3 +99,16 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.quantization import astro_quantizer
+from neuralops.compression_engine.quantization import awq
+from neuralops.compression_engine.quantization import coopq_quantizer
+from neuralops.compression_engine.quantization import faq_quantizer
+from neuralops.compression_engine.quantization import gptq
+from neuralops.compression_engine.quantization import huffman_coder
+from neuralops.compression_engine.quantization import kmeans_quantize
+from neuralops.compression_engine.quantization import rotational_slicegpt_int4
+from neuralops.compression_engine.quantization import slicegpt
+from neuralops.compression_engine.quantization import slicegpt_pca
+from neuralops.compression_engine.quantization import smoothquant

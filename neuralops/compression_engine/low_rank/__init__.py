@@ -291,3 +291,30 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.low_rank import a3_compressor
+from neuralops.compression_engine.low_rank import come_compressor
+from neuralops.compression_engine.low_rank import compot_compressor
+from neuralops.compression_engine.low_rank import cr_compressor
+from neuralops.compression_engine.low_rank import cur_compressor
+from neuralops.compression_engine.low_rank import cur_moe_compressor
+from neuralops.compression_engine.low_rank import dora_qlora
+from neuralops.compression_engine.low_rank import drone_compressor
+from neuralops.compression_engine.low_rank import enlighten_compressor
+from neuralops.compression_engine.low_rank import frandi_compressor
+from neuralops.compression_engine.low_rank import grecodec_compressor
+from neuralops.compression_engine.low_rank import lsc_compressor
+from neuralops.compression_engine.low_rank import mgie_svd_compressor
+from neuralops.compression_engine.low_rank import mlorq_compressor
+from neuralops.compression_engine.low_rank import modegpt_compressor
+from neuralops.compression_engine.low_rank import nmf_compressor
+from neuralops.compression_engine.low_rank import oats_compressor
+from neuralops.compression_engine.low_rank import rpca_compressor
+from neuralops.compression_engine.low_rank import salr
+from neuralops.compression_engine.low_rank import sdrm_compressor
+from neuralops.compression_engine.low_rank import slim_compressor
+from neuralops.compression_engine.low_rank import soka_compressor
+from neuralops.compression_engine.low_rank import svd_llm_compressor
+from neuralops.compression_engine.low_rank import tomoe_compressor
+from neuralops.compression_engine.low_rank import uniql_compressor

@@ -111,3 +111,15 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.pruning import admm_compressor
+from neuralops.compression_engine.pruning import admm_pruner
+from neuralops.compression_engine.pruning import armor_pruner
+from neuralops.compression_engine.pruning import ast_pruner
+from neuralops.compression_engine.pruning import bonsai_pruner
+from neuralops.compression_engine.pruning import flap
+from neuralops.compression_engine.pruning import mamba_shedder
+from neuralops.compression_engine.pruning import proxsparse
+from neuralops.compression_engine.pruning import sparsegpt
+from neuralops.compression_engine.pruning import wanda

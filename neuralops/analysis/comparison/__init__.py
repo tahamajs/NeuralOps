@@ -26,3 +26,6 @@ __all__ = [
     "bayesian_signed_rank_test",
     "run_full_statistical_analysis",
 ]
+
+# Auto-wired package members
+from neuralops.analysis.comparison import statistical_tests

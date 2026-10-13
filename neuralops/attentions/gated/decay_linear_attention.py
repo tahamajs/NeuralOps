@@ -143,14 +143,6 @@ class DecayLinearAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        def _cfg_get(k, default=None):
-            for obj in (config, comp_config):
-                if obj is not None and hasattr(obj, k):
-                    val = getattr(obj, k)
-                    if val is not None:
-                        return val
-            return kwargs.get(k, default)
-
 
         # --- Resolve hidden_size ---
         hidden_size = kwargs.get("hidden_size")

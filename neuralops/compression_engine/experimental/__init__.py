@@ -63,3 +63,10 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.compression_engine.experimental import flat_llm
+from neuralops.compression_engine.experimental import hashed_net_compressor
+from neuralops.compression_engine.experimental import liftr
+from neuralops.compression_engine.experimental import lillama_compressor
+from neuralops.compression_engine.experimental import roast_hashed_linear

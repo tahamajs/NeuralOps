@@ -203,20 +203,23 @@ def apply_rotary_pos_emb(
     if past_len > 0 and S >= past_len + L:
         cos_q = cos[..., past_len : past_len + L, :]
         sin_q = sin[..., past_len : past_len + L, :]
-    elif S > L:
+    elif S >= L:
         cos_q = cos[..., :L, :]
         sin_q = sin[..., :L, :]
     else:
-        cos_q = cos
-        sin_q = sin
+        # If cos/sin is shorter than sequence length L, repeat/pad to L
+        repeats = (L + S - 1) // S
+        cos_q = cos.repeat(1, 1, repeats, 1)[..., :L, :]
+        sin_q = sin.repeat(1, 1, repeats, 1)[..., :L, :]
 
     N_k = k.shape[-2]
-    if S > N_k:
+    if S >= N_k:
         cos_k = cos[..., :N_k, :]
         sin_k = sin[..., :N_k, :]
     else:
-        cos_k = cos
-        sin_k = sin
+        repeats = (N_k + S - 1) // S
+        cos_k = cos.repeat(1, 1, repeats, 1)[..., :N_k, :]
+        sin_k = sin.repeat(1, 1, repeats, 1)[..., :N_k, :]
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]

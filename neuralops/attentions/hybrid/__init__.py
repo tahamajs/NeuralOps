@@ -183,3 +183,20 @@ try:
                     __all__.append(_attr)
 except Exception:
     pass
+
+# Auto-wired submodules
+from neuralops.attentions.hybrid import fusion_attn
+from neuralops.attentions.hybrid import gated_hybrid_kernel_attention
+from neuralops.attentions.hybrid import granite_hybrid
+from neuralops.attentions.hybrid import halo_regla
+from neuralops.attentions.hybrid import hybrid_attention
+from neuralops.attentions.hybrid import hybrid_local_kernel_attention
+from neuralops.attentions.hybrid import landmark_local_attention
+from neuralops.attentions.hybrid import mixattention_moska
+from neuralops.attentions.hybrid import optimized_hybrid_attention
+from neuralops.attentions.hybrid import positive_kernel_linear_attention
+from neuralops.attentions.hybrid import refined_landmark_attention
+from neuralops.attentions.hybrid import regla_attention
+from neuralops.attentions.hybrid import spectron_fp8_attention
+from neuralops.attentions.hybrid import split_head_hybrid_attention
+from neuralops.attentions.hybrid import tri_branch_hybrid_attention

@@ -35,3 +35,21 @@ __all__ = [
     "RobustnessReport",
     "TextAdversarialTester",
 ]
+
+# Auto-wired package members
+from neuralops.evaluation import ab_testing
+from neuralops.evaluation import eval_all_models_datasets
+from neuralops.evaluation import eval_data
+from neuralops.evaluation import eval_patcher
+from neuralops.evaluation import eval_perplexity
+from neuralops.evaluation import eval_pipeline
+from neuralops.evaluation import eval_reporter
+from neuralops.evaluation import eval_types
+from neuralops.evaluation import eval_utils
+from neuralops.evaluation import fairness
+from neuralops.evaluation import full_mnli_validation
+from neuralops.evaluation import label_quality
+from neuralops.evaluation import metrics
+from neuralops.evaluation import retraining
+from neuralops.evaluation import run_baseline_comparison
+from neuralops.evaluation import run_lm_eval_harness
