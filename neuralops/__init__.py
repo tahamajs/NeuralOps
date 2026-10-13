@@ -298,6 +298,10 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.exceptions import (
     NeuralOpsError, ConfigError, WeightCopyError, BackendError, NumericalError
 )
+from neuralops.trainer.optimizers.muon import Muon
+from neuralops.trainer.optimizers import StiefelOptimizer, RiemannianAdam
+from neuralops.models.hybrid_spec import HybridAttentionSpec
+from neuralops.evaluation.eval_pipeline import probe_optimal_batch_size
 
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
@@ -345,6 +349,11 @@ __all__ = [
     "WeightCopyError",
     "BackendError",
     "NumericalError",
+    "Muon",
+    "StiefelOptimizer",
+    "RiemannianAdam",
+    "HybridAttentionSpec",
+    "probe_optimal_batch_size",
 ]
 
 

@@ -24,6 +24,8 @@ from neuralops.trainer.optimizers.muon import (
 from neuralops.trainer.optimizers.riemannian import (
     RiemannianStiefelOptimizer,
 )
+StiefelOptimizer = RiemannianStiefelOptimizer
+RiemannianAdam = RiemannianStiefelOptimizer
 from neuralops.trainer.optimizers.stiefel import (
     is_stiefel_parameter,
     project_stiefel_gradient,

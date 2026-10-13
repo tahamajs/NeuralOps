@@ -711,5 +711,17 @@
   "squeezing_heads_distill": "gqa_attention",
   "tlinformer_attention": "linformer_attention",
   "tpa_attention": "cross_attention",
-  "span_expanded_attention": "adaptive_span_attention"
+  "span_expanded_attention": "adaptive_span_attention",
+  "awq": "coopq_quantizer",
+  "awq_compressor": "coopq_quantizer",
+  "gptq": "sparsegpt",
+  "gptq_compressor": "sparsegpt",
+  "smoothquant": "slicegpt",
+  "smoothquant_compressor": "slicegpt",
+  "wanda": "flap",
+  "wanda_compressor": "flap",
+  "dora": "residual_svd_compressor",
+  "dora_compressor": "residual_svd_compressor",
+  "qlora": "residual_svd_compressor",
+  "qlora_compressor": "residual_svd_compressor"
 }
