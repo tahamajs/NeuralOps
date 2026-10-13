@@ -69,7 +69,7 @@ class CosformerAttention(BaseAttention):
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
 
         if hidden_size is None:
-            hidden_size = _cfg_get("hidden_size", _cfg_get("dim", None))
+            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "n_embd", _cfg_get(config, "d_model", None))))
             if hidden_size is None and source_attn is not None:
                 out_layer = getattr(source_attn, "out_lin",
                                     getattr(source_attn, "dense",
@@ -80,7 +80,7 @@ class CosformerAttention(BaseAttention):
                 hidden_size = 768
 
         if num_heads is None:
-            num_heads = _cfg_get("num_attention_heads", _cfg_get("num_heads", None))
+            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_head", None)))
             if num_heads is None and source_attn is not None:
                 num_heads = getattr(source_attn, "n_heads",
                                     getattr(source_attn, "num_attention_heads",
@@ -93,14 +93,14 @@ class CosformerAttention(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
 
-        resolved_head_dim = _cfg_get("head_dim", None)
+        resolved_head_dim = _cfg_get(config, "head_dim", None)
         if resolved_head_dim is None and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
         if resolved_head_dim is None:
             resolved_head_dim = self.dim // max(1, self.num_heads)
         self.head_dim = int(resolved_head_dim)
 
-        kv_heads = _cfg_get("num_key_value_heads", None)
+        kv_heads = _cfg_get(config, "num_key_value_heads", None)
         if kv_heads is None and source_attn is not None:
             kv_heads = getattr(source_attn, "num_key_value_heads",
                                getattr(source_attn, "num_kv_heads",
@@ -114,20 +114,20 @@ class CosformerAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        self.max_seq_len = int(_cfg_get("max_position_embeddings", max_seq_len))
+        self.max_seq_len = int(_cfg_get(config, "max_position_embeddings", max_seq_len))
         self.act_fun = act_fun
         self.eps = float(eps)
         
         # Local attention parameters
-        self.window_size = int(_cfg_get("window_size", window_size))
+        self.window_size = int(_cfg_get(config, "window_size", window_size))
 
         self.layer_idx = int(kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
-        self.lora_rank = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        self.lora_rank = int(_cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha = float(_cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base = self.lora_rank > 0
 
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
-        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
+        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
         
         if (any(model_type.startswith(p) for p in _decoder_prefixes)
