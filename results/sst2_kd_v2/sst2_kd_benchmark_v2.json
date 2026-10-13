@@ -1,0 +1,19 @@
+{
+  "teacher_acc": 0.9243119266055045,
+  "results": [
+    {
+      "module": "adaptive_span_attention",
+      "status": "NO_CHANGE",
+      "pre_kd_acc": 91.5,
+      "best_kd_acc": 93.0,
+      "best_step": 180,
+      "final_kd_acc": 91.97,
+      "post_kd_acc_full": 91.97,
+      "delta_vs_pre": 0.47,
+      "delta_vs_best": 0.47,
+      "duration_s": 67.0,
+      "error": null,
+      "index": 1
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "module": "samba_moe",
+  "dataset": "glue_mrpc",
+  "status": "IMPROVED",
+  "pre_kd_acc": 41.0,
+  "best_kd_acc": 56.0,
+  "best_step": 20,
+  "final_kd_acc": 52.94,
+  "delta_vs_pre": 11.94,
+  "duration_s": 70.3,
+  "error": null,
+  "config_snapshot": {
+    "task": "glue:mrpc",
+    "teacher": "textattack/bert-base-uncased-MRPC",
+    "pre_kd_samples": 100,
+    "post_kd_samples": 408,
+    "batch_size": 4,
+    "grad_accum_steps": 4,
+    "max_length": 64,
+    "kd_steps": 200,
+    "kd_lr": 1e-05,
+    "eval_every": 20,
+    "temperature": 4.0,
+    "alpha": 0.7,
+    "rank": 32,
+    "output_dir": "/home/tahoora/Project/results/kd_glue_mrpc",
+    "seed": 42,
+    "use_fp16": true,
+    "resume": true,
+    "module_whitelist": null,
+    "fast_fail_threshold": 0.3
+  },
+  "git_commit": "7ed74700bbc070ee5e90aa3b67b459c355f35165",
+  "total_params_m": 245.936,
+  "trainable_params_m": 44.301,
+  "compression_ratio": 0.445,
+  "kd_steps": 200,
+  "effective_batch_size": 16,
+  "learning_rate": 1e-05,
+  "temperature": 4.0,
+  "alpha": 0.7,
+  "final_loss": 0.4084,
+  "eval_history": [
+    {
+      "step": 20,
+      "loss": 0.359,
+      "acc": 56.0
+    },
+    {
+      "step": 40,
+      "loss": 0.5058,
+      "acc": 42.0
+    },
+    {
+      "step": 60,
+      "loss": 0.4632,
+      "acc": 37.0
+    },
+    {
+      "step": 80,
+      "loss": 0.5288,
+      "acc": 31.0
+    },
+    {
+      "step": 100,
+      "loss": 0.4508,
+      "acc": 31.0
+    },
+    {
+      "step": 120,
+      "loss": 0.3643,
+      "acc": 32.0
+    },
+    {
+      "step": 140,
+      "loss": 0.4456,
+      "acc": 33.0
+    },
+    {
+      "step": 160,
+      "loss": 0.3992,
+      "acc": 33.0
+    },
+    {
+      "step": 180,
+      "loss": 0.3673,
+      "acc": 35.0
+    },
+    {
+      "step": 200,
+      "loss": 0.4084,
+      "acc": 33.0
+    }
+  ],
+  "delta_vs_best": -3.06,
+  "peak_vram_gb": 6.2,
+  "timestamp": "2026-10-13T13:27:08Z"
+}

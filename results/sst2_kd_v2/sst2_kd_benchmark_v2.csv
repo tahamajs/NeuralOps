@@ -1,0 +1,2 @@
+module,status,pre_kd_acc,best_kd_acc,best_step,final_kd_acc,post_kd_acc_full,delta_vs_pre,delta_vs_best,duration_s,error,index
+adaptive_span_attention,NO_CHANGE,91.5,93.0,180,91.97,91.97,0.47,0.47,67.0,,1

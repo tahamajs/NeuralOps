@@ -1,0 +1,2 @@
+adaptive_span_attention: stuck at pre-KD accuracy (91.50% -> 91.97%)
+adaptive_span_attention: stuck at pre-KD accuracy (91.50% -> 91.97%)

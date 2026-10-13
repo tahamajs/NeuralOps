@@ -1,0 +1,38 @@
+{
+  "module": "naive_svd",
+  "dataset": "glue_mrpc",
+  "status": "IMPROVED",
+  "pre_kd_acc": 35.0,
+  "best_kd_acc": 35.0,
+  "best_step": 0,
+  "final_kd_acc": 36.5,
+  "delta_vs_pre": 1.5,
+  "duration_s": 16.4,
+  "error": null,
+  "config_snapshot": {
+    "task": "glue:mrpc",
+    "teacher": "textattack/bert-base-uncased-MRPC",
+    "pre_kd_samples": 100,
+    "post_kd_samples": 200,
+    "batch_size": 4,
+    "grad_accum_steps": 4,
+    "max_length": 64,
+    "kd_steps": 20,
+    "kd_lr": 1e-05,
+    "eval_every": 20,
+    "temperature": 4.0,
+    "alpha": 0.7,
+    "rank": 32,
+    "output_dir": "./results/kd_smoke_mrpc",
+    "seed": 42,
+    "use_fp16": true,
+    "resume": true,
+    "module_whitelist": [
+      "naive_svd",
+      "sink_attention"
+    ],
+    "fast_fail_threshold": 0.3
+  },
+  "git_commit": "d8a9eee75844f13734be793b61bd6fbedd56264f",
+  "timestamp": "2026-10-13T12:05:49Z"
+}
