@@ -315,6 +315,7 @@ class GLAttention(BaseAttention):
         causal_full = torch.tril(
             torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool)
         )
+        out_chunks = []
 
         for i in range(num_chunks):
             start = i * chunk_size
@@ -343,7 +344,7 @@ class GLAttention(BaseAttention):
             scores = scores.masked_fill(~causal, 0.0)
             intra = torch.einsum("bhij,bjhd->bihd", scores, v)  # (B, L, H, d)
 
-            out[:, start:end] = inter + intra
+            out_chunks.append(inter + intra)
 
             # ── State update ──
             g_end = b_log[:, -1, :]                             # (B, H)
@@ -355,4 +356,5 @@ class GLAttention(BaseAttention):
 
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
 
+        out = torch.cat(out_chunks, dim=1)
         return out.to(Q.dtype)
