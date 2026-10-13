@@ -1,6 +1,18 @@
 import torch
-import triton
-import triton.language as tl
+try:
+    import triton
+    import triton.language as tl
+    HAS_TRITON = True
+except ImportError:
+    HAS_TRITON = False
+    class _MockTriton:
+        @staticmethod
+        def jit(fn):
+            return fn
+    triton = _MockTriton()
+    class _MockTl:
+        constexpr = int
+    tl = _MockTl()
 
 
 @triton.jit
