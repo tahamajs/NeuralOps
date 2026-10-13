@@ -33,7 +33,7 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.eval_all_models_datasets import apply_module_to_model
+from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
 
 
 def get_byte_imdb_dataloader(

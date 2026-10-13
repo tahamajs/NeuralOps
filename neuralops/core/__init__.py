@@ -125,7 +125,6 @@ from neuralops.core import metrics
 from neuralops.core import model_family
 from neuralops.core import model_utils
 from neuralops.core import model_wrapper
-from neuralops.core import multi_mode_benchmark
 from neuralops.core import pruning_utils
 from neuralops.core import quantized_attention
 from neuralops.core import registry

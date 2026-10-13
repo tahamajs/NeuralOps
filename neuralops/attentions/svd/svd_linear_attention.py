@@ -228,8 +228,9 @@ class SVDLinear(nn.Module):
                     eps=self.eps,
                     use_rms_norm=self.use_rms_norm,
                 )
-            except Exception as e:
-                logger.warning("SVDLinear: fused_svd_linear failed (%s); fallback.", e)
+            except (RuntimeError, NotImplementedError, ValueError) as e:
+                from neuralops.utils.logging_config import warn_once
+                warn_once("svd_fused_linear_fallback", "SVDLinear: fused_svd_linear failed (%s); fallback.", e)
                 Vx = F.linear(x, self.V)
                 out = F.linear(Vx, self.U, self.bias)
         elif not self.use_rms_norm:

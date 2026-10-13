@@ -260,7 +260,10 @@ from neuralops import tracking
 from neuralops import trainer
 from neuralops import training
 from neuralops import utils
-from neuralops import __main__
+try:
+    from neuralops import __main__
+except ImportError:
+    pass
 from neuralops import main
 
 # Direct User-Facing Functional API

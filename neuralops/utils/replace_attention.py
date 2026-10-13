@@ -3,7 +3,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.qwen_compat import bypass_qwen_rope, qwen_attention_mask
 
 
@@ -496,6 +495,7 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
         if isinstance(attention_key, type) or callable(attention_key):
             attn_fn = attention_key
         else:
+            from neuralops.core.registry import ATTENTION_REGISTRY
             attn_fn = ATTENTION_REGISTRY.get(attention_key)
             if attn_fn is None:
                 raise ValueError(
