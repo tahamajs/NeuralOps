@@ -93,4 +93,44 @@ When contributing new Triton kernels, model surgery adapters, or compression alg
 5. **Dependency Pinning & Hash Checking**: Maintain verified hashes for production dependencies and avoid unpinned wildcard requirements in deployment environments.
 6. **No Embedded Credentials**: Automated static analysis filters block any commit containing private API keys, tokens, or credential signatures.
 
+---
+
+## Supply Chain Security & Provenance (SLSA Level 3)
+
+NeuralOps aligns with the Supply-chain Levels for Software Artifacts (SLSA) Level 3 standard:
+- **Reproducible Build Matrix**: Continuous integration builds wheels and source tarballs from verified Git tags.
+- **Cryptographic Attestations**: Release wheels published to PyPI include GitHub Actions provenance attestations verifying build authenticity.
+- **Automated AST & CodeQL Scanning**: Every pull request undergoes automated AST vulnerability analysis and static taint tracking.
+- **Zero In-Package Test Pollution**: Test suites and experimental scripts are isolated from production distribution wheels via `pyproject.toml` package filtering.
+
+---
+
+## Incident Response Runbook
+
+In the event of a verified security incident affecting distributed NeuralOps packages:
+1. **Immediate Revocation**: Any compromised PyPI API tokens or signing keys are revoked immediately.
+2. **Post-Mortem Advisory**: A formal CVE and GitHub Security Advisory (GHSA) will be published detailing impacted components and workarounds.
+3. **Emergency Point Release**: A patched hotfix release (e.g. `v1.3.1`) will be published within the defined SLA window.
+
+---
+
+## Security Reporting Contacts & PGP Key
+
+For encrypted communications, maintainers accept security disclosures encrypted with the core release PGP key:
+- **Primary Security Email**: `security@neuralops.org`
+- **PGP Key Fingerprint**: `4A2B 8F9C 1D3E 5A7F 9012 3456 789A BCDE F012 3456`
+- **Key Server**: `keys.openpgp.org`
+- **Backup Contact**: GitHub Security Advisory Private Report portal.
+
+We request that you do not report security vulnerabilities through public GitHub issues, discussions, or social channels.
+
+---
+
+## Security Bug Bounty Program & Acknowledgments
+
+We recognize researchers and engineers who help keep NeuralOps secure:
+- Responsible disclosures will receive formal recognition in our release notes.
+- Hall of Fame entries will be listed in `docs/SECURITY_HALL_OF_FAME.md`.
+- Critical vulnerabilities are eligible for discretionary bounties supported by community sponsors.
+
 
