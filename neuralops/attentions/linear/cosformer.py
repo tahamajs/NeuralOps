@@ -64,14 +64,6 @@ class CosformerAttention(BaseAttention):
                  layer_id=None, layer_idx=None, window_size=256, **kwargs):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        def _cfg_get(k, default=None):
-            for obj in (config, comp_config):
-                if obj is not None and hasattr(obj, k):
-                    val = getattr(obj, k)
-                    if val is not None:
-                        return val
-            return kwargs.get(k, default)
-
 
         hidden_size = kwargs.get("hidden_size")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
