@@ -28,8 +28,6 @@ _randomized_svd = randomized_svd
 _get_valid_mask = get_token_valid_mask
 
 
-@ATTENTION_REGISTRY.register("replace_class")
-@ATTENTION_REGISTRY.register("replace_attention_class")
 class ReplaceAttention(BaseAttention):
     """
     Robust identity / low-rank SVD replacement attention.
