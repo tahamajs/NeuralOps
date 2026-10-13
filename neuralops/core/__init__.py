@@ -119,7 +119,6 @@ from neuralops.core import config
 from neuralops.core import cuda_graph
 from neuralops.core import fused_norm_attention
 from neuralops.core import gqa_utils
-from neuralops.core import legacy_ensemble
 from neuralops.core import memory
 from neuralops.core import metrics
 from neuralops.core import model_family

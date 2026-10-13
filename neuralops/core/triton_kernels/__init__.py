@@ -103,6 +103,10 @@ __all__ = [
     "gdn_scan_triton",
     "gla_scan_triton",
     "hgrn2_scan_triton",
+    "Autotuner",
+    "autotune_kernel",
+    "check_triton_suitability",
+    "log_fallback_reason",
 ]
 
 # Auto-wired package members

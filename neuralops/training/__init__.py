@@ -19,6 +19,17 @@ from neuralops.benchmarks.core.training import (
 import neuralops.trainer.trainer as trainer
 sys.modules['neuralops.training.trainer'] = trainer
 
+from neuralops.trainer.optimizers import (
+    Muon,
+    MuonAdamW,
+    RiemannianStiefelOptimizer,
+    create_muon,
+    create_muon_adamw_optimizer,
+    create_riemannian_stiefel,
+    create_adamw,
+    create_sgd,
+)
+
 try:
     from neuralops.training.layer_distill import LayerAttentionDistillLoss, LayerDistillScheduler
     _has_distill = True
@@ -38,6 +49,14 @@ __all__ = [
     "train_kd",
     "recovery_finetune",
     "train_with_training_type",
+    "Muon",
+    "MuonAdamW",
+    "RiemannianStiefelOptimizer",
+    "create_muon",
+    "create_muon_adamw_optimizer",
+    "create_riemannian_stiefel",
+    "create_adamw",
+    "create_sgd",
 ]
 
 if _has_distill:
