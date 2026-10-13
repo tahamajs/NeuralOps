@@ -24,6 +24,7 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--modules", type=str, default=None, help="Comma-separated module names")
     run_p.add_argument("--all-attention", action="store_true", help="Run all 159 attention modules")
     run_p.add_argument("--all-compressors", action="store_true", help="Run all 73 compressors")
+    run_p.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true", help="Run all delta modules (gated_delta_net, hgrn2_gated_deltanet, delta_kv, etc.)")
     run_p.add_argument("--all", action="store_true", help="Run all 232 modules")
     run_p.add_argument("--no-compression", action="store_true", help="Run baseline uncompressed model")
     run_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model")
@@ -77,6 +78,7 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--modules", type=str, default=None)
     plan_p.add_argument("--all-attention", action="store_true")
     plan_p.add_argument("--all-compressors", action="store_true")
+    plan_p.add_argument("--all-delta", "--delta", dest="all_delta", action="store_true")
     plan_p.add_argument("--all", action="store_true")
     plan_p.add_argument("--model", type=str, default="distilbert-base-uncased")
     plan_p.add_argument("--models", type=str, default=None)
@@ -128,6 +130,10 @@ def handle_plan(args: argparse.Namespace) -> None:
         mod_count = len(ATTENTION_REGISTRY)
     elif args.all_compressors:
         mod_count = len(COMPRESSOR_REGISTRY)
+    elif getattr(args, "all_delta", False):
+        from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
+        orch = BenchmarkOrchestrator(modules="all-delta")
+        mod_count = len(orch.modules)
     elif args.modules:
         mod_count = len(args.modules.split(","))
 
@@ -192,6 +198,8 @@ def handle_run(args: argparse.Namespace) -> None:
         mods = "all-attention"
     elif args.all_compressors:
         mods = "all-compressors"
+    elif getattr(args, "all_delta", False):
+        mods = "all-delta"
 
     ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
