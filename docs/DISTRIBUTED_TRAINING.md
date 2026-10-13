@@ -1,79 +1,91 @@
-# Distributed Training & MLOps Guide
+# Distributed Training & MLOps Infrastructure Guide (v1.3.0)
 
-NeuralOps provides multi-GPU distributed fine-tuning, recovery, and knowledge distillation along with centralized experiment tracking.
+NeuralOps supports multi-GPU distributed fine-tuning, knowledge distillation, and recovery campaigns across Distributed Data Parallel (DDP), Fully Sharded Data Parallel (FSDP), and DeepSpeed, paired with real-time MLOps telemetry.
 
 ---
 
-## 1. MLOps Experiment Tracking
+## 1. MLOps Experiment Tracking Architecture
 
-NeuralOps natively integrates with enterprise experiment trackers via the `--tracker` flag:
+NeuralOps abstracts telemetry logging into a unified backend interface (`BaseTracker`) that streams training loss, evaluation accuracy, parameter counts, compression ratios, and VRAM consumption in real-time.
 
-- **Weights & Biases (`wandb`)**
-- **MLflow (`mlflow`)**
-- **TensorBoard (`tensorboard`)**
-- **Multiplexed (`all`)**
-- **Local disk JSONL/CSV (`none` / default)**
+Supported backends:
+- **Weights & Biases (`wandb`)**: Live dashboards, metric charts, parameter configurations.
+- **MLflow (`mlflow`)**: Experiment versioning, artifact tracking, run tagging.
+- **TensorBoard (`tensorboard`)**: Local visualization without network access.
+- **Multiplexed (`all`)**: Simultaneous dual-broadcast to WandB, MLflow, and TensorBoard.
+- **Local Disk (`none`)**: Deterministic append-only JSONL files saved to `results/runs/<run_id>.json`.
 
-### CLI Usage:
+### CLI Invocation
 ```bash
-# Track run in Weights & Biases
-neuralops run \
+# Stream run metrics to Weights & Biases
+python -m neuralops.benchmarks run \
   --model roberta-base \
   --dataset sst2 \
   --module cosformer \
   --tracker wandb \
-  --project-name "production-attention-eval" \
-  --run-name "cosformer-sst2-run1"
+  --project-name "subquadratic-attention-benchmark" \
+  --run-name "roberta-cosformer-sst2"
 
-# Track across both WandB and MLflow
-neuralops run \
+# Track compression sweep across both MLflow and TensorBoard
+python -m neuralops.benchmarks run \
   --model distilbert-base-uncased \
   --dataset mnli \
-  --module adasvd \
+  --module direct_svd \
   --rank 32 \
   --tracker all \
-  --project-name "svd-compression-benchmark"
+  --project-name "svd-compression-campaign"
 ```
 
 ---
 
-## 2. Distributed Training (DDP, FSDP, DeepSpeed)
+## 2. Distributed Execution Backends
 
-For large-scale teacher-student knowledge distillation or multi-GPU recovery:
+NeuralOps incorporates `accelerate.Accelerator` inside its training execution loop (`neuralops.benchmarks.core.training.finetune_classification` and `neuralops.benchmarks.executor.execute_benchmark`), enabling zero-code multi-GPU scaling.
 
+### Supported Distributed Strategies:
+1. **DDP (DistributedDataParallel)**: Standard multi-GPU data parallelism across single or multi-node clusters.
+2. **FSDP (Fully Sharded Data Parallel)**: Model, optimizer, and gradient sharding for large 7B+ decoder backbones.
+3. **DeepSpeed (ZeRO-Stage 2 & ZeRO-Stage 3)**: CPU offloading and partitioned parameter updates.
+
+### Multi-GPU Launch Syntax:
 ```bash
-# Distributed Data Parallel (DDP) with mixed precision bf16
-neuralops run \
+# Launch multi-GPU sweep using Accelerate
+accelerate launch \
+  --num_processes 4 \
+  --mixed_precision bf16 \
+  -m neuralops.benchmarks run \
   --model meta-llama/Llama-3.2-1B \
   --dataset wikitext2 \
-  --module gdn_attention \
+  --module gla_attention \
   --distributed-backend ddp \
   --mixed-precision bf16 \
   --batch-size 8
 
-# Multi-GPU execution via Accelerate CLI
-accelerate launch -m neuralops.benchmarks.cli run \
+# Using torchrun directly
+torchrun --nproc_per_node=4 -m neuralops.benchmarks run \
   --model roberta-base \
   --dataset sst2 \
-  --all-attn \
+  --module cosformer \
+  --distributed-backend ddp \
   --mixed-precision fp16
 ```
 
 ---
 
-## 3. Knowledge Distillation (KD) Configuration
+## 3. Mixed Precision Configuration
 
-Compress large models while recovering accuracy using student-teacher distillation:
+NeuralOps implements transparent Automatic Mixed Precision (AMP) with dynamic gradient scaling:
 
-```bash
-neuralops run \
-  --model distilbert-base-uncased \
-  --dataset sst2 \
-  --module adasvd \
-  --rank 32 \
-  --training-type kd \
-  --kd-teacher bert-base-uncased \
-  --kd-temperature 2.0 \
-  --kd-alpha 0.5 \
-  --tracker wandb
-```
+- `--mixed-precision no`: Pure 32-bit float execution (default for CPU/MPS or numerical reference checks).
+- `--mixed-precision fp16`: 16-bit float training using `torch.amp.autocast(device_type="cuda", dtype=torch.float16)` and `torch.cuda.amp.GradScaler` to prevent underflow.
+- `--mixed-precision bf16`: Brain float 16 for Ampere, Ada Lovelace, and Hopper architectures, providing 8 bits of dynamic range without requiring a gradient scaler.
+
+---
+
+## 4. Multi-Server GPU Cluster Management
+
+When executing large matrix sweeps across remote GPU servers (e.g., Server 1 / `tahoora` and Server 2):
+
+1. **VRAM Safety Checks**: Pre-run health checks automatically query `torch.cuda.mem_get_info()`. If available VRAM is below 500 MB, the run logs a warning to avoid disrupting concurrent tmux sessions.
+2. **Deterministic Process Isolation**: Each benchmark process creates an isolated temporary directory and executes inside a threaded worker with a hard wall-clock timeout (`--timeout-s 1800`), ensuring that hung kernels do not freeze GPU nodes.
+3. **Resumable State**: Results are flushed immediately to disk (`results/runs/`) after each run. If a job is preempted or terminated, executing with `--resume` skips already-completed module/dataset tuples automatically.
