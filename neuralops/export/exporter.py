@@ -131,17 +131,68 @@ def export_model(
         raise ValueError(f"Unsupported export format '{format}'. Choose from: 'safetensors', 'onnx', 'torchscript'")
 
 
-def load_exported_model(export_dir: Union[str, Path]) -> Tuple[nn.Module, Dict[str, Any]]:
-    """Load model and reconstruct metadata from an exported directory."""
+def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    """
+    Load an exported NeuralOps model with full round-trip architecture reconstruction.
+
+    1. Reads `neuralops_config.json` containing exact surgery/compression parameters.
+    2. Instantiates or uses base architecture.
+    3. Re-applies `replace_attention` and `compress` transformations.
+    4. Loads saved weights from `model.safetensors` or `pytorch_model.bin`.
+    """
     dir_path = Path(export_dir)
     cfg_file = dir_path / "neuralops_config.json"
     if not cfg_file.exists():
         raise FileNotFoundError(f"Missing neuralops_config.json in {export_dir}")
 
     with open(cfg_file, "r", encoding="utf-8") as f:
-        config = json.load(f)
+        meta = json.load(f)
 
-    return config
+    # 1. Base model initialization
+    model = base_model
+    if model is None:
+        base_name = meta.get("base_model")
+        if base_name and base_name != "unknown":
+            try:
+                from transformers import AutoModel
+                model = AutoModel.from_pretrained(base_name)
+            except Exception as e:
+                logger.debug("Could not load AutoModel for base '%s': %s", base_name, e)
+
+    if model is None:
+        raise ValueError(
+            f"Cannot reconstruct model automatically: base_model '{meta.get('base_model')}' "
+            "cannot be loaded without an explicit base_model instance passed to load_exported_model."
+        )
+
+    # 2. Re-apply attention surgery if recorded
+    import neuralops
+    attn_type = meta.get("attention_type")
+    rank = meta.get("rank")
+    if attn_type:
+        model = neuralops.replace_attention(model, attention=attn_type, rank=rank)
+
+    # 3. Re-apply model compression if recorded
+    comp_method = meta.get("compression_method")
+    if comp_method:
+        model = neuralops.compress(model, method=comp_method, rank=rank)
+
+    # 4. Load weights
+    safetensors_path = dir_path / "model.safetensors"
+    bin_path = dir_path / "pytorch_model.bin"
+
+    if safetensors_path.exists():
+        try:
+            from safetensors.torch import load_file
+            state_dict = load_file(str(safetensors_path))
+            model.load_state_dict(state_dict, strict=False)
+        except Exception as err:
+            logger.warning("Could not load safetensors file: %s", err)
+    elif bin_path.exists():
+        state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
+        model.load_state_dict(state_dict, strict=False)
+
+    return model, meta
 
 
 __all__ = ["export_model", "load_exported_model"]
