@@ -107,6 +107,20 @@ def check_triton_suitability(
             f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}",
         )
 
+    # Route forward-only kernels to differentiable PyTorch fallback during training/autograd
+    FORWARD_ONLY_KERNELS = {
+        "sliding_window",
+        "fused_rope",
+        "fused_ce",
+        "cosformer",
+        "paged_attention",
+        "flash_decoding",
+        "softplus",
+    }
+    if kernel_name in FORWARD_ONLY_KERNELS:
+        if getattr(tensor, "requires_grad", False) or torch.is_grad_enabled():
+            return False, f"kernel '{kernel_name}' is forward-only but gradient computation is enabled"
+
     return True, None
 
 

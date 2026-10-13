@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 
 __all__ = ["sliding_window_attention_kernel", "sliding_window_triton", "sliding_window_attention", "sliding_window_pytorch"]
-sliding_window_attention = sliding_window_attention_kernel
+
 
 
 if HAS_TRITON and tl is not None:
@@ -119,3 +119,4 @@ def sliding_window_attention_kernel(
 
 
 sliding_window_triton = sliding_window_attention_kernel
+sliding_window_attention = sliding_window_attention_kernel
