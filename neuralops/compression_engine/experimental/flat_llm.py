@@ -111,7 +111,8 @@ class PrunedChannelLinear(nn.Module):
             dtype=h.dtype,
             device=h.device,
         )
-        out.scatter_(-1, self.kept_idx.expand(*x.shape[:-1], -1), h)
+        idx = self.kept_idx.to(device=h.device)
+        out.scatter_(-1, idx.expand(*x.shape[:-1], -1), h)
         return out
 
     def extra_repr(self) -> str:
