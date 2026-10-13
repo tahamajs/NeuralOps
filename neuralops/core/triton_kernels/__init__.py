@@ -38,6 +38,10 @@ from neuralops.core.triton_kernels._common import (
     sparse_attn_pytorch_fallback,
     state_update_pytorch_fallback,
     triton_dispatch,
+    Autotuner,
+    autotune_kernel,
+    check_triton_suitability,
+    log_fallback_reason,
 )
 
 try:
