@@ -1236,11 +1236,13 @@ class SVDLinearAttention(BaseAttention):
             return output, attn_out, updated_state
 
         _use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
-        present = None
-        if output_attentions:
-            return (output, present, attn_out)
-        else:
-            return (output, present)
+        if _use_cache or self.is_decoder:
+            present = None
+            if output_attentions:
+                return (output, present, attn_out)
+            else:
+                return (output, present)
+        return (output, attn_out)
 
     # ------------------------------------------------------------------
     def step_recurrent(
