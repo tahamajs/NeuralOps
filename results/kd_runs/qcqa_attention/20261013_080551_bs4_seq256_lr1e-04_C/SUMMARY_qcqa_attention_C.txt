@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: qcqa_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      127.1 M
+  Trainable params:  31.01 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        39.9100
+  Post-KD PPL:       35.0400
+  Stage 1 (KD) PPL:  35.4200
+  Stage 2 (Self) PPL:35.0400
+  KD Gain:           +4.49
+  Self Gain:         +0.38
+  Total Gain:        +4.87
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.9677
+  Recovery:          100.00%
+  Peak VRAM:         2888.41 MB
+  Train time:        489.25 s (Stage 1: 366.6s, Stage 2: 122.6s)
+  s/step:            0.1631
+  Loss (final):      24.8738
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8555
+  Repetition-3:      0.0710
+  Train PPL:         15.3600
+  Test PPL:          35.0400
+  Overfit Gap:       19.68
+  Latency (mean):    471.55 ms
+  Latency (std):     1.38 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        6c7a3c0c9784
+
+TRAINING HISTORY (last 10 steps):
+  step  2910 | loss=2.8543 | lr=2.31e-06
+  step  2920 | loss=2.8138 | lr=2.08e-06
+  step  2930 | loss=2.6199 | lr=1.88e-06
+  step  2940 | loss=2.9868 | lr=1.69e-06
+  step  2950 | loss=2.8294 | lr=1.53e-06
+  step  2960 | loss=2.4439 | lr=1.39e-06
+  step  2970 | loss=2.7188 | lr=1.27e-06
+  step  2980 | loss=2.5252 | lr=1.17e-06
+  step  2990 | loss=2.7670 | lr=1.10e-06
+  step  3000 | loss=2.4594 | lr=1.04e-06
