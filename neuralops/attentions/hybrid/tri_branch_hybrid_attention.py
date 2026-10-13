@@ -4,6 +4,7 @@ Aegis-Hybrid Attention — Production-Hardened (v3).
 """
 
 from __future__ import annotations
+from neuralops.core.common import FactorizedLinear
 from neuralops.core.common import _detect_decoder, _env_flag, _env_float
 
 from neuralops.core.attention_utils import (
@@ -69,129 +70,6 @@ class AegisHybridConfig:
     def __post_init__(self) -> None:
         if self.num_key_value_heads is None:
             self.num_key_value_heads = self.num_attention_heads
-
-
-# ===========================================================================
-# FactorizedLinear (FIX 1: proper LoRA scaling)
-# ===========================================================================
-class FactorizedLinear(nn.Module):
-    """
-    Low-rank factorized linear + LoRA:
-        y = (x @ V.T) @ U.T + LoRA(x) * (α/r) + b
-    """
-
-    is_custom_attention: bool = False
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 128,
-        lora_rank: int = 32,
-        lora_alpha: float = 32.0,
-        bias: bool = True,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
-        self.lora_alpha = float(lora_alpha)
-        self.lora_rank = (
-            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
-        )
-        # FIX 1: proper LoRA scaling
-        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-
-        fk = {"device": device, "dtype": dtype}
-        self.down = nn.Linear(self.in_features, self.rank, bias=False, **fk)
-        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **fk)
-
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = False
-
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
-            # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
-            self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_rank, **fk))
-        else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
-
-        self._cached_weight: torch.Tensor | None = None
-        self._cached_versions: tuple[int, ...] = ()
-
-        self.reset_parameters()
-
-    @property
-    def lin1(self):
-        return self.down
-
-    @property
-    def lin2(self):
-        return self.up
-
-    def reset_parameters(self) -> None:
-        with torch.no_grad():
-            nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
-            nn.init.kaiming_uniform_(self.up.weight, a=math.sqrt(5))
-            if self.up.bias is not None:
-                nn.init.zeros_(self.up.bias)
-            if self.lora_A is not None:
-                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_B)
-
-    def _current_versions(self) -> tuple[int, ...]:
-        vs = [
-            getattr(self.down.weight, "_version", 0),
-            getattr(self.up.weight, "_version", 0),
-        ]
-        if self.lora_A is not None:
-            vs.append(getattr(self.lora_A, "_version", 0))
-            vs.append(getattr(self.lora_B, "_version", 0))
-        return tuple(vs)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        if (
-            not self.training
-            and self._cached_weight is not None
-            and self._cached_versions == self._current_versions()
-        ):
-            return self._cached_weight
-        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
-        if self.lora_A is not None:
-            w = w + torch.matmul(self.lora_B.float(), self.lora_A.float()) * self.lora_scaling
-        w = w.to(self.up.weight.dtype)
-        if not self.training:
-            self._cached_weight = w
-            self._cached_versions = self._current_versions()
-        return w
-
-    @property
-    def bias(self) -> torch.Tensor | None:
-        return self.up.bias
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        orig_dtype = x.dtype
-        x_down = x.to(self.down.weight.dtype)
-        latent = self.down(x_down)
-        latent_up = latent.to(self.up.weight.dtype)
-        out = self.up(latent_up)
-
-        if self.lora_A is not None:
-            # Perform LoRA accumulation in float32 for mixed precision stability
-            x_f = x.float()
-            lora_out = (
-                F.linear(F.linear(x_f, self.lora_A.float()), self.lora_B.float())
-                * self.lora_scaling
-            )
-            out = out.to(orig_dtype) + lora_out.to(orig_dtype)
-        return out.to(orig_dtype)
 
 
 # ===========================================================================
