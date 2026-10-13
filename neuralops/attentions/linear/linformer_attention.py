@@ -619,9 +619,10 @@ class LinformerAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        q = self.q_proj(hidden_states).reshape(B, N, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+
 
         # LF-05: RoPE with past_len offset
         pos_emb = (
