@@ -135,7 +135,7 @@ def test_triton_vs_pytorch_parity_and_gradients(attn_key):
         pytest.skip("CUDA device required for Triton vs PyTorch parity verification")
 
     dim, num_heads = 128, 4
-    m = _instantiate_module(attn_key, dim=dim, num_heads=num_heads).to(device)
+    m = _instantiate_module(attn_key, dim=dim, num_heads=num_heads).to(device=device, dtype=torch.float16)
     m.eval()
 
     B, T = 2, 64
