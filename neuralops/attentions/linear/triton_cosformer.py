@@ -302,7 +302,8 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
     ) -> torch.Tensor:
         B, H, N, D = q.shape
 
-        use_triton = HAS_TRITON and q.is_cuda and D in (32, 64, 128)
+        cc = torch.cuda.get_device_capability(q.device)[0] if q.is_cuda else 0
+        use_triton = HAS_TRITON and q.is_cuda and cc >= 7 and D in (32, 64, 128)
 
         if use_triton:
             out = torch.empty_like(v)
