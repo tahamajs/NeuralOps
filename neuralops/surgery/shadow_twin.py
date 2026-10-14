@@ -151,6 +151,9 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
             m.alpha = 1.0
             if hasattr(m, "_last_twin_loss"):
                 m._last_twin_loss = None
+            if getattr(m, "_is_shadow_twin_patched", False):
+                m.forward = getattr(m, "_orig_unpatched_forward", m.forward)
+                m._is_shadow_twin_patched = False
             count += 1
 
     gc.collect()
@@ -167,6 +170,9 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
 
 def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
     """Patches bridge forward to support in-place twin distillation and homotopy blending."""
+    if getattr(bridge, "_is_shadow_twin_patched", False):
+        return
+
     orig_forward = bridge.forward
 
     def shadow_twin_forward(*args: Any, **kwargs: Any) -> Any:
@@ -202,6 +208,8 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
         return student_ret
 
     bridge.forward = shadow_twin_forward
+    bridge._orig_unpatched_forward = orig_forward
+    bridge._is_shadow_twin_patched = True
 
 
 __all__ = [
