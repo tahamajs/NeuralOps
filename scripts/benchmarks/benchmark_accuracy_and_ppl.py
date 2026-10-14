@@ -88,19 +88,19 @@ def main():
         err = ""
         # A. Evaluate SST-2 Accuracy on RoBERTa
         try:
-            base_ref = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
-            m_rob = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
-            m_rob, _ = apply_module_to_model(m_rob, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
-            
-            # Closed-Form Layerwise Ridge Output Calibration (8 samples for guaranteed memory safety across 6GB GPUs)
-            calib_batch = {k: v[:8] for k, v in enc_sst2.items()}
-            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.15)
-            
-            m_rob.eval()
-            all_preds = []
-            bs = 16
-            total_n = enc_sst2.input_ids.shape[0]
             with torch.no_grad():
+                base_ref = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
+                m_rob = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
+                m_rob, _ = apply_module_to_model(m_rob, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
+                
+                # Closed-Form Layerwise Ridge Output Calibration (8 samples for guaranteed memory safety across 6GB GPUs)
+                calib_batch = {k: v[:8] for k, v in enc_sst2.items()}
+                m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.15)
+                
+                m_rob.eval()
+                all_preds = []
+                bs = 16
+                total_n = enc_sst2.input_ids.shape[0]
                 for start_idx in range(0, total_n, bs):
                     end_idx = min(start_idx + bs, total_n)
                     batch_inputs = {k: v[start_idx:end_idx] for k, v in enc_sst2.items()}
@@ -108,8 +108,8 @@ def main():
                     all_preds.append(logits.argmax(dim=-1))
                 preds = torch.cat(all_preds, dim=0)
                 acc = round((preds == labels_sst2).float().mean().item() * 100, 2)
-            del m_rob
-            del base_ref
+                del m_rob
+                del base_ref
         except Exception as e:
             err += f"RoBERTa error: {e}; "
             
@@ -118,19 +118,19 @@ def main():
         
         # B. Evaluate WikiText-2 PPL on GPT-2
         try:
-            base_gpt_ref = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
-            m_gpt = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
-            m_gpt, _ = apply_module_to_model(m_gpt, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
-            
-            # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
-            calib_wiki = enc_wiki[:, :128]
-            m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.03)
-            
             with torch.no_grad():
+                base_gpt_ref = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
+                m_gpt = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
+                m_gpt, _ = apply_module_to_model(m_gpt, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
+                
+                # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
+                calib_wiki = enc_wiki[:, :128]
+                m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.03)
+                
                 loss = m_gpt(enc_wiki, labels=enc_wiki).loss.item()
                 ppl = round(math.exp(min(loss, 20.0)), 2)
-            del m_gpt
-            del base_gpt_ref
+                del m_gpt
+                del base_gpt_ref
         except Exception as e:
             err += f"GPT2 error: {e}"
             
