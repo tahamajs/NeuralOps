@@ -676,11 +676,13 @@ class MambaBlock(nn.Module):
             y_b = torch.flip(y_b.transpose(1, 2), dims=[1])
             y = 0.5 * (y + y_b)
 
-        # ---- 6. Gating ----
-        y = y.to(target_dtype) * F.silu(z.to(target_dtype))
+        # ---- 6. Gating (computed in float32 and sanitized to prevent fp16 overflow) ----
+        y_gated = y.float() * F.silu(z.float())
+        y = torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
 
         # ---- 7. Output projection ----
         out = self.out_proj(y).to(target_dtype)
+        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
 
         # ---- 8. attention_mask (MB-03, MB-09) ----
         if attention_mask is not None:

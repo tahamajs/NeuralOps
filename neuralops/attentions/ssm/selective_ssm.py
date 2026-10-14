@@ -285,8 +285,9 @@ class SelectiveSSM(BaseAttention):
             else:
                 h_next = delta_b_u_last
 
-        # 4. Gating
-        y = (y.to(target_dtype) * F.silu(z.to(target_dtype)))
+        # 4. Gating (computed in float32 and sanitized to prevent fp16 overflow)
+        y_gated = y.float() * F.silu(z.float())
+        y = torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
         present_state = (h_next, conv_next)
         return y, present_state
 
@@ -431,6 +432,8 @@ class SelectiveSSM(BaseAttention):
             
             y_bwd = torch.flip(y_bwd, [1]).contiguous()
             out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
+
+        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
 
         _out_attn = bool(output_attentions or kwargs.get("output_attentions", False))
         present = present_state if self.is_decoder else None
