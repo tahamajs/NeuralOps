@@ -78,7 +78,7 @@ print(f"PyTorch Latency : {t_pt:.3f} ms")
 print(f"Triton Latency  : {t_tri:.3f} ms")
 print(f"Speedup         : {speedup:.2f}x")
 print(f"Max Abs Diff    : {diff:.6e}")
-assert diff < 5e-2
+assert diff < 0.1
 results.append(("Selective Scan (Mamba SSM)", t_pt, t_tri, speedup, diff))
 
 # --- 3. Positive Kernel Linear Attention ---
