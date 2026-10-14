@@ -979,50 +979,47 @@ class ChelaSlayAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- Dense stream (mathematically identical to softmax) ----
-        dense_scores = torch.matmul(
-            q.float(), k.float().transpose(-2, -1).contiguous()
-        ) * (self.head_dim ** -0.5)
+        # ---- Dense stream (FlashAttention / SDPA accelerated) ----
+        dense_out = None
+        if eff_mask is None and head_mask_b is None and not output_attentions:
+            try:
+                dense_out = F.scaled_dot_product_attention(
+                    q, k, v, is_causal=can_causal, dropout_p=self.dropout.p if self.training else 0.0
+                )
+                dense_attn = None
+            except Exception:
+                dense_out = None
 
-        can_causal = bool(self.is_causal and not is_cross and kv_len == L)
-        if can_causal:
-            causal = torch.triu(
-                torch.full((L, L), -1e4, device=x.device, dtype=torch.float32),
-                diagonal=1,
-            )
-            dense_scores = dense_scores + causal.unsqueeze(0).unsqueeze(0)
+        if dense_out is None:
+            dense_scores = torch.matmul(
+                q.float(), k.float().transpose(-2, -1).contiguous()
+            ) * (self.head_dim ** -0.5)
 
-        eff_mask = encoder_attention_mask if is_cross else attention_mask
-        valid_mask = None
-        if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                valid_mask = (eff_mask > 0).float().unsqueeze(1).unsqueeze(-1)
-                pad_m = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
-                dense_scores = dense_scores + pad_m
-            elif eff_mask.dim() == 3:
-                valid_mask = (eff_mask[:, 0, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
-                dense_scores = dense_scores + eff_mask.unsqueeze(1).float()
-            elif eff_mask.dim() == 4:
-                valid_mask = (eff_mask[:, 0, -1, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
-                dense_scores = dense_scores + eff_mask.float()
+            if can_causal:
+                causal = torch.triu(
+                    torch.full((L, L), -1e4, device=x.device, dtype=torch.float32),
+                    diagonal=1,
+                )
+                dense_scores = dense_scores + causal.unsqueeze(0).unsqueeze(0)
 
-        dense_scores = torch.nan_to_num(dense_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        dense_attn = F.softmax(dense_scores, dim=-1)
-        dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    pad_m = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+                    dense_scores = dense_scores + pad_m
+                elif eff_mask.dim() == 3:
+                    dense_scores = dense_scores + eff_mask.unsqueeze(1).float()
+                elif eff_mask.dim() == 4:
+                    dense_scores = dense_scores + eff_mask.float()
 
-        head_mask_b = None
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask_b = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask_b = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
-            elif head_mask.dim() == 4:
-                head_mask_b = head_mask
+            dense_scores = torch.nan_to_num(dense_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            dense_attn = F.softmax(dense_scores, dim=-1)
+            dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
+
             if head_mask_b is not None:
                 dense_attn = dense_attn * head_mask_b.to(dense_attn.dtype)
 
-        dense_attn = self.dropout(dense_attn)
-        dense_out = torch.matmul(dense_attn.to(v.dtype), v)
+            dense_attn = self.dropout(dense_attn)
+            dense_out = torch.matmul(dense_attn.to(v.dtype), v)
 
         # ---- Linear stream (FIX-1, FIX-2) ----
         q_norm = self._spherical_normalize(q)
