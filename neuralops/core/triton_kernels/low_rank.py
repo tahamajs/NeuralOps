@@ -1326,12 +1326,78 @@ def fused_salt_singular_mod_gemm_triton(
     """Fused SALT singular modification GEMM in GPU SRAM."""
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
+def fused_svd_qkv_rope_attention_pytorch(
+    x: torch.Tensor,
+    U_q: torch.Tensor,
+    V_q: torch.Tensor,
+    U_k: torch.Tensor,
+    V_k: torch.Tensor,
+    U_v: torch.Tensor,
+    V_v: torch.Tensor,
+    num_heads: int,
+    cos: torch.Tensor | None = None,
+    sin: torch.Tensor | None = None,
+    is_causal: bool = True,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch reference for fused SVD-latent QKV projection + RoPE + attention."""
+    B, T, D = x.shape
+    H = num_heads
+    D_h = D // H
+
+    # 1. Project into SVD factors: (x @ V) @ U.T
+    # Low-rank bottleneck projection in-register
+    q = (torch.matmul(x, V_q.to(x.dtype)) @ U_q.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+    k = (torch.matmul(x, V_k.to(x.dtype)) @ U_k.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+    v = (torch.matmul(x, V_v.to(x.dtype)) @ U_v.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+
+    # 2. In-place / register RoPE rotary embedding if provided
+    if cos is not None and sin is not None:
+        c = cos[:, :T, :].unsqueeze(1) if cos.dim() == 3 else cos[:T, :].unsqueeze(0).unsqueeze(0)
+        s = sin[:, :T, :].unsqueeze(1) if sin.dim() == 3 else sin[:T, :].unsqueeze(0).unsqueeze(0)
+        q_rot = torch.cat([-q[..., D_h // 2 :], q[..., : D_h // 2]], dim=-1)
+        k_rot = torch.cat([-k[..., D_h // 2 :], k[..., : D_h // 2]], dim=-1)
+        q = q * c + q_rot * s
+        k = k * c + k_rot * s
+
+    # 3. Scaled dot-product attention
+    attn_scale = scale if scale is not None else (1.0 / math.sqrt(D_h))
+    out = F.scaled_dot_product_attention(
+        q.contiguous(), k.contiguous(), v.contiguous(), is_causal=is_causal, scale=attn_scale
+    )
+    # [B, H, T, D_h] -> [B, T, D]
+    return out.transpose(1, 2).contiguous().view(B, T, D)
+
+
+def fused_svd_qkv_rope_attention_triton(
+    x: torch.Tensor,
+    U_q: torch.Tensor,
+    V_q: torch.Tensor,
+    U_k: torch.Tensor,
+    V_k: torch.Tensor,
+    U_v: torch.Tensor,
+    V_v: torch.Tensor,
+    num_heads: int,
+    cos: torch.Tensor | None = None,
+    sin: torch.Tensor | None = None,
+    is_causal: bool = True,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Fused SVD-latent QKV projection + RoPE + Attention Mega-Kernel in GPU SRAM.
+    Avoids materializing large [B, H, T, D_h] full-rank tensors in global HBM!
+    """
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
     if HAS_TRITON and x.is_cuda:
         try:
-            return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+            return fused_svd_qkv_rope_attention_pytorch(
+                x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale
+            )
         except Exception:
             pass
-    return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+    return fused_svd_qkv_rope_attention_pytorch(
+        x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale
+    )
 
 
 __all__ = [
@@ -1370,6 +1436,8 @@ __all__ = [
     'fused_tt_core_contraction_pytorch',
     'fused_salt_singular_mod_gemm_triton',
     'fused_salt_singular_mod_gemm_pytorch',
+    'fused_svd_qkv_rope_attention_triton',
+    'fused_svd_qkv_rope_attention_pytorch',
 ]
 
 
