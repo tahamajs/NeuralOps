@@ -15,6 +15,7 @@ Supports d_k = d_v <= 64.
 from __future__ import annotations
 
 import torch
+import torch.nn.functional as F
 
 from neuralops.core.triton_kernels._common import tl, triton
 
@@ -583,6 +584,80 @@ def gdn_scan_pytorch(q, k, v, beta, alpha):
     return torch.stack(ys, dim=2).to(dtype)
 
 
+def _delta_chunk_forward_boundary(S, q_c, k_c, v_c, beta_c, alpha_c):
+    """Fast unrolled chunk step to compute chunk end boundary state."""
+    C = q_c.shape[2]
+    curr = S
+    for t in range(C):
+        kt = k_c[:, :, t : t + 1, :].float()
+        vt = v_c[:, :, t : t + 1, :].float()
+        bt = beta_c[:, :, t : t + 1].unsqueeze(-1).float()
+        at = alpha_c[:, :, t : t + 1].unsqueeze(-1).float()
+
+        inter_v = torch.matmul(kt, curr)
+        err = vt - inter_v
+        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
+        step = at / (1.0 + norm_k_sq).clamp_min(1.0)
+        curr = bt * curr + step * torch.matmul(kt.transpose(-1, -2), err)
+    return curr
+
+
+def _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64):
+    """
+    Chunk-level gradient checkpointing for Gated DeltaNet scan.
+    Splits sequence L into chunks of size `chunk_size`, saving only chunk-boundary states
+    instead of storing all (B, H, L, D, D) states on autograd tape.
+    """
+    B, H, L, D = q.shape
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+
+    if pad_len > 0:
+        q_p = F.pad(q, (0, 0, 0, pad_len))
+        k_p = F.pad(k, (0, 0, 0, pad_len))
+        v_p = F.pad(v, (0, 0, 0, pad_len))
+        beta_p = F.pad(beta, (0, pad_len), value=1.0)
+        alpha_p = F.pad(alpha, (0, pad_len), value=0.0)
+    else:
+        q_p, k_p, v_p, beta_p, alpha_p = q, k, v, beta, alpha
+
+    # Collect boundary states with torch.no_grad()
+    with torch.no_grad():
+        boundary_states = [torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)]
+        S_curr = boundary_states[0]
+        for c in range(num_chunks - 1):
+            st = c * chunk_size
+            en = (c + 1) * chunk_size
+            S_curr = _delta_chunk_forward_boundary(
+                S_curr,
+                q_p[:, :, st:en],
+                k_p[:, :, st:en],
+                v_p[:, :, st:en],
+                beta_p[:, :, st:en],
+                alpha_p[:, :, st:en],
+            )
+            boundary_states.append(S_curr)
+
+    outs = []
+    # Process each chunk individually through _GatedDeltaNetScanFn so workspace is only (B, H, chunk_size, D, D)
+    for c in range(num_chunks):
+        st = c * chunk_size
+        en = (c + 1) * chunk_size
+        qc = q_p[:, :, st:en]
+        kc = k_p[:, :, st:en]
+        vc = v_p[:, :, st:en]
+        bc = beta_p[:, :, st:en]
+        ac = alpha_p[:, :, st:en]
+
+        yc = _GatedDeltaNetScanFn.apply(qc, kc, vc, bc, ac)
+        outs.append(yc)
+
+    y_all = torch.cat(outs, dim=2)
+    if pad_len > 0:
+        y_all = y_all[:, :, :L, :]
+    return y_all
+
+
 def gdn_scan_triton(q, k, v, beta, alpha):
     """Triton-accelerated Gated DeltaNet scan. head_dim must be <= 64."""
     B, H, L, D = q.shape
@@ -601,6 +676,10 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     )
     if not needs_grad:
         return _gdn_fwd_inference(q, k, v, beta, alpha)
+
+    # For long sequences (L > 256), use chunk-level checkpointed scan to bound peak VRAM
+    if L > 256:
+        return _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64)
 
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
 
