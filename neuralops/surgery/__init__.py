@@ -28,6 +28,11 @@ from neuralops.surgery.shadow_twin import (
     set_surgery_stage,
 )
 
+from neuralops.surgery.hf_cache_bridge import (
+    NeuralOpsHybridHFCache,
+    wrap_model_for_generation,
+)
+
 __all__ = [
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
@@ -48,4 +53,6 @@ __all__ = [
     "collect_surgery_distillation_loss",
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
+    "NeuralOpsHybridHFCache",
+    "wrap_model_for_generation",
 ]
