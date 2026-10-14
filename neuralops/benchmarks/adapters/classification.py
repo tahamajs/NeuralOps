@@ -90,6 +90,7 @@ class ClassificationAdapter:
             dtype=self.dtype,
             task="classification",
             num_labels=num_labels,
+            dataset=self.dataset_name,
         )
         self.model_meta = get_model_metadata(self.model, model_cfg)
 
