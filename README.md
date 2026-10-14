@@ -534,6 +534,7 @@ Zero-shot replacement via `neuralops.replace_attention` is verified across 8 maj
 
 ## 📖 Documentation
 
+- [Tier-1 Framework Evolution Blueprint](docs/TIER1_FRAMEWORK_BLUEPRINT.md) — Architectural roadmap to enterprise scale: Dynamo/AOTInductor, continuous batching, vLLM plugins, and TP/PP/CP distributed engines.
 - [Framework Overview & Developer Manual](docs/FRAMEWORK_OVERVIEW.md) — Unified framework topology, step decoding, hybrid caching, and serving adapters.
 - [Quick Start Guide](docs/QUICKSTART.md) — 5-minute onboarding and setup.
 - [Module Reference](docs/MODULES.md) — Complete inventory of all 131 attention mechanisms.
@@ -542,6 +543,7 @@ Zero-shot replacement via `neuralops.replace_attention` is verified across 8 maj
 - [Architecture Manual](docs/ARCHITECTURE.md) — Framework internals and system design.
 - [Library Comparison](docs/COMPARISON.md) — Feature matrix and benchmark comparisons.
 - [Troubleshooting & FAQ](docs/FAQ.md) — Common error resolutions and platform configuration.
+
 
 
 ---
