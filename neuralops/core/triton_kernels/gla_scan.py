@@ -17,6 +17,8 @@ Supports head_dim D <= 64.
 from __future__ import annotations
 
 import torch
+import torch.nn.functional as F
+
 
 from neuralops.core.triton_kernels._common import tl, triton
 
