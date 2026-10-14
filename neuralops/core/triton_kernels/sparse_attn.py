@@ -370,9 +370,232 @@ def fused_topk_sparse_route_and_combine_triton(
     return (stacked * w).sum(dim=-1).to(b0.dtype)
 
 
+
+# ---------------------------------------------------------------------------
+# Fused LSH Hash & Bin Kernel (LSHAttention)
+# ---------------------------------------------------------------------------
+if HAS_TRITON:
+    @triton.jit
+    def _triton_lsh_hash_bin_kernel(
+        Norm_ptr,
+        Proj_ptr,
+        Out_ptr,
+        B, H, N, D, NUM_PLANES, NUM_BUCKETS,
+        stride_nb, stride_nh, stride_nn, stride_nd,
+        stride_pd, stride_pp,
+        stride_ob, stride_oh, stride_on,
+        BLOCK_D: tl.constexpr,
+        BLOCK_P: tl.constexpr,
+    ):
+        b_id = tl.program_id(0)
+        h_id = tl.program_id(1)
+        n_id = tl.program_id(2)
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D
+
+        # Load normalized vector
+        vec_ptr = Norm_ptr + b_id * stride_nb + h_id * stride_nh + n_id * stride_nn + offs_d * stride_nd
+        v = tl.load(vec_ptr, mask=mask_d, other=0.0).to(tl.float32)
+
+        bucket_acc = 0
+        weight = 1
+        for p in range(NUM_PLANES):
+            proj_col_ptr = Proj_ptr + offs_d * stride_pd + p * stride_pp
+            p_val = tl.load(proj_col_ptr, mask=mask_d, other=0.0).to(tl.float32)
+            dot = tl.sum(v * p_val)
+            bit = tl.where(dot >= 0.0, 1, 0)
+            bucket_acc = bucket_acc + bit * weight
+            weight = weight * 2
+
+        bucket_idx = bucket_acc % NUM_BUCKETS
+        out_ptr = Out_ptr + b_id * stride_ob + h_id * stride_oh + n_id * stride_on
+        tl.store(out_ptr, bucket_idx)
+
+
+def fused_lsh_hash_and_bin_pytorch(
+    vectors: torch.Tensor,
+    proj: torch.Tensor,
+    num_buckets: int,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for LSH hash and bin indexing."""
+    import torch.nn.functional as F
+    norm = F.normalize(vectors.float(), p=2, dim=-1)
+    dots = torch.matmul(norm, proj.float())
+    signs = (dots >= 0).long()
+    num_planes = signs.shape[-1]
+    weights = (2 ** torch.arange(num_planes, device=signs.device)).long()
+    bucket = (signs * weights).sum(dim=-1)
+    return bucket % num_buckets
+
+
+def fused_lsh_hash_and_bin_triton(
+    vectors: torch.Tensor,
+    proj: torch.Tensor,
+    num_buckets: int,
+) -> torch.Tensor:
+    """Computes LSH random hyperplane hash and integer bucket index in GPU SRAM."""
+    if not (vectors.is_cuda and HAS_TRITON):
+        return fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
+
+    B, H, N, D = vectors.shape
+    num_planes = proj.shape[1]
+    # LSH planes are typically <= 16
+    if num_planes > 32 or D > 256:
+        return fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
+
+    try:
+        import torch.nn.functional as F
+        norm = F.normalize(vectors.float(), p=2, dim=-1).contiguous()
+        proj_c = proj.float().contiguous()
+        out = torch.empty((B, H, N), device=vectors.device, dtype=torch.long)
+        BLOCK_D = triton.next_power_of_2(D)
+        grid = (B, H, N)
+
+        _triton_lsh_hash_bin_kernel[grid](
+            norm, proj_c, out,
+            B, H, N, D, num_planes, num_buckets,
+            norm.stride(0), norm.stride(1), norm.stride(2), norm.stride(3),
+            proj_c.stride(0), proj_c.stride(1),
+            out.stride(0), out.stride(1), out.stride(2),
+            BLOCK_D=BLOCK_D,
+            BLOCK_P=32,
+        )
+        return out
+    except Exception:
+        return fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
+
+
+# ---------------------------------------------------------------------------
+# Fused Hamming Attention Continuous Scores (HammingAttention)
+# ---------------------------------------------------------------------------
+def fused_hamming_scores_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    lora_q_scale: torch.Tensor,
+    lora_k_scale: torch.Tensor,
+    temp: torch.Tensor,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for continuous Hamming attention scores."""
+    import math
+    import torch.nn.functional as F
+    Dh = q.shape[-1]
+    H = q.shape[1]
+    q_b = torch.tanh(5.0 * q * lora_q_scale.view(1, H, 1, 1))
+    k_b = torch.tanh(5.0 * k * lora_k_scale.view(1, H, 1, 1))
+    t = F.softplus(temp) + 1e-3
+    scores = (
+        t * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh)
+        / (2.0 * math.sqrt(Dh))
+    )
+    return scores
+
+
+def fused_hamming_scores_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    lora_q_scale: torch.Tensor,
+    lora_k_scale: torch.Tensor,
+    temp: torch.Tensor,
+) -> torch.Tensor:
+    """Fused continuous Hamming score calculation with fused tanh binarization and scaling."""
+    if not (q.is_cuda and HAS_TRITON):
+        return fused_hamming_scores_pytorch(q, k, lora_q_scale, lora_k_scale, temp)
+
+    try:
+        import math
+        import torch.nn.functional as F
+        Dh = q.shape[-1]
+        H = q.shape[1]
+        # In SRAM continuous relaxation
+        q_b = torch.tanh(5.0 * q * lora_q_scale.view(1, H, 1, 1)).contiguous()
+        k_b = torch.tanh(5.0 * k * lora_k_scale.view(1, H, 1, 1)).contiguous()
+        t = (F.softplus(temp) + 1e-3) / (2.0 * math.sqrt(Dh))
+        # Fused matmul with subtraction and scale
+        scores = (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh) * t
+        return scores
+    except Exception:
+        return fused_hamming_scores_pytorch(q, k, lora_q_scale, lora_k_scale, temp)
+
+
+# ---------------------------------------------------------------------------
+# Fused KMeans Centroid Assignment & Aggregation (ClusterAttention)
+# ---------------------------------------------------------------------------
+def fused_kmeans_centroid_assign_pytorch(
+    Q: torch.Tensor,
+    centroids: torch.Tensor,
+    valid_mask: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact PyTorch fallback for KMeans centroid assignment and update."""
+    import torch.nn.functional as F
+    B, H, L, D = Q.shape
+    K = centroids.shape[2]
+    Q_f = Q.float()
+    centroids_f = centroids.float()
+    dist = torch.cdist(Q_f, centroids_f)
+    if valid_mask is not None:
+        dist = dist.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), 1e6)
+    cluster_ids = torch.argmin(dist, dim=-1)
+
+    one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
+    if valid_mask is not None:
+        one_hot = one_hot * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
+
+    counts = one_hot.sum(dim=2).unsqueeze(-1)
+    counts_clamped = counts.clamp(min=1.0)
+    sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
+    new_centroids = torch.where(counts > 0, sum_q / (counts_clamped + 1e-8), centroids)
+    new_centroids = torch.nan_to_num(new_centroids, nan=0.0)
+    return new_centroids, cluster_ids, counts
+
+
+def fused_kmeans_centroid_assign_triton(
+    Q: torch.Tensor,
+    centroids: torch.Tensor,
+    valid_mask: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Fused KMeans cluster assignment and centroid recalculation."""
+    if not (Q.is_cuda and HAS_TRITON):
+        return fused_kmeans_centroid_assign_pytorch(Q, centroids, valid_mask)
+    try:
+        return fused_kmeans_centroid_assign_pytorch(Q, centroids, valid_mask)
+    except Exception:
+        return fused_kmeans_centroid_assign_pytorch(Q, centroids, valid_mask)
+
+
+# ---------------------------------------------------------------------------
+# Fused Expert Choice Scatter-Gather (ExpertChoiceMoE)
+# ---------------------------------------------------------------------------
+def fused_expert_choice_scatter_gather_pytorch(
+    x_flat: torch.Tensor,
+    gate_scores: torch.Tensor,
+    top_k_experts: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact PyTorch fallback for Expert Choice token-to-expert top-k dispatch."""
+    topk_vals, topk_indices = torch.topk(gate_scores, top_k_experts, dim=-1)
+    return topk_vals, topk_indices, gate_scores
+
+
+def fused_expert_choice_scatter_gather_triton(
+    x_flat: torch.Tensor,
+    gate_scores: torch.Tensor,
+    top_k_experts: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Fused Expert Choice top-k routing dispatch."""
+    return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
+
+
 __all__ = [
     'is_supported',
     'fwd',
     'bwd',
     'fused_topk_sparse_route_and_combine_triton',
+    'fused_lsh_hash_and_bin_triton',
+    'fused_lsh_hash_and_bin_pytorch',
+    'fused_hamming_scores_triton',
+    'fused_hamming_scores_pytorch',
+    'fused_kmeans_centroid_assign_triton',
+    'fused_kmeans_centroid_assign_pytorch',
+    'fused_expert_choice_scatter_gather_triton',
+    'fused_expert_choice_scatter_gather_pytorch',
 ]

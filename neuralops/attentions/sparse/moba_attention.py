@@ -632,34 +632,18 @@ class MoBAAttention(BaseAttention):
             Vb = V_pad.view(B, H, nb, bs, d)
 
             # ---- Block-level scores ----
-            Q_mean = Qb.mean(dim=3)
-            K_mean = Kb.mean(dim=3)
-            block_scores = (
-                torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
+            from neuralops.core.triton_kernels.block_sparse import (
+                fused_moba_block_router_combine_triton,
+                fused_moba_block_router_combine_pytorch,
             )
-
-            # MB-FIX-08: block-0 preservation
-            # - For bidirectional encoders, block 0 (CLS) should always be a candidate.
-            # - For causal decoders, causality is enforced per-position below, so we
-            #   don't need to force block 0; a query at block i > 0 would never see
-            #   block 0 through causal masking.
-            if not is_causal:
-                block_scores_for_topk = block_scores.clone()
-                block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
-            else:
-                block_scores_for_topk = block_scores.clone()
-                # For causal: a query in block i can only attend to blocks j ≤ i.
-                # Mask blocks j > i to -inf.
-                causal_block = torch.triu(
-                    torch.full((nb, nb), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=1,
+            try:
+                block_scores_for_topk, top_idx = fused_moba_block_router_combine_triton(
+                    Qb, Kb, Vb, scale, self.top_k, is_causal
                 )
-                block_scores_for_topk = block_scores_for_topk + causal_block.unsqueeze(0).unsqueeze(
-                    0
+            except Exception:
+                block_scores_for_topk, top_idx = fused_moba_block_router_combine_pytorch(
+                    Qb, Kb, Vb, scale, self.top_k, is_causal
                 )
-
-            top_k = min(self.top_k, nb)
-            _, top_idx = block_scores_for_topk.topk(top_k, dim=-1)  # (B, H, nb, top_k)
 
             # MB-FIX-05: valid block mask reshaped correctly
             valid_b_exp = valid_mask_padded.view(B, 1, nb, bs).expand(-1, H, -1, -1)

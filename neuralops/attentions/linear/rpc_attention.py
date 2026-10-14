@@ -619,16 +619,18 @@ class RPCAttention(BaseAttention):
         proj_k = self.proj_k.to(dtype=k.dtype, device=k.device)
 
         # (B, H, L, head_dim) @ (H, head_dim, r) -> (B, H, L, r)
-        q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
-        k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
-
-        scores = (
-            torch.matmul(
-                q_sketched.float(),
-                k_sketched.float().transpose(-2, -1).contiguous(),
-            )
-            * self.sketch_scale
+        from neuralops.core.triton_kernels.low_rank import (
+            fused_rpc_sketch_attention_triton,
+            fused_rpc_sketch_attention_pytorch,
         )
+        try:
+            scores = fused_rpc_sketch_attention_triton(
+                q, k, proj_q, proj_k, self.sketch_scale
+            )
+        except Exception:
+            scores = fused_rpc_sketch_attention_pytorch(
+                q, k, proj_q, proj_k, self.sketch_scale
+            )
 
         # ---- RPC-07 / RPC-21: causal only for self-attention ----
         if self.is_decoder and not is_cross:

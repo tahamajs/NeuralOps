@@ -438,20 +438,18 @@ class HammingAttention(BaseAttention):
 
         # ---- Hamming attention scores ----
         # Continuous relaxation of Hamming distance via tanh binarization.
-        # Soft-binary: q_b, k_b ∈ (-1, 1)^Dh.
-        # Inner product <q_b, k_b> ∈ (-Dh, Dh), so (matmul - Dh) is in (-2Dh, 0).
-        # Dividing by 2*sqrt(Dh) normalizes; multiplying by learned temp sharpens.
-        q_b = torch.tanh(5.0 * Q * self.lora_q_scale.view(1, H, 1, 1))
-        k_b = torch.tanh(5.0 * K * self.lora_k_scale.view(1, H, 1, 1))
-
-        # HAD-FIX-02: ensure temperature is positive (softmax over -Hamming needs T > 0)
-        temp = F.softplus(self.lora_temp) + 1e-3
-
-        scores = (
-            temp
-            * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh)
-            / (2.0 * math.sqrt(Dh))
+        from neuralops.core.triton_kernels.sparse_attn import (
+            fused_hamming_scores_triton,
+            fused_hamming_scores_pytorch,
         )
+        try:
+            scores = fused_hamming_scores_triton(
+                Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp
+            )
+        except Exception:
+            scores = fused_hamming_scores_pytorch(
+                Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp
+            )
 
         # ---- Masking ----
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")

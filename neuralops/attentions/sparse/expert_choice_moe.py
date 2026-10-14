@@ -119,7 +119,18 @@ class ExpertChoiceMoE(nn.Module):
         
         # Select top-2 experts per token (standard MoE)
         top_k_experts = min(2, self.n_experts)
-        topk_vals, topk_indices = torch.topk(gate_scores, top_k_experts, dim=-1)
+        from neuralops.core.triton_kernels.sparse_attn import (
+            fused_expert_choice_scatter_gather_triton,
+            fused_expert_choice_scatter_gather_pytorch,
+        )
+        try:
+            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_triton(
+                x_flat, gate_scores, top_k_experts
+            )
+        except Exception:
+            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_pytorch(
+                x_flat, gate_scores, top_k_experts
+            )
 
         out_flat = torch.zeros_like(x_flat)
         for e in range(self.n_experts):
