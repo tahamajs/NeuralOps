@@ -436,6 +436,7 @@ class GatedDeltaNetBlock(BaseAttention):
             if delta_out.shape[-1] != x.shape[-1]:
                 delta_out = delta_out[..., : x.shape[-1]]
 
+            delta_out = torch.nan_to_num(delta_out, nan=0.0, posinf=1e4, neginf=-1e4)
             # No internal residual, no internal norm.
             return delta_out, present_state
 
