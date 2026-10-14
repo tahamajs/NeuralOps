@@ -270,14 +270,18 @@ def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
 
 
 def test_3_5_state_update_idempotency():
-    B, H, D = 2, 2, 16
-    state = torch.randn(B, H, D, D, device=DEVICE)
-    q = torch.randn(B, H, 1, D, device=DEVICE)
-    k = torch.randn(B, H, 1, D, device=DEVICE)
-    v = torch.randn(B, H, 1, D, device=DEVICE)
+    from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
 
-    out1, state1 = triton_dispatch("state_update", q, k, v, state.clone())
-    out2, state2 = state_update_pytorch_fallback(q, k, v, state.clone())
+    B, H, Dk, Dv = 2, 2, 16, 16
+    kv_state = torch.randn(B, H, Dk, Dv, device=DEVICE)
+    z_state = torch.randn(B, H, Dk, device=DEVICE)
+    q = torch.randn(B, H, Dk, device=DEVICE)
+    k = torch.randn(B, H, Dk, device=DEVICE)
+    v = torch.randn(B, H, Dv, device=DEVICE)
 
-    torch.testing.assert_close(out1, out2, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(state1, state2, rtol=1e-3, atol=1e-3)
+    out1, next_kv1, next_z1 = fused_recurrent_linear_step(q, k, v, kv_state.clone(), z_state.clone())
+    out2, next_kv2, next_z2 = fused_recurrent_linear_step(q, k, v, kv_state.clone(), z_state.clone())
+
+    torch.testing.assert_close(out1, out2, rtol=1e-5, atol=1e-5)
+    torch.testing.assert_close(next_kv1, next_kv2, rtol=1e-5, atol=1e-5)
+    torch.testing.assert_close(next_z1, next_z2, rtol=1e-5, atol=1e-5)
