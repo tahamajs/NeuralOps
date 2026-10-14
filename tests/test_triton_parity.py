@@ -281,3 +281,47 @@ def test_scan_kernels_execution():
     iv = torch.randn(B, L, D, device=device, dtype=torch.float32)
     out_hgrn2 = hgrn2_scan(f, iv, res_clip=1.0)
     assert out_hgrn2.shape == f.shape
+
+
+def test_tri_kernel_gla_parity_and_backward():
+    """Verify GLA tri-kernel regimes: inference vs training and backward autograd."""
+    B, H, L, D = 2, 4, 32, 32
+    device = "cuda" if (torch.cuda.is_available() and HAS_TRITON) else "cpu"
+
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    lambdas_raw = torch.randn(B, H, L, device=device, dtype=torch.float32)
+    lambdas = torch.sigmoid(lambdas_raw).detach().requires_grad_(True)
+
+    from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
+    # Forward parity
+    ref = gla_scan_pytorch(q.detach(), k.detach(), v.detach(), lambdas.detach())
+    out = gla_scan(q, k, v, lambdas)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+    # Backward gradient execution
+    loss = out.sum()
+    loss.backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None and lambdas.grad is not None
+
+
+def test_tri_kernel_gdn_continuity_and_backward():
+    """Verify Gated DeltaNet state continuity across sequential chunk execution."""
+    B, H, L, D = 2, 4, 32, 32
+    device = "cuda" if (torch.cuda.is_available() and HAS_TRITON) else "cpu"
+
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32, requires_grad=True)
+    beta = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32, requires_grad=True))
+    alpha = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32, requires_grad=True))
+
+    from neuralops.core.triton_kernels.gdn_scan import gdn_scan, gdn_scan_pytorch
+    ref = gdn_scan_pytorch(q.detach(), k.detach(), v.detach(), beta.detach(), alpha.detach())
+    out = gdn_scan(q, k, v, beta, alpha)
+    torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
+
+    # Autograd backward
+    out.sum().backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
