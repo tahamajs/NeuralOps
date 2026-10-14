@@ -707,7 +707,10 @@ def fused_regla_refined_gate_scan_pytorch(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Exact PyTorch fallback for ReGLA refined gated linear scan."""
-    return kda_hla_chunk_scan_triton(q, k, v, gate, is_causal=is_causal)
+    # Convert gate to log decay (<= 0)
+    log_decay = -F.softplus(gate)
+    return kda_hla_chunk_scan_triton(q, k, v, log_decay)
+
 
 
 def fused_regla_refined_gate_scan_triton(
