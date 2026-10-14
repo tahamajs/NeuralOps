@@ -676,7 +676,9 @@ class REAPMoEAttention(BaseAttention):
         target_dtype = hidden_states.dtype
 
         # Pre-LN: apply norm before attention (RP-FIX-17)
-        if self.pre_ln:
+        # Note: in standalone_attn mode (replacing a pure attention block), the model outer block
+        # already performs layer normalization (e.g. ln_1(x)). Re-normalizing here distorts scales.
+        if self.pre_ln and not getattr(self, "standalone_attn", False):
             n1_dtype = (
                 self.norm1.weight.dtype
                 if hasattr(self.norm1, "weight") and self.norm1.weight is not None
