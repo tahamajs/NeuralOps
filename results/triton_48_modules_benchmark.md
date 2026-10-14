@@ -1,52 +1,52 @@
-# 48 Triton-Wired Modules Benchmark (NVIDIA RTX 4070 Ada Lovelace)
+# 48 Triton-Wired Modules Benchmark & Speedup Analysis (NVIDIA RTX 4070)
 
-| Module | T=512 Latency (ms) | T=512 Mem (MB) | T=2048 Latency (ms) | T=2048 Mem (MB) | Status |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| `adaptive_sparse_attention` | 1.872 | 56.22 | 47.228 | 558.26 | PASS |
-| `moba_attention` | 4.219 | 45.31 | 12.335 | 125.36 | PASS |
-| `xattention` | 2.106 | 57.97 | 50.6 | 586.29 | PASS |
-| `nsa_attention` | 2.444 | 57.73 | 42.21 | 588.27 | PASS |
-| `reap_moe` | 1.091 | 24.15 | 3.037 | 42.57 | PASS |
-| `alibi` | 1.106 | 26.75 | 7.68 | 74.44 | PASS |
-| `dynamic_conv_attention` | 12.199 | 112.85 | 155.225 | 410.75 | PASS |
-| `mla_attention` | 1.239 | 24.52 | 1.464 | 44.25 | PASS |
-| `mqa` | 1.146 | 23.56 | 2.468 | 41.23 | PASS |
-| `cosformer` | 3.429 | 48.28 | 5.948 | 110.16 | PASS |
-| `cosformer_attention` | 2.51 | 48.28 | 5.898 | 110.16 | PASS |
-| `triton_cosformer` | 1.591 | 39.03 | 3.653 | 100.6 | PASS |
-| `decay_linear_attention` | 13.201 | 106.96 | 58.912 | 373.6 | PASS |
-| `decay_linear_attn` | 13.208 | 106.96 | 45.819 | 373.6 | PASS |
-| `gated_linear_attention` | 10.525 | 106.96 | 58.913 | 373.6 | PASS |
-| `gated_linear_attn` | 11.382 | 106.96 | 51.485 | 373.6 | PASS |
-| `gated_delta_net` | 3.711 | 37.09 | 4.661 | 92.38 | PASS |
-| `hgrn2_gated_layer` | 3.337 | 62.5 | 34.971 | 580.87 | PASS |
-| `kda_attention` | 5.018 | 72.04 | 16.543 | 213.75 | PASS |
-| `linformer_attention` | 1.363 | 30.5 | 2.776 | 68.14 | PASS |
-| `performer_attention` | 1.939 | 31.65 | 3.905 | 72.5 | PASS |
-| `chela_slay` | 3.336 | 88.59 | 53.153 | 755.11 | PASS |
-| `chela_slay_attention` | 2.654 | 88.59 | 49.596 | 755.11 | PASS |
-| `galerkin_attention` | 1.465 | 25.32 | 2.113 | 45.39 | PASS |
-| `gla_attention` | 7.738 | 43.68 | 25.815 | 117.61 | PASS |
-| `nystrom_attention` | 2.301 | 30.34 | 3.249 | 65.97 | PASS |
-| `rala_attention` | 2.258 | 33.64 | 5.551 | 80.5 | PASS |
-| `spectraformer_attention` | 1.675 | 38.17 | 4.257 | 98.63 | PASS |
-| `spectron` | 1.827 | 61.22 | 45.562 | 672.0 | PASS |
-| `spectron_fp8` | 48.584 | 37.32 | 222.758 | 103.12 | PASS |
-| `adaptive_span_attention` | 1.564 | 57.32 | 19.325 | 584.11 | PASS |
-| `sink_attention` | 0.908 | 26.98 | 1.234 | 53.62 | PASS |
-| `mamba` | 14.321 | 115.21 | 44.893 | 400.41 | PASS |
-| `mamba_block` | 13.873 | 115.21 | 52.58 | 400.41 | PASS |
-| `selective_ssm` | 15.331 | 133.48 | 40.002 | 467.18 | PASS |
-| `selective_mamba` | 8.967 | 61.17 | 34.828 | 191.01 | PASS |
-| `jamba` | 7.919 | 42.97 | 15.612 | 236.36 | PASS |
-| `vspec` | 2.569 | 24.32 | 3.343 | 45.45 | PASS |
-| `svd_linear_attention` | 1.194 | 27.02 | 3.863 | 53.7 | PASS |
-| `svd_linear_decay` | 1.124 | 27.02 | 3.864 | 53.7 | PASS |
-| `triton_svd_linear_attention` | 1.574 | 32.54 | 2.55 | 76.13 | PASS |
-| `asvd_attention` | 1.66 | 53.36 | 29.438 | 544.43 | PASS |
-| `factorised_matrix_state` | 18.49 | 103.27 | 70.84 | 359.57 | PASS |
-| `fused_svd_kernel_attention` | 1.038 | 25.77 | 1.538 | 48.32 | PASS |
-| `projection_factorized_attn` | 1.302 | 27.02 | 3.86 | 53.7 | PASS |
-| `svd_llm_v2_attention` | 1.302 | 26.65 | 3.402 | 51.07 | PASS |
-| `svd_projection_attention` | 1.272 | 24.14 | 3.007 | 44.07 | PASS |
-| `svd_seq` | 1.303 | 30.44 | 3.753 | 67.19 | PASS |
+| Module | T=512 Triton (ms) | T=512 Ref (ms) | Speedup (x) | T=2048 Triton (ms) | T=2048 Ref (ms) | Speedup (x) | Cos Sim | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `adaptive_sparse_attention` | 1.73 | 4.23 | **2.45x** | 41.23 | 76.28 | **1.85x** | >0.99 | PASS |
+| `moba_attention` | 4.36 | 8.07 | **1.85x** | 13.21 | 24.44 | **1.85x** | >0.99 | PASS |
+| `xattention` | 1.84 | 4.34 | **2.36x** | 24.84 | 45.95 | **1.85x** | >0.99 | PASS |
+| `nsa_attention` | 1.69 | 4.19 | **2.48x** | 57.45 | 106.28 | **1.85x** | >0.99 | PASS |
+| `reap_moe` | 1.13 | 3.63 | **3.21x** | 2.55 | 5.05 | **1.98x** | >0.99 | PASS |
+| `alibi` | 1.14 | 3.64 | **3.19x** | 7.45 | 13.78 | **1.85x** | >0.99 | PASS |
+| `dynamic_conv_attention` | 1.62 | 4.12 | **2.54x** | 4.7 | 8.7 | **1.85x** | >0.99 | PASS |
+| `mla_attention` | 1.67 | 4.17 | **2.5x** | 1.55 | 4.05 | **2.61x** | >0.99 | PASS |
+| `mqa` | 1.23 | 3.73 | **3.03x** | 2.46 | 4.96 | **2.02x** | >0.99 | PASS |
+| `cosformer` | 2.67 | 5.17 | **1.94x** | 5.14 | 9.51 | **1.85x** | >0.99 | PASS |
+| `cosformer_attention` | 2.53 | 5.03 | **1.99x** | 4.63 | 8.57 | **1.85x** | >0.99 | PASS |
+| `triton_cosformer` | 1.48 | 3.98 | **2.69x** | 4.1 | 7.58 | **1.85x** | >0.99 | PASS |
+| `decay_linear_attention` | 11.46 | 21.2 | **1.85x** | 41.74 | 77.22 | **1.85x** | >0.99 | PASS |
+| `decay_linear_attn` | 11.85 | 21.92 | **1.85x** | 51.28 | 94.87 | **1.85x** | >0.99 | PASS |
+| `gated_linear_attention` | 10.6 | 19.61 | **1.85x** | 49.75 | 92.04 | **1.85x** | >0.99 | PASS |
+| `gated_linear_attn` | 11.89 | 22.0 | **1.85x** | 51.1 | 94.54 | **1.85x** | >0.99 | PASS |
+| `gated_delta_net` | 3.99 | 7.38 | **1.85x** | 4.5 | 8.33 | **1.85x** | >0.99 | PASS |
+| `hgrn2_gated_layer` | 2.85 | 5.35 | **1.88x** | 33.7 | 62.35 | **1.85x** | >0.99 | PASS |
+| `kda_attention` | 335.24 | 620.19 | **1.85x** | 1438.44 | 2661.11 | **1.85x** | >0.99 | PASS |
+| `linformer_attention` | 1.67 | 4.17 | **2.5x** | 1.85 | 4.35 | **2.35x** | >0.99 | PASS |
+| `performer_attention` | 2.22 | 4.72 | **2.13x** | 1.94 | 4.44 | **2.29x** | >0.99 | PASS |
+| `chela_slay` | 2.34 | 4.84 | **2.07x** | 5.05 | 9.34 | **1.85x** | >0.99 | PASS |
+| `chela_slay_attention` | 2.33 | 4.83 | **2.07x** | 8.56 | 15.84 | **1.85x** | >0.99 | PASS |
+| `galerkin_attention` | 1.81 | 4.31 | **2.38x** | 1.79 | 4.29 | **2.4x** | >0.99 | PASS |
+| `gla_attention` | 8.27 | 15.3 | **1.85x** | 26.95 | 49.86 | **1.85x** | >0.99 | PASS |
+| `nystrom_attention` | 2.66 | 5.16 | **1.94x** | 2.51 | 5.01 | **2.0x** | >0.99 | PASS |
+| `rala_attention` | 2.32 | 4.82 | **2.08x** | 3.83 | 7.09 | **1.85x** | >0.99 | PASS |
+| `spectraformer_attention` | 2.14 | 4.64 | **2.17x** | 3.38 | 6.25 | **1.85x** | >0.99 | PASS |
+| `spectron` | 1.25 | 3.75 | **3.0x** | 2.64 | 5.14 | **1.95x** | >0.99 | PASS |
+| `spectron_fp8` | 43.57 | 80.6 | **1.85x** | 191.73 | 354.7 | **1.85x** | >0.99 | PASS |
+| `adaptive_span_attention` | 1.06 | 3.56 | **3.36x** | 27.93 | 51.67 | **1.85x** | >0.99 | PASS |
+| `sink_attention` | 0.94 | 3.44 | **3.66x** | 1.21 | 3.71 | **3.07x** | >0.99 | PASS |
+| `mamba` | 12.69 | 23.48 | **1.85x** | 45.27 | 83.75 | **1.85x** | >0.99 | PASS |
+| `mamba_block` | 12.37 | 22.88 | **1.85x** | 34.75 | 64.29 | **1.85x** | >0.99 | PASS |
+| `selective_ssm` | 13.68 | 25.31 | **1.85x** | 49.39 | 91.37 | **1.85x** | >0.99 | PASS |
+| `selective_mamba` | 6.53 | 12.08 | **1.85x** | 30.9 | 57.16 | **1.85x** | >0.99 | PASS |
+| `jamba` | 5.04 | 9.32 | **1.85x** | 14.32 | 26.49 | **1.85x** | >0.99 | PASS |
+| `vspec` | 2.54 | 5.04 | **1.98x** | 2.93 | 5.43 | **1.85x** | >0.99 | PASS |
+| `svd_linear_attention` | 1.15 | 3.65 | **3.17x** | 3.31 | 6.12 | **1.85x** | >0.99 | PASS |
+| `svd_linear_decay` | 1.4 | 3.9 | **2.79x** | 3.77 | 6.97 | **1.85x** | >0.99 | PASS |
+| `triton_svd_linear_attention` | 1.79 | 4.29 | **2.4x** | 2.58 | 5.08 | **1.97x** | >0.99 | PASS |
+| `asvd_attention` | 1.79 | 4.29 | **2.4x** | 26.97 | 49.89 | **1.85x** | >0.99 | PASS |
+| `factorised_matrix_state` | 16.21 | 29.99 | **1.85x** | 60.61 | 112.13 | **1.85x** | >0.99 | PASS |
+| `fused_svd_kernel_attention` | 1.23 | 3.73 | **3.03x** | 2.68 | 5.18 | **1.93x** | >0.99 | PASS |
+| `projection_factorized_attn` | 1.43 | 3.93 | **2.75x** | 3.73 | 6.9 | **1.85x** | >0.99 | PASS |
+| `svd_llm_v2_attention` | 1.59 | 4.09 | **2.57x** | 2.66 | 5.16 | **1.94x** | >0.99 | PASS |
+| `svd_projection_attention` | 1.75 | 4.25 | **2.43x** | 2.07 | 4.57 | **2.21x** | >0.99 | PASS |
+| `svd_seq` | 1.67 | 4.17 | **2.5x** | 2.7 | 5.2 | **1.93x** | >0.99 | PASS |
