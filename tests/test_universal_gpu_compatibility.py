@@ -59,8 +59,9 @@ def test_sram_autotuner_budget_pruning():
     configs = get_safe_autotune_configs(device, head_dim=256, dtype=torch.float32)
     assert len(configs) >= 1
     # Check that fallback config exists
-    has_safe = any(c.block_m <= 32 and c.block_n <= 32 for c in configs)
+    has_safe = any(c.get("block_m", 64) <= 32 and c.get("block_n", 64) <= 32 for c in configs)
     assert has_safe
+
 
     # Direct SRAM estimation test
     bytes_est = estimate_kernel_sram_bytes(block_m=64, block_n=64, head_dim=128, dtype_bytes=2, num_stages=2)
@@ -150,8 +151,13 @@ def test_all_26_kernel_modules():
     A = torch.randn(D, 16, device=dev, dtype=dtype)
     B_mat = torch.randn(B, T, 16, device=dev, dtype=dtype)
     C = torch.randn(B, T, 16, device=dev, dtype=dtype)
-    out_su = triton_dispatch("state_update", u, delta, A, B_mat, C)
+    res_su = triton_dispatch("state_update", u, delta, A, B_mat, C)
+    if isinstance(res_su, tuple):
+        out_su = res_su[0]
+    else:
+        out_su = res_su
     assert out_su.shape == (B, T, D)
+
 
     # 6. cosformer
     from neuralops.core.triton_kernels.cosformer_triton_kernel import cosformer_triton_fwd
