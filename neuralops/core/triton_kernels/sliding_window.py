@@ -96,7 +96,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
         ctx.window_size = window_size
         ctx.save_for_backward(q, k, v)
         suitable = False
-        if HAS_TRITON and q.is_cuda and not (q.requires_grad or k.requires_grad or v.requires_grad):
+        if HAS_TRITON and q.is_cuda:
             try:
                 from neuralops.core.triton_kernels._types import check_triton_suitability
                 suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])

@@ -606,14 +606,22 @@ class HGRN2Layer(BaseAttention):
 
         # Window + causal mask (at token level)
         out = None
-        if past_len == 0 and (self.window_size >= L):
-            try:
-                out = F.scaled_dot_product_attention(
-                    q, k, v, is_causal=self.is_decoder, dropout_p=self.dropout.p if self.training else 0.0
-                )
-                out = out.transpose(1, 2).contiguous().view(B, L, D)
-            except Exception:
-                out = None
+        if past_len == 0:
+            if self.window_size >= L:
+                try:
+                    out = F.scaled_dot_product_attention(
+                        q, k, v, is_causal=self.is_decoder, dropout_p=self.dropout.p if self.training else 0.0
+                    )
+                    out = out.transpose(1, 2).contiguous().view(B, L, D)
+                except Exception:
+                    out = None
+            elif self.is_decoder:
+                try:
+                    from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
+                    out_win = sliding_window_attention_kernel(q, k, v, window_size=self.window_size)
+                    out = out_win.transpose(1, 2).contiguous().view(B, L, D)
+                except Exception:
+                    out = None
 
         if out is None:
             dist = (q_pos - k_pos).abs()
