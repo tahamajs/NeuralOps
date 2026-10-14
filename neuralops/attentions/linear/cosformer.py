@@ -398,7 +398,15 @@ class CosformerAttention(BaseAttention):
                     valid_k = (padding_mask >= -1.0).float()
                 else:
                     valid_k = (padding_mask == 0).float()
+                # valid_k may be [B, 1, 1, N] or [B, N]; broadcast against [B, H, N, d]
+                while valid_k.dim() < 4:
+                    valid_k = valid_k.unsqueeze(1)
                 if valid_k.shape[-1] == N:
+                    valid_k = valid_k.transpose(-1, -2) if valid_k.shape[-2] != N and valid_k.shape[-1] == N else valid_k
+                    if valid_k.shape[-2] == N and valid_k.shape[-1] == 1:
+                        pass
+                    elif valid_k.shape[-1] == N:
+                        valid_k = valid_k.unsqueeze(-1)  # [B, 1, N, 1]
                     K_cos = K_cos * valid_k
                     K_sin = K_sin * valid_k
 
