@@ -247,7 +247,7 @@ class LSCCompressor(BaseCompressor):
             fallback_to_original = _cfg_get(
                 cfg,
                 "lsc_fallback_to_original",
-                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+                _cfg_get(cfg, "fallback_to_original", True),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -673,7 +673,7 @@ def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 1.0))
     fallback_to_original = _cfg_get(
-        comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", False)
+        comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True)
     )
     lora_r = _cfg_get(comp_config, "lora_r", kwargs.pop("lora_r", 0))
     lora_alpha = _cfg_get(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 1.0))
