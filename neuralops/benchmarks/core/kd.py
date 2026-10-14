@@ -108,32 +108,35 @@ class KDLoss(nn.Module):
 
 def kd_train_step(
     student: nn.Module,
-    teacher: nn.Module,
+    teacher: nn.Module | None,
     batch: tuple[torch.Tensor, ...],
     optimizer: torch.optim.Optimizer,
     kd_loss_fn: KDLoss,
     device: str | torch.device = "cuda",
     mixed_precision: str = "no",
     scaler: Any = None,
+    teacher_logits: torch.Tensor | None = None,
 ) -> float:
     """
     Execute a single gradient update step using knowledge distillation from teacher to student.
 
     Args:
         student: Compressed student model undergoing fine-tuning.
-        teacher: Full-precision frozen teacher model.
+        teacher: Full-precision frozen teacher model (can be None if teacher_logits is provided).
         batch: Input tensors (input_ids, attention_mask, labels, etc.).
         optimizer: Student parameter optimizer.
         kd_loss_fn: KDLoss instance.
         device: Active device.
         mixed_precision: "no", "fp16", or "bf16".
         scaler: GradScaler instance for fp16.
+        teacher_logits: Optional pre-cached teacher logits tensor to skip teacher inference.
 
     Returns:
         Scalar training loss value.
     """
     student.train()
-    teacher.eval()
+    if teacher is not None:
+        teacher.eval()
 
     input_ids = batch[0].to(device)
     attention_mask = batch[1].to(device)
@@ -155,8 +158,13 @@ def kd_train_step(
 
     if amp_enabled:
         with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
-            with torch.no_grad():
-                teacher_outputs = _call_model(teacher)
+            if teacher_logits is not None:
+                t_logits = teacher_logits.to(device)
+                teacher_outputs = None
+            else:
+                with torch.no_grad():
+                    teacher_outputs = _call_model(teacher)
+                t_logits = teacher_outputs.logits
             student_outputs = _call_model(student)
             
             # Check if models support extracting final hidden states and lm_head weight for fused loss
@@ -183,12 +191,17 @@ def kd_train_step(
             else:
                 loss = kd_loss_fn(
                     student_logits=student_outputs.logits,
-                    teacher_logits=teacher_outputs.logits,
+                    teacher_logits=t_logits,
                     labels=labels,
                 )
     else:
-        with torch.no_grad():
-            teacher_outputs = _call_model(teacher)
+        if teacher_logits is not None:
+            t_logits = teacher_logits.to(device)
+            teacher_outputs = None
+        else:
+            with torch.no_grad():
+                teacher_outputs = _call_model(teacher)
+            t_logits = teacher_outputs.logits
         student_outputs = _call_model(student)
         s_head = getattr(student, "lm_head", None)
         t_head = getattr(teacher, "lm_head", None)
@@ -196,6 +209,7 @@ def kd_train_step(
             kd_loss_fn.use_fused_linear
             and s_head is not None
             and t_head is not None
+            and teacher_outputs is not None
             and hasattr(student_outputs, "hidden_states")
             and hasattr(teacher_outputs, "hidden_states")
         ):
@@ -213,7 +227,7 @@ def kd_train_step(
         else:
             loss = kd_loss_fn(
                 student_logits=student_outputs.logits,
-                teacher_logits=teacher_outputs.logits,
+                teacher_logits=t_logits,
                 labels=labels,
             )
 
