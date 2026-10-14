@@ -14,6 +14,7 @@ from neuralops.inference.speculative_decoding import (
     SelfSpeculativeDecoder,
     SpeculativeDecodeStats,
 )
+from neuralops.models.cuda_graph import CUDAGraphDecodeRunner
 
 __all__ = [
     "PagedKVCache",
@@ -24,6 +25,7 @@ __all__ = [
     "ContinuousBatcher",
     "SelfSpeculativeDecoder",
     "SpeculativeDecodeStats",
+    "CUDAGraphDecodeRunner",
 ]
 
 # Auto-wired package members
