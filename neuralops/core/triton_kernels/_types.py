@@ -167,178 +167,180 @@ def linear_attn_pytorch_fallback(
         k = k.unsqueeze(1)
         v = v.unsqueeze(1)
 
-    q_f = q.float()
-    k_f = k.float()
-    v_f = v.float()
+    device_type = q.device.type
+    with torch.autocast(device_type=device_type, enabled=False):
+        q_f = q.float()
+        k_f = k.float()
+        v_f = v.float()
 
-    if phi == "elu+1":
-        phi_q = F.elu(q_f) + 1.0
-        phi_k = F.elu(k_f) + 1.0
-    elif phi == "relu":
-        phi_q = F.relu(q_f)
-        phi_k = F.relu(k_f)
-    elif phi == "identity":
-        phi_q = q_f
-        phi_k = k_f
-    elif phi == "softmax_free":
-        phi_q = F.elu(q_f) + 1.0
-        phi_k = F.elu(k_f) + 1.0
-    else:
-        phi_q = F.elu(q_f) + 1.0
-        phi_k = F.elu(k_f) + 1.0
-
-    B, H, N, D_k = phi_q.shape
-    D_v = v_f.shape[-1]
-
-    has_modulation = cos_weight is not None and sin_weight is not None
-    if has_modulation:
-        cos_w = cos_weight.float()
-        sin_w = sin_weight.float()
-        if cos_w.dim() == 1:
-            cos_w = cos_w.view(1, 1, -1, 1)
-            sin_w = sin_w.view(1, 1, -1, 1)
-        elif cos_w.dim() == 2:
-            cos_w = cos_w.unsqueeze(1).unsqueeze(-1)
-            sin_w = sin_w.unsqueeze(1).unsqueeze(-1)
-        elif cos_w.dim() == 3:
-            cos_w = cos_w.unsqueeze(-1)
-            sin_w = sin_w.unsqueeze(-1)
-
-        q_c = phi_q * cos_w
-        q_s = phi_q * sin_w
-        k_c = phi_k * cos_w
-        k_s = phi_k * sin_w
-
-    eff_eps = max(eps, 1e-4) if orig_dtype == torch.float16 else eps
-
-    if is_causal:
-        chunk_size = min(64, max(1, N))
-        num_chunks = (N + chunk_size - 1) // chunk_size
-        out = torch.empty((B, H, N, D_v), dtype=torch.float32, device=q.device)
-
-        if has_modulation:
-            S_cos = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
-            S_sin = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
-            Z_cos = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
-            Z_sin = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
-
-            for c in range(num_chunks):
-                start = c * chunk_size
-                end = min(start + chunk_size, N)
-
-                qc = q_c[:, :, start:end]
-                qs = q_s[:, :, start:end]
-                kc = k_c[:, :, start:end]
-                ks = k_s[:, :, start:end]
-                vc = v_f[:, :, start:end]
-
-                num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(-1) + torch.matmul(
-                    qs, Z_sin.unsqueeze(-1)
-                ).squeeze(-1)
-
-                A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
-                    qs, ks.transpose(-1, -2)
-                )
-                causal_mask = torch.tril(
-                    torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
-                )
-                A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
-                num_intra = torch.matmul(A_intra, vc)
-                denom_intra = A_intra.sum(dim=-1)
-
-                denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
-                if phi in ("elu+1", "relu", "softmax_free"):
-                    denom_safe = torch.clamp(denom_val, min=eff_eps)
-                else:
-                    denom_sign = torch.sign(denom_val)
-                    denom_sign = torch.where(
-                        denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                    )
-                    denom_safe = torch.where(
-                        denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
-                    )
-
-                chunk_out = (num_inter + num_intra) / denom_safe
-                out[:, :, start:end] = chunk_out
-
-                S_cos = S_cos + torch.matmul(kc.transpose(-1, -2), vc)
-                S_sin = S_sin + torch.matmul(ks.transpose(-1, -2), vc)
-                Z_cos = Z_cos + kc.sum(dim=-2)
-                Z_sin = Z_sin + ks.sum(dim=-2)
+        if phi == "elu+1":
+            phi_q = F.elu(q_f) + 1.0
+            phi_k = F.elu(k_f) + 1.0
+        elif phi == "relu":
+            phi_q = F.relu(q_f)
+            phi_k = F.relu(k_f)
+        elif phi == "identity":
+            phi_q = q_f
+            phi_k = k_f
+        elif phi == "softmax_free":
+            phi_q = F.elu(q_f) + 1.0
+            phi_k = F.elu(k_f) + 1.0
         else:
-            S = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
-            Z = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
+            phi_q = F.elu(q_f) + 1.0
+            phi_k = F.elu(k_f) + 1.0
 
-            for c in range(num_chunks):
-                start = c * chunk_size
-                end = min(start + chunk_size, N)
+        B, H, N, D_k = phi_q.shape
+        D_v = v_f.shape[-1]
 
-                qc = phi_q[:, :, start:end]
-                kc = phi_k[:, :, start:end]
-                vc = v_f[:, :, start:end]
-
-                num_inter = torch.matmul(qc, S)
-                denom_inter = torch.matmul(qc, Z.unsqueeze(-1)).squeeze(-1)
-
-                A_intra = torch.matmul(qc, kc.transpose(-1, -2))
-                causal_mask = torch.tril(
-                    torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
-                )
-                A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
-                num_intra = torch.matmul(A_intra, vc)
-                denom_intra = A_intra.sum(dim=-1)
-
-                denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
-                if phi in ("elu+1", "relu", "softmax_free"):
-                    denom_safe = torch.clamp(denom_val, min=eff_eps)
-                else:
-                    denom_sign = torch.sign(denom_val)
-                    denom_sign = torch.where(
-                        denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                    )
-                    denom_safe = torch.where(
-                        denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
-                    )
-
-                chunk_out = (num_inter + num_intra) / denom_safe
-                out[:, :, start:end] = chunk_out
-
-                S = S + torch.matmul(kc.transpose(-1, -2), vc)
-                Z = Z + kc.sum(dim=-2)
-
-        res = out
-    else:
+        has_modulation = cos_weight is not None and sin_weight is not None
         if has_modulation:
-            num = torch.matmul(
-                q_c, torch.matmul(k_c.transpose(-1, -2), v_f)
-            ) + torch.matmul(q_s, torch.matmul(k_s.transpose(-1, -2), v_f))
-            denom = torch.matmul(
-                q_c, k_c.sum(dim=-2).unsqueeze(-1)
-            ) + torch.matmul(q_s, k_s.sum(dim=-2).unsqueeze(-1))
-            if phi in ("elu+1", "relu", "softmax_free"):
-                denom_safe = torch.clamp(denom, min=eff_eps)
-            else:
-                denom_sign = torch.sign(denom)
-                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
-            res = num / denom_safe
-        else:
-            KV = torch.matmul(phi_k.transpose(-1, -2), v_f)
-            num = torch.matmul(phi_q, KV)
-            K_sum = phi_k.sum(dim=-2).unsqueeze(-1)
-            denom = torch.matmul(phi_q, K_sum)
-            if phi in ("elu+1", "relu", "softmax_free"):
-                denom_safe = torch.clamp(denom, min=eff_eps)
-            else:
-                denom_sign = torch.sign(denom)
-                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
-            res = num / denom_safe
+            cos_w = cos_weight.float()
+            sin_w = sin_weight.float()
+            if cos_w.dim() == 1:
+                cos_w = cos_w.view(1, 1, -1, 1)
+                sin_w = sin_w.view(1, 1, -1, 1)
+            elif cos_w.dim() == 2:
+                cos_w = cos_w.unsqueeze(1).unsqueeze(-1)
+                sin_w = sin_w.unsqueeze(1).unsqueeze(-1)
+            elif cos_w.dim() == 3:
+                cos_w = cos_w.unsqueeze(-1)
+                sin_w = sin_w.unsqueeze(-1)
 
-    if orig_dim == 3:
-        res = res.squeeze(1)
-    return res.to(orig_dtype)
+            q_c = phi_q * cos_w
+            q_s = phi_q * sin_w
+            k_c = phi_k * cos_w
+            k_s = phi_k * sin_w
+
+        eff_eps = max(eps, 1e-4) if orig_dtype == torch.float16 else eps
+
+        if is_causal:
+            chunk_size = min(64, max(1, N))
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            out = torch.empty((B, H, N, D_v), dtype=torch.float32, device=q.device)
+
+            if has_modulation:
+                S_cos = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
+                S_sin = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
+                Z_cos = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
+                Z_sin = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
+
+                for c in range(num_chunks):
+                    start = c * chunk_size
+                    end = min(start + chunk_size, N)
+
+                    qc = q_c[:, :, start:end]
+                    qs = q_s[:, :, start:end]
+                    kc = k_c[:, :, start:end]
+                    ks = k_s[:, :, start:end]
+                    vc = v_f[:, :, start:end]
+
+                    num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
+                    denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(-1) + torch.matmul(
+                        qs, Z_sin.unsqueeze(-1)
+                    ).squeeze(-1)
+
+                    A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
+                        qs, ks.transpose(-1, -2)
+                    )
+                    causal_mask = torch.tril(
+                        torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
+                    )
+                    A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
+                    num_intra = torch.matmul(A_intra, vc)
+                    denom_intra = A_intra.sum(dim=-1)
+
+                    denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
+                    if phi in ("elu+1", "relu", "softmax_free"):
+                        denom_safe = torch.clamp(denom_val, min=eff_eps)
+                    else:
+                        denom_sign = torch.sign(denom_val)
+                        denom_sign = torch.where(
+                            denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                        )
+                        denom_safe = torch.where(
+                            denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
+                        )
+
+                    chunk_out = (num_inter + num_intra) / denom_safe
+                    out[:, :, start:end] = chunk_out
+
+                    S_cos = S_cos + torch.matmul(kc.transpose(-1, -2), vc)
+                    S_sin = S_sin + torch.matmul(ks.transpose(-1, -2), vc)
+                    Z_cos = Z_cos + kc.sum(dim=-2)
+                    Z_sin = Z_sin + ks.sum(dim=-2)
+            else:
+                S = torch.zeros((B, H, D_k, D_v), dtype=torch.float32, device=q.device)
+                Z = torch.zeros((B, H, D_k), dtype=torch.float32, device=q.device)
+
+                for c in range(num_chunks):
+                    start = c * chunk_size
+                    end = min(start + chunk_size, N)
+
+                    qc = phi_q[:, :, start:end]
+                    kc = phi_k[:, :, start:end]
+                    vc = v_f[:, :, start:end]
+
+                    num_inter = torch.matmul(qc, S)
+                    denom_inter = torch.matmul(qc, Z.unsqueeze(-1)).squeeze(-1)
+
+                    A_intra = torch.matmul(qc, kc.transpose(-1, -2))
+                    causal_mask = torch.tril(
+                        torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
+                    )
+                    A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
+                    num_intra = torch.matmul(A_intra, vc)
+                    denom_intra = A_intra.sum(dim=-1)
+
+                    denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
+                    if phi in ("elu+1", "relu", "softmax_free"):
+                        denom_safe = torch.clamp(denom_val, min=eff_eps)
+                    else:
+                        denom_sign = torch.sign(denom_val)
+                        denom_sign = torch.where(
+                            denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                        )
+                        denom_safe = torch.where(
+                            denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
+                        )
+
+                    chunk_out = (num_inter + num_intra) / denom_safe
+                    out[:, :, start:end] = chunk_out
+
+                    S = S + torch.matmul(kc.transpose(-1, -2), vc)
+                    Z = Z + kc.sum(dim=-2)
+
+            res = out
+        else:
+            if has_modulation:
+                num = torch.matmul(
+                    q_c, torch.matmul(k_c.transpose(-1, -2), v_f)
+                ) + torch.matmul(q_s, torch.matmul(k_s.transpose(-1, -2), v_f))
+                denom = torch.matmul(
+                    q_c, k_c.sum(dim=-2).unsqueeze(-1)
+                ) + torch.matmul(q_s, k_s.sum(dim=-2).unsqueeze(-1))
+                if phi in ("elu+1", "relu", "softmax_free"):
+                    denom_safe = torch.clamp(denom, min=eff_eps)
+                else:
+                    denom_sign = torch.sign(denom)
+                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                    denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+                res = num / denom_safe
+            else:
+                KV = torch.matmul(phi_k.transpose(-1, -2), v_f)
+                num = torch.matmul(phi_q, KV)
+                K_sum = phi_k.sum(dim=-2).unsqueeze(-1)
+                denom = torch.matmul(phi_q, K_sum)
+                if phi in ("elu+1", "relu", "softmax_free"):
+                    denom_safe = torch.clamp(denom, min=eff_eps)
+                else:
+                    denom_sign = torch.sign(denom)
+                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                    denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+                res = num / denom_safe
+
+        if orig_dim == 3:
+            res = res.squeeze(1)
+        return res.to(orig_dtype)
 
 
 def sparse_attn_pytorch_fallback(
