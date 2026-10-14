@@ -195,8 +195,18 @@ class UniversalAttentionWrapper(nn.Module):
             hasattr(cfg, "model_type")
             and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen")
         ):
-            # In transformers >= 4.49 / 5.0, LlamaDecoderLayer unpacks `hidden_states, _ = self.self_attn(...)` (2-tuple).
-            # When past_key_value is present and requested, it returns 3-tuple if older API, else 2-tuple.
+            # Check transformers version to determine decoder layer contract:
+            # - transformers < 4.49 expects 3-tuple: (hidden, attn_weights, present)
+            # - transformers >= 4.49 / 5.x expects 2-tuple: (hidden, attn_weights)
+            try:
+                import transformers
+                from packaging import version
+                is_legacy_hf_decoder = version.parse(transformers.__version__) < version.parse("4.49.0")
+            except Exception:
+                is_legacy_hf_decoder = False
+
+            if is_legacy_hf_decoder:
+                return (hidden, attn_weights, present)
             if present is not None and kwargs.get("use_cache", False):
                 return (hidden, attn_weights, present)
             return (hidden, attn_weights)
