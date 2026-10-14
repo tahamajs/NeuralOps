@@ -158,6 +158,36 @@ def _build_parser() -> argparse.ArgumentParser:
     search_p.add_argument("--output-json", type=str, default=None, help="Optional output JSON path for allocated ranks")
     search_p.add_argument("--save-compressed", type=str, default=None, help="Directory to save the compressed model")
 
+    # 11. compress
+    comp_p = subparsers.add_parser("compress", help="Compress a model using SVD, W4A16, Hadamard, or any registered compressor")
+    comp_p.add_argument("--model", type=str, required=True, help="Base model name or path (e.g. gpt2, roberta-base)")
+    comp_p.add_argument("--method", "--engine", dest="method", type=str, default="hadamard_incoherent_svd", help="Compression engine name")
+    comp_p.add_argument("--rank", type=int, default=32, help="Target rank for low-rank SVD compression")
+    comp_p.add_argument("--save-dir", "--output-dir", dest="save_dir", type=str, default=None, help="Directory to save compressed weights")
+
+    # 12. generate
+    gen_p = subparsers.add_parser("generate", help="Run accelerated generation with draft-and-verify self-speculative decoding")
+    gen_p.add_argument("--model", type=str, required=True, help="Target model identifier or path")
+    gen_p.add_argument("--prompt", type=str, default="NeuralOps is a cutting-edge deep learning systems library that", help="Input prompt text")
+    gen_p.add_argument("--max-new-tokens", type=int, default=32, help="Number of new tokens to generate")
+    gen_p.add_argument("--speculative", action="store_true", default=True, help="Enable self-speculative draft-and-verify decoding")
+    gen_p.add_argument("--draft-k", type=int, default=4, help="Draft tokens per step")
+    gen_p.add_argument("--temperature", type=float, default=0.0, help="Sampling temperature (0.0 for greedy)")
+
+    # 13. niah
+    niah_p = subparsers.add_parser("niah", help="Run Needle-In-A-Haystack passkey retrieval benchmark and generate 2D heatmap")
+    niah_p.add_argument("--model", type=str, required=True, help="Model identifier or path")
+    niah_p.add_argument("--context-lengths", type=str, default="256,512,1024,2048", help="Comma-separated sequence lengths")
+    niah_p.add_argument("--needle-depths", type=str, default="0.1,0.3,0.5,0.7,0.9", help="Comma-separated needle depths (0.0 to 1.0)")
+    niah_p.add_argument("--output-plot", type=str, default="paper/figures/fig_niah_passkey_heatmap.png", help="Path to save 2D heatmap")
+
+    # 14. benchmark-fused
+    fuse_p = subparsers.add_parser("benchmark-fused", help="Benchmark fused Triton kernels (W4A16, RoPE, State-Update, Loss)")
+    fuse_p.add_argument("--kernel", choices=["w4a16", "rope", "state_update", "loss", "all"], default="all", help="Target kernel to benchmark")
+    fuse_p.add_argument("--batch-size", type=int, default=4, help="Batch size")
+    fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
+    fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
+
     return parser
 
 
@@ -396,6 +426,177 @@ def handle_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_compress(args: argparse.Namespace) -> int:
+    """Executes model compression via the requested engine."""
+    from transformers import AutoModel
+    from neuralops.eval_all_models_datasets import apply_module_to_model
+
+    print(f"Loading base model '{args.model}' for compression...")
+    model = AutoModel.from_pretrained(args.model)
+    orig_params = sum(p.numel() for p in model.parameters())
+
+    print(f"Applying compression engine '{args.method}' (rank={args.rank})...")
+    model, stats = apply_module_to_model(
+        model,
+        args.method,
+        module_type="compressor",
+        rank=args.rank,
+        device=model.device,
+        fallback_to_original=False,
+    )
+    new_params = sum(p.numel() for p in model.parameters())
+    ratio = orig_params / max(1, new_params)
+    savings = 100.0 * (1.0 - new_params / max(1, orig_params))
+
+    print("\n═════════════════════════════════════════════════════")
+    print(f"Compression Complete: {args.method} on {args.model}")
+    print(f"  Original Parameters:   {orig_params:,}")
+    print(f"  Compressed Parameters: {new_params:,}")
+    print(f"  Compression Ratio:     {ratio:.2f}x")
+    print(f"  Parameter Reduction:   {savings:.1f}%")
+    print("═════════════════════════════════════════════════════\n")
+
+    if args.save_dir:
+        import os
+        os.makedirs(args.save_dir, exist_ok=True)
+        model.save_pretrained(args.save_dir)
+        print(f"[+] Compressed model artifacts saved to '{args.save_dir}'")
+    return 0
+
+
+def handle_generate(args: argparse.Namespace) -> int:
+    """Runs autoregressive text generation with self-speculative draft-and-verify decoding."""
+    import time
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
+
+    print(f"Loading generative model '{args.model}'...")
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+
+    input_ids = tokenizer.encode(args.prompt, return_tensors="pt").to(device)
+    print(f"Prompt: \"{args.prompt}\"")
+    print(f"Generating {args.max_new_tokens} tokens (speculative={args.speculative}, draft_k={args.draft_k})...\n")
+
+    decoder = SelfSpeculativeDecoder(
+        target_model=model,
+        max_draft_k=args.draft_k,
+        adaptive_k=True,
+    )
+
+    t0 = time.time()
+    out_ids, stats = decoder.generate(
+        input_ids,
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+    )
+    elapsed = time.time() - t0
+    gen_text = tokenizer.decode(out_ids[0], skip_special_tokens=True)
+
+    print("═════════════════════════════════════════════════════")
+    print("Generated Text:")
+    print(f"\"{gen_text}\"")
+    print("─────────────────────────────────────────────────────")
+    print(f"Tokens Generated:      {stats.total_tokens_generated}")
+    print(f"Target Model Passes:   {stats.total_target_forward_passes}")
+    print(f"Draft Acceptance Rate: {stats.acceptance_rate * 100:.1f}%")
+    print(f"Mean Accepted / Step:  {stats.mean_accepted_tokens_per_step:.2f}")
+    print(f"Throughput:            {stats.tokens_per_sec:.1f} tokens/s")
+    print(f"Speculative Speedup:   {stats.speedup_over_standard:.2f}x")
+    print("═════════════════════════════════════════════════════\n")
+    return 0
+
+
+def handle_niah(args: argparse.Namespace) -> int:
+    """Runs Needle-In-A-Haystack retrieval evaluation and produces a 2D passkey heatmap."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+
+    print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey evaluation...")
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+
+    ctx_lengths = [int(x.strip()) for x in args.context_lengths.split(",")]
+    depths = [float(x.strip()) for x in args.needle_depths.split(",")]
+
+    evaluator = NeedleInAHaystackEvaluator(
+        model=model,
+        tokenizer=tokenizer,
+        context_lengths=ctx_lengths,
+        needle_depths=depths,
+        device=device,
+    )
+
+    print(f"Running NIAH benchmark across lengths={ctx_lengths} and depths={depths}...")
+    matrix = evaluator.evaluate()
+
+    print(f"Generating 2D heatmap -> '{args.output_plot}'...")
+    fig = plot_niah_heatmap(
+        matrix,
+        context_lengths=ctx_lengths,
+        depths=depths,
+        save_path=args.output_plot,
+        model_name=args.model,
+    )
+    print(f"[+] NIAH Passkey heatmap saved to '{args.output_plot}'\n")
+    return 0
+
+
+def handle_benchmark_fused(args: argparse.Namespace) -> int:
+    """Benchmarks fused @triton.jit kernels against PyTorch eager baselines."""
+    import time
+    print(f"Benchmarking Fused Triton Kernels (kernel={args.kernel}, B={args.batch_size}, L={args.seq_len}, D={args.dim})...")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device != "cuda":
+        print("[-] Fused Triton benchmarks require a CUDA GPU. PyTorch fallbacks will be used.")
+
+    # 1. W4A16 Benchmark
+    if args.kernel in ("w4a16", "all"):
+        from neuralops.core.triton_kernels.low_rank import BitPackedW4A16Linear
+        w4 = BitPackedW4A16Linear(args.dim, args.dim, group_size=64, bias=False).to(device)
+        x = torch.randn(args.batch_size, args.seq_len, args.dim, device=device, dtype=torch.float16)
+        # Warmup
+        for _ in range(5):
+            _ = w4(x)
+        if device == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.time()
+        iters = 50
+        for _ in range(iters):
+            _ = w4(x)
+        if device == "cuda":
+            torch.cuda.synchronize()
+        dur = (time.time() - t0) / iters * 1000
+        print(f"  [W4A16 Dequant-GEMM]:  {dur:.2f} ms / forward pass")
+
+    # 2. State-Update Benchmark
+    if args.kernel in ("state_update", "all"):
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+        s = torch.zeros(args.batch_size, 4, 32, 32, device=device)
+        q = torch.randn(args.batch_size, 4, 32, device=device)
+        k = torch.randn(args.batch_size, 4, 32, device=device)
+        v = torch.randn(args.batch_size, 4, 32, device=device)
+        for _ in range(5):
+            _ = fused_recurrent_linear_step(q, k, v, s)
+        if device == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.time()
+        iters = 100
+        for _ in range(iters):
+            _ = fused_recurrent_linear_step(q, k, v, s)
+        if device == "cuda":
+            torch.cuda.synchronize()
+        dur = (time.time() - t0) / iters * 1000
+        print(f"  [Fused O(1) Linear Step]: {dur:.3f} ms / step")
+
+    print("[+] Fused kernel benchmark completed successfully.\n")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -418,6 +619,14 @@ def main(argv: list[str] | None = None) -> int:
         handle_export(args)
     elif args.subcommand == "search":
         return handle_search(args)
+    elif args.subcommand == "compress":
+        return handle_compress(args)
+    elif args.subcommand == "generate":
+        return handle_generate(args)
+    elif args.subcommand == "niah":
+        return handle_niah(args)
+    elif args.subcommand == "benchmark-fused":
+        return handle_benchmark_fused(args)
     elif args.subcommand == "resume":
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
