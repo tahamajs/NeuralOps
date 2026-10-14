@@ -814,7 +814,7 @@ class TriBranchHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             final = fused
         else:
-            final = self.out_proj(fused)
+            final = self.out_proj(fused.to(self.out_proj.lin1.weight.dtype if hasattr(self.out_proj, "lin1") else self.q_proj.lin1.weight.dtype))
 
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
         final = final.to(hidden_states.dtype)
