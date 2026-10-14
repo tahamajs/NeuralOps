@@ -580,9 +580,11 @@ class GriffinSSDBlock(BaseAttention):
                 k_ssd = repeat_kv(k_ssd, repeats)
                 v_ssd = repeat_kv(v_ssd, repeats)
             if self.is_decoder:
-                global_out = self._ssd_scan_chunked(q_ssd, k_ssd, v_ssd, decay, mask_bool, chunk_size=32)
+                from neuralops.core.triton_kernels.selective_scan import fused_rglru_ssd_scan_triton
+                global_out = fused_rglru_ssd_scan_triton(q_ssd, k_ssd, v_ssd, decay, chunk_size=32)
             else:
                 global_out = self._ssd_symmetric(q_ssd, k_ssd, v_ssd, decay, mask_bool)
+
 
         # Fusion gate
         gate = torch.sigmoid(self.fusion_gate).view(1, H, 1, 1).to(target_dtype)

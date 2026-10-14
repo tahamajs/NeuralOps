@@ -792,12 +792,12 @@ class HymbaTransXBlock(BaseAttention):
                     mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
                     M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
 
-            # alpha init = 4.0 → sigmoid(4.0) ≈ 0.98 (attention-dominant)
-            alpha = torch.sigmoid(self.alpha)
-            combined = alpha * A_out + (1.0 - alpha) * M_out
-        else:
-            # SSM disabled: pure attention
-            combined = A_out
+        from neuralops.core.triton_kernels.sliding_window import fused_hymba_meta_token_mix_triton
+
+        combined = fused_hymba_meta_token_mix_triton(
+            A_out, M_out if self.has_mamba and not self._is_ssm_disabled_for_model() else None, self.alpha
+        )
+
 
         # Output projection
         if self.is_nested_encoder:

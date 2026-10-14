@@ -1125,6 +1125,39 @@ def fused_svd_mamba_proj_triton(
         return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
 
 
+def fused_lola_3way_decomposition_pytorch(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    S: torch.Tensor,
+    V: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for LoLA low-rank factorized projection."""
+    target_dtype = x.dtype
+    out = ((x @ V.to(target_dtype)) * S.to(target_dtype)) @ U.to(target_dtype).t().contiguous()
+    if bias is not None:
+        out = out + bias.to(target_dtype)
+    return out
+
+
+def fused_lola_3way_decomposition_triton(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    S: torch.Tensor,
+    V: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused LoLA 3-way low-rank projection in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
+        except Exception:
+            pass
+    return fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -1149,6 +1182,9 @@ __all__ = [
     'fused_primal_dual_landmark_pytorch',
     'fused_svd_mamba_proj_triton',
     'fused_svd_mamba_proj_pytorch',
+    'fused_lola_3way_decomposition_triton',
+    'fused_lola_3way_decomposition_pytorch',
 ]
+
 
 
