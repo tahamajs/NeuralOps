@@ -766,6 +766,7 @@ class HymbaTransXBlock(BaseAttention):
         )
 
         # SSM branch (disabled for GPT-2 by default)
+        M_out = None
         if self.mamba is not None:
             if x.requires_grad:
                 from torch.utils.checkpoint import checkpoint
