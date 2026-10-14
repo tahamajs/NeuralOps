@@ -189,14 +189,17 @@ class UniversalAttentionWrapper(nn.Module):
         if "linear_attn" in self.layer_name and not output_attentions:
             return hidden
 
-        # For LLaMA, Mistral, Qwen2 and modern decoders expecting (attn_output, attn_weights, past_key_value)
-        # or when past_key_value / cache is requested
+        # For LLaMA, Mistral, Qwen2 and modern decoders expecting (attn_output, attn_weights) or (attn_output, attn_weights, past_key_value)
+        # depending on transformers version and use_cache
         if fam in ("llama", "mistral", "qwen", "qwen3_5", "qwen2", "qwen2_5") or (
             hasattr(cfg, "model_type")
             and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen")
         ):
-            # HF LLaMA/Mistral/Qwen2 decoder layer expects: (attn_output, attn_weights, past_key_value)
-            return (hidden, attn_weights, present)
+            # In transformers >= 4.49 / 5.0, LlamaDecoderLayer unpacks `hidden_states, _ = self.self_attn(...)` (2-tuple).
+            # When past_key_value is present and requested, it returns 3-tuple if older API, else 2-tuple.
+            if present is not None and kwargs.get("use_cache", False):
+                return (hidden, attn_weights, present)
+            return (hidden, attn_weights)
 
         if output_attentions:
             return (hidden, present, attn_weights)
