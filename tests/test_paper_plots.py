@@ -50,3 +50,19 @@ def test_paper_plots_generation():
         for p in all_plots:
             assert p.exists()
             assert p.stat().st_size > 0
+
+
+def test_paper_plot_generator_class():
+    from neuralops.analysis.paper_plots import PaperPlotGenerator
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_dir = Path(tmpdir) / "generator_plots"
+        gen = PaperPlotGenerator(output_dir=out_dir)
+
+        model = nn.Sequential(nn.Linear(16, 16))
+        plots = gen.generate_all(model=model)
+        assert len(plots) == 6
+        for p in plots:
+            assert p.exists()
+            assert p.stat().st_size > 0
+
