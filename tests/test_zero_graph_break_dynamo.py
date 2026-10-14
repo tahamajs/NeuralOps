@@ -41,7 +41,7 @@ def test_dynamo_explain_zero_graph_breaks():
 
     model = ToyModel().to(device)
     B, H, T, D = 2, 4, 64, 128
-    x = torch.randn(B * H, T, D, device=device, dtype=dtype)
+    x = torch.randn(B, H, T, D, device=device, dtype=dtype)
     q = torch.randn(B, H, T, D, device=device, dtype=dtype)
     k = torch.randn(B, H, T, D, device=device, dtype=dtype)
     v = torch.randn(B, H, T, D, device=device, dtype=dtype)
