@@ -538,7 +538,6 @@ class NativeHybridAttention(BaseAttention):
         return (out, present_key_value)
 
 
-@ATTENTION_REGISTRY.register("inject_native_hybrid_attention")
 def inject_nha(
     layer: Any = None,
     model: Any = None,
