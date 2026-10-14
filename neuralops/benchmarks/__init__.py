@@ -51,7 +51,6 @@ from neuralops.benchmarks import metrics
 from neuralops.benchmarks import models
 from neuralops.benchmarks import results
 from neuralops.benchmarks import utils
-from neuralops.benchmarks import __main__
 from neuralops.benchmarks import api
 from neuralops.benchmarks import cli
 from neuralops.benchmarks import config

@@ -172,11 +172,16 @@ class HuffmanCoder:
             }
             return raw_bytes, {}, metadata
 
-        # Quantization
+        # Robust zero-point aligned quantization with outlier suppression
         num_levels = 2 ** int(quantize_bits)
-        scale = (max_val - min_val) / max(num_levels - 1, 1)
-        scale = max(scale, 1e-12)
-        quantized = torch.clamp(torch.round((flat - min_val) / scale), 0, num_levels - 1).long()
+        if numel > 1024:
+            p_low = torch.quantile(flat, 0.0005).item()
+            p_high = torch.quantile(flat, 0.9995).item()
+            min_val = min(p_low, 0.0)
+            max_val = max(p_high, 0.0)
+        scale = max((max_val - min_val) / max(num_levels - 1, 1), 1e-12)
+        zero_point = int(np.clip(round(-min_val / scale), 0, num_levels - 1))
+        quantized = torch.clamp(torch.round(flat / scale) + zero_point, 0, num_levels - 1).long()
 
         q_np = quantized.cpu().numpy()
         symbols, counts = np.unique(q_np, return_counts=True)
@@ -204,6 +209,7 @@ class HuffmanCoder:
         metadata = {
             "scale": scale,
             "min_val": min_val,
+            "zero_point": zero_point,
             "orig_shape": list(tensor.shape),
             "orig_dtype": str(tensor.dtype),
             "total_elements": numel,
@@ -301,7 +307,11 @@ class HuffmanCoder:
                 if idx == total_elements:
                     break
 
-        decoded = decoded * scale + min_val
+        zero_point = metadata.get("zero_point", None)
+        if zero_point is not None:
+            decoded = (decoded - zero_point) * scale
+        else:
+            decoded = decoded * scale + min_val
         return torch.from_numpy(decoded).reshape(shape).to(device=device)
 
 
@@ -616,6 +626,7 @@ def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
             _cfg_get(comp_config, "fallback_to_original", False),
         ),
     )
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     compressor = HuffmanCompressor(
         model,
         quantize_bits=bits,
@@ -625,7 +636,9 @@ def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
 
