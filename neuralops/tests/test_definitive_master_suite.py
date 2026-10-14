@@ -159,7 +159,8 @@ def test_rl_alignment_losses_simpo_orpo():
     l_orpo = orpo(sft_loss, chosen_lp, rejected_lp)
     assert l_orpo.item() > 0.0
     l_orpo.backward()
-    assert sft_lp_grad := sft_loss.grad is not None
+    sft_lp_grad = sft_loss.grad
+    assert sft_lp_grad is not None
 
     # 3. Dynamic Routing & Rank Controller
     router = DynamicRoutingAndRankRL(num_ranks_or_blocks=4, target_budget_ratio=0.5)
