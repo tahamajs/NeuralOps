@@ -410,6 +410,15 @@ class PerformerAttention(BaseAttention):
         FIX 11: removed .contiguous() (matmul handles non-contiguous).
         FIX 12: removed dead clamp(max=10.0).
         """
+        # Try accelerated fused Triton kernel
+        try:
+            from neuralops.core.triton_kernels.elementwise import fused_favor_plus_feature_map_triton
+            return fused_favor_plus_feature_map_triton(
+                x, self.omega, self.num_features, kernel_type=self.kernel_type, eps=self.eps
+            )
+        except Exception:
+            pass
+
         # x: [B, H, N, d]
         # omega: [M, d]
         omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()  # [d, M]

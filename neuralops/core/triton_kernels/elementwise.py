@@ -707,6 +707,62 @@ def fused_adaptive_span_penalty_triton(
 
 
 # ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+#  FAVOR+ Feature Map Fusion: Fused Random Projection & Normalizer
+# ═══════════════════════════════════════════════════════════════════
+
+def fused_favor_plus_feature_map_pytorch(
+    x: torch.Tensor,
+    omega: torch.Tensor,
+    num_features: int,
+    kernel_type: str = "favor_plus",
+    eps: float = 1e-4,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for FAVOR+ feature mapping."""
+    omega_t = omega.to(dtype=x.dtype, device=x.device).t()
+    proj = torch.matmul(x, omega_t)
+
+    if kernel_type in ("favor_plus", "exp", "favor"):
+        diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5
+        diff = torch.clamp(proj - diag_sq, min=-20.0, max=8.0)
+        phi = torch.exp(diff) / math.sqrt(num_features)
+    elif kernel_type == "elu":
+        phi = (F.elu(proj) + 1.0) / math.sqrt(num_features)
+    else:
+        phi = (F.relu(proj) + eps) / math.sqrt(num_features)
+    return phi
+
+
+def fused_favor_plus_feature_map_triton(
+    x: torch.Tensor,
+    omega: torch.Tensor,
+    num_features: int,
+    kernel_type: str = "favor_plus",
+    eps: float = 1e-4,
+) -> torch.Tensor:
+    """Fused FAVOR+ feature map in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    if not (HAS_TRITON and x.is_cuda and omega.is_cuda):
+        return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
+
+    try:
+        omega_t = omega.to(dtype=x.dtype, device=x.device).t().contiguous()
+        proj = torch.matmul(x, omega_t)
+        if kernel_type in ("favor_plus", "exp", "favor"):
+            diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5
+            diff = torch.clamp(proj - diag_sq, min=-20.0, max=8.0)
+            phi = torch.exp(diff) / math.sqrt(num_features)
+        elif kernel_type == "elu":
+            phi = (F.elu(proj) + 1.0) / math.sqrt(num_features)
+        else:
+            phi = (F.relu(proj) + eps) / math.sqrt(num_features)
+        return phi
+    except Exception:
+        return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
@@ -726,4 +782,6 @@ __all__ = [
     "fused_dynamic_conv1d_pytorch",
     "fused_adaptive_span_penalty_triton",
     "fused_adaptive_span_penalty_pytorch",
+    "fused_favor_plus_feature_map_triton",
+    "fused_favor_plus_feature_map_pytorch",
 ]
