@@ -680,7 +680,7 @@ A: FLA focuses specifically on Triton implementations for linear attention. Neur
 A: Yes. Calling `neuralops.replace_attention(model, "gated_delta_net")` scans the target model and transplants the attention blocks while preserving RoPE, KV cache dimensions, and output projections.
 
 **Q: Are deprecated module names supported?**  
-A: Yes. Over 657 legacy module aliases are maintained through an internal resolver so existing configurations continue to work without modification.
+A: Yes. 712 legacy module aliases are maintained through an isolated, zero-cycle 1-hop deprecation resolver (`neuralops/core/deprecated_aliases.json`) so existing configurations continue to work without modification.
 
 **Q: Is knowledge distillation supported out of the box?**  
 A: Yes. Use `--training-type kd --kd-teacher <model_name>` in the CLI or pass `training_type="kd"` in the Python API.
