@@ -20,6 +20,9 @@ import torch.nn.functional as F
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Benchmarking on device: {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 
+import neuralops
+import neuralops.attentions
+import neuralops.attentions.gated.flagship_fla
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels.fused_ce import FusedLinearCrossEntropy
 from neuralops.core.triton_kernels.fused_kd import FusedLinearKLDivergence
