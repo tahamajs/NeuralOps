@@ -84,6 +84,10 @@ def test_1_3_strict_causal_non_leakage(attn_name):
 
     device = "cuda"
     mod = _instantiate_attn(attn_name, dim=64, num_heads=2, device=device)
+    if hasattr(mod, "is_decoder"):
+        mod.is_decoder = True
+    if hasattr(mod, "is_causal"):
+        mod.is_causal = True
 
     B, T, D = 1, 16, 64
     x1 = torch.randn(B, T, D, device=device)
