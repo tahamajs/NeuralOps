@@ -14,15 +14,17 @@ from transformers import GPT2Config, GPT2Model
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops import create_attention
-from neuralops.trainer import (
-    CosineSimilarityLoss,
-    AttentionPatternLoss,
-    HiddenStateDistillationLoss,
+from neuralops.trainer.distillation.multi_level_kd import (
+    LogitDistillationLoss,
+    BlockwiseOperatorCloningLoss,
+    LinearCKALoss,
+)
+from neuralops.trainer.rl_alignment.preference_and_onpolicy import (
     SimPOLoss,
     ORPOLoss,
-    GKDObjective,
-    TestTimeTrainingEngine,
+    DynamicRoutingAndRankRL,
 )
+from neuralops.trainer.ttt.test_time_trainer import TTTLinearAttentionLayer
 
 
 # =========================================================================
@@ -110,67 +112,72 @@ def test_all_72_compressors_fallback_false_on_gpt2():
 # =========================================================================
 
 def test_distillation_losses_numerical_soundness():
-    """Verify CosineSimilarity, AttentionPattern, and HiddenStateDistillation losses compute valid gradients."""
-    student_h = torch.randn(2, 16, 64, requires_grad=True)
-    teacher_h = torch.randn(2, 16, 64)
+    """Verify LogitDistillationLoss, BlockwiseOperatorCloningLoss, and LinearCKALoss compute valid gradients."""
+    student_logits = torch.randn(2, 16, 64, requires_grad=True)
+    teacher_logits = torch.randn(2, 16, 64)
 
-    # Cosine Similarity Loss
-    cos_loss_fn = CosineSimilarityLoss()
-    loss_cos = cos_loss_fn(student_h, teacher_h)
-    assert loss_cos.item() >= 0.0
-    loss_cos.backward()
-    assert student_h.grad is not None
-    student_h.grad.zero_()
+    # 1. Forward KL Logit Distillation
+    logit_kd = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
+    loss_kd = logit_kd(student_logits, teacher_logits)
+    assert loss_kd.item() >= 0.0
+    loss_kd.backward()
+    assert student_logits.grad is not None
+    student_logits.grad.zero_()
 
-    # Hidden State Distillation Loss (MSE + SmoothL1)
-    hidden_distill = HiddenStateDistillationLoss()
-    loss_h = hidden_distill(student_h, teacher_h)
-    assert loss_h.item() >= 0.0
-    loss_h.backward()
-    assert student_h.grad is not None
+    # 2. Blockwise Operator Cloning Loss (LoLCATs Attention Transfer)
+    block_clone = BlockwiseOperatorCloningLoss(lambda_cos=0.5, lambda_norm=0.1)
+    loss_clone = block_clone(student_logits, teacher_logits)
+    assert loss_clone.item() >= 0.0
+    loss_clone.backward()
+    assert student_logits.grad is not None
+    student_logits.grad.zero_()
 
-
-def test_rl_alignment_losses_simpo_orpo_gkd():
-    """Verify SimPO, ORPO, and GKD loss functions compute correct divergence and alignment terms."""
-    policy_chosen = torch.tensor([-2.5, -1.8], requires_grad=True)
-    policy_rejected = torch.tensor([-3.8, -4.2], requires_grad=True)
-
-    # SimPO
-    simpo = SimPOLoss(beta=2.0, gamma=0.5)
-    l_simpo = simpo(policy_chosen, policy_rejected)
-    assert l_simpo.item() > 0.0
-    l_simpo.backward()
-    assert policy_chosen.grad is not None
-
-    # ORPO
-    policy_logits = torch.randn(2, 8, 100, requires_grad=True)
-    labels = torch.randint(0, 100, (2, 8))
-    orpo = ORPOLoss(alpha=0.1)
-    l_orpo = orpo(policy_logits, labels, policy_chosen, policy_rejected)
-    assert l_orpo.item() > 0.0
-
-    # GKD
-    student_logits = torch.randn(2, 16, 100, requires_grad=True)
-    teacher_logits = torch.randn(2, 16, 100)
-    gkd = GKDObjective(beta=0.5, temperature=1.0)
-    l_gkd = gkd(student_logits, teacher_logits)
-    assert l_gkd.item() >= 0.0
-    l_gkd.backward()
+    # 3. Linear CKA Loss
+    cka_loss_fn = LinearCKALoss()
+    loss_cka = cka_loss_fn(student_logits, teacher_logits)
+    assert loss_cka.item() >= 0.0
+    loss_cka.backward()
     assert student_logits.grad is not None
 
 
-def test_test_time_training_engine():
-    """Verify Test-Time Training (TTT) engine performs local self-supervised state updates on stream."""
-    class ToyModule(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.linear = nn.Linear(32, 32)
-        def forward(self, x):
-            return self.linear(x)
+def test_rl_alignment_losses_simpo_orpo():
+    """Verify SimPO, ORPO, and Dynamic Routing RL loss functions compute valid objectives."""
+    chosen_lp = torch.tensor([[-2.5, -1.8, -1.2]], requires_grad=True)
+    rejected_lp = torch.tensor([[-3.8, -4.2, -3.1]], requires_grad=True)
 
-    module = ToyModule()
-    ttt = TestTimeTrainingEngine(module, lr=1e-3, steps=3)
-    x_test = torch.randn(1, 16, 32)
-    out_adapted = ttt.adapt_step(x_test)
-    assert out_adapted.shape == (1, 16, 32)
-    assert not torch.isnan(out_adapted).any()
+    # 1. SimPO (Reference-Free Preference Optimization)
+    simpo = SimPOLoss(beta=2.0, gamma=0.5)
+    l_simpo = simpo(chosen_lp, rejected_lp)
+    assert l_simpo.item() > 0.0
+    l_simpo.backward()
+    assert chosen_lp.grad is not None
+    chosen_lp.grad.zero_()
+
+    # 2. ORPO (Odds Ratio Preference Optimization)
+    sft_loss = torch.tensor(1.5, requires_grad=True)
+    orpo = ORPOLoss(lambda_orpo=0.1)
+    l_orpo = orpo(sft_loss, chosen_lp, rejected_lp)
+    assert l_orpo.item() > 0.0
+    l_orpo.backward()
+    assert sft_lp_grad := sft_loss.grad is not None
+
+    # 3. Dynamic Routing & Rank Controller
+    router = DynamicRoutingAndRankRL(num_ranks_or_blocks=4, target_budget_ratio=0.5)
+    logits = torch.randn(2, 4, requires_grad=True)
+    decisions = router.sample_routing(logits, tau=1.0, hard=True)
+    penalty = router.compute_budget_penalty(decisions)
+    assert penalty.item() >= 0.0
+
+
+def test_test_time_training_layer():
+    """Verify Test-Time Training (TTT) attention layer performs recurrent inner-loop updates."""
+    ttt = TTTLinearAttentionLayer(dim=64, num_heads=2)
+    x = torch.randn(2, 16, 64, requires_grad=True)
+    out = ttt(x)
+    out_tensor = out[0] if isinstance(out, tuple) else out
+    assert out_tensor.shape == (2, 16, 64)
+    assert not torch.isnan(out_tensor).any()
+    loss = out_tensor.sum()
+    loss.backward()
+    assert x.grad is not None
+    assert not torch.isnan(x.grad).any()
