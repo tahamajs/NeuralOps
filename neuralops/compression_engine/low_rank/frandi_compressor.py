@@ -730,7 +730,6 @@ class FRanDICompressor(BaseCompressor):
 # ===========================================================================
 # Factory & Registration
 # ===========================================================================
-COMPRESSOR_REGISTRY.register("frandi")(FRanDICompressor)
 COMPRESSOR_REGISTRY.register("frandi_compressor")(FRanDICompressor)
 
 def frandi_factory(
