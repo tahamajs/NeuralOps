@@ -307,8 +307,7 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
         scale_norm = 1.0 / total_valid if reduction == "mean" else 1.0
 
-        # Pre-allocate gradients if gradients are needed
-        compute_grads = torch.is_grad_enabled() and (
+        compute_grads = (
             hidden_states.requires_grad or weight.requires_grad or (bias is not None and bias.requires_grad)
         )
 
