@@ -578,18 +578,19 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
     # 2. State-Update Benchmark
     if args.kernel in ("state_update", "all"):
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
-        s = torch.zeros(args.batch_size, 4, 32, 32, device=device)
+        kv_s = torch.zeros(args.batch_size, 4, 32, 32, device=device)
+        z_s = torch.zeros(args.batch_size, 4, 32, device=device)
         q = torch.randn(args.batch_size, 4, 32, device=device)
         k = torch.randn(args.batch_size, 4, 32, device=device)
         v = torch.randn(args.batch_size, 4, 32, device=device)
         for _ in range(5):
-            _ = fused_recurrent_linear_step(q, k, v, s)
+            _ = fused_recurrent_linear_step(q, k, v, kv_s, z_s)
         if device == "cuda":
             torch.cuda.synchronize()
         t0 = time.time()
         iters = 100
         for _ in range(iters):
-            _ = fused_recurrent_linear_step(q, k, v, s)
+            _ = fused_recurrent_linear_step(q, k, v, kv_s, z_s)
         if device == "cuda":
             torch.cuda.synchronize()
         dur = (time.time() - t0) / iters * 1000
