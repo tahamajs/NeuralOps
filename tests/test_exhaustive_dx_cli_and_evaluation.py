@@ -45,8 +45,9 @@ def test_10_3_paper_plot_generator():
     with tempfile.TemporaryDirectory() as tmpdir:
         gen = PaperPlotGenerator(output_dir=tmpdir)
         dummy_points = [
-            {"name": "full_attn", "speedup": 1.0, "quality": 1.0},
-            {"name": "linear_attn", "speedup": 2.5, "quality": 0.96},
+            {"name": "full_attn", "compression_ratio": 1.0, "accuracy": 1.0},
+            {"name": "linear_attn", "compression_ratio": 2.5, "accuracy": 0.96},
         ]
-        out_path = gen.plot_pareto_curve(dummy_points, filename="pareto_test.png")
-        assert Path(out_path).exists()
+        p_svg, p_pdf = gen.plot_pareto(dummy_points, filename="pareto_test")
+        assert Path(p_svg).exists()
+        assert Path(p_pdf).exists()
