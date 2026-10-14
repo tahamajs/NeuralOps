@@ -121,4 +121,3 @@ from neuralops.attentions.gated import hgrn2_gated_layer
 from neuralops.attentions.gated import hgrn2_gated_outer
 from neuralops.attentions.gated import hla_attention
 from neuralops.attentions.gated import kda_attention
-from neuralops.attentions.gated import flagship_fla
