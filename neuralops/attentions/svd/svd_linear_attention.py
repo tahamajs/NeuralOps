@@ -875,6 +875,14 @@ class SVDLinearAttention(BaseAttention):
 
         # ---- chunked scan for non-channel-wise and no past state ----
         if past_state is None and not self.decay_channel_wise:
+            try:
+                from neuralops.core.triton_kernels.gla_scan import fused_chunk_svd_decay_linear_triton
+                return fused_chunk_svd_decay_linear_triton(
+                    phi_q, phi_k, v_f, lambda_decay, chunk_size=self.chunk_size, eps=self.eps
+                )
+            except Exception:
+                pass
+
             chunk_size = self.chunk_size
             num_chunks = (N + chunk_size - 1) // chunk_size
             S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)

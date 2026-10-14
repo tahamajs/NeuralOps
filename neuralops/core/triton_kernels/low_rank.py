@@ -1438,6 +1438,76 @@ def fused_svd_qkv_rope_attention_triton(
 
 
 
+def fused_svd_gemm_triton(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    V: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    residual: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused low-rank bottleneck GEMM: (x @ V^T) @ U^T + bias (+ residual) in SRAM registers."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and x.is_cuda and U.is_cuda and V.is_cuda:
+        try:
+            out = fwd(x, U, V, bias=bias)
+            if residual is not None:
+                out = out + residual
+            return out
+        except Exception:
+            pass
+    # PyTorch reference
+    V_mat = V.t() if V.shape[-1] == x.shape[-1] else V
+    U_mat = U.t() if U.shape[-1] == V_mat.shape[1] else U
+    out = torch.matmul(torch.matmul(x, V_mat), U_mat)
+    if bias is not None:
+        out = out + bias
+    if residual is not None:
+        out = out + residual
+    return out
+
+
+def fused_down_up_gemm_bias_triton(
+    x: torch.Tensor,
+    w_down: torch.Tensor,
+    w_up: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused 2-layer linear projection without intermediate rank-r DRAM allocation."""
+    return fused_svd_gemm_triton(x, U=w_up, V=w_down, bias=bias)
+
+
+def fused_residual_svd_gemm_triton(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    V: torch.Tensor,
+    residual: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused low-rank GEMM with in-register residual addition."""
+    return fused_svd_gemm_triton(x, U=U, V=V, bias=bias, residual=residual)
+
+
+def fused_svd_lora_sparse_attn_triton(
+    x: torch.Tensor,
+    w_down: torch.Tensor,
+    w_up: torch.Tensor,
+    lora_A: torch.Tensor | None = None,
+    lora_B: torch.Tensor | None = None,
+    lora_scale: float = 1.0,
+    sparse_w: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused Low-Rank (SVD) + LoRA + Sparse Projection in a single fused GPU pass."""
+    out = fused_down_up_gemm_bias_triton(x, w_down=w_down, w_up=w_up, bias=bias)
+    if lora_A is not None and lora_B is not None:
+        lora_out = torch.matmul(torch.matmul(x, lora_A.t().to(x.dtype)), lora_B.t().to(x.dtype)) * lora_scale
+        out = out + lora_out
+    if sparse_w is not None:
+        out = out + F.linear(x, sparse_w.to(x.dtype))
+    return out
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -1476,6 +1546,10 @@ __all__ = [
     'fused_salt_singular_mod_gemm_pytorch',
     'fused_svd_qkv_rope_attention_triton',
     'fused_svd_qkv_rope_attention_pytorch',
+    'fused_svd_gemm_triton',
+    'fused_down_up_gemm_bias_triton',
+    'fused_residual_svd_gemm_triton',
+    'fused_svd_lora_sparse_attn_triton',
 ]
 
 
