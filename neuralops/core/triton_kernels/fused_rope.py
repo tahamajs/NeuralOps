@@ -1,4 +1,4 @@
-"""Fused RoPE Triton kernel with GPU JIT and fast PyTorch fallback."""
+"""Fused RoPE Triton kernel with GPU JIT, autograd backward, and fast PyTorch fallback."""
 from __future__ import annotations
 import torch
 
@@ -47,13 +47,68 @@ if HAS_TRITON and tl is not None:
         tl.store(OUT_Q + i_b * stride_oqb + i_h * stride_oqh + offs_n[:, None] * stride_oqn + offs_d2[None, :] * stride_oqd, oq2, mask=mask_n)
 
 
+def _apply_rope_rotation(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+    """Standard RoPE rotation: [x1, x2] -> [x1*cos - x2*sin, x2*cos + x1*sin]."""
+    D = x.shape[-1]
+    half_d = D // 2
+    x1 = x[..., :half_d]
+    x2 = x[..., half_d:]
+    # Match broadcast dims
+    c = cos[..., :half_d]
+    s = sin[..., :half_d]
+    while c.dim() < x1.dim():
+        c = c.unsqueeze(0)
+        s = s.unsqueeze(0)
+    out1 = x1 * c - x2 * s
+    out2 = x2 * c + x1 * s
+    return torch.cat([out1, out2], dim=-1)
+
+
+def _apply_rope_inverse_rotation(grad: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+    """
+    Inverse RoPE rotation for backward pass:
+    Since rotation is orthogonal (R^T = R^(-1)), inverse rotation replaces sin with -sin:
+    [g1, g2] -> [g1*cos + g2*sin, g2*cos - g1*sin].
+    """
+    D = grad.shape[-1]
+    half_d = D // 2
+    g1 = grad[..., :half_d]
+    g2 = grad[..., half_d:]
+    c = cos[..., :half_d]
+    s = sin[..., :half_d]
+    while c.dim() < g1.dim():
+        c = c.unsqueeze(0)
+        s = s.unsqueeze(0)
+    dx1 = g1 * c + g2 * s
+    dx2 = g2 * c - g1 * s
+    return torch.cat([dx1, dx2], dim=-1)
+
+
+class _FusedRoPEFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor):
+        ctx.save_for_backward(cos, sin)
+        out_q = _apply_rope_rotation(q, cos, sin)
+        out_k = _apply_rope_rotation(k, cos, sin)
+        return out_q, out_k
+
+    @staticmethod
+    def backward(ctx, grad_q: torch.Tensor, grad_k: torch.Tensor):
+        cos, sin = ctx.saved_tensors
+        dq = _apply_rope_inverse_rotation(grad_q, cos, sin) if grad_q is not None else None
+        dk = _apply_rope_inverse_rotation(grad_k, cos, sin) if grad_k is not None else None
+        return dq, dk, None, None
+
+
 def fused_rope_embedding_kernel(
     q: torch.Tensor,
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies fused RoPE using Triton if CUDA available, otherwise optimized PyTorch."""
+    """Applies fused RoPE with full autograd backward support."""
+    if torch.is_grad_enabled() or q.requires_grad or k.requires_grad:
+        return _FusedRoPEFunction.apply(q, k, cos, sin)
     return fused_rope_embedding(q, k, cos, sin)
 
 

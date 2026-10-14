@@ -1,4 +1,6 @@
 import torch
+from typing import Any
+
 try:
     import triton
     import triton.language as tl
@@ -62,15 +64,12 @@ def _cosformer_global_fwd_kernel(
         k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
         k_sin = tl.load(k_sin_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
 
-        # بارگذاری V
         v_ptrs = V_ptr + b * stride_vb + h * stride_vh \
                  + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
         v = tl.load(v_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
 
-        # محاسبهٔ score = Q_cos @ K_cos^T + Q_sin @ K_sin^T  →  (BLOCK_N, BLOCK_N)
         score = tl.dot(q_cos, tl.trans(k_cos)) + tl.dot(q_sin, tl.trans(k_sin))
 
-        # اگر decoder هستیم، ماسک causal اعمال شود
         causal_mask = offs_n[:, None] >= offs_k[None, :]
         score = tl.where(causal_mask, score, 0.0)
 
@@ -85,15 +84,7 @@ def _cosformer_global_fwd_kernel(
 
 
 def cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=True):
-    """Wrapper for kernel up.
-
-    Args:
-        q_cos, q_sin: (B, H, N, D)
-        k_cos, k_sin: (B, H, N, D)
-        v: (B, H, N, D)
-    Returns:
-        out: (B, H, N, D)
-    """
+    """Wrapper for Triton cosformer kernel."""
     B, H, N, D = q_cos.shape
     out = torch.empty_like(v)
     denom = torch.empty((B, H, N), device=v.device, dtype=torch.float32)
@@ -145,6 +136,27 @@ def cosformer_pytorch_fwd(
     return torch.matmul(weights, v)
 
 
+class _CosformerAutograd(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool, eps: float):
+        ctx.is_causal = is_causal
+        ctx.eps = eps
+        out = cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
+        ctx.save_for_backward(q, k, v)
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        q, k, v = ctx.saved_tensors
+        q_r = q.detach().requires_grad_(True)
+        k_r = k.detach().requires_grad_(True)
+        v_r = v.detach().requires_grad_(True)
+        with torch.enable_grad():
+            out = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=ctx.is_causal, eps=ctx.eps)
+            g_q, g_k, g_v = torch.autograd.grad(out, [q_r, k_r, v_r], grad_output, retain_graph=False)
+        return g_q, g_k, g_v, None, None
+
+
 def cosformer_triton_fwd(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -152,7 +164,9 @@ def cosformer_triton_fwd(
     is_causal: bool = False,
     eps: float = 1e-4,
 ) -> torch.Tensor:
-    """Dispatches cosformer forward pass."""
+    """Dispatches cosformer forward pass with full autograd backward support."""
+    if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
+        return _CosformerAutograd.apply(q, k, v, is_causal, eps)
     return cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
 
 
