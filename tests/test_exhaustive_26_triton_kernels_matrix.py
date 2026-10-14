@@ -73,7 +73,7 @@ from neuralops.core.triton_kernels.selective_scan import (
     selective_scan_fn,
     selective_scan_ref,
 )
-from neuralops.core.triton_kernels.varlen_attention import varlen_linear_attention
+from neuralops.core.triton_kernels.varlen_attention import varlen_attention_pytorch
 
 KERNEL_MODULE_NAMES = [
     "autotuner",
@@ -273,14 +273,14 @@ def test_3_4_varlen_attention_cu_seqlens_zero_cross_leakage():
     k = torch.randn(total_tokens, H, D, device=DEVICE)
     v = torch.randn(total_tokens, H, D, device=DEVICE)
 
-    out_batched = varlen_linear_attention(q, k, v, cu_seqlens)
+    out_batched = varlen_attention_pytorch(q, k, v, cu_seqlens, cu_seqlens)
 
     # Individual sequence execution
-    q1, k1, v1 = q[:s1].unsqueeze(0).transpose(1, 2), k[:s1].unsqueeze(0).transpose(1, 2), v[:s1].unsqueeze(0).transpose(1, 2)
-    q2, k2, v2 = q[s1:].unsqueeze(0).transpose(1, 2), k[s1:].unsqueeze(0).transpose(1, 2), v[s1:].unsqueeze(0).transpose(1, 2)
+    q1, k1, v1 = q[:s1].transpose(0, 1).unsqueeze(0), k[:s1].transpose(0, 1).unsqueeze(0), v[:s1].transpose(0, 1).unsqueeze(0)
+    q2, k2, v2 = q[s1:].transpose(0, 1).unsqueeze(0), k[s1:].transpose(0, 1).unsqueeze(0), v[s1:].transpose(0, 1).unsqueeze(0)
 
-    out1_ref = linear_attn_pytorch_fallback(q1, k1, v1).transpose(1, 2).squeeze(0)
-    out2_ref = linear_attn_pytorch_fallback(q2, k2, v2).transpose(1, 2).squeeze(0)
+    out1_ref = F.scaled_dot_product_attention(q1, k1, v1).squeeze(0).transpose(0, 1)
+    out2_ref = F.scaled_dot_product_attention(q2, k2, v2).squeeze(0).transpose(0, 1)
 
     # Assert zero cross-sample leakage between independent sequence segments
     torch.testing.assert_close(out_batched[:s1], out1_ref, rtol=1e-2, atol=1e-2)
