@@ -619,3 +619,20 @@ def test_3_8_unified_rope_offset_triton_parity():
     out_ref = fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
     torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
 
+
+def test_3_8_weighted_gqa_online_softmax_triton_parity():
+    from neuralops.core.triton_kernels.gqa import (
+        fused_weighted_gqa_online_softmax_triton,
+        fused_weighted_gqa_online_softmax_pytorch,
+    )
+    B, H_Q, H_KV, N_Q, N_K, d = 2, 8, 2, 32, 64, 32
+    q = torch.randn(B, H_Q, N_Q, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H_KV, N_K, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H_KV, N_K, d, device=DEVICE, dtype=torch.float32)
+    hw = torch.randn(H_Q, device=DEVICE, dtype=torch.float32)
+
+    for is_causal in (True, False):
+        out_tri = fused_weighted_gqa_online_softmax_triton(q, k, v, head_weights=hw, is_causal=is_causal)
+        out_ref = fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights=hw, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
