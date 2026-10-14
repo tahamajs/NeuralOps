@@ -130,6 +130,8 @@ celerybeat.pid
 
 models/
 **/models/
+!neuralops/models/
+!neuralops/models/**
 datasets/
 **/datasets/
 !datasets/.gitkeep
