@@ -40,6 +40,8 @@ _DENOM_EPS = 1e-5
 
 
 
+@ATTENTION_REGISTRY.register("inject_native_hybrid_attention")
+@ATTENTION_REGISTRY.register("native_hybrid_attention")
 class NativeHybridAttention(BaseAttention):
     is_custom_attention: bool = True
     supports_causal: bool = True

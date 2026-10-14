@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
+@ATTENTION_REGISTRY.register("template_attention")
 class YourCustomAttention(BaseAttention):
     r"""Template attention layer with optional low-rank pooling modulation."""
 

@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Main LEKAv2 Attention
 # ===========================================================================
+@ATTENTION_REGISTRY.register("inject_leka_v2")
+@ATTENTION_REGISTRY.register("landmark_local_attention")
 class LandmarkLocalAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True

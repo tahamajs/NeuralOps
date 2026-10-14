@@ -468,14 +468,137 @@ class _GLAScanFn(torch.autograd.Function):
         return dq, dk, dv, dlambdas
 
 
+def _gla_fwd_inference(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lambdas: torch.Tensor,
+    initial_state: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """Fast forward recurrent inference path without full workspace memory allocation."""
+    B, H, L, D = q.shape
+    y = torch.empty_like(q)
+    BLOCK_D = triton.next_power_of_2(D)
+    grid = (B, H)
+
+    # When STORE_WORKSPACE is False, dummy tensors suffice
+    dummy_s = torch.empty((1,), device=q.device, dtype=torch.float32)
+    dummy_z = torch.empty((1,), device=q.device, dtype=torch.float32)
+
+    _gla_fwd_kernel[grid](
+        q,
+        k,
+        v,
+        lambdas,
+        y,
+        dummy_s,
+        dummy_z,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        lambdas.stride(0),
+        lambdas.stride(1),
+        lambdas.stride(2),
+        y.stride(0),
+        y.stride(1),
+        y.stride(2),
+        y.stride(3),
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0,
+        B,
+        L,
+        H,
+        D,
+        STORE_WORKSPACE=False,
+        BLOCK_D=BLOCK_D,
+    )
+    return y
+
+
+def gla_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lambdas: torch.Tensor,
+) -> torch.Tensor:
+    """Pure PyTorch fallback reference implementation for GLA recurrent scan."""
+    B, H, L, D = q.shape
+    device = q.device
+    dtype = q.dtype
+
+    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    Z = torch.zeros((B, H, D), device=device, dtype=torch.float32)
+    ys = []
+
+    for t in range(L):
+        q_t = q[:, :, t, :].float()
+        k_t = k[:, :, t, :].float()
+        v_t = v[:, :, t, :].float()
+        lam_val = lambdas[:, :, t].float()
+        lam_t = torch.clamp(lam_val, min=1e-4, max=1.0 - 1e-4)
+
+        # S_t = lam_t * S_{t-1} + k_t^T @ v_t
+        kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
+        S = lam_t.unsqueeze(-1).unsqueeze(-1) * S + kv
+
+        # Z_t = lam_t * Z_{t-1} + k_t
+        Z = lam_t.unsqueeze(-1) * Z + k_t
+
+        num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+        den_t = (q_t * Z).sum(dim=-1, keepdim=True) + 1e-4
+        y_t = num_t / den_t
+        ys.append(y_t)
+
+    return torch.stack(ys, dim=2).to(dtype)
+
+
 def gla_scan_triton(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, lambdas: torch.Tensor
 ) -> torch.Tensor:
-    """Triton-accelerated GLA scan function. head_dim must be <= 64."""
+    """
+    Triton-accelerated GLA scan function with tri-kernel autograd dispatch:
+      - Uses fast fused recurrent kernel for inference (no workspace allocation).
+      - Uses full autograd Function during training with exact backward gradients.
+    """
     B, H, L, D = q.shape
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
-    return _GLAScanFn.apply(q, k, v, lambdas)
+
+    q_c = q.contiguous()
+    k_c = k.contiguous()
+    v_c = v.contiguous()
+    lam_c = lambdas.contiguous()
+
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (q, k, v, lambdas) if isinstance(t, torch.Tensor)
+    )
+    if not needs_grad:
+        return _gla_fwd_inference(q_c, k_c, v_c, lam_c)
+
+    return _GLAScanFn.apply(q_c, k_c, v_c, lam_c)
 
 
-__all__ = ['gla_scan_triton']
+def gla_scan(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, lambdas: torch.Tensor
+) -> torch.Tensor:
+    """Dispatches GLA scan to Triton GPU kernel when suitable, else PyTorch fallback."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "gla_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
+    if suitable:
+        try:
+            return gla_scan_triton(q, k, v, lambdas)
+        except Exception:
+            pass
+    return gla_scan_pytorch(q, k, v, lambdas)
+
+
+__all__ = ['gla_scan_triton', 'gla_scan_pytorch', 'gla_scan']

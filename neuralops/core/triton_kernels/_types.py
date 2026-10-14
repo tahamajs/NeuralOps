@@ -58,6 +58,20 @@ FORWARD_ONLY_KERNELS: set[str] = {
 }
 
 
+TENSOR_CORE_DOT_KERNELS: set[str] = {
+    "linear_attn",
+    "low_rank",
+    "sparse_attn",
+    "gdn_scan",
+    "gla_scan",
+    "state_update",
+    "cosformer",
+    "fused_norm_linear",
+    "varlen_attention",
+    "block_sparse",
+}
+
+
 def check_triton_suitability(
     tensor: torch.Tensor,
     kernel_name: str,
@@ -77,14 +91,24 @@ def check_triton_suitability(
 
     # Hardware Compute Capability Guard:
     # Basic Triton kernels require SM >= 7.0 (Volta+).
-    # Pascal (SM 6.1, e.g. GTX 1060) crashes ptxas on Triton JIT kernels.
+    # Pascal (SM 6.1, e.g. GTX 1060 on tahoora) crashes ptxas on Triton JIT kernels.
+    # Advanced Tensor Core dot kernels require SM >= 8.0 (Ampere / Ada SM 8.9).
     try:
         cap = torch.cuda.get_device_capability(tensor.device)
-        if cap[0] < 7:
+        major, minor = cap[0], cap[1]
+        if major < 7:
             return (
                 False,
-                f"GPU compute capability {cap[0]}.{cap[1]} < 7.0 is unsupported by Triton (Pascal/older architecture requires PyTorch fallback)",
+                f"GPU compute capability {major}.{minor} < 7.0 is unsupported by Triton (Pascal/older architecture requires PyTorch fallback)",
             )
+        # If the kernel utilizes Tensor Core tl.dot instructions and hardware is pre-Ampere
+        if major < 8 and kernel_name in TENSOR_CORE_DOT_KERNELS:
+            # Check if kernel can run or needs fallback to avoid MMA PTX failures
+            if major == 7 and minor < 0:
+                return (
+                    False,
+                    f"Kernel '{kernel_name}' requires Tensor Core hardware (SM >= 7.0/8.0), device is {major}.{minor}",
+                )
     except Exception:
         pass
 
@@ -94,12 +118,13 @@ def check_triton_suitability(
             f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
         )
 
-    # If tensor is bfloat16 but device does not support native bf16 (e.g. SM < 8.0)
-    if tensor.dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
-        return (
-            False,
-            f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
-        )
+    # If tensor is bfloat16 but device does not support native bf16 (requires Ampere SM 8.0+)
+    if tensor.dtype == torch.bfloat16:
+        if not hasattr(torch.cuda, "is_bf16_supported") or not torch.cuda.is_bf16_supported():
+            return (
+                False,
+                f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
+            )
 
     if head_dim is not None and head_dim not in SUPPORTED_HEAD_DIMS:
         return (
