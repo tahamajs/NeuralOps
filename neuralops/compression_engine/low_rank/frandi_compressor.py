@@ -728,9 +728,11 @@ class FRanDICompressor(BaseCompressor):
 
 
 # ===========================================================================
-# Factory
+# Factory & Registration
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("frandi_compressor")
+COMPRESSOR_REGISTRY.register("frandi")(FRanDICompressor)
+COMPRESSOR_REGISTRY.register("frandi_compressor")(FRanDICompressor)
+
 def frandi_factory(
     model: nn.Module,
     comp_config: Any | None = None,
