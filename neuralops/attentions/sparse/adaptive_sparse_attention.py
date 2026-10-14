@@ -734,6 +734,9 @@ class AdaptiveSparseAttention(BaseAttention):
             except Exception as e:
                 logger.debug("Triton sparse_attn failed in AdaptiveSparseAttention, falling back: %s", e)
 
+        context_chunks = []
+        attn_chunks = [] if output_attentions else None
+
         for q_start in range(0, N_q, chunk_size):
             q_end = min(q_start + chunk_size, N_q)
             q_chunk = Q[:, :, q_start:q_end, :]  # [B, H, C_q, d]

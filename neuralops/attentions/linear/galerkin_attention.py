@@ -707,41 +707,59 @@ class GalerkinAttention(BaseAttention):
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
             # Phi: (N, r)
 
-            # Project into basis
-            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)  # (B, H, r, d)
-            K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
-            V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
-
             scale = d**-0.5
-            scores = (
-                torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous())
-                * scale
-            )
-            # (B, H, r, r)
 
-            # Numerically stable softmax in basis space
-            scores_max = scores.max(dim=-1, keepdim=True).values.detach()
-            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
-            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
-            probs = exp_scores / denom
-            probs = torch.nan_to_num(probs, nan=0.0)
+            if not output_attentions and head_mask is None:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_galerkin_continuous_kernel_triton
+                    context = fused_galerkin_continuous_kernel_triton(Q, K_masked, V_masked, Phi, scale)
+                    probs = None
+                except Exception:
+                    # Project into basis
+                    Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)  # (B, H, r, d)
+                    K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
+                    V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                probs = probs * head_mask.to(probs.dtype)
+                    scores = (
+                        torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous())
+                        * scale
+                    )
+                    scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+                    exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
+                    denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+                    probs = exp_scores / denom
+                    probs = torch.nan_to_num(probs, nan=0.0)
+                    probs = self.dropout(probs)
+                    O_basis = torch.matmul(probs.to(dtype), V_basis)
+                    context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+            else:
+                # Project into basis
+                Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)  # (B, H, r, d)
+                K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
+                V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
-            probs = self.dropout(probs)
+                scores = (
+                    torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous())
+                    * scale
+                )
+                scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+                exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
+                denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+                probs = exp_scores / denom
+                probs = torch.nan_to_num(probs, nan=0.0)
 
-            # Attention in basis space
-            O_basis = torch.matmul(probs.to(dtype), V_basis)  # (B, H, r, d)
+                if head_mask is not None:
+                    if head_mask.dim() == 1:
+                        head_mask = head_mask.view(1, -1, 1, 1)
+                    elif head_mask.dim() == 2:
+                        head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                    elif head_mask.dim() == 3:
+                        head_mask = head_mask.unsqueeze(-1)
+                    probs = probs * head_mask.to(probs.dtype)
 
-            # Reconstruct sequence representation
-            context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)  # (B, H, N, d)
+                probs = self.dropout(probs)
+                O_basis = torch.matmul(probs.to(dtype), V_basis)  # (B, H, r, d)
+                context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)  # (B, H, N, d)
 
             # Apply padding mask on outputs
             if eff_mask is not None and not is_cross_attention:
