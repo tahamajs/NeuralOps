@@ -41,6 +41,119 @@ def _handle_deprecated(name: str) -> str:
         k = name.lower()
     return name
 
+
+def _make_universal_attention_class(target_cls: type) -> type:
+    """Wraps an attention class so direct instantiation cls(dim=256, num_heads=4) works seamlessly."""
+    if not isinstance(target_cls, type):
+        return target_cls
+    if getattr(target_cls, "_is_universal_attention_wrapped", False):
+        return target_cls
+
+    class UniversalAttentionWrapper(target_cls):
+        _is_universal_attention_wrapped = True
+
+        def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+            args_list = list(args)
+            resolved_dim = kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            resolved_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or kwargs.get("n_head")
+
+            if len(args_list) > 0 and isinstance(args_list[0], int):
+                resolved_dim = args_list.pop(0)
+                if len(args_list) > 0 and isinstance(args_list[0], int):
+                    resolved_heads = args_list.pop(0)
+
+            config = kwargs.get("config")
+            if len(args_list) > 0 and not isinstance(args_list[0], int):
+                config = args_list[0]
+
+            if resolved_dim is not None:
+                if config is None:
+                    from transformers import BertConfig
+                    h = resolved_heads or max(1, resolved_dim // 64)
+                    config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+                else:
+                    try:
+                        config.hidden_size = resolved_dim
+                        config.n_embd = resolved_dim
+                        config.d_model = resolved_dim
+                        if resolved_heads:
+                            config.num_attention_heads = resolved_heads
+                            config.num_heads = resolved_heads
+                    except Exception:
+                        pass
+                kwargs["config"] = config
+                kwargs["hidden_size"] = resolved_dim
+                kwargs["dim"] = resolved_dim
+                if resolved_heads:
+                    kwargs["num_heads"] = resolved_heads
+                    kwargs["num_attention_heads"] = resolved_heads
+
+            try:
+                return super().__new__(cls)
+            except Exception:
+                return target_cls.__new__(target_cls)
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            args_list = list(args)
+            resolved_dim = kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            resolved_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or kwargs.get("n_head")
+
+            if len(args_list) > 0 and isinstance(args_list[0], int):
+                resolved_dim = args_list.pop(0)
+                if len(args_list) > 0 and isinstance(args_list[0], int):
+                    resolved_heads = args_list.pop(0)
+
+            config = kwargs.get("config")
+            if len(args_list) > 0 and not isinstance(args_list[0], int):
+                config = args_list[0]
+
+            if resolved_dim is not None:
+                if config is None:
+                    from transformers import BertConfig
+                    h = resolved_heads or max(1, resolved_dim // 64)
+                    config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+                else:
+                    try:
+                        config.hidden_size = resolved_dim
+                        config.n_embd = resolved_dim
+                        config.d_model = resolved_dim
+                        if resolved_heads:
+                            config.num_attention_heads = resolved_heads
+                            config.num_heads = resolved_heads
+                    except Exception:
+                        pass
+                kwargs["config"] = config
+                kwargs["hidden_size"] = resolved_dim
+                kwargs["dim"] = resolved_dim
+                if resolved_heads:
+                    kwargs["num_heads"] = resolved_heads
+                    kwargs["num_attention_heads"] = resolved_heads
+
+            init_attempts = [
+                lambda: super(UniversalAttentionWrapper, self).__init__(*args_list, **kwargs),
+                lambda: super(UniversalAttentionWrapper, self).__init__(config=config, **{k: v for k, v in kwargs.items() if k != "config"}),
+                lambda: super(UniversalAttentionWrapper, self).__init__(config, **{k: v for k, v in kwargs.items() if k != "config"}),
+                lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, resolved_heads, **kwargs),
+                lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, **kwargs),
+                lambda: super(UniversalAttentionWrapper, self).__init__(**kwargs),
+            ]
+            last_err = None
+            for attempt in init_attempts:
+                try:
+                    attempt()
+                    return
+                except TypeError as e:
+                    last_err = e
+                    continue
+            if last_err:
+                raise last_err
+
+    UniversalAttentionWrapper.__name__ = target_cls.__name__
+    UniversalAttentionWrapper.__qualname__ = target_cls.__qualname__
+    UniversalAttentionWrapper.__module__ = target_cls.__module__
+    return UniversalAttentionWrapper
+
+
 _ATTENTION_FILE_MAP: dict[str, str] = {
     "gqa": "gqa_attention",
     "galerkin": "galerkin_attention",
@@ -244,7 +357,10 @@ class Registry:
         except ValueError:
             return None
         self._try_lazy_load(k)
-        return self._dict.get(k.lower())
+        obj = self._dict.get(k.lower())
+        if obj is not None and self.name == "attentions" and isinstance(obj, type):
+            return _make_universal_attention_class(obj)
+        return obj
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
@@ -258,7 +374,10 @@ class Registry:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
             )
-        return self._dict[k_lower]
+        obj = self._dict[k_lower]
+        if self.name == "attentions" and isinstance(obj, type):
+            return _make_universal_attention_class(obj)
+        return obj
 
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""
