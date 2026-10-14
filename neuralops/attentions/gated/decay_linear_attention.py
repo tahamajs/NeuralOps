@@ -145,7 +145,7 @@ class DecayLinearAttention(BaseAttention):
 
 
         # --- Resolve hidden_size ---
-        hidden_size = kwargs.get("hidden_size")
+        hidden_size = kwargs.get("dim") or kwargs.get("hidden_size")
         if hidden_size is None and d_model is not None:
             hidden_size = d_model
         if hidden_size is None:
