@@ -19,40 +19,35 @@ class _FusedNormLinearFunction(torch.autograd.Function):
         D = orig_shape[-1]
         x_2d = x.reshape(-1, D)
 
-        # LayerNorm forward: mean & var
-        mean = x_2d.mean(dim=-1, keepdim=True)
-        var = ((x_2d - mean) ** 2).mean(dim=-1, keepdim=True)
-        rstd = torch.rsqrt(var + eps)
-        x_hat = (x_2d - mean) * rstd
+        # LayerNorm forward via F.layer_norm for exact precision equivalence
+        x_hat = F.layer_norm(x_2d, (D,), eps=eps)
 
         # Linear projection
         out_2d = F.linear(x_hat, weight, bias)
         out = out_2d.reshape(*orig_shape[:-1], weight.shape[0])
 
-        ctx.save_for_backward(x_2d, mean, rstd, x_hat, weight)
+        ctx.save_for_backward(x_2d, x_hat, weight)
+        ctx.D = D
         return out
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        x_2d, mean, rstd, x_hat, weight = ctx.saved_tensors
-        D = x_2d.shape[-1]
+        x_2d, x_hat, weight = ctx.saved_tensors
+        D = ctx.D
         grad_out_2d = grad_output.reshape(-1, weight.shape[0])
 
-        # dweight = grad_out^T @ x_hat
         dweight = torch.matmul(grad_out_2d.t(), x_hat)
         dbias = grad_out_2d.sum(dim=0) if ctx.has_bias else None
 
-        # dx_hat = grad_out @ weight
         dx_hat = torch.matmul(grad_out_2d, weight)
-
-        # LayerNorm backward
-        # dx = rstd * (dx_hat - mean(dx_hat) - x_hat * mean(dx_hat * x_hat))
+        # Analytical backward of LayerNorm without affine parameters
+        var = ((x_2d - x_2d.mean(dim=-1, keepdim=True)) ** 2).mean(dim=-1, keepdim=True)
+        rstd = torch.rsqrt(var + ctx.eps)
         mean_dx_hat = dx_hat.mean(dim=-1, keepdim=True)
         mean_dx_hat_x_hat = (dx_hat * x_hat).mean(dim=-1, keepdim=True)
         dx_2d = rstd * (dx_hat - mean_dx_hat - x_hat * mean_dx_hat_x_hat)
 
-        dx = dx_2d.reshape(ctx.saved_tensors[0].shape)
-        # Match original input shape
+        dx = dx_2d.reshape(x_2d.shape)
         if grad_output.dim() > 2:
             dx = dx.reshape(*grad_output.shape[:-1], D)
 
