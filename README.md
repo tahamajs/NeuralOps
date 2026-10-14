@@ -494,7 +494,7 @@ Empirical verification of bidirectional scan adaptation and teacher distillation
 
 Evaluation of compression engines across parameter reduction, compression ratio, memory footprint, and WikiText-2 perplexity:
 
-| Compression Engine | Compressed Params | Param Reduction (%) | Compression Ratio | WikiText-2 PPL | Memory Footprint |
+| Compression Engine | Active Params | Param Reduction (%) | Compression Ratio | WikiText-2 PPL | Memory Footprint |
 |:---|:---:|:---:|:---:|:---:|:---:|
 | **Baseline (Uncompressed GPT-2)** | 124.44M | 0.0% | 1.000x | **19.82** | 474.7 MB |
 | **Bonsai Pruner** | 62.22M | **50.0%** | **2.000x** | 21.45 | 237.4 MB |
@@ -622,6 +622,8 @@ print(tokenizer.decode(outputs[0]))
 | **Preserved Legacy Aliases** | **712 aliases** | ❌ None | ❌ None |
 
 ### Quantitative Sequence Length Scaling ($B=1, H=32, D=128$, RTX 4090, fp16)
+
+While unfused linear attention baselines like Cosformer can encounter memory-bandwidth bottlenecks at short contexts (e.g. 0.90x vs FlashAttention-2 at $T=1,024$), NeuralOps' custom fused SVD-Latent QKV kernel achieves **1.33x–1.75x speedup** even at $T=512$–$1,024$ by eliminating intermediate High-Bandwidth Memory (HBM) roundtrips and fusing projection directly into on-chip SRAM.
 
 | Sequence Length ($N$) | FlashAttention-2 ($O(N^2)$) | Fused SVD-QKV ($O(N)$) | Cosformer ($O(N)$) | Chunk GLA ($O(N)$) | Mamba-1 Scan ($O(N)$) | Speedup vs FA2 |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
