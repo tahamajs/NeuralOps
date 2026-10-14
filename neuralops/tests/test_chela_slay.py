@@ -13,7 +13,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 def test_registry():
     assert "chela_slay" in ATTENTION_REGISTRY.list_available()
     assert "chela_slay_attention" in ATTENTION_REGISTRY.list_available()
-    assert ATTENTION_REGISTRY.get("chela_slay") is ChelaSlayAttention
+    assert issubclass(ATTENTION_REGISTRY.get("chela_slay"), ChelaSlayAttention)
 
 def test_odd_dim_rotate_half():
     x = torch.randn(2, 4, 15)

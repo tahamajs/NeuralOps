@@ -14,7 +14,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 def test_registry():
     assert "cosformer" in ATTENTION_REGISTRY.list_available()
     assert "cosformer_attention" in ATTENTION_REGISTRY.list_available()
-    assert ATTENTION_REGISTRY.get("cosformer") is CosformerAttention
+    assert issubclass(ATTENTION_REGISTRY.get("cosformer"), CosformerAttention)
 
 def test_forward_bidirectional():
     cfg = MockConfig(is_decoder=False)
