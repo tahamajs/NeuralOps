@@ -19,19 +19,73 @@ class KDLoss(nn.Module):
         Loss = alpha * TaskLoss + (1 - alpha) * (T^2 * KL(student || teacher))
     """
 
-    def __init__(self, temperature: float = 2.0, alpha: float = 0.5) -> None:
+    def __init__(
+        self,
+        temperature: float = 2.0,
+        alpha: float = 0.5,
+        use_fused_linear: bool = False,
+        chunk_size: int = 512,
+    ) -> None:
         super().__init__()
         self.temperature = temperature
         self.alpha = alpha
+        self.use_fused_linear = use_fused_linear
+        self.chunk_size = chunk_size
         self.kl_div = nn.KLDivLoss(reduction="batchmean")
 
     def forward(
         self,
-        student_logits: torch.Tensor,
-        teacher_logits: torch.Tensor,
+        student_logits: torch.Tensor | None = None,
+        teacher_logits: torch.Tensor | None = None,
         labels: torch.Tensor | None = None,
+        student_hidden: torch.Tensor | None = None,
+        student_weight: torch.Tensor | None = None,
+        teacher_hidden: torch.Tensor | None = None,
+        teacher_weight: torch.Tensor | None = None,
+        student_bias: torch.Tensor | None = None,
+        teacher_bias: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Compute distillation loss with temperature scaling."""
+        """Compute distillation loss with optional fused linear kernel execution."""
+        from neuralops.core.triton_kernels.fused_ce import fused_linear_cross_entropy
+        from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_divergence
+
+        # If hidden states and head weights are provided, execute fused linear KD & CE directly
+        # preventing multi-gigabyte logits materialization in HBM!
+        if (
+            self.use_fused_linear
+            and student_hidden is not None
+            and student_weight is not None
+            and teacher_hidden is not None
+            and teacher_weight is not None
+        ):
+            distill_loss = fused_linear_kl_divergence(
+                student_hidden=student_hidden,
+                student_weight=student_weight,
+                teacher_hidden=teacher_hidden,
+                teacher_weight=teacher_weight,
+                student_bias=student_bias,
+                teacher_bias=teacher_bias,
+                temperature=self.temperature,
+                reduction="batchmean",
+                chunk_size=self.chunk_size,
+            )
+            if labels is not None:
+                task_loss = fused_linear_cross_entropy(
+                    hidden_states=student_hidden,
+                    weight=student_weight,
+                    bias=student_bias,
+                    targets=labels,
+                    chunk_size=self.chunk_size,
+                )
+                return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
+            return distill_loss
+
+        # Standard logits fallback path
+        if student_logits is None or teacher_logits is None:
+            raise ValueError(
+                "Either (student_logits, teacher_logits) or (student_hidden, student_weight, teacher_hidden, teacher_weight) must be provided."
+            )
+
         p_student = F.log_softmax(student_logits / self.temperature, dim=-1)
         p_teacher = F.softmax(teacher_logits / self.temperature, dim=-1)
 
@@ -89,18 +143,66 @@ def kd_train_step(
     if amp_enabled:
         with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
             with torch.no_grad():
-                teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask)
-                teacher_logits = teacher_outputs.logits
-            student_outputs = student(input_ids=input_ids, attention_mask=attention_mask)
-            student_logits = student_outputs.logits
-            loss = kd_loss_fn(student_logits, teacher_logits, labels=labels)
+                teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+            student_outputs = student(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+            
+            # Check if models support extracting final hidden states and lm_head weight for fused loss
+            s_head = getattr(student, "lm_head", None)
+            t_head = getattr(teacher, "lm_head", None)
+            if (
+                kd_loss_fn.use_fused_linear
+                and s_head is not None
+                and t_head is not None
+                and hasattr(student_outputs, "hidden_states")
+                and hasattr(teacher_outputs, "hidden_states")
+            ):
+                s_h = student_outputs.hidden_states[-1]
+                t_h = teacher_outputs.hidden_states[-1]
+                loss = kd_loss_fn(
+                    labels=labels,
+                    student_hidden=s_h,
+                    student_weight=s_head.weight,
+                    teacher_hidden=t_h,
+                    teacher_weight=t_head.weight,
+                    student_bias=getattr(s_head, "bias", None),
+                    teacher_bias=getattr(t_head, "bias", None),
+                )
+            else:
+                loss = kd_loss_fn(
+                    student_logits=student_outputs.logits,
+                    teacher_logits=teacher_outputs.logits,
+                    labels=labels,
+                )
     else:
         with torch.no_grad():
-            teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask)
-            teacher_logits = teacher_outputs.logits
-        student_outputs = student(input_ids=input_ids, attention_mask=attention_mask)
-        student_logits = student_outputs.logits
-        loss = kd_loss_fn(student_logits, teacher_logits, labels=labels)
+            teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+        student_outputs = student(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+        s_head = getattr(student, "lm_head", None)
+        t_head = getattr(teacher, "lm_head", None)
+        if (
+            kd_loss_fn.use_fused_linear
+            and s_head is not None
+            and t_head is not None
+            and hasattr(student_outputs, "hidden_states")
+            and hasattr(teacher_outputs, "hidden_states")
+        ):
+            s_h = student_outputs.hidden_states[-1]
+            t_h = teacher_outputs.hidden_states[-1]
+            loss = kd_loss_fn(
+                labels=labels,
+                student_hidden=s_h,
+                student_weight=s_head.weight,
+                teacher_hidden=t_h,
+                teacher_weight=t_head.weight,
+                student_bias=getattr(s_head, "bias", None),
+                teacher_bias=getattr(t_head, "bias", None),
+            )
+        else:
+            loss = kd_loss_fn(
+                student_logits=student_outputs.logits,
+                teacher_logits=teacher_outputs.logits,
+                labels=labels,
+            )
 
     if amp_enabled and mp_type == "fp16" and scaler is not None:
         scaler.scale(loss).backward()
