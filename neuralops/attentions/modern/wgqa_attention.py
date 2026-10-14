@@ -590,12 +590,21 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     elif mask.dim() in (3, 4):
                         sdpa_mask = mask.to(dtype=torch.bool) if mask.dtype != torch.bool else mask
 
-                context = F.scaled_dot_product_attention(
-                    Q, K_full, V_full,
-                    attn_mask=sdpa_mask,
-                    is_causal=_is_causal,
-                    dropout_p=self.dropout.p if self.training else 0.0,
+                from neuralops.core.triton_kernels.gqa import (
+                    fused_weighted_gqa_online_softmax_triton,
+                    fused_weighted_gqa_online_softmax_pytorch,
                 )
+                if Q.is_cuda and not self.training and sdpa_mask is None:
+                    context = fused_weighted_gqa_online_softmax_triton(
+                        Q, K, V, head_weights=None, is_causal=_is_causal, scale=scale
+                    )
+                else:
+                    context = F.scaled_dot_product_attention(
+                        Q, K_full, V_full,
+                        attn_mask=sdpa_mask,
+                        is_causal=_is_causal,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
 
                 context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
                 output = context if self.is_nested_encoder else self.out_proj(context)
