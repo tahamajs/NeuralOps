@@ -36,12 +36,24 @@ _RMSNORM_BLOCK = 1024
 
 
 def _cuda_ok(*tensors: torch.Tensor) -> bool:
-    """True if Triton is available and every tensor is a CUDA float tensor."""
+    """True if Triton is available, GPU supports Triton JIT, and every tensor is a valid CUDA float tensor."""
     if not (HAS_TRITON and tl is not None and triton is not None):
         return False
-    return all(
-        t.is_cuda and t.dtype in _FLOAT_DTYPES for t in tensors
-    )
+    if not all(t.is_cuda and t.dtype in _FLOAT_DTYPES for t in tensors):
+        return False
+    try:
+        from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
+
+        profile = get_device_hardware_profile(tensors[0].device)
+        if not profile.supports_triton_jit:
+            return False
+        # If any tensor is bf16, verify hardware supports bf16
+        if any(t.dtype == torch.bfloat16 for t in tensors) and not profile.supports_bf16:
+            return False
+    except Exception:
+        pass
+    return True
+
 
 
 # ═══════════════════════════════════════════════════════════════════
