@@ -17,6 +17,17 @@ from neuralops.surgery.topology_router import (
     sanitize_kv_for_padding_mask,
 )
 
+from neuralops.surgery.shadow_twin import (
+    collect_surgery_distillation_loss,
+    compute_linear_cka_loss,
+    compute_operator_cloning_loss,
+    enable_shadow_twin,
+    finalize_surgery,
+    patch_bridge_for_shadow_twin,
+    set_surgery_alpha,
+    set_surgery_stage,
+)
+
 __all__ = [
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
@@ -29,4 +40,12 @@ __all__ = [
     "sanitize_kv_for_padding_mask",
     "BiDirectionalScanWrapper",
     "AsymmetricCrossAttentionRouter",
+    "compute_operator_cloning_loss",
+    "compute_linear_cka_loss",
+    "enable_shadow_twin",
+    "set_surgery_alpha",
+    "set_surgery_stage",
+    "collect_surgery_distillation_loss",
+    "finalize_surgery",
+    "patch_bridge_for_shadow_twin",
 ]
