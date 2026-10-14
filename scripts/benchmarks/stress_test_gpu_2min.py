@@ -8,7 +8,7 @@ import argparse
 import torch
 import torch.nn.functional as F
 
-from neuralops.attentions.registry import ATTENTION_REGISTRY
+from neuralops.attentions import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels.elementwise import fused_alibi_bias_triton, fused_dynamic_conv1d_triton
 from neuralops.core.triton_kernels.sparse_attn import (
     fused_lsh_hash_and_bin_triton,
