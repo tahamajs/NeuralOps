@@ -31,11 +31,17 @@ def main():
             inject_attention(model, mod)
             train_loader = make_dataloader(train_ds, batch_size=4, shuffle=True)
             eval_loader = make_dataloader(eval_ds, batch_size=8, shuffle=False)
-            optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
-            metrics = finetune_classification(model, train_loader, optimizer, "cuda", epochs=1, eval_loader=eval_loader)
+            metrics = finetune_classification(
+                model=model,
+                train_loader=train_loader,
+                eval_loader=eval_loader,
+                epochs=1,
+                lr=2e-5,
+                device="cuda",
+            )
             print(f"SUCCESS {mod}: acc={metrics.get('accuracy'):.4f}, loss={metrics.get('loss'):.4f}")
             results[mod] = {"status": "success", "metrics": metrics}
-            del model, optimizer, train_loader, eval_loader
+            del model, train_loader, eval_loader
         except Exception as e:
             print(f"FAILED {mod}: {type(e).__name__}: {e}")
             results[mod] = {"status": "failed", "error": f"{type(e).__name__}: {e}"}
