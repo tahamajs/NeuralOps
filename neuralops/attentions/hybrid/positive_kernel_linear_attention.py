@@ -800,7 +800,6 @@ LEKAV1Attention = PositiveKernelLinearAttention
 # ===========================================================================
 # [FIX-9, FIX-10] Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_leka_v1")
 def inject_positive_kernel_linear(
     layer: Any = None,
     model: Any = None,
