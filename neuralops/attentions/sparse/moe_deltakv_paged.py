@@ -922,6 +922,60 @@ class MoEDeltaKVPagedAttention(nn.Module):
         attn_ret = attn_probs if output_attentions else None
         return out, attn_ret
 
+    def step(self, x: torch.Tensor, state: dict[str, Any] | None = None) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Autoregressive single-step forward for generation.
+
+        Args:
+            x: (B, 1, D) input tensor.
+            state: Optional dictionary containing past 'k_cache' and 'v_cache'.
+
+        Returns:
+            (out, new_state) where out is (B, 1, D) and new_state is updated dict.
+        """
+        B, N, D = x.shape
+        H, d = self.num_heads, self.head_dim
+        H_kv = self.num_kv_heads
+
+        q = self.query(x).view(B, N, H, d).transpose(1, 2)
+        k_t = self.key(x).view(B, N, H_kv, d).transpose(1, 2)
+        v_t = self.value(x).view(B, N, H_kv, d).transpose(1, 2)
+
+        if state is None:
+            state = {}
+
+        if "k_cache" in state and "v_cache" in state:
+            k = torch.cat([state["k_cache"], k_t], dim=2)
+            v = torch.cat([state["v_cache"], v_t], dim=2)
+        else:
+            k = k_t
+            v = v_t
+
+        new_state = {
+            "k_cache": k,
+            "v_cache": v,
+        }
+
+        if H_kv != H:
+            k_exp = repeat_kv(k, self.kv_repeat)
+            v_exp = repeat_kv(v, self.kv_repeat)
+        else:
+            k_exp = k
+            v_exp = v
+
+        scale = 1.0 / math.sqrt(d)
+        scores = torch.matmul(q.float(), k_exp.float().transpose(-2, -1)) * scale
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        probs = F.softmax(scores, dim=-1).to(x.dtype)
+        context = torch.matmul(probs, v_exp)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        return out, new_state
+
 
 # ===========================================================================
 # Injection (MDP-FIX-06)
