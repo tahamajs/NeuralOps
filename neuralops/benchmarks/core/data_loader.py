@@ -94,7 +94,10 @@ def load_dataset_by_name(
     # 1. GLUE Classification
     if name_clean in GLUE_TASKS:
         cfg = GLUE_TASKS[name_clean]
-        raw_ds = load_dataset("glue", name_clean, split=split)
+        try:
+            raw_ds = load_dataset("nyu-mll/glue", name_clean, split=split)
+        except Exception:
+            raw_ds = load_dataset("glue", name_clean, split=split)
         if max_samples is not None and max_samples < len(raw_ds):
             raw_ds = raw_ds.select(range(max_samples))
             LOG.info("Subsampled %s split '%s' to %d samples", name_clean, split, len(raw_ds))
