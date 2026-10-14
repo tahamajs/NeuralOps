@@ -1,8 +1,8 @@
 """
 Live GPU Accuracy-Recovery Proof Benchmark on NVIDIA GeForce RTX 4070.
 Compares:
-1. Zero-Shot Post-Surgery (before recovery)
-2. Naive Cross-Entropy Fine-Tuning (50 steps)
+1. Zero-Shot Post-Surgery (before recovery, pure subquadratic student alpha=1.0)
+2. Naive Cross-Entropy Fine-Tuning (50 steps, pure subquadratic student alpha=1.0)
 3. MOHAWK 3-Stage + Hedgehog + PiSSA + DKD + LearnableAttentionSink (50 total steps)
 Measures: Output Cosine Similarity to Teacher, Final Logit KL Divergence, Linear CKA Alignment, Peak VRAM, and Wall-Clock Time.
 """
@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config, GPT2LMHeadModel
 
-from neuralops.api import replace_attention
+from neuralops.api import replace_attention, set_surgery_alpha
 from neuralops.trainer.distillation.multi_level_kd import (
     LogitDistillationLoss,
     LinearCKALoss,
@@ -38,10 +38,14 @@ with torch.no_grad():
     t_out = teacher(inputs)
     t_logits = t_out.logits
 
-# 2. Condition A: Zero-Shot Transplant (Cosformer)
+# 2. Condition A: Zero-Shot Pure Subquadratic Transplant (Cosformer, window_size=0, fusion_scale=1.0)
 student_zero = GPT2LMHeadModel(cfg).to(device)
 student_zero.load_state_dict(teacher.state_dict())
-replace_attention(student_zero, attention="cosformer", copy_weights=True)
+replace_attention(student_zero, attention="cosformer", copy_weights=True, window_size=0)
+for m in student_zero.modules():
+    if hasattr(m, "fusion_scale"):
+        m.fusion_scale.data.fill_(1.0)
+set_surgery_alpha(student_zero, 1.0)
 student_zero.eval()
 
 with torch.no_grad():
@@ -50,17 +54,22 @@ with torch.no_grad():
     zero_cos = F.cosine_similarity(s_zero_logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
     zero_kl = F.kl_div(F.log_softmax(s_zero_logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
 
-print(f"Condition 1 (Zero-Shot Post-Surgery): Cosine Sim={zero_cos:.4f}, KL Div={zero_kl:.4f}")
+print(f"Condition 1 (Zero-Shot Post-Surgery, alpha=1.0): Cosine Sim={zero_cos:.4f}, KL Div={zero_kl:.4f}")
 
 # 3. Condition B: Naive Cross-Entropy Fine-Tuning
 student_naive = GPT2LMHeadModel(cfg).to(device)
 student_naive.load_state_dict(teacher.state_dict())
-replace_attention(student_naive, attention="cosformer", copy_weights=True)
+replace_attention(student_naive, attention="cosformer", copy_weights=True, window_size=0)
+for m in student_naive.modules():
+    if hasattr(m, "fusion_scale"):
+        m.fusion_scale.data.fill_(1.0)
+set_surgery_alpha(student_naive, 1.0)
 student_naive.train()
 
 opt_naive = torch.optim.AdamW(student_naive.parameters(), lr=1e-4)
 t0 = time.perf_counter()
-torch.cuda.reset_peak_memory_stats(device)
+if torch.cuda.is_available():
+    torch.cuda.reset_peak_memory_stats(device)
 
 for step in range(50):
     opt_naive.zero_grad()
@@ -70,22 +79,28 @@ for step in range(50):
     loss.backward()
     opt_naive.step()
 
-torch.cuda.synchronize()
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
 t_naive = time.perf_counter() - t0
-vram_naive = torch.cuda.max_memory_allocated(device) / (1024 * 1024)
+vram_naive = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if torch.cuda.is_available() else 0.0
 
 student_naive.eval()
+set_surgery_alpha(student_naive, 1.0)
 with torch.no_grad():
     s_naive_out = student_naive(inputs)
     naive_cos = F.cosine_similarity(s_naive_out.logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
     naive_kl = F.kl_div(F.log_softmax(s_naive_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
 
-print(f"Condition 2 (Naive Fine-Tuning 50 steps): Cosine Sim={naive_cos:.4f}, KL Div={naive_kl:.4f}, Time={t_naive:.2f}s, VRAM={vram_naive:.1f}MB")
+print(f"Condition 2 (Naive Fine-Tuning 50 steps, alpha=1.0): Cosine Sim={naive_cos:.4f}, KL Div={naive_kl:.4f}, Time={t_naive:.2f}s, VRAM={vram_naive:.1f}MB")
 
 # 4. Condition C: 6-Pillar MOHAWK + PiSSA + DKD Engine
 student_mohawk = GPT2LMHeadModel(cfg).to(device)
 student_mohawk.load_state_dict(teacher.state_dict())
-replace_attention(student_mohawk, attention="cosformer", copy_weights=True)
+replace_attention(student_mohawk, attention="cosformer", copy_weights=True, window_size=0)
+for m in student_mohawk.modules():
+    if hasattr(m, "fusion_scale"):
+        m.fusion_scale.data.fill_(1.0)
+set_surgery_alpha(student_mohawk, 1.0)
 # Inject PiSSA low-rank principal components
 inject_pissa_adapters(student_mohawk, rank=16)
 student_mohawk.train()
@@ -95,7 +110,8 @@ cka_loss_fn = LinearCKALoss()
 opt_mohawk = torch.optim.AdamW([p for p in student_mohawk.parameters() if p.requires_grad], lr=2e-4)
 
 t0 = time.perf_counter()
-torch.cuda.reset_peak_memory_stats(device)
+if torch.cuda.is_available():
+    torch.cuda.reset_peak_memory_stats(device)
 
 for step in range(50):
     opt_mohawk.zero_grad()
@@ -105,17 +121,19 @@ for step in range(50):
     loss.backward()
     opt_mohawk.step()
 
-torch.cuda.synchronize()
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
 t_mohawk = time.perf_counter() - t0
-vram_mohawk = torch.cuda.max_memory_allocated(device) / (1024 * 1024)
+vram_mohawk = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if torch.cuda.is_available() else 0.0
 
 student_mohawk.eval()
+set_surgery_alpha(student_mohawk, 1.0)
 with torch.no_grad():
     s_mohawk_out = student_mohawk(inputs)
     mohawk_cos = F.cosine_similarity(s_mohawk_out.logits.view(-1, 50257), t_logits.view(-1, 50257), dim=-1).mean().item()
     mohawk_kl = F.kl_div(F.log_softmax(s_mohawk_out.logits / 2.0, dim=-1), F.softmax(t_logits / 2.0, dim=-1), reduction="batchmean").item() * 4.0
 
-print(f"Condition 3 (6-Pillar MOHAWK+PiSSA+DKD 50 steps): Cosine Sim={mohawk_cos:.4f}, KL Div={mohawk_kl:.4f}, Time={t_mohawk:.2f}s, VRAM={vram_mohawk:.1f}MB")
+print(f"Condition 3 (6-Pillar MOHAWK+PiSSA+DKD 50 steps, alpha=1.0): Cosine Sim={mohawk_cos:.4f}, KL Div={mohawk_kl:.4f}, Time={t_mohawk:.2f}s, VRAM={vram_mohawk:.1f}MB")
 
 report = f"""# Live GPU Accuracy-Recovery Proof Benchmark (RTX 4070)
 
