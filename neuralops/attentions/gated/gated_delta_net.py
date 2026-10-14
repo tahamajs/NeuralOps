@@ -1061,6 +1061,77 @@ class GatedDeltaNet(BaseAttention):
 
         return out, None
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for GatedDeltaNet."""
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_gdn_step
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, D = x.shape
+        H, d = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        # 1. Projections
+        q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).contiguous()  # [B, H, 1, d]
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        z = self.z_proj(x)
+
+        if self.num_kv_heads != self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        # 2. L2 normalize Q and K
+        q_norm = F.normalize(q, p=2, dim=-1, eps=1e-12)
+        k_norm = F.normalize(k, p=2, dim=-1, eps=1e-12)
+
+        # 3. Gates
+        beta = torch.sigmoid(self.lora_beta_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)    # [B, H]
+        alpha = torch.sigmoid(self.lora_alpha_proj(x)).view(B, 1, H).transpose(1, 2).squeeze(-1)  # [B, H]
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
+
+        kv_state = state["kv_state"]
+
+        q_t = q_norm.squeeze(2)  # [B, H, d]
+        k_t = k_norm.squeeze(2)
+        v_t = v.squeeze(2)
+
+        # 4. Fused GDN step: S_t = beta * S_{t-1} + alpha * k_t \otimes (v_t - S_{t-1}^T @ k_t)
+        out_t, kv_state = fused_recurrent_gdn_step(
+            q_t, k_t, v_t, beta, alpha, kv_state, scale=self.scale
+        )
+        state["kv_state"] = kv_state
+        state["step_idx"] = step_idx + 1
+
+        y = out_t.unsqueeze(2).transpose(1, 2).contiguous().view(B, 1, H * d)
+        y = self.norm(y.to(dtype))
+        gated_y = y * self.gate_act(z)
+
+        if self.is_nested_encoder:
+            out = gated_y
+        else:
+            out = self.out_proj(gated_y)
+
+        out = out * self.lora_output_scale
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
     # ------------------------------------------------------------------
     # Storage accounting
     # ------------------------------------------------------------------
