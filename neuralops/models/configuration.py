@@ -92,6 +92,8 @@ class NeuralOpsConfig(PretrainedConfig):
             bos_token_id=bos_token_id,
             eos_token_id=eos_token_id,
             tie_word_embeddings=tie_word_embeddings,
+            is_decoder=is_decoder,
+            is_causal=is_causal,
             **kwargs,
         )
 
