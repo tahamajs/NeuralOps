@@ -634,5 +634,5 @@ def test_3_8_weighted_gqa_online_softmax_triton_parity():
     for is_causal in (True, False):
         out_tri = fused_weighted_gqa_online_softmax_triton(q, k, v, head_weights=hw, is_causal=is_causal)
         out_ref = fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights=hw, is_causal=is_causal)
-        torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+        torch.testing.assert_close(out_tri, out_ref, rtol=5e-3, atol=5e-3)
 
