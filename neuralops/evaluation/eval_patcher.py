@@ -379,6 +379,7 @@ def _apply_compressor_module(
     calibration_data: Any | None,
     calibration_loader: Any | None,
     tokenizer: Any | None,
+    **kwargs: Any,
 ) -> nn.Module:
     """Apply compression engine module to target model using registry instantiation strategies."""
     if module_name not in COMPRESSOR_REGISTRY:
@@ -423,6 +424,9 @@ def _apply_compressor_module(
         c_kwargs["calib_loader"] = calibration_loader
     if calibration_data is not None:
         c_kwargs["calibration_data"] = calibration_data
+
+    # Merge explicit caller kwargs
+    c_kwargs.update(kwargs)
 
     # Strategy 1: instantiate with model
     candidate = None
@@ -493,6 +497,7 @@ def apply_module_to_model(
     calibration_data: Any | None = None,
     calibration_loader: Any | None = None,
     tokenizer: Any | None = None,
+    **kwargs: Any,
 ) -> tuple[nn.Module, float]:
     """Inject attention or apply compression engine to model and calculate parameter ratio.
 
@@ -505,6 +510,7 @@ def apply_module_to_model(
         calibration_data: Optional tensor calibration batch.
         calibration_loader: Optional DataLoader containing real calibration samples.
         tokenizer: Optional AutoTokenizer matching the target model.
+        **kwargs: Optional extra arguments forwarded to compressor modules (e.g. fallback_to_original).
 
     Returns:
         Tuple of (patched_model, compression_ratio).
@@ -541,7 +547,7 @@ def apply_module_to_model(
         model = _apply_attention_module(model, module_name, rank, device)
     elif module_type == "compressor":
         model = _apply_compressor_module(
-            model, module_name, rank, calibration_data, calibration_loader, tokenizer
+            model, module_name, rank, calibration_data, calibration_loader, tokenizer, **kwargs
         )
 
     model.to(device)
