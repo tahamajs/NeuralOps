@@ -543,7 +543,7 @@ def fused_dynamic_conv1d_triton(
     dyn_w: torch.Tensor,
 ) -> torch.Tensor:
     """Fused Dynamic Causal Depthwise Conv1D kernel executed entirely in GPU SRAM."""
-    if not (HAS_TRITON and v_full.is_cuda):
+    if not (HAS_TRITON and v_full.is_cuda) or v_full.requires_grad or dyn_w.requires_grad:
         return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
 
     B, H, T, d = v_full.shape
