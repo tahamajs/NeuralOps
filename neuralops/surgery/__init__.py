@@ -39,6 +39,11 @@ from neuralops.surgery.universal_calibrator import (
     transplant_and_compress,
 )
 
+from neuralops.api import (
+    replace_attention,
+    transplant_attention,
+)
+
 __all__ = [
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
@@ -64,4 +69,6 @@ __all__ = [
     "UniversalActivationCalibrator",
     "compress_model_universal",
     "transplant_and_compress",
+    "replace_attention",
+    "transplant_attention",
 ]
