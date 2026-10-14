@@ -457,7 +457,14 @@ class AdaptiveSVDAttention(BaseAttention):
     def _init_svd_part(self, layer: AdaptiveSVDLinear, W_data, bias_data):
         with torch.no_grad():
             W = W_data.float()
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            dev = W.device
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vt = Vt.to(dev)
             max_r = min(layer.svd_rank, U.size(1), Vt.size(0))
             r = self._compute_energy_rank(S, max_rank=max_r)
 

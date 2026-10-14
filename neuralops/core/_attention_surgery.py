@@ -383,7 +383,14 @@ def _svd_factorize_weights(
         if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
             if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
                 W_f = W_f.t()
-            U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+            dev = src_weight.device
+            try:
+                U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(W_f.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vt = Vt.to(dev)
             r = min(
                 lin1.weight.shape[0],
                 lin2.weight.shape[1],

@@ -499,8 +499,15 @@ class ASVDAttention(BaseAttention):
             ):
                 W = W.t().contiguous()
 
-            # Perform SVD strictly in FP32
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            # Perform SVD strictly in FP32 with CPU fallback for driver robustness
+            dev = W.device
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vt = Vt.to(dev)
 
             # Energy-based dynamic rank selection
             total_energy = torch.sum(S**2)

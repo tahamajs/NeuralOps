@@ -93,9 +93,17 @@ def safe_svd(
         try:
             U, S, Vh = torch.linalg.svd(M, full_matrices=full_matrices, driver=driver)
         except RuntimeError:
-            # Fallback with small diagonal jitter if convergence fails
-            jitter = 1e-6 * torch.eye(M.shape[-2], M.shape[-1], device=M.device, dtype=work_dtype)
-            U, S, Vh = torch.linalg.svd(M + jitter, full_matrices=full_matrices)
+            # Fallback 1: small diagonal jitter on current device
+            try:
+                jitter = 1e-6 * torch.eye(M.shape[-2], M.shape[-1], device=M.device, dtype=work_dtype)
+                U, S, Vh = torch.linalg.svd(M + jitter, full_matrices=full_matrices)
+            except RuntimeError:
+                # Fallback 2: Execute robustly on CPU (protects against cuSOLVER driver bugs on SM 6.x / GTX 1060)
+                M_cpu = M.detach().to("cpu")
+                U_cpu, S_cpu, Vh_cpu = torch.linalg.svd(M_cpu, full_matrices=full_matrices)
+                U = U_cpu.to(orig_device)
+                S = S_cpu.to(orig_device)
+                Vh = Vh_cpu.to(orig_device)
 
     return U.to(orig_dtype), S.to(orig_dtype), Vh.to(orig_dtype)
 
