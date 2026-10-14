@@ -33,6 +33,12 @@ from neuralops.surgery.hf_cache_bridge import (
     wrap_model_for_generation,
 )
 
+from neuralops.surgery.universal_calibrator import (
+    UniversalActivationCalibrator,
+    compress_model_universal,
+    transplant_and_compress,
+)
+
 __all__ = [
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
@@ -55,4 +61,7 @@ __all__ = [
     "patch_bridge_for_shadow_twin",
     "NeuralOpsHybridHFCache",
     "wrap_model_for_generation",
+    "UniversalActivationCalibrator",
+    "compress_model_universal",
+    "transplant_and_compress",
 ]
