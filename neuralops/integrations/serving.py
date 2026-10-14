@@ -95,6 +95,85 @@ class TGIAttentionAdapter:
         return batch_inputs[: self.max_batch_size]
 
 
+class SGLangRadixLinearCacheAdapter:
+    """
+    Bridges NeuralOps linear/recurrent state caching with SGLang RadixAttention interface.
+    Supports tree-structured prefix state matching, reference locking, and LRU eviction.
+    """
+
+    def __init__(self, max_cached_nodes: int = 4096) -> None:
+        self.max_cached_nodes = max_cached_nodes
+        # Prefix tree node storage: token_tuple -> dict(state=Tensor, ref_count=int, last_accessed=int)
+        self.tree: dict[tuple[int, ...], dict[str, Any]] = {}
+        self.access_counter = 0
+
+    def match_prefix(self, token_ids: list[int] | tuple[int, ...]) -> tuple[int, Optional[Any]]:
+        """Finds the longest cached prefix state in O(L) time."""
+        token_tuple = tuple(token_ids)
+        best_match_len = 0
+        best_state = None
+
+        for length in range(len(token_tuple), 0, -1):
+            prefix = token_tuple[:length]
+            if prefix in self.tree:
+                self.access_counter += 1
+                self.tree[prefix]["last_accessed"] = self.access_counter
+                return length, self.tree[prefix]["state"]
+
+        return 0, None
+
+    def cache_finished_req(self, token_ids: list[int] | tuple[int, ...], final_state: Any) -> None:
+        """Caches state of a completed sequence, evicting cold unlocked nodes if capacity is reached."""
+        self._ensure_capacity()
+        prefix = tuple(token_ids)
+        self.access_counter += 1
+        if prefix in self.tree:
+            self.tree[prefix]["state"] = final_state
+            self.tree[prefix]["last_accessed"] = self.access_counter
+        else:
+            self.tree[prefix] = {
+                "state": final_state,
+                "ref_count": 0,
+                "last_accessed": self.access_counter,
+            }
+
+    def cache_unfinished_req(self, token_ids: list[int] | tuple[int, ...], current_state: Any) -> None:
+        """Locks and caches intermediate state during prefill/rollouts."""
+        prefix = tuple(token_ids)
+        self.cache_finished_req(prefix, current_state)
+        self.inc_lock_ref(prefix)
+
+    def inc_lock_ref(self, token_ids: list[int] | tuple[int, ...]) -> None:
+        prefix = tuple(token_ids)
+        if prefix in self.tree:
+            self.tree[prefix]["ref_count"] += 1
+
+    def dec_lock_ref(self, token_ids: list[int] | tuple[int, ...]) -> None:
+        prefix = tuple(token_ids)
+        if prefix in self.tree:
+            self.tree[prefix]["ref_count"] = max(0, self.tree[prefix]["ref_count"] - 1)
+
+    def evict(self, num_nodes: int = 1) -> int:
+        """Evicts unreferenced nodes according to LRU policy."""
+        evicted = 0
+        unlocked = [
+            (prefix, node["last_accessed"])
+            for prefix, node in self.tree.items()
+            if node["ref_count"] == 0
+        ]
+        # Sort by oldest access
+        unlocked.sort(key=lambda x: x[1])
+
+        for prefix, _ in unlocked[:num_nodes]:
+            del self.tree[prefix]
+            evicted += 1
+        return evicted
+
+    def _ensure_capacity(self) -> None:
+        if len(self.tree) >= self.max_cached_nodes:
+            self.evict(max(1, len(self.tree) - self.max_cached_nodes + 1))
+
+
 # Export unified names
 VLLMAdapter = VLLMAttentionAdapter
 TGIAdapter = TGIAttentionAdapter
@@ -104,6 +183,8 @@ __all__ = [
     "TGIAttentionAdapter",
     "VLLMAdapter",
     "TGIAdapter",
+    "SGLangRadixLinearCacheAdapter",
     "HAS_VLLM",
     "HAS_TGI",
 ]
+
