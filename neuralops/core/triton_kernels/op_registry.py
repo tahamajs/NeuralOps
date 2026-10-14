@@ -148,21 +148,22 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                     return hgrn2_scan_triton(f, iv, res_clip=res_clip)
                 except Exception:
                     pass
-            from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_torch
-            return hgrn2_scan_torch(f, iv, res_clip=res_clip)
+            from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_pytorch
+            return hgrn2_scan_pytorch(f, iv, res_clip=res_clip)
 
         @_op_hgrn2_scan.register_fake
         def _op_hgrn2_scan_fake(f: torch.Tensor, iv: torch.Tensor, res_clip: float = 1.0) -> torch.Tensor:
             return torch.empty_like(iv)
 
-        # 8. State Update Op
         @torch.library.custom_op("neuralops::state_update", mutates_args=())
-        def _op_state_update(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> torch.Tensor:
+        def _op_state_update(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
             return triton_dispatch("state_update", u, delta, A, B, C)
 
         @_op_state_update.register_fake
-        def _op_state_update_fake(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> torch.Tensor:
-            return torch.empty_like(u)
+        def _op_state_update_fake(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            N_sz = A.shape[-1] if A.dim() >= 2 else 16
+            state_shape = (u.shape[0], u.shape[2], N_sz)
+            return torch.empty_like(u), u.new_empty(state_shape)
 
         # 9. Softplus Op
         @torch.library.custom_op("neuralops::softplus", mutates_args=())
