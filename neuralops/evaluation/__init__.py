@@ -20,6 +20,9 @@ except ImportError:
     RobustnessReport = None  # type: ignore
     TextAdversarialTester = None  # type: ignore
 
+from .niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
+from .lm_eval_adapter import NeuralOpsLMEvalAdapter, evaluate_zero_shot_tasks
+
 __all__ = [
     "metrics",
     "get_task_metrics",
@@ -36,6 +39,10 @@ __all__ = [
     "TriggerType",
     "RobustnessReport",
     "TextAdversarialTester",
+    "NeedleInAHaystackEvaluator",
+    "plot_niah_heatmap",
+    "NeuralOpsLMEvalAdapter",
+    "evaluate_zero_shot_tasks",
 ]
 
 # Auto-wired package members

@@ -296,6 +296,64 @@ def fused_rms_variance_match_triton(
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  Fast Walsh-Hadamard Transform (FWHT) & Orthogonal Rotation
+# ═══════════════════════════════════════════════════════════════════
+
+def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
+    """Vectorized in-place butterfly stages for Walsh-Hadamard Transform."""
+    orig_shape = x.shape
+    dim = orig_shape[-1]
+    
+    # Must be power of 2
+    if dim & (dim - 1) != 0:
+        next_pow2 = 1 << (dim - 1).bit_length()
+        x_pad = torch.nn.functional.pad(x, (0, next_pow2 - dim))
+        res = _pytorch_fwht_butterfly(x_pad)
+        return res[..., :dim]
+        
+    x_flat = x.view(-1, dim).float().clone()
+    h = 1
+    while h < dim:
+        for i in range(0, dim, h * 2):
+            u = x_flat[:, i : i + h].clone()
+            v = x_flat[:, i + h : i + 2 * h].clone()
+            x_flat[:, i : i + h] = u + v
+            x_flat[:, i + h : i + 2 * h] = u - v
+        h *= 2
+        
+    x_flat /= (dim ** 0.5)
+    return x_flat.view(orig_shape).to(x.dtype)
+
+
+def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Tensor:
+    """
+    Computes normalized block-diagonal Fast Walsh-Hadamard Transform:
+      Y = X @ H where H^T H = I and H = H^T (involutory and orthogonal).
+    Smears activation and weight channel outliers uniformly without parameters.
+    """
+    orig_shape = x.shape
+    d = orig_shape[-1]
+    
+    # Ensure block_size is power of 2 and <= d
+    b = min(block_size, 1 << (d.bit_length() - 1))
+    if b < 2:
+        return x
+        
+    # Chunk along last dimension
+    rem = d % b
+    if rem == 0:
+        x_blocks = x.view(-1, d // b, b)
+        y_blocks = _pytorch_fwht_butterfly(x_blocks)
+        return y_blocks.view(orig_shape)
+    else:
+        # Pad last dimension to multiple of b
+        pad_len = b - rem
+        x_pad = torch.nn.functional.pad(x, (0, pad_len))
+        y_pad = fast_hadamard_transform(x_pad, block_size=b)
+        return y_pad[..., :d].contiguous()
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
@@ -308,4 +366,5 @@ __all__ = [
     "fused_fast_gelu",
     "fused_spectral_gate_triton",
     "fused_rms_variance_match_triton",
+    "fast_hadamard_transform",
 ]

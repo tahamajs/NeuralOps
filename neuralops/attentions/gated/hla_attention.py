@@ -860,7 +860,8 @@ class HLAAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # 2. Kernel feature map: ELU + 1
-        q_act = (F.elu(q.float() * self.scale) + 1.0)
+        scale = 1.0 / math.sqrt(Dh)
+        q_act = (F.elu(q.float() * scale) + 1.0)
         k_act = (F.elu(k.float()) + 1.0)
 
         # 3. Per-head exponential decay
