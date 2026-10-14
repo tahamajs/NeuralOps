@@ -52,10 +52,11 @@ class RALALinearAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size = kwargs.get("dim") or getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         if (
             (config is None or not hasattr(config, "hidden_size"))
             and "hidden_size" not in kwargs
+            and "dim" not in kwargs
             and pretrained_attn is not None
         ):
             for cand in ["q_lin", "query", "q_proj", "c_attn"]:
@@ -66,7 +67,7 @@ class RALALinearAttention(BaseAttention):
                     break
 
         self.dim = self.hidden_size
-        self.num_heads = getattr(
+        self.num_heads = kwargs.get("num_heads") or getattr(
             config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
         )
         self.num_kv_heads = getattr(
