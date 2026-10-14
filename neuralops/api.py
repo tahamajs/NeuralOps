@@ -182,16 +182,17 @@ def transplant_attention(
     copy_weights: bool = True,
     layers: Optional[List[int]] = None,
     attention_type: Optional[str] = None,
+    target_attention: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
     """Canonical alias for replace_attention."""
+    attn = attention or attention_type or target_attention
     return replace_attention(
         model=model,
-        attention=attention,
+        attention=attn,
         rank=rank,
         copy_weights=copy_weights,
         layers=layers,
-        attention_type=attention_type,
         **kwargs,
     )
 
