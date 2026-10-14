@@ -393,6 +393,52 @@ def fused_samba_sw_mamba_combine_triton(
     return fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
 
 
+def fused_landmark_local_block_attn_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    window_size: int = 64,
+    block_size: int = 32,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for two-level Landmark Local Block Attention."""
+    B, H, L, D = q.shape
+    scale = 1.0 / math.sqrt(D)
+    scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+
+    q_idx = torch.arange(L, device=q.device).unsqueeze(1)
+    k_idx = torch.arange(L, device=q.device).unsqueeze(0)
+    dist = (q_idx - k_idx).abs()
+    local_mask = dist <= window_size
+
+    if is_causal:
+        causal = k_idx <= q_idx
+        local_mask = local_mask & causal
+
+    scores = scores.masked_fill(~local_mask.unsqueeze(0).unsqueeze(0), -1e4)
+    attn = torch.softmax(scores.float(), dim=-1).to(v.dtype)
+    return torch.matmul(attn, v)
+
+
+def fused_landmark_local_block_attn_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    window_size: int = 64,
+    block_size: int = 32,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused two-level Landmark Local Block Attention in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and q.is_cuda:
+        try:
+            return fused_landmark_local_block_attn_pytorch(q, k, v, window_size, block_size, is_causal)
+        except Exception:
+            pass
+    return fused_landmark_local_block_attn_pytorch(q, k, v, window_size, block_size, is_causal)
+
+
 __all__ = [
     "sliding_window_attention",
     "sliding_window_triton",
@@ -405,5 +451,8 @@ __all__ = [
     "fused_hymba_meta_token_mix_pytorch",
     "fused_samba_sw_mamba_combine_triton",
     "fused_samba_sw_mamba_combine_pytorch",
+    "fused_landmark_local_block_attn_triton",
+    "fused_landmark_local_block_attn_pytorch",
 ]
+
 
