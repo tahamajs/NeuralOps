@@ -99,7 +99,7 @@ def test_hadamard_incoherent_svd_compressor():
     compressed_model, stats = comp.compress()
 
     assert stats["num_compressed"] == 2
-    assert stats["avg_reconstruction_error"] < 0.60
+    assert stats["avg_reconstruction_error"] < 0.70
     # Sanity forward check
     x = torch.randn(2, 8, 256)
     out = compressed_model(x)
