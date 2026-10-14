@@ -250,8 +250,8 @@ class ROASTCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         target_modules: list[str] | None = None,
         target_attention_only: bool = False,
-        max_error: float = 2.0,
-        fallback_to_original: bool = False,
+        max_error: float = 1.0,
+        fallback_to_original: bool = True,
         min_numel: int = 16,
         device: str | torch.device | None = None,
         cfg: Any | None = None,
@@ -460,12 +460,18 @@ class ROASTCompressor(BaseCompressor):
                     err = (torch.norm(W_orig - W_rec, p="fro") / norm_orig).item()
                     self.layer_errors[name] = float(err)
 
+                    from neuralops.core.pruning_utils import adaptive_max_error
+                    fam = getattr(getattr(self.model, "config", None), "model_type", None)
+                    d_out, d_in = W_orig.shape
+                    eff_max_err = max(self.max_error, adaptive_max_error(None, d_in, d_out, family=fam))
+
                     is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
-                    if err > self.max_error:
+                    if err > eff_max_err:
                         logger.warning(
-                            "ROAST: reconstruction error %.4f on %s exceeded threshold %.4f.",
+                            "ROAST: reconstruction error %.4f on %s exceeded threshold %.4f (base=%.4f).",
                             err,
                             name,
+                            eff_max_err,
                             self.max_error,
                         )
                         is_invalid = True
@@ -547,9 +553,9 @@ def roast_factory(
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 2.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
     fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
     )
 
     compressor = ROASTCompressor(
