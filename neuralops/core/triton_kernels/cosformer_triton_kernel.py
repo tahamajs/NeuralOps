@@ -113,7 +113,7 @@ def cosformer_pytorch_fwd(
     is_causal: bool = False,
     eps: float = 1e-4,
 ) -> torch.Tensor:
-    """Pure PyTorch cosformer reference forward pass."""
+    """Pure PyTorch linear cosformer reference forward pass O(N d^2)."""
     B, H, N, D = q.shape
     device = q.device
     dtype = q.dtype
@@ -121,19 +121,62 @@ def cosformer_pytorch_fwd(
     cos_m = torch.cos(m).view(1, 1, N, 1).to(dtype)
     sin_m = torch.sin(m).view(1, 1, N, 1).to(dtype)
 
-    q_cos = q * cos_m
-    q_sin = q * sin_m
-    k_cos = k * cos_m
-    k_sin = k * sin_m
+    q_cos = (q * cos_m).float()
+    q_sin = (q * sin_m).float()
+    k_cos = (k * cos_m).float()
+    k_sin = (k * sin_m).float()
+    v_f = v.float()
 
-    scores = torch.matmul(q_cos, k_cos.transpose(-2, -1)) + torch.matmul(q_sin, k_sin.transpose(-2, -1))
-    if is_causal:
-        mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-        scores = scores.masked_fill(~mask.view(1, 1, N, N), 0.0)
+    if not is_causal:
+        S_cos = torch.matmul(k_cos.transpose(-1, -2), v_f)
+        S_sin = torch.matmul(k_sin.transpose(-1, -2), v_f)
+        Z_cos = k_cos.sum(dim=-2, keepdim=True)
+        Z_sin = k_sin.sum(dim=-2, keepdim=True)
 
-    denom = scores.sum(dim=-1, keepdim=True).clamp(min=eps)
-    weights = scores / denom
-    return torch.matmul(weights, v)
+        num = torch.matmul(q_cos, S_cos) + torch.matmul(q_sin, S_sin)
+        denom = (q_cos * Z_cos).sum(dim=-1, keepdim=True) + (q_sin * Z_sin).sum(dim=-1, keepdim=True)
+        denom_safe = denom.clamp(min=eps)
+        return (num / denom_safe).to(dtype)
+
+    # Causal linear chunked streaming
+    chunk_size = 64
+    num_chunks = (N + chunk_size - 1) // chunk_size
+    out = torch.empty((B, H, N, D), dtype=torch.float32, device=device)
+
+    S_cos = torch.zeros((B, H, D, D), dtype=torch.float32, device=device)
+    S_sin = torch.zeros((B, H, D, D), dtype=torch.float32, device=device)
+    Z_cos = torch.zeros((B, H, 1, D), dtype=torch.float32, device=device)
+    Z_sin = torch.zeros((B, H, 1, D), dtype=torch.float32, device=device)
+
+    for c in range(num_chunks):
+        start = c * chunk_size
+        end = min(start + chunk_size, N)
+
+        qc = q_cos[:, :, start:end]
+        qs = q_sin[:, :, start:end]
+        kc = k_cos[:, :, start:end]
+        ks = k_sin[:, :, start:end]
+        vc = v_f[:, :, start:end]
+
+        num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
+        denom_inter = (qc * Z_cos).sum(dim=-1, keepdim=True) + (qs * Z_sin).sum(dim=-1, keepdim=True)
+
+        A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(qs, ks.transpose(-1, -2))
+        causal_mask = torch.tril(torch.ones(end - start, end - start, device=device, dtype=torch.bool))
+        A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
+
+        num_intra = torch.matmul(A_intra, vc)
+        denom_intra = A_intra.sum(dim=-1, keepdim=True)
+
+        denom_total = (denom_inter + denom_intra).clamp(min=eps)
+        out[:, :, start:end] = (num_inter + num_intra) / denom_total
+
+        S_cos = S_cos + torch.matmul(kc.transpose(-1, -2), vc)
+        S_sin = S_sin + torch.matmul(ks.transpose(-1, -2), vc)
+        Z_cos = Z_cos + kc.sum(dim=-2, keepdim=True)
+        Z_sin = Z_sin + ks.sum(dim=-2, keepdim=True)
+
+    return out.to(dtype)
 
 
 class _CosformerAutograd(torch.autograd.Function):

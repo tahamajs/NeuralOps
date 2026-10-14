@@ -95,7 +95,14 @@ class _SlidingWindowAutograd(torch.autograd.Function):
     def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int):
         ctx.window_size = window_size
         ctx.save_for_backward(q, k, v)
+        suitable = False
         if HAS_TRITON and q.is_cuda and not (q.requires_grad or k.requires_grad or v.requires_grad):
+            try:
+                from neuralops.core.triton_kernels._types import check_triton_suitability
+                suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
+            except Exception:
+                suitable = False
+        if suitable:
             B, H, N, D = q.shape
             out = torch.empty_like(q)
             grid = (triton.cdiv(N, 64), B * H)
@@ -110,6 +117,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
             )
             return out
         return sliding_window_pytorch(q, k, v, window_size=window_size)
+
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
@@ -132,8 +140,17 @@ def sliding_window_attention_kernel(
     """Dispatches sliding window attention with full autograd backward support."""
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
         return _SlidingWindowAutograd.apply(q, k, v, window_size)
-    if not HAS_TRITON or q.device.type != "cuda":
+    suitable = False
+    if HAS_TRITON and q.device.type == "cuda":
+        try:
+            from neuralops.core.triton_kernels._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
+        except Exception:
+            suitable = False
+
+    if not suitable:
         return sliding_window_pytorch(q, k, v, window_size=window_size)
+
 
     B, H, N, D = q.shape
     out = torch.empty_like(q)
