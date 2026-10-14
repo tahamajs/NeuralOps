@@ -87,7 +87,7 @@ def test_reference_selective_scan_pytorch_basic():
 @pytest.mark.parametrize("has_D", [True, False])
 def test_selective_scan_triton_correctness(device, dtype, has_D):
     """Verify Triton selective scan matches PyTorch reference on CUDA."""
-    B, L, D_dim, N = 2, 16, 16, 16
+    B, L, D_dim, N = 2, 16, 32, 16
     u = torch.randn(B, L, D_dim, device=device, dtype=dtype)
     delta = torch.randn(B, L, D_dim, device=device, dtype=dtype)
     A = -torch.rand(D_dim, N, device=device, dtype=dtype)
