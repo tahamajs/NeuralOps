@@ -378,6 +378,12 @@ class CosformerAttention(BaseAttention):
 
 
     def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
+        """
+        O(N d^2) Chunked Causal Linear Attention for Cosformer.
+        Avoids materializing O(N^2) attention matrices by decomposing:
+            cos(pi*(i-j)/(2M)) = cos_i cos_j + sin_i sin_j
+        and maintaining recurrent states S_cos = sum_{j<=i} K_cos_j^T V_j and S_sin = sum_{j<=i} K_sin_j^T V_j.
+        """
         device_type = "cuda" if device.type == "cuda" else "cpu"
         with torch.amp.autocast(device_type=device_type, enabled=False):
             Q_cos = Q_cos.float()
@@ -386,54 +392,77 @@ class CosformerAttention(BaseAttention):
             K_sin = K_sin.float()
             V = V.float()
 
-            if N <= 2048:
-                score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2))
-                score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2))
-                scores = score_c + score_s
+            if padding_mask is not None:
+                # If padding_mask is additive (-inf for padded tokens) or 0/1
+                if padding_mask.min() < -1.0:
+                    valid_k = (padding_mask >= -1.0).float()
+                else:
+                    valid_k = (padding_mask == 0).float()
+                if valid_k.shape[-1] == N:
+                    K_cos = K_cos * valid_k
+                    K_sin = K_sin * valid_k
 
-                if self.is_decoder:
-                    causal_bool = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-                    scores = scores.masked_fill(~causal_bool, 0.0)
+            if not self.is_decoder:
+                # Full bidirectional linear attention O(N d^2)
+                S_cos = torch.matmul(K_cos.transpose(-1, -2), V)  # [B, H, d, d]
+                S_sin = torch.matmul(K_sin.transpose(-1, -2), V)
+                Z_cos = K_cos.sum(dim=-2, keepdim=True)           # [B, H, 1, d]
+                Z_sin = K_sin.sum(dim=-2, keepdim=True)
 
-                if padding_mask is not None:
-                    # Zero contribution from padded keys if shape matches sequence length
-                    if padding_mask.shape[-1] == N:
-                        scores = scores * (padding_mask == 0).float()
-                    elif padding_mask.shape[-1] == scores.shape[-1]:
-                        scores = scores * (padding_mask == 0).float()
-
-                scores = torch.clamp(scores, min=0.0, max=1e4)
-                num = torch.matmul(scores, V)
+                num = torch.matmul(Q_cos, S_cos) + torch.matmul(Q_sin, S_sin)  # [B, H, N, d]
+                denom = (Q_cos * Z_cos).sum(dim=-1, keepdim=True) + (Q_sin * Z_sin).sum(dim=-1, keepdim=True)
                 from neuralops.utils.amp_safety import safe_linear_attn_denominator
-                denom = safe_linear_attn_denominator(scores.sum(dim=-1, keepdim=True), eps=1e-5, floor_val=1e-4)
-                res = num / denom
+                denom_safe = safe_linear_attn_denominator(denom, eps=1e-5, floor_val=1e-4)
+                res = num / denom_safe
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
-        logger.warning(
-            "CosformerAttention._forward_causal: N=%d > 2048, using chunked accumulation.",
-            N,
-        )
-        from neuralops.utils.amp_safety import safe_linear_attn_denominator
-        chunk = 1024
-        out = torch.zeros(B, H, N, d, device=device, dtype=dtype)
-        for start in range(0, N, chunk):
-            end = min(start + chunk, N)
-            Qc = Q_cos[:, :, start:end]
-            Qs = Q_sin[:, :, start:end]
-            sc = torch.matmul(Qc, K_cos.transpose(-1, -2))
-            ss = torch.matmul(Qs, K_sin.transpose(-1, -2))
-            s = sc + ss
-            if self.is_decoder:
-                rows = torch.arange(start, end, device=device)
-                cols = torch.arange(N, device=device)
-                allowed = rows.unsqueeze(1) >= cols.unsqueeze(0)
-                s = s.masked_fill(~allowed, 0.0)
-            scores = torch.clamp(s, min=0.0, max=1e4)
-            num = torch.matmul(scores, V)
-            denom = safe_linear_attn_denominator(scores.sum(dim=-1, keepdim=True), eps=1e-5, floor_val=1e-4)
-            res = num / denom
-            out[:, :, start:end] = torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
-        return out
+            # Causal mode: Chunked streaming execution (chunk_size = 64)
+            chunk_size = 64
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            out = torch.empty((B, H, N, d), dtype=torch.float32, device=device)
+
+            S_cos = torch.zeros((B, H, d, d), dtype=torch.float32, device=device)
+            S_sin = torch.zeros((B, H, d, d), dtype=torch.float32, device=device)
+            Z_cos = torch.zeros((B, H, 1, d), dtype=torch.float32, device=device)
+            Z_sin = torch.zeros((B, H, 1, d), dtype=torch.float32, device=device)
+
+            from neuralops.utils.amp_safety import safe_linear_attn_denominator
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+
+                qc = Q_cos[:, :, start:end]
+                qs = Q_sin[:, :, start:end]
+                kc = K_cos[:, :, start:end]
+                ks = K_sin[:, :, start:end]
+                vc = V[:, :, start:end]
+
+                # 1. Inter-chunk projection: Q @ S_prev
+                num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
+                denom_inter = (qc * Z_cos).sum(dim=-1, keepdim=True) + (qs * Z_sin).sum(dim=-1, keepdim=True)
+
+                # 2. Intra-chunk causal computation (within chunk_size x chunk_size)
+                A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(qs, ks.transpose(-1, -2))
+                causal_mask = torch.tril(torch.ones(end - start, end - start, device=device, dtype=torch.bool))
+                A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
+
+                num_intra = torch.matmul(A_intra, vc)
+                denom_intra = A_intra.sum(dim=-1, keepdim=True)
+
+                denom_total = denom_inter + denom_intra
+                denom_safe = safe_linear_attn_denominator(denom_total, eps=1e-5, floor_val=1e-4)
+
+                chunk_out = (num_inter + num_intra) / denom_safe
+                out[:, :, start:end] = chunk_out
+
+                # 3. Update running recurrent states
+                S_cos = S_cos + torch.matmul(kc.transpose(-1, -2), vc)
+                S_sin = S_sin + torch.matmul(ks.transpose(-1, -2), vc)
+                Z_cos = Z_cos + kc.sum(dim=-2, keepdim=True)
+                Z_sin = Z_sin + ks.sum(dim=-2, keepdim=True)
+
+            return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
     
     def forward(self, hidden_states, attention_mask=None, head_mask=None,
                 encoder_hidden_states=None, encoder_attention_mask=None,
