@@ -45,7 +45,8 @@ def test_dx_apis_smoke():
 
     x = torch.randn(2, 64)
     comp = compare(model, model, x)
-    assert comp["param_ratio"] == 1.0
+    assert comp["cosine_similarity"] > 0.99
+
 
 
 
