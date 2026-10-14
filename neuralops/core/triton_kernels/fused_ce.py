@@ -312,8 +312,8 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
         )
 
         grad_hidden = torch.empty_like(h_flat) if compute_grads and hidden_states.requires_grad else None
-        grad_weight = torch.zeros_like(weight, dtype=torch.float32) if compute_grads and weight.requires_grad else None
-        grad_bias = torch.zeros_like(bias, dtype=torch.float32) if compute_grads and ctx.has_bias and bias.requires_grad else None
+        grad_weight = torch.zeros_like(weight) if compute_grads and weight.requires_grad else None
+        grad_bias = torch.zeros_like(bias) if compute_grads and ctx.has_bias and bias.requires_grad else None
 
         total_loss = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
         chunk_size = max(1, min(chunk_size, N_tokens))
@@ -333,28 +333,21 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
                 # 3. Analytical in-place gradient accumulation
                 if compute_grads:
-                    probs_c = F.softmax(logits_c.float(), dim=-1)
-                    one_hot_c = torch.zeros_like(probs_c).scatter_(-1, t_c.clamp(min=0).unsqueeze(-1), 1.0)
-                    valid_c = (t_c != ignore_index).unsqueeze(-1)
-                    d_logits_c = torch.where(
-                        valid_c,
-                        (probs_c - one_hot_c) * scale_norm,
-                        torch.zeros_like(probs_c),
-                    ).to(h_flat.dtype)
+                    probs_c = F.softmax(logits_c, dim=-1)
+                    probs_c.scatter_(-1, t_c.clamp(min=0).unsqueeze(-1), -1.0, reduce="add")
+                    if ignore_index is not None:
+                        invalid_c = (t_c == ignore_index).unsqueeze(-1)
+                        probs_c.masked_fill_(invalid_c, 0.0)
+                    probs_c.mul_(scale_norm)
 
                     if grad_hidden is not None:
-                        grad_hidden[c_start:c_end] = torch.matmul(d_logits_c, weight)
+                        grad_hidden[c_start:c_end] = torch.matmul(probs_c, weight)
                     if grad_weight is not None:
-                        grad_weight.addmm_(d_logits_c.t().float(), h_c.float())
+                        grad_weight.addmm_(probs_c.t(), h_c)
                     if grad_bias is not None:
-                        grad_bias += d_logits_c.sum(dim=0).float()
+                        grad_bias.add_(probs_c.sum(dim=0))
 
-                    del logits_c, probs_c, one_hot_c, d_logits_c
-
-        if grad_weight is not None:
-            grad_weight = grad_weight.to(weight.dtype)
-        if grad_bias is not None:
-            grad_bias = grad_bias.to(bias.dtype)
+                    del logits_c, probs_c
 
         ctx.save_for_backward(grad_hidden, grad_weight, grad_bias)
 
