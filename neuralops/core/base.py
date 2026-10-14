@@ -82,18 +82,40 @@ class BaseAttention(nn.Module):
         
         Args:
             x: Input token representation [B, 1, D] or [B, D].
-            state: Recurrent hidden state or KV-cache.
+            state: Recurrent hidden state dictionary or KV-cache.
         Returns:
-            (out, next_state) where out is [B, 1, D] and next_state is the updated state.
+            (out, next_state) where out is [B, 1, D] (or [B, D] if 2D input was passed).
         """
-        if x.dim() == 2:
+        is_2d = (x.dim() == 2)
+        if is_2d:
             x = x.unsqueeze(1)
-        res = self.forward(x, past_key_values=state, use_cache=True, **kwargs)
+
+        if state is None:
+            state = {"step_idx": 0}
+        elif not isinstance(state, dict):
+            state = {"cache": state, "step_idx": 0}
+
+        step_idx = state.get("step_idx", 0)
+
+        # Standard fallback: execute forward with use_cache=True and past_key_values
+        res = self.forward(x, past_key_values=state.get("cache", None), use_cache=True, **kwargs)
+
         if isinstance(res, tuple):
-            if len(res) == 3:
-                return res[0], res[2]
-            return res[0], state
-        return res, state
+            out = res[0]
+            if len(res) >= 3 and res[2] is not None:
+                state["cache"] = res[2]
+            elif len(res) >= 2 and res[1] is not None:
+                # If weights/cache returned
+                state["cache"] = res[1]
+        else:
+            out = res
+
+        state["step_idx"] = step_idx + 1
+
+        if is_2d and out.dim() == 3 and out.shape[1] == 1:
+            out = out.squeeze(1)
+
+        return out, state
 
 
     def copy_weights(self, old_attn: Any) -> None:
