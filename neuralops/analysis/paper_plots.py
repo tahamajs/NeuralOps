@@ -308,9 +308,51 @@ def generate_all_paper_plots(
     return generated
 
 
+class PaperPlotGenerator:
+    """Publication-grade paper plot generator orchestrator."""
+
+    def __init__(self, output_dir: Union[str, Path] = "results/plots"):
+        self.output_dir = Path(output_dir)
+
+    def generate_all(self, model: Optional[nn.Module] = None) -> List[Path]:
+        return generate_all_paper_plots(model=model, output_dir=self.output_dir)
+
+    def plot_singular_spectrum(self, model: nn.Module, filename: str = "figure_singular_spectrum") -> Tuple[Path, Path]:
+        import matplotlib.pyplot as plt
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        p_svg = self.output_dir / f"{filename}.svg"
+        p_pdf = self.output_dir / f"{filename}.pdf"
+        fig = plot_singular_value_spectrum(model, save_path=p_svg)
+        fig.savefig(p_pdf)
+        plt.close(fig)
+        return p_svg, p_pdf
+
+    def plot_attention_entropy(self, attention_matrix: torch.Tensor, filename: str = "figure_attention_entropy") -> Tuple[Path, Path]:
+        import matplotlib.pyplot as plt
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        p_svg = self.output_dir / f"{filename}.svg"
+        p_pdf = self.output_dir / f"{filename}.pdf"
+        fig = plot_attention_entropy_heatmap(attention_matrix, save_path=p_svg)
+        fig.savefig(p_pdf)
+        plt.close(fig)
+        return p_svg, p_pdf
+
+    def plot_pareto(self, points: List[Dict[str, Any]], filename: str = "figure_pareto_frontier") -> Tuple[Path, Path]:
+        import matplotlib.pyplot as plt
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        p_svg = self.output_dir / f"{filename}.svg"
+        p_pdf = self.output_dir / f"{filename}.pdf"
+        fig = plot_pareto_frontier(points, save_path=p_svg)
+        fig.savefig(p_pdf)
+        plt.close(fig)
+        return p_svg, p_pdf
+
+
 __all__ = [
     "plot_singular_value_spectrum",
     "plot_attention_entropy_heatmap",
     "plot_pareto_frontier",
     "generate_all_paper_plots",
+    "PaperPlotGenerator",
 ]
+
