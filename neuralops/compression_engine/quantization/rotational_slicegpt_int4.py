@@ -196,8 +196,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
-        max_error = _cfg_get(cfg, "max_error", 1.0)
-        fallback_to_original = _cfg_get(cfg, "fallback_to_original", False)
+        max_error = _cfg_get(cfg, "max_error", max_error)
+        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
