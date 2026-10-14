@@ -14,10 +14,8 @@ from neuralops.core.triton_kernels.elementwise import (
     fused_dynamic_conv1d_triton,
 )
 import neuralops.core.triton_kernels.selective_scan as tss
-from neuralops.core.triton_kernels.sparse_attn import (
-    _pytorch_block_sparse_reference,
-    triton_block_sparse_attention,
-)
+from neuralops.core.triton_kernels._types import sparse_attn_pytorch_fallback
+import neuralops.core.triton_kernels.sparse_attn as sparse_attn_mod
 from neuralops.core.selective_scan import selective_scan_chunked
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -124,20 +122,20 @@ n_blocks = 512 // 64
 b_mask = torch.tril(torch.ones((n_blocks, n_blocks), device=device, dtype=torch.int32))
 
 t_pt = time_fn(
-    lambda: _pytorch_block_sparse_reference(
-        q_sp, k_sp, v_sp, b_mask, block_size=64, is_causal=True
+    lambda: sparse_attn_pytorch_fallback(
+        q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
     )
 )
 t_tri = time_fn(
-    lambda: triton_block_sparse_attention(
-        q_sp, k_sp, v_sp, b_mask, block_size=64, is_causal=True
+    lambda: sparse_attn_mod.fwd(
+        q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
     )
 )
-out_pt = _pytorch_block_sparse_reference(
-    q_sp, k_sp, v_sp, b_mask, block_size=64, is_causal=True
+out_pt = sparse_attn_pytorch_fallback(
+    q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
 )
-out_tri = triton_block_sparse_attention(
-    q_sp, k_sp, v_sp, b_mask, block_size=64, is_causal=True
+out_tri = sparse_attn_mod.fwd(
+    q_sp, k_sp, v_sp, block_mask=b_mask, block_size=64, is_causal=True
 )
 diff = (out_pt - out_tri).abs().max().item()
 speedup = t_pt / t_tri
