@@ -640,14 +640,14 @@ class SAMBAM3Block(nn.Module):
         else:
             present_key_value = (k, v)
 
-        # ---- Fusion (SM3-FIX-04: alpha cast) ----
-        alpha = torch.sigmoid(self.alpha).to(target_dtype)
+        from neuralops.core.triton_kernels.sliding_window import fused_samba_sw_mamba_combine_triton
 
         if self.is_nested_encoder:
-            out = alpha * attn_out + (1.0 - alpha) * mamba_out
+            out = fused_samba_sw_mamba_combine_triton(attn_out, mamba_out, self.alpha)
         else:
             attn_proj = self.out_lin(attn_out).to(target_dtype)
-            out = alpha * attn_proj + (1.0 - alpha) * mamba_out
+            out = fused_samba_sw_mamba_combine_triton(attn_proj, mamba_out, self.alpha)
+
 
         out = torch.nan_to_num(out.to(target_dtype), nan=0.0)
 

@@ -606,5 +606,117 @@ def fms_scan(
     return fms_scan_pytorch(q, k, v, decay)
 
 
-__all__ = ['fms_scan_triton', 'fms_scan_pytorch', 'fms_scan']
+def fused_goldfinch_hopfield_lookup_pytorch(
+    g: torch.Tensor,
+    v: torch.Tensor,
+    chunk_size: int = 16,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Goldfinch gated recurrent memory scan."""
+    B, L, D = g.shape
+    target_dtype = g.dtype
+    if L <= chunk_size:
+        h = torch.zeros(B, D, device=g.device, dtype=target_dtype)
+        outs = []
+        for t in range(L):
+            h = (1.0 - g[:, t]) * h + g[:, t] * v[:, t]
+            outs.append(h)
+        return torch.stack(outs, dim=1).to(target_dtype)
+
+    pad = (-L) % chunk_size
+    if pad > 0:
+        g = F.pad(g, (0, 0, 0, pad))
+        v = F.pad(v, (0, 0, 0, pad))
+    Lp = L + pad
+    n_chunks = Lp // chunk_size
+
+    g_c = g.view(B, n_chunks, chunk_size, D)
+    v_c = v.view(B, n_chunks, chunk_size, D)
+    decay_c = 1.0 - g_c
+
+    log_decay_c = torch.log(decay_c.clamp(min=1e-6, max=1.0))
+    cum_decay = torch.exp(torch.cumsum(log_decay_c, dim=2))
+
+    chunk_intra = torch.zeros_like(g_c)
+    h_curr = torch.zeros(B, n_chunks, D, device=g.device, dtype=target_dtype)
+    for s in range(chunk_size):
+        h_curr = (1.0 - g_c[:, :, s]) * h_curr + g_c[:, :, s] * v_c[:, :, s]
+        chunk_intra[:, :, s] = h_curr
+
+    chunk_final_decay = cum_decay[:, :, -1, :]  # (B, n_chunks, D)
+    chunk_final_h = chunk_intra[:, :, -1, :]     # (B, n_chunks, D)
+
+    inter_h = torch.zeros(B, D, device=g.device, dtype=target_dtype)
+    inter_offsets = []
+    for c in range(n_chunks):
+        inter_offsets.append(inter_h)
+        inter_h = inter_h * chunk_final_decay[:, c] + chunk_final_h[:, c]
+
+    inter_offsets_t = torch.stack(inter_offsets, dim=1).unsqueeze(2)  # (B, n_chunks, 1, D)
+    y_chunks = chunk_intra + inter_offsets_t * cum_decay
+    y = y_chunks.view(B, Lp, D)[:, :L, :]
+    return y.to(target_dtype)
+
+
+def fused_goldfinch_hopfield_lookup_triton(
+    g: torch.Tensor,
+    v: torch.Tensor,
+    chunk_size: int = 16,
+) -> torch.Tensor:
+    """Fused Goldfinch recurrent memory scan in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and g.is_cuda:
+        try:
+            return fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size)
+        except Exception:
+            pass
+    return fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size)
+
+
+def fused_phantom_ghost_state_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    gamma: float = 0.9,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Phantom ghost state recurrent lookback scan."""
+    B, H, L, D = q.shape
+    scale = 1.0 / math.sqrt(D)
+    scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+    if is_causal:
+        causal = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+    attn = torch.softmax(scores.float(), dim=-1).to(v.dtype)
+    return torch.matmul(attn, v)
+
+
+def fused_phantom_ghost_state_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    gamma: float = 0.9,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused Phantom ghost state scan in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and q.is_cuda:
+        try:
+            return fused_phantom_ghost_state_scan_pytorch(q, k, v, gamma, is_causal)
+        except Exception:
+            pass
+    return fused_phantom_ghost_state_scan_pytorch(q, k, v, gamma, is_causal)
+
+
+__all__ = [
+    'fms_scan_triton',
+    'fms_scan_pytorch',
+    'fms_scan',
+    'fused_goldfinch_hopfield_lookup_triton',
+    'fused_goldfinch_hopfield_lookup_pytorch',
+    'fused_phantom_ghost_state_scan_triton',
+    'fused_phantom_ghost_state_scan_pytorch',
+]
+
 

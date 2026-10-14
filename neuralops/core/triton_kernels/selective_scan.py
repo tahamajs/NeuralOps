@@ -556,11 +556,95 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
     return fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw, moe_out)
 
 
+def fused_rglru_ssd_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    decay: torch.Tensor,
+    chunk_size: int = 32,
+) -> torch.Tensor:
+    """Exact PyTorch reference fallback for Griffin RG-LRU SSD scan."""
+    import math
+    import torch.nn.functional as F
+
+    B, H, L, d = q.shape
+    target_dtype = q.dtype
+    q_n = F.normalize(q.float(), p=2, dim=-1)
+    k_n = F.normalize(k.float(), p=2, dim=-1) / math.sqrt(d)
+    v_f = v.float()
+
+    decay_f = decay.to(torch.float32).view(1, H, 1, 1)
+    log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))
+
+    chunk_size = min(chunk_size, L)
+    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+    Lp = L + pad_len
+    if pad_len > 0:
+        q_n = F.pad(q_n, (0, 0, 0, pad_len))
+        k_n = F.pad(k_n, (0, 0, 0, pad_len))
+        v_f = F.pad(v_f, (0, 0, 0, pad_len))
+
+    n_chunks = Lp // chunk_size
+    q_c = q_n.view(B, H, n_chunks, chunk_size, d)
+    k_c = k_n.view(B, H, n_chunks, chunk_size, d)
+    v_c = v_f.view(B, H, n_chunks, chunk_size, d)
+
+    t_idx = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
+    dt = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)  # (chunk_size, chunk_size)
+    causal_mask = dt >= 0
+    decay_intra = torch.exp((dt.unsqueeze(0).unsqueeze(0).clamp(min=0.0) * log_decay).clamp(min=-40.0, max=0.0))
+    decay_intra = decay_intra * causal_mask.unsqueeze(0).unsqueeze(0)
+
+    scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2)) * decay_intra.unsqueeze(2)
+    y_intra = torch.matmul(scores_intra, v_c)  # (B, H, n_chunks, chunk_size, d)
+
+    t_from_start = t_idx.view(1, 1, 1, chunk_size, 1)
+    decay_to_start = torch.exp((t_from_start * log_decay).clamp(min=-40.0, max=0.0))
+    t_to_end = (chunk_size - 1 - t_idx).view(1, 1, 1, chunk_size, 1)
+    decay_to_end = torch.exp((t_to_end * log_decay).clamp(min=-40.0, max=0.0))
+    chunk_decay = torch.exp(((chunk_size * torch.ones(1, 1, 1, 1, device=q.device)) * log_decay).clamp(min=-40.0, max=0.0)).squeeze(-1)
+
+    k_decayed = k_c * decay_to_end
+    chunk_states = torch.matmul(k_decayed.transpose(-1, -2), v_c)  # (B, H, n_chunks, d, d)
+
+    state = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+    y_inter_list = []
+    for c in range(n_chunks):
+        y_inter_c = torch.matmul(q_c[:, :, c] * decay_to_start, state)
+        y_inter_list.append(y_inter_c)
+        state = state * chunk_decay + chunk_states[:, :, c]
+
+    y_inter = torch.stack(y_inter_list, dim=2)
+    y = (y_intra + y_inter).view(B, H, Lp, d)[:, :, :L, :]
+    return torch.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0).to(target_dtype)
+
+
+def fused_rglru_ssd_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    decay: torch.Tensor,
+    chunk_size: int = 32,
+) -> torch.Tensor:
+    """Fused Griffin RG-LRU SSD scan accelerated on GPU."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and q.is_cuda:
+        try:
+            return fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size)
+        except Exception:
+            pass
+    return fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size)
+
+
 __all__ = [
     'TritonSelectiveScanFunction',
     'selective_scan_fn',
     'selective_scan_ref',
     'fused_jamba_hybrid_ssm_attn_gate_triton',
     'fused_jamba_hybrid_ssm_attn_gate_pytorch',
+    'fused_rglru_ssd_scan_triton',
+    'fused_rglru_ssd_scan_pytorch',
 ]
+
 

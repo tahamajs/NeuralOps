@@ -435,11 +435,12 @@ class LowRankLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
-        if x.dtype != self.V.dtype:
-            x = x.to(self.V.dtype)
 
-        Vx = F.linear(x, self.V)
-        out = F.linear(Vx, self.U)
+        from neuralops.core.triton_kernels.low_rank import fused_lola_3way_decomposition_triton
+
+        S_ones = torch.ones(self.U.shape[1], device=x.device, dtype=x.dtype)
+        out = fused_lola_3way_decomposition_triton(x, self.U, S_ones, self.V.t().contiguous(), self.bias)
+
 
         if (
             self.lora_rank > 0
@@ -452,10 +453,8 @@ class LowRankLinear(nn.Module):
             )
             out = out + lora_out
 
-        if self.bias is not None:
-            out = out + self.bias
-
         return out.to(orig_dtype)
+
 
 
 # ===========================================================================
