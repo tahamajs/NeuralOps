@@ -35,9 +35,15 @@ class CUDAGraphDecodeRunner:
         batch_size: int = 1,
         device: Optional[torch.device | str] = None,
         warmup_steps: int = 3,
+        max_batch_size: Optional[int] = None,
+        max_seq_len: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         self.model = model
+        if max_batch_size is not None:
+            batch_size = max_batch_size
         self.batch_size = batch_size
+        self.max_seq_len = max_seq_len
         self.device = torch.device(device) if device is not None else next(model.parameters()).device
         self.warmup_steps = warmup_steps
 
