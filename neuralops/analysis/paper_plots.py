@@ -82,7 +82,11 @@ def plot_singular_value_spectrum(
         S = torch.linalg.svdvals(w).cpu().numpy()
         layers_sv["sample_linear"] = (S / S[0])[:max_components]
 
-    cmap = plt.cm.get_cmap("viridis", len(layers_sv))
+    try:
+        import matplotlib
+        cmap = matplotlib.colormaps.get_cmap("viridis").resampled(len(layers_sv))
+    except Exception:
+        cmap = plt.get_cmap("viridis", len(layers_sv))
     for i, (layer_name, s_vals) in enumerate(layers_sv.items()):
         short_name = layer_name.split(".")[-2:] if "." in layer_name else [layer_name]
         ax.plot(
