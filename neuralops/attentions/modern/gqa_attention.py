@@ -640,15 +640,24 @@ class GroupedQueryAttention(BaseAttention):
         )
 
         if use_sdpa:
+            from neuralops.core.triton_kernels.gqa import (
+                fused_weighted_gqa_online_softmax_triton,
+                fused_weighted_gqa_online_softmax_pytorch,
+            )
             try:
-                context = F.scaled_dot_product_attention(
-                    Q,
-                    K_full,
-                    V_full,
-                    attn_mask=None,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                    is_causal=is_causal,
-                )
+                if Q.is_cuda and not self.training:
+                    context = fused_weighted_gqa_online_softmax_triton(
+                        Q, K, V, head_weights=None, is_causal=is_causal, scale=d**-0.5
+                    )
+                else:
+                    context = F.scaled_dot_product_attention(
+                        Q,
+                        K_full,
+                        V_full,
+                        attn_mask=None,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                        is_causal=is_causal,
+                    )
             except Exception as e:
                 logger.debug("GQA SDPA fast-path failed, falling back: %s", e)
                 use_sdpa = False

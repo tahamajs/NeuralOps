@@ -269,6 +269,175 @@ def fused_asymmetric_cross_attention_triton(
     return fused_asymmetric_cross_attention_pytorch(q, k, v, scale, causal_mask, eff_mask)
 
 
+# ---------------------------------------------------------------------------
+# Fused Weighted GQA / MQA / QCQA Online-Softmax Kernel in SRAM
+# ---------------------------------------------------------------------------
+if HAS_TRITON:
+    @triton.jit
+    def _triton_gqa_online_softmax_fwd_kernel(
+        Q_ptr, K_ptr, V_ptr, HeadWeights_ptr, Out_ptr,
+        stride_qb, stride_qh, stride_qn, stride_qd,
+        stride_kb, stride_kh, stride_kn, stride_kd,
+        stride_vb, stride_vh, stride_vn, stride_vd,
+        stride_hw,
+        stride_ob, stride_oh, stride_on, stride_od,
+        B, H_Q, H_KV, N_Q, N_K, D, sm_scale,
+        HAS_HEAD_WEIGHTS: tl.constexpr,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        start_m = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+
+        b_id = pid_bh // H_Q
+        h_q = pid_bh % H_Q
+        group_size = H_Q // H_KV
+        h_kv = h_q // group_size
+
+        offs_m = start_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_d = tl.arange(0, BLOCK_D)
+
+        mask_m = offs_m < N_Q
+        mask_d = offs_d < D
+
+        q_ptrs = Q_ptr + b_id * stride_qb + h_q * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+        q = tl.load(q_ptrs, mask=(mask_m[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
+
+        m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
+        l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
+        acc = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
+
+        hw_val = 1.0
+        if HAS_HEAD_WEIGHTS:
+            hw_val = tl.load(HeadWeights_ptr + h_q * stride_hw).to(tl.float32)
+
+        # Iterate over KV blocks
+        end_n = N_K
+        if IS_CAUSAL:
+            end_n = tl.minimum(N_K, (start_m + 1) * BLOCK_M)
+
+        num_k_blocks = tl.cdiv(end_n, BLOCK_N)
+        for j in range(num_k_blocks):
+            offs_n = j * BLOCK_N + tl.arange(0, BLOCK_N)
+            mask_n = offs_n < N_K
+
+            k_ptrs = K_ptr + b_id * stride_kb + h_kv * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+            k = tl.load(k_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
+
+            qk = tl.dot(q, tl.trans(k)) * sm_scale
+
+            if IS_CAUSAL:
+                causal_mask = offs_m[:, None] >= offs_n[None, :]
+                qk = tl.where(causal_mask, qk, float("-inf"))
+
+            m_curr = tl.maximum(m_i, tl.max(qk, 1))
+            alpha = tl.exp(m_i - m_curr)
+            p = tl.exp(qk - m_curr[:, None])
+
+            v_ptrs = V_ptr + b_id * stride_vb + h_kv * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            v = tl.load(v_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
+
+            acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
+            l_i = l_i * alpha + tl.sum(p, 1)
+            m_i = m_curr
+
+        out = (acc / (l_i[:, None] + 1e-6)) * hw_val
+        out_ptrs = Out_ptr + b_id * stride_ob + h_q * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=(mask_m[:, None] & mask_d[None, :]))
+
+
+def fused_weighted_gqa_online_softmax_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    head_weights: torch.Tensor | None = None,
+    is_causal: bool = True,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for GQA online-softmax with optional head weights."""
+    B, H_Q, N_Q, D = q.shape
+    H_KV = k.shape[1]
+    N_K = k.shape[2]
+    rep = H_Q // H_KV
+
+    if rep > 1:
+        from neuralops.core.gqa_utils import repeat_kv
+        k_full = repeat_kv(k, rep)
+        v_full = repeat_kv(v, rep)
+    else:
+        k_full, v_full = k, v
+
+    sm_scale = scale if scale is not None else (1.0 / math.sqrt(D))
+    scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous()) * sm_scale
+
+    if is_causal:
+        q_idx = torch.arange(N_Q, device=q.device).unsqueeze(1)
+        k_idx = torch.arange(N_K, device=q.device).unsqueeze(0)
+        causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+        scores = scores.masked_fill(~causal, -1e4)
+
+    attn = torch.softmax(scores, dim=-1).to(v.dtype)
+    out = torch.matmul(attn, v_full)
+
+    if head_weights is not None:
+        hw = head_weights.view(1, H_Q, 1, 1).to(out.dtype)
+        out = out * hw
+
+    return out
+
+
+def fused_weighted_gqa_online_softmax_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    head_weights: torch.Tensor | None = None,
+    is_causal: bool = True,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Fused GQA / MQA / WGQA online-softmax in GPU SRAM without allocating (B, H, T, T) in HBM."""
+    if not (HAS_TRITON and q.is_cuda and k.is_cuda and v.is_cuda):
+        return fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights, is_causal, scale)
+
+    B, H_Q, N_Q, D = q.shape
+    H_KV = k.shape[1]
+    N_K = k.shape[2]
+
+    if (H_Q % H_KV != 0) or D > 128:
+        return fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights, is_causal, scale)
+
+    try:
+        sm_scale = scale if scale is not None else (1.0 / math.sqrt(D))
+        out = torch.empty((B, H_Q, N_Q, D), device=q.device, dtype=q.dtype)
+
+        BLOCK_M = 32
+        BLOCK_N = 32
+        BLOCK_D = triton.next_power_of_2(D)
+
+        grid = (triton.cdiv(N_Q, BLOCK_M), B * H_Q)
+
+        _triton_gqa_online_softmax_fwd_kernel[grid](
+            q.contiguous(), k.contiguous(), v.contiguous(),
+            head_weights.contiguous() if head_weights is not None else q,
+            out,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            head_weights.stride(0) if head_weights is not None else 0,
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            B, H_Q, H_KV, N_Q, N_K, D, sm_scale,
+            HAS_HEAD_WEIGHTS=(head_weights is not None),
+            IS_CAUSAL=is_causal,
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+            BLOCK_D=BLOCK_D,
+        )
+        return out
+    except Exception:
+        return fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights, is_causal, scale)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -277,4 +446,6 @@ __all__ = [
     'fused_mqa_bias_scale_pytorch',
     'fused_asymmetric_cross_attention_triton',
     'fused_asymmetric_cross_attention_pytorch',
+    'fused_weighted_gqa_online_softmax_triton',
+    'fused_weighted_gqa_online_softmax_pytorch',
 ]
