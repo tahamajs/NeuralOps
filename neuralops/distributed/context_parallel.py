@@ -60,13 +60,6 @@ def compute_chunk_prefix_scan(
 
 
 
-class ContextParallelRecurrentScan(torch.autograd.Function):
-    """
-    Exact 3-Stage Parallel-Prefix Scan across W Context Parallel ranks.
-    Guarantees exact forward and backward gradient parity with single-GPU execution.
-    """
-
-    @staticmethod
 class _ContextParallelScanFunction(torch.autograd.Function):
     """
     Exact 3-Stage Parallel-Prefix Scan across W Context Parallel ranks.
@@ -74,6 +67,7 @@ class _ContextParallelScanFunction(torch.autograd.Function):
     """
 
     @staticmethod
+
     def forward(
         ctx: Any,
         W: int,
