@@ -174,7 +174,7 @@ class UniversalActivationCalibrator:
 
 def compress_model_universal(
     model: nn.Module,
-    method: str = "svd",
+    method: str = "direct_svd",
     rank: int = 32,
     calibration_data: Optional[Any] = None,
     layers: Optional[List[int]] = None,
@@ -184,6 +184,9 @@ def compress_model_universal(
     Universal model compression runner supporting all 72 NeuralOps compression engines
     with optional streaming calibration.
     """
+    if method == "svd":
+        method = "direct_svd"
+
     calib_stats = None
     if calibration_data is not None:
         calibrator = UniversalActivationCalibrator(model)
@@ -206,7 +209,7 @@ def compress_model_universal(
 def transplant_and_compress(
     model: nn.Module,
     attention_type: str = "cosformer",
-    compression_method: str = "svd",
+    compression_method: str = "direct_svd",
     rank: int = 32,
     calibration_data: Optional[Any] = None,
     **kwargs: Any,
