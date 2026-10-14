@@ -1,0 +1,674 @@
+[
+  {
+    "module": "adaptive_sparse_attention",
+    "seq_len": 512,
+    "latency_ms": 1.872,
+    "peak_mem_mb": 56.22,
+    "status": "PASS"
+  },
+  {
+    "module": "moba_attention",
+    "seq_len": 512,
+    "latency_ms": 4.219,
+    "peak_mem_mb": 45.31,
+    "status": "PASS"
+  },
+  {
+    "module": "xattention",
+    "seq_len": 512,
+    "latency_ms": 2.106,
+    "peak_mem_mb": 57.97,
+    "status": "PASS"
+  },
+  {
+    "module": "nsa_attention",
+    "seq_len": 512,
+    "latency_ms": 2.444,
+    "peak_mem_mb": 57.73,
+    "status": "PASS"
+  },
+  {
+    "module": "reap_moe",
+    "seq_len": 512,
+    "latency_ms": 1.091,
+    "peak_mem_mb": 24.15,
+    "status": "PASS"
+  },
+  {
+    "module": "alibi",
+    "seq_len": 512,
+    "latency_ms": 1.106,
+    "peak_mem_mb": 26.75,
+    "status": "PASS"
+  },
+  {
+    "module": "dynamic_conv_attention",
+    "seq_len": 512,
+    "latency_ms": 12.199,
+    "peak_mem_mb": 112.85,
+    "status": "PASS"
+  },
+  {
+    "module": "mla_attention",
+    "seq_len": 512,
+    "latency_ms": 1.239,
+    "peak_mem_mb": 24.52,
+    "status": "PASS"
+  },
+  {
+    "module": "mqa",
+    "seq_len": 512,
+    "latency_ms": 1.146,
+    "peak_mem_mb": 23.56,
+    "status": "PASS"
+  },
+  {
+    "module": "cosformer",
+    "seq_len": 512,
+    "latency_ms": 3.429,
+    "peak_mem_mb": 48.28,
+    "status": "PASS"
+  },
+  {
+    "module": "cosformer_attention",
+    "seq_len": 512,
+    "latency_ms": 2.51,
+    "peak_mem_mb": 48.28,
+    "status": "PASS"
+  },
+  {
+    "module": "triton_cosformer",
+    "seq_len": 512,
+    "latency_ms": 1.591,
+    "peak_mem_mb": 39.03,
+    "status": "PASS"
+  },
+  {
+    "module": "decay_linear_attention",
+    "seq_len": 512,
+    "latency_ms": 13.201,
+    "peak_mem_mb": 106.96,
+    "status": "PASS"
+  },
+  {
+    "module": "decay_linear_attn",
+    "seq_len": 512,
+    "latency_ms": 13.208,
+    "peak_mem_mb": 106.96,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_linear_attention",
+    "seq_len": 512,
+    "latency_ms": 10.525,
+    "peak_mem_mb": 106.96,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_linear_attn",
+    "seq_len": 512,
+    "latency_ms": 11.382,
+    "peak_mem_mb": 106.96,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_delta_net",
+    "seq_len": 512,
+    "latency_ms": 3.711,
+    "peak_mem_mb": 37.09,
+    "status": "PASS"
+  },
+  {
+    "module": "hgrn2_gated_layer",
+    "seq_len": 512,
+    "latency_ms": 3.337,
+    "peak_mem_mb": 62.5,
+    "status": "PASS"
+  },
+  {
+    "module": "kda_attention",
+    "seq_len": 512,
+    "latency_ms": 5.018,
+    "peak_mem_mb": 72.04,
+    "status": "PASS"
+  },
+  {
+    "module": "linformer_attention",
+    "seq_len": 512,
+    "latency_ms": 1.363,
+    "peak_mem_mb": 30.5,
+    "status": "PASS"
+  },
+  {
+    "module": "performer_attention",
+    "seq_len": 512,
+    "latency_ms": 1.939,
+    "peak_mem_mb": 31.65,
+    "status": "PASS"
+  },
+  {
+    "module": "chela_slay",
+    "seq_len": 512,
+    "latency_ms": 3.336,
+    "peak_mem_mb": 88.59,
+    "status": "PASS"
+  },
+  {
+    "module": "chela_slay_attention",
+    "seq_len": 512,
+    "latency_ms": 2.654,
+    "peak_mem_mb": 88.59,
+    "status": "PASS"
+  },
+  {
+    "module": "galerkin_attention",
+    "seq_len": 512,
+    "latency_ms": 1.465,
+    "peak_mem_mb": 25.32,
+    "status": "PASS"
+  },
+  {
+    "module": "gla_attention",
+    "seq_len": 512,
+    "latency_ms": 7.738,
+    "peak_mem_mb": 43.68,
+    "status": "PASS"
+  },
+  {
+    "module": "nystrom_attention",
+    "seq_len": 512,
+    "latency_ms": 2.301,
+    "peak_mem_mb": 30.34,
+    "status": "PASS"
+  },
+  {
+    "module": "rala_attention",
+    "seq_len": 512,
+    "latency_ms": 2.258,
+    "peak_mem_mb": 33.64,
+    "status": "PASS"
+  },
+  {
+    "module": "spectraformer_attention",
+    "seq_len": 512,
+    "latency_ms": 1.675,
+    "peak_mem_mb": 38.17,
+    "status": "PASS"
+  },
+  {
+    "module": "spectron",
+    "seq_len": 512,
+    "latency_ms": 1.827,
+    "peak_mem_mb": 61.22,
+    "status": "PASS"
+  },
+  {
+    "module": "spectron_fp8",
+    "seq_len": 512,
+    "latency_ms": 48.584,
+    "peak_mem_mb": 37.32,
+    "status": "PASS"
+  },
+  {
+    "module": "adaptive_span_attention",
+    "seq_len": 512,
+    "latency_ms": 1.564,
+    "peak_mem_mb": 57.32,
+    "status": "PASS"
+  },
+  {
+    "module": "sink_attention",
+    "seq_len": 512,
+    "latency_ms": 0.908,
+    "peak_mem_mb": 26.98,
+    "status": "PASS"
+  },
+  {
+    "module": "mamba",
+    "seq_len": 512,
+    "latency_ms": 14.321,
+    "peak_mem_mb": 115.21,
+    "status": "PASS"
+  },
+  {
+    "module": "mamba_block",
+    "seq_len": 512,
+    "latency_ms": 13.873,
+    "peak_mem_mb": 115.21,
+    "status": "PASS"
+  },
+  {
+    "module": "selective_ssm",
+    "seq_len": 512,
+    "latency_ms": 15.331,
+    "peak_mem_mb": 133.48,
+    "status": "PASS"
+  },
+  {
+    "module": "selective_mamba",
+    "seq_len": 512,
+    "latency_ms": 8.967,
+    "peak_mem_mb": 61.17,
+    "status": "PASS"
+  },
+  {
+    "module": "jamba",
+    "seq_len": 512,
+    "latency_ms": 7.919,
+    "peak_mem_mb": 42.97,
+    "status": "PASS"
+  },
+  {
+    "module": "vspec",
+    "seq_len": 512,
+    "latency_ms": 2.569,
+    "peak_mem_mb": 24.32,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_linear_attention",
+    "seq_len": 512,
+    "latency_ms": 1.194,
+    "peak_mem_mb": 27.02,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_linear_decay",
+    "seq_len": 512,
+    "latency_ms": 1.124,
+    "peak_mem_mb": 27.02,
+    "status": "PASS"
+  },
+  {
+    "module": "triton_svd_linear_attention",
+    "seq_len": 512,
+    "latency_ms": 1.574,
+    "peak_mem_mb": 32.54,
+    "status": "PASS"
+  },
+  {
+    "module": "asvd_attention",
+    "seq_len": 512,
+    "latency_ms": 1.66,
+    "peak_mem_mb": 53.36,
+    "status": "PASS"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "seq_len": 512,
+    "latency_ms": 18.49,
+    "peak_mem_mb": 103.27,
+    "status": "PASS"
+  },
+  {
+    "module": "fused_svd_kernel_attention",
+    "seq_len": 512,
+    "latency_ms": 1.038,
+    "peak_mem_mb": 25.77,
+    "status": "PASS"
+  },
+  {
+    "module": "projection_factorized_attn",
+    "seq_len": 512,
+    "latency_ms": 1.302,
+    "peak_mem_mb": 27.02,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_llm_v2_attention",
+    "seq_len": 512,
+    "latency_ms": 1.302,
+    "peak_mem_mb": 26.65,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_projection_attention",
+    "seq_len": 512,
+    "latency_ms": 1.272,
+    "peak_mem_mb": 24.14,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_seq",
+    "seq_len": 512,
+    "latency_ms": 1.303,
+    "peak_mem_mb": 30.44,
+    "status": "PASS"
+  },
+  {
+    "module": "adaptive_sparse_attention",
+    "seq_len": 2048,
+    "latency_ms": 47.228,
+    "peak_mem_mb": 558.26,
+    "status": "PASS"
+  },
+  {
+    "module": "moba_attention",
+    "seq_len": 2048,
+    "latency_ms": 12.335,
+    "peak_mem_mb": 125.36,
+    "status": "PASS"
+  },
+  {
+    "module": "xattention",
+    "seq_len": 2048,
+    "latency_ms": 50.6,
+    "peak_mem_mb": 586.29,
+    "status": "PASS"
+  },
+  {
+    "module": "nsa_attention",
+    "seq_len": 2048,
+    "latency_ms": 42.21,
+    "peak_mem_mb": 588.27,
+    "status": "PASS"
+  },
+  {
+    "module": "reap_moe",
+    "seq_len": 2048,
+    "latency_ms": 3.037,
+    "peak_mem_mb": 42.57,
+    "status": "PASS"
+  },
+  {
+    "module": "alibi",
+    "seq_len": 2048,
+    "latency_ms": 7.68,
+    "peak_mem_mb": 74.44,
+    "status": "PASS"
+  },
+  {
+    "module": "dynamic_conv_attention",
+    "seq_len": 2048,
+    "latency_ms": 155.225,
+    "peak_mem_mb": 410.75,
+    "status": "PASS"
+  },
+  {
+    "module": "mla_attention",
+    "seq_len": 2048,
+    "latency_ms": 1.464,
+    "peak_mem_mb": 44.25,
+    "status": "PASS"
+  },
+  {
+    "module": "mqa",
+    "seq_len": 2048,
+    "latency_ms": 2.468,
+    "peak_mem_mb": 41.23,
+    "status": "PASS"
+  },
+  {
+    "module": "cosformer",
+    "seq_len": 2048,
+    "latency_ms": 5.948,
+    "peak_mem_mb": 110.16,
+    "status": "PASS"
+  },
+  {
+    "module": "cosformer_attention",
+    "seq_len": 2048,
+    "latency_ms": 5.898,
+    "peak_mem_mb": 110.16,
+    "status": "PASS"
+  },
+  {
+    "module": "triton_cosformer",
+    "seq_len": 2048,
+    "latency_ms": 3.653,
+    "peak_mem_mb": 100.6,
+    "status": "PASS"
+  },
+  {
+    "module": "decay_linear_attention",
+    "seq_len": 2048,
+    "latency_ms": 58.912,
+    "peak_mem_mb": 373.6,
+    "status": "PASS"
+  },
+  {
+    "module": "decay_linear_attn",
+    "seq_len": 2048,
+    "latency_ms": 45.819,
+    "peak_mem_mb": 373.6,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_linear_attention",
+    "seq_len": 2048,
+    "latency_ms": 58.913,
+    "peak_mem_mb": 373.6,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_linear_attn",
+    "seq_len": 2048,
+    "latency_ms": 51.485,
+    "peak_mem_mb": 373.6,
+    "status": "PASS"
+  },
+  {
+    "module": "gated_delta_net",
+    "seq_len": 2048,
+    "latency_ms": 4.661,
+    "peak_mem_mb": 92.38,
+    "status": "PASS"
+  },
+  {
+    "module": "hgrn2_gated_layer",
+    "seq_len": 2048,
+    "latency_ms": 34.971,
+    "peak_mem_mb": 580.87,
+    "status": "PASS"
+  },
+  {
+    "module": "kda_attention",
+    "seq_len": 2048,
+    "latency_ms": 16.543,
+    "peak_mem_mb": 213.75,
+    "status": "PASS"
+  },
+  {
+    "module": "linformer_attention",
+    "seq_len": 2048,
+    "latency_ms": 2.776,
+    "peak_mem_mb": 68.14,
+    "status": "PASS"
+  },
+  {
+    "module": "performer_attention",
+    "seq_len": 2048,
+    "latency_ms": 3.905,
+    "peak_mem_mb": 72.5,
+    "status": "PASS"
+  },
+  {
+    "module": "chela_slay",
+    "seq_len": 2048,
+    "latency_ms": 53.153,
+    "peak_mem_mb": 755.11,
+    "status": "PASS"
+  },
+  {
+    "module": "chela_slay_attention",
+    "seq_len": 2048,
+    "latency_ms": 49.596,
+    "peak_mem_mb": 755.11,
+    "status": "PASS"
+  },
+  {
+    "module": "galerkin_attention",
+    "seq_len": 2048,
+    "latency_ms": 2.113,
+    "peak_mem_mb": 45.39,
+    "status": "PASS"
+  },
+  {
+    "module": "gla_attention",
+    "seq_len": 2048,
+    "latency_ms": 25.815,
+    "peak_mem_mb": 117.61,
+    "status": "PASS"
+  },
+  {
+    "module": "nystrom_attention",
+    "seq_len": 2048,
+    "latency_ms": 3.249,
+    "peak_mem_mb": 65.97,
+    "status": "PASS"
+  },
+  {
+    "module": "rala_attention",
+    "seq_len": 2048,
+    "latency_ms": 5.551,
+    "peak_mem_mb": 80.5,
+    "status": "PASS"
+  },
+  {
+    "module": "spectraformer_attention",
+    "seq_len": 2048,
+    "latency_ms": 4.257,
+    "peak_mem_mb": 98.63,
+    "status": "PASS"
+  },
+  {
+    "module": "spectron",
+    "seq_len": 2048,
+    "latency_ms": 45.562,
+    "peak_mem_mb": 672.0,
+    "status": "PASS"
+  },
+  {
+    "module": "spectron_fp8",
+    "seq_len": 2048,
+    "latency_ms": 222.758,
+    "peak_mem_mb": 103.12,
+    "status": "PASS"
+  },
+  {
+    "module": "adaptive_span_attention",
+    "seq_len": 2048,
+    "latency_ms": 19.325,
+    "peak_mem_mb": 584.11,
+    "status": "PASS"
+  },
+  {
+    "module": "sink_attention",
+    "seq_len": 2048,
+    "latency_ms": 1.234,
+    "peak_mem_mb": 53.62,
+    "status": "PASS"
+  },
+  {
+    "module": "mamba",
+    "seq_len": 2048,
+    "latency_ms": 44.893,
+    "peak_mem_mb": 400.41,
+    "status": "PASS"
+  },
+  {
+    "module": "mamba_block",
+    "seq_len": 2048,
+    "latency_ms": 52.58,
+    "peak_mem_mb": 400.41,
+    "status": "PASS"
+  },
+  {
+    "module": "selective_ssm",
+    "seq_len": 2048,
+    "latency_ms": 40.002,
+    "peak_mem_mb": 467.18,
+    "status": "PASS"
+  },
+  {
+    "module": "selective_mamba",
+    "seq_len": 2048,
+    "latency_ms": 34.828,
+    "peak_mem_mb": 191.01,
+    "status": "PASS"
+  },
+  {
+    "module": "jamba",
+    "seq_len": 2048,
+    "latency_ms": 15.612,
+    "peak_mem_mb": 236.36,
+    "status": "PASS"
+  },
+  {
+    "module": "vspec",
+    "seq_len": 2048,
+    "latency_ms": 3.343,
+    "peak_mem_mb": 45.45,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_linear_attention",
+    "seq_len": 2048,
+    "latency_ms": 3.863,
+    "peak_mem_mb": 53.7,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_linear_decay",
+    "seq_len": 2048,
+    "latency_ms": 3.864,
+    "peak_mem_mb": 53.7,
+    "status": "PASS"
+  },
+  {
+    "module": "triton_svd_linear_attention",
+    "seq_len": 2048,
+    "latency_ms": 2.55,
+    "peak_mem_mb": 76.13,
+    "status": "PASS"
+  },
+  {
+    "module": "asvd_attention",
+    "seq_len": 2048,
+    "latency_ms": 29.438,
+    "peak_mem_mb": 544.43,
+    "status": "PASS"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "seq_len": 2048,
+    "latency_ms": 70.84,
+    "peak_mem_mb": 359.57,
+    "status": "PASS"
+  },
+  {
+    "module": "fused_svd_kernel_attention",
+    "seq_len": 2048,
+    "latency_ms": 1.538,
+    "peak_mem_mb": 48.32,
+    "status": "PASS"
+  },
+  {
+    "module": "projection_factorized_attn",
+    "seq_len": 2048,
+    "latency_ms": 3.86,
+    "peak_mem_mb": 53.7,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_llm_v2_attention",
+    "seq_len": 2048,
+    "latency_ms": 3.402,
+    "peak_mem_mb": 51.07,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_projection_attention",
+    "seq_len": 2048,
+    "latency_ms": 3.007,
+    "peak_mem_mb": 44.07,
+    "status": "PASS"
+  },
+  {
+    "module": "svd_seq",
+    "seq_len": 2048,
+    "latency_ms": 3.753,
+    "peak_mem_mb": 67.19,
+    "status": "PASS"
+  }
+]
