@@ -26,7 +26,7 @@ def _resolve_class_name(inject_fn: Any, model_type: str = "") -> str:
     """Infer registered attention class name from the injector or class."""
     if inspect.isclass(inject_fn):
         for k, v in ATTENTION_REGISTRY.items():
-            if v is inject_fn:
+            if v is inject_fn or (inspect.isclass(v) and issubclass(inject_fn, v)):
                 return k
         return getattr(inject_fn, "__name__", "replace_class")
     name = getattr(inject_fn, "__name__", "")
