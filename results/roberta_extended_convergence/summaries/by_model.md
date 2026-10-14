@@ -2,4 +2,4 @@
 
 | Model | Total Runs | Unique Modules | Best Module | Best Accuracy |
 |---|---|---|---|---|
-| `roberta-base` | 10 | 10 | `sink_attention` | 0.8300 |
+| `textattack/roberta-base-SST-2` | 1 | 1 | `gated_delta_net` | 0.7600 |
