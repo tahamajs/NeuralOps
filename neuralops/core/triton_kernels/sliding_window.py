@@ -469,15 +469,14 @@ def fused_sink_sliding_window_linear_hybrid_pytorch(
     # 2. Linear feature state for long-range distant tokens
     phi_q = F.elu(q.float()) + 1.0
     phi_k = F.elu(k.float()) + 1.0
-    distant_mask = (~active_mask).float().unsqueeze(0).unsqueeze(0)
-    phi_k_dist = phi_k * distant_mask
+    v_f = v.float()
 
-    # Outer product linear accumulation
-    kv_state = torch.matmul(phi_k_dist.transpose(-2, -1).contiguous(), v.float())
-    num_dist = torch.matmul(phi_q, kv_state)
-    k_sum = phi_k_dist.sum(dim=-2, keepdim=True)
-    den_dist = torch.matmul(phi_q, k_sum.transpose(-2, -1).contiguous()).clamp_min(1e-4)
-    out_dist = (num_dist / den_dist).to(v.dtype)
+    # Inter-chunk / causal linear attention for distant context
+    causal_dist = (q_idx >= k_idx) & ~active_mask
+    dist_scores = causal_dist.float().unsqueeze(0).unsqueeze(0)
+    linear_attn_weights = (torch.matmul(phi_q, phi_k.transpose(-2, -1)) * dist_scores)
+    den = linear_attn_weights.sum(dim=-1, keepdim=True).clamp_min(1e-4)
+    out_dist = torch.matmul(linear_attn_weights / den, v_f).to(v.dtype)
 
     return 0.8 * out_local + 0.2 * out_dist
 
