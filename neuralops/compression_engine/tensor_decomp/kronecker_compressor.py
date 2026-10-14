@@ -253,6 +253,8 @@ class KroneckerLinear(nn.Module):
         """(A ⊗ B) x computed without materializing the full weight."""
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)  # (K, n1 * n2)
+        if x_flat.dtype != self.B.dtype:
+            x_flat = x_flat.to(self.B.dtype)
         K = x_flat.shape[0]
 
         # Step 1: contract with B over n2  ->  (K * n1, m2)
@@ -277,11 +279,14 @@ class KroneckerLinear(nn.Module):
         )
 
         if self.bias is not None:
-            out = out + self.bias
-        return out.reshape(*orig_shape[:-1], self.out_features)
+            out = out + self.bias.to(out.dtype)
+        return out.reshape(*orig_shape[:-1], self.out_features).to(x.dtype)
 
     def _forward_svd(self, x: torch.Tensor) -> torch.Tensor:
-        return F.linear(F.linear(x, self.V), self.U, self.bias)
+        v_w = self.V.to(x.dtype)
+        u_w = self.U.to(x.dtype)
+        b_w = self.bias.to(x.dtype) if self.bias is not None else None
+        return F.linear(F.linear(x, v_w), u_w, b_w)
 
     # ------------------------------------------------------------------
     # SVD fitting (KL-FIX-03, KL-FIX-05, KL-FIX-09, KL-FIX-11)
@@ -295,7 +300,14 @@ class KroneckerLinear(nn.Module):
     ) -> None:
         """Fit low-rank SVD factors ensuring parameter reduction."""
         in_f, out_f = self.in_features, self.out_features
-        target_dtype = weight.dtype
+        # Ensure target_dtype matches existing parameters or weight
+        target_dtype = getattr(self, "dtype", None)
+        if target_dtype is None and self.U is not None:
+            target_dtype = self.U.dtype
+        elif target_dtype is None and self.A is not None:
+            target_dtype = self.A.dtype
+        else:
+            target_dtype = weight.dtype
         target_device = weight.device
         W_norm = torch.norm(weight, p="fro").item()
 
