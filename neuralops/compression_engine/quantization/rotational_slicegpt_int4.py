@@ -687,10 +687,10 @@ def rotational_slicegpt_int4_factory(
     )
     lambda_reg = kwargs.pop("lambda_reg", _cfg_get(comp_config, "lambda_reg", 1e-2))
     quant_bits = kwargs.pop("quant_bits", _cfg_get(comp_config, "quant_bits", 4))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", adaptive_max_error(r_ratio=r_ratio, quant_bits=quant_bits, default=1.0)))
     fallback_to_original = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "fallback_to_original", False),
+        _cfg_get(comp_config, "fallback_to_original", True),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
