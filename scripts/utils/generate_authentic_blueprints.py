@@ -32,7 +32,7 @@ MODULE_KERNEL_MAP = {
     "moba_attention": (sparse_attn._triton_block_sparse_fwd_kernel, "sparse_attn (block-sparse mixture of attention)"),
     "xattention": (sparse_attn._triton_block_sparse_fwd_kernel, "sparse_attn (block-sparse tiled reduction)"),
     "nsa_attention": (sparse_attn._triton_block_sparse_fwd_kernel, "sparse_attn (native sparse attention)"),
-    "reap_moe": (block_sparse._triton_block_sparse_fwd_kernel, "block_sparse (sparse router reduction)"),
+    "reap_moe": (block_sparse._block_sparse_attention_fwd, "block_sparse (sparse router reduction)"),
     "alibi": (elementwise._fused_alibi_bias_kernel, "elementwise (fused_alibi_bias_kernel)"),
     "dynamic_conv_attention": (elementwise._fused_dynconv1d_fwd_kernel, "elementwise (fused_dynamic_conv1d_fwd_kernel)"),
     "mla_attention": (low_rank._fused_low_rank_fwd_kernel, "low_rank (fused_low_rank_fwd_kernel)"),
