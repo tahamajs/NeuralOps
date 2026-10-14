@@ -161,12 +161,14 @@ class SinkAttention(BaseAttention):
 
         # -------- Dimensions --------
         self.d_model = int(
-            getattr(config, "hidden_size", None) or d_model
+            kwargs.get("dim")
+            or getattr(config, "hidden_size", None) or d_model
             or kwargs.get("hidden_size") or 768
         )
         self.dim = self.d_model
         self.num_heads = int(
-            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+            kwargs.get("num_heads")
+            or getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads = int(
             getattr(
