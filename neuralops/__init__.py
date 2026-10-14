@@ -256,6 +256,7 @@ _API_EXPORTS = {
     "AutoNeuralOpsModel": "neuralops.api",
     "AutoNeuralOpsForCausalLM": "neuralops.api",
     "AutoNeuralOpsForSequenceClassification": "neuralops.api",
+    "merge_for_inference": "neuralops.api",
     # Specific attention and optimizer classes
     "GLAttention": "neuralops.attentions.linear.gla_attention",
     "CosformerAttention": "neuralops.attentions.linear.cosformer",
@@ -369,6 +370,7 @@ __all__ = [
     "AutoNeuralOpsModel",
     "AutoNeuralOpsForCausalLM",
     "AutoNeuralOpsForSequenceClassification",
+    "merge_for_inference",
 ] + sorted(list(_LAZY_EXPORTS.keys()))
 
 
