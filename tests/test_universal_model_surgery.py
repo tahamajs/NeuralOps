@@ -80,7 +80,7 @@ def test_arch1_bidirectional_encoder_bert():
 
     # Verify that BiDirectionalScanWrapper works cleanly on bidirectional cosformer
     from neuralops.attentions.linear.cosformer import CosformerAttention
-    cosformer = CosformerAttention(embed_dim=64, num_heads=4)
+    cosformer = CosformerAttention(hidden_size=64, num_heads=4)
     bidir_cosformer = BiDirectionalScanWrapper(cosformer)
     x = torch.randn(2, 16, 64)
     out_bidir = bidir_cosformer(x, attention_mask=attention_mask)
@@ -152,6 +152,16 @@ def test_arch3_modern_gqa_rope_decoder():
     class MockLlamaModel(nn.Module):
         def __init__(self, embed_dim=64, n_layers=2):
             super().__init__()
+            from types import SimpleNamespace
+            self.config = SimpleNamespace(
+                hidden_size=embed_dim,
+                num_attention_heads=4,
+                num_key_value_heads=2,
+                head_dim=16,
+                model_type="llama",
+                is_decoder=True,
+                is_causal=True,
+            )
             self.layers = nn.ModuleList([MockLlamaBlock(embed_dim) for _ in range(n_layers)])
 
         def forward(self, x, past_key_values=None):
@@ -260,16 +270,17 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     kv_x = torch.randn(2, 16, 64)
 
     # 1. Asymmetric Cross-Attention Router verification
-    from neuralops.attentions.linear.cosformer import CosformerAttention
-    student_attn = CosformerAttention(embed_dim=64, num_heads=4)
-    router = AsymmetricCrossAttentionRouter(student_attn)
-    routed_out = router(q_x, kv_x)
+    router = AsymmetricCrossAttentionRouter(d_model=64, num_heads=4)
+    routed_out, _ = router(q_x, kv_x)
     assert routed_out.shape == (2, 8, 64)
 
     # 2. Shadow-Twin Distillation Lifecycle verification
     specs = UniversalArchitectureScanner.scan(orig_cross_attn)
     assert len(specs) == 1
     spec = specs[0]
+
+    from neuralops.attentions.linear.cosformer import CosformerAttention
+    student_attn = CosformerAttention(hidden_size=64, num_heads=4)
 
     bridge = UniversalAttentionBridge(
         orig_module=orig_cross_attn,
