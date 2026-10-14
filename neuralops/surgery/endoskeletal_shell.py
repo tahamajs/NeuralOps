@@ -259,6 +259,7 @@ class UniversalAttentionBridge(nn.Module):
         # Teacher / shadow twin placeholder
         self.teacher_branch: Optional[nn.Module] = None
         self.alpha: float = 1.0
+        self.stage: str = "stage3_end_to_end"
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         # Extract primary hidden states from args or kwargs
