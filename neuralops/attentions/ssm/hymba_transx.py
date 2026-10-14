@@ -643,6 +643,13 @@ class HymbaTransXBlock(BaseAttention):
         if x is None:
             raise ValueError("HymbaTransXBlock.forward: no input tensor provided.")
 
+        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+        if is_causal:
+            self.is_decoder = True
+            self.is_causal = True
+            if hasattr(self, "mamba") and self.mamba is not None and hasattr(self.mamba, "is_decoder"):
+                self.mamba.is_decoder = True
+
         B, L, D = x.shape
         device = x.device
 
