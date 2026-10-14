@@ -113,10 +113,10 @@ def main():
 
     # 3. Lossless Self-Speculative Decoding Benchmark
     logger.info("--- 3. Evaluating Self-Speculative Decoding Speedup ---")
-    config = GPT2Config(vocab_size=1000, n_positions=512, n_embd=256, n_layer=4, n_head=4)
+    config = GPT2Config(vocab_size=1000, n_positions=4096, n_embd=256, n_layer=4, n_head=4)
     target_mod = GPT2LMHeadModel(config).eval().to(device)
 
-    draft_config = GPT2Config(vocab_size=1000, n_positions=512, n_embd=256, n_layer=1, n_head=4)
+    draft_config = GPT2Config(vocab_size=1000, n_positions=4096, n_embd=256, n_layer=1, n_head=4)
     draft_mod = GPT2LMHeadModel(draft_config).eval().to(device)
 
     decoder = SelfSpeculativeDecoder(target_mod, draft_mod, max_draft_k=4)
