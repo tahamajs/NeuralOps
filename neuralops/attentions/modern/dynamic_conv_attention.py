@@ -258,10 +258,12 @@ class DynamicConvAttention(BaseAttention):
         if hasattr(src, "c_attn") and src.c_attn is not None:
             w, b = _unpack_weight_bias(src.c_attn)
             if w is not None:
+                if w.ndim == 2 and w.shape[1] == 3 * self.hidden_size:
+                    w = w.t().contiguous()
                 split = w.shape[0] // 3
-                v_weight = w[2 * split:].contiguous()
+                v_weight = w[2 * split : 3 * split].contiguous()
                 if b is not None:
-                    v_bias = b[2 * split:].contiguous()
+                    v_bias = b[2 * split : 3 * split].contiguous()
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o_weight, o_bias = _unpack_weight_bias(src.c_proj)
 
