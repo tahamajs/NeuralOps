@@ -928,6 +928,10 @@ class ORIONAttention(BaseAttention):
         if eff_mask is not None:
             token_valid = get_token_valid_mask(eff_mask, B, K_all.shape[2], device)
 
+        is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
+        old_is_dec = self.is_decoder
+        self.is_decoder = is_dec
+
         ctx_list = []
 
         # OR-FIX-04: pass token_valid to both branches
@@ -973,12 +977,12 @@ class ORIONAttention(BaseAttention):
             output = self.out_proj(context)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        if self.is_decoder:
-            if output_attentions:
-                return output, present_key_value, None
-            return output, present_key_value
+        if is_dec:
+            ret = (output, present_key_value, None) if output_attentions else (output, present_key_value)
         else:
-            return output, None
+            ret = (output, None)
+        self.is_decoder = old_is_dec
+        return ret
 
     def step(
         self,
