@@ -487,7 +487,10 @@ def _inject_attention_loop(
     if not modules_list:
         logger.warning("No attention modules found to replace for architecture '%s'", arch)
 
+    layer_indices = kwargs.pop("layer_indices", kwargs.pop("layers", None))
     for layer_i, (name, old_attn) in enumerate(modules_list):
+        if layer_indices is not None and layer_i not in layer_indices:
+            continue
         if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
             continue
 
