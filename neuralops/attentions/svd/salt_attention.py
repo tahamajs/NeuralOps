@@ -162,7 +162,26 @@ class SALTLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute adapted linear projection efficiently in low-rank factorized form."""
+        orig_dtype = x.dtype
+        if x.dtype != self.U.dtype:
+            x = x.to(self.U.dtype)
+
         adapted_S = (self.S * self.gamma).to(dtype=x.dtype)
+
+        if x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_gemm_triton
+                # Fused SVD base: x @ Vt.T @ diag(adapted_S) @ U.T
+                # fused_svd_gemm_triton(x, U, S, Vt, bias) computes (x @ Vt.T * S) @ U.T + bias
+                x_svd = fused_svd_gemm_triton(x, self.U, adapted_S, self.Vt, bias=None)
+                x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
+                out = x_svd + x_lora
+                if self.bias is not None:
+                    out = out + self.bias.to(dtype=x.dtype)
+                return out.to(orig_dtype)
+            except Exception:
+                pass
+
         # SVD branch: (x @ Vt.T) * adapted_S @ U.T
         x_vt = F.linear(x, self.Vt.to(dtype=x.dtype))
         x_svd = F.linear(x_vt * adapted_S, self.U.to(dtype=x.dtype))
@@ -171,7 +190,7 @@ class SALTLinear(nn.Module):
         out = x_svd + x_lora
         if self.bias is not None:
             out = out + self.bias.to(dtype=x.dtype)
-        return out
+        return out.to(orig_dtype)
 
     def freeze_base_weights(self) -> None:
         """Buffers U, S, Vt are non-trainable by construction. Gamma and A, B remain trainable."""

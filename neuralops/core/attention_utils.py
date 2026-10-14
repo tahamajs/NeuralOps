@@ -327,6 +327,28 @@ class LoRALinear(nn.Module):
         orig_dtype = x.dtype
         if x.dtype != self.weight.dtype:
             x = x.to(self.weight.dtype)
+
+        if (
+            self.lora_rank > 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+            and x.is_cuda
+        ):
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=None,
+                    w_up=None,
+                    lora_A=self.lora_A,
+                    lora_B=self.lora_B,
+                    lora_scale=self.lora_scaling,
+                    bias=self.bias,
+                    w_full=self.weight,
+                ).to(orig_dtype)
+            except Exception:
+                pass
+
         out = F.linear(x, self.weight, self.bias)
         if (
             self.lora_rank > 0
