@@ -121,9 +121,9 @@ def test_5_4_rl_and_adaptation_primitives():
     assert torch.isfinite(loss_simpo).all()
 
     # TTT Linear Attention Layer
-    ttt = TTTLinearAttentionLayer(dim=D, num_heads=2, mini_batch_size=2).to(DEVICE)
+    ttt = TTTLinearAttentionLayer(dim=D, num_heads=2).to(DEVICE)
     x = torch.randn(B, S, D, device=DEVICE, requires_grad=True)
-    out_ttt = ttt(x)
+    out_ttt, _ = ttt(x)
     assert out_ttt.shape == x.shape
     out_ttt.sum().backward()
     assert x.grad is not None
