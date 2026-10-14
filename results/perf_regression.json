@@ -3,7 +3,7 @@
   "num_heads": 4,
   "seq_len": 128,
   "head_dim": 64,
-  "mha_latency_s": 0.0007217582082375884,
-  "linear_latency_s": 0.0013311416027136148,
-  "speedup": 0.54
+  "mha_latency_s": 0.002667824999662116,
+  "linear_latency_s": 0.002328546400531195,
+  "speedup": 1.15
 }

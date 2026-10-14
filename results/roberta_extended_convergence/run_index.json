@@ -9,5 +9,38 @@
     "rank": 64,
     "accuracy": 0.76,
     "result_path": "results/roberta_kd_sweep/05_glue_finetuning/gated_delta_net/textattack_roberta-base-SST-2/sst2/rank_64/fab3e0d4-ef4f-4468-9e03-797233688b3d.json"
+  },
+  "selective_ssm__textattack/roberta-base-SST-2__sst2__rank64__47b001f732ef": {
+    "run_id": "758ac9ec-4006-4cd4-9131-d56a30a74b79",
+    "timestamp": "2026-10-14T19:51:19Z",
+    "status": "failed",
+    "module": "selective_ssm",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/selective_ssm/textattack_roberta-base-SST-2/sst2/rank_64/758ac9ec-4006-4cd4-9131-d56a30a74b79.json"
+  },
+  "selective_ssm__textattack/roberta-base-SST-2__sst2__rank64__c1373592929a": {
+    "run_id": "a6767835-ca6d-426f-8b05-bd42c641cf52",
+    "timestamp": "2026-10-14T19:53:07Z",
+    "status": "success",
+    "module": "selective_ssm",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.505,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/selective_ssm/textattack_roberta-base-SST-2/sst2/rank_64/a6767835-ca6d-426f-8b05-bd42c641cf52.json"
+  },
+  "selective_ssm__textattack/roberta-base-SST-2__sst2__rank64__973ef1c62ba8": {
+    "run_id": "7717fbd8-ebe3-4676-9846-a35473764699",
+    "timestamp": "2026-10-14T19:56:56Z",
+    "status": "success",
+    "module": "selective_ssm",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.495,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/selective_ssm/textattack_roberta-base-SST-2/sst2/rank_64/7717fbd8-ebe3-4676-9846-a35473764699.json"
   }
 }

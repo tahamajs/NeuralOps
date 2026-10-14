@@ -1,0 +1,923 @@
+{
+  "baseline_roberta_accuracy_pct": 95.0,
+  "baseline_gpt2_ppl": 27.5,
+  "results": [
+    {
+      "module": "adaptive_span_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 11070.82,
+      "duration_s": 3.12,
+      "error": ""
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "accuracy_pct": 92.0,
+      "perplexity": 27.54,
+      "duration_s": 3.75,
+      "error": ""
+    },
+    {
+      "module": "adaptive_svd_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1300.04,
+      "duration_s": 16.45,
+      "error": ""
+    },
+    {
+      "module": "adasplash_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 67.92,
+      "duration_s": 1.74,
+      "error": ""
+    },
+    {
+      "module": "aegis_hybrid",
+      "accuracy_pct": 52.0,
+      "perplexity": null,
+      "duration_s": 8.54,
+      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+    },
+    {
+      "module": "aegis_spectron_fp8",
+      "accuracy_pct": 52.0,
+      "perplexity": 2328.62,
+      "duration_s": 12.79,
+      "error": ""
+    },
+    {
+      "module": "aegis_v1",
+      "accuracy_pct": 52.0,
+      "perplexity": 2035.24,
+      "duration_s": 8.83,
+      "error": ""
+    },
+    {
+      "module": "aegis_v2",
+      "accuracy_pct": 52.0,
+      "perplexity": 2036.91,
+      "duration_s": 8.17,
+      "error": ""
+    },
+    {
+      "module": "aegis_v3",
+      "accuracy_pct": 52.0,
+      "perplexity": 2026.4,
+      "duration_s": 8.88,
+      "error": ""
+    },
+    {
+      "module": "aegis_v4",
+      "accuracy_pct": 52.0,
+      "perplexity": 2016.72,
+      "duration_s": 8.58,
+      "error": ""
+    },
+    {
+      "module": "aegis_v5",
+      "accuracy_pct": 52.0,
+      "perplexity": null,
+      "duration_s": 8.2,
+      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+    },
+    {
+      "module": "aegis_v6",
+      "accuracy_pct": 52.0,
+      "perplexity": 1701.72,
+      "duration_s": 8.55,
+      "error": ""
+    },
+    {
+      "module": "alibi",
+      "accuracy_pct": 91.0,
+      "perplexity": 37074.94,
+      "duration_s": 1.53,
+      "error": ""
+    },
+    {
+      "module": "asvd_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 126.6,
+      "duration_s": 8.68,
+      "error": ""
+    },
+    {
+      "module": "bam_umoe",
+      "accuracy_pct": 52.0,
+      "perplexity": 756.6,
+      "duration_s": 4.93,
+      "error": ""
+    },
+    {
+      "module": "block_transformer_hiba",
+      "accuracy_pct": 92.0,
+      "perplexity": 140.13,
+      "duration_s": 2.4,
+      "error": ""
+    },
+    {
+      "module": "chela_slay",
+      "accuracy_pct": 89.0,
+      "perplexity": 46.91,
+      "duration_s": 1.74,
+      "error": ""
+    },
+    {
+      "module": "chela_slay_attention",
+      "accuracy_pct": 89.0,
+      "perplexity": 45.16,
+      "duration_s": 1.57,
+      "error": ""
+    },
+    {
+      "module": "cluster_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 30.3,
+      "duration_s": 1.47,
+      "error": ""
+    },
+    {
+      "module": "compressed_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1359.33,
+      "duration_s": 4.1,
+      "error": ""
+    },
+    {
+      "module": "compressed_mha_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1373.73,
+      "duration_s": 4.11,
+      "error": ""
+    },
+    {
+      "module": "cosformer",
+      "accuracy_pct": 95.0,
+      "perplexity": 443.94,
+      "duration_s": 1.62,
+      "error": ""
+    },
+    {
+      "module": "cosformer_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 541.86,
+      "duration_s": 1.87,
+      "error": ""
+    },
+    {
+      "module": "cross_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": 27.5,
+      "duration_s": 1.42,
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attention",
+      "accuracy_pct": 66.0,
+      "perplexity": 18157.22,
+      "duration_s": 1.92,
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attn",
+      "accuracy_pct": 66.0,
+      "perplexity": 18157.22,
+      "duration_s": 2.62,
+      "error": ""
+    },
+    {
+      "module": "dynamic_conv_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 2250704.43,
+      "duration_s": 1.62,
+      "error": ""
+    },
+    {
+      "module": "eat",
+      "accuracy_pct": 91.0,
+      "perplexity": 31.34,
+      "duration_s": 1.41,
+      "error": ""
+    },
+    {
+      "module": "eat_attention",
+      "accuracy_pct": 89.0,
+      "perplexity": 29.17,
+      "duration_s": 1.73,
+      "error": ""
+    },
+    {
+      "module": "expert_choice_moe",
+      "accuracy_pct": 89.0,
+      "perplexity": 32.67,
+      "duration_s": 1.47,
+      "error": ""
+    },
+    {
+      "module": "factorised_matrix_state",
+      "accuracy_pct": 70.0,
+      "perplexity": 25843.83,
+      "duration_s": 1.43,
+      "error": ""
+    },
+    {
+      "module": "flash_attention3",
+      "accuracy_pct": 92.0,
+      "perplexity": 31.21,
+      "duration_s": 1.69,
+      "error": ""
+    },
+    {
+      "module": "flash_attention3_fp8",
+      "accuracy_pct": 92.0,
+      "perplexity": 31.37,
+      "duration_s": 1.42,
+      "error": ""
+    },
+    {
+      "module": "full",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.5,
+      "duration_s": 1.11,
+      "error": ""
+    },
+    {
+      "module": "full_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 32.05,
+      "duration_s": 1.44,
+      "error": ""
+    },
+    {
+      "module": "fused_svd_kernel",
+      "accuracy_pct": 52.0,
+      "perplexity": 1322.2,
+      "duration_s": 8.06,
+      "error": ""
+    },
+    {
+      "module": "fusion_attn",
+      "accuracy_pct": 95.0,
+      "perplexity": 71.77,
+      "duration_s": 1.39,
+      "error": ""
+    },
+    {
+      "module": "galerkin_attention",
+      "accuracy_pct": 54.0,
+      "perplexity": 31.81,
+      "duration_s": 1.73,
+      "error": ""
+    },
+    {
+      "module": "gated_delta_net",
+      "accuracy_pct": 52.0,
+      "perplexity": 1432.28,
+      "duration_s": 2.63,
+      "error": ""
+    },
+    {
+      "module": "gated_deltanet_block",
+      "accuracy_pct": 52.0,
+      "perplexity": 1428.54,
+      "duration_s": 2.69,
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attention",
+      "accuracy_pct": 66.0,
+      "perplexity": 18157.22,
+      "duration_s": 1.94,
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attn",
+      "accuracy_pct": 66.0,
+      "perplexity": 18157.22,
+      "duration_s": 1.89,
+      "error": ""
+    },
+    {
+      "module": "gla_attention",
+      "accuracy_pct": 56.0,
+      "perplexity": 10475.47,
+      "duration_s": 1.43,
+      "error": ""
+    },
+    {
+      "module": "goldfinch_ahn",
+      "accuracy_pct": 95.0,
+      "perplexity": 10491.3,
+      "duration_s": 1.65,
+      "error": ""
+    },
+    {
+      "module": "gqa_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 30.66,
+      "duration_s": 1.53,
+      "error": ""
+    },
+    {
+      "module": "granite_hybrid",
+      "accuracy_pct": null,
+      "perplexity": 5035.83,
+      "duration_s": 3.91,
+      "error": "RoBERTa error: CUDA out of memory. Tried to allocate 516.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 86.81 MiB is free. Including non-PyTorch memory, this process has 2.57 GiB memory in use. Process 725928 has 4.94 GiB memory in use. Of the allocated memory 1.73 GiB is allocated by PyTorch, and 250.75 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf); "
+    },
+    {
+      "module": "griffin_ssd",
+      "accuracy_pct": 91.0,
+      "perplexity": 127.52,
+      "duration_s": 3.3,
+      "error": ""
+    },
+    {
+      "module": "halo_regla",
+      "accuracy_pct": 92.0,
+      "perplexity": 4150.02,
+      "duration_s": 3.17,
+      "error": ""
+    },
+    {
+      "module": "hamming_attention",
+      "accuracy_pct": 62.0,
+      "perplexity": 4135.06,
+      "duration_s": 3.62,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_deltanet",
+      "accuracy_pct": 92.0,
+      "perplexity": 4581.09,
+      "duration_s": 7.93,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_layer",
+      "accuracy_pct": 92.0,
+      "perplexity": 4597.07,
+      "duration_s": 4.56,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_outer",
+      "accuracy_pct": null,
+      "perplexity": 4372.25,
+      "duration_s": 3.22,
+      "error": "RoBERTa error: CUDA out of memory. Tried to allocate 300.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 142.81 MiB is free. Including non-PyTorch memory, this process has 2.52 GiB memory in use. Process 725928 has 4.94 GiB memory in use. Of the allocated memory 1.75 GiB is allocated by PyTorch, and 176.46 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf); "
+    },
+    {
+      "module": "hgrn2_outer",
+      "accuracy_pct": null,
+      "perplexity": 4409.86,
+      "duration_s": 2.86,
+      "error": "RoBERTa error: CUDA out of memory. Tried to allocate 300.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 54.81 MiB is free. Including non-PyTorch memory, this process has 2.61 GiB memory in use. Process 725928 has 4.94 GiB memory in use. Of the allocated memory 1.75 GiB is allocated by PyTorch, and 264.04 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf); "
+    },
+    {
+      "module": "hla_attention",
+      "accuracy_pct": 50.0,
+      "perplexity": 4669.51,
+      "duration_s": 3.0,
+      "error": ""
+    },
+    {
+      "module": "hybrid_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 100.82,
+      "duration_s": 3.34,
+      "error": ""
+    },
+    {
+      "module": "hybrid_local_kernel",
+      "accuracy_pct": 52.0,
+      "perplexity": 2069.46,
+      "duration_s": 21.83,
+      "error": ""
+    },
+    {
+      "module": "hymba_transx",
+      "accuracy_pct": 93.0,
+      "perplexity": 140.64,
+      "duration_s": 5.34,
+      "error": ""
+    },
+    {
+      "module": "jamba",
+      "accuracy_pct": 94.0,
+      "perplexity": 29.9,
+      "duration_s": 2.41,
+      "error": ""
+    },
+    {
+      "module": "jamba_info",
+      "accuracy_pct": 55.0,
+      "perplexity": 2098.35,
+      "duration_s": 1.88,
+      "error": ""
+    },
+    {
+      "module": "kda_attention",
+      "accuracy_pct": 51.0,
+      "perplexity": NaN,
+      "duration_s": 2.39,
+      "error": ""
+    },
+    {
+      "module": "landmark_local_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1196.81,
+      "duration_s": 8.59,
+      "error": ""
+    },
+    {
+      "module": "linformer_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1712.01,
+      "duration_s": 9.23,
+      "error": ""
+    },
+    {
+      "module": "lola_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1291.54,
+      "duration_s": 10.01,
+      "error": ""
+    },
+    {
+      "module": "lora_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 30.71,
+      "duration_s": 1.9,
+      "error": ""
+    },
+    {
+      "module": "lsh_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1072.44,
+      "duration_s": 9.02,
+      "error": ""
+    },
+    {
+      "module": "mamba_block",
+      "accuracy_pct": 52.0,
+      "perplexity": 3959.32,
+      "duration_s": 5.79,
+      "error": ""
+    },
+    {
+      "module": "mamba_svd_flash",
+      "accuracy_pct": 95.0,
+      "perplexity": 30.35,
+      "duration_s": 3.84,
+      "error": ""
+    },
+    {
+      "module": "minimal_nova",
+      "accuracy_pct": 52.0,
+      "perplexity": 1295.42,
+      "duration_s": 6.66,
+      "error": ""
+    },
+    {
+      "module": "minimal_svd",
+      "accuracy_pct": 52.0,
+      "perplexity": 1258.71,
+      "duration_s": 8.62,
+      "error": ""
+    },
+    {
+      "module": "mixattention_moska",
+      "accuracy_pct": 90.0,
+      "perplexity": 31.3,
+      "duration_s": 1.92,
+      "error": ""
+    },
+    {
+      "module": "mla_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 698.78,
+      "duration_s": 5.66,
+      "error": ""
+    },
+    {
+      "module": "moba_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 49.14,
+      "duration_s": 1.56,
+      "error": ""
+    },
+    {
+      "module": "moe_deltakv_paged",
+      "accuracy_pct": 91.0,
+      "perplexity": null,
+      "duration_s": 2.81,
+      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+    },
+    {
+      "module": "mqa",
+      "accuracy_pct": 52.0,
+      "perplexity": 992.49,
+      "duration_s": 1.47,
+      "error": ""
+    },
+    {
+      "module": "naive_svd",
+      "accuracy_pct": 52.0,
+      "perplexity": 1257.15,
+      "duration_s": 8.31,
+      "error": ""
+    },
+    {
+      "module": "nasc_attention",
+      "accuracy_pct": 92.0,
+      "perplexity": 339.55,
+      "duration_s": 3.06,
+      "error": ""
+    },
+    {
+      "module": "native_hybrid_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 5095.43,
+      "duration_s": 1.93,
+      "error": ""
+    },
+    {
+      "module": "nexus",
+      "accuracy_pct": 55.0,
+      "perplexity": null,
+      "duration_s": 1.35,
+      "error": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
+    },
+    {
+      "module": "nsa_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 36.54,
+      "duration_s": 1.89,
+      "error": ""
+    },
+    {
+      "module": "nystrom_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": 1171.66,
+      "duration_s": 1.87,
+      "error": ""
+    },
+    {
+      "module": "optimized_hybrid_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 6425.2,
+      "duration_s": 3.08,
+      "error": ""
+    },
+    {
+      "module": "orion",
+      "accuracy_pct": 52.0,
+      "perplexity": 1898.29,
+      "duration_s": 9.43,
+      "error": ""
+    },
+    {
+      "module": "padre_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": 344.29,
+      "duration_s": 1.84,
+      "error": ""
+    },
+    {
+      "module": "performer_attention",
+      "accuracy_pct": 75.0,
+      "perplexity": 16604.77,
+      "duration_s": 1.59,
+      "error": ""
+    },
+    {
+      "module": "phantom",
+      "accuracy_pct": 52.0,
+      "perplexity": 1232.49,
+      "duration_s": 9.44,
+      "error": ""
+    },
+    {
+      "module": "positive_kernel_linear_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 834.03,
+      "duration_s": 10.55,
+      "error": ""
+    },
+    {
+      "module": "primal_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 29.6,
+      "duration_s": 16.17,
+      "error": ""
+    },
+    {
+      "module": "progressive_token_pruning",
+      "accuracy_pct": 94.0,
+      "perplexity": 121.75,
+      "duration_s": 1.54,
+      "error": ""
+    },
+    {
+      "module": "projection_factorized_attn",
+      "accuracy_pct": 52.0,
+      "perplexity": 3588.41,
+      "duration_s": 6.21,
+      "error": ""
+    },
+    {
+      "module": "qcqa_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 32.78,
+      "duration_s": 1.88,
+      "error": ""
+    },
+    {
+      "module": "rala_attention",
+      "accuracy_pct": 75.0,
+      "perplexity": 22067.47,
+      "duration_s": 2.06,
+      "error": ""
+    },
+    {
+      "module": "reap_moe",
+      "accuracy_pct": 93.0,
+      "perplexity": 32.68,
+      "duration_s": 2.8,
+      "error": ""
+    },
+    {
+      "module": "refined_landmark_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 2122.52,
+      "duration_s": 8.97,
+      "error": ""
+    },
+    {
+      "module": "regla_attention",
+      "accuracy_pct": 77.0,
+      "perplexity": 833.54,
+      "duration_s": 1.65,
+      "error": ""
+    },
+    {
+      "module": "residual_svd_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1286.72,
+      "duration_s": 9.75,
+      "error": ""
+    },
+    {
+      "module": "routing_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1444.23,
+      "duration_s": 9.41,
+      "error": ""
+    },
+    {
+      "module": "rpc_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 2184.07,
+      "duration_s": 10.2,
+      "error": ""
+    },
+    {
+      "module": "salt_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 782.72,
+      "duration_s": 27.89,
+      "error": ""
+    },
+    {
+      "module": "samba_m3",
+      "accuracy_pct": 83.0,
+      "perplexity": 106.77,
+      "duration_s": 2.08,
+      "error": ""
+    },
+    {
+      "module": "samba_moe",
+      "accuracy_pct": 90.0,
+      "perplexity": 685.83,
+      "duration_s": 3.16,
+      "error": ""
+    },
+    {
+      "module": "selective_ssm",
+      "accuracy_pct": 52.0,
+      "perplexity": 5432.31,
+      "duration_s": 2.47,
+      "error": ""
+    },
+    {
+      "module": "simple_ssm",
+      "accuracy_pct": 52.0,
+      "perplexity": 5406.81,
+      "duration_s": 2.48,
+      "error": ""
+    },
+    {
+      "module": "sink_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 807.45,
+      "duration_s": 1.94,
+      "error": ""
+    },
+    {
+      "module": "soa_attn",
+      "accuracy_pct": 52.0,
+      "perplexity": 568.8,
+      "duration_s": 7.22,
+      "error": ""
+    },
+    {
+      "module": "spectraformer_attention",
+      "accuracy_pct": 49.0,
+      "perplexity": 880608.83,
+      "duration_s": 8.09,
+      "error": ""
+    },
+    {
+      "module": "spectron",
+      "accuracy_pct": 52.0,
+      "perplexity": 3609.21,
+      "duration_s": 8.25,
+      "error": ""
+    },
+    {
+      "module": "spectron_fp8",
+      "accuracy_pct": 52.0,
+      "perplexity": 2403.1,
+      "duration_s": 14.1,
+      "error": ""
+    },
+    {
+      "module": "split_head_hybrid",
+      "accuracy_pct": 52.0,
+      "perplexity": null,
+      "duration_s": 8.5,
+      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+    },
+    {
+      "module": "svd_compressed",
+      "accuracy_pct": 52.0,
+      "perplexity": 3588.72,
+      "duration_s": 8.91,
+      "error": ""
+    },
+    {
+      "module": "svd_linear",
+      "accuracy_pct": 52.0,
+      "perplexity": 3565.18,
+      "duration_s": 7.62,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 3610.76,
+      "duration_s": 5.84,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attn",
+      "accuracy_pct": 52.0,
+      "perplexity": 3592.59,
+      "duration_s": 4.67,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_decay",
+      "accuracy_pct": 52.0,
+      "perplexity": 3606.8,
+      "duration_s": 5.03,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_inject",
+      "accuracy_pct": 52.0,
+      "perplexity": 3603.2,
+      "duration_s": 5.03,
+      "error": ""
+    },
+    {
+      "module": "svd_llm_v2_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1832.08,
+      "duration_s": 3.49,
+      "error": ""
+    },
+    {
+      "module": "svd_mamba",
+      "accuracy_pct": 52.0,
+      "perplexity": 3846.3,
+      "duration_s": 22.94,
+      "error": ""
+    },
+    {
+      "module": "svd_projection_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": null,
+      "duration_s": 7.17,
+      "error": "GPT2 error: name 'math' is not defined"
+    },
+    {
+      "module": "svd_seq",
+      "accuracy_pct": 96.0,
+      "perplexity": 7910.01,
+      "duration_s": 3.1,
+      "error": ""
+    },
+    {
+      "module": "template_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 4152.16,
+      "duration_s": 2.42,
+      "error": ""
+    },
+    {
+      "module": "token_compressed_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 3940.38,
+      "duration_s": 3.03,
+      "error": ""
+    },
+    {
+      "module": "tri_branch_hybrid",
+      "accuracy_pct": 52.0,
+      "perplexity": null,
+      "duration_s": 8.67,
+      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+    },
+    {
+      "module": "triton_cosformer",
+      "accuracy_pct": 68.0,
+      "perplexity": 22770.5,
+      "duration_s": 2.99,
+      "error": ""
+    },
+    {
+      "module": "triton_svd_linear_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 1213.26,
+      "duration_s": 11.62,
+      "error": ""
+    },
+    {
+      "module": "ttt_linear_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 6529.27,
+      "duration_s": 12.17,
+      "error": ""
+    },
+    {
+      "module": "unified_rope",
+      "accuracy_pct": 92.0,
+      "perplexity": 4218.74,
+      "duration_s": 2.05,
+      "error": ""
+    },
+    {
+      "module": "upi_stuffed_mamba",
+      "accuracy_pct": null,
+      "perplexity": 1328.82,
+      "duration_s": 2.02,
+      "error": "RoBERTa error: CUDA out of memory. Tried to allocate 258.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 240.81 MiB is free. Including non-PyTorch memory, this process has 3.66 GiB memory in use. Process 733153 has 3.70 GiB memory in use. Of the allocated memory 2.66 GiB is allocated by PyTorch, and 410.98 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf); "
+    },
+    {
+      "module": "vig_attention",
+      "accuracy_pct": 86.0,
+      "perplexity": null,
+      "duration_s": 2.49,
+      "error": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
+    },
+    {
+      "module": "vspec",
+      "accuracy_pct": 52.0,
+      "perplexity": 1084.77,
+      "duration_s": 16.09,
+      "error": ""
+    },
+    {
+      "module": "wgqa_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 929.8,
+      "duration_s": 3.27,
+      "error": ""
+    },
+    {
+      "module": "xattention",
+      "accuracy_pct": 87.0,
+      "perplexity": 29.78,
+      "duration_s": 1.85,
+      "error": ""
+    },
+    {
+      "module": "zeros_attention",
+      "accuracy_pct": 55.0,
+      "perplexity": 82506.78,
+      "duration_s": 2.12,
+      "error": ""
+    }
+  ]
+}

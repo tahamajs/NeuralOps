@@ -6,11 +6,30 @@
       "roberta-base",
       "sst2",
       64
+    ],
+    [
+      "selective_ssm",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "selective_ssm",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
     ]
   ],
-  "failed": [],
+  "failed": [
+    [
+      "selective_ssm",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ]
+  ],
   "skipped": [],
   "total_runs": 1,
-  "status": "finished",
+  "status": "running",
   "start_time": 1792001962.1931384
 }
