@@ -410,7 +410,12 @@ class FusedSVDLinear(nn.Module):
         """Decompose dense weight matrix into symmetric SVD factors."""
         with torch.no_grad():
             W = weight.float()
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            dev = W.device
+            W_cpu = W.detach().cpu().float()
+            U_cpu, S_cpu, Vt_cpu = torch.linalg.svd(W_cpu, full_matrices=False)
+            U = U_cpu.to(dev)
+            S = S_cpu.to(dev)
+            Vt = Vt_cpu.to(dev)
             r = min(self.rank, len(S))
             sqrt_s = torch.sqrt(S[:r])
             self.U.data.zero_()

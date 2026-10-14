@@ -114,7 +114,12 @@ class FactorisedLinear(nn.Module):
                 ]
                 W = padded_W
 
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            dev = W.device
+            W_cpu = W.detach().cpu().float()
+            U_cpu, S_cpu, Vt_cpu = torch.linalg.svd(W_cpu, full_matrices=False)
+            U = U_cpu.to(dev)
+            S = S_cpu.to(dev)
+            Vt = Vt_cpu.to(dev)
             target_energy = energy if energy is not None else self.energy
             total_energy = (S**2).sum()
             cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
