@@ -797,6 +797,13 @@ class HLAAttention(BaseAttention):
         # ---- Reshape to (B, L, H·d) ----
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
+        # Variance-preserving RMS gain to prevent signal decay before out_proj
+        v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
+        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        scale = (v_rms / c_rms).clamp(0.25, 4.0)
+        context = context * scale
+
         # ---- Output projection ----
         if self.is_nested_encoder:
             out = context * self.lora_output_scale

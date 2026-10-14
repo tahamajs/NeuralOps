@@ -230,8 +230,13 @@ class GLAttention(BaseAttention):
         # 4. RMSNorm per head (essential for stable magnitude)
         out = self.o_norm(out)  # (B, N, H, d)
 
-        # 5. Out projection
+        # 5. Out projection with variance-preserving RMS gain
         out = out.contiguous().view(B, N, self.all_head_size)
+        v_flat = V.contiguous().view(B, N, self.all_head_size)
+        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        o_rms = torch.sqrt(torch.mean(out ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        scale = (v_rms / o_rms).clamp(0.25, 4.0)
+        out = out * scale
         return self.out_proj(out), None
 
     def _chunked_gla_forward(
