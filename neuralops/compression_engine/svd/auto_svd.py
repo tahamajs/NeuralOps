@@ -183,13 +183,16 @@ def solve_optimal_rank_allocation(
       Min sum_{l} || W_l - U_l S_l V_l^T ||_F^2 * FisherWeight_l
       s.t. sum_{l} r_l * (in_l + out_l) <= TargetParams
     """
-    linear_layers: Dict[str, nn.Linear] = {}
+    linear_layers: Dict[str, Any] = {}
     for name, mod in model.named_modules():
-        if isinstance(mod, nn.Linear):
-            if any(skip in name.lower() for skip in ("lm_head", "classifier", "head", "output_layer", "score")):
-                continue
-            if target_layers is None or any(t in name for t in target_layers):
-                linear_layers[name] = mod
+        w = getattr(mod, "weight", None)
+        if w is not None and isinstance(w, torch.Tensor) and w.dim() == 2:
+            cls_name = mod.__class__.__name__.lower()
+            if isinstance(mod, nn.Linear) or "conv1d" in cls_name or hasattr(mod, "nf"):
+                if any(skip in name.lower() for skip in ("lm_head", "classifier", "head", "output_layer", "score", "embed", "wte", "wpe")):
+                    continue
+                if target_layers is None or any(t in name for t in target_layers):
+                    linear_layers[name] = mod
 
     if not linear_layers:
         return {}, {}
@@ -199,7 +202,12 @@ def solve_optimal_rank_allocation(
 
     for name, mod in linear_layers.items():
         w = mod.weight.detach().float().cpu()
-        out_f, in_f = w.shape
+        if mod.__class__.__name__ == "Conv1D":
+            # HuggingFace Conv1D has weight of shape [in_features, out_features]
+            in_f, out_f = w.shape
+            w = w.t().contiguous()
+        else:
+            out_f, in_f = w.shape
         orig_p = in_f * out_f
         total_orig_params += orig_p
 
