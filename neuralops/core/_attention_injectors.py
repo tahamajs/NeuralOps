@@ -44,10 +44,18 @@ def _prepare_layer_config(
     num_kv_heads = None
 
     if family_adapter is not None:
-        hidden_size = getattr(family_adapter, "hidden_size", None)
-        num_heads = getattr(family_adapter, "num_heads", None)
-        num_kv_heads = getattr(family_adapter, "num_key_value_heads", None)
-        head_dim = getattr(family_adapter, "head_dim", None)
+        h = getattr(family_adapter, "hidden_size", None)
+        nh = getattr(family_adapter, "num_heads", None)
+        nkv = getattr(family_adapter, "num_key_value_heads", None)
+        hd = getattr(family_adapter, "head_dim", None)
+        if h:
+            hidden_size = h
+        if nh:
+            num_heads = nh
+        if nkv:
+            num_kv_heads = nkv
+        if hd:
+            head_dim = hd
 
     if hidden_size is None or num_heads is None:
         for _, child in old_attn.named_children():
