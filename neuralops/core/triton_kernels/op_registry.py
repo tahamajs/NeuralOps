@@ -70,6 +70,33 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             out_shape = list(x.shape[:-1]) + [V.shape[-1]]
             return x.new_empty(out_shape)
 
+        # Register Autograd formulas for training / backward pass
+        def _low_rank_bwd(ctx, grad_output):
+            x, U, V = ctx.saved_tensors
+            # y = (x @ V.T) @ U.T
+            # dy/dx = grad_output @ U @ V
+            grad_x = torch.matmul(torch.matmul(grad_output, U), V) if ctx.needs_input_grad[0] else None
+            # dy/dU = grad_output.T @ (x @ V.T)
+            x_2d = x.reshape(-1, x.shape[-1])
+            g_2d = grad_output.reshape(-1, grad_output.shape[-1])
+            h = torch.matmul(x_2d, V.t())
+            grad_U = torch.matmul(g_2d.t(), h) if ctx.needs_input_grad[1] else None
+            grad_V = torch.matmul(torch.matmul(g_2d, U).t(), x_2d) if ctx.needs_input_grad[2] else None
+            return grad_x, grad_U, grad_V
+
+        def _low_rank_setup_context(ctx, inputs, output):
+            x, U, V = inputs
+            ctx.save_for_backward(x, U, V)
+
+        if hasattr(torch.library, "register_autograd"):
+            try:
+                torch.library.register_autograd(
+                    "neuralops::low_rank", _low_rank_bwd, setup_context=_low_rank_setup_context
+                )
+            except Exception:
+                pass
+
+
         # 4. GQA Op
         @torch.library.custom_op("neuralops::gqa", mutates_args=())
         def _op_gqa(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int) -> Tuple[torch.Tensor, torch.Tensor]:
