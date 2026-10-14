@@ -165,6 +165,39 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             out_shape = list(x.shape[:-1]) + [weight.shape[0]]
             return x.new_empty(out_shape)
 
+        # 11. Recurrent Linear Step Op
+        @torch.library.custom_op("neuralops::recurrent_linear_step", mutates_args=())
+        def _op_recurrent_linear_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, kv_state: torch.Tensor, z_state: torch.Tensor, eps: float = 1e-6) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+            return fused_recurrent_linear_step(q_t, k_t, v_t, kv_state, z_state, eps=eps)
+
+        @_op_recurrent_linear_step.register_fake
+        def _op_recurrent_linear_step_fake(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, kv_state: torch.Tensor, z_state: torch.Tensor, eps: float = 1e-6) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            out = q_t.new_empty(q_t.shape[0], q_t.shape[1], v_t.shape[-1])
+            return out, torch.empty_like(kv_state), torch.empty_like(z_state)
+
+        # 12. Recurrent GLA Step Op
+        @torch.library.custom_op("neuralops::recurrent_gla_step", mutates_args=())
+        def _op_recurrent_gla_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, gk_t: torch.Tensor, kv_state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            from neuralops.core.triton_kernels.state_update import fused_recurrent_gla_step
+            return fused_recurrent_gla_step(q_t, k_t, v_t, gk_t, kv_state)
+
+        @_op_recurrent_gla_step.register_fake
+        def _op_recurrent_gla_step_fake(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, gk_t: torch.Tensor, kv_state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            out = q_t.new_empty(q_t.shape[0], q_t.shape[1], v_t.shape[-1])
+            return out, torch.empty_like(kv_state)
+
+        # 13. Recurrent GDN Step Op
+        @torch.library.custom_op("neuralops::recurrent_gdn_step", mutates_args=())
+        def _op_recurrent_gdn_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, g_t: torch.Tensor, beta_t: torch.Tensor, kv_state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            from neuralops.core.triton_kernels.state_update import fused_recurrent_gdn_step
+            return fused_recurrent_gdn_step(q_t, k_t, v_t, g_t, beta_t, kv_state)
+
+        @_op_recurrent_gdn_step.register_fake
+        def _op_recurrent_gdn_step_fake(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, g_t: torch.Tensor, beta_t: torch.Tensor, kv_state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            out = q_t.new_empty(q_t.shape[0], q_t.shape[1], v_t.shape[-1])
+            return out, torch.empty_like(kv_state)
+
         _CUSTOM_OPS_REGISTERED = True
     except Exception as exc:
         logger.debug("Failed registering custom ops with torch.library: %s", exc)
