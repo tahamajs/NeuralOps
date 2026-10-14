@@ -411,6 +411,10 @@ class GatedDeltaNetBlock(BaseAttention):
         else:
             # --- Gated DeltaNet branch ---
             # Forward ALL relevant kwargs so KV-cache and RoPE work.
+            is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+            if is_causal and hasattr(self.deltanet, "is_decoder"):
+                self.deltanet.is_decoder = True
+                self.deltanet.is_causal = True
             delta_result = self.deltanet(
                 x,
                 attention_mask=attention_mask,
