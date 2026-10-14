@@ -152,6 +152,20 @@ class FactorisedLinear(nn.Module):
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.down.weight,
+                    w_up=self.up.weight,
+                    lora_A=self.lora_A if self.lora_rank > 0 else None,
+                    lora_B=self.lora_B if self.lora_rank > 0 else None,
+                    lora_scale=self.lora_scaling,
+                    bias=self.up.bias,
+                )
+            except Exception:
+                pass
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling

@@ -436,18 +436,29 @@ class CompressedDistilBertAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(
-            0
-        ).unsqueeze(0)
-        qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
-
-        # LoRA residual adapter
-        if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
-            lora_qkv = (
-                F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv)
-                * self.lora_scaling
-            )
-            qkv_comp = qkv_comp + lora_qkv
+        qkv_w_up = self.U_qkv * self.S_qkv
+        qkv_w_down = self.Vh_qkv
+        if hidden_states.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                qkv_comp = fused_svd_lora_sparse_attn_triton(
+                    hidden_states,
+                    w_down=qkv_w_down,
+                    w_up=qkv_w_up,
+                    lora_A=self.lora_A_qkv if self.lora_rank > 0 else None,
+                    lora_B=self.lora_B_qkv if self.lora_rank > 0 else None,
+                    lora_scale=self.lora_scaling,
+                )
+            except Exception:
+                proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
+                qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
+                if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
+                    qkv_comp = qkv_comp + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
+        else:
+            proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
+            qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
+            if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
+                qkv_comp = qkv_comp + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
 
         q_raw, k_raw, v_raw = torch.split(
             qkv_comp, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1
@@ -534,16 +545,30 @@ class CompressedDistilBertAttention(BaseAttention):
         if self.is_nested_encoder:
             out = context
         else:
-            out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(
-                0
-            ).unsqueeze(0)
-            out = torch.matmul(out_proj, self.U_out.t().contiguous()) + self.bias_out
-            if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
-                lora_out = (
-                    F.linear(F.linear(context, self.lora_A_out), self.lora_B_out)
-                    * self.lora_scaling
-                )
-                out = out + lora_out
+            out_w_up = self.U_out * self.S_out
+            out_w_down = self.Vh_out
+            if context.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                    out = fused_svd_lora_sparse_attn_triton(
+                        context,
+                        w_down=out_w_down,
+                        w_up=out_w_up,
+                        lora_A=self.lora_A_out if self.lora_rank > 0 else None,
+                        lora_B=self.lora_B_out if self.lora_rank > 0 else None,
+                        lora_scale=self.lora_scaling,
+                        bias=self.bias_out,
+                    )
+                except Exception:
+                    out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(0).unsqueeze(0)
+                    out = torch.matmul(out_proj, self.U_out.t().contiguous()) + self.bias_out
+                    if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
+                        out = out + (F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling)
+            else:
+                out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(0).unsqueeze(0)
+                out = torch.matmul(out_proj, self.U_out.t().contiguous()) + self.bias_out
+                if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
+                    out = out + (F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling)
 
         return out, (attn_probs if output_attentions else None)
 

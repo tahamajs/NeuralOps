@@ -572,13 +572,18 @@ def calibrate_surgically_replaced_model(
     else:
         batch = sample_inputs.to(device)
 
-    # 1. Identify attention module pairs
+    # 1. Identify attention module pairs (only leaf attention mechanisms)
     def _collect_attention_modules(m: nn.Module) -> dict[str, nn.Module]:
         attns = {}
         for name, sub in m.named_modules():
             leaf = name.split(".")[-1].lower()
-            if leaf in ("attention", "self", "self_attn", "attn"):
+            if leaf in ("self", "self_attn", "attn"):
                 attns[name] = sub
+        if not attns:
+            for name, sub in m.named_modules():
+                leaf = name.split(".")[-1].lower()
+                if leaf == "attention":
+                    attns[name] = sub
         return attns
 
     orig_attns = _collect_attention_modules(orig_model)

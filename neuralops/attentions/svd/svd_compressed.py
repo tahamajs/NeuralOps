@@ -624,6 +624,20 @@ class SVDCompressedAttention(BaseAttention):
         def proj_q(x: torch.Tensor) -> torch.Tensor:
             if x.device != self.q_down.weight.device:
                 x = x.to(self.q_down.weight.device)
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.q_down.weight,
+                    w_up=self.q_up.weight,
+                    lora_A=self.q_lora_A if self.lora_rank > 0 else None,
+                    lora_B=self.q_lora_B if self.lora_rank > 0 else None,
+                    lora_scale=self.scaling,
+                    sparse_w=self.q_sparse_weight if self.add_sparse else None,
+                    bias=self.q_up.bias,
+                )
+            except Exception:
+                pass
             out = self.q_up(self.q_down(x))
             if self.lora_rank > 0 and self.q_lora_A is not None and self.q_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
@@ -634,6 +648,20 @@ class SVDCompressedAttention(BaseAttention):
         def proj_k(x: torch.Tensor) -> torch.Tensor:
             if x.device != self.k_down.weight.device:
                 x = x.to(self.k_down.weight.device)
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.k_down.weight,
+                    w_up=self.k_up.weight,
+                    lora_A=self.k_lora_A if self.lora_rank > 0 else None,
+                    lora_B=self.k_lora_B if self.lora_rank > 0 else None,
+                    lora_scale=self.scaling,
+                    sparse_w=self.k_sparse_weight if self.add_sparse else None,
+                    bias=self.k_up.bias,
+                )
+            except Exception:
+                pass
             out = self.k_up(self.k_down(x))
             if self.lora_rank > 0 and self.k_lora_A is not None and self.k_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
@@ -644,6 +672,20 @@ class SVDCompressedAttention(BaseAttention):
         def proj_v(x: torch.Tensor) -> torch.Tensor:
             if x.device != self.v_down.weight.device:
                 x = x.to(self.v_down.weight.device)
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.v_down.weight,
+                    w_up=self.v_up.weight,
+                    lora_A=self.v_lora_A if self.lora_rank > 0 else None,
+                    lora_B=self.v_lora_B if self.lora_rank > 0 else None,
+                    lora_scale=self.scaling,
+                    sparse_w=self.v_sparse_weight if self.add_sparse else None,
+                    bias=self.v_up.bias,
+                )
+            except Exception:
+                pass
             out = self.v_up(self.v_down(x))
             if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
@@ -654,6 +696,20 @@ class SVDCompressedAttention(BaseAttention):
         def proj_o(x: torch.Tensor) -> torch.Tensor:
             if x.device != self.o_down.weight.device:
                 x = x.to(self.o_down.weight.device)
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.o_down.weight,
+                    w_up=self.o_up.weight,
+                    lora_A=self.o_lora_A if self.lora_rank > 0 else None,
+                    lora_B=self.o_lora_B if self.lora_rank > 0 else None,
+                    lora_scale=self.scaling,
+                    sparse_w=self.o_sparse_weight if self.add_sparse else None,
+                    bias=self.o_up.bias,
+                )
+            except Exception:
+                pass
             out = self.o_up(self.o_down(x))
             if self.lora_rank > 0 and self.o_lora_A is not None and self.o_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling

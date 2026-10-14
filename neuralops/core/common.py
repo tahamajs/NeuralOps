@@ -641,6 +641,21 @@ class ResSVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward execution: y = Base(x) + scaling * (x @ A^T) @ B^T + bias."""
+        if self.factorize_base and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                return fused_svd_lora_sparse_attn_triton(
+                    x,
+                    w_down=self.base_V,
+                    w_up=self.base_U,
+                    lora_A=self.lora_A if self.residual_rank > 0 else None,
+                    lora_B=self.lora_B if self.residual_rank > 0 else None,
+                    lora_scale=self.scaling,
+                    bias=self.bias,
+                )
+            except Exception:
+                pass
+
         if self.factorize_base:
             base_intermediate = F.linear(x, self.base_V)
             base_out = F.linear(base_intermediate, self.base_U)
