@@ -227,8 +227,10 @@ _API_EXPORTS = {
     "transplant_attention": "neuralops.api",
     "compress": "neuralops.api",
     "export_model": "neuralops.api",
+    "compile_to_so": "neuralops.api",
     "push_to_hub": "neuralops.api",
     "load_exported_model": "neuralops.api",
+
     "collect_surgery_distillation_loss": "neuralops.api",
     "set_surgery_alpha": "neuralops.api",
     "set_surgery_stage": "neuralops.api",
@@ -336,8 +338,10 @@ __all__ = [
     "compress",
     "create_compressor",
     "export_model",
+    "compile_to_so",
     "push_to_hub",
     "load_exported_model",
+
     "collect_surgery_distillation_loss",
     "set_surgery_alpha",
     "set_surgery_stage",
