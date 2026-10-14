@@ -55,6 +55,12 @@ class UnifiedHybridCache:
                     return layer_state.shape[-2]
         return self._seen_tokens
 
+    def get_query_offset(self, layer_idx: int = 0) -> int:
+        return 0
+
+    def get_max_cache_shape(self) -> int:
+        return self._seen_tokens
+
     def get_usable_length(self, new_seq_len: int, layer_idx: int = 0) -> int:
         return self.get_seq_length(layer_idx)
 
