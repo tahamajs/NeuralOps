@@ -111,6 +111,10 @@ def unpad_from_triton_power_of_2(out: torch.Tensor, orig_d: int) -> torch.Tensor
     return out[..., :orig_d]
 
 
+pad_head_dim_for_triton = pad_to_triton_power_of_2
+unpad_head_dim = unpad_from_triton_power_of_2
+
+
 # ---------------------------------------------------------------------------
 # Architecture Dtype Coercion
 # ---------------------------------------------------------------------------
