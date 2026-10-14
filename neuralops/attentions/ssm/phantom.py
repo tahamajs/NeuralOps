@@ -238,8 +238,12 @@ def lsh_attention(
     K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
     eye = (q_idx == k_idx).unsqueeze(0).unsqueeze(0)
 
-    for _ in range(rounds):
+    for r in range(rounds):
+        # Deterministic pseudo-random projection vector for each round to ensure batch-element invariance
+        rng_state = torch.random.get_rng_state()
+        torch.manual_seed(10007 + r * 37)
         hash_proj = torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype)
+        torch.random.set_rng_state(rng_state)
         hash_proj = F.normalize(hash_proj, p=2, dim=0, eps=1e-5)
 
         hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N_q]
