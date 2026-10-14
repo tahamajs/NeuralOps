@@ -307,6 +307,31 @@ def load_model(
     return _load_model(export_dir=export_dir, base_model=base_model)
 
 
+def compile_to_so(
+    model: nn.Module,
+    sample_inputs: Union[torch.Tensor, Tuple[torch.Tensor, ...]],
+    output_path: Union[str, Path] = "model_aot.so",
+    dynamic_batch: bool = True,
+    dynamic_seq_len: bool = True,
+    min_seq_len: int = 1,
+    max_seq_len: int = 32768,
+    device: Optional[Union[str, torch.device]] = None,
+) -> Any:
+    """Compile a model to a standalone C++ AOTInductor shared library (.so or .pt2)."""
+    from neuralops.export.exporter import compile_to_so as _compile_to_so
+    return _compile_to_so(
+        model=model,
+        sample_inputs=sample_inputs,
+        output_path=output_path,
+        dynamic_batch=dynamic_batch,
+        dynamic_seq_len=dynamic_seq_len,
+        min_seq_len=min_seq_len,
+        max_seq_len=max_seq_len,
+        device=device,
+    )
+
+
+
 # =====================================================================
 # 2. Discovery Operations
 # =====================================================================
