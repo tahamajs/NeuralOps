@@ -240,3 +240,5 @@ from neuralops.compression_engine.svd import svd_linear
 from neuralops.compression_engine.svd import swift_svd
 from neuralops.compression_engine.svd import swift_svd_act
 from neuralops.compression_engine.svd import hadamard_incoherent_svd
+from neuralops.compression_engine.svd import auto_svd
+
