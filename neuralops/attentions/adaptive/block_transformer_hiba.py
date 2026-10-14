@@ -97,7 +97,10 @@ class BlockTransformerHIBA(BaseAttention):
 
         # ---- Dimensions ----
         self.dim: int = (
-            kwargs.get("hidden_size")
+            kwargs.get("dim")
+            or kwargs.get("hidden_size")
+            or kwargs.get("embed_dim")
+            or kwargs.get("d_model")
             or getattr(
                 config,
                 "hidden_size",
