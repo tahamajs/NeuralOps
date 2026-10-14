@@ -1,4 +1,5 @@
 {
+  "svd": "direct_svd",
   "SVD_Mamba": "svd_mamba",
   "a3": "a3_compressor",
   "aa_svd": "aa_svd_compressor",
