@@ -403,6 +403,7 @@ class SpectronFP8Attention(BaseAttention):
         self.fp8_format = config.fp8_format
         self.rank = config.svd_rank
         self.lora_rank = config.lora_rank
+        self.window_size = getattr(config, "window_size", 64)
 
         self.router = SpectronSpectralEntropyRouter(config)
 
@@ -1105,17 +1106,17 @@ class SpectronFP8Attention(BaseAttention):
         out_glob = out_glob_t.unsqueeze(2).to(dtype)
 
         # 3. Recurrent state branch
-        gamma = torch.sigmoid(self.gamma_log.to(device=device, dtype=torch.float32)).view(1, H, 1, 1)
+        gamma = torch.sigmoid(self.decay_param.to(device=device, dtype=torch.float32)).view(1, H, 1, d)
         if "lin_state" not in state or state["lin_state"] is None:
             state["lin_state"] = torch.zeros((B, H, 1, d), device=device, dtype=torch.float32)
 
         lin_state = state["lin_state"]
-        u = self.linear_B(x.float()).view(B, 1, H, d).transpose(1, 2)
+        u = (x.float() * self.linear_B.view(1, 1, -1).to(device=device, dtype=torch.float32)).view(B, 1, H, d).transpose(1, 2)
         lin_state = gamma * lin_state + u
         state["lin_state"] = lin_state
 
-        out_lin_h = self.state_norm(lin_state.transpose(1, 2).contiguous().view(B, 1, -1))
-        out_lin = out_lin_h.view(B, 1, H, d).transpose(1, 2) * self.linear_C.view(1, H, 1, d)
+        out_lin_flat = self.state_norm(lin_state.transpose(1, 2).contiguous().view(B, 1, -1).to(dtype))
+        out_lin = out_lin_flat.view(B, 1, H, d).transpose(1, 2)
 
         # Combine 3 branches
         fused = alpha_loc * out_loc + alpha_glob * out_glob + alpha_lin * out_lin.to(dtype)

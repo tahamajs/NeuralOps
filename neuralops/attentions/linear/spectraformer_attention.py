@@ -600,9 +600,9 @@ class SpectraformerAttention(BaseAttention):
         k = self.k_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+        if self.num_heads != self.num_kv_heads:
+            k = repeat_kv(k, self.num_heads // self.num_kv_heads)
+            v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
         R = self.R.to(device=device, dtype=q.dtype)
         Q_proj = (F.elu(torch.matmul(q, R)) + 1.0).squeeze(2)  # [B, H, r]
