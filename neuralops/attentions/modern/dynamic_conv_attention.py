@@ -393,6 +393,13 @@ class DynamicConvAttention(BaseAttention):
         chunk: int | None = None,
     ) -> torch.Tensor:
         """Compute out[b,h,i,:] = sum_k v_full[b,h,i+k,:] * dyn_w[b,h,i,k]."""
+        # Try fused Triton kernel in SRAM
+        try:
+            from neuralops.core.triton_kernels.elementwise import fused_dynamic_conv1d_triton
+            return fused_dynamic_conv1d_triton(v_full, dyn_w)
+        except Exception:
+            pass
+
         B, H, T, d = v_full.shape
         N = dyn_w.shape[2]
         K = dyn_w.shape[3]
