@@ -29,7 +29,7 @@ import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import get_calibration_tensors
+from neuralops.core.pruning_utils import get_calibration_tensors, adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -132,6 +132,15 @@ class RotationalSliceGPTINT4Linear(nn.Module):
             self.register_parameter("bias", None)
 
     def _dequantize_W(self) -> torch.Tensor:
+        if self.W_centroids.ndim == 2:
+            # Per-column centroids: (r, C)
+            # W_indices: (D_out, r)
+            r, C = self.W_centroids.shape
+            D_out = self.W_indices.shape[0]
+            cents_exp = self.W_centroids.unsqueeze(0).expand(D_out, r, C)
+            idx_exp = self.W_indices.long().unsqueeze(-1)
+            deq = torch.gather(cents_exp, dim=2, index=idx_exp).squeeze(-1)
+            return deq.to(self.Q_P_r.dtype)
         return AstroQuantizer.dequantize(self.W_indices, self.W_centroids).to(self.Q_P_r.dtype)
 
     @property
@@ -196,8 +205,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
-        max_error = _cfg_get(cfg, "max_error", max_error)
-        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+        max_error = _cfg_get(cfg, "max_error", adaptive_max_error(r_ratio=r_ratio, quant_bits=quant_bits, default=1.0))
+        fallback_to_original = _cfg_get(cfg, "fallback_to_original", True)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
@@ -386,11 +395,15 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             idx_j, cents_j = self.quantizer.quantize(W_quant[:, j])
             W_indices[:, j] = idx_j
             per_col_centroids.append(cents_j)
-        # Use a single shared centroid table = average of per-column tables.
-        W_centroids = torch.stack(per_col_centroids, dim=0).mean(dim=0)
+        # Keep per-column centroids table: shape (r, C)
+        W_centroids = torch.stack(per_col_centroids, dim=0)  # (r, C)
 
-        # Reconstruct and measure error (using the shared table for honesty).
-        W_deq = AstroQuantizer.dequantize(W_indices, W_centroids).to(W_quant.dtype)
+        # Reconstruct with per-column centroids and measure error
+        D_out = W_indices.shape[0]
+        C = W_centroids.shape[1]
+        cents_exp = W_centroids.unsqueeze(0).expand(D_out, r, C)
+        idx_exp = W_indices.long().unsqueeze(-1)
+        W_deq = torch.gather(cents_exp, dim=2, index=idx_exp).squeeze(-1).to(W_quant.dtype)
         W_recon = (W_deq @ P_r.T) @ Q.T  # (D_out, D_in)
         norm_orig = W_fp32.norm(p="fro").clamp_min(1e-8)
         rel_error = float((W_fp32 - W_recon).norm(p="fro") / norm_orig)
