@@ -299,10 +299,11 @@ if HAS_TRITON:
     @triton.jit
     def _fused_topk_route_kernel(
         Branches_ptr, Weights_ptr, Out_ptr,
-        B, T, D, NUM_BRANCHES: tl.constexpr,
+        B, T, D,
         stride_bb, stride_bt, stride_bd,
         stride_wb, stride_wt, stride_wm,
         stride_ob, stride_ot, stride_od,
+        NUM_BRANCHES: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
         pid_bt = tl.program_id(0)
@@ -352,10 +353,11 @@ def fused_topk_sparse_route_and_combine_triton(
 
             _fused_topk_route_kernel[grid](
                 stacked_branches, w_c, out,
-                B, T, D, NUM_BRANCHES=M,
+                B, T, D,
                 b0.stride(0), b0.stride(1), b0.stride(2),
                 w_c.stride(0), w_c.stride(1), w_c.stride(2),
                 out.stride(0), out.stride(1), out.stride(2),
+                NUM_BRANCHES=M,
                 BLOCK_D=BLOCK_D,
             )
             return out
