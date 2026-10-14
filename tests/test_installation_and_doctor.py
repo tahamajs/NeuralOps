@@ -52,9 +52,11 @@ def test_triton_or_pytorch_fallback_execution():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     from neuralops.core.triton_kernels.elementwise import fused_swiglu
     x = torch.randn(2, 16, 64, device=device)
-    y = fused_swiglu(x)
-    assert y.shape == (2, 16, 32)
+    gate = torch.randn(2, 16, 64, device=device)
+    y = fused_swiglu(x, gate)
+    assert y.shape == (2, 16, 64)
     assert not torch.isnan(y).any()
+
 
 
 def test_public_api_completeness():
