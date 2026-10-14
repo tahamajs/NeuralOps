@@ -366,9 +366,17 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         B, H, L, feat_2f = q_feat.shape
         D_v = v_masked.shape[-1]
 
+        sm_supported = True
+        if q_feat.is_cuda:
+            try:
+                sm_supported = torch.cuda.get_device_capability(q_feat.device)[0] >= 7
+            except Exception:
+                sm_supported = False
+
         use_triton = (
             HAS_TRITON
             and q_feat.is_cuda
+            and sm_supported
             and feat_2f in (16, 32, 64, 128, 256, 512)
             and D_v in (16, 32, 64, 128, 256)
         )
