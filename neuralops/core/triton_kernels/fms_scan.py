@@ -522,6 +522,9 @@ class _FMSScanFn(torch.autograd.Function):
         return dq, dk, dv, ddecay_acc.to(decay.dtype)
 
 
+import math
+
+
 def fms_scan_triton(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
 ) -> torch.Tensor:
@@ -542,4 +545,66 @@ def fms_scan_triton(
     return _FMSScanFn.apply(q, k, v, decay)
 
 
-__all__ = ['fms_scan_triton']
+def fms_scan_pytorch(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation for Factorised Matrix State (FMS) recurrent scan."""
+    B, H, L, D = q.shape
+    device = q.device
+    dtype = q.dtype
+
+    if decay.dim() > 1:
+        decay = decay.squeeze()
+    elif decay.dim() == 0:
+        decay = decay.repeat(H)
+
+    # Feature maps: ELU + 1
+    q_f = torch.where(q.float() > 0.0, q.float() + 1.0, torch.exp(q.float()))
+    k_elu = torch.where(k.float() > 0.0, k.float() + 1.0, torch.exp(k.float()))
+
+    k_f = k_elu / math.sqrt(D)
+    v_f = v.float()
+
+    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    Z = torch.zeros((B, H, D), device=device, dtype=torch.float32)
+    ys = []
+
+    decay_4d = decay.view(1, H, 1, 1).float()
+    decay_3d = decay.view(1, H, 1).float()
+
+    for t in range(L):
+        q_t = q_f[:, :, t, :]  # (B, H, D)
+        k_t = k_f[:, :, t, :]  # (B, H, D)
+        v_t = v_f[:, :, t, :]  # (B, H, D)
+
+        # S_t = decay * S_{t-1} + k_t^T @ v_t
+        kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))  # (B, H, D, D)
+        S = decay_4d * S + kv
+
+        # Z_t = decay * Z_{t-1} + k_t
+        Z = decay_3d * Z + k_t
+
+        num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)  # (B, H, D)
+        den_t = (q_t * Z).sum(dim=-1, keepdim=True).clamp(min=1e-5)  # (B, H, 1)
+        y_t = num_t / den_t
+        ys.append(y_t)
+
+    return torch.stack(ys, dim=2).to(dtype)
+
+
+def fms_scan(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
+    """Dispatches FMS scan to Triton GPU kernel when suitable, else PyTorch fallback."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "fms_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
+    if suitable and hasattr(triton, "jit") and q.shape[-1] <= MAX_REGISTER_DIM:
+        try:
+            return fms_scan_triton(q, k, v, decay)
+        except Exception:
+            pass
+    return fms_scan_pytorch(q, k, v, decay)
+
+
+__all__ = ['fms_scan_triton', 'fms_scan_pytorch', 'fms_scan']
+
