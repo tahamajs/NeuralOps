@@ -288,11 +288,16 @@ class DeltaProductAttention(BaseAttention):
             bt = beta[:, :, t : t + 1].float()
 
             # Apply Householder reflection to state S: H_t @ S_{t-1}
-            # For each column of S, reflect along vector ut
-            S_reflected = householder_reflection(S, ut.unsqueeze(-1), bt)
+            # H_t = I - 2 * beta * (u u^T) / ||u||^2
+            # H_t @ S = S - 2 * beta * u^T @ (u @ S) / ||u||^2
+            # Shapes: S: (B, H, D, D), ut: (B, H, 1, D)
+            u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6  # (B, H, 1, 1)
+            u_S = torch.matmul(ut, S)  # (B, H, 1, D)
+            refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)  # (B, H, D, D)
+            S_reflected = S - refl
             # Rank-1 associative outer product update
             S = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
-            yt = torch.matmul(qt, S)
+            yt = torch.matmul(qt, S)  # (B, H, 1, D)
             outs.append(yt.to(q.dtype))
 
         y = torch.cat(outs, dim=2).transpose(1, 2).contiguous().view(B, L, H * D)
