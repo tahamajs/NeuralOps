@@ -44,10 +44,11 @@ if HAS_TRITON and tl is not None:
         offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
         mask = offs < N
         x = tl.load(X_ptr + offs, mask=mask, other=0.0)
-        scaled_x = x * BETA
-        # Numerical threshold check
-        y = tl.where(scaled_x > THRESHOLD, x, tl.log(1.0 + tl.exp(scaled_x)) / BETA)
-        tl.store(Y_ptr + offs, y, mask=mask)
+        x_f = x.to(tl.float32)
+        scaled_x = x_f * BETA
+        # Numerical threshold check with FP32 math
+        y_f = tl.where(scaled_x > THRESHOLD, x_f, tl.log(1.0 + tl.exp(scaled_x)) / BETA)
+        tl.store(Y_ptr + offs, y_f.to(Y_ptr.dtype.element_ty), mask=mask)
 
     @triton.jit
     def _softplus_bwd_kernel(X_ptr, DY_ptr, DX_ptr, N, BETA: tl.constexpr, THRESHOLD: tl.constexpr, BLOCK_SIZE: tl.constexpr):
@@ -56,11 +57,14 @@ if HAS_TRITON and tl is not None:
         mask = offs < N
         x = tl.load(X_ptr + offs, mask=mask, other=0.0)
         dy = tl.load(DY_ptr + offs, mask=mask, other=0.0)
-        scaled_x = x * BETA
+        x_f = x.to(tl.float32)
+        dy_f = dy.to(tl.float32)
+        scaled_x = x_f * BETA
         # d/dx (log(1+exp(beta*x))/beta) = sigmoid(beta * x)
         sig = 1.0 / (1.0 + tl.exp(-scaled_x))
-        dx = tl.where(scaled_x > THRESHOLD, dy, dy * sig)
-        tl.store(DX_ptr + offs, dx, mask=mask)
+        dx_f = tl.where(scaled_x > THRESHOLD, dy_f, dy_f * sig)
+        tl.store(DX_ptr + offs, dx_f.to(DX_ptr.dtype.element_ty), mask=mask)
+
 
 
 class _SoftplusAutograd(torch.autograd.Function):
