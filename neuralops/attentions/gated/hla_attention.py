@@ -584,6 +584,9 @@ class HLAAttention(BaseAttention):
             (C - 1 - t_idx.float()).view(1, 1, C, 1) * log_gamma
         )  # (1, H, C, 1)
 
+        # ---- Block decay γ^C ----
+        block_decay = torch.exp(C * log_gamma)  # (1, H, 1, 1)
+
 
         # ---- Initialize state ----
         if initial_state is not None:

@@ -169,3 +169,135 @@ def sliding_window_attention_kernel(
 
 sliding_window_triton = sliding_window_attention_kernel
 sliding_window_attention = sliding_window_attention_kernel
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Sink Attention: Fused Sink & Rolling KV-Cache Pruning Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_sink_prune_kernel(
+        k_in_ptr,
+        v_in_ptr,
+        pos_in_ptr,
+        k_out_ptr,
+        v_out_ptr,
+        pos_out_ptr,
+        B,
+        H,
+        N_in,
+        W,
+        S,
+        d,
+        stride_kb, stride_kh, stride_kn, stride_kd,
+        stride_okb, stride_okh, stride_okn, stride_okd,
+        stride_posb, stride_posn,
+        stride_oposb, stride_oposn,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_w = tl.program_id(0)   # target token slot in [0, W)
+        pid_bh = tl.program_id(1)  # b * H + h
+
+        b = pid_bh // H
+        h = pid_bh % H
+
+        # Map target slot to source token index
+        # [0, S) -> [0, S)
+        # [S, W) -> [N_in - (W - S), N_in)
+        if pid_w < S:
+            src_n = pid_w
+        else:
+            src_n = N_in - (W - S) + (pid_w - S)
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < d
+
+        # Copy K
+        k_in_offs = b * stride_kb + h * stride_kh + src_n * stride_kn + offs_d * stride_kd
+        k_val = tl.load(k_in_ptr + k_in_offs, mask=mask_d, other=0.0)
+        k_out_offs = b * stride_okb + h * stride_okh + pid_w * stride_okn + offs_d * stride_okd
+        tl.store(k_out_ptr + k_out_offs, k_val, mask=mask_d)
+
+        # Copy V
+        v_in_offs = b * stride_kb + h * stride_kh + src_n * stride_kn + offs_d * stride_kd
+        v_val = tl.load(v_in_ptr + v_in_offs, mask=mask_d, other=0.0)
+        v_out_offs = b * stride_okb + h * stride_okh + pid_w * stride_okn + offs_d * stride_okd
+        tl.store(v_out_ptr + v_out_offs, v_val, mask=mask_d)
+
+        # Only first head writes positions once
+        if h == 0 and pid_bh == (b * H):
+            pos_val = tl.load(pos_in_ptr + b * stride_posb + src_n * stride_posn)
+            tl.store(pos_out_ptr + b * stride_oposb + pid_w * stride_oposn, pos_val)
+
+
+def fused_sink_rolling_cache_pytorch(
+    k: torch.Tensor,
+    v: torch.Tensor,
+    positions: torch.Tensor,
+    window_size: int,
+    num_sink_tokens: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact reference PyTorch implementation for Sink KV-cache pruning."""
+    N_k = k.shape[-2]
+    W = window_size
+    S = num_sink_tokens
+    if N_k <= W:
+        return k, v, positions
+    head = slice(0, S)
+    tail = slice(N_k - (W - S), N_k)
+    idx = torch.arange(N_k, device=k.device)
+    keep_idx = torch.cat([idx[head], idx[tail]])
+    return k.index_select(-2, keep_idx), v.index_select(-2, keep_idx), positions.index_select(-1, keep_idx)
+
+
+def fused_sink_rolling_cache_triton(
+    k: torch.Tensor,
+    v: torch.Tensor,
+    positions: torch.Tensor,
+    window_size: int,
+    num_sink_tokens: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Fused StreamingLLM attention sinks and rolling KV-cache pruning in SRAM."""
+    N_k = k.shape[-2]
+    W = window_size
+    S = num_sink_tokens
+    if N_k <= W:
+        return k, v, positions
+
+    if not (HAS_TRITON and k.is_cuda and v.is_cuda and positions.is_cuda):
+        return fused_sink_rolling_cache_pytorch(k, v, positions, W, S)
+
+    B, H, _, d = k.shape
+    device = k.device
+
+    k_out = torch.empty((B, H, W, d), dtype=k.dtype, device=device)
+    v_out = torch.empty((B, H, W, d), dtype=v.dtype, device=device)
+    pos_out = torch.empty((B, W), dtype=positions.dtype, device=device)
+
+    BLOCK_D = triton.next_power_of_2(d)
+    grid = (W, B * H)
+
+    try:
+        _fused_sink_prune_kernel[grid](
+            k, v, positions,
+            k_out, v_out, pos_out,
+            B, H, N_k, W, S, d,
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            k_out.stride(0), k_out.stride(1), k_out.stride(2), k_out.stride(3),
+            positions.stride(0), positions.stride(1),
+            pos_out.stride(0), pos_out.stride(1),
+            BLOCK_D=BLOCK_D,
+        )
+        return k_out, v_out, pos_out
+    except Exception:
+        return fused_sink_rolling_cache_pytorch(k, v, positions, W, S)
+
+
+__all__ = [
+    "sliding_window_attention",
+    "sliding_window_triton",
+    "sliding_window_pytorch",
+    "fused_sink_rolling_cache_triton",
+    "fused_sink_rolling_cache_pytorch",
+]
