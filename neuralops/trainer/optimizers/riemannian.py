@@ -20,10 +20,6 @@ from neuralops.trainer.optimizers.stiefel import (
 class RiemannianStiefelOptimizer(Optimizer):
     """Riemannian Stiefel Manifold Optimizer with Retraction-based Updates."""
 
-
-# Alias for standard Riemannian Adam on Stiefel manifolds
-RiemannianAdam = RiemannianStiefelOptimizer
-
     def __init__(
         self,
         params: (
