@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Triton Grouped Query Attention (GQA) Head Expansion Kernel.
+Triton Grouped Query Attention (GQA) Head Expansion Kernel with Autograd Backward.
 
 Efficiently repeats KV heads along the head dimension for multi-query and grouped-query attention:
   (k, v) with num_kv_heads -> (k_expanded, v_expanded) with num_heads
@@ -81,14 +81,13 @@ def is_supported(
     return True
 
 
-def fwd(
+def _gqa_fwd_dispatch(
     k: torch.Tensor,
     v: torch.Tensor,
     num_kv_heads: int,
     num_heads: int,
     **kwargs: Any,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Forward entrypoint for GQA head expansion: (k_expanded, v_expanded)."""
     if num_kv_heads == num_heads:
         return k, v
 
@@ -158,9 +157,35 @@ def bwd(
     n_rep = num_heads // num_kv_heads
     B, _, N, D = grad_k.shape
 
-    gk = grad_k.view(B, num_kv_heads, n_rep, N, D).sum(dim=2)
-    gv = grad_v.view(B, num_kv_heads, n_rep, N, D).sum(dim=2)
+    gk = grad_k.view(B, num_kv_heads, n_rep, N, D).sum(dim=2) if grad_k is not None else None
+    gv = grad_v.view(B, num_kv_heads, n_rep, N, D).sum(dim=2) if grad_v is not None else None
     return gk, gv
+
+
+class _GQAAutograd(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int):
+        ctx.num_kv_heads = num_kv_heads
+        ctx.num_heads = num_heads
+        return _gqa_fwd_dispatch(k, v, num_kv_heads, num_heads)
+
+    @staticmethod
+    def backward(ctx, grad_k: torch.Tensor, grad_v: torch.Tensor):
+        gk, gv = bwd(grad_k, grad_v, ctx.num_kv_heads, ctx.num_heads)
+        return gk, gv, None, None
+
+
+def fwd(
+    k: torch.Tensor,
+    v: torch.Tensor,
+    num_kv_heads: int,
+    num_heads: int,
+    **kwargs: Any,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Forward entrypoint with full autograd backward support."""
+    if torch.is_grad_enabled() or k.requires_grad or v.requires_grad:
+        return _GQAAutograd.apply(k, v, num_kv_heads, num_heads)
+    return _gqa_fwd_dispatch(k, v, num_kv_heads, num_heads, **kwargs)
 
 
 __all__ = ['is_supported', 'fwd', 'bwd']
