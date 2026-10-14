@@ -527,8 +527,12 @@ class AASVDCompressor(BaseCompressor):
                 try:
                     cov_fp32 = cov.to(self.device, torch.float32)
                     cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
-                    eigvals, eigvecs = torch.linalg.eigh(cov_sym)
-                    eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
+                    # Trace-proportional Tikhonov damping lambda >= 0.05
+                    trace_val = torch.trace(cov_sym).clamp(min=1e-8)
+                    damping = 0.05 * (trace_val / in_feat)
+                    cov_damped = cov_sym + damping * torch.eye(in_feat, device=cov_sym.device, dtype=torch.float32)
+                    eigvals, eigvecs = torch.linalg.eigh(cov_damped)
+                    eps = 1e-5 * torch.max(eigvals).clamp(min=1e-12) + 1e-7
                     eigvals_reg = eigvals.clamp(min=eps)
                     cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
                     cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
@@ -596,6 +600,13 @@ class AASVDCompressor(BaseCompressor):
                     best_err = float(
                         torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
                     )
+
+            # Row-wise L2 norm scaling gain to preserve Frobenius energy and variance
+            W_recon = best_Ur @ best_Vr
+            orig_row_norms = torch.norm(W, dim=-1, keepdim=True)
+            comp_row_norms = torch.norm(W_recon, dim=-1, keepdim=True).clamp_min(1e-6)
+            row_gain = (orig_row_norms / comp_row_norms).clamp(0.2, 5.0)
+            best_Ur = best_Ur * row_gain
 
             dtype = weight_tensor.dtype
             device = weight_tensor.device

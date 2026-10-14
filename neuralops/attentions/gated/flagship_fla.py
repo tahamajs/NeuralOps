@@ -154,8 +154,8 @@ def gdn2_chunk_scan(
     return y, S.to(dtype)
 
 
-@ATTENTION_REGISTRY.register("gdn2_attention")
-@ATTENTION_REGISTRY.register("gdn2")
+@ATTENTION_REGISTRY.register("gdn2_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("gdn2", is_alias=True)
 class GDN2Attention(BaseAttention):
     """
     Gated DeltaNet 2 Attention with Decoupled Erase & Write Linear Recurrence.
@@ -288,9 +288,10 @@ def householder_reflection(
     return v - reflect
 
 
-@ATTENTION_REGISTRY.register("delta_product_attention")
-@ATTENTION_REGISTRY.register("delta_product")
-@ATTENTION_REGISTRY.register("path_attention")
+@ATTENTION_REGISTRY.register("delta_product_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("delta_product", is_alias=True)
+@ATTENTION_REGISTRY.register("deltaproduct", is_alias=True)
+@ATTENTION_REGISTRY.register("path_attention", is_alias=True)
 class DeltaProductAttention(BaseAttention):
     """
     Householder Product & PaTH Attention for NeuralOps.
@@ -435,10 +436,10 @@ class DeltaProductAttention(BaseAttention):
 # ==============================================================================
 # 3. Preconditioned Gated DeltaNet (PreconditionedGDNAttention / PGDNAttention)
 # ==============================================================================
-@ATTENTION_REGISTRY.register("preconditioned_gdn_attention")
-@ATTENTION_REGISTRY.register("preconditioned_gdn")
-@ATTENTION_REGISTRY.register("pgdn_attention")
-@ATTENTION_REGISTRY.register("pgdn")
+@ATTENTION_REGISTRY.register("preconditioned_gdn_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("preconditioned_gdn", is_alias=True)
+@ATTENTION_REGISTRY.register("pgdn_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("pgdn", is_alias=True)
 class PreconditionedGDNAttention(BaseAttention):
     """
     Curvature-Aware Preconditioned Gated DeltaNet.
