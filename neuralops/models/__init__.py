@@ -28,9 +28,12 @@ from neuralops.models.hub import (
     list_org_models,
 )
 
+from neuralops.models.cache import UnifiedHybridCache
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "UnifiedHybridCache",
     "NeuralOpsConfig",
     "NeuralOpsPreTrainedModel",
     "NeuralOpsModel",

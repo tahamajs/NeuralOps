@@ -969,7 +969,6 @@ LEKAV3Attention = RefinedLandmarkAttention
 # ===========================================================================
 # [FIX-10, FIX-11] Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_leka_v3")
 def inject_refined_landmark(
     layer: Any = None,
     model: Any = None,
