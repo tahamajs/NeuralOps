@@ -87,7 +87,7 @@ class DynamicConvAttention(BaseAttention):
         self.config = config
 
         # ---------- hidden_size ----------
-        h_size = embed_dim or kwargs.get("hidden_size") or kwargs.get("d_model")
+        h_size = embed_dim or kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model")
         if h_size is None and config is not None:
             h_size = (
                 _cfg_get(config, "hidden_size")
