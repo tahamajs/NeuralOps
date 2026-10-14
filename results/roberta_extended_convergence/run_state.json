@@ -1,0 +1,101 @@
+{
+  "run_id": "1a1f357d-02c0-4a54-9b3b-2bbf4d932f52",
+  "completed": [
+    [
+      "dynamic_conv_attention",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "hamming_attention",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "sink_attention",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "hgrn2_gated_outer",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "hgrn2_outer",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "mamba_block",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "selective_ssm",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "simple_ssm",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "svd_mamba",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "ttt_linear_attention",
+      "roberta-base",
+      "sst2",
+      64
+    ]
+  ],
+  "failed": [
+    [
+      "gated_delta_net",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "gated_deltanet_block",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "granite_hybrid",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "hgrn2_gated_deltanet",
+      "roberta-base",
+      "sst2",
+      64
+    ],
+    [
+      "mamba_svd_flash",
+      "roberta-base",
+      "sst2",
+      64
+    ]
+  ],
+  "skipped": [],
+  "total_runs": 1,
+  "status": "finished",
+  "start_time": 1791994160.0752347
+}

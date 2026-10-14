@@ -1,0 +1,58 @@
+# Benchmark Module Coverage Report
+
+- **Registry Total**: 202 modules (131 Attention + 72 Compressors)
+- **Tested Modules**: 27 (13.4% coverage)
+- **Remaining Unbenchmarked**: 175
+
+### Missing Modules
+- `a3_compressor`
+- `aa_svd_compressor`
+- `aatc_xkv_compressor`
+- `adaptive_ranks`
+- `adaptive_span_attention`
+- `adaptive_sparse_attention`
+- `adaptive_svd_attention`
+- `adasplash_attention`
+- `adasvd_compressor`
+- `admm_compressor`
+- `admm_pruner`
+- `aegis_spectron_fp8`
+- `aegis_v1`
+- `aegis_v2`
+- `aegis_v3`
+- `aegis_v4`
+- `aegis_v6`
+- `alibi`
+- `armor_pruner`
+- `ast_pruner`
+- `asvd_attention`
+- `bam_umoe`
+- `bonsai_pruner`
+- `cachenotes_compressor`
+- `chela_slay_attention`
+- `cluster_attention`
+- `come_compressor`
+- `compot_compressor`
+- `compressed_attention`
+- `compressed_mha_attention`
+- `coopq_quantizer`
+- `cosformer`
+- `cosformer_attention`
+- `cr_compressor`
+- `cross_attention`
+- `cur_compressor`
+- `cur_moe_compressor`
+- `decay_linear_attention`
+- `decay_linear_attn`
+- `delta_kv`
+- `direct_svd`
+- `dobi_svd`
+- `dynamic_conv_attention`
+- `dynamic_rank`
+- `eat`
+- `eat_attention`
+- `erc_svd`
+- `expert_choice_moe`
+- `factorised_matrix_state`
+- `faq_quantizer`
+- ... and 125 more

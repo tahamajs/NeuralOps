@@ -219,17 +219,34 @@ def chunked_delta_rule_scan(
     mask_c = mask_h.view(B, H, n_chunks, chunk_size) if mask_h is not None else None
 
     outputs = []
+    use_cp = torch.is_grad_enabled()
+    if use_cp:
+        import torch.utils.checkpoint as cp
+
     for c in range(n_chunks):
         mk = mask_c[:, :, c] if mask_c is not None else None
-        y_i, S = _delta_chunk_forward(
-            S,
-            q_c[:, :, c],
-            k_c[:, :, c],
-            v_c[:, :, c],
-            beta_c[:, :, c],
-            alpha_c[:, :, c],
-            mk,
-        )
+        if use_cp:
+            y_i, S = cp.checkpoint(
+                _delta_chunk_forward,
+                S,
+                q_c[:, :, c],
+                k_c[:, :, c],
+                v_c[:, :, c],
+                beta_c[:, :, c],
+                alpha_c[:, :, c],
+                mk,
+                use_reentrant=False,
+            )
+        else:
+            y_i, S = _delta_chunk_forward(
+                S,
+                q_c[:, :, c],
+                k_c[:, :, c],
+                v_c[:, :, c],
+                beta_c[:, :, c],
+                alpha_c[:, :, c],
+                mk,
+            )
         outputs.append(y_i)
 
     y = torch.cat(outputs, dim=2)

@@ -1,0 +1,167 @@
+{
+  "dynamic_conv_attention__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "e514d2b9-789f-4be0-b4e9-0f703aebb6e8",
+    "timestamp": "2026-10-14T16:10:00Z",
+    "status": "success",
+    "module": "dynamic_conv_attention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.52,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/dynamic_conv_attention/roberta-base/sst2/rank_64/e514d2b9-789f-4be0-b4e9-0f703aebb6e8.json"
+  },
+  "hamming_attention__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "869aed02-ea2a-4b66-ba55-b6af0611c4f4",
+    "timestamp": "2026-10-14T16:10:31Z",
+    "status": "success",
+    "module": "hamming_attention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.48,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/hamming_attention/roberta-base/sst2/rank_64/869aed02-ea2a-4b66-ba55-b6af0611c4f4.json"
+  },
+  "sink_attention__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "95be84fd-f8cf-4b4e-b3ed-85bc9541f89d",
+    "timestamp": "2026-10-14T16:11:04Z",
+    "status": "success",
+    "module": "sink_attention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.83,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/sink_attention/roberta-base/sst2/rank_64/95be84fd-f8cf-4b4e-b3ed-85bc9541f89d.json"
+  },
+  "gated_delta_net__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "fe959683-5e69-4adb-8c85-70594c889583",
+    "timestamp": "2026-10-14T16:11:20Z",
+    "status": "failed",
+    "module": "gated_delta_net",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/gated_delta_net/roberta-base/sst2/rank_64/fe959683-5e69-4adb-8c85-70594c889583.json"
+  },
+  "gated_deltanet_block__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "ba16c84b-797e-437e-9ed4-71d85a7f5a64",
+    "timestamp": "2026-10-14T16:11:40Z",
+    "status": "failed",
+    "module": "gated_deltanet_block",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/gated_deltanet_block/roberta-base/sst2/rank_64/ba16c84b-797e-437e-9ed4-71d85a7f5a64.json"
+  },
+  "granite_hybrid__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "24fe421a-ca9c-4a9d-a384-e343c2b9d8c0",
+    "timestamp": "2026-10-14T16:12:00Z",
+    "status": "failed",
+    "module": "granite_hybrid",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/granite_hybrid/roberta-base/sst2/rank_64/24fe421a-ca9c-4a9d-a384-e343c2b9d8c0.json"
+  },
+  "hgrn2_gated_deltanet__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "3f6a0b6d-b378-406d-903d-5db1d50b55a4",
+    "timestamp": "2026-10-14T16:12:17Z",
+    "status": "failed",
+    "module": "hgrn2_gated_deltanet",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/hgrn2_gated_deltanet/roberta-base/sst2/rank_64/3f6a0b6d-b378-406d-903d-5db1d50b55a4.json"
+  },
+  "hgrn2_gated_outer__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "6546aade-d51f-475d-b84f-9fbbd9399ef9",
+    "timestamp": "2026-10-14T16:13:42Z",
+    "status": "success",
+    "module": "hgrn2_gated_outer",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.81,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/hgrn2_gated_outer/roberta-base/sst2/rank_64/6546aade-d51f-475d-b84f-9fbbd9399ef9.json"
+  },
+  "hgrn2_outer__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "400f2a78-4a01-44de-9573-25fa889f6bc0",
+    "timestamp": "2026-10-14T16:15:09Z",
+    "status": "success",
+    "module": "hgrn2_outer",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.81,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/hgrn2_outer/roberta-base/sst2/rank_64/400f2a78-4a01-44de-9573-25fa889f6bc0.json"
+  },
+  "mamba_block__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "9228f21e-67ed-480d-a8a9-a783d6a873c3",
+    "timestamp": "2026-10-14T16:19:29Z",
+    "status": "success",
+    "module": "mamba_block",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.52,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/mamba_block/roberta-base/sst2/rank_64/9228f21e-67ed-480d-a8a9-a783d6a873c3.json"
+  },
+  "mamba_svd_flash__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "411e0a50-99e5-427c-9f28-4ad08dc6e85d",
+    "timestamp": "2026-10-14T16:19:44Z",
+    "status": "failed",
+    "module": "mamba_svd_flash",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/mamba_svd_flash/roberta-base/sst2/rank_64/411e0a50-99e5-427c-9f28-4ad08dc6e85d.json"
+  },
+  "selective_ssm__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "e8710720-68e9-4b8c-a82f-d2e83e33c30f",
+    "timestamp": "2026-10-14T16:23:54Z",
+    "status": "success",
+    "module": "selective_ssm",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.52,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/selective_ssm/roberta-base/sst2/rank_64/e8710720-68e9-4b8c-a82f-d2e83e33c30f.json"
+  },
+  "simple_ssm__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "fb36ce7b-42fd-424f-9fb1-15bcba6302da",
+    "timestamp": "2026-10-14T16:28:19Z",
+    "status": "success",
+    "module": "simple_ssm",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.52,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/simple_ssm/roberta-base/sst2/rank_64/fb36ce7b-42fd-424f-9fb1-15bcba6302da.json"
+  },
+  "svd_mamba__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "8414e0b8-4e87-41db-bbc4-a178229116f5",
+    "timestamp": "2026-10-14T16:29:45Z",
+    "status": "success",
+    "module": "svd_mamba",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.48,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/svd_mamba/roberta-base/sst2/rank_64/8414e0b8-4e87-41db-bbc4-a178229116f5.json"
+  },
+  "ttt_linear_attention__roberta-base__sst2__rank64__3790bc8f5e25": {
+    "run_id": "d3570994-2629-42f0-802b-525fd7b57717",
+    "timestamp": "2026-10-14T16:31:18Z",
+    "status": "success",
+    "module": "ttt_linear_attention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.52,
+    "result_path": "results/roberta_extended_convergence/05_glue_finetuning/ttt_linear_attention/roberta-base/sst2/rank_64/d3570994-2629-42f0-802b-525fd7b57717.json"
+  }
+}
