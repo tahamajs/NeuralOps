@@ -79,6 +79,29 @@ class SurgeryManifest:
             metadata=data.get("metadata", {}),
         )
 
+    @classmethod
+    def from_model(
+        cls,
+        model: nn.Module,
+        attention_type: Optional[str] = None,
+        rank: Optional[int] = None,
+        **kwargs: Any,
+    ) -> SurgeryManifest:
+        manifest = build_manifest_from_model(model)
+        if attention_type is not None:
+            manifest.metadata["target_attention"] = attention_type
+        if rank is not None:
+            manifest.metadata["rank"] = rank
+        manifest.metadata.update(kwargs)
+        return manifest
+
+    def save_pretrained(self, save_directory: Union[str, Path]) -> None:
+        save_path = Path(save_directory)
+        save_path.mkdir(parents=True, exist_ok=True)
+        manifest_file = save_path / "surgery_manifest.json"
+        with open(manifest_file, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
 
 def record_attention_surgery(
     model: nn.Module,

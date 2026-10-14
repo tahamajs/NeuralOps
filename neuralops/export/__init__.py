@@ -10,6 +10,11 @@ from neuralops.export.exporter import (
     AOTICompiledModelRunner,
 )
 from neuralops.export.serving import VLLMAdapter, TGIAdapter
+from neuralops.export.surgery_manifest import (
+    SurgeryManifest,
+    replay_surgery_manifest,
+    merge_for_inference,
+)
 
 __all__ = [
     "export_model",
@@ -19,5 +24,8 @@ __all__ = [
     "AOTICompiledModelRunner",
     "VLLMAdapter",
     "TGIAdapter",
+    "SurgeryManifest",
+    "replay_surgery_manifest",
+    "merge_for_inference",
 ]
 
