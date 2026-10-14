@@ -52,7 +52,8 @@ class SpectraformerAttention(BaseAttention):
         comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config")
 
         self.hidden_size = (
-            kwargs.get("hidden_size")
+            kwargs.get("dim")
+            or kwargs.get("hidden_size")
             or _cfg_get(config, "hidden_size", None)
             or _cfg_get(config, "d_model", None)
         )
