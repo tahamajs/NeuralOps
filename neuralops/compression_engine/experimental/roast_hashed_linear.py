@@ -91,6 +91,7 @@ class ROASTLinear(nn.Module):
 
         self._cached_weight: torch.Tensor | None = None
         self._cache_stale: bool = True
+        self.register_buffer("row_scales", torch.ones(out_features, device=device, dtype=dtype), persistent=True)
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
@@ -120,6 +121,8 @@ class ROASTLinear(nn.Module):
             dim=1,
         )
         W_res = W_full[: self.out_features, : self.in_features]
+        if hasattr(self, "row_scales") and self.row_scales is not None:
+            W_res = W_res * self.row_scales.unsqueeze(1).to(device=W_res.device, dtype=W_res.dtype)
         if not self.training:
             self._cached_weight = W_res
             self._cache_stale = False
@@ -229,6 +232,14 @@ class ROASTLinear(nn.Module):
                 device=roast.weight_table.device, dtype=roast.weight_table.dtype
             )
             roast.weight_table.data.scatter_(0, flat_idx, flat_means)
+
+            # Row-wise L2 norm restoration g_i = ||W_orig[i, :]||_2 / (||W_hat[i, :]||_2 + 1e-6)
+            W_recon_unscaled = roast.weight.detach().float()
+            orig_row_norms = torch.norm(W, p=2, dim=1)
+            recon_row_norms = torch.norm(W_recon_unscaled, p=2, dim=1).clamp(min=1e-6)
+            g = orig_row_norms / recon_row_norms
+            roast.row_scales.copy_(g.to(dtype=roast.row_scales.dtype, device=roast.row_scales.device))
+            roast._invalidate_cache()
 
         return roast
 
