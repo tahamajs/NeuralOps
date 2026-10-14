@@ -613,7 +613,7 @@ class TokenCompressedAttention(BaseAttention):
                 attn_combined = fused_token_importance_topk_triton(
                     x, q, k, is_decoder=self.is_decoder, head_dim=self.head_dim
                 )
-                attn_importance = (attn_combined - energy).mean(dim=0, keepdim=True).expand(B, -1)
+                attn_importance = attn_combined - energy
                 attn_importance = attn_importance / (
                     attn_importance.max(dim=-1, keepdim=True).values + 1e-6
                 )
