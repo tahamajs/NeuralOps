@@ -110,6 +110,39 @@ def export_model(
             except Exception as e:
                 logger.debug("Could not save HF config: %s", e)
 
+        # 3. Inject auto_map and self-contained modeling files for HuggingFace Hub trust_remote_code=True
+        cfg_file = out_path / "config.json"
+        if cfg_file.exists():
+            try:
+                with open(cfg_file, "r", encoding="utf-8") as f:
+                    c_dict = json.load(f)
+                if "auto_map" not in c_dict:
+                    c_dict["auto_map"] = {
+                        "AutoConfig": "configuration_neuralops.NeuralOpsConfig",
+                        "AutoModel": "modeling_neuralops.NeuralOpsModel",
+                        "AutoModelForCausalLM": "modeling_neuralops.NeuralOpsForCausalLM",
+                    }
+                    with open(cfg_file, "w", encoding="utf-8") as f:
+                        json.dump(c_dict, f, indent=2)
+
+                # Copy self-contained modeling scripts
+                import shutil
+                import neuralops.models.configuration as conf_mod
+                import neuralops.models.modeling as model_mod
+                import neuralops.models.modeling_block as block_mod
+                import neuralops.models.modeling_norm as norm_mod
+                import neuralops.models.modeling_mlp as mlp_mod
+                import neuralops.models.hybrid_spec as spec_mod
+
+                shutil.copy(conf_mod.__file__, out_path / "configuration_neuralops.py")
+                shutil.copy(model_mod.__file__, out_path / "modeling_neuralops.py")
+                shutil.copy(block_mod.__file__, out_path / "modeling_block.py")
+                shutil.copy(norm_mod.__file__, out_path / "modeling_norm.py")
+                shutil.copy(mlp_mod.__file__, out_path / "modeling_mlp.py")
+                shutil.copy(spec_mod.__file__, out_path / "hybrid_spec.py")
+            except Exception as e:
+                logger.debug("Could not inject auto_map or copy self-contained files: %s", e)
+
         logger.info("Exported model to safetensors directory: %s", out_path)
         return out_path
 
