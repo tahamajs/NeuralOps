@@ -20,7 +20,14 @@ from neuralops.trainer import PiSSALinear
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-@pytest.mark.parametrize("attn_type", ["linear_attention", "cosformer", "gla_attention"])
+@pytest.mark.parametrize("attn_type", [
+    "linear_attention",
+    "cosformer",
+    "gla_attention",
+    "mamba_block",
+    "hgrn2_gated_outer",
+    "gated_delta_net",
+])
 def test_9_1_export_model_and_config(attn_type):
     cfg = NeuralOpsConfig(
         vocab_size=128,
@@ -45,7 +52,8 @@ def test_9_1_export_model_and_config(attn_type):
         torch.testing.assert_close(out_orig, out_rel)
 
 
-@pytest.mark.parametrize("rank", [4, 8, 16])
+@pytest.mark.parametrize("rank", [2, 4, 8, 16])
+
 def test_9_2_merge_for_inference_algebraic_identity(rank):
     base_linear = nn.Linear(32, 32).to(DEVICE)
     pissa = PiSSALinear(base_linear, rank=rank)

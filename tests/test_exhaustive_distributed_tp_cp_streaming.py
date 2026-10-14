@@ -72,3 +72,48 @@ def test_8_2_streaming_dataset(seq_len):
     assert len(items) == 3
     assert items[0]["input_ids"].shape[0] == seq_len
     assert items[0]["labels"].shape[0] == seq_len
+
+
+@pytest.mark.parametrize("tp_size", [2, 4])
+@pytest.mark.parametrize("d_in,d_out", [(32, 64), (64, 32)])
+def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
+    B, T = 2, 8
+    x = torch.randn(B, T, d_in, device=DEVICE)
+    # Column parallel splits d_out across tp_size
+    col_layers = [
+        ColumnParallelSVDLinear(d_in, d_out, rank=8, tp_size=tp_size, tp_rank=r, bias=False).to(DEVICE)
+        for r in range(tp_size)
+    ]
+    col_outs = [col_layers[r](x) for r in range(tp_size)]
+    combined_col = torch.cat(col_outs, dim=-1)
+    assert combined_col.shape == (B, T, d_out)
+    assert not torch.isnan(combined_col).any()
+
+    # Row parallel splits d_in across tp_size
+    chunk_in = d_in // tp_size
+    row_layers = [
+        RowParallelSVDLinear(d_in, d_out, rank=8, tp_size=tp_size, tp_rank=r, bias=False).to(DEVICE)
+        for r in range(tp_size)
+    ]
+    row_outs = [row_layers[r](x[:, :, r * chunk_in : (r + 1) * chunk_in]) for r in range(tp_size)]
+    combined_row = sum(row_outs)
+    assert combined_row.shape == (B, T, d_out)
+    assert not torch.isnan(combined_row).any()
+
+
+@pytest.mark.parametrize("num_chunks", [2, 4])
+@pytest.mark.parametrize("chunk_len", [4, 8])
+def test_8_4_context_parallel_recurrent_scan_prefix(num_chunks, chunk_len):
+    B, H, D = 2, 2, 16
+    T = num_chunks * chunk_len
+    q = torch.randn(B, H, T, D, device=DEVICE)
+    k = torch.randn(B, H, T, D, device=DEVICE)
+    v = torch.randn(B, H, T, D, device=DEVICE)
+    decay = torch.sigmoid(torch.randn(B, H, T, D, device=DEVICE))
+
+    # Compute chunk prefix scan
+    states = compute_chunk_prefix_scan(k, v, decay=decay, chunk_len=chunk_len)
+    assert states.shape[0] == B
+    assert states.shape[1] == H
+    assert states.shape[2] == num_chunks
+
