@@ -520,6 +520,106 @@ if HAS_TRITON:
         tl.store(out_ptr + out_offset, acc.to(out_ptr.dtype.element_ty), mask=mask_d)
 
 
+    @triton.jit
+    def _fused_dynconv1d_bwd_kernel(
+        v_ptr,
+        w_ptr,
+        dout_ptr,
+        dv_ptr,
+        dw_ptr,
+        B,
+        H,
+        N,
+        d,
+        K,
+        stride_vb, stride_vh, stride_vt, stride_vd,
+        stride_wb, stride_wh, stride_wn, stride_wk,
+        stride_dob, stride_doh, stride_don, stride_dod,
+        stride_dvb, stride_dvh, stride_dvt, stride_dvd,
+        stride_dwb, stride_dwh, stride_dwn, stride_dwk,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_n = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+
+        b = pid_bh // H
+        h = pid_bh % H
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < d
+
+        # Load dout for timestep pid_n
+        dout_off = b * stride_dob + h * stride_doh + pid_n * stride_don + offs_d * stride_dod
+        dout_val = tl.load(dout_ptr + dout_off, mask=mask_d, other=0.0).to(tl.float32)
+
+        for k in range(0, K):
+            # dw[b, h, n, k] = sum_d(dout[b, h, n, d] * v[b, h, n + k, d])
+            v_off = b * stride_vb + h * stride_vh + (pid_n + k) * stride_vt + offs_d * stride_vd
+            v_val = tl.load(v_ptr + v_off, mask=mask_d, other=0.0).to(tl.float32)
+            dw_val = tl.sum(dout_val * v_val)
+
+            w_off = b * stride_wb + h * stride_wh + pid_n * stride_wn + k * stride_wk
+            w_val = tl.load(w_ptr + w_off)
+
+            dw_off = b * stride_dwb + h * stride_dwh + pid_n * stride_dwn + k * stride_dwk
+            tl.store(dw_ptr + dw_off, dw_val.to(dw_ptr.dtype.element_ty))
+
+            # dv[b, h, n + k, d] += dout[b, h, n, d] * w[b, h, n, k]
+            dv_off = b * stride_dvb + h * stride_dvh + (pid_n + k) * stride_dvt + offs_d * stride_dvd
+            dv_val = dout_val * w_val
+            tl.atomic_add(dv_ptr + dv_off, dv_val.to(dv_ptr.dtype.element_ty), mask=mask_d)
+
+
+class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, v_full: torch.Tensor, dyn_w: torch.Tensor) -> torch.Tensor:
+        B, H, T, d = v_full.shape
+        N = dyn_w.shape[2]
+        K = dyn_w.shape[3]
+        device = v_full.device
+
+        out = torch.empty((B, H, N, d), dtype=v_full.dtype, device=device)
+        BLOCK_D = triton.next_power_of_2(d)
+        grid = (N, B * H)
+
+        _fused_dynconv1d_fwd_kernel[grid](
+            v_full, dyn_w, out,
+            B, H, N, d, K,
+            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
+            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            BLOCK_D=BLOCK_D,
+        )
+        ctx.save_for_backward(v_full, dyn_w)
+        ctx.BLOCK_D = BLOCK_D
+        return out
+
+    @staticmethod
+    def backward(ctx, dout: torch.Tensor):
+        v_full, dyn_w = ctx.saved_tensors
+        B, H, T, d = v_full.shape
+        N = dyn_w.shape[2]
+        K = dyn_w.shape[3]
+
+        dv = torch.zeros_like(v_full)
+        dw = torch.empty_like(dyn_w)
+        BLOCK_D = ctx.BLOCK_D
+        grid = (N, B * H)
+
+        dout_c = dout.contiguous()
+        _fused_dynconv1d_bwd_kernel[grid](
+            v_full, dyn_w, dout_c, dv, dw,
+            B, H, N, d, K,
+            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
+            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
+            dout_c.stride(0), dout_c.stride(1), dout_c.stride(2), dout_c.stride(3),
+            dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
+            dw.stride(0), dw.stride(1), dw.stride(2), dw.stride(3),
+            BLOCK_D=BLOCK_D,
+        )
+        return dv, dw
+
+
 def fused_dynamic_conv1d_pytorch(
     v_full: torch.Tensor,
     dyn_w: torch.Tensor,
@@ -544,28 +644,11 @@ def fused_dynamic_conv1d_triton(
     dyn_w: torch.Tensor,
 ) -> torch.Tensor:
     """Fused Dynamic Causal Depthwise Conv1D kernel executed entirely in GPU SRAM."""
-    if not (HAS_TRITON and v_full.is_cuda) or v_full.requires_grad or dyn_w.requires_grad:
+    if not (HAS_TRITON and v_full.is_cuda):
         return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
 
-    B, H, T, d = v_full.shape
-    N = dyn_w.shape[2]
-    K = dyn_w.shape[3]
-    device = v_full.device
-
-    out = torch.empty((B, H, N, d), dtype=v_full.dtype, device=device)
-    BLOCK_D = triton.next_power_of_2(d)
-    grid = (N, B * H)
-
     try:
-        _fused_dynconv1d_fwd_kernel[grid](
-            v_full, dyn_w, out,
-            B, H, N, d, K,
-            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
-            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-            BLOCK_D=BLOCK_D,
-        )
-        return out
+        return _FusedDynamicConv1DTritonFn.apply(v_full.contiguous(), dyn_w.contiguous())
     except Exception:
         return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
 
