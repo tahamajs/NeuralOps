@@ -342,8 +342,8 @@ def fused_topk_sparse_route_and_combine_triton(
 
     b0 = branch_outputs[0]
     B, T, D = b0.shape
-
-    if b0.is_cuda and HAS_TRITON and _cuda_ok(b0):
+    suitable, _ = check_triton_suitability(b0, "sparse_attn")
+    if b0.is_cuda and HAS_TRITON and suitable:
         try:
             stacked_branches = torch.stack(branch_outputs, dim=0).contiguous()  # [M, B, T, D]
             w_c = router_weights.expand(B, T, M).contiguous()
