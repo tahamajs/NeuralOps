@@ -864,7 +864,11 @@ class TritonSVDLinearAttention(BaseAttention):
 
         # Dimensionality extraction
         self.embed_dim = (
-            embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
+            embed_dim
+            or kwargs.get("dim")
+            or kwargs.get("d_model")
+            or kwargs.get("hidden_size")
+            or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
         )
         self.num_heads = (
             num_heads
@@ -1129,8 +1133,7 @@ class TritonSVDLinearAttention(BaseAttention):
         out = self.out_proj(out)
 
         # Numerical safety guard against unbounded linear attention residual accumulation in FP16
-        if out.dtype == torch.float16:
-            out = torch.clamp(out, min=-65000.0, max=65000.0)
+        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(hidden_states.dtype)
 
         return out, None
 
