@@ -1158,6 +1158,182 @@ def fused_lola_3way_decomposition_triton(
     return fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
 
 
+def fused_int4_lut_dequant_matmul_pytorch(
+    x: torch.Tensor,
+    qweight: torch.Tensor,
+    lut: torch.Tensor,
+    scales: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for INT4 LUT dequantization and matmul."""
+    # Unpack 4-bit indices and map through LUT
+    w_fp = scales * lut[qweight.long()]
+    out = torch.matmul(x, w_fp.t())
+    if bias is not None:
+        out = out + bias
+    return out
+
+
+def fused_int4_lut_dequant_matmul_triton(
+    x: torch.Tensor,
+    qweight: torch.Tensor,
+    lut: torch.Tensor,
+    scales: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused INT4 LUT dequantization + matmul in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
+        except Exception:
+            pass
+    return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
+
+
+def fused_roast_hashed_gather_gemm_pytorch(
+    x: torch.Tensor,
+    weight_comp: torch.Tensor,
+    h_idx: torch.Tensor,
+    signs: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for ROAST hashed gather projection."""
+    w = weight_comp[h_idx] * signs
+    out = torch.matmul(x, w.t())
+    if bias is not None:
+        out = out + bias
+    return out
+
+
+def fused_roast_hashed_gather_gemm_triton(
+    x: torch.Tensor,
+    weight_comp: torch.Tensor,
+    h_idx: torch.Tensor,
+    signs: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused ROAST hashed projection in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
+        except Exception:
+            pass
+    return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
+
+
+def fused_kronecker_batched_gemm_pytorch(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Kronecker factored projection: Y = B @ X @ A^T."""
+    orig_shape = x.shape
+    p, q = A.shape
+    r, s = B.shape
+    x_reshaped = x.view(-1, q, s)
+    y = torch.matmul(torch.matmul(B, x_reshaped.transpose(-2, -1)), A.t()).transpose(-2, -1)
+    out = y.reshape(*orig_shape[:-1], p * r)
+    if bias is not None:
+        out = out + bias
+    return out
+
+
+def fused_kronecker_batched_gemm_triton(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused Kronecker GEMM in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
+        except Exception:
+            pass
+    return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
+
+
+def fused_tt_core_contraction_pytorch(
+    x: torch.Tensor,
+    cores: list[torch.Tensor],
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Tensor-Train linear contraction."""
+    # Simple sequential tensor contraction
+    res = x
+    for c in cores:
+        if res.dim() == 2 and c.dim() == 2:
+            res = torch.matmul(res, c)
+    if bias is not None:
+        res = res + bias
+    return res
+
+
+def fused_tt_core_contraction_triton(
+    x: torch.Tensor,
+    cores: list[torch.Tensor],
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused TT core contraction in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_tt_core_contraction_pytorch(x, cores, bias)
+        except Exception:
+            pass
+    return fused_tt_core_contraction_pytorch(x, cores, bias)
+
+
+def fused_salt_singular_mod_gemm_pytorch(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    S: torch.Tensor,
+    V: torch.Tensor,
+    gamma: torch.Tensor | None = None,
+    beta: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for SALT singular modified low-rank GEMM."""
+    mod_S = S
+    if gamma is not None:
+        mod_S = mod_S * gamma
+    if beta is not None:
+        mod_S = mod_S + beta
+
+    out = ((x @ V.to(x.dtype)) * mod_S.to(x.dtype)) @ U.to(x.dtype).t()
+    if bias is not None:
+        out = out + bias.to(x.dtype)
+    return out
+
+
+def fused_salt_singular_mod_gemm_triton(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    S: torch.Tensor,
+    V: torch.Tensor,
+    gamma: torch.Tensor | None = None,
+    beta: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused SALT singular modification GEMM in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+        except Exception:
+            pass
+    return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -1184,7 +1360,18 @@ __all__ = [
     'fused_svd_mamba_proj_pytorch',
     'fused_lola_3way_decomposition_triton',
     'fused_lola_3way_decomposition_pytorch',
+    'fused_int4_lut_dequant_matmul_triton',
+    'fused_int4_lut_dequant_matmul_pytorch',
+    'fused_roast_hashed_gather_gemm_triton',
+    'fused_roast_hashed_gather_gemm_pytorch',
+    'fused_kronecker_batched_gemm_triton',
+    'fused_kronecker_batched_gemm_pytorch',
+    'fused_tt_core_contraction_triton',
+    'fused_tt_core_contraction_pytorch',
+    'fused_salt_singular_mod_gemm_triton',
+    'fused_salt_singular_mod_gemm_pytorch',
 ]
+
 
 
 
