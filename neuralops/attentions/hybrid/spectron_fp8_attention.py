@@ -38,10 +38,14 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
 
-    # Fast hardware / native FP8 path on PyTorch 2.1+ CUDA
+    # Fast hardware / native FP8 path on PyTorch 2.1+ CUDA.
+    # CRITICAL: Always use per-token (per-row) scaling in the last dimension.
+    # Using global amax() would couple future token activations to past token
+    # quantization, causing causal leakage in decoder/causal contexts.
     if x.is_cuda and hasattr(torch, "float8_e4m3fn") and format.lower() in ("e4m3", "float8_e4m3fn"):
         x_f = x.float()
-        amax = (x_f.abs().amax(dim=-1, keepdim=True) if per_channel else x_f.abs().amax()).clamp(min=1e-12)
+        # Per-token scale: amax over the last (channel) dimension only — each token is independent
+        amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
         scale = 448.0 / amax
         x_scaled = (x_f * scale).clamp(min=-448.0, max=448.0)
         x_dequant = (x_scaled.to(torch.float8_e4m3fn).to(orig_dtype) / scale.to(orig_dtype))
@@ -57,7 +61,8 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     else:
         max_val, mantissa_bits, torch_dtype = 57344.0, 2, getattr(torch, "float8_e5m2", None)
 
-    amax = (x_f.abs().amax(dim=-1, keepdim=True) if per_channel else x_f.abs().amax()).clamp(min=1e-12)
+    amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)  # Per-token scale for causal correctness
+
     scale = max_val / amax
     x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
     x_dequant = None
