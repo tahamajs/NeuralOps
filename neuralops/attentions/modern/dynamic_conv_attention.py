@@ -266,6 +266,8 @@ class DynamicConvAttention(BaseAttention):
                     v_bias = b[2 * split : 3 * split].contiguous()
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o_weight, o_bias = _unpack_weight_bias(src.c_proj)
+                if o_weight is not None and o_weight.ndim == 2:
+                    o_weight = o_weight.t().contiguous()
 
         # BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "value"):
