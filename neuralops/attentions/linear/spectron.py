@@ -787,55 +787,66 @@ class SpectronAttention(BaseAttention):
         # SP-FIX-04: correct causal condition
         is_causal = self.is_decoder and not is_cross and N > 1
 
-        # SP-FIX-05: removed padding/truncation hack
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-
-        if is_causal:
-            causal = (
-                torch.triu(
-                    torch.full(
-                        (N, kv_len),
-                        float("-inf"),
-                        device=scores.device,
-                        dtype=torch.float32,
-                    ),
-                    diagonal=1 + max(0, kv_len - N),
-                )
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
-            scores = scores + causal
-
+        context = None
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-            elif eff_mask.dim() == 3:
-                scores = scores + eff_mask.unsqueeze(1).float()
-            elif eff_mask.dim() == 4:
-                scores = scores + eff_mask.float()
+        if eff_mask is None and head_mask is None and not output_attentions:
+            try:
+                context = F.scaled_dot_product_attention(
+                    Q, K, V, is_causal=is_causal, dropout_p=self.dropout.p if self.training else 0.0
+                )
+                context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+            except Exception:
+                context = None
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights)
+        if context is None:
+            # SP-FIX-05: fallback dense calculation
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        if head_mask is not None:
-            hm = head_mask.to(attn_weights.dtype)
-            if hm.dim() == 1:
-                hm = hm.view(1, -1, 1, 1)
-            elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
-            elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
-            attn_weights = attn_weights * hm
+            if is_causal:
+                causal = (
+                    torch.triu(
+                        torch.full(
+                            (N, kv_len),
+                            float("-inf"),
+                            device=scores.device,
+                            dtype=torch.float32,
+                        ),
+                        diagonal=1 + max(0, kv_len - N),
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
+                scores = scores + causal
 
-        context = (
-            torch.matmul(attn_weights, V)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, N, self.all_head_size)
-        )
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                elif eff_mask.dim() == 3:
+                    scores = scores + eff_mask.unsqueeze(1).float()
+                elif eff_mask.dim() == 4:
+                    scores = scores + eff_mask.float()
+
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+            attn_weights = self.dropout(attn_weights)
+
+            if head_mask is not None:
+                hm = head_mask.to(attn_weights.dtype)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(1)
+                attn_weights = attn_weights * hm
+
+            context = (
+                torch.matmul(attn_weights, V)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, N, self.all_head_size)
+            )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
