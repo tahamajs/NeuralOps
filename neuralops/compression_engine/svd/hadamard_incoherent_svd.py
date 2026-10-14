@@ -12,7 +12,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.core.compression_pipeline import BaseCompressor
+from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
 
