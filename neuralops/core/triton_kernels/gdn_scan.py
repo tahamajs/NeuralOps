@@ -684,8 +684,8 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     if not needs_grad:
         return _gdn_fwd_inference(q, k, v, beta, alpha)
 
-    # For long sequences (L > 256), use chunk-level checkpointed scan to bound peak VRAM
-    if L > 256:
+    # For extremely long sequences (L > 4096), use chunk-level checkpointed scan to bound peak VRAM
+    if L > 4096:
         return _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64)
 
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
