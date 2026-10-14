@@ -131,8 +131,9 @@ class SeerGating(nn.Module):
         Q_pooled = Q.mean(dim=2)
         K_pooled = K.mean(dim=2)
 
-        q_gate = self.q_pool(Q_pooled).view(B, H, 1, gr)
-        k_gate = self.k_pool(K_pooled).view(B, H, gr, 1)
+        p_dtype = self.q_pool[0].weight.dtype
+        q_gate = self.q_pool(Q_pooled.to(p_dtype)).view(B, H, 1, gr)
+        k_gate = self.k_pool(K_pooled.to(p_dtype)).view(B, H, gr, 1)
 
         gate_score = torch.sigmoid(
             torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature
