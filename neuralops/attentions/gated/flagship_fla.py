@@ -232,6 +232,27 @@ class GDN2Attention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
+        # Fast path via native FLA chunk_gdn2 on CUDA when head_dim <= 64 and no cache
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from fla.ops.gdn2 import chunk_gdn2
+                # FLA chunk_gdn2 requires [B, T, H, K] layout
+                # g is log-decay gate [B, T, H, K], b is erase gate [B, T, H, K], w is write gate [B, T, H, K]
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                # Expand gates along head_dim
+                g_fl = torch.log(alpha.float().clamp(min=1e-4, max=1.0)).transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                b_fl = beta_erase.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                w_fl = beta_write.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                res = chunk_gdn2(q_fl, k_fl, v_fl, g_fl, b_fl, w_fl)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
+                y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
+                return self.out_proj(y_gated), None
+            except Exception:
+                pass
+
         y, next_state = gdn2_chunk_scan(
             q, k, v, alpha, beta_erase, beta_write,
             initial_state=init_state,
@@ -315,7 +336,7 @@ class DeltaProductAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         u = self.u_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
-        beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2).unsqueeze(-1)
+        beta_raw = torch.sigmoid(self.beta_proj(hidden_states))  # [B, L, H]
 
         init_state = None
         if past_key_value is not None:
@@ -324,6 +345,24 @@ class DeltaProductAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
+        # Fast path via native FLA parallel_path_attn on CUDA when head_dim <= 64 and no cache
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from fla.ops import parallel_path_attn
+                # FLA parallel_path_attn expects [B, T, H, K], w and beta in float32
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                u_fl = u.transpose(1, 2).contiguous().float()
+                beta_fl = beta_raw.float().contiguous()
+                res = parallel_path_attn(q_fl, k_fl, v_fl, u_fl, beta_fl)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
+                return self.out_proj(y), None
+            except Exception:
+                pass
+
+        beta = beta_raw.transpose(1, 2).unsqueeze(-1)
         S = (
             torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
             if init_state is None
