@@ -26,8 +26,6 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.attentions  # noqa: F401 - ensure registrations
-import neuralops.compression_engine  # noqa: F401 - ensure registrations
 from neuralops.core.attention_utils import inject_attention
 from neuralops.export.exporter import export_model as _export_model, load_model as _load_model, load_exported_model
 

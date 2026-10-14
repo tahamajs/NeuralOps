@@ -220,93 +220,58 @@ _LAZY_EXPORTS = {
     "triton_dispatch": ("neuralops.core.triton_kernels", "triton_dispatch"),
 }
 
-__all__: list[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))
+# Direct User-Facing Functional API and Subpackage Exports via PEP 562 Lazy Loading
+_API_EXPORTS = {
+    "load_model": "neuralops.api",
+    "replace_attention": "neuralops.api",
+    "transplant_attention": "neuralops.api",
+    "compress": "neuralops.api",
+    "export_model": "neuralops.api",
+    "load_exported_model": "neuralops.api",
+    "collect_surgery_distillation_loss": "neuralops.api",
+    "set_surgery_alpha": "neuralops.api",
+    "set_surgery_stage": "neuralops.api",
+    "finalize_surgery": "neuralops.api",
+    "list_attentions": "neuralops.api",
+    "list_compressors": "neuralops.api",
+    "get_attention_class": "neuralops.api",
+    "get_compressor_class": "neuralops.api",
+    "list_families": "neuralops.api",
+    "train": "neuralops.api",
+    "distill": "neuralops.api",
+    "evaluate": "neuralops.api",
+    "benchmark": "neuralops.api",
+    "benchmark_all": "neuralops.api",
+    "info": "neuralops.api",
+    "available_backends": "neuralops.api",
+    "has_triton": "neuralops.api",
+    "validate": "neuralops.api",
+    "get_version": "neuralops.api",
+    # Specific attention and optimizer classes
+    "GLAttention": "neuralops.attentions.linear.gla_attention",
+    "CosformerAttention": "neuralops.attentions.linear.cosformer",
+    "SVDLinearAttention": "neuralops.attentions.svd.svd_linear_attention",
+    "DecayLinearAttention": "neuralops.attentions.gated.decay_linear_attention",
+    "Muon": "neuralops.trainer.optimizers.muon",
+    "StiefelOptimizer": "neuralops.trainer.optimizers",
+    "RiemannianAdam": "neuralops.trainer.optimizers",
+    "HybridAttentionSpec": "neuralops.models.hybrid_spec",
+    "probe_optimal_batch_size": "neuralops.evaluation.eval_pipeline",
+    "NeuralOpsError": "neuralops.core.exceptions",
+    "ConfigError": "neuralops.core.exceptions",
+    "WeightCopyError": "neuralops.core.exceptions",
+    "BackendError": "neuralops.core.exceptions",
+    "NumericalError": "neuralops.core.exceptions",
+}
 
-
-def __getattr__(name: str) -> Any:
-    """Execute __getattr__ operation."""
-    if name in _LAZY_EXPORTS:
-        module_path, attr_name = _LAZY_EXPORTS[name]
-        module = importlib.import_module(module_path)
-        val = getattr(module, attr_name)
-        globals()[name] = val  # cache attribute on module
-        return val
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
-
-def __dir__() -> list[str]:
-    """Execute __dir__ operation."""
-    return sorted(list(globals().keys()) + __all__)
-
-# Auto-wired package members
-from neuralops import analysis
-from neuralops import attentions
-from neuralops import benchmarks
-from neuralops import cli
-from neuralops import compression_engine
-from neuralops import config
-from neuralops import core
-from neuralops import data
-from neuralops import evaluation
-from neuralops import experiment_logging
-from neuralops import experiment_utils
-from neuralops import inference
-from neuralops import integrations
-from neuralops import models
-from neuralops import results_saver
-from neuralops import runners
-from neuralops import tests
-from neuralops import tracking
-from neuralops import trainer
-from neuralops import training
-from neuralops import utils
-try:
-    from neuralops import __main__
-except ImportError:
-    pass
-from neuralops import main
-
-# Direct User-Facing Functional API
-from neuralops.api import (
-    load_model,
-    replace_attention,
-    transplant_attention,
-    compress,
-    export_model,
-    load_exported_model,
-    collect_surgery_distillation_loss,
-    set_surgery_alpha,
-    set_surgery_stage,
-    finalize_surgery,
-    list_attentions,
-    list_compressors,
-    get_attention_class,
-    get_compressor_class,
-    list_families,
-    train,
-    distill,
-    evaluate,
-    benchmark,
-    benchmark_all,
-    info,
-    available_backends,
-    has_triton,
-    validate,
-    get_version,
-)
-
-from neuralops.attentions.linear.gla_attention import GLAttention
-from neuralops.attentions.linear.cosformer import CosformerAttention
-from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
-from neuralops.attentions.gated.decay_linear_attention import DecayLinearAttention
-from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.exceptions import (
-    NeuralOpsError, ConfigError, WeightCopyError, BackendError, NumericalError
-)
-from neuralops.trainer.optimizers.muon import Muon
-from neuralops.trainer.optimizers import StiefelOptimizer, RiemannianAdam
-from neuralops.models.hybrid_spec import HybridAttentionSpec
-from neuralops.evaluation.eval_pipeline import probe_optimal_batch_size
+# Subpackages made available lazily
+_SUBPACKAGES = {
+    "analysis", "attentions", "benchmarks", "cli", "compression_engine",
+    "config", "core", "data", "evaluation", "experiment_logging",
+    "experiment_utils", "inference", "integrations", "models",
+    "results_saver", "runners", "tests", "tracking", "trainer",
+    "training", "utils", "main", "surgery", "export",
+}
 
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
@@ -315,6 +280,7 @@ def inject_gla(model, **kwargs):
     return replace_attention_in_model(model, _GLA, **kwargs)
 
 def create_attention(name: str, **kwargs):
+    from neuralops.core.registry import ATTENTION_REGISTRY
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
         raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
@@ -364,7 +330,41 @@ __all__ = [
     "RiemannianAdam",
     "HybridAttentionSpec",
     "probe_optimal_batch_size",
-]
+] + sorted(list(_LAZY_EXPORTS.keys()))
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562 dynamic lazy loader."""
+    if name == "ATTENTION_REGISTRY":
+        from neuralops.core.registry import ATTENTION_REGISTRY as reg
+        globals()[name] = reg
+        return reg
+
+    if name in _API_EXPORTS:
+        mod_name = _API_EXPORTS[name]
+        mod = importlib.import_module(mod_name)
+        val = getattr(mod, name)
+        globals()[name] = val
+        return val
+
+    if name in _LAZY_EXPORTS:
+        module_path, attr_name = _LAZY_EXPORTS[name]
+        module = importlib.import_module(module_path)
+        val = getattr(module, attr_name)
+        globals()[name] = val
+        return val
+
+    if name in _SUBPACKAGES:
+        submod = importlib.import_module(f"neuralops.{name}")
+        globals()[name] = submod
+        return submod
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+def __dir__() -> list[str]:
+    """Execute __dir__ operation."""
+    return sorted(list(globals().keys()) + __all__ + list(_SUBPACKAGES))
 
 
 
