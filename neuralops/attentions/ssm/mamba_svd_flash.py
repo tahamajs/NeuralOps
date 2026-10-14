@@ -788,26 +788,42 @@ class MambaSVDFlash(BaseAttention):
         V_f = V.float().contiguous()
         bx = (B_seq.float() * x.float()).contiguous()
 
-        steps = range(L - 1, -1, -1) if reverse else range(L)
+        steps = list(range(L - 1, -1, -1) if reverse else range(L))
+        chunk_size = 16
+        use_cp = torch.is_grad_enabled()
+        if use_cp:
+            import torch.utils.checkpoint as cp
 
-        h_list = []
-        h_col = h.unsqueeze(-1)
-        for t in steps:
-            v_t = torch.bmm(V_f[:, t], h_col)  # (B, r, 1)
-            h_trans = torch.bmm(US[:, t], v_t).squeeze(-1)  # (B, D)
-            h_next = h_trans + bx[:, t]
-            if mask is not None:
-                m_t = mask[:, t].unsqueeze(-1).to(h_next.dtype)
-                h = torch.where(m_t.bool(), h_next, h)
+        def _step_subchunk(h_in: torch.Tensor, sub_steps: list[int]) -> tuple[torch.Tensor, torch.Tensor]:
+            sub_h_list = []
+            curr_h = h_in
+            curr_col = curr_h.unsqueeze(-1)
+            for t in sub_steps:
+                v_t = torch.bmm(V_f[:, t], curr_col)  # (B, r, 1)
+                h_trans = torch.bmm(US[:, t], v_t).squeeze(-1)  # (B, D)
+                h_next = h_trans + bx[:, t]
+                if mask is not None:
+                    m_t = mask[:, t].unsqueeze(-1).to(h_next.dtype)
+                    curr_h = torch.where(m_t.bool(), h_next, curr_h)
+                else:
+                    curr_h = h_next
+                curr_h = torch.nan_to_num(curr_h, nan=0.0, posinf=1e4, neginf=-1e4)
+                curr_col = curr_h.unsqueeze(-1)
+                sub_h_list.append(curr_h)
+            return torch.stack(sub_h_list, dim=1), curr_h
+
+        h_chunks = []
+        for s in range(0, L, chunk_size):
+            sub_steps = steps[s : min(s + chunk_size, L)]
+            if use_cp:
+                chunk_H, h = cp.checkpoint(_step_subchunk, h, sub_steps, use_reentrant=False)
             else:
-                h = h_next
-            h = torch.nan_to_num(h, nan=0.0, posinf=1e4, neginf=-1e4)
-            h_col = h.unsqueeze(-1)
-            h_list.append(h)
+                chunk_H, h = _step_subchunk(h, sub_steps)
+            h_chunks.append(chunk_H)
 
+        H = torch.cat(h_chunks, dim=1)
         if reverse:
-            h_list.reverse()
-        H = torch.stack(h_list, dim=1)
+            H = torch.flip(H, dims=[1])
 
         out = C_seq.float() * H
         return out.to(x.dtype), h.to(x.dtype)
