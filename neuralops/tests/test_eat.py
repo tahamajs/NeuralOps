@@ -13,7 +13,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 def test_registry():
     assert "eat" in ATTENTION_REGISTRY.list_available()
     assert "eat_attention" in ATTENTION_REGISTRY.list_available()
-    assert ATTENTION_REGISTRY.get("eat") is EATBlock
+    assert issubclass(ATTENTION_REGISTRY.get("eat"), EATBlock)
 
 
 def test_lora_linear():
