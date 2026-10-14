@@ -162,6 +162,10 @@ all = [
 [project.scripts]
 neuralops = "neuralops.benchmarks.cli:main"
 
+[project.entry-points."vllm.general_plugins"]
+neuralops_vllm = "neuralops.integrations.vllm:register_neuralops_vllm_plugin"
+
+
 [project.urls]
 Homepage = "https://github.com/tahamajs/SVD_linear_Attention"
 Repository = "https://github.com/tahamajs/SVD_linear_Attention"
