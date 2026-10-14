@@ -636,3 +636,33 @@ def test_3_8_weighted_gqa_online_softmax_triton_parity():
         out_ref = fused_weighted_gqa_online_softmax_pytorch(q, k, v, head_weights=hw, is_causal=is_causal)
         torch.testing.assert_close(out_tri, out_ref, rtol=5e-3, atol=5e-3)
 
+
+@pytest.mark.parametrize("d_head", [48, 80, 96])
+def test_3_9_prime_and_odd_head_dimensions(d_head):
+    B, H, N = 2, 4, 32
+    q = torch.randn(B, H, N, d_head, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, N, d_head, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, N, d_head, device=DEVICE, dtype=torch.float32)
+
+    out_ref = linear_attn_pytorch_fallback(q, k, v)
+    out_act = triton_dispatch("linear_attn", q, k, v)
+    torch.testing.assert_close(out_act, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_9_fused_ce_ignore_index_and_chunked():
+    B, T, V = 4, 32, 128
+    logits = torch.randn(B * T, V, device=DEVICE, dtype=torch.float32, requires_grad=True)
+    targets = torch.randint(0, V, (B * T,), device=DEVICE, dtype=torch.long)
+    # Mask 25% of tokens with ignore_index = -100
+    targets[::4] = -100
+
+    loss_act = fused_cross_entropy(logits, targets, ignore_index=-100)
+    loss_ref = F.cross_entropy(logits, targets, ignore_index=-100)
+    torch.testing.assert_close(loss_act, loss_ref, rtol=1e-4, atol=1e-4)
+
+    # Test backward gradient flow with ignore_index
+    loss_act.backward()
+    assert logits.grad is not None
+    assert not torch.isnan(logits.grad).any()
+
+
