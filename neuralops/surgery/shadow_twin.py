@@ -71,19 +71,28 @@ def compute_linear_cka_loss(
 # ==============================================================================
 
 def enable_shadow_twin(
-    bridge: UniversalAttentionBridge,
+    bridge_or_model: nn.Module,
     stage: str = "stage2_block_cloning",
 ) -> None:
-    """Enables shadow twin teacher branch inside UniversalAttentionBridge."""
-    if bridge.teacher_branch is None:
-        bridge.teacher_branch = bridge.orig_module
-        bridge.teacher_branch.eval()
-        for p in bridge.teacher_branch.parameters():
-            p.requires_grad = False
+    """Enables shadow twin teacher branch inside UniversalAttentionBridge or all bridges in a model."""
+    target_bridges = []
+    if isinstance(bridge_or_model, UniversalAttentionBridge):
+        target_bridges.append(bridge_or_model)
+    else:
+        for m in bridge_or_model.modules():
+            if isinstance(m, UniversalAttentionBridge):
+                target_bridges.append(m)
 
-    bridge.stage = stage
-    bridge.alpha = 0.0  # Output 100% teacher activation in stage 2
-    patch_bridge_for_shadow_twin(bridge)
+    for bridge in target_bridges:
+        if bridge.teacher_branch is None:
+            bridge.teacher_branch = bridge.orig_module
+            bridge.teacher_branch.eval()
+            for p in bridge.teacher_branch.parameters():
+                p.requires_grad = False
+
+        bridge.stage = stage
+        bridge.alpha = 0.0  # Output 100% teacher activation in stage 2
+        patch_bridge_for_shadow_twin(bridge)
 
 
 def set_surgery_alpha(model: nn.Module, alpha: float) -> None:
