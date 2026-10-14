@@ -178,7 +178,11 @@ class SpectraformerAttention(BaseAttention):
         # Generated once with QR decomposition for maximum feature variance coverage
         torch.manual_seed(42)
         H = torch.randn(self.head_dim, self.rank)
-        Q_ortho, _ = torch.linalg.qr(H)
+        if self.head_dim <= self.rank:
+            q_tmp, _ = torch.linalg.qr(H.t())
+            Q_ortho = q_tmp.t()
+        else:
+            Q_ortho, _ = torch.linalg.qr(H)
         self.register_buffer("R", Q_ortho.float())
 
         dropout_p = (
@@ -507,7 +511,11 @@ class SpectraformerAttention(BaseAttention):
                 dtype=torch.float32,
                 generator=g,
             )
-            R, _ = torch.linalg.qr(H)
+            if self.head_dim <= self.rank:
+                q_tmp, _ = torch.linalg.qr(H.t())
+                R = q_tmp.t()
+            else:
+                R, _ = torch.linalg.qr(H)
             R = R.to(dtype=hidden_states.dtype)
             if hasattr(self, "R") and isinstance(self.R, torch.Tensor) and self.R.shape == R.shape:
                 self.R.data.copy_(R)
@@ -526,29 +534,31 @@ class SpectraformerAttention(BaseAttention):
             K_proj = K_proj * v_mask_4d
             v = v * v_mask_4d
 
-        if self.is_decoder:
-            # Recurrent linear causal attention: exact vectorized computation
-            causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
-            aff = torch.matmul(
-                Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous()
-            )  # (B, H, N, N)
-            aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+        device_type = hidden_states.device.type
+        with torch.autocast(device_type=device_type, enabled=False):
+            if self.is_decoder:
+                # Recurrent linear causal attention: exact vectorized computation
+                causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
+                aff = torch.matmul(
+                    Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous()
+                )  # (B, H, N, N)
+                aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-            num = torch.matmul(aff, v.float())  # (B, H, N, d)
-            den = aff.sum(dim=-1, keepdim=True) + 1e-8  # (B, H, N, 1)
-            context = (num / den).to(hidden_states.dtype)
-        else:
-            # Bidirectional linear attention: exact O(N·r·d) computation
-            KV = torch.matmul(
-                K_proj.transpose(-2, -1).contiguous().float(), v.float()
-            )  # (B, H, r, d)
-            Z = (
-                K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
-            )  # (B, H, r, 1)
+                num = torch.matmul(aff, v.float())  # (B, H, N, d)
+                den = aff.sum(dim=-1, keepdim=True) + 1e-8  # (B, H, N, 1)
+                context = (num / den).to(hidden_states.dtype)
+            else:
+                # Bidirectional linear attention: exact O(N·r·d) computation
+                KV = torch.matmul(
+                    K_proj.transpose(-2, -1).contiguous().float(), v.float()
+                )  # (B, H, r, d)
+                Z = (
+                    K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
+                )  # (B, H, r, 1)
 
-            num = torch.matmul(Q_proj.float(), KV)  # (B, H, N, d)
-            den = torch.matmul(Q_proj.float(), Z) + 1e-8  # (B, H, N, 1)
-            context = (num / den).to(hidden_states.dtype)
+                num = torch.matmul(Q_proj.float(), KV)  # (B, H, N, d)
+                den = torch.matmul(Q_proj.float(), Z) + 1e-8  # (B, H, N, 1)
+                context = (num / den).to(hidden_states.dtype)
 
         if head_mask is not None:
             hm = head_mask.to(context.device)
