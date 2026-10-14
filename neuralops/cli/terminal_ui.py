@@ -91,7 +91,7 @@ NeuralOps features **72 Compression Engines** spanning:
 - **Bit-Packed W4A16**: Packs two 4-bit weights per byte in uint8, dynamically dequantized in-SRAM via fused Triton GEMM.
 - **AutoSVD Pareto Search**: Evaluates Fisher & Gram information matrices to allocate non-uniform layer ranks optimally under a target compression ratio.
 """,
-    "attention": """# Attention Zoo (131 Mechanisms)
+    "attention": r"""# Attention Zoo (131 Mechanisms)
 Categorized by mathematical formulation:
 - **Linear Attention**: $O(N)$ recurrence via kernel feature maps ($\phi(q) \sum \phi(k)^T v$).
 - **Gated State-Space & Delta Rule**: Selective scans, Gated DeltaNet, HGRN2, and Mamba-1/2 blocks.
