@@ -282,6 +282,7 @@ def test_all_26_kernel_modules():
     assert out_hgrn.shape == (B, T, D)
 
     # 22. softplus
-    from neuralops.core.triton_kernels.softplus import softplus
-    out_sp = softplus(q)
+    from neuralops.core.triton_kernels.softplus import softplus_fn
+    out_sp = softplus_fn(q)
     assert out_sp.shape == q.shape
+
