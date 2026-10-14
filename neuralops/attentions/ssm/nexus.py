@@ -1014,8 +1014,12 @@ class NEXUSAttention(BaseAttention):
         k_all = state["k_cache"]
         v_all = state["v_cache"]
 
-        scores = torch.matmul(Q, k_all.transpose(-1, -2)) / math.sqrt(D)
-        attn_w = F.softmax(scores, dim=-1)
+        scores = torch.matmul(Q.float(), k_all.float().transpose(-1, -2)) / math.sqrt(D)
+        if getattr(self.cfg, "softpick_enabled", False):
+            attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(dtype)
+        else:
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_w = F.softmax(scores, dim=-1).to(dtype)
         context = torch.matmul(attn_w, v_all)
 
         state["step_idx"] = step_idx + 1
