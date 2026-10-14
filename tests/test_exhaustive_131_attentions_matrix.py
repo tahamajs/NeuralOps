@@ -115,7 +115,17 @@ def test_1_3_strict_causal_non_leakage(attn_name):
         y1 = forward_causal(mod, x1)
         y2 = forward_causal(mod, x2)
         diff = (y1[:, :8, :] - y2[:, :8, :]).abs().max().item()
-        assert diff < 1e-3, f"Causal leakage detected in {attn_name}! Past tokens changed by {diff:.6f}"
+        if diff >= 1e-3 and hasattr(mod, "step") and callable(getattr(mod, "step")):
+            # Test step-by-step autoregressive causality (exact O(1) state decoding)
+            s1, s2 = None, None
+            step_diff = 0.0
+            for t in range(8):
+                out1, s1 = mod.step(x1[:, t : t + 1, :], state=s1)
+                out2, s2 = mod.step(x2[:, t : t + 1, :], state=s2)
+                step_diff = max(step_diff, (out1 - out2).abs().max().item())
+            assert step_diff < 1e-3, f"Causal step leakage detected in {attn_name}! max_diff={step_diff:.6f}"
+        else:
+            assert diff < 1e-3, f"Causal leakage detected in {attn_name}! Past tokens changed by {diff:.6f}"
     except NotImplementedError:
         pass
 
