@@ -65,7 +65,12 @@ class CosformerAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
 
-        hidden_size = kwargs.get("hidden_size")
+        hidden_size = (
+            kwargs.get("hidden_size")
+            or kwargs.get("embed_dim")
+            or kwargs.get("d_model")
+            or kwargs.get("dim")
+        )
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
 
         if hidden_size is None:
