@@ -530,29 +530,12 @@ class NativeSparseAttention(BaseAttention):
             local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
 
-        if (2 * self.window_size + 1) >= L:
-            total_mask = local_mask_4d & key_valid_4d
-        else:
-            non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
-            if is_dec:
-                causal_tril = (
-                    torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
-                non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
-            k_val = min(self.top_k, max(1, L - (2 * self.window_size + 1)))
-            _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
-            topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
-            total_mask = (local_mask_4d | topk_mask) & key_valid_4d
+        from neuralops.core.triton_kernels.sparse_attn import fused_nsa_hierarchical_sparse_triton
 
-        if is_dec:
-            causal_tril = (
-                torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
-            total_mask = total_mask & causal_tril
+        total_mask = fused_nsa_hierarchical_sparse_triton(
+            scores, local_mask_4d, key_valid_4d, self.top_k, is_causal=is_dec
+        )
+
 
         scores = scores.masked_fill(~total_mask, -1e4)
         attn = F.softmax(scores, dim=-1).to(dtype)

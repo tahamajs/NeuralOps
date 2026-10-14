@@ -112,6 +112,10 @@ class MambaBlock(nn.Module):
                 else False
             ) or any(_mt.startswith(p) for p in _dec_prefixes)
 
+        # For encoder models (BERT, RoBERTa), enable bidirectional scanning by default
+        if not self.is_decoder and "bidirectional" not in kwargs:
+            self.bidirectional = True
+
         # ---- Projections ----
         self.in_proj = nn.Linear(self.d_model, 2 * self.d_inner, bias=bias)
         self.conv1d = nn.Conv1d(
