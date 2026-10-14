@@ -162,17 +162,23 @@ class SelfSpeculativeDecoder:
                         num_accepted += 1
                         break
             else:
-                # All K tokens accepted! Emit bonus token from target at position K+1
-                bonus_logits = target_logits[:, -1, :]
-                if temperature == 0.0:
-                    bonus_token = torch.argmax(bonus_logits, dim=-1, keepdim=True)
-                else:
-                    bonus_probs = F.softmax(bonus_logits / max(temperature, 1e-5), dim=-1)
-                    bonus_token = torch.multinomial(bonus_probs, num_samples=1)
-                curr_ids = torch.cat([curr_ids, bonus_token], dim=-1)
-                num_accepted += 1
+                # All K tokens accepted! Emit bonus token from target at position K+1 if budget allows
+                if curr_ids.shape[-1] - prompt_len < max_new_tokens:
+                    bonus_logits = target_logits[:, -1, :]
+                    if temperature == 0.0:
+                        bonus_token = torch.argmax(bonus_logits, dim=-1, keepdim=True)
+                    else:
+                        bonus_probs = F.softmax(bonus_logits / max(temperature, 1e-5), dim=-1)
+                        bonus_token = torch.multinomial(bonus_probs, num_samples=1)
+                    curr_ids = torch.cat([curr_ids, bonus_token], dim=-1)
+                    num_accepted += 1
 
             total_accepted_tokens += num_accepted
+            
+            # Enforce max_new_tokens limit
+            if curr_ids.shape[-1] - prompt_len >= max_new_tokens:
+                curr_ids = curr_ids[:, : prompt_len + max_new_tokens]
+                break
             
             # Adaptive draft horizon update
             if self.adaptive_k:

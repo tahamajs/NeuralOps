@@ -311,7 +311,7 @@ def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
         res = _pytorch_fwht_butterfly(x_pad)
         return res[..., :dim]
         
-    x_flat = x.view(-1, dim).float().clone()
+    x_flat = x.reshape(-1, dim).float().clone()
     h = 1
     while h < dim:
         for i in range(0, dim, h * 2):
