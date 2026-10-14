@@ -190,6 +190,9 @@ def _build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
 
+    # 15. ui
+    subparsers.add_parser("ui", help="Launch interactive Terminal User Interface (TUI mode)")
+
     return parser
 
 
@@ -602,13 +605,28 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
+    
+    # If no arguments provided or --help, show the huggingface-cli style rich menu
+    raw_args = sys.argv[1:] if argv is None else argv
+    if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
+        try:
+            from neuralops.cli.terminal_ui import print_hf_style_help
+            print_hf_style_help()
+            return 0
+        except Exception:
+            pass
+
     args = parser.parse_args(argv)
 
     if not args.subcommand:
         parser.print_help()
         return 0
 
-    if args.subcommand == "list":
+    if args.subcommand == "ui":
+        from neuralops.cli.terminal_ui import run_interactive_ui
+        run_interactive_ui()
+        return 0
+    elif args.subcommand == "list":
         handle_list(args)
     elif args.subcommand == "plan":
         handle_plan(args)
