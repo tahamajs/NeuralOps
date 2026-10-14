@@ -4,14 +4,22 @@ Tests forward, causal masking, backward differentiability, and numerical stabili
 Properly initializes modules with GPT2Config and standard model structure.
 """
 
+import os
 import sys
 import time
+
+# Ensure offline operation so diagnostics run without network delays or hangs
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"=== RUNNING MODULE DIAGNOSTICS ON {device.upper()} ===")
