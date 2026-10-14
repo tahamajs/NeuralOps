@@ -661,13 +661,18 @@ class MultiQueryAttention(BaseAttention):
         # ---- Manual path ----
         if not use_sdpa:
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous()) * scale
+            raw_scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous())
 
-            if is_causal:
-                q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
-                k_idx = torch.arange(N_k, device=device).unsqueeze(0)
-                causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
-                scores = scores.masked_fill(causal_mask, _safe_mask_val(scores.dtype))
+            try:
+                from neuralops.core.triton_kernels.gqa import fused_mqa_bias_scale_triton
+                scores = fused_mqa_bias_scale_triton(raw_scores, scale, is_causal=is_causal, past_len=past_len)
+            except Exception:
+                scores = raw_scores * scale
+                if is_causal:
+                    q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
+                    k_idx = torch.arange(N_k, device=device).unsqueeze(0)
+                    causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
+                    scores = scores.masked_fill(causal_mask, _safe_mask_val(scores.dtype))
 
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
