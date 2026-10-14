@@ -299,7 +299,7 @@ class BenchmarkOrchestrator:
                 task_key = (mod, mdl, ds, rk)
                 progress_bar.set_postfix_str(f"{mod} ({rk})")
 
-                if self.resume_mode and task_key in completed_set:
+                if not getattr(self.config, "force_rerun", False) and self.resume_mode and task_key in completed_set:
                     LOG.info("Skipping completed task: %s", task_key)
                     continue
 
