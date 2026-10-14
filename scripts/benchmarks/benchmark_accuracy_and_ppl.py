@@ -94,7 +94,7 @@ def main():
             
             # Closed-Form Layerwise Ridge Output Calibration (32 samples)
             calib_batch = {k: v[:32] for k, v in enc_sst2.items()}
-            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.88)
+            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.35)
             del base_ref
             
             m_rob.eval()
@@ -124,7 +124,7 @@ def main():
             
             # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
             calib_wiki = enc_wiki[:, :128]
-            m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.88)
+            m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.03)
             del base_gpt_ref
             
             with torch.no_grad():
