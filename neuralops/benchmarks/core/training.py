@@ -227,22 +227,41 @@ def train_kd(
     mp_type = (mixed_precision or "no").lower()
     scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
 
+    # Pre-cache teacher outputs for all batches to eliminate redundant teacher forward passes across epochs!
+    teacher_logits_cache = []
+    if teacher is not None:
+        teacher.eval()
+        LOG.info("Pre-caching teacher logits across %d training batches...", len(train_loader))
+        with torch.no_grad():
+            for batch in train_loader:
+                inp_ids = batch[0].to(device)
+                att_msk = batch[1].to(device)
+                if amp_enabled:
+                    with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
+                        t_out = teacher(input_ids=inp_ids, attention_mask=att_msk)
+                else:
+                    t_out = teacher(input_ids=inp_ids, attention_mask=att_msk)
+                teacher_logits_cache.append(t_out.logits.detach().cpu())
+        LOG.info("Teacher cache successfully built (%d batches in memory).", len(teacher_logits_cache))
+
     step = 0
     epoch_losses = []
 
     for epoch in range(epochs):
         running_loss = 0.0
         count = 0
-        for batch in train_loader:
+        for batch_idx, batch in enumerate(train_loader):
+            cached_t_logits = teacher_logits_cache[batch_idx] if batch_idx < len(teacher_logits_cache) else None
             step_loss = kd_train_step(
                 student=student,
-                teacher=teacher,
+                teacher=None if cached_t_logits is not None else teacher,
                 batch=batch,
                 optimizer=optimizer,
                 kd_loss_fn=kd_loss_fn,
                 device=device,
                 mixed_precision=mixed_precision,
                 scaler=scaler,
+                teacher_logits=cached_t_logits,
             )
             running_loss += step_loss
             count += 1
