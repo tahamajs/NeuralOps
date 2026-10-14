@@ -315,8 +315,12 @@ class _TensorOnlyExportWrapper(nn.Module):
         super().__init__()
         self.model = model
 
-    def forward(self, *args: Any, **kwargs: Any) -> torch.Tensor:
-        out = self.model(*args, **kwargs)
+    def forward(self, x: torch.Tensor, *extra_args: Any) -> torch.Tensor:
+        if extra_args:
+            out = self.model(x, *extra_args)
+        else:
+            out = self.model(x)
+
         if hasattr(out, "logits") and isinstance(out.logits, torch.Tensor):
             return out.logits
         if isinstance(out, (list, tuple)):
