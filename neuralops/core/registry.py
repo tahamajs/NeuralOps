@@ -42,12 +42,17 @@ def _handle_deprecated(name: str) -> str:
     return name
 
 
+_UNIVERSAL_WRAPPER_CACHE: dict[type, type] = {}
+
+
 def _make_universal_attention_class(target_cls: type) -> type:
     """Wraps an attention class so direct instantiation cls(dim=256, num_heads=4) works seamlessly."""
     if not isinstance(target_cls, type):
         return target_cls
     if getattr(target_cls, "_is_universal_attention_wrapped", False):
         return target_cls
+    if target_cls in _UNIVERSAL_WRAPPER_CACHE:
+        return _UNIVERSAL_WRAPPER_CACHE[target_cls]
 
     class UniversalAttentionWrapper(target_cls):
         _is_universal_attention_wrapped = True
@@ -151,6 +156,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
     UniversalAttentionWrapper.__name__ = target_cls.__name__
     UniversalAttentionWrapper.__qualname__ = target_cls.__qualname__
     UniversalAttentionWrapper.__module__ = target_cls.__module__
+    _UNIVERSAL_WRAPPER_CACHE[target_cls] = UniversalAttentionWrapper
     return UniversalAttentionWrapper
 
 
@@ -364,7 +370,7 @@ class Registry:
                     raise
                 logger.warning("Error during lazy loading of attention '%s': %s", key, e)
 
-    def get(self, key: str) -> Callable | None:
+    def get(self, key: str, unwrap: bool = False) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
         try:
             k = _handle_deprecated(key)
@@ -375,6 +381,8 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
+        if unwrap:
+            return obj
         if obj is not None and self.name == "attentions" and isinstance(obj, type):
             return _make_universal_attention_class(obj)
         return obj
