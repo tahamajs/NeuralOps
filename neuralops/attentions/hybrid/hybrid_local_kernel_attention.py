@@ -132,7 +132,14 @@ class FactorisedLinear(nn.Module):
                 padded[:r, :c] = W[:r, :c]
                 W = padded
 
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            dev = W.device
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vt = Vt.to(dev)
             S = torch.clamp(S, min=1e-6)
             target_energy = energy if energy is not None else self.energy
             total = (S**2).sum()
