@@ -413,13 +413,15 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
 
         if reduction == "batchmean":
             batch_size = orig_shape[0] if orig_shape[0] > 0 else 1
-            return total_loss / batch_size
+            out_loss = total_loss / batch_size
         elif reduction == "mean":
-            return total_loss / (N_tokens * V)
+            out_loss = total_loss / (N_tokens * V)
         elif reduction == "sum":
-            return total_loss
+            out_loss = total_loss
         else:
-            return total_loss / (orig_shape[0] if orig_shape[0] > 0 else 1)
+            out_loss = total_loss / (orig_shape[0] if orig_shape[0] > 0 else 1)
+
+        return out_loss.to(student_hidden.dtype)
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):

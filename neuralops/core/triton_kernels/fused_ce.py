@@ -304,13 +304,13 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
         ctx.save_for_backward(h_flat, weight, bias, t_flat)
 
         if reduction == "mean":
-            return total_loss / total_valid
+            out_loss = total_loss / total_valid
         elif reduction == "sum":
-            return total_loss
+            out_loss = total_loss
         else:
-            # If reduction is 'none', fallback to standard chunked projection per token
-            # Note: For memory saving during training, reduction="mean" or "sum" is standard
-            return total_loss / total_valid
+            out_loss = total_loss / total_valid
+
+        return out_loss.to(hidden_states.dtype)
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
