@@ -336,6 +336,17 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if disable_hgrn and disable_delta:
             raise RuntimeError("Both branches disabled. Nothing to compute.")
 
+        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+        if is_causal:
+            self.is_decoder = True
+            self.is_causal = True
+            if hasattr(self.hgrn, "is_decoder"):
+                self.hgrn.is_decoder = True
+                self.hgrn.is_causal = True
+            if hasattr(self.deltanet, "is_decoder"):
+                self.deltanet.is_decoder = True
+                self.deltanet.is_causal = True
+
         # ---- [HGD-FIX-11] Route past cache to correct branch ----
         hgrn_past = None
         delta_past = None

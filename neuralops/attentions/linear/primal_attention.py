@@ -458,6 +458,28 @@ class PrimalAttention(BaseAttention):
             K_land = K[:, :, idx, :]
 
         scale = 1.0 / (self.head_dim**0.5)
+        is_causal = bool(self.is_decoder or kwargs.get("is_causal", False) or kwargs.get("causal", False))
+
+        if is_causal:
+            # Exact causal attention to prevent future token leakage across landmarks
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            causal_mask = torch.triu(
+                torch.full((seq_len, seq_len), -1e4, device=scores.device),
+                diagonal=1,
+            )
+            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            if attention_mask is not None:
+                scores = apply_attention_mask(scores, attention_mask)
+            probs = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(hidden_states.dtype)
+            probs = self.dropout(probs)
+            if head_mask is not None:
+                probs = probs * head_mask
+            context = torch.matmul(probs, V)
+            context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
+            if self.is_nested_encoder:
+                return context, (probs if output_attentions else None)
+            output = self.out_proj(context)
+            return output, (probs if output_attentions else None)
 
         # PR-FIX-01 + PR-FIX-07: chunked head processing to bound peak memory.
         # The chunk_heads attribute (default 0) disables chunking.

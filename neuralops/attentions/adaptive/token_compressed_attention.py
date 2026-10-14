@@ -727,8 +727,11 @@ class TokenCompressedAttention(BaseAttention):
             importance[all_masked, 0] = 0.0
 
         # Selection strategy
-        if self.is_decoder and L > self.chunk_size:
-            top_indices = self._chunked_causal_topk(importance, k_keep, valid_mask_2d)
+        if self.is_decoder:
+            if L <= self.chunk_size:
+                top_indices = torch.arange(L, device=x.device).unsqueeze(0).expand(B, -1)
+            else:
+                top_indices = self._chunked_causal_topk(importance, k_keep, valid_mask_2d)
         else:
             _, top_indices = torch.topk(importance, k_keep, dim=-1)
             top_indices, _ = torch.sort(top_indices, dim=-1)
