@@ -174,13 +174,14 @@ class UniversalAttentionWrapper(nn.Module):
         }
 
         # ---- Standardize output tuple to match HuggingFace contract ----
+        incoming_cache = kwargs.get("past_key_value", kwargs.get("past_key_values", None))
         if isinstance(out, tuple):
             hidden = out[0] if len(out) >= 1 else None
-            present = out[1] if len(out) >= 2 else None
+            present = out[1] if len(out) >= 2 else incoming_cache
             attn_weights = out[2] if len(out) >= 3 else None
         else:
             hidden = out
-            present = None
+            present = incoming_cache
             attn_weights = None
 
         if self.return_tuple is not None and not self.return_tuple:
