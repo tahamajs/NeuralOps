@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\caption{Pareto Frontier: Runtime Latency, Decode Throughput, Peak VRAM, and Retrieval Quality across Attention Mechanisms and SVD Compression Engines.}
+\label{tab:neuralops_pareto}
+\small
+\begin{tabular}{llccccr}
+\toprule
+\textbf{Method} & \textbf{Category} & \textbf{Prefill (2k) [ms]} & \textbf{Prefill (4k) [ms]} & \textbf{Decode [tok/s]} & \textbf{Peak VRAM [MB]} & \textbf{Recall [\%]} \\
+\midrule
+Softmax Attention (Dense) & Full Attention & 0.78 & 2.01 & 7167.7 & 61.8 & 51.0\% \\
+Cosformer (Linear) & Linear Attention & 10.02 & 24.93 & 1262.9 & 487.3 & 46.7\% \\
+GLA (Gated Linear) & Linear Attention & 0.65 & 1.47 & 2843.4 & 98.1 & 48.4\% \\
+SVD Linear Attention & Compression & 0.75 & 1.49 & 6150.4 & 61.6 & 47.3\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
