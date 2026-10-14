@@ -122,11 +122,11 @@ def test_5_4_pissa_linear_exact_identity_and_merge(rank):
 
 
 def test_5_5_orpo_preference_loss():
-    orpo = ORPOLoss(sft_weight=1.0, odds_ratio_weight=0.5)
+    orpo = ORPOLoss(lambda_orpo=0.5)
     policy_chosen_logps = torch.tensor([-1.0, -0.7], device=DEVICE)
     policy_rejected_logps = torch.tensor([-2.8, -2.4], device=DEVICE)
     sft_loss = torch.tensor(1.2, device=DEVICE)
-    loss = orpo(policy_chosen_logps, policy_rejected_logps, sft_loss=sft_loss)
+    loss = orpo(sft_loss, policy_chosen_logps, policy_rejected_logps)
     assert torch.isfinite(loss).all()
 
 
