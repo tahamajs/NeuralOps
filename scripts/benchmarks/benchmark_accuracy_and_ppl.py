@@ -92,13 +92,13 @@ def main():
             m_rob = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
             m_rob, _ = apply_module_to_model(m_rob, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
             
-            # Closed-Form Layerwise Ridge Output Calibration (32 samples)
-            calib_batch = {k: v[:32] for k, v in enc_sst2.items()}
+            # Closed-Form Layerwise Ridge Output Calibration (8 samples for guaranteed memory safety across 6GB GPUs)
+            calib_batch = {k: v[:8] for k, v in enc_sst2.items()}
             m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.15)
             
             m_rob.eval()
             all_preds = []
-            bs = 25
+            bs = 16
             total_n = enc_sst2.input_ids.shape[0]
             with torch.no_grad():
                 for start_idx in range(0, total_n, bs):
