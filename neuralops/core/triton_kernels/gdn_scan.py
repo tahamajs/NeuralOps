@@ -675,20 +675,7 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     beta = beta.contiguous()
     alpha = alpha.contiguous()
 
-    # When FLA chunk_gdn is available on CUDA with D <= 64, use native fused Triton chunk scan
-    if q.is_cuda and D <= 64:
-        try:
-            from fla.ops import chunk_gdn
-            # In FLA chunk_gdn: g is the log-decay gate (alpha decay), beta is the step-size
-            # Shape for FLA: g in log-space (e.g. log(clamp(alpha, 1e-4, 1.0))), beta in [B, H, L]
-            log_g = torch.log(alpha.float().clamp(min=1e-4, max=1.0)).to(q.dtype)
-            step_beta = beta.to(q.dtype)
-            res = chunk_gdn(q, k, v, log_g, step_beta)
-            if isinstance(res, tuple):
-                return res[0]
-            return res
-        except Exception:
-            pass
+
 
     # If gradients are not needed, use fast inference path without L*D*D workspace allocation
     needs_grad = torch.is_grad_enabled() and any(
