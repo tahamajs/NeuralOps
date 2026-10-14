@@ -168,6 +168,21 @@ class _ModuleAliasFinder(MetaPathFinder):
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
+# Configure PyTorch CUDA Linear Algebra Backend Robustness
+try:
+    import torch
+    if torch.cuda.is_available() and hasattr(torch.backends.cuda, "preferred_linalg_library"):
+        # On Pascal / GTX 1060 (SM 6.1) cuSOLVER Gesvdj frequently execution-fails.
+        # Fall back to magma or default if cuSOLVER encounters driver instability.
+        cap = torch.cuda.get_device_capability()
+        if cap < (7, 0):
+            try:
+                torch.backends.cuda.preferred_linalg_library("magma")
+            except Exception:
+                pass
+except Exception:
+    pass
+
 
 # Symbol to (module_path, attr_name) mapping for fast, lazy resolution
 _LAZY_EXPORTS = {
