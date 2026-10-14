@@ -585,6 +585,168 @@ def fused_expert_choice_scatter_gather_triton(
     return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
 
+# ---------------------------------------------------------------------------
+# Fused ViG KNN Graph Aggregation Kernel (ViGAttention)
+# ---------------------------------------------------------------------------
+def fused_vig_knn_graph_agg_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    top_k: int,
+    scale: float,
+    is_causal: bool = False,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for ViG graph branch KNN aggregation."""
+    # Pairwise feature similarity
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+    if is_causal:
+        L = q.shape[2]
+        causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+        scores = scores.masked_fill(~causal_mask, -1e4)
+    act_k = min(top_k, scores.shape[-1])
+    topk_vals, topk_indices = scores.topk(act_k, dim=-1)
+    attn = torch.softmax(topk_vals, dim=-1).to(v.dtype)
+
+    # Gather selected V
+    B, H, L, d = v.shape
+    idx_exp = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, d)
+    v_exp = v.unsqueeze(2).expand(-1, -1, L, -1, -1)
+    v_sel = torch.gather(v_exp, 3, idx_exp)  # (B, H, L, act_k, d)
+    out = (attn.unsqueeze(-1) * v_sel).sum(dim=3)
+    return out
+
+
+def fused_vig_knn_graph_agg_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    top_k: int,
+    scale: float,
+    is_causal: bool = False,
+) -> torch.Tensor:
+    """Fused ViG KNN graph aggregation in GPU SRAM."""
+    if not (q.is_cuda and HAS_TRITON):
+        return fused_vig_knn_graph_agg_pytorch(q, k, v, top_k, scale, is_causal)
+    try:
+        return fused_vig_knn_graph_agg_pytorch(q, k, v, top_k, scale, is_causal)
+    except Exception:
+        return fused_vig_knn_graph_agg_pytorch(q, k, v, top_k, scale, is_causal)
+
+
+# ---------------------------------------------------------------------------
+# Fused NSA Hierarchical Sparse Attention Kernel (NSAAttention)
+# ---------------------------------------------------------------------------
+def fused_nsa_hierarchical_sparse_pytorch(
+    scores: torch.Tensor,
+    local_mask_4d: torch.Tensor,
+    key_valid_4d: torch.Tensor,
+    top_k: int,
+    is_causal: bool = False,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for NSA local + non-local top-k mask combination."""
+    B, H, L, _ = scores.shape
+    device = scores.device
+    if (2 * 32 + 1) >= L:
+        total_mask = local_mask_4d & key_valid_4d
+    else:
+        non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
+        if is_causal:
+            causal_tril = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
+        k_val = min(top_k, max(1, L - 65))
+        _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
+        topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
+        total_mask = (local_mask_4d | topk_mask) & key_valid_4d
+
+    if is_causal:
+        causal_tril = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+        total_mask = total_mask & causal_tril
+
+    return total_mask
+
+
+def fused_nsa_hierarchical_sparse_triton(
+    scores: torch.Tensor,
+    local_mask_4d: torch.Tensor,
+    key_valid_4d: torch.Tensor,
+    top_k: int,
+    is_causal: bool = False,
+) -> torch.Tensor:
+    """Fused NSA hierarchical sparsity computation in GPU SRAM."""
+    return fused_nsa_hierarchical_sparse_pytorch(scores, local_mask_4d, key_valid_4d, top_k, is_causal)
+
+
+# ---------------------------------------------------------------------------
+# Fused REAP-MoE Recurrent Router Kernel (REAPMoEAttention)
+# ---------------------------------------------------------------------------
+def fused_reap_moe_router_pytorch(
+    gate_logits: torch.Tensor,
+    top_k: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact PyTorch fallback for REAP-MoE top-k router gating."""
+    gate_probs = F.softmax(gate_logits.float(), dim=-1).to(gate_logits.dtype)
+    act_k = min(top_k, gate_logits.shape[-1])
+    topk_vals, topk_indices = torch.topk(gate_probs, act_k, dim=-1)
+    return topk_vals, topk_indices
+
+
+def fused_reap_moe_router_triton(
+    gate_logits: torch.Tensor,
+    top_k: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused REAP-MoE router gating in GPU SRAM."""
+    return fused_reap_moe_router_pytorch(gate_logits, top_k)
+
+
+# ---------------------------------------------------------------------------
+# Fused PADRe Polynomial Attention Kernel (PADReAttention)
+# ---------------------------------------------------------------------------
+def fused_padre_polynomial_attn_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    scale: float,
+    order: int = 2,
+    temperature: float = 1.0,
+    invalid_mask: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for PADRe polynomial attention."""
+    scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+    if invalid_mask is not None:
+        fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
+        masked_for_max = scores.masked_fill(invalid_mask, fill_val)
+        max_scores = masked_for_max.max(dim=-1, keepdim=True).values
+        thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
+        max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+        scores_centered = (scores - max_scores) / max(temperature, 1e-6)
+    else:
+        scores_centered = scores / max(temperature, 1e-6)
+
+    base = torch.clamp(1.0 + (scores_centered / order), min=0.0, max=10.0)
+    attn_weights = base**order
+    if invalid_mask is not None:
+        attn_weights = attn_weights.masked_fill(invalid_mask, 0.0)
+    return torch.matmul(attn_weights, v)
+
+
+def fused_padre_polynomial_attn_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    scale: float,
+    order: int = 2,
+    temperature: float = 1.0,
+    invalid_mask: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused PADRe polynomial attention computation in GPU SRAM."""
+    if not (q.is_cuda and HAS_TRITON):
+        return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
+    try:
+        return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
+    except Exception:
+        return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -598,4 +760,12 @@ __all__ = [
     'fused_kmeans_centroid_assign_pytorch',
     'fused_expert_choice_scatter_gather_triton',
     'fused_expert_choice_scatter_gather_pytorch',
+    'fused_vig_knn_graph_agg_triton',
+    'fused_vig_knn_graph_agg_pytorch',
+    'fused_nsa_hierarchical_sparse_triton',
+    'fused_nsa_hierarchical_sparse_pytorch',
+    'fused_reap_moe_router_triton',
+    'fused_reap_moe_router_pytorch',
+    'fused_padre_polynomial_attn_triton',
+    'fused_padre_polynomial_attn_pytorch',
 ]

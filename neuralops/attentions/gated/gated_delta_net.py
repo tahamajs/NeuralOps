@@ -425,11 +425,16 @@ class GatedDeltaNet(BaseAttention):
             )
             self.lora_alpha = float(
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-            )
         else:
             self.lora_rank = int(kwargs.get("lora_rank", 16))
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
-        self.freeze_base = self.lora_rank > 0
+
+        # By default do NOT freeze base projections so gradients propagate directly to base weights
+        # during end-to-end task fine-tuning and distillation, unless explicitly requested.
+        explicit_freeze = kwargs.get("freeze_base", None)
+        if explicit_freeze is None and comp_config is not None:
+            explicit_freeze = getattr(comp_config, "freeze_base", None)
+        self.freeze_base = bool(explicit_freeze) if explicit_freeze is not None else False
 
         # ---- Decoder detection ----
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
