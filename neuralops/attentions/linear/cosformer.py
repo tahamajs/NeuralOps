@@ -559,6 +559,89 @@ class CosformerAttention(BaseAttention):
 
         return final_out.to(input_dtype), None
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for Cosformer."""
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+        from neuralops.utils.amp_safety import safe_linear_attn_denominator
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, D = x.shape
+        H, d = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        # 1. Projections
+        q_raw = self.q_proj(x).float().view(B, 1, H, d).transpose(1, 2)  # [B, H, 1, d]
+        k_raw = self.k_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
+        v_global = self.v_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
+
+        if self.num_kv_heads != self.num_heads:
+            k_raw = repeat_kv(k_raw, self.kv_repeat)
+            v_global = repeat_kv(v_global, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(d)
+        q_scaled = torch.clamp(q_raw * scale, min=-50.0, max=50.0)
+        k_clamped = torch.clamp(k_raw, min=-50.0, max=50.0)
+
+        if self.act_fun == "softplus":
+            q_act = F.softplus(q_scaled)
+            k_act = F.softplus(k_clamped)
+        else:
+            q_act = F.elu(q_scaled) + 1.0
+            k_act = F.elu(k_clamped) + 1.0
+
+        # 2. Angle at current step_idx
+        m = max(16384, self.max_seq_len)
+        angle = (math.pi / 2.0 / m) * float(step_idx)
+        cos_val = math.cos(angle)
+        sin_val = math.sin(angle)
+
+        qc = q_act * cos_val
+        qs = q_act * sin_val
+        kc = k_act * cos_val
+        ks = k_act * sin_val
+
+        # Concatenate cosine and sine feature maps: [B, H, 2d]
+        q_aug = torch.cat([qc.squeeze(2), qs.squeeze(2)], dim=-1)
+        k_aug = torch.cat([kc.squeeze(2), ks.squeeze(2)], dim=-1)
+        v_in = v_global.squeeze(2)  # [B, H, d]
+
+        # 3. Retrieve or initialize recurrent state [B, H, 2d, d] and [B, H, 2d]
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, 2 * d, d), device=device, dtype=torch.float32)
+            state["z_state"] = torch.zeros((B, H, 2 * d), device=device, dtype=torch.float32)
+
+        kv_state = state["kv_state"]
+        z_state = state["z_state"]
+
+        # 4. Fused recurrent linear step: S_t = S_{t-1} + k_t \otimes v_t
+        out_token, kv_state, z_state = fused_recurrent_linear_step(
+            q_aug, k_aug, v_in, kv_state, z_state, eps=1e-5
+        )
+        state["kv_state"] = kv_state
+        state["z_state"] = z_state
+        state["step_idx"] = step_idx + 1
+
+        context = out_token.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+        out = self.out_proj(context.to(dtype))
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
 
 def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None,
                      layer_idx=0, total_layers=12, old_attn=None, **kwargs):
