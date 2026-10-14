@@ -504,12 +504,18 @@ class PreconditionedGDNAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        # Fast path via Triton gdn_scan when suitable and without cache
+        # Fast path via fused chunk_gdn when D <= 64 on CUDA and without cache
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
-                from neuralops.core.triton_kernels.gdn_scan import gdn_scan
-                y_scan = gdn_scan(q, k_preconditioned, v, beta, alpha)
-                y = y_scan.transpose(1, 2).contiguous().view(B, L, H * D)
+                from fla.ops import chunk_gdn
+                q_fl = q.transpose(1, 2).contiguous()
+                k_fl = k_preconditioned.transpose(1, 2).contiguous()
+                v_fl = v.transpose(1, 2).contiguous()
+                log_g = torch.log(beta.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
+                step_beta = alpha.transpose(1, 2).to(q.dtype).contiguous()
+                res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
+                y_fl = res[0] if isinstance(res, tuple) else res
+                y = y_fl.contiguous().view(B, L, H * D)
                 out = self.out_proj(y)
                 return out, None
             except Exception:
