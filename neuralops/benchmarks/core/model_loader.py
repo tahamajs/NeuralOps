@@ -97,6 +97,10 @@ def load_model_and_tokenizer(
     if num_labels is not None:
         config.num_labels = num_labels
 
+    # Ensure model config has a valid pad_token_id matching tokenizer (required by GPT-2 classification)
+    if getattr(config, "pad_token_id", None) is None and tokenizer.pad_token_id is not None:
+        config.pad_token_id = tokenizer.pad_token_id
+
     LOG.info("Instantiating model '%s' (is_causal=%s, dtype=%s)...", model_name, is_causal, dtype)
     try:
         if is_causal:
