@@ -605,18 +605,29 @@ class HGRN2Layer(BaseAttention):
         scores = torch.matmul(q, k.transpose(-1, -2)) * scale  # (B, H, L, N_kv)
 
         # Window + causal mask (at token level)
-        dist = (q_pos - k_pos).abs()
-        window_mask = dist <= self.window_size  # (L, N_kv)
-        if self.is_decoder:
-            causal = k_pos <= q_pos  # (L, N_kv)
-            window_mask = window_mask & causal
+        out = None
+        if past_len == 0 and (self.window_size >= L):
+            try:
+                out = F.scaled_dot_product_attention(
+                    q, k, v, is_causal=self.is_decoder, dropout_p=self.dropout.p if self.training else 0.0
+                )
+                out = out.transpose(1, 2).contiguous().view(B, L, D)
+            except Exception:
+                out = None
 
-        window_mask = window_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
-        scores = scores.masked_fill(~window_mask, -1e4)
+        if out is None:
+            dist = (q_pos - k_pos).abs()
+            window_mask = dist <= self.window_size  # (L, N_kv)
+            if self.is_decoder:
+                causal = k_pos <= q_pos  # (L, N_kv)
+                window_mask = window_mask & causal
 
-        attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
-        out = torch.matmul(attn, v)  # (B, H, L, d)
-        out = out.transpose(1, 2).contiguous().view(B, L, D)
+            window_mask = window_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
+            scores = scores.masked_fill(~window_mask, -1e4)
+
+            attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
+            out = torch.matmul(attn, v)  # (B, H, L, d)
+            out = out.transpose(1, 2).contiguous().view(B, L, D)
 
         return out, k_new, v_new
 
