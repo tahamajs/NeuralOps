@@ -1057,7 +1057,8 @@ class SplitHeadHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             output = out
         else:
-            output = self.out_proj(out)
+            proj_dtype = self.out_proj.down.weight.dtype if hasattr(self.out_proj, "down") else (self.q_proj.down.weight.dtype if hasattr(self.q_proj, "down") else out.dtype)
+            output = self.out_proj(out.to(proj_dtype))
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ---- HuggingFace-compatible return tuple ----

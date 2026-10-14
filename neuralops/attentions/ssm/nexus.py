@@ -975,7 +975,8 @@ class NEXUSAttention(BaseAttention):
         if self.is_nested_encoder:
             output = context
         else:
-            output = self.out_proj(self.dropout(context))
+            proj_dtype = self.out_proj.weight.dtype if hasattr(self.out_proj, "weight") else context.dtype
+            output = self.out_proj(self.dropout(context.to(proj_dtype)))
 
         return (output, None)
 
