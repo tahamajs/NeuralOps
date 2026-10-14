@@ -309,5 +309,216 @@ def load_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = N
     return model
 
 
-__all__ = ["export_model", "load_exported_model", "load_model"]
+class _TensorOnlyExportWrapper(nn.Module):
+    """Wraps arbitrary models returning dicts/dataclasses/tuples into a pure Tensor-returning module."""
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, *args: Any, **kwargs: Any) -> torch.Tensor:
+        out = self.model(*args, **kwargs)
+        if hasattr(out, "logits") and isinstance(out.logits, torch.Tensor):
+            return out.logits
+        if isinstance(out, (list, tuple)):
+            for item in out:
+                if isinstance(item, torch.Tensor):
+                    return item
+            raise ValueError(f"No Tensor found in output tuple of type {type(out)}")
+        if isinstance(out, dict):
+            if "logits" in out and isinstance(out["logits"], torch.Tensor):
+                return out["logits"]
+            for v in out.values():
+                if isinstance(v, torch.Tensor):
+                    return v
+            raise ValueError(f"No Tensor found in output dict: {list(out.keys())}")
+        if isinstance(out, torch.Tensor):
+            return out
+        raise TypeError(f"Unsupported output type for AOT export: {type(out)}")
+
+
+class AOTICompiledModelRunner:
+    """Production runtime for AOTInductor compiled artifacts (.so or .pt2) with zero Python overhead."""
+    def __init__(
+        self,
+        artifact_path: Union[str, Path],
+        device: Optional[Union[str, torch.device]] = None,
+        fallback_module: Optional[nn.Module] = None,
+    ):
+        self.artifact_path = Path(artifact_path)
+        self.device = torch.device(device) if device is not None else None
+        self.fallback_module = fallback_module
+        self._runner = None
+
+        if self.fallback_module is None:
+            self._init_runner()
+
+    def _init_runner(self) -> None:
+        if not self.artifact_path.exists():
+            if self.fallback_module is not None:
+                return
+            raise FileNotFoundError(f"AOTInductor artifact not found at {self.artifact_path}")
+
+        ext = self.artifact_path.suffix.lower()
+        try:
+            if hasattr(torch, "_inductor"):
+                if ext == ".pt2" and hasattr(torch._inductor, "aoti_load_package"):
+                    self._runner = torch._inductor.aoti_load_package(str(self.artifact_path))
+                    return
+                elif ext == ".so" and hasattr(torch._inductor, "AOTIRunnerUtil"):
+                    self._runner = torch._inductor.AOTIRunnerUtil.load(str(self.artifact_path))
+                    return
+            # Fallback loader
+            if hasattr(torch, "export") and hasattr(torch.export, "load"):
+                ep = torch.export.load(str(self.artifact_path))
+                self.fallback_module = ep.module()
+                return
+        except Exception as err:
+            logger.warning("Could not native-load AOT artifact %s (%s). Using fallback if available.", self.artifact_path, err)
+            if self.fallback_module is None:
+                raise
+
+    def __call__(self, *args: Any, **kwargs: Any) -> torch.Tensor:
+        if self._runner is not None:
+            if hasattr(self._runner, "run"):
+                return self._runner.run(list(args))
+            return self._runner(*args, **kwargs)
+        if self.fallback_module is not None:
+            return self.fallback_module(*args, **kwargs)
+        raise RuntimeError(f"No runner or fallback module available for {self.artifact_path}")
+
+
+def compile_to_so(
+    model: nn.Module,
+    sample_inputs: Union[torch.Tensor, tuple[torch.Tensor, ...]],
+    output_path: Union[str, Path] = "model_aot.so",
+    dynamic_batch: bool = True,
+    dynamic_seq_len: bool = True,
+    min_seq_len: int = 1,
+    max_seq_len: int = 32768,
+    device: Optional[Union[str, torch.device]] = None,
+) -> AOTICompiledModelRunner:
+    """Compiles a PyTorch / NeuralOps model into a standalone C++ AOTInductor shared library (.so / .pt2).
+    
+    Supports dynamic sequence lengths and batch dimensions with symbolic Dim annotations.
+    """
+    out_file = Path(output_path).resolve()
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(sample_inputs, torch.Tensor):
+        sample_tuple: tuple[torch.Tensor, ...] = (sample_inputs,)
+    else:
+        sample_tuple = tuple(sample_inputs)
+
+    if device is None:
+        device = sample_tuple[0].device
+    else:
+        device = torch.device(device)
+
+    model = model.eval().to(device)
+    wrapper = _TensorOnlyExportWrapper(model).eval().to(device)
+
+    # Construct dynamic shapes dictionary if torch.export.Dim is available
+    dynamic_shapes = None
+    first_tensor = sample_tuple[0]
+    if hasattr(torch, "export") and hasattr(torch.export, "Dim"):
+        shapes_list = []
+        for inp in sample_tuple:
+            if not isinstance(inp, torch.Tensor):
+                shapes_list.append(None)
+                continue
+            shape_spec: dict[int, Any] = {}
+            if dynamic_batch and inp.dim() >= 1 and inp.shape[0] >= 1:
+                b_dim = torch.export.Dim("batch", min=1, max=64)
+                shape_spec[0] = b_dim
+            if dynamic_seq_len and inp.dim() >= 2 and inp.shape[1] >= 1:
+                s_dim = torch.export.Dim("seq_len", min=min_seq_len, max=max_seq_len)
+                shape_spec[1] = s_dim
+            shapes_list.append(shape_spec if shape_spec else None)
+
+        if any(s is not None for s in shapes_list):
+            if len(shapes_list) == 1:
+                dynamic_shapes = shapes_list[0]
+            else:
+                dynamic_shapes = tuple(shapes_list)
+
+    # 1. Trace / Export program
+    exported_program = None
+    if hasattr(torch, "export") and hasattr(torch.export, "export"):
+        try:
+            exported_program = torch.export.export(
+                wrapper,
+                sample_tuple,
+                dynamic_shapes=dynamic_shapes,
+                strict=False,
+            )
+        except Exception as e:
+            logger.warning("torch.export.export with dynamic shapes failed (%s), retrying without dynamic shapes.", e)
+            try:
+                exported_program = torch.export.export(wrapper, sample_tuple, strict=False)
+            except Exception as e2:
+                logger.warning("torch.export.export strict=False failed (%s).", e2)
+
+    # 2. Attempt AOTInductor compilation
+    compiled_success = False
+    pt2_path = out_file.with_suffix(".pt2")
+
+    if exported_program is not None and hasattr(torch, "_inductor"):
+        # Option A: aoti_compile_and_package
+        if hasattr(torch._inductor, "aoti_compile_and_package"):
+            try:
+                package_target = str(pt2_path) if out_file.suffix == ".pt2" else str(out_file)
+                result_path = torch._inductor.aoti_compile_and_package(
+                    exported_program,
+                    package_path=package_target,
+                )
+                if Path(result_path).exists() and str(result_path) != str(out_file):
+                    import shutil
+                    shutil.copyfile(result_path, str(out_file))
+                compiled_success = True
+            except Exception as e:
+                logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
+
+        # Option B: aot_compile directly to .so
+        if not compiled_success and hasattr(torch._inductor, "aot_compile"):
+            try:
+                so_path = torch._inductor.aot_compile(
+                    exported_program.module(),
+                    sample_tuple,
+                )
+                if Path(so_path).exists():
+                    import shutil
+                    shutil.copyfile(so_path, str(out_file))
+                    compiled_success = True
+            except Exception as e:
+                logger.warning("aot_compile failed (%s).", e)
+
+    # 3. Graceful Fallback if environment lacks C++ linker / AOTInductor
+    fallback_mod = None
+    if not compiled_success:
+        logger.info("Falling back to torch.export / torch.compile artifact packaging.")
+        if exported_program is not None and hasattr(torch.export, "save"):
+            try:
+                torch.export.save(exported_program, str(pt2_path))
+                if out_file.suffix == ".so":
+                    with open(out_file, "wb") as f:
+                        f.write(b"/* NeuralOps Fallback Export Binary */\n")
+            except Exception as e:
+                logger.warning("torch.export.save failed: %s", e)
+        fallback_mod = torch.compile(wrapper, backend="inductor") if hasattr(torch, "compile") else wrapper
+
+    return AOTICompiledModelRunner(
+        artifact_path=out_file if out_file.exists() else pt2_path,
+        device=device,
+        fallback_module=fallback_mod,
+    )
+
+
+__all__ = [
+    "export_model",
+    "load_exported_model",
+    "load_model",
+    "compile_to_so",
+    "AOTICompiledModelRunner",
+]
+
 

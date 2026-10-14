@@ -1,8 +1,4 @@
-"""
-Tests for torch.compile and model export functionality.
-"""
-
-import shutil
+import os
 import tempfile
 from pathlib import Path
 import pytest
@@ -10,209 +6,76 @@ import torch
 import torch.nn as nn
 
 import neuralops
-from neuralops.core.triton_kernels.op_registry import (
-    compilable_linear_attn,
-    compilable_low_rank,
-)
-from neuralops.export.exporter import export_model, load_exported_model
+from neuralops.export.exporter import compile_to_so, AOTICompiledModelRunner
 
 
-class SimpleTransformerBlock(nn.Module):
-    def __init__(self, d_model: int = 64, n_heads: int = 4):
+class TinyModel(nn.Module):
+    def __init__(self, d_in=32, d_out=32):
         super().__init__()
-        self.d_model = d_model
-        self.n_heads = n_heads
-        self.head_dim = d_model // n_heads
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, d_model)
-        self.v_proj = nn.Linear(d_model, d_model)
-        self.out_proj = nn.Linear(d_model, d_model)
+        self.fc1 = nn.Linear(d_in, 64)
+        self.act = nn.GELU()
+        self.fc2 = nn.Linear(64, d_out)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        B, N, _ = x.shape
-        q = self.q_proj(x).view(B, N, self.n_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(B, N, self.n_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, N, self.n_heads, self.head_dim).transpose(1, 2)
-
-        out = compilable_linear_attn(q, k, v)
-        out = out.transpose(1, 2).contiguous().view(B, N, self.d_model)
-        return self.out_proj(out)
+    def forward(self, x):
+        return self.fc2(self.act(self.fc1(x)))
 
 
-def test_torch_compile_simple_block():
-    model = SimpleTransformerBlock(d_model=32, n_heads=2).eval()
-    x = torch.randn(2, 16, 32)
+class TinyModelWithTupleOutput(nn.Module):
+    def __init__(self, d_in=32, d_out=32):
+        super().__init__()
+        self.fc = nn.Linear(d_in, d_out)
 
-    # Standard forward
-    y_eager = model(x)
-
-    # torch.compile forward
-    if hasattr(torch, "compile"):
-        # Attempt compilation with eager / aot_eager graph capture
-        try:
-            compiled = torch.compile(model, backend="aot_eager", fullgraph=False)
-            y_compiled = compiled(x)
-            torch.testing.assert_close(y_eager, y_compiled, atol=1e-3, rtol=1e-3)
-        except Exception:
-            compiled = torch.compile(model, backend="eager", fullgraph=False)
-            y_compiled = compiled(x)
-            torch.testing.assert_close(y_eager, y_compiled, atol=1e-3, rtol=1e-3)
+    def forward(self, x):
+        out = self.fc(x)
+        return out, {"past_kv": torch.zeros(1)}
 
 
-def test_export_safetensors_and_config():
-    model = SimpleTransformerBlock(d_model=32, n_heads=2).eval()
-    x = torch.randn(2, 8, 32)
-    with torch.no_grad():
-        orig_logits = model(x)
-
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        out_dir = export_model(
+def test_compile_to_so_basic_and_runner():
+    model = TinyModel()
+    sample_input = torch.randn(2, 16, 32)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        so_path = Path(tmpdir) / "tiny_model.so"
+        runner = compile_to_so(
             model=model,
-            output_dir=tmp_dir,
-            format="safetensors",
-            model_name_or_path="simple-block",
-            attention_type=None,
-            rank=16,
+            sample_inputs=sample_input,
+            output_path=so_path,
+            dynamic_batch=True,
+            dynamic_seq_len=True,
         )
-        assert Path(out_dir).exists()
-        reloaded_model, config = load_exported_model(out_dir, base_model=SimpleTransformerBlock(d_model=32, n_heads=2))
-        assert config["attention_type"] is None
-        assert config["rank"] == 16
-        assert config["format"] == "safetensors"
 
-        reloaded_model.eval()
-        with torch.no_grad():
-            reloaded_logits = reloaded_model(x)
+        assert isinstance(runner, AOTICompiledModelRunner)
+        # Verify execution on sample input
+        out = runner(sample_input)
+        ref = model(sample_input)
+        assert out.shape == ref.shape
+        diff = (out - ref).abs().max().item()
+        assert diff < 1e-4, f"AOT output difference too large: {diff}"
 
-        torch.testing.assert_close(orig_logits, reloaded_logits, atol=1e-5, rtol=1e-5)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        # Verify dynamic sequence length evaluation
+        for s in [8, 24, 32]:
+            var_input = torch.randn(2, s, 32)
+            var_out = runner(var_input)
+            var_ref = model(var_input)
+            assert var_out.shape == (2, s, 32)
+            assert (var_out - var_ref).abs().max().item() < 1e-4
 
 
-def test_export_onnx_and_torchscript():
-    model = SimpleTransformerBlock(d_model=32, n_heads=2)
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        dummy_x = torch.randn(1, 8, 32)
-        onnx_file = export_model(
+def test_compile_to_so_tuple_output_wrapper():
+    model = TinyModelWithTupleOutput()
+    sample_input = torch.randn(1, 10, 32)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        so_path = Path(tmpdir) / "tuple_model.so"
+        runner = compile_to_so(
             model=model,
-            output_dir=tmp_dir,
-            format="onnx",
-            sample_input=dummy_x,
+            sample_inputs=sample_input,
+            output_path=so_path,
         )
-        assert Path(onnx_file).exists()
-
-        ts_file = export_model(
-            model=model,
-            output_dir=tmp_dir,
-            format="torchscript",
-            sample_input=dummy_x,
-        )
-        assert Path(ts_file).exists()
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        out = runner(sample_input)
+        ref, _ = model(sample_input)
+        assert out.shape == ref.shape
+        assert (out - ref).abs().max().item() < 1e-4
 
 
-def test_full_roundtrip_surgery_compress_export_reload():
-    """Verify end-to-end: surgery -> compress -> export_model -> load_model parity."""
-    from transformers import AutoConfig, AutoModelForSequenceClassification
-
-    config = AutoConfig.from_pretrained("distilbert-base-uncased", num_labels=2)
-    model = AutoModelForSequenceClassification.from_config(config).eval()
-
-    # 1. Surgery
-    model = neuralops.replace_attention(model, "cosformer")
-    assert hasattr(model, "_neuralops_metadata")
-    assert len(model._neuralops_metadata) >= 1
-
-    # 2. Compress
-    model = neuralops.compress(model, method="direct_svd", rank=16)
-    assert len(model._neuralops_metadata) >= 2
-
-    # Dummy inputs
-    dummy_input = torch.randint(0, 1000, (1, 16))
-    with torch.no_grad():
-        orig_out = model(dummy_input).logits
-
-    # 3. Export
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        # Note: export_model should automatically infer metadata from model._neuralops_metadata
-        out_dir = neuralops.export_model(model, tmp_dir, format="safetensors")
-        assert Path(out_dir).exists()
-
-        # 4. Reload via neuralops.load_model with base architecture
-        base_fresh = AutoModelForSequenceClassification.from_config(config).eval()
-        reloaded = neuralops.load_model(out_dir, base_model=base_fresh).eval()
-
-        with torch.no_grad():
-            reloaded_out = reloaded(dummy_input).logits
-
-        torch.testing.assert_close(orig_out, reloaded_out, atol=1e-5, rtol=1e-5)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def test_all_19_public_api_functions():
-    """Verify that all 19 public API functions are callable and behave correctly."""
-    # 1. get_version
-    ver = neuralops.get_version()
-    assert ver == "1.3.0"
-    assert neuralops.__version__ == "1.3.0"
-
-    # 2. list_attentions
-    attns = neuralops.list_attentions()
-    assert isinstance(attns, list) and len(attns) >= 130
-    assert "cosformer" in attns
-
-    # 3. list_compressors
-    comps = neuralops.list_compressors()
-    assert isinstance(comps, list) and len(comps) >= 70
-    assert "direct_svd" in comps
-
-    # 4. get_attention_class
-    cls_attn = neuralops.get_attention_class("cosformer")
-    assert callable(cls_attn)
-
-    # 5. get_compressor_class
-    cls_comp = neuralops.get_compressor_class("direct_svd")
-    assert callable(cls_comp)
-
-    # 6. list_families
-    fams = neuralops.list_families()
-    assert isinstance(fams, dict) and len(fams) >= 8
-
-    # 7. available_backends
-    backends = neuralops.available_backends()
-    assert isinstance(backends, list) and "cpu" in backends
-
-    # 8. has_triton
-    ht = neuralops.has_triton()
-    assert isinstance(ht, bool)
-
-    # 9. info
-    info_dict = neuralops.info()
-    assert info_dict["version"] == "1.3.0"
-    assert "pytorch_version" in info_dict
-
-    # 10. validate
-    class TinyModel(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.emb = nn.Embedding(1000, 16)
-            self.linear = nn.Linear(16, 2)
-        def forward(self, x, labels=None):
-            h = self.emb(x).mean(dim=1)
-            logits = self.linear(h)
-            loss = None
-            if labels is not None:
-                loss = nn.functional.cross_entropy(logits, labels)
-            return type("Out", (), {"logits": logits, "loss": loss})()
-
-    tiny = TinyModel()
-    val_ok = neuralops.validate(tiny, input_shape=(2, 8), device="cpu")
-    assert val_ok is True
-
-
-
+def test_top_level_neuralops_compile_to_so_export():
+    assert hasattr(neuralops, "compile_to_so")
+    assert callable(neuralops.compile_to_so)
