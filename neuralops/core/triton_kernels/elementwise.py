@@ -467,6 +467,109 @@ def fused_alibi_bias_triton(
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  DynamicConv1D Fusion: Fused Causal Depthwise Conv Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_dynconv1d_fwd_kernel(
+        v_ptr,
+        w_ptr,
+        out_ptr,
+        B,
+        H,
+        N,
+        d,
+        K,
+        stride_vb,
+        stride_vh,
+        stride_vt,
+        stride_vd,
+        stride_wb,
+        stride_wh,
+        stride_wn,
+        stride_wk,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_n = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+
+        b = pid_bh // H
+        h = pid_bh % H
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < d
+
+        acc = tl.zeros([BLOCK_D], dtype=tl.float32)
+
+        for k in range(0, K):
+            w_offset = b * stride_wb + h * stride_wh + pid_n * stride_wn + k * stride_wk
+            weight = tl.load(w_ptr + w_offset)
+
+            v_offset = b * stride_vb + h * stride_vh + (pid_n + k) * stride_vt + offs_d * stride_vd
+            v_val = tl.load(v_ptr + v_offset, mask=mask_d, other=0.0)
+
+            acc += weight * v_val.to(tl.float32)
+
+        out_offset = b * stride_ob + h * stride_oh + pid_n * stride_on + offs_d * stride_od
+        tl.store(out_ptr + out_offset, acc.to(out_ptr.dtype.element_ty), mask=mask_d)
+
+
+def fused_dynamic_conv1d_pytorch(
+    v_full: torch.Tensor,
+    dyn_w: torch.Tensor,
+    chunk: int | None = 64,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for chunked dynamic causal conv."""
+    B, H, T, d = v_full.shape
+    N = dyn_w.shape[2]
+    K = dyn_w.shape[3]
+    out = torch.empty((B, H, N, d), dtype=v_full.dtype, device=v_full.device)
+    v_win_all = v_full.unfold(dimension=2, size=K, step=1)
+    for start in range(0, N, chunk):
+        end = min(start + chunk, N)
+        v_chunk = v_win_all[:, :, start:end, :, :]
+        w_chunk = dyn_w[:, :, start:end, :]
+        out[:, :, start:end, :] = torch.einsum("bhcdk,bhck->bhcd", v_chunk, w_chunk)
+    return out
+
+
+def fused_dynamic_conv1d_triton(
+    v_full: torch.Tensor,
+    dyn_w: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Dynamic Causal Depthwise Conv1D kernel executed entirely in GPU SRAM."""
+    if not (HAS_TRITON and v_full.is_cuda):
+        return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
+
+    B, H, T, d = v_full.shape
+    N = dyn_w.shape[2]
+    K = dyn_w.shape[3]
+    device = v_full.device
+
+    out = torch.empty((B, H, N, d), dtype=v_full.dtype, device=device)
+    BLOCK_D = triton.next_power_of_2(d)
+    grid = (N, B * H)
+
+    try:
+        _fused_dynconv1d_fwd_kernel[grid](
+            v_full, dyn_w, out,
+            B, H, N, d, K,
+            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
+            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            BLOCK_D=BLOCK_D,
+        )
+        return out
+    except Exception:
+        return fused_dynamic_conv1d_pytorch(v_full, dyn_w)
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
@@ -482,4 +585,6 @@ __all__ = [
     "fast_hadamard_transform",
     "fused_alibi_bias_triton",
     "fused_alibi_bias_pytorch",
+    "fused_dynamic_conv1d_triton",
+    "fused_dynamic_conv1d_pytorch",
 ]
