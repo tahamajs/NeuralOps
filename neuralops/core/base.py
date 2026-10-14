@@ -65,10 +65,36 @@ class BaseAttention(nn.Module):
         attention_mask: torch.Tensor | None = None,
         head_mask: torch.Tensor | None = None,
         output_attentions: bool = False,
+        past_key_values: Any | None = None,
+        use_cache: bool = False,
         **kwargs: Any,
-    ) -> tuple[Any, Any | None]:
-        """Must return (output, attention_weights_or_None)."""
+    ) -> tuple[Any, Any | None] | tuple[Any, Any | None, Any | None]:
+        """Must return (output, attention_weights_or_None) or (output, weights, past_key_values)."""
         raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: Any | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, Any]:
+        """Step-by-step autoregressive generation token forward.
+        
+        Args:
+            x: Input token representation [B, 1, D] or [B, D].
+            state: Recurrent hidden state or KV-cache.
+        Returns:
+            (out, next_state) where out is [B, 1, D] and next_state is the updated state.
+        """
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        res = self.forward(x, past_key_values=state, use_cache=True, **kwargs)
+        if isinstance(res, tuple):
+            if len(res) == 3:
+                return res[0], res[2]
+            return res[0], state
+        return res, state
+
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal fallback: copy pretrained weights from old attention layer."""
