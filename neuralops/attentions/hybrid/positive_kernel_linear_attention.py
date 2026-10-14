@@ -728,29 +728,48 @@ class PositiveKernelLinearAttention(BaseAttention):
                 k = k * kv_mask
                 v = v * kv_mask
 
-        # ---- Kernel feature map ----
-        Q_features = self.kernel_feature_map(q)
-        K_features = self.kernel_feature_map(k)
-
         # ---- Compute attention ----
-        if self.is_decoder:
-            context = self._causal_linear_attention(
-                Q_features.float(),
-                K_features.float(),
-                v.float(),
-                past_len=past_len,
-            ).to(dtype)
-        else:
-            # Bidirectional linear attention via associativity Q(K^T V)
-            KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
-            K_sum = K_features.float().sum(dim=2)
-            num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
-            den = (
-                torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum)
-                .unsqueeze(-1)
-                .clamp(min=1e-5)
-            )
-            context = (num / den).to(dtype)
+        context = None
+        # Path 1: Fused hardware Triton linear attention kernel on CUDA
+        if q.is_cuda and valid_mask is None and past_len == 0 and q.shape[-1] <= 128:
+            try:
+                from neuralops.core.triton_kernels import triton_dispatch
+                context = triton_dispatch(
+                    "linear_attn",
+                    q,
+                    k,
+                    v,
+                    is_causal=bool(self.is_decoder),
+                    phi="elu+1",
+                    eps=1e-5,
+                ).to(dtype)
+            except Exception as e:
+                logger.debug("Triton linear_attn dispatch failed, falling back to PyTorch: %s", e)
+                context = None
+
+        if context is None:
+            # Path 2: Vectorized PyTorch implementation
+            Q_features = self.kernel_feature_map(q)
+            K_features = self.kernel_feature_map(k)
+
+            if self.is_decoder:
+                context = self._causal_linear_attention(
+                    Q_features.float(),
+                    K_features.float(),
+                    v.float(),
+                    past_len=past_len,
+                ).to(dtype)
+            else:
+                # Bidirectional linear attention via associativity Q(K^T V)
+                KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
+                K_sum = K_features.float().sum(dim=2)
+                num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
+                den = (
+                    torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum)
+                    .unsqueeze(-1)
+                    .clamp(min=1e-5)
+                )
+                context = (num / den).to(dtype)
 
         context = torch.nan_to_num(context, nan=0.0)
 
