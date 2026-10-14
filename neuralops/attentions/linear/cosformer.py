@@ -99,10 +99,10 @@ class CosformerAttention(BaseAttention):
         self.num_heads = int(num_heads)
 
         resolved_head_dim = _cfg_get(config, "head_dim", None)
-        if resolved_head_dim is None and source_attn is not None:
+        if not resolved_head_dim and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
-        if resolved_head_dim is None:
-            resolved_head_dim = self.dim // max(1, self.num_heads)
+        if not resolved_head_dim:
+            resolved_head_dim = max(1, self.dim // max(1, self.num_heads))
         self.head_dim = int(resolved_head_dim)
 
         kv_heads = _cfg_get(config, "num_key_value_heads", None)
