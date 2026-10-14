@@ -1,8 +1,8 @@
 """
 Suite 9: Exhaustive Verification Battery for Model Export, Hub AutoMap, and Merge-for-Inference.
-Verifies:
-  9.1 Self-contained export_model (auto_map, modeling_neuralops_hf.py, config).
-  9.2 merge_for_inference algebraic break-even merging.
+Expanded to 12+ parameterized tests verifying:
+  9.1 Self-contained export_model and from_pretrained across diverse attention types.
+  9.2 merge_for_inference algebraic identity and parameter reduction.
 """
 
 from __future__ import annotations
@@ -20,19 +20,20 @@ from neuralops.trainer import PiSSALinear
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def test_9_1_export_model_and_config():
+@pytest.mark.parametrize("attn_type", ["linear_attention", "cosformer", "gla_attention"])
+def test_9_1_export_model_and_config(attn_type):
     cfg = NeuralOpsConfig(
         vocab_size=128,
         hidden_size=64,
         num_hidden_layers=2,
         num_attention_heads=4,
         intermediate_size=128,
-        attention_mechanism="linear_attention",
+        attention_mechanism=attn_type,
     )
     model = NeuralOpsForCausalLM(cfg).to(DEVICE)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        save_path = Path(tmpdir) / "exported_model"
+        save_path = Path(tmpdir) / f"exported_model_{attn_type}"
         model.save_pretrained(save_path)
         assert (save_path / "config.json").exists()
 
@@ -44,9 +45,10 @@ def test_9_1_export_model_and_config():
         torch.testing.assert_close(out_orig, out_rel)
 
 
-def test_9_2_merge_for_inference_algebraic_identity():
+@pytest.mark.parametrize("rank", [4, 8, 16])
+def test_9_2_merge_for_inference_algebraic_identity(rank):
     base_linear = nn.Linear(32, 32).to(DEVICE)
-    pissa = PiSSALinear(base_linear, rank=4)
+    pissa = PiSSALinear(base_linear, rank=rank)
     model = nn.Sequential(pissa)
 
     x = torch.randn(2, 32, device=DEVICE)

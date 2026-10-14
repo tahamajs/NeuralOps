@@ -1,9 +1,9 @@
 """
 Suite 10: Exhaustive Verification Battery for Developer Experience (DX), CLI, Recipes, and Plots.
-Verifies:
-  10.1 Builtin recipes (fast_linear_recovery, etc.) and recommend().
-  10.2 Model inspector summary and compare.
-  10.3 Publication plot generator (PDF/SVG artifact output).
+Expanded to 20+ parameterized tests verifying:
+  10.1 All built-in recipes in BUILTIN_RECIPES and recommend() across memory budgets.
+  10.2 Model inspector summary and compare across architectures.
+  10.3 PaperPlotGenerator producing vector graphics (.svg and .pdf).
 """
 
 from __future__ import annotations
@@ -21,22 +21,26 @@ from neuralops.analysis.paper_plots import PaperPlotGenerator
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def test_10_1_recipes_and_recommendation():
-    assert len(BUILTIN_RECIPES) >= 3
-    assert "fast_linear_recovery" in BUILTIN_RECIPES
+@pytest.mark.parametrize("recipe_name", list(BUILTIN_RECIPES.keys()))
+def test_10_1_builtin_recipes(recipe_name):
+    recipe = BUILTIN_RECIPES[recipe_name]
+    assert "description" in recipe
+    assert "attention" in recipe or "compressor" in recipe or "strategy" in recipe
 
-    rec = recommend()
+
+@pytest.mark.parametrize("vram_gb", [4, 6, 8, 24, 80])
+def test_10_1_recommend_across_budgets(vram_gb):
+    rec = recommend(gpu_memory_gb=vram_gb)
     assert "recommended_attention" in rec
 
 
-def test_10_2_inspector_summary_and_compare():
-    m1 = nn.Sequential(nn.Linear(16, 16), nn.Linear(16, 8)).to(DEVICE)
-    m2 = nn.Sequential(nn.Linear(16, 16), nn.Linear(16, 8)).to(DEVICE)
-
+@pytest.mark.parametrize("dim", [16, 32, 64])
+def test_10_2_inspector_summary_and_compare(dim):
+    m1 = nn.Sequential(nn.Linear(dim, dim), nn.Linear(dim, dim // 2)).to(DEVICE)
     s = summary(m1)
     assert s["total_parameters"] > 0
 
-    x = torch.randn(2, 16, device=DEVICE)
+    x = torch.randn(2, dim, device=DEVICE)
     comp = compare(m1, m1, x)
     assert comp["cosine_similarity"] > 0.999
 
