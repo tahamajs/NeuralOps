@@ -1,7 +1,7 @@
 """
-Comprehensive numerical parity and fallback tests across all 26 Triton kernel modules.
-Tests CPU/MPS/CUDA fallbacks across float32 and float16 precisions, verifying mathematical
-equivalence, shape preservation, and differentiability.
+Comprehensive numerical parity, fallback, and autograd gradient tests across all 26 Triton kernel modules.
+Tests CPU/MPS/CUDA execution across float32 and float16 precisions, verifying mathematical
+equivalence, shape preservation, and differentiability (Forward + Backward).
 """
 
 import pytest
@@ -61,49 +61,47 @@ from neuralops.core.triton_kernels.selective_scan import (
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_linear_attn_parity(dtype):
+def test_linear_attn_parity_and_grad(dtype):
     B, H, N, D = 2, 4, 32, 64
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    q = torch.randn(B, H, N, D, dtype=dtype, device=device)
-    k = torch.randn(B, H, N, D, dtype=dtype, device=device)
-    v = torch.randn(B, H, N, D, dtype=dtype, device=device)
+    q = torch.randn(B, H, N, D, dtype=dtype, device=device, requires_grad=True)
+    k = torch.randn(B, H, N, D, dtype=dtype, device=device, requires_grad=True)
+    v = torch.randn(B, H, N, D, dtype=dtype, device=device, requires_grad=True)
 
     out_fallback = linear_attn_pytorch_fallback(q, k, v)
     out_dispatch = triton_dispatch("linear_attn", q, k, v)
-
     torch.testing.assert_close(out_dispatch, out_fallback, rtol=1e-2, atol=1e-2)
 
-    if device == "cuda" and HAS_TRITON and linear_attn.is_supported(q, k, v):
-        out_triton = linear_attn.fwd(q, k, v)
-        torch.testing.assert_close(out_triton, out_fallback, rtol=1e-2, atol=1e-2)
+    loss = out_dispatch.sum()
+    loss.backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_low_rank_parity(dtype):
+def test_low_rank_parity_and_grad(dtype):
     B, N, in_dim, rank, out_dim = 2, 16, 64, 16, 64
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    x = torch.randn(B, N, in_dim, dtype=dtype, device=device)
-    U = torch.randn(in_dim, rank, dtype=dtype, device=device)
-    V = torch.randn(rank, out_dim, dtype=dtype, device=device)
-    bias = torch.randn(out_dim, dtype=dtype, device=device)
+    x = torch.randn(B, N, in_dim, dtype=dtype, device=device, requires_grad=True)
+    U = torch.randn(in_dim, rank, dtype=dtype, device=device, requires_grad=True)
+    V = torch.randn(rank, out_dim, dtype=dtype, device=device, requires_grad=True)
+    bias = torch.randn(out_dim, dtype=dtype, device=device, requires_grad=True)
 
     out_fallback = low_rank_pytorch_fallback(x, U, V, bias=bias)
     out_dispatch = triton_dispatch("low_rank", x, U, V, bias=bias)
-
     torch.testing.assert_close(out_dispatch, out_fallback, rtol=1e-2, atol=1e-2)
 
-    if device == "cuda" and HAS_TRITON and low_rank.is_supported(x, U, V, bias=bias):
-        out_triton = low_rank.fwd(x, U, V, bias=bias)
-        torch.testing.assert_close(out_triton, out_fallback, rtol=1e-2, atol=1e-2)
+    loss = out_dispatch.sum()
+    loss.backward()
+    assert x.grad is not None and U.grad is not None and V.grad is not None and bias.grad is not None
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_gqa_parity(dtype):
+def test_gqa_parity_and_grad(dtype):
     B, num_kv_heads, N, D = 2, 2, 16, 32
     num_heads = 4
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    k = torch.randn(B, num_kv_heads, N, D, dtype=dtype, device=device)
-    v = torch.randn(B, num_kv_heads, N, D, dtype=dtype, device=device)
+    k = torch.randn(B, num_kv_heads, N, D, dtype=dtype, device=device, requires_grad=True)
+    v = torch.randn(B, num_kv_heads, N, D, dtype=dtype, device=device, requires_grad=True)
 
     k_f, v_f = gqa_pytorch_fallback(k, v, num_kv_heads=num_kv_heads, num_heads=num_heads)
     k_d, v_d = triton_dispatch("gqa", k, v, num_kv_heads=num_kv_heads, num_heads=num_heads)
@@ -111,23 +109,23 @@ def test_gqa_parity(dtype):
     torch.testing.assert_close(k_d, k_f)
     torch.testing.assert_close(v_d, v_f)
 
-    if device == "cuda" and HAS_TRITON and gqa.is_supported(k, v, num_kv_heads, num_heads):
-        k_t, v_t = gqa.fwd(k, v, num_kv_heads, num_heads)
-        torch.testing.assert_close(k_t, k_f)
-        torch.testing.assert_close(v_t, v_f)
+    loss = (k_d.sum() + v_d.sum())
+    loss.backward()
+    assert k.grad is not None and v.grad is not None
+    assert k.grad.shape == k.shape and v.grad.shape == v.shape
 
 
-def test_sparse_attn_fallback_shapes():
+def test_sparse_attn_fallback_shapes_and_grad():
     B, H, N, D = 1, 2, 16, 32
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    q = torch.randn(B, H, N, D, device=device)
-    k = torch.randn(B, H, N, D, device=device)
-    v = torch.randn(B, H, N, D, device=device)
+    q = torch.randn(B, H, N, D, device=device, requires_grad=True)
+    k = torch.randn(B, H, N, D, device=device, requires_grad=True)
+    v = torch.randn(B, H, N, D, device=device, requires_grad=True)
 
-    out = sparse_attn_pytorch_fallback(q, k, v)
-    assert out.shape == q.shape
     out_d = triton_dispatch("sparse_attn", q, k, v)
     assert out_d.shape == q.shape
+    out_d.sum().backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
@@ -146,75 +144,108 @@ def test_paged_attention_parity(dtype):
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_fused_norm_linear_parity(dtype):
+def test_fused_norm_linear_parity_and_grad(dtype):
     B, N, D_in, D_out = 2, 8, 32, 64
-    x = torch.randn(B, N, D_in, dtype=dtype)
-    weight = torch.randn(D_out, D_in, dtype=dtype)
-    bias = torch.randn(D_out, dtype=dtype)
+    x = torch.randn(B, N, D_in, dtype=dtype, requires_grad=True)
+    weight = torch.randn(D_out, D_in, dtype=dtype, requires_grad=True)
+    bias = torch.randn(D_out, dtype=dtype, requires_grad=True)
 
     ref = fused_norm_linear_pytorch(x, weight, bias=bias)
     out = fused_norm_linear(x, weight, bias=bias)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
+    out.sum().backward()
+    assert x.grad is not None and weight.grad is not None and bias.grad is not None
+
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_softplus_parity(dtype):
-    x = torch.randn(4, 16, dtype=dtype)
+def test_softplus_parity_and_grad(dtype):
+    x = torch.randn(4, 16, dtype=dtype, requires_grad=True)
     ref = softplus_pytorch(x)
     out = softplus_fwd(x)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
+    out.sum().backward()
+    assert x.grad is not None and x.grad.shape == x.shape
 
-def test_fused_ce_parity():
-    logits = torch.randn(4, 10, dtype=torch.float32)
+
+def test_fused_ce_parity_and_grad():
+    logits = torch.randn(4, 10, dtype=torch.float32, requires_grad=True)
     targets = torch.tensor([1, 4, 0, 9], dtype=torch.long)
 
     ref = fused_cross_entropy_pytorch(logits, targets)
     out = fused_cross_entropy(logits, targets)
     torch.testing.assert_close(out, ref, rtol=1e-4, atol=1e-4)
 
+    out.backward()
+    assert logits.grad is not None and logits.grad.shape == logits.shape
 
-def test_fused_kd_parity():
-    s_logits = torch.randn(4, 10, dtype=torch.float32)
+
+def test_fused_kd_parity_and_grad():
+    s_logits = torch.randn(4, 10, dtype=torch.float32, requires_grad=True)
     t_logits = torch.randn(4, 10, dtype=torch.float32)
 
     ref = fused_kd_loss_pytorch(s_logits, t_logits, temperature=2.0)
     out = fused_kd_loss(s_logits, t_logits, temperature=2.0)
     torch.testing.assert_close(out, ref, rtol=1e-4, atol=1e-4)
 
+    out.backward()
+    assert s_logits.grad is not None and s_logits.grad.shape == s_logits.shape
 
-def test_sliding_window_parity():
+
+def test_sliding_window_parity_and_grad():
     B, H, N, D = 1, 2, 16, 32
-    q = torch.randn(B, H, N, D)
-    k = torch.randn(B, H, N, D)
-    v = torch.randn(B, H, N, D)
+    q = torch.randn(B, H, N, D, requires_grad=True)
+    k = torch.randn(B, H, N, D, requires_grad=True)
+    v = torch.randn(B, H, N, D, requires_grad=True)
 
     ref = sliding_window_pytorch(q, k, v, window_size=4)
     out = sliding_window_attention(q, k, v, window_size=4)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
+    out.sum().backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
 
-def test_cosformer_parity():
+
+def test_cosformer_parity_and_grad():
     B, H, N, D = 1, 2, 16, 32
-    q = torch.randn(B, H, N, D)
-    k = torch.randn(B, H, N, D)
-    v = torch.randn(B, H, N, D)
+    q = torch.randn(B, H, N, D, requires_grad=True)
+    k = torch.randn(B, H, N, D, requires_grad=True)
+    v = torch.randn(B, H, N, D, requires_grad=True)
 
     ref = cosformer_pytorch_fwd(q, k, v)
     out = cosformer_triton_fwd(q, k, v)
     torch.testing.assert_close(out, ref, rtol=1e-3, atol=1e-3)
 
+    out.sum().backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
 
-def test_fused_rope_parity():
+
+def test_fused_rope_parity_and_grad():
     B, H, N, D = 2, 4, 16, 32
-    q = torch.randn(B, H, N, D)
-    k = torch.randn(B, H, N, D)
+    q = torch.randn(B, H, N, D, requires_grad=True)
+    k = torch.randn(B, H, N, D, requires_grad=True)
     cos = torch.ones(B, 1, N, D)
     sin = torch.zeros(B, 1, N, D)
 
     q_out, k_out = fused_rope_embedding_kernel(q, k, cos, sin)
     torch.testing.assert_close(q_out, q)
     torch.testing.assert_close(k_out, k)
+
+    (q_out.sum() + k_out.sum()).backward()
+    assert q.grad is not None and k.grad is not None
+
+
+def test_block_sparse_parity_and_grad():
+    B, H, N, D = 1, 2, 16, 32
+    q = torch.randn(B, H, N, D, requires_grad=True)
+    k = torch.randn(B, H, N, D, requires_grad=True)
+    v = torch.randn(B, H, N, D, requires_grad=True)
+
+    out = block_sparse_attention(q, k, v, block_size=8)
+    assert out.shape == q.shape
+    out.sum().backward()
+    assert q.grad is not None and k.grad is not None and v.grad is not None
 
 
 def test_selective_scan_parity():
