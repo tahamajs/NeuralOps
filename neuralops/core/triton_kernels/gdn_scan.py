@@ -607,7 +607,9 @@ def gdn_scan_triton(q, k, v, beta, alpha):
 
 def gdn_scan(q, k, v, beta, alpha):
     """Dispatches GDN scan to Triton GPU kernel when suitable, else PyTorch fallback."""
-    if torch.cuda.is_available() and q.is_cuda and hasattr(triton, "jit"):
+    from neuralops.core.triton_kernels._types import check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "gdn_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
+    if suitable and hasattr(triton, "jit"):
         try:
             return gdn_scan_triton(q, k, v, beta, alpha)
         except Exception:
