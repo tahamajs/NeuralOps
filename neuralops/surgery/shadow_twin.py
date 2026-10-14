@@ -188,12 +188,14 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
         student_ret = orig_forward(*args, **kwargs)
         student_core = student_ret[0] if isinstance(student_ret, tuple) else student_ret
 
-        # 3. Compute stage-specific loss
+        # 3. Compute stage-specific loss (guarded against recomputation mutability)
         stage = getattr(bridge, "stage", "stage2_block_cloning")
-        if stage in ("stage1_orientation", "stage2_block_cloning"):
+        if stage in ("stage1_orientation", "stage2_block_cloning") and torch.is_grad_enabled():
             loss_clone = compute_operator_cloning_loss(teacher_core, student_core)
             loss_cka = compute_linear_cka_loss(teacher_core, student_core)
             bridge._last_twin_loss = loss_clone + 0.05 * loss_cka
+        elif not torch.is_grad_enabled():
+            pass  # Do not mutate state or overwrite graph during checkpoint backward re-entrant pass
         else:
             bridge._last_twin_loss = None
 
