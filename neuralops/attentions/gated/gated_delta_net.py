@@ -147,24 +147,6 @@ def chunked_delta_rule_scan(
     if mask is not None:
         mask_h = mask[:, None, :].expand(-1, H, -1).contiguous()
 
-    # --- Fused Triton chunk_gdn fast path (CUDA, d <= 64, no initial_state, no mask) ---
-    if q.is_cuda and d <= 64 and initial_state is None and mask_h is None:
-        try:
-            from fla.ops import chunk_gdn
-            q_fl = q.transpose(1, 2).contiguous()
-            k_fl = k.transpose(1, 2).contiguous()
-            v_fl = v.transpose(1, 2).contiguous()
-            # g in FLA is the log-decay gate [B, T, H]
-            log_g = torch.log(beta_f.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
-            step_beta = alpha_f.transpose(1, 2).to(q.dtype).contiguous()
-            res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
-            out_fl = res[0] if isinstance(res, tuple) else res
-            out = torch.nan_to_num(out_fl.transpose(1, 2).contiguous(), nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
-            S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
-            return out, S_final
-        except Exception:
-            pass
-
     # --- Triton scan path (only when no initial state and no mask) ---
     if (
         HAS_TRITON_GDN
@@ -182,6 +164,24 @@ def chunked_delta_rule_scan(
             return out, S_final
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
+
+    # --- Optional FLA chunk_gdn path for inference (when not requires_grad) ---
+    if q.is_cuda and d <= 64 and initial_state is None and mask_h is None and not (q.requires_grad or k.requires_grad or v.requires_grad):
+        try:
+            from fla.ops import chunk_gdn
+            q_fl = q.transpose(1, 2).contiguous()
+            k_fl = k.transpose(1, 2).contiguous()
+            v_fl = v.transpose(1, 2).contiguous()
+            # g in FLA is the log-decay gate [B, T, H]
+            log_g = torch.log(beta_f.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
+            step_beta = alpha_f.transpose(1, 2).to(q.dtype).contiguous()
+            res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
+            out_fl = res[0] if isinstance(res, tuple) else res
+            out = torch.nan_to_num(out_fl.transpose(1, 2).contiguous(), nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+            S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+            return out, S_final
+        except Exception:
+            pass
 
     # --- PyTorch fallback ---
     # Initialize state
