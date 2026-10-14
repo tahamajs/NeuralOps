@@ -264,12 +264,19 @@ def fused_cross_entropy(
 class FusedLinearCrossEntropyFunction(torch.autograd.Function):
     """
     Fused Linear Projection + Cross-Entropy Loss without materializing full (B*T, V) logits in HBM.
-    Iterates over token chunks:
-      For chunk:
-        1. logits_chunk = h_chunk @ weight.T + bias
-        2. scalar_loss, d_logits_chunk computed in-place via online softmax
-        3. d_h_chunk = d_logits_chunk @ weight
-        4. d_weight += d_logits_chunk.T @ h_chunk
+    Follows the Liger-Kernel / FLA in-forward analytical gradient accumulation pattern:
+      During forward (under no_grad for chunk logits):
+        1. Pre-allocate grad_hidden and grad_weight
+        2. In each token chunk:
+           a. logits_c = h_c @ weight.T + bias
+           b. Accumulate scalar cross-entropy loss
+           c. Compute analytical softmax gradient in-place: d_logits_c = (probs - target_one_hot) / total_valid
+           d. grad_hidden[start:end] = d_logits_c @ weight
+           e. grad_weight.addmm_(d_logits_c.T, h_c)
+           f. del logits_c, d_logits_c
+        3. Save ONLY grad_hidden, grad_weight, grad_bias in ctx
+      During backward:
+        Simply return grad_hidden * grad_output, grad_weight * grad_output in O(1) time!
     """
 
     @staticmethod
@@ -281,11 +288,9 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
         targets: torch.Tensor,
         ignore_index: int = -100,
         reduction: str = "mean",
-        chunk_size: int = 1024,
+        chunk_size: int = 2048,
     ):
-        ctx.ignore_index = ignore_index
         ctx.reduction = reduction
-        ctx.chunk_size = chunk_size
         ctx.has_bias = bias is not None
 
         orig_shape = hidden_states.shape
@@ -298,22 +303,61 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
         valid_mask = t_flat != ignore_index
         total_valid = valid_mask.sum().clamp(min=1).item()
-        ctx.total_valid = total_valid
         ctx.orig_shape = orig_shape
 
-        # Compute total scalar loss chunk-by-chunk
+        scale_norm = 1.0 / total_valid if reduction == "mean" else 1.0
+
+        # Pre-allocate gradients if gradients are needed
+        compute_grads = torch.is_grad_enabled() and (
+            hidden_states.requires_grad or weight.requires_grad or (bias is not None and bias.requires_grad)
+        )
+
+        grad_hidden = torch.empty_like(h_flat) if compute_grads and hidden_states.requires_grad else None
+        grad_weight = torch.zeros_like(weight, dtype=torch.float32) if compute_grads and weight.requires_grad else None
+        grad_bias = torch.zeros_like(bias, dtype=torch.float32) if compute_grads and ctx.has_bias and bias.requires_grad else None
+
         total_loss = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+        chunk_size = max(512, min(chunk_size, N_tokens))
 
-        for c_start in range(0, N_tokens, chunk_size):
-            c_end = min(c_start + chunk_size, N_tokens)
-            h_c = h_flat[c_start:c_end]
-            t_c = t_flat[c_start:c_end]
+        with torch.no_grad():
+            for c_start in range(0, N_tokens, chunk_size):
+                c_end = min(c_start + chunk_size, N_tokens)
+                h_c = h_flat[c_start:c_end]
+                t_c = t_flat[c_start:c_end]
 
-            logits_c = F.linear(h_c, weight, bias)
-            loss_c = F.cross_entropy(logits_c, t_c, ignore_index=ignore_index, reduction="sum")
-            total_loss += loss_c
+                # 1. Chunked linear projection
+                logits_c = F.linear(h_c, weight, bias)
 
-        ctx.save_for_backward(h_flat, weight, bias, t_flat)
+                # 2. Scalar loss accumulation
+                loss_c = F.cross_entropy(logits_c, t_c, ignore_index=ignore_index, reduction="sum")
+                total_loss += loss_c
+
+                # 3. Analytical in-place gradient accumulation
+                if compute_grads:
+                    probs_c = F.softmax(logits_c.float(), dim=-1)
+                    one_hot_c = torch.zeros_like(probs_c).scatter_(-1, t_c.clamp(min=0).unsqueeze(-1), 1.0)
+                    valid_c = (t_c != ignore_index).unsqueeze(-1)
+                    d_logits_c = torch.where(
+                        valid_c,
+                        (probs_c - one_hot_c) * scale_norm,
+                        torch.zeros_like(probs_c),
+                    ).to(h_flat.dtype)
+
+                    if grad_hidden is not None:
+                        grad_hidden[c_start:c_end] = torch.matmul(d_logits_c, weight)
+                    if grad_weight is not None:
+                        grad_weight.addmm_(d_logits_c.t().float(), h_c.float())
+                    if grad_bias is not None:
+                        grad_bias += d_logits_c.sum(dim=0).float()
+
+                    del logits_c, probs_c, one_hot_c, d_logits_c
+
+        if grad_weight is not None:
+            grad_weight = grad_weight.to(weight.dtype)
+        if grad_bias is not None:
+            grad_bias = grad_bias.to(bias.dtype)
+
+        ctx.save_for_backward(grad_hidden, grad_weight, grad_bias)
 
         if reduction == "mean":
             out_loss = total_loss / total_valid
@@ -326,48 +370,17 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        h_flat, weight, bias, t_flat = ctx.saved_tensors
-        ignore_index = ctx.ignore_index
-        reduction = ctx.reduction
-        chunk_size = ctx.chunk_size
-        total_valid = ctx.total_valid
-        N_tokens, D = h_flat.shape
-        V = weight.shape[0]
+        grad_hidden, grad_weight, grad_bias = ctx.saved_tensors
+        g_val = grad_output.to(torch.float32)
 
-        scale = grad_output / total_valid if reduction == "mean" else grad_output
-
-        grad_hidden = torch.empty_like(h_flat)
-        grad_weight = torch.zeros_like(weight, dtype=torch.float32)
-        grad_bias = torch.zeros_like(bias, dtype=torch.float32) if ctx.has_bias else None
-
-        for c_start in range(0, N_tokens, chunk_size):
-            c_end = min(c_start + chunk_size, N_tokens)
-            h_c = h_flat[c_start:c_end]
-            t_c = t_flat[c_start:c_end]
-
-            # In-chunk projection
-            logits_c = F.linear(h_c, weight, bias)
-            probs_c = F.softmax(logits_c.float(), dim=-1)
-
-            # In-place gradient computation: (probs - target_one_hot) * scale
-            one_hot_c = torch.zeros_like(probs_c).scatter_(-1, t_c.clamp(min=0).unsqueeze(-1), 1.0)
-            valid_c = (t_c != ignore_index).unsqueeze(-1)
-            d_logits_c = torch.where(valid_c, (probs_c - one_hot_c) * scale, torch.zeros_like(probs_c)).to(h_flat.dtype)
-
-            # Accumulate gradients into hidden_states and weight
-            grad_hidden[c_start:c_end] = torch.matmul(d_logits_c, weight)
-            grad_weight += torch.matmul(d_logits_c.t(), h_c).float()
-            if grad_bias is not None:
-                grad_bias += d_logits_c.sum(dim=0).float()
-
-        grad_weight = grad_weight.to(weight.dtype)
-        if grad_bias is not None:
-            grad_bias = grad_bias.to(bias.dtype)
+        out_grad_h = (grad_hidden.view(ctx.orig_shape) * g_val).to(grad_hidden.dtype) if grad_hidden is not None else None
+        out_grad_w = (grad_weight * g_val).to(grad_weight.dtype) if grad_weight is not None else None
+        out_grad_b = (grad_bias * g_val).to(grad_bias.dtype) if grad_bias is not None else None
 
         return (
-            grad_hidden.view(ctx.orig_shape),
-            grad_weight,
-            grad_bias,
+            out_grad_h,
+            out_grad_w,
+            out_grad_b,
             None,
             None,
             None,
