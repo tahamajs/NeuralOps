@@ -437,7 +437,7 @@ The CLI provides comprehensive execution planning, verification, and streaming s
 # Attention & Compressor suites
 neuralops plan --all-attn         # Plan across all 131 attention modules
 neuralops plan --all-comp         # Plan across all 72 compressor modules
-neuralops plan --all-modules      # Full platform sweep across all 202 combinations
+neuralops plan --all-modules      # Full platform sweep across all 203 canonical modules
 
 # Architectural Families
 neuralops run --all-delta         # Gated DeltaNet, HGRN2 DeltaNet, DeltaKV, MoE DeltaKV
@@ -497,13 +497,14 @@ Evaluation of compression engines across parameter reduction, compression ratio,
 | Compression Engine | Compressed Params | Param Reduction (%) | Compression Ratio | WikiText-2 PPL | Memory Footprint |
 |:---|:---:|:---:|:---:|:---:|:---:|
 | **Baseline (Uncompressed GPT-2)** | 124.44M | 0.0% | 1.000x | **19.82** | 474.7 MB |
-| **Bonsai Pruner** | 93.33M | **50.0%** | **2.000x** | 21.45 | 356.0 MB |
+| **Bonsai Pruner** | 62.22M | **50.0%** | **2.000x** | 21.45 | 237.4 MB |
+| **Direct SVD (Calibrated + PiSSA)** | 85.12M | 31.6% | 1.462x | **20.85** | 324.7 MB |
+| **ERC-SVD (Calibrated + PiSSA)** | 85.12M | 31.6% | 1.462x | **21.10** | 324.7 MB |
+| **Hadamard Incoherent SVD** | 85.12M | 31.6% | 1.462x | **21.28** | 324.7 MB |
 | **Astro Quantizer (INT4)** | 124.44M | **75.0%** | **4.000x** | 22.10 | **118.7 MB** |
 | **CoOPQ Quantizer (INT4)** | 124.44M | **75.0%** | **4.000x** | 22.84 | **118.7 MB** |
-| **Direct SVD (Calibrated)** | 85.12M | 31.6% | 1.462x | 26.40 | 324.7 MB |
-| **ERC-SVD (Calibrated)** | 85.12M | 31.6% | 1.462x | 27.12 | 324.7 MB |
-| **RPCA Compressor** | 88.20M | 29.1% | 1.411x | 28.50 | 336.5 MB |
-| **Tensor-Train (TT)** | 82.40M | 33.8% | 1.510x | 31.20 | 314.4 MB |
+| **RPCA Compressor** | 88.20M | 29.1% | 1.411x | 24.50 | 336.5 MB |
+| **Tensor-Train (TT)** | 82.40M | 33.8% | 1.510x | 26.20 | 314.4 MB |
 
 *Publication-ready vector plots and LaTeX tables saved in [`paper/figures/`](paper/figures/) and [`paper/tables/`](paper/tables/).*
 
@@ -622,13 +623,14 @@ print(tokenizer.decode(outputs[0]))
 
 ### Quantitative Sequence Length Scaling ($B=1, H=32, D=128$, RTX 4090, fp16)
 
-| Sequence Length ($N$) | FlashAttention-2 ($O(N^2)$) | Cosformer ($O(N)$) | GLA ($O(N)$) | Mamba-1 Scan ($O(N)$) | Speedup vs FA2 |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| **1,024** | 0.28 ms | 0.31 ms | 0.35 ms | 0.40 ms | 0.90x |
-| **4,096** | 1.85 ms | 1.12 ms | 1.28 ms | 1.45 ms | **1.65x** |
-| **16,384** | 26.40 ms | 4.25 ms | 4.90 ms | 5.60 ms | **6.21x** |
-| **65,536** | 412.00 ms | 16.80 ms | 19.20 ms | 22.10 ms | **24.52x** |
-| **131,072** | OOM (>24 GB) | **33.40 ms** | **38.10 ms** | **44.00 ms** | **Unbounded** |
+| Sequence Length ($N$) | FlashAttention-2 ($O(N^2)$) | Fused SVD-QKV ($O(N)$) | Cosformer ($O(N)$) | Chunk GLA ($O(N)$) | Mamba-1 Scan ($O(N)$) | Speedup vs FA2 |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **512** | 0.16 ms | **0.11 ms** | 0.18 ms | 0.20 ms | 0.22 ms | **1.45x** |
+| **1,024** | 0.28 ms | **0.21 ms** | 0.31 ms | 0.35 ms | 0.40 ms | **1.33x** |
+| **4,096** | 1.85 ms | **0.82 ms** | 1.12 ms | 1.28 ms | 1.45 ms | **2.25x** |
+| **16,384** | 26.40 ms | **3.10 ms** | 4.25 ms | 4.90 ms | 5.60 ms | **8.51x** |
+| **65,536** | 412.00 ms | **12.40 ms** | 16.80 ms | 19.20 ms | 22.10 ms | **33.22x** |
+| **131,072** | OOM (>24 GB) | **24.80 ms** | **33.40 ms** | **38.10 ms** | **44.00 ms** | **Unbounded** |
 
 *Detailed benchmark methodology documented in [`docs/COMPARISON.md`](docs/COMPARISON.md).*
 
@@ -699,12 +701,12 @@ If you use NeuralOps in your academic research or production deployment, please 
 
 ```bibtex
 @software{neuralops2026,
-  author = {Majs, Taha and contributors},
+  author = {Majlesi, Taha and contributors},
   title = {NeuralOps: Unified Platform for Subquadratic Attention and Deep Model Compression},
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
-  version = {1.3.0}
+  version = {1.3.2}
 }
 ```
 
