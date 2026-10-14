@@ -27,7 +27,7 @@ def compute_chunk_prefix_scan(
     init_state: Optional[torch.Tensor] = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Computes linear attention over a sequence chunk [B, H, T_c, D] given incoming init_state [B, H, D, D].
+    Computes exact linear attention over a sequence chunk [B, H, T_c, D] given incoming init_state [B, H, D, D].
     Returns (out, end_state).
     """
     B, H, T_c, D_k = q.shape
@@ -35,45 +35,29 @@ def compute_chunk_prefix_scan(
     if scale is None:
         scale = 1.0 / (D_k ** 0.5)
 
-    if g is None:
-        g = torch.zeros_like(q)
+    q = q * scale
 
-    # Log decay: cumulative decay within chunk
-    g_cumsum = torch.cumsum(g, dim=2)
-    g_total = g_cumsum[:, :, -1:, :]  # [B, H, 1, D_k]
-
-    # Effective keys and queries with decay
-    k_decayed = k * torch.exp(g_total - g_cumsum)
-    q_decayed = q * torch.exp(g_cumsum) * scale
-
-    # Intra-chunk state summary: sum_t k_t^T v_t
-    S_intra = torch.matmul(k_decayed.transpose(-2, -1), v)  # [B, H, D_k, D_v]
-
-    # End state incorporates incoming init_state scaled by chunk total decay
     if init_state is not None:
-        decay_factor = torch.exp(g_total).transpose(-2, -1)  # [B, H, D_k, 1]
-        S_end = init_state * decay_factor + S_intra
+        S = init_state.clone()
     else:
-        S_end = S_intra
+        S = torch.zeros((B, H, D_k, D_v), dtype=q.dtype, device=q.device)
 
-    # Compute token outputs:
-    # 1. Intra-chunk causal output via standard triangular prefix sum
-    scores = torch.matmul(q_decayed, k_decayed.transpose(-2, -1))
-    causal_mask = torch.triu(torch.full((T_c, T_c), float("-inf"), device=q.device), diagonal=1)
-    # Filter out -inf for linear attention: lower triangular 1s
-    tril_mask = torch.tril(torch.ones((T_c, T_c), device=q.device))
-    scores = scores * tril_mask
-    out_intra = torch.matmul(scores, v)
+    outs = []
+    for t in range(T_c):
+        if g is not None:
+            decay = torch.exp(g[:, :, t, :])  # [B, H, D_k]
+            S = S * decay.unsqueeze(-1)
+        # S += k_t^T v_t
+        kt = k[:, :, t:t+1, :]
+        vt = v[:, :, t:t+1, :]
+        S = S + torch.matmul(kt.transpose(-2, -1), vt)
+        # out_t = q_t @ S
+        ot = torch.matmul(q[:, :, t:t+1, :], S)
+        outs.append(ot)
 
-    # 2. Inter-chunk injection from init_state
-    if init_state is not None:
-        # q_t @ S_init
-        out_inter = torch.matmul(q_decayed, init_state)
-        out = out_intra + out_inter
-    else:
-        out = out_intra
+    out = torch.cat(outs, dim=2)
+    return out, S
 
-    return out, S_end
 
 
 class ContextParallelRecurrentScan(torch.autograd.Function):
