@@ -146,7 +146,13 @@ def test_arch3_modern_gqa_rope_decoder():
 
         def forward(self, x, past_key_value=None):
             normed = self.input_layernorm(x)
-            attn_out, past_kv = self.self_attn(normed, past_key_value=past_key_value)
+            attn_res = self.self_attn(normed, past_key_value=past_key_value)
+            if isinstance(attn_res, tuple):
+                attn_out = attn_res[0]
+                past_kv = attn_res[-1] if len(attn_res) > 1 else None
+            else:
+                attn_out = attn_res
+                past_kv = None
             return x + attn_out, past_kv
 
     class MockLlamaModel(nn.Module):
@@ -288,10 +294,10 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
         new_attention=student_attn,
         inherit_weights=True,
     )
-    enable_shadow_twin(bridge, orig_cross_attn)
+    enable_shadow_twin(bridge, stage="stage1_orientation")
 
     # Stage 1: pure shadow twin distillation
-    set_surgery_stage(bridge, stage=1)
+    set_surgery_stage(bridge, stage="stage1_orientation")
     set_surgery_alpha(bridge, alpha=0.5)
 
     bridge(q_x)

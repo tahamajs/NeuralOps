@@ -93,13 +93,20 @@ def set_surgery_alpha(model: nn.Module, alpha: float) -> None:
             m.alpha = alpha
 
 
-def set_surgery_stage(model: nn.Module, stage: str) -> None:
+def set_surgery_stage(model: nn.Module, stage: Union[str, int]) -> None:
     """
     Sets surgery training stage across all bridges:
-      - 'stage1_orientation': freeze host, train linear feature maps / qkv projection.
-      - 'stage2_block_cloning': local teacher-student block cloning with alpha=0.0.
-      - 'stage3_end_to_end': full student path with alpha=1.0 or annealed.
+      - 1 or 'stage1_orientation': freeze host, train linear feature maps / qkv projection.
+      - 2 or 'stage2_block_cloning': local teacher-student block cloning with alpha=0.0.
+      - 3 or 'stage3_end_to_end': full student path with alpha=1.0 or annealed.
     """
+    if stage == 1:
+        stage = "stage1_orientation"
+    elif stage == 2:
+        stage = "stage2_block_cloning"
+    elif stage == 3:
+        stage = "stage3_end_to_end"
+
     for m in model.modules():
         if isinstance(m, UniversalAttentionBridge):
             m.stage = stage
