@@ -536,7 +536,8 @@ class ChelaSlayAttention(BaseAttention):
             config.model_type = ""
 
         self.dim = _safe_int(
-            kwargs.get("hidden_size")
+            kwargs.get("dim")
+            or kwargs.get("hidden_size")
             or kwargs.get("d_model")
             or _resolve_attr(config, "hidden_size", "d_model", "dim"),
             768,
