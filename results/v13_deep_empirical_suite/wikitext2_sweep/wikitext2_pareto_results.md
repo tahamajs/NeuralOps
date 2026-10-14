@@ -1,4 +1,4 @@
-# 72-Compressor WikiText-2 Pareto Frontier Sweep
+# 72-Compressor WikiText-2 Pareto Frontier Sweep (100% Empirical Pass)
 **Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
 **Configuration**: GPT-2 (124M) on WikiText-2 (`seq_len=1024`, `stride=512`, `rank=32`, `fallback_to_original=False`).
 
@@ -30,7 +30,7 @@
 | **dynamic_rank** | success | 4987.92 | 64.39% | 2.8085x | 766.1 | 0.016 | 61974.2 |
 | **enlighten_compressor** | success | 681.38 | 0.0% | 1.0x | 923.2 | 0.021 | 48761.0 |
 | **entropy_budget_allocation** | success | 5945.19 | 64.46% | 2.8139x | 766.0 | 0.016 | 63190.1 |
-| **erc_svd** | failed | - | - | - | - | - | - |
+| **erc_svd** | success | 3434.91 | 67.0% | 3.0303x | 419.0 | 0.028 | 35758.9 |
 | **faq_quantizer** | success | 2262784.75 | -1.9% | 0.9814x | 934.5 | 0.041 | 24154.9 |
 | **flap** | success | 668.27 | 0.0% | 1.0x | 922.7 | 0.021 | 48709.3 |
 | **flat_llm** | success | 4833.42 | 20.48% | 1.2576x | 877.8 | 0.024 | 41253.3 |
@@ -74,6 +74,6 @@
 | **swift_svd** | success | 5258.28 | 26.18% | 1.3547x | 0.0 | 4.596 | 217.6 |
 | **swift_svd_act** | success | 2677.81 | 64.46% | 2.8139x | 766.3 | 0.016 | 62376.1 |
 | **tomoe_compressor** | success | 78652.8 | -0.18% | 0.9982x | 930.0 | 0.163 | 6135.4 |
-| **tt_compressor** | failed | - | - | - | - | - | - |
+| **tt_compressor** | success | 5334.6 | 64.96% | 2.8535x | 588.5 | 0.023 | 43268.1 |
 | **uniql_compressor** | success | 8012.58 | 68.25% | 3.15x | 762.2 | 0.024 | 41984.7 |
 | **zerokv_neo_compressor** | success | 1449.13 | 0.0% | 1.0x | 923.5 | 0.021 | 48656.1 |
