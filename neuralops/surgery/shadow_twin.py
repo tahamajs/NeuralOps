@@ -83,6 +83,7 @@ def enable_shadow_twin(
 
     bridge.stage = stage
     bridge.alpha = 0.0  # Output 100% teacher activation in stage 2
+    patch_bridge_for_shadow_twin(bridge)
 
 
 def set_surgery_alpha(model: nn.Module, alpha: float) -> None:
@@ -129,7 +130,8 @@ def collect_surgery_distillation_loss(model: nn.Module) -> torch.Tensor:
                 device = m._last_twin_loss.device
 
     if len(losses) == 0:
-        device = next(model.parameters()).device if any(model.parameters()) else torch.device("cpu")
+        param = next(model.parameters(), None)
+        device = param.device if param is not None else torch.device("cpu")
         return torch.tensor(0.0, device=device, requires_grad=True)
 
     return torch.stack(losses).mean()
