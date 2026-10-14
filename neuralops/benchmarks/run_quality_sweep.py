@@ -21,8 +21,12 @@ def run_quality_sweep(*args, **kwargs):
     return runner.run_all(*args, **kwargs)
 
 try:
-    from neuralops.benchmarks._legacy.run_quality_sweep import main  # noqa: F401
+    from neuralops.benchmarks._legacy.run_quality_sweep import (
+        main,
+        evaluate_comprehensive,
+        prepare_eval_batches,
+    )
 except ImportError:
     pass
 
-__all__ = ["run_quality_sweep", "QualitySweepConfig"]
+__all__ = ["run_quality_sweep", "QualitySweepConfig", "evaluate_comprehensive", "prepare_eval_batches"]
