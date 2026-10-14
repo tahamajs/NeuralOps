@@ -451,7 +451,15 @@ def fp8_tensorcore_matmul_triton(
             pass
 
     # Exact dequantized fallback
-    return (torch.matmul(a_fp8.float(), b_fp8.float()) * scale_a[:, None] * scale_b[None, :]).to(out_dtype)
+    # a: [M, K], b: [K, N]
+    # a_dequant: a_fp8.float() * scale_a[:, None]
+    # b_dequant: if scale_b has shape [K], scale_b[:, None] * b_fp8; if [N], b_fp8 * scale_b[None, :]
+    a_deq = a_fp8.float() * (scale_a[:, None] if scale_a.dim() == 1 else scale_a)
+    if scale_b.shape[0] == K:
+        b_deq = b_fp8.float() * scale_b[:, None]
+    else:
+        b_deq = b_fp8.float() * scale_b[None, :]
+    return torch.matmul(a_deq, b_deq).to(out_dtype)
 
 
 # ═══════════════════════════════════════════════════════════════════
