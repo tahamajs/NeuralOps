@@ -192,7 +192,12 @@ class FusedQKVSVDLinear(nn.Module):
         for W_part, A_param, B_param in splits:
             U, Svals, Vt = torch.linalg.svd(W_part, full_matrices=False)
             r = min(self.rank, Svals.shape[0])
-            sqrt_S = torch.sqrt(torch.clamp(Svals[:r], min=1e-12))
+            norm_part = float(torch.norm(W_part, p="fro").item())
+            W_recon = torch.matmul(U[:, :r], Svals[:r].unsqueeze(1) * Vt[:r, :])
+            recon_norm = float(torch.norm(W_recon, p="fro").item())
+            energy_scale = math.sqrt(norm_part / max(recon_norm, 1e-12)) if norm_part > 1e-12 else 1.0
+
+            sqrt_S = torch.sqrt(torch.clamp(Svals[:r], min=1e-12)) * math.sqrt(energy_scale)
             A_new = U[:, :r] * sqrt_S.unsqueeze(0)
             B_new = sqrt_S.unsqueeze(1) * Vt[:r, :]
             with torch.no_grad():

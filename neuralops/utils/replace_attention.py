@@ -599,6 +599,44 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
         except (StopIteration, RuntimeError):
             pass
 
+        # Closed-form Procrustes alignment / Instantaneous calibration if calibration data provided
+        calib_data = kwargs.get("calibration_data", kwargs.get("calibration_batch", None))
+        if calib_data is not None:
+            try:
+                with torch.no_grad():
+                    if isinstance(calib_data, dict):
+                        inp = calib_data.get("input_ids", calib_data.get("hidden_states", None))
+                    elif isinstance(calib_data, (tuple, list)):
+                        inp = calib_data[0]
+                    else:
+                        inp = calib_data
+                    if inp is not None and isinstance(inp, torch.Tensor):
+                        inp_dev = inp.to(device=next(old_module.parameters()).device)
+                        if inp_dev.dim() == 2 and hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
+                            h_in = model.transformer.wte(inp_dev)
+                        elif inp_dev.dim() == 3:
+                            h_in = inp_dev
+                        else:
+                            h_in = None
+                        if h_in is not None:
+                            # Instantaneous Procrustes Alignment: min_R ||Y_student R - Y_teacher||_F
+                            o_mod = getattr(new_attn, "o_proj", getattr(new_attn, "c_proj", getattr(new_attn, "out_proj", None)))
+                            if o_mod is not None and hasattr(o_mod, "weight") and isinstance(o_mod.weight, nn.Parameter):
+                                old_out = old_module(h_in)
+                                old_y = old_out[0] if isinstance(old_out, tuple) else old_out
+                                new_out = new_attn(h_in)
+                                new_y = new_out[0] if isinstance(new_out, tuple) else new_out
+                                if isinstance(old_y, torch.Tensor) and isinstance(new_y, torch.Tensor) and old_y.shape == new_y.shape:
+                                    Y_s = new_y.reshape(-1, new_y.shape[-1]).float()
+                                    Y_t = old_y.reshape(-1, old_y.shape[-1]).float()
+                                    M = torch.matmul(Y_s.t(), Y_t)
+                                    u_p, _, vt_p = torch.linalg.svd(M, full_matrices=False)
+                                    R = torch.matmul(u_p, vt_p).to(dtype=o_mod.weight.dtype, device=o_mod.weight.device)
+                                    if o_mod.weight.shape == R.shape:
+                                        o_mod.weight.data.copy_(torch.matmul(o_mod.weight.data, R))
+            except Exception as calib_err:
+                logger.debug("Closed-form Procrustes alignment skipped: %s", calib_err)
+
         # Wrap in universal adapter
         wrapped_attn = UniversalAttentionWrapper(new_attn)
 
