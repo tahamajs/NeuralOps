@@ -31,23 +31,23 @@ class NeuralOpsPreTrainedModel(PreTrainedModel):
     _skip_keys_device_placement = "past_key_values"
 
     def _init_weights(self, module: nn.Module) -> None:
-        from transformers.modeling_utils import init
+        import torch.nn.init as nn_init
         std = getattr(self.config, "initializer_range", 0.02)
         if isinstance(module, nn.Linear):
             if getattr(module, "weight", None) is not None:
-                init.normal_(module.weight, mean=0.0, std=std)
+                nn_init.normal_(module.weight, mean=0.0, std=std)
             if getattr(module, "bias", None) is not None:
-                init.zeros_(module.bias)
+                nn_init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
             if getattr(module, "weight", None) is not None:
-                init.normal_(module.weight, mean=0.0, std=std)
+                nn_init.normal_(module.weight, mean=0.0, std=std)
                 if module.padding_idx is not None and not getattr(module.weight, "_is_hf_initialized", False):
-                    init.zeros_(module.weight[module.padding_idx])
+                    nn_init.zeros_(module.weight[module.padding_idx])
         elif isinstance(module, nn.LayerNorm) or "RMSNorm" in module.__class__.__name__:
             if getattr(module, "weight", None) is not None:
-                init.ones_(module.weight)
+                nn_init.ones_(module.weight)
             if getattr(module, "bias", None) is not None:
-                init.zeros_(module.bias)
+                nn_init.zeros_(module.bias)
 
 
 class NeuralOpsModel(NeuralOpsPreTrainedModel):
