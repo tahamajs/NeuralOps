@@ -325,19 +325,25 @@ class CosformerAttention(BaseAttention):
     
     def _build_padding_mask(self, attention_mask, L, device, dtype):
         """Convert (B, L) padding mask to additive (B, 1, 1, L) mask.
-        Returns None if attention_mask is None.
+        Returns None if attention_mask is None or dimensionality does not match sequence length.
         """
         if attention_mask is None:
             return None
         am = attention_mask
         if am.dim() == 4:
+            if am.shape[-1] != L:
+                return None
             return am.to(device=device, dtype=dtype)
         if am.dim() == 3:
+            if am.shape[-1] != L:
+                return None
             am = am.unsqueeze(2)
         elif am.dim() == 2:
+            if am.shape[-1] != L:
+                return None
             am = am[:, None, None, :]
         else:
-            raise ValueError(f"Unexpected attention_mask shape: {tuple(am.shape)}")
+            return None
         return (1.0 - am.to(dtype=dtype)) * _neg_inf(dtype)
 
     def _local_attention(self, Q, K, V_local, padding_mask, seq_len, device, dtype):
