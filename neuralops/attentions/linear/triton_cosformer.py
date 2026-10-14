@@ -371,82 +371,84 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     num_warps=4,
                 )
         else:
-            # Strictly O(N * d^2) PyTorch Fallback for CPU / Mac MPS (Zero N x N memory footprint)
-            phi_q = F.elu(q.float()) + 1.0
-            phi_k = F.elu(k.float()) + 1.0
+            # Strictly O(N * d^2) PyTorch Fallback for CPU / Mac MPS / Pascal SM < 7.0 (Zero N x N memory footprint)
+            device_type = q.device.type
+            with torch.autocast(device_type=device_type, enabled=False):
+                phi_q = F.elu(q.float()) + 1.0
+                phi_k = F.elu(k.float()) + 1.0
 
-            pos = torch.arange(N, device=q.device, dtype=torch.float32)
-            angles = (math.pi / (2.0 * float(max_length))) * pos
-            cos_w = torch.cos(angles).view(1, 1, N, 1)
-            sin_w = torch.sin(angles).view(1, 1, N, 1)
+                pos = torch.arange(N, device=q.device, dtype=torch.float32)
+                angles = (math.pi / (2.0 * float(max_length))) * pos
+                cos_w = torch.cos(angles).view(1, 1, N, 1)
+                sin_w = torch.sin(angles).view(1, 1, N, 1)
 
-            qc, qs = phi_q * cos_w, phi_q * sin_w
-            kc, ks = phi_k * cos_w, phi_k * sin_w
-            vf = v.float()
+                qc, qs = phi_q * cos_w, phi_q * sin_w
+                kc, ks = phi_k * cos_w, phi_k * sin_w
+                vf = v.float()
 
-            if is_decoder:
-                # Chunked causal scan: memory O(N * d), strictly eliminating O(N^2) allocations
-                chunk_size = 64
-                num_chunks = (N + chunk_size - 1) // chunk_size
+                if is_decoder:
+                    # Chunked causal scan: memory O(N * d), strictly eliminating O(N^2) allocations
+                    chunk_size = 64
+                    num_chunks = (N + chunk_size - 1) // chunk_size
 
-                S_cos = torch.zeros(B, H, D, D, device=q.device, dtype=torch.float32)
-                S_sin = torch.zeros(B, H, D, D, device=q.device, dtype=torch.float32)
-                Z_cos = torch.zeros(B, H, D, 1, device=q.device, dtype=torch.float32)
-                Z_sin = torch.zeros(B, H, D, 1, device=q.device, dtype=torch.float32)
+                    S_cos = torch.zeros(B, H, D, D, device=q.device, dtype=torch.float32)
+                    S_sin = torch.zeros(B, H, D, D, device=q.device, dtype=torch.float32)
+                    Z_cos = torch.zeros(B, H, D, 1, device=q.device, dtype=torch.float32)
+                    Z_sin = torch.zeros(B, H, D, 1, device=q.device, dtype=torch.float32)
 
-                outputs = []
-                for c in range(num_chunks):
-                    start = c * chunk_size
-                    end = min(start + chunk_size, N)
-                    cur_len = end - start
+                    outputs = []
+                    for c in range(num_chunks):
+                        start = c * chunk_size
+                        end = min(start + chunk_size, N)
+                        cur_len = end - start
 
-                    qc_c = qc[:, :, start:end, :]
-                    qs_c = qs[:, :, start:end, :]
-                    kc_c = kc[:, :, start:end, :]
-                    ks_c = ks[:, :, start:end, :]
-                    v_c = vf[:, :, start:end, :]
+                        qc_c = qc[:, :, start:end, :]
+                        qs_c = qs[:, :, start:end, :]
+                        kc_c = kc[:, :, start:end, :]
+                        ks_c = ks[:, :, start:end, :]
+                        v_c = vf[:, :, start:end, :]
 
-                    # Intra-chunk local attention
-                    score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2))
-                    score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
-                    scores = score_c + score_s
+                        # Intra-chunk local attention
+                        score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2))
+                        score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
+                        scores = score_c + score_s
 
-                    causal_mask = torch.tril(
-                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                        causal_mask = torch.tril(
+                            torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                        )
+                        scores = scores.masked_fill(~causal_mask, 0.0)
+
+                        intra_num = torch.matmul(scores, v_c)
+                        intra_denom = scores.sum(dim=-1, keepdim=True)
+
+                        # Inter-chunk recurrent carry-over
+                        inter_num = torch.matmul(qc_c, S_cos) + torch.matmul(qs_c, S_sin)
+                        inter_denom = torch.matmul(qc_c, Z_cos) + torch.matmul(qs_c, Z_sin)
+
+                        out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
+                        outputs.append(out_c)
+
+                        # Update recurrent running states
+                        S_cos = S_cos + torch.matmul(kc_c.transpose(-1, -2), v_c)
+                        S_sin = S_sin + torch.matmul(ks_c.transpose(-1, -2), v_c)
+                        Z_cos = Z_cos + kc_c.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                        Z_sin = Z_sin + ks_c.sum(dim=-2, keepdim=True).transpose(-1, -2)
+
+                    out = torch.cat(outputs, dim=-2).to(q.dtype)
+                else:
+                    # Bidirectional global reduction
+                    S_cos = torch.matmul(kc.transpose(-1, -2), vf)
+                    S_sin = torch.matmul(ks.transpose(-1, -2), vf)
+                    Z_cos = kc.sum(dim=-2, keepdim=True)
+                    Z_sin = ks.sum(dim=-2, keepdim=True)
+
+                    num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
+                    denom = (
+                        torch.matmul(qc, Z_cos.transpose(-1, -2))
+                        + torch.matmul(qs, Z_sin.transpose(-1, -2))
+                        + eps
                     )
-                    scores = scores.masked_fill(~causal_mask, 0.0)
-
-                    intra_num = torch.matmul(scores, v_c)
-                    intra_denom = scores.sum(dim=-1, keepdim=True)
-
-                    # Inter-chunk recurrent carry-over
-                    inter_num = torch.matmul(qc_c, S_cos) + torch.matmul(qs_c, S_sin)
-                    inter_denom = torch.matmul(qc_c, Z_cos) + torch.matmul(qs_c, Z_sin)
-
-                    out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
-                    outputs.append(out_c)
-
-                    # Update recurrent running states
-                    S_cos = S_cos + torch.matmul(kc_c.transpose(-1, -2), v_c)
-                    S_sin = S_sin + torch.matmul(ks_c.transpose(-1, -2), v_c)
-                    Z_cos = Z_cos + kc_c.sum(dim=-2, keepdim=True).transpose(-1, -2)
-                    Z_sin = Z_sin + ks_c.sum(dim=-2, keepdim=True).transpose(-1, -2)
-
-                out = torch.cat(outputs, dim=-2).to(q.dtype)
-            else:
-                # Bidirectional global reduction
-                S_cos = torch.matmul(kc.transpose(-1, -2), vf)
-                S_sin = torch.matmul(ks.transpose(-1, -2), vf)
-                Z_cos = kc.sum(dim=-2, keepdim=True)
-                Z_sin = ks.sum(dim=-2, keepdim=True)
-
-                num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom = (
-                    torch.matmul(qc, Z_cos.transpose(-1, -2))
-                    + torch.matmul(qs, Z_sin.transpose(-1, -2))
-                    + eps
-                )
-                out = (num / denom).to(q.dtype)
+                    out = (num / denom).to(q.dtype)
 
         ctx.save_for_backward(q, k, v)
         ctx.is_decoder = is_decoder
