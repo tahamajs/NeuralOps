@@ -58,7 +58,7 @@ class NystromAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        hidden_size = kwargs.get("hidden_size")
+        hidden_size = kwargs.get("dim") or kwargs.get("hidden_size")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_key_value_heads") or kwargs.get("num_kv_heads")
 
