@@ -90,32 +90,37 @@ class BaseAttention(nn.Module):
         if is_2d:
             x = x.unsqueeze(1)
 
-        if state is None:
-            state = {"step_idx": 0}
-        elif not isinstance(state, dict):
-            state = {"cache": state, "step_idx": 0}
-
-        step_idx = state.get("step_idx", 0)
+        # Handle past state: could be Tensor, tuple, or dict
+        if isinstance(state, dict):
+            past_cache = state.get("cache", None)
+            step_idx = state.get("step_idx", 0)
+        else:
+            past_cache = state
+            step_idx = 0
 
         # Standard fallback: execute forward with use_cache=True and past_key_values
-        res = self.forward(x, past_key_values=state.get("cache", None), use_cache=True, **kwargs)
+        res = self.forward(x, past_key_values=past_cache, use_cache=True, **kwargs)
 
+        next_cache = past_cache
         if isinstance(res, tuple):
             out = res[0]
             if len(res) >= 3 and res[2] is not None:
-                state["cache"] = res[2]
+                next_cache = res[2]
             elif len(res) >= 2 and res[1] is not None:
-                # If weights/cache returned
-                state["cache"] = res[1]
+                next_cache = res[1]
         else:
             out = res
-
-        state["step_idx"] = step_idx + 1
 
         if is_2d and out.dim() == 3 and out.shape[1] == 1:
             out = out.squeeze(1)
 
-        return out, state
+        if isinstance(state, dict):
+            state["cache"] = next_cache
+            state["step_idx"] = step_idx + 1
+            return out, state
+
+        return out, next_cache
+
 
 
     def copy_weights(self, old_attn: Any) -> None:

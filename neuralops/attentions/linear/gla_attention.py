@@ -239,6 +239,66 @@ class GLAttention(BaseAttention):
         out = out * scale
         return self.out_proj(out), None
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for GLA."""
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_gla_step
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, D = x.shape
+        H, d = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        # 1. Gate calculation: logsigmoid(gate_logits / tau) <= 0
+        gate_logits = self.gate_W2(self.gate_W1(x))  # (B, 1, H)
+        g = F.logsigmoid(gate_logits / self.gate_tau)  # (B, 1, H)
+
+        # 2. Projections
+        Q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)  # [B, H, d]
+        K = self.k_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
+        V = self.v_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
+        g_in = g.transpose(1, 2).squeeze(2)                              # [B, H]
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
+
+        kv_state = state["kv_state"]
+
+        # 3. Recurrent update
+        out_t, kv_state = fused_recurrent_gla_step(
+            Q, K, V, g_in, kv_state, scale=self.scale
+        )
+        state["kv_state"] = kv_state
+        state["step_idx"] = step_idx + 1
+
+        # 4. RMSNorm per head + out_proj
+        out_h = out_t.unsqueeze(1).view(B, 1, H, d)
+        out_normed = self.o_norm(out_h).contiguous().view(B, 1, self.all_head_size)
+
+        v_flat = V.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        o_rms = torch.sqrt(torch.mean(out_normed ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        norm_scale = (v_rms / o_rms).clamp(0.25, 4.0)
+        out_scaled = out_normed * norm_scale
+
+        out = self.out_proj(out_scaled.to(dtype))
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
     def _chunked_gla_forward(
         self,
         q: torch.Tensor,
