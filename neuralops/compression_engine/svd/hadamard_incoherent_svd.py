@@ -97,7 +97,7 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("hadamard_incoherent_svd")
+@COMPRESSOR_REGISTRY.register("hadamard_incoherent_svd", is_alias=True)
 @COMPRESSOR_REGISTRY.register("hadamard_svd", is_alias=True)
 @COMPRESSOR_REGISTRY.register("quarot_svd", is_alias=True)
 def hadamard_svd_factory(model: nn.Module, rank: int = 32, **kwargs: Any) -> nn.Module:
