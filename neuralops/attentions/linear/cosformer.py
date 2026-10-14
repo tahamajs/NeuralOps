@@ -538,16 +538,17 @@ class CosformerAttention(BaseAttention):
             padding_mask, B, H, d, N, device, torch.float32,
         )
 
-        local_out = self._local_attention(
-            torch.clamp(Q_raw.float(), min=-1e4, max=1e4),
-            torch.clamp(K_raw.float(), min=-1e4, max=1e4),
-            torch.clamp(V_local.float(), min=-1e4, max=1e4),
-            padding_mask, N, device, torch.float32,
-        )
-        local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
-        # Zero-init to match GPT-2 exactly at step 0, avoiding KD shock.
-        context = local_out + self.fusion_scale.to(torch.float32) * global_out
+        if N <= 1024:
+            local_out = self._local_attention(
+                torch.clamp(Q_raw.float(), min=-1e4, max=1e4),
+                torch.clamp(K_raw.float(), min=-1e4, max=1e4),
+                torch.clamp(V_local.float(), min=-1e4, max=1e4),
+                padding_mask, N, device, torch.float32,
+            )
+            local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
+            context = local_out + self.fusion_scale.to(torch.float32) * global_out
+        else:
+            context = global_out
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         context = torch.clamp(context, min=-65500.0, max=65500.0).to(input_dtype)
