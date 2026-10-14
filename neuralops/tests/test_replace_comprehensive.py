@@ -12,11 +12,11 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 
 class DummyAttention(nn.Module):
-    def __init__(self, hidden_size=64, num_heads=4, **kwargs):
+    def __init__(self, hidden_size=64, num_heads=4, dim=None, **kwargs):
         super().__init__()
-        self.hidden_size = hidden_size
+        self.hidden_size = dim if dim is not None else hidden_size
         self.num_heads = num_heads
-        self.proj = nn.Linear(hidden_size, hidden_size)
+        self.proj = nn.Linear(self.hidden_size, self.hidden_size)
 
     def forward(self, x, *args, **kwargs):
         return self.proj(x), None
