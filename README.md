@@ -1,8 +1,14 @@
+<div align="center">
+
+<img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
+
 # 🧬 NeuralOps
 
 ### **Unified Platform for Subquadratic Attention and Deep Model Compression**
 
-> 131 canonical attention mechanisms · 72 compression engines · 26 Triton kernel modules · 8 transformer architectures
+> **131 canonical attention mechanisms · 72 compression engines · 26 Triton kernel modules · 8 transformer architectures**
+
+</div>
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -86,7 +92,7 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 🚀 Installation
 
-### Install from PyPI (v1.3.0)
+### Install from PyPI (v1.3.2)
 
 Install the core package or select your preferred hardware acceleration extras:
 
