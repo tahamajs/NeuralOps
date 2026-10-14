@@ -31,7 +31,7 @@ python -c "import neuralops; print(neuralops.info())"
 Output:
 ```json
 {
-  "version": "1.3.0",
+  "version": "1.3.2",
   "attentions_count": 131,
   "compressors_count": 72,
   "backends": ["cpu", "cuda", "triton"],
@@ -45,7 +45,7 @@ Output:
 
 ## 2. The 19-Function Public API
 
-NeuralOps 1.3.0 exposes 19 canonical, fully-typed functions directly under the top-level `neuralops` namespace:
+NeuralOps 1.3.2 exposes 19 canonical, fully-typed functions directly under the top-level `neuralops` namespace:
 
 ### Model & Export (4 Functions)
 - `neuralops.replace_attention(model, attention="cosformer", rank=None, copy_weights=True, layers=None, **kwargs)`: Replaces multi-head attention blocks with subquadratic variants while automatically recording surgery history in `model._neuralops_metadata`.
@@ -72,7 +72,7 @@ NeuralOps 1.3.0 exposes 19 canonical, fully-typed functions directly under the t
 - `neuralops.available_backends() -> list[str]`: Lists available hardware backends (`["cpu", "cuda", "mps", "triton"]`).
 - `neuralops.has_triton() -> bool`: Returns `True` if Triton GPU kernel compilation is supported.
 - `neuralops.validate(model, input_shape=(2, 32), device="cpu") -> bool`: Checks model device movement, forward output shapes, NaN/Inf absence, and backward gradient flow.
-- `neuralops.get_version() -> str`: Returns release version `"1.3.0"`.
+- `neuralops.get_version() -> str`: Returns release version `"1.3.2"`.
 
 ---
 

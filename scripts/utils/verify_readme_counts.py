@@ -13,7 +13,7 @@ with open("README.md") as f:
     readme = f.read()
 
 # 1. Version check
-actual_version = neuralops.get_version() if callable(getattr(neuralops, "get_version", None)) else getattr(neuralops, "__version__", "1.3.0")
+actual_version = neuralops.get_version() if callable(getattr(neuralops, "get_version", None)) else getattr(neuralops, "__version__", "1.3.2")
 info_obj = neuralops.info() if callable(getattr(neuralops, "info", None)) else {}
 if isinstance(info_obj, dict):
     info_version = info_obj.get("version", actual_version)
@@ -21,8 +21,8 @@ else:
     info_version = str(info_obj)
 
 errors = []
-if actual_version != "1.3.0":
-    errors.append(f"Version mismatch: expected '1.3.0', got {actual_version}")
+if actual_version != "1.3.2":
+    errors.append(f"Version mismatch: expected '1.3.2', got {actual_version}")
 
 # 2. Count verification
 actual_attn = len(ATTENTION_REGISTRY)
