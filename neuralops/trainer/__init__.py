@@ -143,6 +143,59 @@ __all__ += [
     "ContrastiveLoss",
 ]
 
+# Pillar 1-6 exports
+from .distillation.multi_level_kd import (
+    LogitDistillationLoss,
+    SpikyFeatureMap,
+    HedgehogFeatureMapKDLoss,
+    MiniLMValueRelationKDLoss,
+    BlockwiseOperatorCloningLoss,
+    LinearCKALoss,
+)
+from .surgery_schedules.mohawk import (
+    AttentionHomotopyScheduler,
+    AlphaBlendingAttentionWrapper,
+    MOHAWKTrainer,
+)
+from .peft_recovery.svd_adapters import (
+    PiSSALinear,
+    DoRALinear,
+    inject_pissa_adapters,
+)
+from .rl_alignment.preference_and_onpolicy import (
+    SimPOLoss,
+    ORPOLoss,
+    DynamicRoutingAndRankRL,
+)
+from .regularizers.attention_stability import (
+    LearnableAttentionSink,
+    GateSaturationPenalty,
+    SpectralJacobianRegularizer,
+)
+from .ttt.test_time_trainer import TTTLinearAttentionLayer
+
+__all__ += [
+    "LogitDistillationLoss",
+    "SpikyFeatureMap",
+    "HedgehogFeatureMapKDLoss",
+    "MiniLMValueRelationKDLoss",
+    "BlockwiseOperatorCloningLoss",
+    "LinearCKALoss",
+    "AttentionHomotopyScheduler",
+    "AlphaBlendingAttentionWrapper",
+    "MOHAWKTrainer",
+    "PiSSALinear",
+    "DoRALinear",
+    "inject_pissa_adapters",
+    "SimPOLoss",
+    "ORPOLoss",
+    "DynamicRoutingAndRankRL",
+    "LearnableAttentionSink",
+    "GateSaturationPenalty",
+    "SpectralJacobianRegularizer",
+    "TTTLinearAttentionLayer",
+]
+
 # Auto-wired package members
 from neuralops.trainer import methods
 from neuralops.trainer import optimizers
