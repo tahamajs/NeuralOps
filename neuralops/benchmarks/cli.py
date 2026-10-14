@@ -8,6 +8,8 @@ import argparse
 import platform
 import sys
 
+import torch
+
 from neuralops.benchmarks.api import Runner
 from neuralops.benchmarks.discovery import discover_all_modules
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
