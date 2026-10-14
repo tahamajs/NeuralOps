@@ -430,18 +430,25 @@ class CosformerAttention(BaseAttention):
                 encoder_hidden_states=None, encoder_attention_mask=None,
                 position_ids=None, position_embeddings=None, *args, **kwargs):
         
-        B, N, D = hidden_states.shape
+        from neuralops.core.mask_utils import prepare_mask_and_positions, mask_kv_states
+        valid_mask, derived_pos_ids, clean_hidden = prepare_mask_and_positions(
+            hidden_states, attention_mask=attention_mask, position_ids=position_ids
+        )
+        
+        B, N, D = clean_hidden.shape
         H, d = self.num_heads, self.head_dim
-        device = hidden_states.device
-        input_dtype = hidden_states.dtype
+        device = clean_hidden.device
+        input_dtype = clean_hidden.dtype
 
         # Cast projections to float32 immediately so backward gradients stay in fp32 range.
-        # Without this, Q_raw/K_raw are fp16, and the grad from _local_attention (fp32)
-        # overflows fp16 on the way back, producing NaN that propagates to all trainable params.
-        Q_raw = self.q_proj(hidden_states).float().view(B, N, H, d).transpose(1, 2).contiguous()
-        K_raw = self.k_proj(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_global = self.v_proj(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_local = self.v_proj_attn(hidden_states).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        Q_raw = self.q_proj(clean_hidden).float().view(B, N, H, d).transpose(1, 2).contiguous()
+        K_raw = self.k_proj(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_global = self.v_proj(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_local = self.v_proj_attn(clean_hidden).float().view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+
+        # Zero out padding positions in keys and values
+        K_raw, V_global = mask_kv_states(K_raw, V_global, valid_mask)
+        _, V_local = mask_kv_states(K_raw, V_local, valid_mask)
 
         if self.num_kv_heads != self.num_heads:
             K_raw = repeat_kv(K_raw, self.kv_repeat)
@@ -459,7 +466,7 @@ class CosformerAttention(BaseAttention):
             Q_k = F.elu(Q_scaled.float()) + 1.0
             K_k = F.elu(K_clamped.float()) + 1.0
 
-        cos_w, sin_w = self._get_cos_sin_weights(N, device, dtype=torch.float32)
+        cos_w, sin_w = self._get_cos_sin_weights(N, device, dtype=torch.float32, pos_ids=derived_pos_ids)
         Q_cos = Q_k * cos_w
         Q_sin = Q_k * sin_w
         K_cos = K_k * cos_w
