@@ -82,10 +82,28 @@ records = [{
     "error": None,
 }]
 
+# Checkpoint resumption support
+json_out = out_dir / "wikitext2_pareto_results.json"
+completed_compressors = set()
+if json_out.exists():
+    try:
+        with open(json_out, "r", encoding="utf-8") as f:
+            saved_records = json.load(f)
+        if isinstance(saved_records, list) and len(saved_records) > 0:
+            records = saved_records
+            completed_compressors = {r["compressor"] for r in records if r.get("status") in ("success", "failed")}
+            logger.info("Resuming from checkpoint: found %d existing records (%d unique).", len(records), len(completed_compressors))
+    except Exception as e:
+        logger.warning("Could not read existing checkpoint: %s", e)
+
 compressor_keys = sorted(list(COMPRESSOR_REGISTRY.keys()))
 logger.info("Found %d registered compressors to evaluate.", len(compressor_keys))
 
 for idx, comp_name in enumerate(compressor_keys, 1):
+    if comp_name in completed_compressors:
+        logger.info("[%d/%d] Skipping already completed compressor: %s", idx, len(compressor_keys), comp_name)
+        continue
+
     logger.info("[%d/%d] Evaluating Compressor: %s ...", idx, len(compressor_keys), comp_name)
     torch.cuda.empty_cache()
     try:
