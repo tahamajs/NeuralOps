@@ -67,20 +67,25 @@ class ContextParallelRecurrentScan(torch.autograd.Function):
     """
 
     @staticmethod
+class _ContextParallelScanFunction(torch.autograd.Function):
+    """
+    Exact 3-Stage Parallel-Prefix Scan across W Context Parallel ranks.
+    Guarantees exact forward and backward gradient parity with single-GPU execution.
+    """
+
+    @staticmethod
     def forward(
         ctx: Any,
-        q_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
-        k_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
-        v_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
-        g_chunks: Optional[list[torch.Tensor] | tuple[torch.Tensor, ...]] = None,
-        scale: Optional[float] = None,
+        W: int,
+        scale: float,
+        *all_chunks: torch.Tensor,
     ) -> tuple[torch.Tensor, ...]:
-        W = len(q_chunks)
-        if g_chunks is None:
-            g_chunks = tuple(torch.zeros_like(qc) for qc in q_chunks)
+        q_chunks = all_chunks[:W]
+        k_chunks = all_chunks[W:2*W]
+        v_chunks = all_chunks[2*W:3*W]
+        g_chunks = all_chunks[3*W:4*W]
 
         out_list = []
-        state_list = []
         curr_state = None
 
         # Stage 1 & 2 & 3: Prefix state propagation across chunks
@@ -91,24 +96,22 @@ class ContextParallelRecurrentScan(torch.autograd.Function):
             gp = g_chunks[p]
             out_p, next_state = compute_chunk_prefix_scan(qp, kp, vp, gp, scale=scale, init_state=curr_state)
             out_list.append(out_p)
-            state_list.append(curr_state)  # Store incoming state for backward
             curr_state = next_state
 
         ctx.scale = scale
         ctx.W = W
-        ctx.save_for_backward(*(list(q_chunks) + list(k_chunks) + list(v_chunks) + list(g_chunks) + [s if s is not None else torch.zeros(1) for s in state_list]))
+        ctx.save_for_backward(*all_chunks)
         return tuple(out_list)
 
     @staticmethod
     def backward(ctx: Any, *grad_outputs: torch.Tensor) -> tuple[Any, ...]:
-        # Exact autograd pass using single-graph tape
         W = ctx.W
-        saved = ctx.saved_tensors
-        q_chunks = saved[:W]
-        k_chunks = saved[W:2*W]
-        v_chunks = saved[2*W:3*W]
-        g_chunks = saved[3*W:4*W]
         scale = ctx.scale
+        all_chunks = ctx.saved_tensors
+        q_chunks = all_chunks[:W]
+        k_chunks = all_chunks[W:2*W]
+        v_chunks = all_chunks[2*W:3*W]
+        g_chunks = all_chunks[3*W:4*W]
 
         # Re-run forward with autograd tape on chunks to compute exact analytical gradients
         with torch.enable_grad():
@@ -125,16 +128,41 @@ class ContextParallelRecurrentScan(torch.autograd.Function):
                 )
                 tape_outs.append(out_p)
 
-            # Backpropagate upstream gradients
-            grads_to_back = [go for go in grad_outputs]
+            grads_to_back = list(grad_outputs)
             torch.autograd.backward(tape_outs, grads_to_back)
 
-            dq = tuple(qv.grad for qv in q_vars)
-            dk = tuple(kv.grad for kv in k_vars)
-            dv = tuple(vv.grad for vv in v_vars)
-            dg = tuple(gv.grad for gv in g_vars)
+            dq = [qv.grad for qv in q_vars]
+            dk = [kv.grad for kv in k_vars]
+            dv = [vv.grad for vv in v_vars]
+            dg = [gv.grad for gv in g_vars]
 
-        return (dq, dk, dv, dg, None)
+        return (None, None, *dq, *dk, *dv, *dg)
+
+
+def context_parallel_recurrent_scan(
+    q_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
+    k_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
+    v_chunks: list[torch.Tensor] | tuple[torch.Tensor, ...],
+    g_chunks: Optional[list[torch.Tensor] | tuple[torch.Tensor, ...]] = None,
+    scale: Optional[float] = None,
+) -> tuple[torch.Tensor, ...]:
+    """Helper wrapper for ContextParallelRecurrentScan with clean list/tuple interfaces."""
+    W = len(q_chunks)
+    if g_chunks is None:
+        g_chunks = tuple(torch.zeros_like(qc) for qc in q_chunks)
+    if scale is None:
+        scale = 1.0 / (q_chunks[0].shape[-1] ** 0.5)
+
+    all_tensors = list(q_chunks) + list(k_chunks) + list(v_chunks) + list(g_chunks)
+    return _ContextParallelScanFunction.apply(W, float(scale), *all_tensors)
+
+
+# Backward-compatible alias
+class ContextParallelRecurrentScan:
+    @staticmethod
+    def apply(q_chunks, k_chunks, v_chunks, g_chunks=None, scale=None):
+        return context_parallel_recurrent_scan(q_chunks, k_chunks, v_chunks, g_chunks, scale)
+
 
 
 class ContextParallelLinearAttention(nn.Module):
