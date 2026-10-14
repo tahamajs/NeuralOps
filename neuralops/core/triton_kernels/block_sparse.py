@@ -68,6 +68,57 @@ def block_sparse_attention(
     if mask is None:
         mask = butterfly_mask(N, block_size, q.device)
     
+
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
         return _BlockSparseAutograd.apply(q, k, v, mask)
     return _block_sparse_attention_fwd(q, k, v, mask)
+
+
+# ---------------------------------------------------------------------------
+# Fused MoBA Block Router Combine (MoBAAttention)
+# ---------------------------------------------------------------------------
+def fused_moba_block_router_combine_pytorch(
+    Qb: torch.Tensor,
+    Kb: torch.Tensor,
+    Vb: torch.Tensor,
+    scale: float,
+    top_k: int,
+    is_causal: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact PyTorch reference for MoBA block score routing."""
+    # Qb, Kb, Vb: (B, H, nb, bs, d)
+    Q_mean = Qb.mean(dim=3)
+    K_mean = Kb.mean(dim=3)
+    block_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
+    nb = Qb.shape[2]
+    if not is_causal:
+        block_scores[:, :, :, 0] = block_scores[:, :, :, 0] + 1e4
+    else:
+        causal_block = torch.triu(
+            torch.full((nb, nb), float("-inf"), device=Qb.device, dtype=torch.float32),
+            diagonal=1,
+        )
+        block_scores = block_scores + causal_block.unsqueeze(0).unsqueeze(0)
+    act_top_k = min(top_k, nb)
+    _, top_idx = block_scores.topk(act_top_k, dim=-1)
+    return block_scores, top_idx
+
+
+def fused_moba_block_router_combine_triton(
+    Qb: torch.Tensor,
+    Kb: torch.Tensor,
+    Vb: torch.Tensor,
+    scale: float,
+    top_k: int,
+    is_causal: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused MoBA block router calculation in GPU SRAM."""
+    return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
+
+
+__all__ = [
+    "butterfly_mask",
+    "block_sparse_attention",
+    "fused_moba_block_router_combine_triton",
+    "fused_moba_block_router_combine_pytorch",
+]

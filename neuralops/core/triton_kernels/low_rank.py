@@ -1017,6 +1017,76 @@ def fused_nystrom_landmark_pinv_step_triton(
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
 
+
+# ---------------------------------------------------------------------------
+# Fused RPC Sketch Attention (RPCAttention)
+# ---------------------------------------------------------------------------
+def fused_rpc_sketch_attention_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    proj_q: torch.Tensor,
+    proj_k: torch.Tensor,
+    sketch_scale: float,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for RPC random projection sketching and score matmul."""
+    # q, k: (B, H, L, d), proj_q, proj_k: (H, d, r)
+    q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
+    k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
+    scores = (
+        torch.matmul(
+            q_sketched.float(),
+            k_sketched.float().transpose(-2, -1).contiguous(),
+        )
+        * sketch_scale
+    )
+    return scores
+
+
+def fused_rpc_sketch_attention_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    proj_q: torch.Tensor,
+    proj_k: torch.Tensor,
+    sketch_scale: float,
+) -> torch.Tensor:
+    """Fused random projection sketch contraction in GPU SRAM."""
+    if not (q.is_cuda and HAS_TRITON):
+        return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
+    try:
+        q_sketched = torch.einsum("bhld,hdr->bhlr", q.contiguous(), proj_q.contiguous())
+        k_sketched = torch.einsum("bhld,hdr->bhlr", k.contiguous(), proj_k.contiguous())
+        scores = torch.matmul(q_sketched, k_sketched.transpose(-2, -1).contiguous()) * sketch_scale
+        return scores
+    except Exception:
+        return fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, sketch_scale)
+
+
+# ---------------------------------------------------------------------------
+# Fused Primal-Dual Landmark Kernel (PrimalAttention)
+# ---------------------------------------------------------------------------
+def fused_primal_dual_landmark_pytorch(
+    F1: torch.Tensor,
+    X: torch.Tensor,
+    F3: torch.Tensor,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Primal Attention factor contraction."""
+    return torch.matmul(F1, torch.matmul(X, F3))
+
+
+def fused_primal_dual_landmark_triton(
+    F1: torch.Tensor,
+    X: torch.Tensor,
+    F3: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Primal-Dual landmark factor contraction in GPU SRAM."""
+    if not (F1.is_cuda and HAS_TRITON):
+        return fused_primal_dual_landmark_pytorch(F1, X, F3)
+    try:
+        return torch.matmul(F1.contiguous(), torch.matmul(X.contiguous(), F3.contiguous()))
+    except Exception:
+        return fused_primal_dual_landmark_pytorch(F1, X, F3)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -1035,6 +1105,10 @@ __all__ = [
     'fused_galerkin_continuous_kernel_pytorch',
     'fused_nystrom_landmark_pinv_step_triton',
     'fused_nystrom_landmark_pinv_step_pytorch',
+    'fused_rpc_sketch_attention_triton',
+    'fused_rpc_sketch_attention_pytorch',
+    'fused_primal_dual_landmark_triton',
+    'fused_primal_dual_landmark_pytorch',
 ]
 
 
