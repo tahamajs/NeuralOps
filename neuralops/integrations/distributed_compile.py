@@ -6,9 +6,11 @@ import torch.nn as nn
 
 __all__ = [
     "get_deepspeed_config",
+    "get_neuralops_fsdp_policy",
     "apply_fsdp_wrapping",
     "compile_attention_module",
 ]
+
 
 
 def get_deepspeed_config(
@@ -31,13 +33,32 @@ def get_deepspeed_config(
     }
 
 
+def get_neuralops_fsdp_policy(min_num_params: int = int(1e5)):
+    """Generate PyTorch FSDP auto-wrap policy targeted at factorized SVD, PEFT, and attention blocks."""
+    try:
+        from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy, transformer_auto_wrap_policy
+        from neuralops.core.base import BaseAttention
+        from neuralops.trainer.peft_recovery.svd_adapters import PiSSALinear, DoRALinear
+        
+        def custom_policy(module: nn.Module, recurse: bool, nonwrapped_numel: int) -> bool:
+            if isinstance(module, (BaseAttention, PiSSALinear, DoRALinear)):
+                return True
+            return nonwrapped_numel >= min_num_params
+
+        return custom_policy
+    except Exception:
+        return None
+
+
 def apply_fsdp_wrapping(model: nn.Module, auto_wrap_policy: Any = None) -> nn.Module:
-    """Wraps model in PyTorch FullyShardedDataParallel (FSDP)."""
+    """Wraps model in PyTorch FullyShardedDataParallel (FSDP) using neuralops-aware auto-wrap policy."""
     try:
         from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-        return FSDP(model, auto_wrap_policy=auto_wrap_policy)
+        policy = auto_wrap_policy or get_neuralops_fsdp_policy()
+        return FSDP(model, auto_wrap_policy=policy)
     except Exception:
         return model
+
 
 
 def compile_attention_module(
