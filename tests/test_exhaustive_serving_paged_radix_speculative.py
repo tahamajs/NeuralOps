@@ -11,12 +11,13 @@ from __future__ import annotations
 import pytest
 import torch
 import torch.nn as nn
+from transformers import GPT2Config, GPT2LMHeadModel
 
-from neuralops.core.serving.paged_state import (
+from neuralops.models.paged_state import (
     PagedStateTable,
     RadixPrefixStateCache,
 )
-from neuralops.serving.speculative import (
+from neuralops.inference.speculative_decoding import (
     SelfSpeculativeDecoder,
 )
 
@@ -24,57 +25,57 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def test_7_1_paged_state_table_refcount_and_cow():
-    table = PagedStateTable(num_pages=64, page_size=16, state_dim=32, device=DEVICE)
-    seq_a = table.allocate_sequence()
+    table = PagedStateTable(num_pages=16, num_heads=4, head_dim=32, device=DEVICE)
+    parent_pages = table.register_sequence(10, initial_pages=1)
+    p_id = parent_pages[0]
+    table.page_pool[p_id, 0, 0, 0] = 42.0
 
-    # Write state to sequence A
-    dummy_state = torch.ones(1, 32, device=DEVICE) * 3.14
-    table.write_state(seq_a, token_idx=0, state=dummy_state)
+    child_pages = table.fork_sequence(parent_seq_id=10, child_seq_id=20)
+    assert child_pages[0] == p_id
+    assert table.ref_counts[p_id] == 2
 
-    # Zero-copy fork to sequence B
-    seq_b = table.fork_sequence(seq_a)
-    state_a = table.read_state(seq_a, token_idx=0)
-    state_b = table.read_state(seq_b, token_idx=0)
-    torch.testing.assert_close(state_a, state_b)
-
-    # Copy-on-write modification on B must NOT affect A
-    new_state = torch.ones(1, 32, device=DEVICE) * 9.99
-    table.write_state(seq_b, token_idx=0, state=new_state)
-
-    state_a_after = table.read_state(seq_a, token_idx=0)
-    state_b_after = table.read_state(seq_b, token_idx=0)
-    assert not torch.allclose(state_a_after, state_b_after)
-    torch.testing.assert_close(state_a_after, dummy_state)
-    torch.testing.assert_close(state_b_after, new_state)
+    new_child_p = table.prepare_write(seq_id=20, page_slot=0)
+    assert new_child_p != p_id
+    assert table.ref_counts[p_id] == 1
+    assert table.ref_counts[new_child_p] == 1
+    assert float(table.page_pool[new_child_p, 0, 0, 0].item()) == 42.0
 
 
 def test_7_2_radix_prefix_state_cache():
-    cache = RadixPrefixStateCache(max_cached_tokens=1024, state_dim=32, device=DEVICE)
+    table = PagedStateTable(num_pages=32, num_heads=4, head_dim=32, device=DEVICE)
+    cache = RadixPrefixStateCache(table)
 
-    prefix_tokens = [101, 2054, 2003, 1037]  # e.g., "what is a"
-    state_payload = torch.randn(1, 32, device=DEVICE)
+    prefix_tokens = [101, 2054, 2003, 1037]
+    page = table.allocate_page()
+    table.page_pool[page].fill_(1.23)
 
-    cache.insert(prefix_tokens, state_payload)
-    matched_state, matched_len = cache.match_prefix([101, 2054, 2003, 1037, 3241, 102])
+    cache.insert_prefix(prefix_tokens, [page])
+    matched_pages, matched_len = cache.match_prefix([101, 2054, 2003, 1037, 999])
     assert matched_len == 4
-    torch.testing.assert_close(matched_state, state_payload)
+    assert matched_pages == [page]
 
 
 def test_7_3_self_speculative_decoder():
-    class DummyDraftTargetModel(nn.Module):
-        def __init__(self, vocab_size=64):
-            super().__init__()
-            self.emb = nn.Embedding(vocab_size, 32)
-            self.head = nn.Linear(32, vocab_size)
+    config = GPT2Config(
+        vocab_size=100,
+        n_positions=64,
+        n_embd=32,
+        n_layer=2,
+        n_head=2,
+        pad_token_id=0,
+    )
+    target_model = GPT2LMHeadModel(config).to(DEVICE).eval()
+    draft_config = GPT2Config(
+        vocab_size=100,
+        n_positions=64,
+        n_embd=32,
+        n_layer=1,
+        n_head=2,
+        pad_token_id=0,
+    )
+    draft_model = GPT2LMHeadModel(draft_config).to(DEVICE).eval()
 
-        def forward(self, input_ids):
-            x = self.emb(input_ids)
-            return self.head(x)
-
-    model = DummyDraftTargetModel().to(DEVICE).eval()
-    decoder = SelfSpeculativeDecoder(draft_model=model, target_model=model, gamma=3)
-
-    prompt = torch.tensor([[1, 5, 9]], device=DEVICE)
-    with torch.no_grad():
-        out = decoder.generate(prompt, max_new_tokens=4)
-    assert out.shape[1] >= prompt.shape[1] + 1
+    decoder = SelfSpeculativeDecoder(target_model=target_model, draft_model=draft_model, max_draft_k=2)
+    prompt = torch.tensor([[10, 20]], device=DEVICE)
+    tokens, stats = decoder.generate(prompt, max_new_tokens=4, temperature=0.0)
+    assert tokens.shape[1] == 6
