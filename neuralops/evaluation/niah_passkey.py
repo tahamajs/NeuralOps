@@ -62,6 +62,10 @@ class NeedleInAHaystackEvaluator:
         high = (10 ** self.passkey_digits) - 1
         return str(random.randint(low, high))
 
+    def evaluate(self, num_trials_per_cell: int = 1) -> Dict[str, Any]:
+        """Alias for evaluate_grid."""
+        return self.evaluate_grid(num_trials_per_cell=num_trials_per_cell)
+
     def evaluate_grid(self, num_trials_per_cell: int = 1) -> Dict[str, Any]:
         """
         Runs evaluation over the 2D grid of context lengths and needle depths.
