@@ -1044,6 +1044,7 @@ class GatedDeltaNet(BaseAttention):
             out = self.out_proj(gated_y)
 
         out = out * self.lora_output_scale
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ---- 12. Final output masking (single application) ----
         if mask_bool is not None:
