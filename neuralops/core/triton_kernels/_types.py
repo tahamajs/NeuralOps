@@ -38,7 +38,7 @@ except ImportError:
 # Constants
 # ---------------------------------------------------------------------------
 SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
-MAX_TRITON_SEQ_LEN: int = 4096
+MAX_TRITON_SEQ_LEN: int = 16384
 BLOCK_SIZE: int = 64
 
 _WARNED_REASONS: set[str] = set()
