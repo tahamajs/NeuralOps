@@ -38,7 +38,8 @@ def finetune_classification(
         from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
         optimizer = create_riemannian_stiefel(model, lr=lr)
     else:
-        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+        trainable_params = [p for p in model.parameters() if p.requires_grad]
+        optimizer = AdamW(trainable_params, lr=lr, weight_decay=0.01)
 
     # Distributed backend wrapping via accelerate
     dist_backend = (distributed_backend or "none").lower()
@@ -99,12 +100,16 @@ def finetune_classification(
             if amp_enabled and mp_type == "fp16":
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                if use_cuda:
+                    torch.cuda.empty_cache()
                 scaler.step(optimizer)
                 scaler.update()
             else:
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                if use_cuda:
+                    torch.cuda.empty_cache()
                 optimizer.step()
 
             cur_loss = float(loss.item())
@@ -159,7 +164,8 @@ def train_kd(
     from neuralops.benchmarks.core.kd import KDLoss, kd_train_step
 
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
-    optimizer = AdamW(student.parameters(), lr=lr, weight_decay=0.01)
+    trainable_student = [p for p in student.parameters() if p.requires_grad]
+    optimizer = AdamW(trainable_student, lr=lr, weight_decay=0.01)
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
