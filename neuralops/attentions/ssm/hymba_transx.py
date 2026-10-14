@@ -796,7 +796,7 @@ class HymbaTransXBlock(BaseAttention):
         from neuralops.core.triton_kernels.sliding_window import fused_hymba_meta_token_mix_triton
 
         combined = fused_hymba_meta_token_mix_triton(
-            A_out, M_out if self.has_mamba and not self._is_ssm_disabled_for_model() else None, self.alpha
+            A_out, M_out if self.mamba is not None else None, self.alpha
         )
 
 
