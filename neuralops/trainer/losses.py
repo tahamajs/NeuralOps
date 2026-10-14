@@ -92,3 +92,12 @@ class ContrastiveLoss(nn.Module):
             self.margin - dist, min=0
         ).pow(2)
         return loss.mean()
+
+
+def get_loss_function(name: str, **kwargs) -> nn.Module:
+    """Retrieve instantiated loss module by registered name."""
+    cls = LOSS_REGISTRY.get(name)
+    if cls is None:
+        raise KeyError(f"Loss function '{name}' not found in LOSS_REGISTRY. Available: {list(LOSS_REGISTRY.keys())}")
+    return cls(**kwargs)
+
