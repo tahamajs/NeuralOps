@@ -680,11 +680,7 @@ class MambaBlock(nn.Module):
         y = y.to(target_dtype) * F.silu(z.to(target_dtype))
 
         # ---- 7. Output projection ----
-        if self.is_nested_encoder:
-            # Nested encoder: outer layer will project. Skip out_proj.
-            out = y.to(target_dtype)
-        else:
-            out = self.out_proj(y).to(target_dtype)
+        out = self.out_proj(y).to(target_dtype)
 
         # ---- 8. attention_mask (MB-03, MB-09) ----
         if attention_mask is not None:
