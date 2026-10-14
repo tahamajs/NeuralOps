@@ -65,7 +65,10 @@ from neuralops.benchmarks import logging
 from neuralops.benchmarks import orchestrator
 from neuralops.benchmarks import registry
 from neuralops.benchmarks import result
-from neuralops.benchmarks import run_quality_sweep
+from neuralops.benchmarks.run_quality_sweep import run_quality_sweep
+from neuralops.benchmarks.run_gpt2_sweep import run_gpt2_sweep
 from neuralops.benchmarks import runner
 from neuralops.benchmarks import suite_runner
 from neuralops.benchmarks import writers
+
+__all__.extend(["run_gpt2_sweep", "run_quality_sweep"])
