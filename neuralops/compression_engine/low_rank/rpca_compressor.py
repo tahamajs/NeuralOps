@@ -217,6 +217,9 @@ class RPCACompressor(BaseCompressor):
     ) -> SVDLinear | None:
         """Decompose a single linear layer via RPCA and return factorized SVDLinear with LoRA."""
         base_layer = getattr(layer, "base_layer", layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf")
         device = base_layer.weight.device
         dtype = base_layer.weight.dtype
 
