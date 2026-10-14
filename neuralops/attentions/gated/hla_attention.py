@@ -584,17 +584,6 @@ class HLAAttention(BaseAttention):
             (C - 1 - t_idx.float()).view(1, 1, C, 1) * log_gamma
         )  # (1, H, C, 1)
 
-        # ---- Try fast Triton / FLA accelerated scan on CUDA when state is empty and no reverse ----
-        if q.is_cuda and initial_state is None and not reverse and d <= 64:
-            try:
-                from neuralops.core.triton_kernels.gla_scan import kda_hla_chunk_scan_triton
-                # Convert per-head constant decay to log_decay: log(sigmoid(beta))
-                log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1)
-                y_triton = kda_hla_chunk_scan_triton(q, k, v, log_dec)
-                # Compute final state approximation if requested
-                return y_triton.to(q.dtype), (torch.zeros(B, H, d, d, device=device, dtype=torch.float32), torch.zeros(B, H, d, 1, device=device, dtype=torch.float32))
-            except Exception as e:
-                logger.debug("Triton HLA scan failed, using chunked PyTorch: %s", e)
 
         # ---- Initialize state ----
         if initial_state is not None:

@@ -354,6 +354,119 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  ALiBi Bias Fusion: Fused Relative Position Bias Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_alibi_bias_kernel(
+        Bias_ptr,
+        Slopes_ptr,
+        N_q,
+        N_k,
+        past_len,
+        stride_bh,
+        stride_q,
+        stride_k,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        head_idx = tl.program_id(2)
+
+        slope = tl.load(Slopes_ptr + head_idx)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+
+        mask_m = offs_m < N_q
+        mask_n = offs_n < N_k
+
+        q_pos = offs_m[:, None] + past_len
+        k_pos = offs_n[None, :]
+
+        diff = q_pos - k_pos
+        if IS_CAUSAL:
+            dist = tl.where(diff >= 0, diff, 0.0)
+        else:
+            dist = tl.where(diff >= 0, diff, -diff)
+
+        bias = -slope * dist
+
+        bias_offs = (
+            head_idx * stride_bh
+            + offs_m[:, None] * stride_q
+            + offs_n[None, :] * stride_k
+        )
+        mask = mask_m[:, None] & mask_n[None, :]
+        tl.store(Bias_ptr + bias_offs, bias, mask=mask)
+
+
+def fused_alibi_bias_pytorch(
+    slopes: torch.Tensor,
+    N_q: int,
+    N_k: int,
+    past_len: int = 0,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for ALiBi relative bias."""
+    device = slopes.device
+    num_heads = slopes.numel()
+    q_pos = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(1)
+    k_pos = torch.arange(0, N_k, device=device).unsqueeze(0)
+    if is_causal:
+        dist = (q_pos - k_pos).clamp(min=0).float()
+    else:
+        dist = (q_pos - k_pos).abs().float()
+    slopes_reshaped = slopes.view(1, num_heads, 1, 1).to(device)
+    return -slopes_reshaped * dist.unsqueeze(0).unsqueeze(0)
+
+
+def fused_alibi_bias_triton(
+    slopes: torch.Tensor,
+    N_q: int,
+    N_k: int,
+    past_len: int = 0,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused ALiBi relative distance bias matrix computation in SRAM."""
+    if not (HAS_TRITON and slopes.is_cuda):
+        return fused_alibi_bias_pytorch(slopes, N_q, N_k, past_len=past_len, is_causal=is_causal)
+
+    device = slopes.device
+    num_heads = slopes.numel()
+    out = torch.empty((1, num_heads, N_q, N_k), device=device, dtype=slopes.dtype)
+
+    BLOCK_M = 32
+    BLOCK_N = 32
+    grid = (
+        triton.cdiv(N_q, BLOCK_M),
+        triton.cdiv(N_k, BLOCK_N),
+        num_heads,
+    )
+
+    try:
+        _fused_alibi_bias_kernel[grid](
+            out,
+            slopes,
+            N_q,
+            N_k,
+            past_len,
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
+            IS_CAUSAL=is_causal,
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+        )
+        return out
+    except Exception:
+        return fused_alibi_bias_pytorch(slopes, N_q, N_k, past_len=past_len, is_causal=is_causal)
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
@@ -367,4 +480,6 @@ __all__ = [
     "fused_spectral_gate_triton",
     "fused_rms_variance_match_triton",
     "fast_hadamard_transform",
+    "fused_alibi_bias_triton",
+    "fused_alibi_bias_pytorch",
 ]
