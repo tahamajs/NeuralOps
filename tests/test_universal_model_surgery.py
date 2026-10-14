@@ -84,6 +84,8 @@ def test_arch1_bidirectional_encoder_bert():
     bidir_cosformer = BiDirectionalScanWrapper(cosformer)
     x = torch.randn(2, 16, 64)
     out_bidir = bidir_cosformer(x, attention_mask=attention_mask)
+    if isinstance(out_bidir, tuple):
+        out_bidir = out_bidir[0]
     assert out_bidir.shape == (2, 16, 64)
 
 
