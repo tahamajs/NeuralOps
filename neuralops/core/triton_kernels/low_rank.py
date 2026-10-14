@@ -1328,6 +1328,14 @@ def fused_salt_singular_mod_gemm_triton(
     """Fused SALT singular modification GEMM in GPU SRAM."""
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
+    if HAS_TRITON and x.is_cuda:
+        try:
+            return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+        except Exception:
+            pass
+    return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+
+
 def fused_svd_qkv_rope_attention_pytorch(
     x: torch.Tensor,
     U_q: torch.Tensor,
