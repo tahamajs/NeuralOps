@@ -212,12 +212,29 @@ from neuralops.trainer import (
 base_linear = nn.Linear(768, 768)
 pissa_layer = PiSSALinear(base_linear, rank=16, alpha=16.0)
 
-# Exact zero initial residual perturbation
-diff = torch.norm(pissa_layer(torch.randn(2, 16, 768)) - base_linear(torch.randn(2, 16, 768)))
+# Exact zero initial residual perturbation (identity at step 0)
+x = torch.randn(2, 16, 768)
+diff = (pissa_layer(x) - base_linear(x)).abs().max().item()
+assert diff < 1e-4, f"PiSSA identity violation: {diff}"
 
-# 2. Multi-level distillation loss
-kd_criterion = LogitDistillationLoss(temperature=2.0, alpha=0.5)
+# 2. Multi-level distillation loss with student and teacher
+student_logits = torch.randn(2, 16, 32, requires_grad=True)
+teacher_logits = torch.randn(2, 16, 32)
+kd_criterion = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
+kd_loss = kd_criterion(student_logits, teacher_logits)
+
+# 3. Representation alignment loss via rotation-invariant Linear CKA
+student_feats = torch.randn(2, 16, 768)
+teacher_feats = torch.randn(2, 16, 768)
 cka_criterion = LinearCKALoss()
+cka_loss = cka_criterion(student_feats, teacher_feats)
+
+# 4. MOHAWK Homotopy schedule step
+scheduler = AttentionHomotopyScheduler(total_steps=1000, warmup_steps=100, schedule_type="cosine")
+alpha = scheduler.get_alpha(step=250)
+total_loss = alpha * kd_loss + (1.0 - alpha) * cka_loss
+total_loss.backward()
+print(f"Step 250: alpha={alpha:.4f}, total_loss={total_loss.item():.4f}")
 ```
 
 ### Recipe 6: Surgery Manifest, Merging & CUDA Graph Decoding
@@ -241,6 +258,9 @@ model = merge_for_inference(model)
 
 # 3. Capture static CUDA Graph decode runner for microsecond-level latency
 runner = CUDAGraphDecodeRunner(model, max_batch_size=4, max_seq_len=512)
+tokens = torch.randint(0, 50257, (1, 1), device="cuda" if torch.cuda.is_available() else "cpu")
+next_token_logits = runner.step(tokens)
+print("Decode step logits shape:", next_token_logits.shape)
 ```
 
 ### Recipe 7: HuggingFace-Style CLI & Interactive TUI
