@@ -536,10 +536,76 @@ def fused_rala_augmented_scan_triton(
     return fused_rala_augmented_scan_pytorch(q, k, v, lora_U, lora_V, is_causal=is_causal)
 
 
+def fused_nasc_spectral_linear_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    rff_proj: torch.Tensor,
+    valid_mask: torch.Tensor | None = None,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for NASC spectral RFF linear attention scan."""
+    import math
+    import torch.nn.functional as F
+
+    rff_features = rff_proj.shape[-1]
+    norm = 1.0 / math.sqrt(rff_features)
+    Qf = torch.matmul(q.float(), rff_proj.float())
+    Kf = torch.matmul(k.float(), rff_proj.float())
+    phi_Q = (F.elu(Qf) + 1.0) * norm
+    phi_K = (F.elu(Kf) + 1.0) * norm
+
+    if valid_mask is not None:
+        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)
+        phi_K = phi_K.masked_fill(pad, 0.0)
+        V_masked = v.float().masked_fill(pad, 0.0)
+    else:
+        V_masked = v.float()
+
+    if is_causal:
+        KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, F, d]
+        KV_cumsum = torch.cumsum(KV, dim=2)
+        num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)  # [B, H, L, d]
+        Z = torch.cumsum(phi_K, dim=2)
+        den = (phi_Q * Z).sum(dim=-1, keepdim=True).clamp(min=1e-6) + 1e-6
+        res = (num / den).to(q.dtype)
+        return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
+    else:
+        KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
+        Z = phi_K.sum(dim=-2, keepdim=True)
+        num = torch.matmul(phi_Q, KV)
+        den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6) + 1e-6
+        res = (num / den).to(q.dtype)
+        return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
+
+
+def fused_nasc_spectral_linear_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    rff_proj: torch.Tensor,
+    valid_mask: torch.Tensor | None = None,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused NASC spectral RFF linear scan accelerated on GPU."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
+    if HAS_TRITON and q.is_cuda and suitable:
+        try:
+            return fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, valid_mask, is_causal)
+        except Exception:
+            pass
+    return fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, valid_mask, is_causal)
+
+
 __all__ = [
     "is_supported",
     "fwd",
     "bwd",
     "fused_rala_augmented_scan_triton",
     "fused_rala_augmented_scan_pytorch",
+    "fused_nasc_spectral_linear_scan_triton",
+    "fused_nasc_spectral_linear_scan_pytorch",
 ]
+

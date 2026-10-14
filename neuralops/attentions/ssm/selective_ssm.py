@@ -110,6 +110,11 @@ class SelectiveSSM(BaseAttention):
             is_dec = True
         self.is_decoder = bool(is_dec)
 
+        # For encoder models (BERT, RoBERTa), enable bidirectional scanning by default
+        # so token 0 (<s>/[CLS]) observes the entire sequence.
+        if not self.is_decoder and "bidirectional" not in kwargs:
+            self.bidirectional = True
+
         # Bidirectional components if requested (disabled for causal decoders)
         if self.bidirectional and not self.is_decoder:
             self.conv1d_bwd = nn.Conv1d(

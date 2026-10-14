@@ -118,11 +118,14 @@ class SVDLinear(nn.Module):
         return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = ((x @ self.V) * self.S) @ self.U.t().contiguous() + self.bias
+        from neuralops.core.triton_kernels.low_rank import fused_svd_mamba_proj_triton
+
+        out = fused_svd_mamba_proj_triton(x, self.U, self.S, self.V, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
         return out
+
 
 
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
