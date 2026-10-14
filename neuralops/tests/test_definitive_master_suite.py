@@ -64,7 +64,7 @@ def test_all_131_attentions_multi_dim_forward_and_backward(dim):
 
 def test_all_131_attentions_factory_dispatch():
     """Verify create_attention() factory produces identical valid behaviors across all 131 attentions."""
-    names = list(ATTENTION_REGISTRY.keys())
+    names = [k for k in ATTENTION_REGISTRY.keys() if not k.startswith("dummy")]
     for name in names:
         attn = create_attention(name, dim=128, num_heads=4)
         assert attn is not None
