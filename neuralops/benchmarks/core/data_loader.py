@@ -163,8 +163,8 @@ def make_dataloader(
     is computing. pin_memory=True enables DMA transfers.
     """
     if num_workers is None:
-        import platform
-        num_workers = 4 if platform.system() == "Linux" else 0
+        # Use 0 by default to prevent forkserver / subprocess circular module import issues with Python 3.14
+        num_workers = int(os.environ.get("NEURALOPS_DATALOADER_WORKERS", "0"))
 
     return DataLoader(
         dataset,
