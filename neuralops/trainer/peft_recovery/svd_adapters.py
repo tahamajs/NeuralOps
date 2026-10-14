@@ -74,7 +74,13 @@ class PiSSALinear(nn.Module):
     def merge_and_unload(self) -> nn.Linear:
         """Folds B @ A back into weight_residual, returning a standard nn.Linear."""
         merged_w = self.weight_residual + (self.lora_B @ self.lora_A) * self.scaling
-        lin = nn.Linear(self.in_features, self.out_features, bias=self.bias is not None)
+        lin = nn.Linear(
+            self.in_features,
+            self.out_features,
+            bias=self.bias is not None,
+            device=self.weight_residual.device,
+            dtype=self.weight_residual.dtype,
+        )
         lin.weight.data.copy_(merged_w)
         if self.bias is not None:
             lin.bias.data.copy_(self.bias)
