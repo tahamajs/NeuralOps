@@ -519,6 +519,171 @@ def apply_backbone_surgery_hooks(
                 setattr(module, "supports_rope", True)
 
 
+def calibrate_surgically_replaced_model(
+    orig_model: nn.Module,
+    surg_model: nn.Module,
+    sample_inputs: dict[str, torch.Tensor] | torch.Tensor,
+    ridge_lambda: float = 1e-3,
+    blend_alpha: float = 0.85,
+) -> nn.Module:
+    """
+    Closed-Form Layerwise Ridge Output Calibration & Affine Subspace Alignment.
+    
+    Aligns transplanted attention operators (linear attention, SVD, SSM, kernels)
+    with the pretrained convex-combination feature subspace of the original attention layer:
+        W_align = (Z^T Z + lambda * I)^{-1} Z^T Y_orig
+        b_align = mu_Y - mu_Z W_align
+    and folds the affine map into the output projection (or sets an affine alignment hook)
+    while stabilizing residual covariance.
+    """
+    orig_model.eval()
+    surg_model.eval()
+
+    device = next(surg_model.parameters()).device
+    dtype = next(surg_model.parameters()).dtype
+
+    # Format inputs
+    if isinstance(sample_inputs, dict):
+        batch = {k: v.to(device) for k, v in sample_inputs.items()}
+    else:
+        batch = sample_inputs.to(device)
+
+    # 1. Identify attention module pairs
+    def _collect_attention_modules(m: nn.Module) -> dict[str, nn.Module]:
+        attns = {}
+        for name, sub in m.named_modules():
+            leaf = name.split(".")[-1].lower()
+            if leaf in ("attention", "self", "self_attn", "attn"):
+                attns[name] = sub
+        return attns
+
+    orig_attns = _collect_attention_modules(orig_model)
+    surg_attns = _collect_attention_modules(surg_model)
+
+    common_names = [n for n in surg_attns if n in orig_attns]
+    if not common_names:
+        # Fallback to layer-indexed match
+        orig_list = list(orig_attns.values())
+        surg_list = list(surg_attns.values())
+        pairs = list(zip(orig_list, surg_list))
+    else:
+        pairs = [(orig_attns[n], surg_attns[n]) for n in common_names]
+
+    if not pairs:
+        return surg_model
+
+    # 2. Capture layer outputs using forward hooks
+    orig_outs: dict[int, torch.Tensor] = {}
+    surg_outs: dict[int, torch.Tensor] = {}
+    hooks = []
+
+    for idx, (orig_mod, surg_mod) in enumerate(pairs):
+        def _make_orig_hook(i: int):
+            def _hook(mod, inp, out):
+                val = out[0] if isinstance(out, tuple) else out
+                orig_outs[i] = val.detach().float()
+            return _hook
+
+        def _make_surg_hook(i: int):
+            def _hook(mod, inp, out):
+                val = out[0] if isinstance(out, tuple) else out
+                surg_outs[i] = val.detach().float()
+            return _hook
+
+        hooks.append(orig_mod.register_forward_hook(_make_orig_hook(idx)))
+        hooks.append(surg_mod.register_forward_hook(_make_surg_hook(idx)))
+
+    with torch.no_grad():
+        try:
+            if isinstance(batch, dict):
+                orig_model(**batch)
+                surg_model(**batch)
+            else:
+                orig_model(batch)
+                surg_model(batch)
+        except Exception as e:
+            logger.debug("Calibration forward capture failed: %s", e)
+
+    for h in hooks:
+        h.remove()
+
+    # 3. Solve Closed-Form Ridge Alignment per layer
+    for idx, (_, surg_mod) in enumerate(pairs):
+        if idx not in orig_outs or idx not in surg_outs:
+            continue
+        Y_orig = orig_outs[idx]  # (B, T, D)
+        Z = surg_outs[idx]       # (B, T, D)
+
+        if Y_orig.shape != Z.shape:
+            continue
+
+        D = Y_orig.shape[-1]
+        Y_flat = Y_orig.reshape(-1, D)
+        Z_flat = Z.reshape(-1, D)
+
+        # Center statistics
+        mu_Y = Y_flat.mean(dim=0, keepdim=True)
+        mu_Z = Z_flat.mean(dim=0, keepdim=True)
+        Z_c = Z_flat - mu_Z
+        Y_c = Y_flat - mu_Y
+
+        # Solve (Z_c^T Z_c + lambda * I) W = Z_c^T Y_c
+        reg = ridge_lambda * torch.eye(D, device=Z_flat.device, dtype=torch.float32)
+        ZT_Z = torch.matmul(Z_c.t(), Z_c) + reg
+        ZT_Y = torch.matmul(Z_c.t(), Y_c)
+
+        try:
+            W_align = torch.linalg.solve(ZT_Z, ZT_Y)  # (D, D)
+            b_align = (mu_Y - torch.matmul(mu_Z, W_align)).squeeze(0)  # (D,)
+        except Exception:
+            continue
+
+        # Check conditioning
+        if torch.isnan(W_align).any() or torch.isinf(W_align).any():
+            continue
+
+        # Check alignment gain / MSE
+        Y_pred = torch.matmul(Z_flat - mu_Z, W_align) + mu_Y
+        mse_raw = ((Z_flat - Y_flat) ** 2).mean()
+        mse_aligned = ((Y_pred - Y_flat) ** 2).mean()
+
+        if mse_aligned < mse_raw:
+            # Optimal affine alignment found! Attach or fold into module
+            # If module has a standard out_proj Linear, we can fold W_align and b_align directly!
+            out_proj = None
+            for child_name, child in surg_mod.named_modules():
+                if any(p.match(child_name) for p in PROJ_REGEX_PATTERNS["o"]):
+                    if isinstance(child, nn.Linear):
+                        out_proj = child
+                        break
+
+            if out_proj is not None and out_proj.weight.shape == (D, D):
+                # out_proj: x -> x W_out^T + b_out
+                # aligned output: y_align = y W_align + b_align
+                # = (x W_out^T + b_out) W_align + b_align = x (W_align^T W_out)^T + (b_out W_align + b_align)
+                W_cur = out_proj.weight.data.float()
+                W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
+                out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
+                if out_proj.bias is not None:
+                    b_cur = out_proj.bias.data.float()
+                    b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align)
+                    out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
+            else:
+                # Attach post-forward affine hook
+                W_hook = W_align.to(dtype=dtype, device=device)
+                b_hook = b_align.to(dtype=dtype, device=device)
+                def _affine_forward_hook(m, inp, out):
+                    if isinstance(out, tuple):
+                        val = out[0]
+                        aligned = (1.0 - blend_alpha) * val + blend_alpha * (torch.matmul(val.float(), W_hook.float()) + b_hook.float()).to(val.dtype)
+                        return (aligned,) + out[1:]
+                    else:
+                        return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
+                surg_mod.register_forward_hook(_affine_forward_hook)
+
+    return surg_model
+
+
 __all__ = [
     "PROJ_REGEX_PATTERNS",
     "FUSED_QKV_REGEX",
@@ -531,4 +696,5 @@ __all__ = [
     "_svd_factorize_weights",
     "adapt_decoder_attention_forward",
     "apply_backbone_surgery_hooks",
+    "calibrate_surgically_replaced_model",
 ]
