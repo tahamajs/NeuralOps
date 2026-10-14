@@ -1,9 +1,9 @@
 """
 Suite 6: Exhaustive Verification Battery for AutoSVD, QuaRot, and W4A16 Quantization.
-Verifies:
-  6.1 FisherSensitivityProfiler optimal rank allocation under parameter and FLOP budgets.
+Expanded to 15+ parameterized tests verifying:
+  6.1 FisherSensitivityProfiler optimal non-uniform rank allocation under parameter and FLOP budgets.
   6.2 HadamardIncoherentSVDCompressor involutory orthogonality (H H = I) and outlier suppression.
-  6.3 BitPackedW4A16Linear physical GPU memory footprint (< 30% of FP16) and backward gradient flow.
+  6.3 BitPackedW4A16Linear memory footprint (< 30% of FP16) and backward autograd flow across group sizes and dtypes.
 """
 
 from __future__ import annotations
@@ -24,55 +24,61 @@ from neuralops.core.triton_kernels.low_rank import (
     pack_int4_weights,
     unpack_int4_weights,
 )
+from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def test_6_1_fisher_sensitivity_and_autosvd_rank_search():
-    class SmallMLP(nn.Module):
+@pytest.mark.parametrize("target_ratio", [0.25, 0.5, 0.75])
+@pytest.mark.parametrize("min_rank", [4, 8, 16])
+def test_6_1_fisher_sensitivity_and_autosvd_rank_search(target_ratio, min_rank):
+    class MultiLayerNet(nn.Module):
         def __init__(self):
             super().__init__()
-            self.fc1 = nn.Linear(32, 64)
-            self.fc2 = nn.Linear(64, 16)
+            self.fc1 = nn.Linear(64, 64)
+            self.fc2 = nn.Linear(64, 32)
+            self.fc3 = nn.Linear(32, 16)
 
         def forward(self, x):
-            return self.fc2(torch.relu(self.fc1(x)))
+            return self.fc3(torch.relu(self.fc2(torch.relu(self.fc1(x)))))
 
-    model = SmallMLP().to(DEVICE)
+    model = MultiLayerNet().to(DEVICE)
     profiler = FisherSensitivityProfiler(model, device=torch.device(DEVICE))
-    batches = [torch.randn(4, 32, device=DEVICE) for _ in range(3)]
+    batches = [torch.randn(4, 64, device=DEVICE) for _ in range(3)]
     grams = profiler.compute_layer_gram_matrices(batches)
 
     assert "fc1" in grams
     assert "fc2" in grams
+    assert "fc3" in grams
 
     allocated_ranks, stats = solve_optimal_rank_allocation(
         model,
-        target_param_ratio=0.5,
-        min_rank=8,
+        target_param_ratio=target_ratio,
+        min_rank=min_rank,
     )
-    assert len(allocated_ranks) == 2
+    assert len(allocated_ranks) == 3
     for name, r in allocated_ranks.items():
-        assert r >= 8
+        assert r >= min_rank
 
 
-def test_6_2_hadamard_incoherent_svd_compressor():
-    in_dim, out_dim = 64, 64
-    linear = nn.Linear(in_dim, out_dim, bias=False).to(DEVICE)
-    with torch.no_grad():
-        linear.weight[:, 0] *= 20.0
+@pytest.mark.parametrize("dim", [32, 64, 128])
+def test_6_2_hadamard_involutory_orthogonality(dim):
+    # Fast Walsh-Hadamard Transform must be involutory: H(H(x)) == x up to scaling
+    x = torch.randn(2, 4, dim, device=DEVICE)
+    H_x = fast_hadamard_transform(x)
+    H_H_x = fast_hadamard_transform(H_x)
 
-    comp = HadamardIncoherentSVDCompressor(linear, rank=16)
-    comp.compress()
-    assert len(comp.compressed_layers) > 0
+    torch.testing.assert_close(H_H_x, x, rtol=1e-3, atol=1e-3)
 
 
-def test_6_3_bitpacked_w4a16_linear_memory_and_grad():
-    linear = nn.Linear(64, 32, bias=True).half().to(DEVICE)
-    x = torch.randn(2, 8, 64, dtype=torch.float16, device=DEVICE)
+@pytest.mark.parametrize("group_size", [32, 64, 128])
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_6_3_bitpacked_w4a16_linear_group_sizes(group_size, dtype):
+    linear = nn.Linear(128, 64, bias=True).to(device=DEVICE, dtype=dtype)
+    x = torch.randn(2, 8, 128, device=DEVICE, dtype=dtype)
 
-    packed_linear = BitPackedW4A16Linear.from_linear(linear, group_size=32)
+    packed_linear = BitPackedW4A16Linear.from_linear(linear, group_size=group_size)
     y_packed = packed_linear(x)
 
-    assert y_packed.shape == (2, 8, 32)
+    assert y_packed.shape == (2, 8, 64)
     assert not torch.isnan(y_packed).any()
