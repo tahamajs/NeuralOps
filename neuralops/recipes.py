@@ -14,32 +14,38 @@ logger = logging.getLogger("NeuralOps.Recipes")
 
 BUILTIN_RECIPES: Dict[str, Dict[str, Any]] = {
     "fast_linear_recovery": {
+        "description": "Fast linear attention recovery with GLA and AdaSVD + PiSSA",
         "attention": "gla_attention",
         "compressor": "adasvd",
         "rank_ratio": 0.5,
         "peft_recovery": "pissa",
     },
     "cosformer_encoder_svd": {
+        "description": "Cosformer linear attention with CUR compressor",
         "attention": "cosformer",
         "compressor": "cur_compressor",
         "rank_ratio": 0.6,
     },
     "low_vram_6gb": {
+        "description": "Low VRAM profile with Cosformer and Rotational SliceGPT INT4",
         "attention": "cosformer",
         "compressor": "rotational_slicegpt_int4",
         "rank_ratio": 0.4,
     },
     "hybrid_jamba_ratio": {
+        "description": "Hybrid Jamba-style ratio with ModeGPT",
         "attention": "tri_branch_hybrid",
         "compressor": "modegpt",
         "rank_ratio": 0.5,
     },
     "lossless_svd_80": {
+        "description": "High-fidelity Swift-SVD at 80% rank retention with PiSSA",
         "compressor": "swift_svd_act",
         "rank_ratio": 0.8,
         "peft_recovery": "pissa",
     },
     "flagship_2026": {
+        "description": "Flagship 2026 recipe with GDN-2 attention and AA-SVD compressor",
         "attention": "gdn2_attention",
         "compressor": "aa_svd_compressor",
         "rank_ratio": 0.5,
@@ -92,8 +98,12 @@ def recommend(
     target_vram_gb: Optional[float] = None,
     task: str = "causal_lm",
     seq_len: int = 4096,
+    gpu_memory_gb: Optional[float] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Inspects the active GPU and returns tailored architecture, compressor, and recipe advice."""
+    if gpu_memory_gb is not None:
+        target_vram_gb = gpu_memory_gb
     sm_major = 7
     if torch.cuda.is_available():
         sm_major = torch.cuda.get_device_capability()[0]
