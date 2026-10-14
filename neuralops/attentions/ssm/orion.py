@@ -715,14 +715,14 @@ class ORIONAttention(BaseAttention):
         Q_norm_sq = (Q_scaled**2).sum(dim=-1, keepdim=True) / 2.0  # (B, Hk, N, 1)
         K_norm_sq = (K_scaled**2).sum(dim=-1, keepdim=True) / 2.0  # (B, Hk, N, 1)
 
-        # Numerical safety: subtract per-batch max before exp (log-sum-exp style)
-        # Mathematically cancels out in num/denom, so accuracy is unchanged and batch rows are independent.
-        max_q = Q_proj.detach().amax(dim=(1, 2, 3), keepdim=True)  # (B, 1, 1, 1)
-        max_k = K_proj.detach().amax(dim=(1, 2, 3), keepdim=True)  # (B, 1, 1, 1)
-        max_val = torch.maximum(max_q, max_k).clamp(min=0.0)
+        # Numerical safety: subtract per-token max before exp (log-sum-exp style)
+        # Mathematically cancels out in numerator and denominator for every (q_t, k_s) pair,
+        # while preventing any future tokens (s > t) from affecting past feature representations.
+        max_q = (Q_proj - Q_norm_sq).detach().amax(dim=-1, keepdim=True).clamp(min=0.0)
+        max_k = (K_proj - K_norm_sq).detach().amax(dim=-1, keepdim=True).clamp(min=0.0)
 
-        Q_feat = torch.exp(Q_proj - Q_norm_sq - max_val) / math.sqrt(F_dim)
-        K_feat = torch.exp(K_proj - K_norm_sq - max_val) / math.sqrt(F_dim)
+        Q_feat = torch.exp(Q_proj - Q_norm_sq - max_q) / math.sqrt(F_dim)
+        K_feat = torch.exp(K_proj - K_norm_sq - max_k) / math.sqrt(F_dim)
 
         # Padding mask on K and V
         if token_valid is not None:
