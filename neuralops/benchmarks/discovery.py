@@ -105,7 +105,7 @@ def inspect_module_capabilities(
 
 
 def discover_all_modules() -> list[ModuleMetadata]:
-    """Discover and return capabilities for all 232 registered modules."""
+    """Discover and return capabilities for all registered modules (131 attentions + 72 compressors = 203)."""
 
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []
@@ -121,10 +121,37 @@ def discover_all_modules() -> list[ModuleMetadata]:
     return discovered
 
 
-def discover_modules() -> dict[str, ModuleMetadata]:
-    """Discover all registered modules and return a mapping of name to ModuleMetadata."""
+def discover_modules(key_by: str = "name") -> dict[str, ModuleMetadata]:
+    """Discover all registered modules and return a mapping to ModuleMetadata.
+    
+    Args:
+        key_by: 'name' returns module names with collision preservation for dual-registered keys
+                (e.g. 'compressor:svd_linear' for the compressor and 'svd_linear' for attention),
+                'unique_key' or 'tuple' returns (type, name) or 'type:name' for all 203 entries.
+    """
     modules = discover_all_modules()
-    return {m.name: m for m in modules}
+    mapping: dict[str, ModuleMetadata] = {}
+
+    for m in modules:
+        if key_by in ("tuple", "(category, name)"):
+            mapping[(m.type, m.name)] = m
+        elif key_by in ("unique_key", "category_name"):
+            mapping[f"{m.type}:{m.name}"] = m
+        else:
+            # Default 'name' mode: If collision detected (e.g. svd_linear in both attention and compressor),
+            # preserve attention as 'svd_linear' and register compressor as both 'svd_linear_compressor'
+            # and 'compressor:svd_linear' so all 203 modules remain reachable and distinct.
+            if m.name in mapping:
+                existing = mapping[m.name]
+                if existing.type != m.type:
+                    # Disambiguate
+                    mapping[f"{existing.type}:{existing.name}"] = existing
+                    mapping[f"{m.type}:{m.name}"] = m
+                    mapping[f"{m.name}_{m.type}"] = m
+                    continue
+            mapping[m.name] = m
+
+    return mapping
 
 
 __all__ = [
