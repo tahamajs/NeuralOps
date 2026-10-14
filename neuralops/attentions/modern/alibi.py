@@ -288,18 +288,29 @@ class ALiBiAttention(BaseAttention):
         if cache_key in self._alibi_cache:
             return self._alibi_cache[cache_key]
 
-        q_pos = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(1)  # (N_q, 1)
-        k_pos = torch.arange(0, N_k, device=device).unsqueeze(0)                    # (1, N_k)
+        # Try fused Triton kernel for GPU SRAM acceleration
+        try:
+            from neuralops.core.triton_kernels.elementwise import fused_alibi_bias_triton
+            bias = fused_alibi_bias_triton(
+                self.alibi_slopes.to(device),
+                N_q=N_q,
+                N_k=N_k,
+                past_len=past_len,
+                is_causal=causal,
+            )
+        except Exception:
+            q_pos = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(1)  # (N_q, 1)
+            k_pos = torch.arange(0, N_k, device=device).unsqueeze(0)                    # (1, N_k)
 
-        if causal:
-            dist = (q_pos - k_pos).clamp(min=0).float()      # i - j >= 0
-        else:
-            dist = (q_pos - k_pos).abs().float()
+            if causal:
+                dist = (q_pos - k_pos).clamp(min=0).float()      # i - j >= 0
+            else:
+                dist = (q_pos - k_pos).abs().float()
 
-        slopes = self.alibi_slopes.view(1, self.num_heads, 1, 1).to(device)
-        bias = -slopes * dist.unsqueeze(0).unsqueeze(0)      # (1, H, N_q, N_k)
+            slopes = self.alibi_slopes.view(1, self.num_heads, 1, 1).to(device)
+            bias = -slopes * dist.unsqueeze(0).unsqueeze(0)      # (1, H, N_q, N_k)
 
-        # ذخیره در کش (محدود کردن سایز کش به 4 برای جلوگیری از نشت حافظه)
+        # Store in cache (limit size to 4 to prevent memory leaks)
         if len(self._alibi_cache) > 4:
             self._alibi_cache.clear()
         self._alibi_cache[cache_key] = bias
