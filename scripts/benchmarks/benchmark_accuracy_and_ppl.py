@@ -148,7 +148,9 @@ def main():
         })
         
     # Save output artifacts
-    suffix = f"_{node_name}" if len(sys.argv) <= 1 else f"_{node_name}_part{sys.argv[2]}"
+    has_split = ("--split" in sys.argv)
+    split_part = sys.argv[sys.argv.index("--split") + 1] if has_split else ""
+    suffix = f"_{node_name}_part{split_part}" if has_split else f"_{node_name}"
     json_path = os.path.join(out_dir, f"accuracy_and_ppl_benchmark{suffix}.json")
     with open(json_path, "w") as f:
         json.dump({
