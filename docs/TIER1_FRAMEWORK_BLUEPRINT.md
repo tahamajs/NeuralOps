@@ -191,8 +191,9 @@ Q4 2027: NeuralOps v2.0.0 (Enterprise Production Framework)
 - [x] Automated FSDP wrapping policy for factorized layers (`get_neuralops_fsdp_policy`).
 - [x] Post-installation health diagnostics (`neuralops doctor` & `tests/test_installation_and_doctor.py`).
 - [x] 6-Pillar Training Engine (distillation, homotopy, SVD-PEFT, RL alignment, stability).
-- [ ] Complete FakeTensor meta-shape registration across all 26 Triton kernels (Scheduled v1.4).
-- [ ] Paged recurrent state tables for continuous batching (Scheduled v1.4).
+- [x] Complete FakeTensor meta-shape registration across all 26 Triton kernels (`neuralops/core/triton_kernels/op_registry.py`).
+- [x] Paged recurrent state tables (`PagedStateTable`) & associative prefix caching (`RadixPrefixStateCache`) for continuous batching.
+- [x] Automated Fisher-information & Activation-Gram AutoSVD rank search CLI (`neuralops search` & `auto_svd.py`).
 - [ ] First-class vLLM attention backend registration (Scheduled v1.4).
-- [ ] Automated Fisher-information AutoSVD rank search (Scheduled v1.5).
 - [ ] Context parallelism ring state-passing for 1M+ sequences (Scheduled v1.6).
+
