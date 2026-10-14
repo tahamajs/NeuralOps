@@ -7,6 +7,7 @@ from transformers import RobertaForSequenceClassification, AutoTokenizer
 from neuralops.core.attention_utils import inject_attention
 from neuralops.benchmarks.core.data_loader import load_dataset_by_name, make_dataloader
 from neuralops.benchmarks.core.training import finetune_classification
+from neuralops.benchmarks.core.evaluation import evaluate_classification
 
 def main():
     failed_mods = [
@@ -31,16 +32,22 @@ def main():
             inject_attention(model, mod)
             train_loader = make_dataloader(train_ds, batch_size=4, shuffle=True)
             eval_loader = make_dataloader(eval_ds, batch_size=8, shuffle=False)
-            metrics = finetune_classification(
+            train_metrics = finetune_classification(
                 model=model,
                 train_loader=train_loader,
-                eval_loader=eval_loader,
                 epochs=1,
                 lr=2e-5,
                 device="cuda",
             )
-            print(f"SUCCESS {mod}: acc={metrics.get('accuracy'):.4f}, loss={metrics.get('loss'):.4f}")
-            results[mod] = {"status": "success", "metrics": metrics}
+            eval_metrics = evaluate_classification(
+                model=model,
+                eval_loader=eval_loader,
+                device="cuda",
+            )
+            acc = eval_metrics.get("accuracy", 0.0)
+            loss = eval_metrics.get("loss", 0.0)
+            print(f"SUCCESS {mod}: acc={acc:.4f}, loss={loss:.4f}")
+            results[mod] = {"status": "success", "train_metrics": train_metrics, "eval_metrics": eval_metrics}
             del model, train_loader, eval_loader
         except Exception as e:
             print(f"FAILED {mod}: {type(e).__name__}: {e}")
