@@ -307,16 +307,65 @@ def _noncausal_global_linear_attention(
 def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = False) -> torch.Tensor:
     if os.environ.get("AEGIS_DISABLE_RECURRENCE", "0") == "1":
         return u
-    if reverse: u = torch.flip(u, dims=[1])
-    gamma_b = gamma.view(1, 1, -1).squeeze(1)
+    if reverse:
+        u = torch.flip(u, dims=[1])
     B, N, D = u.shape
-    state = torch.zeros(B, D, device=u.device, dtype=u.dtype)
+
+    # For short sequences, simple sequential loop is fast
+    if N <= 64:
+        gamma_b = gamma.view(1, 1, -1).squeeze(1)
+        state = torch.zeros(B, D, device=u.device, dtype=u.dtype)
+        outs = []
+        for t in range(N):
+            state = gamma_b * state + u[:, t, :]
+            outs.append(state)
+        out = torch.stack(outs, dim=1)
+        if reverse:
+            out = torch.flip(out, dims=[1])
+        return out
+
+    # For N > 64, execute fast O(N/C) vectorized chunked scan
+    chunk = min(64, N)
+    pad_len = (chunk - (N % chunk)) % chunk
+    if pad_len > 0:
+        u_p = F.pad(u, (0, 0, 0, pad_len))
+    else:
+        u_p = u
+
+    N_pad = u_p.shape[1]
+    num_chunks = N_pad // chunk
+
+    pos = torch.arange(chunk, device=u.device, dtype=torch.float32)
+    diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # [chunk, chunk]
+    tril = (diff >= 0).unsqueeze(-1)  # [chunk, chunk, 1]
+
+    log_gamma = torch.log(gamma.float().clamp(min=1e-5, max=1.0 - 1e-5)).view(1, 1, D)
+    decay_intra = torch.where(
+        tril,
+        torch.exp(diff.unsqueeze(-1) * log_gamma),
+        torch.zeros(1, 1, 1, device=u.device),
+    ).to(u.dtype)
+    gamma_chunk = torch.exp(chunk * log_gamma).to(u.dtype).view(1, 1, D)
+    decay_inter = torch.exp((pos + 1).view(1, chunk, 1) * log_gamma).to(u.dtype)
+    decay_carry = torch.exp((chunk - 1 - pos).view(1, chunk, 1) * log_gamma).to(u.dtype)
+
+    u_chunks = u_p.view(B, num_chunks, chunk, D)
+    state = torch.zeros(B, 1, D, device=u.device, dtype=u.dtype)
     outs = []
-    for t in range(N):
-        state = gamma_b * state + u[:, t, :]
-        outs.append(state)
-    out = torch.stack(outs, dim=1)
-    if reverse: out = torch.flip(out, dims=[1])
+
+    for c in range(num_chunks):
+        uc = u_chunks[:, c]
+        out_intra = torch.einsum("bcd,kcd->bkd", uc, decay_intra)
+        out_inter = state * decay_inter
+        yc = out_intra + out_inter
+        outs.append(yc)
+        state = state * gamma_chunk + (uc * decay_carry).sum(dim=1, keepdim=True)
+
+    out = torch.cat(outs, dim=1)
+    if pad_len > 0:
+        out = out[:, :N, :]
+    if reverse:
+        out = torch.flip(out, dims=[1])
     return out
 
 
