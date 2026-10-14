@@ -1,0 +1,24 @@
+\begin{table}[h]
+\centering
+\small
+\caption{Head-to-Head Latency and Peak VRAM Scaling on NVIDIA RTX 4070 (B=2, H=12, D=768).}
+\label{tab:fla_scaling}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Mechanism} & \textbf{Metric} & \textbf{T=512} & \textbf{T=1024} & \textbf{T=2048} & \textbf{T=4096} & \textbf{T=8192} \\
+\midrule
+PyTorch SDPA & Latency (ms) & 1.44 & 1.83 & 3.42 & 8.87 & 28.53 \\
+ & VRAM (MB) & 73.5 & 146.9 & 293.7 & 587.3 & 1174.5 \\
+Chunk GLA & Latency (ms) & 2.53 & 3.42 & 5.86 & 10.42 & 19.56 \\
+ & VRAM (MB) & 140.8 & 172.8 & 236.8 & 364.8 & 620.8 \\
+Chunk GDN & Latency (ms) & 6.12 & 9.85 & 18.23 & 34.61 & 68.42 \\
+ & VRAM (MB) & 142.1 & 185.3 & 260.4 & 420.7 & 720.5 \\
+GDN-2 & Latency (ms) & 4.81 & 7.23 & 12.45 & 23.10 & 45.52 \\
+ & VRAM (MB) & 138.4 & 174.2 & 245.6 & 388.9 & 655.2 \\
+PGDN & Latency (ms) & 3.12 & 4.56 & 7.89 & 13.45 & 22.15 \\
+ & VRAM (MB) & 135.2 & 168.4 & 234.8 & 368.1 & 634.5 \\
+Cosformer (Triton) & Latency (ms) & 4.59 & 12.31 & 13.44 & 30.20 & 74.19 \\
+ & VRAM (MB) & 115.0 & 226.2 & 349.4 & 674.7 & 1324.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
