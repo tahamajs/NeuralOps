@@ -174,14 +174,16 @@ class REAPMoE(nn.Module):
         else:
             scores = logits
 
-        full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
-        topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
+        from neuralops.core.triton_kernels.sparse_attn import fused_reap_moe_router_triton
+
+        topk_weights, topk_indices = fused_reap_moe_router_triton(scores, self.top_k)
         topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
             target_dtype
         )
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
+
         expert_assignment = expert_mask.sum(dim=2).clamp(max=1.0)
         density = expert_assignment.view(-1, self.n_experts).mean(dim=0)
         prob_mean = router_probs.mean(dim=0)

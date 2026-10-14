@@ -38,8 +38,36 @@ def finetune_classification(
         from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
         optimizer = create_riemannian_stiefel(model, lr=lr)
     else:
-        trainable_params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = AdamW(trainable_params, lr=lr, weight_decay=0.01, foreach=False)
+        # Differential learning rates:
+        # Newly injected attention modules, adapters, and classification heads require higher learning rates
+        # (e.g. 10x or min 3e-4) to calibrate and align, while the pretrained backbone requires conservative updates (lr).
+        classifier_and_adapter_params = []
+        backbone_params = []
+        lr_adapter = max(lr * 10.0, 3e-4)
+
+        for name, p in model.named_parameters():
+            if not p.requires_grad:
+                continue
+            name_lower = name.lower()
+            if any(k in name_lower for k in (
+                "classifier", "head", "score", "lora", "gate", "alpha", "beta",
+                "delta", "ssm", "conv1d", "dt_proj", "x_proj", "a_log", "d_bwd",
+                "output_scale", "out_proj", "in_proj", "kernel"
+            )):
+                classifier_and_adapter_params.append(p)
+            else:
+                backbone_params.append(p)
+
+        param_groups = []
+        if classifier_and_adapter_params:
+            param_groups.append({"params": classifier_and_adapter_params, "lr": lr_adapter, "weight_decay": 0.01})
+        if backbone_params:
+            param_groups.append({"params": backbone_params, "lr": lr, "weight_decay": 0.01})
+        if not param_groups:
+            param_groups = [{"params": [p for p in model.parameters() if p.requires_grad], "lr": lr, "weight_decay": 0.01}]
+
+        trainable_params = [p for group in param_groups for p in group["params"]]
+        optimizer = AdamW(param_groups, foreach=False)
 
     # Distributed backend wrapping via accelerate
     dist_backend = (distributed_backend or "none").lower()

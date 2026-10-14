@@ -97,6 +97,18 @@ class GLAttention(BaseAttention):
             else compute_dtype
         )
 
+        # Decoder / Causal detection
+        model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo")
+        is_dec = False
+        if config is not None:
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
+        if any(model_type.startswith(p) for p in dec_prefixes) or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+        if old_attn is not None and (hasattr(old_attn, "c_attn") or getattr(old_attn, "is_decoder", False)):
+            is_dec = True
+        self.is_decoder = is_dec
+
         # Projections
         self.q_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.k_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
@@ -202,7 +214,6 @@ class GLAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, N, H, d)
         V = self.v_proj(hidden_states).view(B, N, H, d)
 
-        # 3. Execution backend
         if self._fla_kernel is not None:
             try:
                 Q_f = Q.to(torch.bfloat16)
@@ -226,6 +237,16 @@ class GLAttention(BaseAttention):
                 out = self._pytorch_gla_stable(Q, K, V, g)
         else:
             out = self._pytorch_gla_stable(Q, K, V, g)
+
+        # Bidirectional scan for bidirectional encoder models (e.g. RoBERTa, BERT)
+        if not self.is_decoder:
+            Q_r = torch.flip(Q, dims=[1])
+            K_r = torch.flip(K, dims=[1])
+            V_r = torch.flip(V, dims=[1])
+            g_r = torch.flip(g, dims=[1])
+            out_bwd_raw = self._pytorch_gla_stable(Q_r, K_r, V_r, g_r)
+            out_bwd = torch.flip(out_bwd_raw, dims=[1])
+            out = 0.5 * (out + out_bwd)
 
         # 4. RMSNorm per head (essential for stable magnitude)
         out = self.o_norm(out)  # (B, N, H, d)
