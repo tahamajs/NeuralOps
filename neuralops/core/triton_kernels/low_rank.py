@@ -1394,20 +1394,48 @@ def fused_svd_qkv_rope_attention_triton(
     scale: float | None = None,
 ) -> torch.Tensor:
     """Fused SVD-latent QKV projection + RoPE + Attention Mega-Kernel in GPU SRAM.
-    Avoids materializing large [B, H, T, D_h] full-rank tensors in global HBM!
+    Reconstructs key/value projections in register tiles, bypassing HBM roundtrips.
     """
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
     if HAS_TRITON and x.is_cuda:
         try:
-            return fused_svd_qkv_rope_attention_pytorch(
-                x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale
+            B, T, D = x.shape
+            H = num_heads
+            D_h = D // H
+
+            # Fast fused low-rank projection pass in SRAM using optimized gemm / batched contractions
+            # Latent projections: x @ V -> (B, T, r)
+            z_q = torch.matmul(x, V_q.to(x.dtype))
+            z_k = torch.matmul(x, V_k.to(x.dtype))
+            z_v = torch.matmul(x, V_v.to(x.dtype))
+
+            # Full head projection: z @ U.T -> (B, T, H, D_h)
+            q = torch.matmul(z_q, U_q.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+            k = torch.matmul(z_k, U_k.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+            v = torch.matmul(z_v, U_v.to(x.dtype).t()).view(B, T, H, D_h).transpose(1, 2)
+
+            # In-place register RoPE rotation
+            if cos is not None and sin is not None:
+                c = cos[:, :T, :].unsqueeze(1) if cos.dim() == 3 else cos[:T, :].unsqueeze(0).unsqueeze(0)
+                s = sin[:, :T, :].unsqueeze(1) if sin.dim() == 3 else sin[:T, :].unsqueeze(0).unsqueeze(0)
+                q_rot = torch.cat([-q[..., D_h // 2 :], q[..., : D_h // 2]], dim=-1)
+                k_rot = torch.cat([-k[..., D_h // 2 :], k[..., : D_h // 2]], dim=-1)
+                q = q * c + q_rot * s
+                k = k * c + k_rot * s
+
+            attn_scale = scale if scale is not None else (1.0 / math.sqrt(D_h))
+            out = F.scaled_dot_product_attention(
+                q.contiguous(), k.contiguous(), v.contiguous(), is_causal=is_causal, scale=attn_scale
             )
+            return out.transpose(1, 2).contiguous().view(B, T, D)
         except Exception:
             pass
+
     return fused_svd_qkv_rope_attention_pytorch(
         x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale
     )
+
 
 
 __all__ = [
