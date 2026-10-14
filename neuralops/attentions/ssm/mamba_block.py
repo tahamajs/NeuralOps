@@ -730,6 +730,57 @@ class MambaBlock(nn.Module):
         # default encoder fallback
         return (out, attn_weights)
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Single-step autoregressive recurrent update for MambaBlock."""
+        from neuralops.core.triton_kernels.state_update import causal_conv1d_step, fused_recurrent_ssm_step
+
+        if state is None:
+            state = {}
+
+        B = x.shape[0]
+        device = x.device
+        dtype = x.dtype
+
+        # 1. Input projection
+        xz = self.in_proj(x)
+        x_ssm, z = xz.chunk(2, dim=-1)
+        x_ssm_1d = x_ssm.squeeze(1) if x_ssm.dim() == 3 else x_ssm
+
+        # 2. Conv1D step
+        conv_state = state.get("conv_state", None)
+        if conv_state is None:
+            conv_state = torch.zeros(B, self.d_inner, self.d_conv - 1, device=device, dtype=dtype)
+        x_conv, next_conv_state = causal_conv1d_step(x_ssm_1d, conv_state, self.conv1d.weight, self.conv1d.bias)
+        x_act = F.silu(x_conv)
+
+        # 3. Parameter projections
+        x_dbl = self.x_proj(x_act)
+        dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
+        dt = F.softplus(self.dt_proj(dt))
+
+        # 4. SSM step
+        ssm_state = state.get("ssm_state", None)
+        if ssm_state is None:
+            ssm_state = torch.zeros(B, self.d_inner, self.d_state, device=device, dtype=dtype)
+        A = -torch.exp(self.A_log)
+        y_ssm, next_ssm_state = fused_recurrent_ssm_step(x_act, dt, A, B_ssm, C_ssm, self.D, ssm_state)
+
+        # 5. Gating & Out projection
+        z_1d = z.squeeze(1) if z.dim() == 3 else z
+        y_gated = y_ssm * F.silu(z_1d)
+        out = self.out_proj(y_gated).unsqueeze(1)
+
+        new_state = {
+            "conv_state": next_conv_state,
+            "ssm_state": next_ssm_state,
+        }
+        return out, new_state
+
 
 # Convenience alias
 Mamba = MambaBlock
