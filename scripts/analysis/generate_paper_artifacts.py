@@ -25,6 +25,21 @@ import matplotlib.pyplot as plt
 
 plots_dir = Path("results/v13_deep_empirical_suite/plots")
 plots_dir.mkdir(parents=True, exist_ok=True)
+paper_fig_dir = Path("paper/figures")
+paper_fig_dir.mkdir(parents=True, exist_ok=True)
+paper_tab_dir = Path("paper/tables")
+paper_tab_dir.mkdir(parents=True, exist_ok=True)
+
+def save_fig_all(fig, stem: str):
+    for d in [plots_dir, paper_fig_dir]:
+        fig.savefig(d / f"{stem}.pdf")
+        fig.savefig(d / f"{stem}.svg")
+        fig.savefig(d / f"{stem}.png")
+
+def save_tex_all(content: str, stem: str):
+    for d in [plots_dir, paper_tab_dir]:
+        with open(d / f"{stem}.tex", "w", encoding="utf-8") as f:
+            f.write(content)
 
 plt.rcParams.update({
     "font.family": "serif",
@@ -74,8 +89,7 @@ if wikitext_json.exists():
 
     ax.legend(frameon=True, loc="upper left")
     plt.tight_layout()
-    fig.savefig(plots_dir / "figure_pareto_wikitext2.pdf")
-    fig.savefig(plots_dir / "figure_pareto_wikitext2.svg")
+    save_fig_all(fig, "figure_pareto_wikitext2")
     plt.close(fig)
 
     # Export LaTeX Booktabs Table
@@ -96,8 +110,7 @@ if wikitext_json.exists():
 \\end{tabular}
 \\end{table}
 """
-    with open(plots_dir / "table_wikitext2_pareto.tex", "w") as f:
-        f.write(tex_pareto)
+    save_tex_all(tex_pareto, "table_wikitext2_pareto")
 
 # ==============================================================================
 # 2. Figure & Table: 6-Pillar Accuracy-Recovery Ablation Suite
@@ -138,8 +151,7 @@ if ablation_json.exists():
     ax.set_ylim(0.0, 1.05)
     ax.legend(frameon=True, bbox_to_anchor=(1.02, 1), loc="upper left")
     plt.tight_layout()
-    fig.savefig(plots_dir / "figure_recovery_ablation_6pillar.pdf")
-    fig.savefig(plots_dir / "figure_recovery_ablation_6pillar.svg")
+    save_fig_all(fig, "figure_recovery_ablation_6pillar")
     plt.close(fig)
 
     # Export LaTeX Table for 6-Pillar Suite
@@ -159,8 +171,7 @@ if ablation_json.exists():
 \\end{tabular}
 \\end{table}
 """
-    with open(plots_dir / "table_recovery_ablation_6pillar.tex", "w") as f:
-        f.write(tex_ablation)
+    save_tex_all(tex_ablation, "table_recovery_ablation_6pillar")
 
 # ==============================================================================
 # 3. Figure & Table: FLA Scaling Benchmark (Head-to-Head Latency & VRAM)
@@ -223,8 +234,7 @@ ax2.set_xscale("log", base=2)
 ax2.legend(frameon=True, fontsize=9)
 
 plt.tight_layout()
-fig.savefig(plots_dir / "figure_fla_scaling.pdf")
-fig.savefig(plots_dir / "figure_fla_scaling.svg")
+save_fig_all(fig, "figure_fla_scaling")
 plt.close(fig)
 
 # Export LaTeX Table for Scaling
@@ -245,7 +255,6 @@ tex_scaling += """\\bottomrule
 \\end{tabular}
 \\end{table}
 """
-with open(plots_dir / "table_fla_scaling.tex", "w") as f:
-    f.write(tex_scaling)
+save_tex_all(tex_scaling, "table_fla_scaling")
 
-print("All paper plots and LaTeX booktabs tables successfully generated in results/v13_deep_empirical_suite/plots/!")
+print("All paper plots and LaTeX booktabs tables successfully generated in results/v13_deep_empirical_suite/plots/ and paper/{figures,tables}/!")
