@@ -140,11 +140,19 @@ def kd_train_step(
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
 
     optimizer.zero_grad()
+    def _call_model(mod: nn.Module) -> Any:
+        try:
+            if kd_loss_fn.use_fused_linear:
+                return mod(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
+            return mod(input_ids=input_ids, attention_mask=attention_mask)
+        except TypeError:
+            return mod(input_ids=input_ids, attention_mask=attention_mask)
+
     if amp_enabled:
         with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
             with torch.no_grad():
-                teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
-            student_outputs = student(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+                teacher_outputs = _call_model(teacher)
+            student_outputs = _call_model(student)
             
             # Check if models support extracting final hidden states and lm_head weight for fused loss
             s_head = getattr(student, "lm_head", None)
@@ -175,8 +183,8 @@ def kd_train_step(
                 )
     else:
         with torch.no_grad():
-            teacher_outputs = teacher(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
-        student_outputs = student(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=kd_loss_fn.use_fused_linear)
+            teacher_outputs = _call_model(teacher)
+        student_outputs = _call_model(student)
         s_head = getattr(student, "lm_head", None)
         t_head = getattr(teacher, "lm_head", None)
         if (
