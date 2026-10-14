@@ -565,4 +565,95 @@ def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
 
 direct_svd_compressor_factory = direct_svd_factory
 
-__all__ = ["DirectSVDCompressor", "direct_svd_factory", "direct_svd_compressor_factory"]
+
+def merge_for_inference(
+    model: nn.Module,
+    rank_threshold: Optional[int] = None,
+    inplace: bool = True,
+) -> nn.Module:
+    """Fuse low-rank SVDLinear layers and PiSSALinear adapters into standard nn.Linear.
+
+    Converts factorized low-rank matrix multiplications (e.g. U @ V or B @ A) back
+    into dense single-matrix GEMMs for maximum hardware tensor-core utilization and
+    zero parameter / activation dispatch overhead during inference.
+
+    Args:
+        model: PyTorch model containing SVDLinear, SVDLinearLayer, or PiSSALinear modules.
+        rank_threshold: If provided, only merge layers whose rank >= rank_threshold.
+                        If None, all factorized/adapter layers are merged.
+        inplace: Whether to mutate the model in-place (default: True).
+
+    Returns:
+        Model with fused standard nn.Linear layers.
+    """
+    if not inplace:
+        import copy
+        model = copy.deepcopy(model)
+
+    merged_count = 0
+
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            # 1. PiSSALinear
+            if hasattr(child, "merge_and_unload") and callable(child.merge_and_unload):
+                child_rank = getattr(child, "rank", 0)
+                if rank_threshold is None or child_rank >= rank_threshold:
+                    fused_layer = child.merge_and_unload()
+                    setattr(module, child_name, fused_layer)
+                    merged_count += 1
+                continue
+
+            # 2. SVDLinear (from aa_svd_compressor or svd_linear)
+            cls_name = child.__class__.__name__
+            if cls_name in ("SVDLinear", "SVDLinearLayer"):
+                child_rank = getattr(child, "rank", 0)
+                if rank_threshold is not None and child_rank < rank_threshold:
+                    continue
+
+                in_f = getattr(child, "in_features", None)
+                out_f = getattr(child, "out_features", None)
+
+                # Compute full fused weight matrix W = U @ V + (lora_B @ lora_A * scale)
+                with torch.no_grad():
+                    if hasattr(child, "get_weight"):
+                        w_dense = child.get_weight()
+                    elif hasattr(child, "U") and hasattr(child, "V"):
+                        w_dense = torch.matmul(child.U, child.V)
+                        if getattr(child, "lora_r", 0) > 0 and hasattr(child, "lora_A") and hasattr(child, "lora_B"):
+                            if child.lora_A is not None and child.lora_B is not None:
+                                scaling = getattr(child, "scaling", 1.0)
+                                w_dense = w_dense + torch.matmul(child.lora_B, child.lora_A) * scaling
+                    else:
+                        continue
+
+                    if in_f is None:
+                        in_f = w_dense.shape[1]
+                    if out_f is None:
+                        out_f = w_dense.shape[0]
+
+                    bias_present = hasattr(child, "bias") and child.bias is not None
+                    fused_linear = nn.Linear(
+                        in_f,
+                        out_f,
+                        bias=bias_present,
+                        device=w_dense.device,
+                        dtype=w_dense.dtype,
+                    )
+                    fused_linear.weight.data.copy_(w_dense)
+                    if bias_present:
+                        fused_linear.bias.data.copy_(child.bias.data)
+
+                    setattr(module, child_name, fused_linear)
+                    merged_count += 1
+
+    logger.info("merge_for_inference: Successfully fused %d low-rank layers into standard nn.Linear", merged_count)
+    return model
+
+
+__all__ = [
+    "DirectSVDCompressor",
+    "direct_svd_factory",
+    "direct_svd_compressor_factory",
+    "merge_for_inference",
+]
+
