@@ -666,6 +666,74 @@ class SAMBAM3Block(nn.Module):
             else:
                 return (out,) if self.is_nested_encoder else (out, None)
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Single-step autoregressive recurrent update for SAMBAM3Block."""
+        from neuralops.core.triton_kernels.sliding_window import fused_samba_sw_mamba_combine_triton
+
+        if state is None:
+            state = {}
+
+        B = x.shape[0]
+        device = x.device
+        dtype = x.dtype
+
+        # 1. Attention KV step
+        q = self.q_lin(x).view(B, 1, self.n_heads, self.head_dim).transpose(1, 2)
+        k = self.k_lin(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_lin(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+
+        past_k = state.get("past_k", None)
+        past_v = state.get("past_v", None)
+        if past_k is not None:
+            k_cat = torch.cat([past_k, k], dim=-2)
+            v_cat = torch.cat([past_v, v], dim=-2)
+        else:
+            k_cat = k
+            v_cat = v
+
+        if self.num_kv_heads != self.n_heads:
+            k_exp = repeat_kv(k_cat, self.num_key_value_groups)
+            v_exp = repeat_kv(v_cat, self.num_key_value_groups)
+        else:
+            k_exp = k_cat
+            v_exp = v_cat
+
+        # Keep only the last window tokens in sliding-window cache
+        if k_cat.shape[-2] > self.window:
+            next_past_k = k_cat[:, :, -self.window :, :]
+            next_past_v = v_cat[:, :, -self.window :, :]
+        else:
+            next_past_k = k_cat
+            next_past_v = v_cat
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q.float(), k_exp.float().transpose(-1, -2)) * scale
+        probs = F.softmax(scores, dim=-1).to(dtype)
+        attn_out = torch.matmul(probs, v_exp).transpose(1, 2).contiguous().view(B, 1, self.q_head_size)
+
+        # 2. Mamba step
+        mamba_state = state.get("mamba_state", None)
+        mamba_out, next_mamba_state = self.mamba.step(x, state=mamba_state, **kwargs)
+
+        # 3. Combine branches
+        if self.is_nested_encoder:
+            out = fused_samba_sw_mamba_combine_triton(attn_out, mamba_out, self.alpha)
+        else:
+            attn_proj = self.out_lin(attn_out)
+            out = fused_samba_sw_mamba_combine_triton(attn_proj, mamba_out, self.alpha)
+
+        new_state = {
+            "past_k": next_past_k,
+            "past_v": next_past_v,
+            "mamba_state": next_mamba_state,
+        }
+        return out, new_state
+
 
 def inject_samba_m3(
     layer: Any = None,
