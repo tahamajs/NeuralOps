@@ -59,8 +59,12 @@ def test_sram_autotuner_budget_pruning():
     configs = get_safe_autotune_configs(device, head_dim=256, dtype=torch.float32)
     assert len(configs) >= 1
     # Check that fallback config exists
-    has_safe = any(c.get("block_m", 64) <= 32 and c.get("block_n", 64) <= 32 for c in configs)
+    has_safe = any(
+        c.get("BLOCK_M", c.get("block_m", 64)) <= 32 and c.get("BLOCK_N", c.get("block_n", 64)) <= 32
+        for c in configs
+    )
     assert has_safe
+
 
 
     # Direct SRAM estimation test

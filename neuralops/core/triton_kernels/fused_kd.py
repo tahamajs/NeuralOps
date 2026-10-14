@@ -384,11 +384,9 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         teacher_bias: torch.Tensor | None,
         temperature: float = 2.0,
         reduction: str = "batchmean",
-        chunk_size: int = 512,
+        chunk_size: int = 2048,
     ):
-        ctx.temperature = float(temperature)
         ctx.reduction = reduction
-        ctx.chunk_size = chunk_size
         ctx.has_s_bias = student_bias is not None
 
         orig_shape = student_hidden.shape
@@ -400,28 +398,65 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         t_h_flat = teacher_hidden.reshape(-1, D_t).contiguous()
         N_tokens = s_h_flat.shape[0]
 
-        total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
         T = float(temperature)
         T2 = T * T
 
-        for c_start in range(0, N_tokens, chunk_size):
-            c_end = min(c_start + chunk_size, N_tokens)
-            s_hc = s_h_flat[c_start:c_end]
-            t_hc = t_h_flat[c_start:c_end]
+        if reduction == "batchmean":
+            scale_norm = 1.0 / (orig_shape[0] if orig_shape[0] > 0 else 1)
+        elif reduction == "mean":
+            scale_norm = 1.0 / (N_tokens * V)
+        elif reduction == "sum":
+            scale_norm = 1.0
+        else:
+            scale_norm = 1.0 / (orig_shape[0] if orig_shape[0] > 0 else 1)
 
-            s_logits_c = F.linear(s_hc, student_weight, student_bias)
-            with torch.no_grad():
+        compute_grads = torch.is_grad_enabled() and (
+            student_hidden.requires_grad or student_weight.requires_grad or (student_bias is not None and student_bias.requires_grad)
+        )
+
+        grad_s_hidden = torch.empty_like(s_h_flat) if compute_grads and student_hidden.requires_grad else None
+        grad_s_weight = torch.zeros_like(student_weight, dtype=torch.float32) if compute_grads and student_weight.requires_grad else None
+        grad_s_bias = torch.zeros_like(student_bias, dtype=torch.float32) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
+
+        total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
+        chunk_size = max(512, min(chunk_size, N_tokens))
+
+        with torch.no_grad():
+            for c_start in range(0, N_tokens, chunk_size):
+                c_end = min(c_start + chunk_size, N_tokens)
+                s_hc = s_h_flat[c_start:c_end]
+                t_hc = t_h_flat[c_start:c_end]
+
+                s_logits_c = F.linear(s_hc, student_weight, student_bias)
                 t_logits_c = F.linear(t_hc, teacher_weight, teacher_bias)
 
-            p_s = F.log_softmax(s_logits_c / T, dim=-1)
-            p_t = F.softmax(t_logits_c / T, dim=-1)
-            loss_c = F.kl_div(p_s, p_t, reduction="sum") * T2
-            total_loss += loss_c
+                p_s = F.log_softmax(s_logits_c / T, dim=-1)
+                p_t = F.softmax(t_logits_c / T, dim=-1)
+                loss_c = F.kl_div(p_s, p_t, reduction="sum") * T2
+                total_loss += loss_c
 
-        ctx.save_for_backward(s_h_flat, student_weight, student_bias, t_h_flat, teacher_weight, teacher_bias)
+                if compute_grads:
+                    # Analytical gradient: dL / d(s_logits) = T * (softmax(s_logits/T) - p_t) * scale_norm
+                    probs_s = F.softmax(s_logits_c.float() / T, dim=-1)
+                    probs_t = p_t.float()
+                    d_s_logits = ((probs_s - probs_t) * (T * scale_norm)).to(s_h_flat.dtype)
+
+                    if grad_s_hidden is not None:
+                        grad_s_hidden[c_start:c_end] = torch.matmul(d_s_logits, student_weight)
+                    if grad_s_weight is not None:
+                        grad_s_weight.addmm_(d_s_logits.t().float(), s_hc.float())
+                    if grad_s_bias is not None:
+                        grad_s_bias += d_s_logits.sum(dim=0).float()
+
+                    del s_logits_c, t_logits_c, p_s, p_t, probs_s, probs_t, d_s_logits
+
+        if grad_s_weight is not None:
+            grad_s_weight = grad_s_weight.to(student_weight.dtype)
+        if grad_s_bias is not None:
+            grad_s_bias = grad_s_bias.to(student_bias.dtype)
+
+        ctx.save_for_backward(grad_s_hidden, grad_s_weight, grad_s_bias)
         ctx.orig_shape = orig_shape
-        ctx.N_tokens = N_tokens
-        ctx.V = V
 
         if reduction == "batchmean":
             batch_size = orig_shape[0] if orig_shape[0] > 0 else 1
@@ -437,65 +472,17 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
-        (
-            s_h_flat,
-            student_weight,
-            student_bias,
-            t_h_flat,
-            teacher_weight,
-            teacher_bias,
-        ) = ctx.saved_tensors
-        temperature = ctx.temperature
-        reduction = ctx.reduction
-        chunk_size = ctx.chunk_size
-        N_tokens = ctx.N_tokens
-        V = ctx.V
+        grad_s_hidden, grad_s_weight, grad_s_bias = ctx.saved_tensors
+        g_val = grad_output.to(torch.float32)
 
-        if reduction == "batchmean":
-            batch_size = ctx.orig_shape[0] if ctx.orig_shape[0] > 0 else 1
-            scale = grad_output / batch_size
-        elif reduction == "mean":
-            scale = grad_output / (N_tokens * V)
-        elif reduction == "sum":
-            scale = grad_output
-        else:
-            scale = grad_output / (ctx.orig_shape[0] if ctx.orig_shape[0] > 0 else 1)
-
-        grad_s_hidden = torch.empty_like(s_h_flat)
-        grad_s_weight = torch.zeros_like(student_weight, dtype=torch.float32)
-        grad_s_bias = torch.zeros_like(student_bias, dtype=torch.float32) if ctx.has_s_bias else None
-
-        T = float(temperature)
-
-        for c_start in range(0, N_tokens, chunk_size):
-            c_end = min(c_start + chunk_size, N_tokens)
-            s_hc = s_h_flat[c_start:c_end]
-            t_hc = t_h_flat[c_start:c_end]
-
-            s_logits_c = F.linear(s_hc, student_weight, student_bias)
-            with torch.no_grad():
-                t_logits_c = F.linear(t_hc, teacher_weight, teacher_bias)
-
-            p_s = F.softmax(s_logits_c.float() / T, dim=-1)
-            p_t = F.softmax(t_logits_c.float() / T, dim=-1)
-
-            # d(Loss)/d(s_logits) = T * (p_s - p_t) * scale
-            d_s_logits = ((p_s - p_t) * (scale * T)).to(s_h_flat.dtype)
-
-            # Backprop into student hidden and student weight
-            grad_s_hidden[c_start:c_end] = torch.matmul(d_s_logits, student_weight)
-            grad_s_weight += torch.matmul(d_s_logits.t(), s_hc).float()
-            if grad_s_bias is not None:
-                grad_s_bias += d_s_logits.sum(dim=0).float()
-
-        grad_s_weight = grad_s_weight.to(student_weight.dtype)
-        if grad_s_bias is not None:
-            grad_s_bias = grad_s_bias.to(student_bias.dtype)
+        out_grad_h = (grad_s_hidden.view(ctx.orig_shape) * g_val).to(grad_s_hidden.dtype) if grad_s_hidden is not None else None
+        out_grad_w = (grad_s_weight * g_val).to(grad_s_weight.dtype) if grad_s_weight is not None else None
+        out_grad_b = (grad_s_bias * g_val).to(grad_s_bias.dtype) if grad_s_bias is not None else None
 
         return (
-            grad_s_hidden.view(ctx.orig_shape),
-            grad_s_weight,
-            grad_s_bias,
+            out_grad_h,
+            out_grad_w,
+            out_grad_b,
             None,
             None,
             None,
