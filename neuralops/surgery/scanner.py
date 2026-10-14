@@ -155,7 +155,7 @@ class UniversalArchitectureScanner:
         visited_ids = set()
 
         for name, module in model.named_modules():
-            if id(module) in visited_ids or module is model:
+            if id(module) in visited_ids:
                 continue
 
             spec = cls._inspect_module(model, name, module)
