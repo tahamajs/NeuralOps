@@ -75,10 +75,30 @@ def check_triton_suitability(
     if not tensor.is_cuda:
         return False, f"tensor is on {tensor.device}, expected CUDA"
 
+    # Hardware Compute Capability Guard:
+    # Basic Triton kernels require SM >= 7.0 (Volta+).
+    # Pascal (SM 6.1, e.g. GTX 1060) crashes ptxas on Triton JIT kernels.
+    try:
+        cap = torch.cuda.get_device_capability(tensor.device)
+        if cap[0] < 7:
+            return (
+                False,
+                f"GPU compute capability {cap[0]}.{cap[1]} < 7.0 is unsupported by Triton (Pascal/older architecture requires PyTorch fallback)",
+            )
+    except Exception:
+        pass
+
     if tensor.dtype not in (torch.float16, torch.bfloat16):
         return (
             False,
             f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
+        )
+
+    # If tensor is bfloat16 but device does not support native bf16 (e.g. SM < 8.0)
+    if tensor.dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        return (
+            False,
+            f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
         )
 
     if head_dim is not None and head_dim not in SUPPORTED_HEAD_DIMS:
