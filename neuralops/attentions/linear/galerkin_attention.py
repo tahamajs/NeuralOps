@@ -571,7 +571,9 @@ class GalerkinAttention(BaseAttention):
 
         eye = torch.eye(N, r_actual, device=device, dtype=torch.float32)
         phi = phi + 1e-4 * eye
-        phi, _ = torch.linalg.qr(phi)
+        device_type = "cuda" if device.type == "cuda" else "cpu"
+        with torch.amp.autocast(device_type=device_type, enabled=False):
+            phi, _ = torch.linalg.qr(phi.float())
         phi = phi.to(dtype=dtype)
         self._basis_cache[key] = phi
         return phi

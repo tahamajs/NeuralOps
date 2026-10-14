@@ -387,7 +387,8 @@ class CosformerAttention(BaseAttention):
 
                 scores = torch.clamp(scores, min=0.0, max=1e4)
                 num = torch.matmul(scores, V)
-                denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                from neuralops.utils.amp_safety import safe_linear_attn_denominator
+                denom = safe_linear_attn_denominator(scores.sum(dim=-1, keepdim=True), eps=1e-5, floor_val=1e-4)
                 res = num / denom
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
@@ -395,6 +396,7 @@ class CosformerAttention(BaseAttention):
             "CosformerAttention._forward_causal: N=%d > 2048, using chunked accumulation.",
             N,
         )
+        from neuralops.utils.amp_safety import safe_linear_attn_denominator
         chunk = 1024
         out = torch.zeros(B, H, N, d, device=device, dtype=dtype)
         for start in range(0, N, chunk):
@@ -411,7 +413,7 @@ class CosformerAttention(BaseAttention):
                 s = s.masked_fill(~allowed, 0.0)
             scores = torch.clamp(s, min=0.0, max=1e4)
             num = torch.matmul(scores, V)
-            denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            denom = safe_linear_attn_denominator(scores.sum(dim=-1, keepdim=True), eps=1e-5, floor_val=1e-4)
             res = num / denom
             out[:, :, start:end] = torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
         return out

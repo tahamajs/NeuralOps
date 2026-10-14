@@ -273,7 +273,8 @@ class DirectSVDCompressor(BaseCompressor):
         norm_w = torch.norm(W, p="fro").item()
 
         try:
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            from neuralops.utils.amp_safety import safe_svd
+            U, S, Vt = safe_svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("DirectSVD SVD computation failed: %s", e)
             return None, 1.0, 0
