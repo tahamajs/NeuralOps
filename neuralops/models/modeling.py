@@ -11,9 +11,24 @@ from transformers.modeling_outputs import (
     CausalLMOutputWithPast,
 )
 
-from neuralops.models.configuration import NeuralOpsConfig
-from neuralops.models.modeling_block import NeuralOpsBlock
-from neuralops.models.modeling_norm import build_norm_layer
+try:
+    from .configuration_neuralops import NeuralOpsConfig
+except ImportError:
+    try:
+        from configuration_neuralops import NeuralOpsConfig
+    except ImportError:
+        from neuralops.models.configuration import NeuralOpsConfig
+
+try:
+    from .modeling_block import NeuralOpsBlock
+    from .modeling_norm import build_norm_layer
+except ImportError:
+    try:
+        from modeling_block import NeuralOpsBlock
+        from modeling_norm import build_norm_layer
+    except ImportError:
+        from neuralops.models.modeling_block import NeuralOpsBlock
+        from neuralops.models.modeling_norm import build_norm_layer
 
 
 from transformers.generation import GenerationMixin
