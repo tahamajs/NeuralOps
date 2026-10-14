@@ -421,7 +421,9 @@ class SelectiveSSM(BaseAttention):
         )
         out = self.out_proj(y_fwd.to(target_dtype))
 
-        if self.bidirectional:
+        is_causal = bool(self.is_decoder or kwargs.get("is_causal", False) or kwargs.get("causal", False))
+
+        if self.bidirectional and not is_causal:
             x_ssm_bwd = torch.flip(x_ssm, [1]).contiguous()
             z_bwd = torch.flip(z, [1]).contiguous()
             
