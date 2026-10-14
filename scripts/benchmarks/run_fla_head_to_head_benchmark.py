@@ -76,7 +76,7 @@ def benchmark_attention(name, key, seq_len):
 
     # Forward benchmark
     t0 = time.perf_counter()
-    iters = 10
+    iters = 3 if seq_len >= 4096 else 5
     for _ in range(iters):
         try:
             out = mod(x)
@@ -108,23 +108,23 @@ def benchmark_attention(name, key, seq_len):
 
     return fwd_time_ms, fwd_bwd_time_ms, peak_vram_mb
 
-print("\n" + "=" * 95)
-print(f"{'Mechanism':<24} | {'SeqLen':<7} | {'Fwd (ms)':<10} | {'Fwd+Bwd (ms)':<14} | {'Peak VRAM (MB)':<14}")
-print("-" * 95)
+print("\n" + "=" * 95, flush=True)
+print(f"{'Mechanism':<24} | {'SeqLen':<7} | {'Fwd (ms)':<10} | {'Fwd+Bwd (ms)':<14} | {'Peak VRAM (MB)':<14}", flush=True)
+print("-" * 95, flush=True)
 
 results = []
 for name, key in models_to_test:
     for T in seq_lens:
         try:
             fwd, fwd_bwd, vram = benchmark_attention(name, key, T)
-            print(f"{name:<24} | {T:<7} | {fwd:10.2f} | {fwd_bwd:14.2f} | {vram:14.1f}")
+            print(f"{name:<24} | {T:<7} | {fwd:10.2f} | {fwd_bwd:14.2f} | {vram:14.1f}", flush=True)
             results.append((name, T, fwd, fwd_bwd, vram))
         except torch.cuda.OutOfMemoryError:
-            print(f"{name:<24} | {T:<7} | {'OOM':<10} | {'OOM':<14} | {'OOM':<14}")
+            print(f"{name:<24} | {T:<7} | {'OOM':<10} | {'OOM':<14} | {'OOM':<14}", flush=True)
             results.append((name, T, "OOM", "OOM", "OOM"))
             torch.cuda.empty_cache()
         except Exception as e:
-            print(f"{name:<24} | {T:<7} | {'ERR':<10} | {'ERR':<14} | {str(e)[:14]}")
+            print(f"{name:<24} | {T:<7} | {'ERR':<10} | {'ERR':<14} | {str(e)[:14]}", flush=True)
             torch.cuda.empty_cache()
 
 # Loss benchmarking
