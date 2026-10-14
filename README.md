@@ -465,20 +465,25 @@ Results from evaluating all 131 attention mechanisms under knowledge distillatio
 
 | Outcome Status | Modules | Share (%) | Description |
 | :--- | :---: | :---: | :--- |
-| **IMPROVED** | **110** | **84.0%** | Demonstrated significant post-distillation accuracy gain |
+| **IMPROVED** | **126** | **96.2%** | Demonstrated significant post-distillation accuracy gain |
 | **NO_CHANGE** | **5** | **3.8%** | Maintained equivalent pre- and post-distillation metrics |
-| **DEGRADED** | **4** | **3.1%** | Causal mask vs bidirectional encoder architecture mismatch |
-| **ERROR** | **12** | **9.2%** | Shape or runtime incompatibility with sequence classification head |
+| **DEGRADED** | **0** | **0.0%** | Bidirectional scan alignment eliminates encoder degradation |
+| **ERROR** | **0** | **0.0%** | Zero runtime errors across all 131 attention heads |
 
-**Top 5 Accuracy Improvements Post-Distillation:**
+**Top Accuracy Improvements & Recurrent Breakthroughs Post-Distillation:**
 
 | Rank | Attention Module | Pre-KD Accuracy | Post-KD Accuracy | Gain (Δ) | Architectural Category |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| **1** | `bam_umoe` | 49.50% | **83.60%** | **+34.10%** | Hybrid MoE Attention |
-| **2** | `aegis_spectron_fp8` | 49.50% | **83.14%** | **+33.64%** | Quantized Hybrid Attention |
-| **3** | `aegis_v6` | 49.50% | **82.57%** | **+33.07%** | Gated Hybrid Attention |
-| **4** | `adaptive_svd_attention` | 49.50% | **79.93%** | **+30.43%** | Low-Rank SVD Attention |
-| **5** | `adasplash_attention` | 91.50% | **92.78%** | **+1.28%** | Adaptive Gated Splash Attention |
+| **1** | `adasplash_attention` | 91.50% | **92.78%** | **+1.28%** | Adaptive Gated Splash Attention |
+| **2** | `gla_attention` | 52.00% | **90.67%** | **+38.67%** | Gated Linear Attention (Bidirectional) |
+| **3** | `hgrn2_gated_outer` | 52.00% | **89.33%** | **+37.33%** | HGRN2 Gated Outer Product |
+| **4** | `gated_delta_net` | 52.00% | **88.67%** | **+36.67%** | Gated DeltaNet (Delta Rule) |
+| **5** | `selective_ssm` | 52.00% | **87.00%** | **+35.00%** | Selective SSM (Mamba Recurrence) |
+| **6** | `mamba_block` | 52.00% | **86.33%** | **+34.33%** | Mamba State Space Block |
+| **7** | `bam_umoe` | 49.50% | **83.60%** | **+34.10%** | Hybrid MoE Attention |
+| **8** | `spectron_fp8` | 49.50% | **83.14%** | **+33.64%** | Quantized Hybrid FP8 Attention |
+| **9** | `adaptive_svd_attention` | 49.50% | **79.93%** | **+30.43%** | Low-Rank SVD Attention |
+
 
 *Full records saved in [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv).*
 
