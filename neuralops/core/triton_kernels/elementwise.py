@@ -75,11 +75,13 @@ if HAS_TRITON and tl is not None:
         x = tl.load(X + offs, mask=mask, other=0.0)
         g = tl.load(GATE + offs, mask=mask, other=0.0)
 
-        # Numerically stable SiLU: sigmoid via tl.sigmoid.
-        silu = g * tl.sigmoid(g)
-        out = silu * x
+        # Numerically stable SiLU: g * sigmoid(g) = g / (1.0 + exp(-g))
+        g_f = g.to(tl.float32)
+        silu = g_f / (1.0 + tl.exp(-g_f))
+        out = (silu * x.to(tl.float32)).to(OUT.dtype.element_ty)
 
         tl.store(OUT + offs, out, mask=mask)
+
 
 
 def fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
