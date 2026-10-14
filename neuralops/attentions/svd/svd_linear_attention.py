@@ -1100,7 +1100,7 @@ class SVDLinearAttention(BaseAttention):
     # ------------------------------------------------------------------
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         head_mask: torch.Tensor | None = None,
         encoder_hidden_states: torch.Tensor | None = None,
