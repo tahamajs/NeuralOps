@@ -2,7 +2,7 @@
 
 **Project:** NeuralOps (`SVD_linear_Attention`)  
 **Release Tag:** `v1.3.0`  
-**Git Synchronization Hash:** `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf`  
+**Git Synchronization Hash:** `13711b6a15237395f1606582a1325c1aa79068a5`  
 **Status:** 100% Complete, 0 Unresolved Module Bugs, Verified Production-Ready  
 
 ---
@@ -38,15 +38,15 @@
 
 ## 2. Five-Worktree Git Hash Lock
 
-All active development trees and deployment remotes are strictly synchronized to the clean HEAD commit `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf`:
+All active development trees and deployment remotes are strictly synchronized to the clean HEAD commit `13711b6a15237395f1606582a1325c1aa79068a5`:
 
 | Worktree / Machine | Path | Branch | Commit Hash | Clean State |
 |---|---|:---:|:---:|:---:|
-| **Local Development** (macOS) | `/Users/tahamajs/Documents/uni/Project` | `main` | `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf` | Clean |
-| **Origin Remote** (GitHub) | `https://github.com/tahamajs/SVD_linear_Attention.git` | `main` | `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf` | Synchronized |
-| **GPU Primary** (`gpu` RTX 4070) | `/mnt/d/SVD_linear_Attention` | `main` | `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf` | Clean |
-| **GPU Secondary** (`gpu` RTX 4070) | `/mnt/d/SVD_Project` | `main` | `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf` | Clean |
-| **Tahoora Pascal** (`tahoora` GTX 1060) | `/home/tahoora/Project` | `main` | `4b3561e842625f86c0a0dfdf3df1cbd1619c90bf` | Clean |
+| **Local Development** (macOS) | `/Users/tahamajs/Documents/uni/Project` | `main` | `13711b6a15237395f1606582a1325c1aa79068a5` | Clean |
+| **Origin Remote** (GitHub) | `https://github.com/tahamajs/SVD_linear_Attention.git` | `main` | `13711b6a15237395f1606582a1325c1aa79068a5` | Synchronized |
+| **GPU Primary** (`gpu` RTX 4070) | `/mnt/d/SVD_linear_Attention` | `main` | `13711b6a15237395f1606582a1325c1aa79068a5` | Clean |
+| **GPU Secondary** (`gpu` RTX 4070) | `/mnt/d/SVD_Project` | `main` | `13711b6a15237395f1606582a1325c1aa79068a5` | Clean |
+| **Tahoora Pascal** (`tahoora` GTX 1060) | `/home/tahoora/Project` | `main` | `13711b6a15237395f1606582a1325c1aa79068a5` | Clean |
 
 ---
 
