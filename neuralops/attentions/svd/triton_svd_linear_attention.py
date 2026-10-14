@@ -515,58 +515,60 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     num_warps=4,
                 )
         else:
-            # Reference PyTorch fallback (CPU / Apple Silicon MPS / Non-Triton)
-            if activation_mode == "elu":
-                phi_q = F.elu(q.float()) + 1.0
-                phi_k = F.elu(k.float()) + 1.0
-            elif activation_mode == "relu":
-                phi_q = F.relu(q.float())
-                phi_k = F.relu(k.float())
-            else:
-                phi_q = q.float()
-                phi_k = k.float()
+            # Reference PyTorch fallback (CPU / Apple Silicon MPS / Pascal SM < 7.0)
+            device_type = q.device.type
+            with torch.autocast(device_type=device_type, enabled=False):
+                if activation_mode == "elu":
+                    phi_q = F.elu(q.float()) + 1.0
+                    phi_k = F.elu(k.float()) + 1.0
+                elif activation_mode == "relu":
+                    phi_q = F.relu(q.float())
+                    phi_k = F.relu(k.float())
+                else:
+                    phi_q = q.float()
+                    phi_k = k.float()
 
-            v_f = v.float()
+                v_f = v.float()
 
-            if is_causal:
-                chunk_size = 64
-                num_chunks = (N + chunk_size - 1) // chunk_size
-                S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
-                Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
-                outputs = []
+                if is_causal:
+                    chunk_size = 64
+                    num_chunks = (N + chunk_size - 1) // chunk_size
+                    S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
+                    Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+                    outputs = []
 
-                for c in range(num_chunks):
-                    start = c * chunk_size
-                    end = min(start + chunk_size, N)
-                    cur_len = end - start
-                    qc = phi_q[:, :, start:end, :]
-                    kc = phi_k[:, :, start:end, :]
-                    vc = v_f[:, :, start:end, :]
+                    for c in range(num_chunks):
+                        start = c * chunk_size
+                        end = min(start + chunk_size, N)
+                        cur_len = end - start
+                        qc = phi_q[:, :, start:end, :]
+                        kc = phi_k[:, :, start:end, :]
+                        vc = v_f[:, :, start:end, :]
 
-                    scores = torch.matmul(qc, kc.transpose(-1, -2))
-                    causal_mask = torch.tril(
-                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
-                    )
-                    scores = scores.masked_fill(~causal_mask, 0.0)
-                    intra_num = torch.matmul(scores, vc)
-                    intra_denom = scores.sum(dim=-1, keepdim=True)
+                        scores = torch.matmul(qc, kc.transpose(-1, -2))
+                        causal_mask = torch.tril(
+                            torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                        )
+                        scores = scores.masked_fill(~causal_mask, 0.0)
+                        intra_num = torch.matmul(scores, vc)
+                        intra_denom = scores.sum(dim=-1, keepdim=True)
 
-                    inter_num = torch.matmul(qc, S)
-                    inter_denom = torch.matmul(qc, Z)
+                        inter_num = torch.matmul(qc, S)
+                        inter_denom = torch.matmul(qc, Z)
 
-                    out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
-                    outputs.append(out_c)
+                        out_c = (intra_num + inter_num) / (intra_denom + inter_denom + eps)
+                        outputs.append(out_c)
 
-                    S = S + torch.matmul(kc.transpose(-1, -2), vc)
-                    Z = Z + kc.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                        S = S + torch.matmul(kc.transpose(-1, -2), vc)
+                        Z = Z + kc.sum(dim=-2, keepdim=True).transpose(-1, -2)
 
-                out = torch.cat(outputs, dim=-2).to(q.dtype)
-            else:
-                S = torch.matmul(phi_k.transpose(-1, -2), v_f)
-                Z = phi_k.sum(dim=-2, keepdim=True)
-                num = torch.matmul(phi_q, S)
-                denom = torch.matmul(phi_q, Z.transpose(-1, -2)) + eps
-                out = (num / denom).to(q.dtype)
+                    out = torch.cat(outputs, dim=-2).to(q.dtype)
+                else:
+                    S = torch.matmul(phi_k.transpose(-1, -2), v_f)
+                    Z = phi_k.sum(dim=-2, keepdim=True)
+                    num = torch.matmul(phi_q, S)
+                    denom = torch.matmul(phi_q, Z.transpose(-1, -2)) + eps
+                    out = (num / denom).to(q.dtype)
 
         ctx.save_for_backward(q, k, v)
         ctx.is_causal = is_causal
