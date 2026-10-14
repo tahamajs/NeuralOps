@@ -313,4 +313,5 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     finalized = finalize_surgery(bridge)
     assert finalized.teacher_branch is None
     out_final = finalized(q_x)
-    assert out_final.shape == (2, 8, 64)
+    core_final = out_final[0] if isinstance(out_final, tuple) else out_final
+    assert core_final.shape == (2, 8, 64)
