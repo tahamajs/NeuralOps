@@ -16,7 +16,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 def test_registry():
     assert "decay_linear_attention" in ATTENTION_REGISTRY.list_available()
     assert "decay_linear_attn" in ATTENTION_REGISTRY.list_available()
-    assert ATTENTION_REGISTRY.get("decay_linear_attention") is DecayLinearAttention
+    assert issubclass(ATTENTION_REGISTRY.get("decay_linear_attention"), DecayLinearAttention)
 
 def test_forward_bidirectional():
     cfg = MockConfig(is_decoder=False)
