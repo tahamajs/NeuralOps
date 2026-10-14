@@ -325,3 +325,114 @@ def test_tri_kernel_gdn_continuity_and_backward():
     # Autograd backward
     out.sum().backward()
     assert q.grad is not None and k.grad is not None and v.grad is not None
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+def test_fused_linear_cross_entropy_parity_and_grad(dtype):
+    """Verify FusedLinearCrossEntropy matches nn.Linear + F.cross_entropy in forward and backward."""
+    B, T, D, V = 2, 8, 32, 64
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    x = torch.randn(B, T, D, dtype=dtype, device=device, requires_grad=True)
+    weight = torch.randn(V, D, dtype=dtype, device=device, requires_grad=True)
+    bias = torch.randn(V, dtype=dtype, device=device, requires_grad=True)
+    targets = torch.randint(0, V, (B, T), device=device)
+
+    # Reference
+    logits_ref = F.linear(x, weight, bias)
+    loss_ref = F.cross_entropy(logits_ref.view(-1, V), targets.view(-1))
+    loss_ref.backward()
+    x_grad_ref = x.grad.clone()
+    w_grad_ref = weight.grad.clone()
+    b_grad_ref = bias.grad.clone()
+
+    # Reset grads
+    x.grad.zero_()
+    weight.grad.zero_()
+    bias.grad.zero_()
+
+    # Fused module
+    from neuralops.core.triton_kernels.fused_ce import FusedLinearCrossEntropy
+    fused_ce = FusedLinearCrossEntropy(reduction="mean", chunk_size=4)
+    loss_fused = fused_ce(x, weight, bias=bias, targets=targets)
+    loss_fused.backward()
+
+    torch.testing.assert_close(loss_fused, loss_ref, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(x.grad, x_grad_ref, rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(weight.grad, w_grad_ref, rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(bias.grad, b_grad_ref, rtol=1e-2, atol=1e-2)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+def test_fused_linear_kl_divergence_parity_and_grad(dtype):
+    """Verify FusedLinearKLDivergence matches student/teacher nn.Linear + KLDiv in forward and backward."""
+    B, T, D, V = 2, 8, 32, 64
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    s_h = torch.randn(B, T, D, dtype=dtype, device=device, requires_grad=True)
+    s_w = torch.randn(V, D, dtype=dtype, device=device, requires_grad=True)
+    s_b = torch.randn(V, dtype=dtype, device=device, requires_grad=True)
+
+    t_h = torch.randn(B, T, D, dtype=dtype, device=device)
+    t_w = torch.randn(V, D, dtype=dtype, device=device)
+    t_b = torch.randn(V, dtype=dtype, device=device)
+
+    temperature = 2.0
+
+    # Reference
+    s_logits = F.linear(s_h, s_w, s_b)
+    t_logits = F.linear(t_h, t_w, t_b)
+    p_s = F.log_softmax(s_logits / temperature, dim=-1)
+    p_t = F.softmax(t_logits / temperature, dim=-1)
+    loss_ref = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature ** 2)
+    loss_ref.backward()
+
+    s_h_grad_ref = s_h.grad.clone()
+    s_w_grad_ref = s_w.grad.clone()
+    s_b_grad_ref = s_b.grad.clone()
+
+    s_h.grad.zero_()
+    s_w.grad.zero_()
+    s_b.grad.zero_()
+
+    # Fused module
+    from neuralops.core.triton_kernels.fused_kd import FusedLinearKLDivergence
+    fused_kd = FusedLinearKLDivergence(temperature=temperature, reduction="batchmean", chunk_size=4)
+    loss_fused = fused_kd(
+        student_hidden=s_h,
+        student_weight=s_w,
+        teacher_hidden=t_h,
+        teacher_weight=t_w,
+        student_bias=s_b,
+        teacher_bias=t_b,
+    )
+    loss_fused.backward()
+
+    torch.testing.assert_close(loss_fused, loss_ref, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(s_h.grad, s_h_grad_ref, rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(s_w.grad, s_w_grad_ref, rtol=1e-2, atol=1e-2)
+    torch.testing.assert_close(s_b.grad, s_b_grad_ref, rtol=1e-2, atol=1e-2)
+
+
+@pytest.mark.parametrize("activation", ["silu", "sigmoid"])
+def test_fused_rmsnorm_gate_parity_and_grad(activation):
+    """Verify fused_rmsnorm_gate autograd backward pass and forward parity."""
+    B, T, D = 2, 8, 32
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    x = torch.randn(B, T, D, device=device, requires_grad=True)
+    gate = torch.randn(B, T, D, device=device, requires_grad=True)
+    norm_w = torch.randn(D, device=device, requires_grad=True)
+
+    from neuralops.core.triton_kernels.fused_norm_linear import fused_rmsnorm_gate
+
+    out = fused_rmsnorm_gate(x, gate, norm_w, eps=1e-5, activation=activation)
+    assert out.shape == x.shape
+    loss = out.sum()
+    loss.backward()
+
+    assert x.grad is not None and gate.grad is not None and norm_w.grad is not None
+    assert torch.isfinite(x.grad).all()
+    assert torch.isfinite(gate.grad).all()
+    assert torch.isfinite(norm_w.grad).all()
+
