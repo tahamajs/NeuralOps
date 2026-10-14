@@ -706,8 +706,13 @@ class LinformerAttention(BaseAttention):
             )
 
         # Project key/value sequence: (B, H, k_eff, d)
-        K_proj = torch.matmul(E_act.to(k.dtype), k)
-        V_proj = torch.matmul(F_act.to(v.dtype), v)
+        try:
+            from neuralops.core.triton_kernels.low_rank import fused_linformer_seq_proj_triton
+            K_proj = fused_linformer_seq_proj_triton(E_act, k)
+            V_proj = fused_linformer_seq_proj_triton(F_act, v)
+        except Exception:
+            K_proj = torch.matmul(E_act.to(k.dtype), k)
+            V_proj = torch.matmul(F_act.to(v.dtype), v)
 
         scale = 1.0 / math.sqrt(d)
         scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale

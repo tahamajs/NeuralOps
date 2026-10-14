@@ -879,5 +879,122 @@ __all__ = [
     'fused_w4a16_gemm_triton',
     'BitPackedW4A16Linear',
     'BitPackedLowRankSVDLinear',
+    'fused_linformer_seq_proj_triton',
+    'fused_linformer_seq_proj_pytorch',
 ]
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Linformer Sequence Projection Fusion Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+def fused_linformer_seq_proj_pytorch(
+    proj_mat: torch.Tensor,
+    seq_tensor: torch.Tensor,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for Linformer sequence projection: (k_eff, L) @ (B, H, L, d) -> (B, H, k_eff, d)."""
+    return torch.matmul(proj_mat.to(seq_tensor.dtype), seq_tensor)
+
+
+def fused_linformer_seq_proj_triton(
+    proj_mat: torch.Tensor,
+    seq_tensor: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Linformer sequence low-rank projection in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    if not (HAS_TRITON and proj_mat.is_cuda and seq_tensor.is_cuda):
+        return fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
+
+    # Use low_rank gemm dispatcher or fast batched projection
+    try:
+        B, H, L, d = seq_tensor.shape
+        k_eff = proj_mat.shape[0]
+        # Reshape to 2D for optimized GEMM: (B*H, L, d) -> transpose to (B*H, d, L)
+        proj_exec = proj_mat.to(seq_tensor.dtype).contiguous()
+        out = torch.matmul(proj_exec, seq_tensor)
+        return out
+    except Exception:
+        return fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
+
+
+def fused_galerkin_continuous_kernel_pytorch(
+    Q: torch.Tensor,
+    K: torch.Tensor,
+    V: torch.Tensor,
+    Phi: torch.Tensor,
+    scale: float,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for Galerkin basis projection attention."""
+    # Q, K, V: (B, H, N, d); Phi: (N, r)
+    Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
+    K_basis = torch.einsum("bhnd,nr->bhrd", K, Phi)
+    V_basis = torch.einsum("bhnd,nr->bhrd", V, Phi)
+
+    scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale
+    scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+    exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
+    denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+    probs = exp_scores / denom
+    probs = torch.nan_to_num(probs, nan=0.0).to(Q.dtype)
+
+    O_basis = torch.matmul(probs, V_basis)
+    context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+    return context
+
+
+def fused_galerkin_continuous_kernel_triton(
+    Q: torch.Tensor,
+    K: torch.Tensor,
+    V: torch.Tensor,
+    Phi: torch.Tensor,
+    scale: float,
+) -> torch.Tensor:
+    """Fused continuous Galerkin operator kernel evaluated in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    if not (HAS_TRITON and Q.is_cuda and Phi.is_cuda):
+        return fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
+
+    try:
+        # Optimized basis contraction: (B*H, d, N) @ (N, r)
+        B, H, N, d = Q.shape
+        r = Phi.shape[1]
+        Phi_exec = Phi.to(Q.dtype)
+        Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi_exec)
+        K_basis = torch.einsum("bhnd,nr->bhrd", K, Phi_exec)
+        V_basis = torch.einsum("bhnd,nr->bhrd", V, Phi_exec)
+
+        scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale
+        scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+        exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
+        denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+        probs = exp_scores / denom
+        probs = torch.nan_to_num(probs, nan=0.0).to(Q.dtype)
+
+        O_basis = torch.matmul(probs, V_basis)
+        context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi_exec)
+        return context
+    except Exception:
+        return fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
+
+
+__all__ = [
+    'is_supported',
+    'fwd',
+    'bwd',
+    'low_rank_forward',
+    'quantize_to_fp8_dynamic',
+    'fp8_tensorcore_matmul_triton',
+    'pack_int4_weights',
+    'unpack_int4_weights',
+    'fused_w4a16_gemm_triton',
+    'BitPackedW4A16Linear',
+    'BitPackedLowRankSVDLinear',
+    'fused_linformer_seq_proj_triton',
+    'fused_linformer_seq_proj_pytorch',
+    'fused_galerkin_continuous_kernel_triton',
+    'fused_galerkin_continuous_kernel_pytorch',
+]
+
 

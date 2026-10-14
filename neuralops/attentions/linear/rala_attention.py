@@ -475,63 +475,70 @@ class RALALinearAttention(BaseAttention):
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
-        if is_causal:
-            # State-based linear scan in FP32 outside AMP autocast to prevent half-precision overflow
-            with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
-                q_p = q_prime.float()
-                k_p = k_prime.float()
-                v_m = v_masked.float()
-                S = torch.zeros(
-                    batch_size,
-                    self.num_heads,
-                    self.head_dim,
-                    self.head_dim,
-                    dtype=torch.float32,
-                    device=hidden_states.device,
-                )
-                z = torch.zeros(
-                    batch_size,
-                    self.num_heads,
-                    self.head_dim,
-                    dtype=torch.float32,
-                    device=hidden_states.device,
-                )
+        # Try accelerated Triton kernel scan
+        try:
+            from neuralops.core.triton_kernels.linear_attn import fused_rala_augmented_scan_triton
+            lin_out, aug_out = fused_rala_augmented_scan_triton(
+                q_prime, k_prime, v_masked, self.lora_U, self.lora_V, is_causal=is_causal
+            )
+        except Exception:
+            if is_causal:
+                # State-based linear scan in FP32 outside AMP autocast to prevent half-precision overflow
+                with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
+                    q_p = q_prime.float()
+                    k_p = k_prime.float()
+                    v_m = v_masked.float()
+                    S = torch.zeros(
+                        batch_size,
+                        self.num_heads,
+                        self.head_dim,
+                        self.head_dim,
+                        dtype=torch.float32,
+                        device=hidden_states.device,
+                    )
+                    z = torch.zeros(
+                        batch_size,
+                        self.num_heads,
+                        self.head_dim,
+                        dtype=torch.float32,
+                        device=hidden_states.device,
+                    )
 
-                num_list = []
-                denom_list = []
+                    num_list = []
+                    denom_list = []
 
-                for i in range(seq_len):
-                    q_i = q_p[:, :, i, :]
-                    k_i = k_p[:, :, i, :]
-                    v_i = v_m[:, :, i, :]
+                    for i in range(seq_len):
+                        q_i = q_p[:, :, i, :]
+                        k_i = k_p[:, :, i, :]
+                        v_i = v_m[:, :, i, :]
 
-                    S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
-                    z = z + k_i
+                        S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
+                        z = z + k_i
 
-                    num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
-                    denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
+                        num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
+                        denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
 
-                    num_list.append(num_i)
-                    denom_list.append(denom_i)
+                        num_list.append(num_i)
+                        denom_list.append(denom_i)
 
-                num = torch.stack(num_list, dim=2)
-                denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
-                lin_out = torch.nan_to_num(num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    num = torch.stack(num_list, dim=2)
+                    denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
+                    lin_out = torch.nan_to_num(num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
-                rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
-                aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
-        else:
-            with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
-                q_p = q_prime.float()
-                k_p = k_prime.float()
-                v_m = v_masked.float()
-                kv = torch.einsum("bhnd,bhne->bhde", k_p, v_m)
-                z = k_p.sum(dim=2)
-                denom = torch.einsum("bhnd,bhd->bhn", q_p, z).unsqueeze(-1).clamp(min=1e-4)
-                lin_out = torch.nan_to_num(torch.einsum("bhnd,bhde->bhne", q_p, kv) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
+                    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+            else:
+                with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
+                    q_p = q_prime.float()
+                    k_p = k_prime.float()
+                    v_m = v_masked.float()
+                    kv = torch.einsum("bhnd,bhne->bhde", k_p, v_m)
+                    z = k_p.sum(dim=2)
+                    denom = torch.einsum("bhnd,bhd->bhn", q_p, z).unsqueeze(-1).clamp(min=1e-4)
+                    lin_out = torch.nan_to_num(torch.einsum("bhnd,bhde->bhne", q_p, kv) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
-                rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
-                aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
+                    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
         # RALA-FIX-04: removed dead scale_factor=1.0
         # RALA-FIX-01: use lora_rank_alpha (trainable)

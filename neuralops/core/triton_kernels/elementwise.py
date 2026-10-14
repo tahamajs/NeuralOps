@@ -570,6 +570,143 @@ def fused_dynamic_conv1d_triton(
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  Adaptive Span Penalty Fusion: Fused Span Mask Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_adaptive_span_kernel(
+        penalty_ptr,
+        spans_ptr,
+        q_pos_ptr,
+        k_pos_ptr,
+        ramp_size,
+        B,
+        H,
+        N_q,
+        N_k,
+        stride_pb,
+        stride_ph,
+        stride_pq,
+        stride_pk,
+        stride_qb,
+        stride_qq,
+        stride_kb,
+        stride_kk,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        pid_bh = tl.program_id(2)
+
+        b = pid_bh // H
+        h = pid_bh % H
+
+        span = tl.load(spans_ptr + h)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+
+        mask_m = offs_m < N_q
+        mask_n = offs_n < N_k
+
+        q_pos = tl.load(q_pos_ptr + b * stride_qb + offs_m * stride_qq, mask=mask_m, other=0.0)
+        k_pos = tl.load(k_pos_ptr + b * stride_kb + offs_n * stride_kk, mask=mask_n, other=0.0)
+
+        diff = q_pos[:, None] - k_pos[None, :]
+
+        if IS_CAUSAL:
+            dist = tl.where(diff >= 0.0, diff, 0.0)
+        else:
+            dist = tl.where(diff >= 0.0, diff, -diff)
+
+        ramp = (ramp_size + span - dist) / ramp_size
+        ramp = tl.maximum(0.0, tl.minimum(1.0, ramp))
+        penalty = tl.log(tl.maximum(1e-9, ramp))
+
+        offs_penalty = (
+            b * stride_pb
+            + h * stride_ph
+            + offs_m[:, None] * stride_pq
+            + offs_n[None, :] * stride_pk
+        )
+        mask = mask_m[:, None] & mask_n[None, :]
+        tl.store(penalty_ptr + offs_penalty, penalty, mask=mask)
+
+
+def fused_adaptive_span_penalty_pytorch(
+    spans: torch.Tensor,
+    q_pos: torch.Tensor,
+    k_pos: torch.Tensor,
+    ramp_size: float,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for adaptive span penalty."""
+    B, N_q = q_pos.shape
+    _, N_k = k_pos.shape
+    H = spans.shape[0]
+
+    if is_causal:
+        dist = (q_pos.unsqueeze(2) - k_pos.unsqueeze(1)).clamp(min=0.0)
+    else:
+        dist = (q_pos.unsqueeze(2) - k_pos.unsqueeze(1)).abs()
+
+    span_h = spans.view(H, 1, 1).unsqueeze(1)
+    dist_e = dist.unsqueeze(0)
+    ramp = ((ramp_size + span_h - dist_e) / ramp_size).clamp(0.0, 1.0)
+    span_mask = torch.log(ramp.clamp(min=1e-9))
+    return span_mask.permute(1, 0, 2, 3).contiguous()
+
+
+def fused_adaptive_span_penalty_triton(
+    spans: torch.Tensor,
+    q_pos: torch.Tensor,
+    k_pos: torch.Tensor,
+    ramp_size: float,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused Adaptive Span Penalty computation in GPU SRAM."""
+    if not (HAS_TRITON and spans.is_cuda and q_pos.is_cuda and k_pos.is_cuda):
+        return fused_adaptive_span_penalty_pytorch(spans, q_pos, k_pos, ramp_size, is_causal=is_causal)
+
+    B, N_q = q_pos.shape
+    _, N_k = k_pos.shape
+    H = spans.shape[0]
+    device = spans.device
+
+    penalty = torch.empty((B, H, N_q, N_k), device=device, dtype=torch.float32)
+
+    BLOCK_M = 32
+    BLOCK_N = 32
+    grid = (
+        triton.cdiv(N_q, BLOCK_M),
+        triton.cdiv(N_k, BLOCK_N),
+        B * H,
+    )
+
+    try:
+        _fused_adaptive_span_kernel[grid](
+            penalty,
+            spans.float(),
+            q_pos.float(),
+            k_pos.float(),
+            float(ramp_size),
+            B, H, N_q, N_k,
+            penalty.stride(0), penalty.stride(1), penalty.stride(2), penalty.stride(3),
+            q_pos.stride(0), q_pos.stride(1),
+            k_pos.stride(0), k_pos.stride(1),
+            IS_CAUSAL=is_causal,
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+        )
+        return penalty
+    except Exception:
+        return fused_adaptive_span_penalty_pytorch(spans, q_pos, k_pos, ramp_size, is_causal=is_causal)
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
@@ -587,4 +724,6 @@ __all__ = [
     "fused_alibi_bias_pytorch",
     "fused_dynamic_conv1d_triton",
     "fused_dynamic_conv1d_pytorch",
+    "fused_adaptive_span_penalty_triton",
+    "fused_adaptive_span_penalty_pytorch",
 ]
