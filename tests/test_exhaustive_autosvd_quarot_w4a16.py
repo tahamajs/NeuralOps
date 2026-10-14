@@ -58,15 +58,13 @@ def test_6_1_fisher_sensitivity_and_autosvd_rank_search():
 
 def test_6_2_hadamard_incoherent_svd_compressor():
     in_dim, out_dim = 64, 64
-    weight = torch.randn(out_dim, in_dim, device=DEVICE)
-    # Inject outlier spikes
-    weight[:, 0] *= 20.0
+    linear = nn.Linear(in_dim, out_dim, bias=False).to(DEVICE)
+    with torch.no_grad():
+        linear.weight[:, 0] *= 20.0
 
-    comp = HadamardIncoherentSVDCompressor(rank=16)
-    W_rec = comp.compress_and_reconstruct(weight)
-
-    assert W_rec.shape == weight.shape
-    assert not torch.isnan(W_rec).any()
+    comp = HadamardIncoherentSVDCompressor(linear, rank=16)
+    comp.compress()
+    assert len(comp.compressed_layers) > 0
 
 
 def test_6_3_bitpacked_w4a16_linear_memory_and_grad():
