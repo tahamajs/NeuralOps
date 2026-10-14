@@ -586,10 +586,12 @@ class CosformerAttention(BaseAttention):
         q_raw = self.q_proj(x).float().view(B, 1, H, d).transpose(1, 2)  # [B, H, 1, d]
         k_raw = self.k_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
         v_global = self.v_proj(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
+        v_local = self.v_proj_attn(x).float().view(B, 1, self.num_kv_heads, d).transpose(1, 2)
 
         if self.num_kv_heads != self.num_heads:
             k_raw = repeat_kv(k_raw, self.kv_repeat)
             v_global = repeat_kv(v_global, self.kv_repeat)
+            v_local = repeat_kv(v_local, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(d)
         q_scaled = torch.clamp(q_raw * scale, min=-50.0, max=50.0)
@@ -632,9 +634,33 @@ class CosformerAttention(BaseAttention):
         )
         state["kv_state"] = kv_state
         state["z_state"] = z_state
+
+        # 5. Local attention window calculation (if window_size > 0 and step_idx < 1024)
+        if self.window_size > 0 and step_idx < 1024:
+            if "local_k" not in state or state["local_k"] is None:
+                state["local_k"] = k_raw
+                state["local_v"] = v_local
+            else:
+                state["local_k"] = torch.cat([state["local_k"], k_raw], dim=2)
+                state["local_v"] = torch.cat([state["local_v"], v_local], dim=2)
+                if state["local_k"].shape[2] > self.window_size + 1:
+                    state["local_k"] = state["local_k"][:, :, -(self.window_size + 1):, :]
+                    state["local_v"] = state["local_v"][:, :, -(self.window_size + 1):, :]
+
+            # Attn scores: q_raw @ local_k^T * scale
+            q_clamped = torch.clamp(q_raw, min=-1e4, max=1e4)
+            k_win = torch.clamp(state["local_k"], min=-1e4, max=1e4)
+            v_win = torch.clamp(state["local_v"], min=-1e4, max=1e4)
+            scores = torch.matmul(q_clamped, k_win.transpose(-1, -2)) * scale  # [B, H, 1, win_len]
+            attn_weights = F.softmax(scores, dim=-1)
+            local_token = torch.matmul(attn_weights, v_win).squeeze(2)  # [B, H, d]
+            blended_token = local_token + self.fusion_scale.to(torch.float32) * out_token
+        else:
+            blended_token = out_token
+
         state["step_idx"] = step_idx + 1
 
-        context = out_token.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+        context = blended_token.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
         out = self.out_proj(context.to(dtype))
 
         if is_2d:
