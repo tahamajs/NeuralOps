@@ -207,6 +207,12 @@ class UniversalAttentionWrapper(nn.Module):
                 is_legacy_hf_decoder = False
 
             if is_legacy_hf_decoder:
+                if present is None:
+                    try:
+                        from transformers.cache_utils import DynamicCache
+                        present = DynamicCache()
+                    except Exception:
+                        present = ()
                 return (hidden, attn_weights, present)
             if present is not None and kwargs.get("use_cache", False):
                 return (hidden, attn_weights, present)
