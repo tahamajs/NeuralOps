@@ -13,33 +13,12 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-import json
-import os
-import warnings
-
-_DEPRECATED_ALIASES_PATH = os.path.join(os.path.dirname(__file__), "deprecated_aliases.json")
-if os.path.exists(_DEPRECATED_ALIASES_PATH):
-    with open(_DEPRECATED_ALIASES_PATH) as _fp:
-        _DEPRECATED_ALIASES: dict[str, str] = json.load(_fp)
-else:
-    _DEPRECATED_ALIASES = {}
-
-def _handle_deprecated(name: str) -> str:
-    k = name.lower()
-    visited = set()
-    while k in _DEPRECATED_ALIASES and k not in visited:
-        visited.add(k)
-        new_name = _DEPRECATED_ALIASES[k]
-        if new_name is None:
-            raise ValueError(f"Module '{name}' has been deprecated and disabled.")
-        warnings.warn(
-            f"'{name}' is deprecated. Use '{new_name}' instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        name = new_name
-        k = name.lower()
-    return name
+from neuralops.core.legacy_aliases import (
+    DEPRECATED_ALIASES as _DEPRECATED_ALIASES,
+    handle_deprecated_alias as _handle_deprecated,
+    ATTENTION_FILE_MAP as _ATTENTION_FILE_MAP,
+    COMPRESSOR_FILE_MAP as _COMPRESSOR_FILE_MAP,
+)
 
 
 _UNIVERSAL_WRAPPER_CACHE: dict[type, type] = {}
@@ -159,76 +138,6 @@ def _make_universal_attention_class(target_cls: type) -> type:
     _UNIVERSAL_WRAPPER_CACHE[target_cls] = UniversalAttentionWrapper
     return UniversalAttentionWrapper
 
-
-_ATTENTION_FILE_MAP: dict[str, str] = {
-    "gqa": "gqa_attention",
-    "galerkin": "galerkin_attention",
-    "galerkin_inject": "galerkin_attention",
-    "adaptive_span_inject": "adaptive_span_attention",
-    "adaptive_sparse_inject": "adaptive_sparse_attention",
-    "adasplash_inject": "adasplash_attention",
-    "aegis_hybrid_attention": "aegis_hybrid",
-    "cluster_inject": "cluster_attention",
-    "compressed_mha": "compressed_mha_attention",
-    "cosformer_inject": "cosformer",
-    "hla_inject": "hla_attention",
-    "kda_inject": "kda_attention",
-    "hybrid_local_kernel": "hybrid_local_kernel_attention",
-    "split_head_hybrid": "split_head_hybrid_attention",
-    "gated_hybrid_kernel": "gated_hybrid_kernel_attention",
-    "positive_kernel_linear": "positive_kernel_linear_attention",
-    "landmark_local": "landmark_local_attention",
-    "refined_landmark": "refined_landmark_attention",
-    "mamba_attention": "mamba_block",
-    "moba": "moba_attention",
-    "nha_compressor": "nha_attention",
-    "rpc": "rpc_attention",
-    "salt": "salt_attention",
-    "soa_fused_module": "SOAFusedAttention",
-    "soa_module": "soa_attn",
-    "spectra_v2_attention": "spectra_v2",
-    "svd_compressed_attention": "svd_compressed",
-    "svd_llm_v2": "svd_llm_v2_attention",
-    "svd_proj_attn": "svd_projection_attention",
-    "token_compressed": "token_compressed_attention",
-    "tt": "token_compressed_attention",
-    "upi_mamba": "upi_stuffed_mamba",
-    "gdn2": "gated.flagship_fla",
-    "gdn2_attention": "gated.flagship_fla",
-    "pgdn": "gated.flagship_fla",
-    "pgdn_attention": "gated.flagship_fla",
-    "preconditioned_gdn": "gated.flagship_fla",
-    "preconditioned_gdn_attention": "gated.flagship_fla",
-    "delta_product": "gated.flagship_fla",
-    "delta_product_attention": "gated.flagship_fla",
-    "deltaproduct": "gated.flagship_fla",
-    "path_attention": "gated.flagship_fla",
-}
-
-_COMPRESSOR_FILE_MAP: dict[str, str] = {
-    "aasvd": "aa_svd_compressor",
-    "adasvd": "adasvd_compressor",
-    "cur_moe": "cur_moe_compressor",
-    "frandi": "frandi_compressor",
-    "grecodec": "grecodec_compressor",
-    "hybridkv": "hybridkv_compressor",
-    "kvtc": "kvtc_compressor",
-    "modegpt": "modegpt_compressor",
-    "oats": "oats_compressor",
-    "proxsparse_pruner": "proxsparse",
-    "rpca": "rpca_compressor",
-    "saes_svd": "saes_svd_v2",
-    "saes_svd_compressor": "saes_svd_v2",
-    "sdrm": "sdrm_compressor",
-    "slicegpt_compressor": "slicegpt",
-    "soka": "soka_compressor",
-    "swift_svd_compressor": "swift_svd_act",
-    "zerokv_neo": "zerokv_neo_compressor",
-    "dynamic_entropy_svd": "dynamic_rank",
-    "entropy_rank_allocator": "dynamic_rank",
-    "res_svd": "res_svd",
-    "spectral_residual_lora": "res_svd",
-}
 
 
 class Registry:
