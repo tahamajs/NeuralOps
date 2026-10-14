@@ -217,15 +217,14 @@ class RPCACompressor(BaseCompressor):
     ) -> SVDLinear | None:
         """Decompose a single linear layer via RPCA and return factorized SVDLinear with LoRA."""
         base_layer = getattr(layer, "base_layer", layer)
-        raw_w = base_layer.weight.data
-        cls_name = base_layer.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf")
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
 
         if is_conv1d:
-            W = raw_w.t().contiguous().detach().cpu().float()
+            W = raw_w.t().contiguous().to(device=device, dtype=torch.float32)
             out_f, in_f = W.shape
         else:
-            W = raw_w.contiguous().detach().cpu().float()
+            W = raw_w.contiguous().to(device=device, dtype=torch.float32)
             out_f = getattr(base_layer, "out_features", W.shape[0])
             in_f = getattr(base_layer, "in_features", W.shape[1])
 
@@ -241,13 +240,10 @@ class RPCACompressor(BaseCompressor):
             )
             return None
 
-        device = base_layer.weight.device
-        dtype = base_layer.weight.dtype
-
         L = W.clone()
         S_sparse = torch.zeros_like(W)
 
-        # Inexact ALM / PCP Iterations in FP32 with try/except protection
+        # Inexact ALM / PCP Iterations in FP32 on device with try/except protection
         try:
             for _ in range(self.max_iter):
                 # Low-rank projection via truncated SVD
