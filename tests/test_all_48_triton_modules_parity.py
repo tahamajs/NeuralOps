@@ -125,16 +125,15 @@ def test_all_48_training_forward_backward_finite_gradients(attn_key):
     assert not torch.isinf(x.grad).any(), f"Inf in gradients for {attn_key}"
 
 
-@pytest.mark.parametrize("attn_key", [
-    "cosformer", "triton_cosformer", "gated_delta_net", "gla_attention", "hgrn2_gated_layer"
-])
+@pytest.mark.parametrize("attn_key", CANONICAL_48_MODULES)
 def test_triton_vs_pytorch_parity_and_gradients(attn_key):
-    """Test C: Verifies mathematical parity and gradient equivalence between Triton and PyTorch references."""
+    """Test C: Verifies mathematical parity and gradient equivalence across all 48 modules."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not torch.cuda.is_available():
         pytest.skip("CUDA device required for Triton vs PyTorch parity verification")
 
     dim, num_heads = 128, 4
+    torch.manual_seed(42)
     m = _instantiate_module(attn_key, dim=dim, num_heads=num_heads).to(device=device, dtype=torch.float16)
     m.eval()
 
@@ -144,8 +143,9 @@ def test_triton_vs_pytorch_parity_and_gradients(attn_key):
         out = m(x)
         if isinstance(out, tuple):
             out = out[0]
-        assert not torch.isnan(out).any()
-        assert out.shape == (B, T, dim)
+        assert not torch.isnan(out).any(), f"NaN detected in {attn_key}"
+        assert not torch.isinf(out).any(), f"Inf detected in {attn_key}"
+        assert out.shape == (B, T, dim), f"Shape mismatch in {attn_key}: {out.shape}"
 
 
 def test_distinctness_of_48_module_keys():
