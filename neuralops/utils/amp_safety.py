@@ -44,13 +44,14 @@ def safe_linear_attn_denominator(
     Stabilizes denominator tensor for linear attention:
         Z = sum(K, dim=-2)
         out = (Q @ KV) / (Q @ Z + eps)
-    Clamps positive values away from zero and replaces non-finite values (NaN / Inf) with floor_val.
+    Clamps positive/negative values away from zero and replaces non-finite values (NaN / Inf) with floor_val.
     """
+    threshold = max(eps, floor_val)
     denom_clean = torch.nan_to_num(denominator, nan=floor_val, posinf=1e4, neginf=-1e4)
     sign = torch.sign(denom_clean)
     sign = torch.where(sign == 0, torch.ones_like(sign), sign)
     return torch.where(
-        denom_clean.abs() < eps,
+        denom_clean.abs() < threshold,
         sign * floor_val,
         denom_clean,
     )
