@@ -63,3 +63,11 @@ def create_poly(optimizer, total_iters=10000, power=1.0, **kwargs) -> Any:
 
 # FIX: Public alias for standard cosine warmup scheduler
 get_cosine_schedule_with_warmup = create_cosine_warmup
+
+
+def get_lr_scheduler(name: str, optimizer, **kwargs) -> Any:
+    """Retrieve and construct a learning rate scheduler by registered name."""
+    fn = SCHEDULER_REGISTRY.get(name)
+    if fn is None:
+        raise KeyError(f"Scheduler '{name}' not found in SCHEDULER_REGISTRY. Available: {list(SCHEDULER_REGISTRY.keys())}")
+    return fn(optimizer, **kwargs)
