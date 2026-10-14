@@ -259,9 +259,17 @@ def selective_scan(
             # SC-FIX-06: surface the failure so it can be investigated.
             logger.warning(
                 "mamba_ssm CUDA selective_scan failed (%s); "
-                "falling back to chunked PyTorch implementation.",
+                "trying Triton selective_scan_fn.",
                 e,
             )
+
+    # Fast path: Triton-accelerated selective scan kernel on CUDA
+    if u.is_cuda and z is None and delta_bias is None:
+        try:
+            from neuralops.core.triton_kernels.selective_scan import selective_scan_fn as _triton_scan_fn
+            return _triton_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
+        except Exception as e:
+            logger.debug("Triton selective_scan_fn failed, falling back to chunked PyTorch: %s", e)
 
     return selective_scan_chunked(
         u=u,
