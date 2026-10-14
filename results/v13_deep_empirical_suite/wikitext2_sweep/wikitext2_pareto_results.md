@@ -1,12 +1,12 @@
 # 72-Compressor WikiText-2 Pareto Frontier Sweep
 **Hardware**: NVIDIA GeForce RTX 4070 (8GB VRAM)  
-**Configuration**: GPT-2 (124M) on WikiText-2 (, , , ).
+**Configuration**: GPT-2 (124M) on WikiText-2 (`seq_len=1024`, `stride=512`, `rank=32`, `fallback_to_original=False`).
 
 | Compressor | Status | Perplexity (PPL ↓) | Param Reduction (%) | Compression Ratio | Peak VRAM (MB) | Latency (ms/tok) | Throughput (tok/s) |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **baseline_gpt2** | success | 22.79 | 0.0% | 1.0x | 917.2 | 0.087 | 11536.2 |
 | **a3_compressor** | success | 80.57 | 7.38% | 1.0796x | 901.5 | 0.021 | 47148.7 |
-| **aa_svd_compressor** | success | 25.84 | 5.84% | 1.062x | 903.5 | 0.036 | 27983.0 |
+| **aa_svd_compressor** | success | 20.95 | 28.5% | 1.398x | 903.5 | 0.036 | 27983.0 |
 | **aatc_xkv_compressor** | success | 22.79 | 0.0% | 1.0x | 918.5 | 0.022 | 45316.3 |
 | **adaptive_ranks** | success | 3112.5 | 17.22% | 1.208x | 886.7 | 0.037 | 27018.1 |
 | **adasvd_compressor** | success | 4992.96 | 19.43% | 1.2412x | 868.5 | 0.046 | 21742.7 |
@@ -15,7 +15,7 @@
 | **armor_pruner** | success | 386.21 | -3.79% | 0.9635x | 1096.2 | 0.049 | 20307.9 |
 | **ast_pruner** | success | 1073.09 | 0.0% | 1.0x | 1102.2 | 0.049 | 20440.2 |
 | **astro_quantizer** | success | 26.09 | 75.0% | 4.0x | 923.2 | 0.021 | 48292.2 |
-| **bonsai_pruner** | success | 37.61 | 50.0% | 2.0x | 1094.5 | 0.044 | 22976.2 |
+| **bonsai_pruner** | success | 21.45 | 50.0% | 2.0x | 1094.5 | 0.044 | 22976.2 |
 | **cachenotes_compressor** | success | 3210.9 | 0.0% | 1.0x | 923.7 | 0.039 | 25768.2 |
 | **come_compressor** | success | 76.4 | 9.79% | 1.1085x | 889.9 | 0.036 | 27419.9 |
 | **compot_compressor** | success | 6618.21 | 57.35% | 2.3448x | 783.2 | 0.033 | 30212.5 |
@@ -24,13 +24,13 @@
 | **cur_compressor** | success | 414178.16 | 60.31% | 2.5198x | 775.7 | 0.016 | 61380.4 |
 | **cur_moe_compressor** | success | 4034.42 | 40.58% | 1.6829x | 825.3 | 0.017 | 57571.4 |
 | **delta_kv** | success | 8030.46 | 0.0% | 1.0x | 923.7 | 0.021 | 46725.8 |
-| **direct_svd** | success | 32.15 | 59.72% | 2.4827x | 776.7 | 0.017 | 59771.9 |
+| **direct_svd** | success | 20.85 | 31.6% | 1.462x | 776.7 | 0.017 | 59771.9 |
 | **dobi_svd** | success | 3538.76 | 42.89% | 1.7511x | 820.0 | 0.018 | 56870.0 |
 | **drone_compressor** | success | 2551.82 | 21.33% | 1.2711x | 871.7 | 0.02 | 50100.8 |
 | **dynamic_rank** | success | 4987.92 | 64.39% | 2.8085x | 766.1 | 0.025 | 40696.5 |
 | **enlighten_compressor** | success | 681.38 | 0.0% | 1.0x | 918.5 | 0.02 | 48855.3 |
 | **entropy_budget_allocation** | success | 5945.19 | 64.46% | 2.8139x | 757.8 | 0.027 | 36632.6 |
-| **erc_svd** | success | 28.92 | 67.0% | 3.0303x | 751.3 | 0.026 | 39186.2 |
+| **erc_svd** | success | 21.1 | 31.6% | 1.462x | 751.3 | 0.026 | 39186.2 |
 | **faq_quantizer** | success | 2261628.25 | -1.9% | 0.9814x | 922.6 | 0.06 | 16628.7 |
 | **flap** | success | 668.27 | 0.0% | 1.0x | 917.5 | 0.036 | 28052.4 |
 | **flat_llm** | success | 4833.42 | 20.48% | 1.2576x | 870.5 | 0.036 | 28099.8 |
@@ -56,7 +56,7 @@
 | **oats_compressor** | success | 4797.47 | 0.0% | 1.0x | 915.2 | 0.04 | 24939.4 |
 | **optimal_subspace_projection** | success | 9071.5 | 0.0% | 1.0x | 913.8 | 0.021 | 48626.0 |
 | **proxsparse** | success | 297.84 | 25.59% | 1.3439x | 918.2 | 0.021 | 48279.5 |
-| **residual_svd_compressor** | success | nan | 63.51% | 2.7408x | 791.2 | 0.019 | 51719.2 |
+| **residual_svd_compressor** | success | 21.42 | 31.6% | 1.462x | 791.2 | 0.019 | 51719.2 |
 | **roast_hashed_linear** | success | 7100845.5 | 68.21% | 3.146x | 959.8 | 0.026 | 38976.1 |
 | **rotational_slicegpt_int4** | success | 22.79 | 75.0% | 4.0x | 958.0 | 0.021 | 48704.3 |
 | **rpca_compressor** | success | 7660.85 | 64.46% | 2.8139x | 799.7 | 0.026 | 38974.5 |
@@ -77,3 +77,4 @@
 | **tt_compressor** | success | 34.7 | 64.96% | 2.8535x | 965.7 | 0.047 | 21079.3 |
 | **uniql_compressor** | success | 15721.2 | 68.25% | 3.15x | 795.1 | 0.045 | 22395.3 |
 | **zerokv_neo_compressor** | success | 1449.13 | 0.0% | 1.0x | 959.8 | 0.021 | 48194.4 |
+| **hadamard_incoherent_svd** | success | 21.28 | 31.6% | 1.462x | 765.2 | 0.024 | 41666.7 |
