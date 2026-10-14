@@ -988,7 +988,6 @@ LEKAV2Attention = LandmarkLocalAttention
 # ===========================================================================
 # [FIX-10, FIX-11] Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_leka_v2")
 def inject_landmark_local(
     layer: Any = None,
     model: Any = None,
