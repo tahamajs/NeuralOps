@@ -313,15 +313,15 @@
   },
   {
     "compressor": "erc_svd",
-    "status": "failed",
-    "perplexity": null,
-    "param_reduction_pct": null,
-    "compression_ratio": null,
-    "total_params": null,
-    "peak_vram_mb": null,
-    "latency_ms_per_token": null,
-    "throughput_tok_sec": null,
-    "error": "CUDA out of memory. Tried to allocate 74.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 14.88 MiB is free. Incl"
+    "status": "success",
+    "perplexity": 3434.91,
+    "param_reduction_pct": 67.0,
+    "compression_ratio": 3.0303,
+    "total_params": 41064960,
+    "peak_vram_mb": 419.0,
+    "latency_ms_per_token": 0.028,
+    "throughput_tok_sec": 35758.9,
+    "error": null
   },
   {
     "compressor": "faq_quantizer",
@@ -841,15 +841,15 @@
   },
   {
     "compressor": "tt_compressor",
-    "status": "failed",
-    "perplexity": null,
-    "param_reduction_pct": null,
-    "compression_ratio": null,
-    "total_params": null,
-    "peak_vram_mb": null,
-    "latency_ms_per_token": null,
-    "throughput_tok_sec": null,
-    "error": "CUDA out of memory. Tried to allocate 74.00 MiB. GPU 0 has a total capacity of 7.62 GiB of which 28.88 MiB is free. Incl"
+    "status": "success",
+    "perplexity": 5334.6,
+    "param_reduction_pct": 64.96,
+    "compression_ratio": 2.8535,
+    "total_params": 43609344,
+    "peak_vram_mb": 588.5,
+    "latency_ms_per_token": 0.023,
+    "throughput_tok_sec": 43268.1,
+    "error": null
   },
   {
     "compressor": "uniql_compressor",
