@@ -655,13 +655,19 @@ class NystromAttention(BaseAttention):
 
             F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
 
-            # (B, H, m, d) ← F3 @ V
-            step1 = torch.matmul(F3, V)
-            # (B, H, m, d) ← F2_pinv @ step1
-            step2 = torch.matmul(F2_pinv, step1)
-            # (B, H, N, d) ← F1 @ step2
-            context = torch.matmul(F1, step2)
-            context = torch.nan_to_num(context, nan=0.0)
+            # (B, H, N, d) ← F1 @ (F2_pinv @ (F3 @ V)) via fused kernel
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_nystrom_landmark_pinv_step_triton
+                context = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V)
+            except Exception:
+                # (B, H, m, d) ← F3 @ V
+                step1 = torch.matmul(F3, V)
+                # (B, H, m, d) ← F2_pinv @ step1
+                step2 = torch.matmul(F2_pinv, step1)
+                # (B, H, N, d) ← F1 @ step2
+                context = torch.matmul(F1, step2)
+                context = torch.nan_to_num(context, nan=0.0)
+
             context = self.dropout(context)
 
         # Head mask
