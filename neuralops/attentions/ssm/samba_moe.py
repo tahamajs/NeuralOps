@@ -240,6 +240,11 @@ class SambaMoEBlock(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("SambaMoEBlock does not support cross-attention")
 
+        is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
+        kwargs_swa = dict(kwargs)
+        kwargs_swa["is_decoder"] = is_dec
+        kwargs_swa["is_causal"] = is_dec
+
         swa_res = self.swa_mamba(
             hidden_states,
             attention_mask=attention_mask,
@@ -250,7 +255,7 @@ class SambaMoEBlock(BaseAttention):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-            **kwargs,
+            **kwargs_swa,
         )
         if isinstance(swa_res, tuple):
             x = swa_res[0]
