@@ -187,6 +187,16 @@ _ATTENTION_FILE_MAP: dict[str, str] = {
     "token_compressed": "token_compressed_attention",
     "tt": "token_compressed_attention",
     "upi_mamba": "upi_stuffed_mamba",
+    "gdn2": "gated.flagship_fla",
+    "gdn2_attention": "gated.flagship_fla",
+    "pgdn": "gated.flagship_fla",
+    "pgdn_attention": "gated.flagship_fla",
+    "preconditioned_gdn": "gated.flagship_fla",
+    "preconditioned_gdn_attention": "gated.flagship_fla",
+    "delta_product": "gated.flagship_fla",
+    "delta_product_attention": "gated.flagship_fla",
+    "deltaproduct": "gated.flagship_fla",
+    "path_attention": "gated.flagship_fla",
 }
 
 _COMPRESSOR_FILE_MAP: dict[str, str] = {
@@ -221,6 +231,7 @@ class Registry:
     def __init__(self, name: str) -> None:
         self.name = name
         self._dict: dict[str, Callable] = {}
+        self._aliases: dict[str, Callable] = {}
         self._metadata: dict[str, dict[str, Any]] = {}
         self._loaded: bool = False
 
@@ -231,6 +242,7 @@ class Registry:
         supports_bidirectional: bool | None = None,
         supports_cross_attention: bool | None = None,
         supports_gqa: bool | None = None,
+        is_alias: bool = False,
         **extra_metadata: Any,
     ) -> Callable:
         """
@@ -252,18 +264,20 @@ class Registry:
             """
             final_key = key if key is not None else obj.__name__
             k = final_key.lower()
-            # If key already exists and maps to a class, do not let a plain function overwrite it
-            if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
-                logger.debug(
-                    "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
-                    self.name,
-                    self._dict[k].__name__,
-                    obj.__name__,
-                    k,
-                )
-                return obj
-
-            self._dict[k] = obj
+            if is_alias:
+                self._aliases[k] = obj
+            else:
+                # If key already exists and maps to a class, do not let a plain function overwrite it
+                if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
+                    logger.debug(
+                        "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
+                        self.name,
+                        self._dict[k].__name__,
+                        obj.__name__,
+                        k,
+                    )
+                    return obj
+                self._dict[k] = obj
 
             # Derive capabilities from explicit kwargs or attributes on the registered object
             caps = {
@@ -311,7 +325,7 @@ class Registry:
     def _try_lazy_load(self, key: str) -> None:
         """Attempt to lazily load package modules when a key is queried."""
         k = key.lower()
-        if k in self._dict:
+        if k in self._dict or k in self._aliases:
             return
         if self.name == "compressors":
             canonical = _COMPRESSOR_FILE_MAP.get(k, k)
@@ -319,7 +333,7 @@ class Registry:
                 import neuralops.compression_engine as _ce
 
                 _ = getattr(_ce, key, None)
-                if k not in self._dict:
+                if k not in self._dict and k not in self._aliases:
                     import importlib
 
                     importlib.import_module(f"neuralops.compression_engine.{canonical}")
@@ -337,7 +351,7 @@ class Registry:
                 import neuralops.attentions as _att
 
                 _ = getattr(_att, key, None)
-                if k not in self._dict:
+                if k not in self._dict and k not in self._aliases:
                     import importlib
 
                     importlib.import_module(f"neuralops.attentions.{canonical}")
@@ -357,7 +371,10 @@ class Registry:
         except ValueError:
             return None
         self._try_lazy_load(k)
-        obj = self._dict.get(k.lower())
+        k_lower = k.lower()
+        obj = self._dict.get(k_lower)
+        if obj is None:
+            obj = self._aliases.get(k_lower)
         if obj is not None and self.name == "attentions" and isinstance(obj, type):
             return _make_universal_attention_class(obj)
         return obj
@@ -370,11 +387,13 @@ class Registry:
             raise KeyError(str(e)) from e
         self._try_lazy_load(k)
         k_lower = k.lower()
-        if k_lower not in self._dict:
+        obj = self._dict.get(k_lower)
+        if obj is None:
+            obj = self._aliases.get(k_lower)
+        if obj is None:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
             )
-        obj = self._dict[k_lower]
         if self.name == "attentions" and isinstance(obj, type):
             return _make_universal_attention_class(obj)
         return obj
@@ -437,7 +456,8 @@ class Registry:
         except ValueError:
             return False
         self._try_lazy_load(k)
-        return k.lower() in self._dict
+        k_lower = k.lower()
+        return (k_lower in self._dict) or (k_lower in self._aliases)
 
     def __len__(self) -> int:
         self._load_all()
