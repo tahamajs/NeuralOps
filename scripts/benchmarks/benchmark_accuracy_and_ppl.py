@@ -90,8 +90,17 @@ def main():
         try:
             m_rob = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
             m_rob, _ = apply_module_to_model(m_rob, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
+            m_rob.eval()
+            all_preds = []
+            bs = 25
+            total_n = enc_sst2.input_ids.shape[0]
             with torch.no_grad():
-                preds = m_rob(**enc_sst2).logits.argmax(dim=-1)
+                for start_idx in range(0, total_n, bs):
+                    end_idx = min(start_idx + bs, total_n)
+                    batch_inputs = {k: v[start_idx:end_idx] for k, v in enc_sst2.items()}
+                    logits = m_rob(**batch_inputs).logits
+                    all_preds.append(logits.argmax(dim=-1))
+                preds = torch.cat(all_preds, dim=0)
                 acc = round((preds == labels_sst2).float().mean().item() * 100, 2)
             del m_rob
         except Exception as e:
