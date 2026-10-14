@@ -938,14 +938,14 @@
     {
       "module": "nexus",
       "sst2_acc_rtx4070": 55.0,
-      "sst2_acc_gtx1060": 64.0,
+      "sst2_acc_gtx1060": 62.0,
       "ppl_rtx4070": null,
-      "ppl_gtx1060": null,
+      "ppl_gtx1060": 6212.85,
       "latency_rtx4070_s": 1.35,
       "latency_gtx1060_s": 2.45,
       "speedup_rtx_vs_gtx": 1.81,
       "error_rtx4070": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half",
-      "error_gtx1060": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
+      "error_gtx1060": ""
     },
     {
       "module": "nsa_attention",

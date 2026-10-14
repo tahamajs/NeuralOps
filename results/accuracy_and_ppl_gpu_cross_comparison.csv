@@ -76,7 +76,7 @@ mqa,52.0,52.0,992.49,990.73,1.47,2.27,1.54,,
 naive_svd,52.0,52.0,1257.15,1302.28,8.31,22.77,2.74,,
 nasc_attention,92.0,92.0,339.55,347.78,3.06,3.44,1.12,,
 native_hybrid_attention,94.0,94.0,5095.43,4581.07,1.93,3.47,1.8,,
-nexus,55.0,64.0,,,1.35,2.45,1.81,"GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half","GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
+nexus,55.0,62.0,,6212.85,1.35,2.45,1.81,"GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half",
 nsa_attention,95.0,95.0,36.54,33.57,1.89,2.54,1.34,,
 nystrom_attention,93.0,95.0,1171.66,1050.51,1.87,3.13,1.67,,
 optimized_hybrid_attention,94.0,94.0,6425.2,7150.95,3.08,2.73,0.89,,
