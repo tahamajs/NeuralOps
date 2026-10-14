@@ -36,7 +36,7 @@ MODULE_KERNEL_MAP = {
     "alibi": (elementwise._fused_alibi_bias_kernel, "elementwise (fused_alibi_bias_kernel)"),
     "dynamic_conv_attention": (elementwise._fused_dynconv1d_fwd_kernel, "elementwise (fused_dynamic_conv1d_fwd_kernel)"),
     "mla_attention": (low_rank._triton_gemm_bias_kernel, "low_rank (fused_gemm_bias_kernel)"),
-    "mqa": (gqa._triton_gqa_fwd_kernel, "gqa (fused_gqa_fwd_kernel)"),
+    "mqa": (gqa._triton_gqa_expand_kernel, "gqa (fused_gqa_expand_kernel)"),
     "cosformer": (cosformer_triton_kernel._cosformer_fwd_kernel, "cosformer (cosformer_fwd_kernel)"),
     "cosformer_attention": (cosformer_triton_kernel._cosformer_fwd_kernel, "cosformer (cosformer_fwd_kernel)"),
     "triton_cosformer": (cosformer_triton_kernel._cosformer_fwd_kernel, "cosformer (cosformer_fwd_kernel)"),
