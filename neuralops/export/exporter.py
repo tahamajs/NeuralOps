@@ -444,10 +444,8 @@ def compile_to_so(
             shapes_list.append(shape_spec if shape_spec else None)
 
         if any(s is not None for s in shapes_list):
-            if len(shapes_list) == 1:
-                dynamic_shapes = shapes_list[0]
-            else:
-                dynamic_shapes = tuple(shapes_list)
+            dynamic_shapes = tuple(shapes_list)
+
 
     # 1. Trace / Export program
     exported_program = None
