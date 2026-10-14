@@ -32,7 +32,7 @@ if HAS_TRITON and tl is not None:
         q = tl.load(q_ptrs, mask=offs_m[:, None] < N, other=0.0)
 
         # Online softmax state
-        m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
+        m_i = tl.full([BLOCK_M], -1e4, dtype=tl.float32)
         l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
         acc = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
 
@@ -49,7 +49,7 @@ if HAS_TRITON and tl is not None:
             scores = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
             dist = offs_m[:, None] - offs_n[None, :]
             mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            scores = tl.where(mask_window, scores, float("-inf"))
+            scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
             alpha = tl.exp(m_i - m_curr)
