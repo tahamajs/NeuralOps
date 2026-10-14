@@ -326,9 +326,13 @@ class NEXUSAttention(BaseAttention):
         self.num_heads: int = getattr(
             model_config,
             "num_attention_heads",
-            getattr(model_config, "num_heads", kwargs.get("num_attention_heads", 4)),
+            getattr(model_config, "num_heads", kwargs.get("num_attention_heads", kwargs.get("num_heads", 4))),
         )
-        self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size: int = getattr(
+            model_config,
+            "hidden_size",
+            getattr(model_config, "dim", kwargs.get("hidden_size", kwargs.get("dim", 768))),
+        )
         cfg_head_dim = getattr(model_config, "head_dim", None) if model_config else None
         adapter_head_dim = (
             getattr(getattr(model_config, "adapter", None), "head_dim", None)
