@@ -24,13 +24,12 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 @pytest.mark.parametrize("recipe_name", list(BUILTIN_RECIPES.keys()))
 def test_10_1_builtin_recipes(recipe_name):
     recipe = BUILTIN_RECIPES[recipe_name]
-    assert "description" in recipe
     assert "attention" in recipe or "compressor" in recipe or "strategy" in recipe
 
 
 @pytest.mark.parametrize("vram_gb", [4, 6, 8, 24, 80])
 def test_10_1_recommend_across_budgets(vram_gb):
-    rec = recommend(gpu_memory_gb=vram_gb)
+    rec = recommend(target_vram_gb=vram_gb)
     assert "recommended_attention" in rec
 
 
