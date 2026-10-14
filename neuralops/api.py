@@ -104,6 +104,14 @@ def replace_attention(
         out_model._neuralops_metadata = []
     out_model._neuralops_metadata.append(meta_entry)
 
+    from neuralops.export.surgery_manifest import record_attention_surgery
+    record_attention_surgery(
+        out_model,
+        layer_path="all_attention",
+        attention_type=attn_name,
+        kwargs=meta_entry["kwargs"],
+    )
+
     if hasattr(out_model, "config") and hasattr(out_model.config, "to_dict"):
         if not hasattr(out_model.config, "neuralops_history") or out_model.config.neuralops_history is None:
             out_model.config.neuralops_history = []
