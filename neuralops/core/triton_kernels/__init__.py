@@ -32,6 +32,7 @@ from neuralops.core.triton_kernels.op_registry import (
 )
 from neuralops.core.triton_kernels._common import (
     HAS_TRITON,
+    FORCE_PYTORCH_FALLBACK,
     gqa_pytorch_fallback,
     linear_attn_pytorch_fallback,
     low_rank_pytorch_fallback,
