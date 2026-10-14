@@ -308,7 +308,12 @@ def _copy_projection_weights(
 
             r = min(target_rank, U.size(1), Vt.size(0))
 
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            W_recon = torch.matmul(U[:, :r], S[:r].unsqueeze(1) * Vt[:r, :])
+            norm_orig = float(torch.norm(W_float, p="fro").item())
+            norm_recon = float(torch.norm(W_recon, p="fro").item())
+            energy_scale = math.sqrt(norm_orig / max(norm_recon, 1e-12)) if norm_orig > 1e-12 else 1.0
+
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12)) * math.sqrt(energy_scale)
             U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                 device=src_weight.device, dtype=src_weight.dtype
             )
