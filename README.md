@@ -21,7 +21,7 @@
 
 Transformers have an intrinsic quadratic bottleneck: doubling sequence length quadruples attention computation and memory footprint. Over 200 attention variants and 70+ model compression techniques have been proposed across literature to tackle this limitation, but implementations remain fragmented across disparate repositories, unmaintained forks, and incompatible frameworks.
 
-**NeuralOps unifies them into a single, high-performance platform.** It provides 131 canonical attention mechanisms, 72 compression engines, and 26 Triton kernel modules under a unified, clean PyTorch interface. Every component acts as a drop-in replacement for Hugging Face models, backed by automatic zero-shot surgery, PyTorch CPU/MPS fallbacks, and a native command-line suite for distillation, recovery, and benchmarking.
+**NeuralOps unifies them into a single, high-performance platform.** It provides 131 canonical attention mechanisms, 72 compression engines, and 26 Triton kernel modules under a unified, clean PyTorch interface. Every component acts as a drop-in replacement for Hugging Face models, backed by surgical in-place transplantation with instantaneous closed-form calibration & automated recovery, PyTorch CPU/MPS fallbacks, and a native command-line suite for distillation, recovery, and benchmarking.
 
 Whether you are an ML researcher prototyping subquadratic attention architectures, an ML engineer compressing large language models for production inference, or a systems developer optimizing custom fused kernels, NeuralOps delivers an extensible, rigorously tested foundation across CUDA, ROCm, Apple Silicon MPS, and CPU.
 
@@ -77,7 +77,7 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - 🧠 **131 Canonical Attention Mechanisms**: Linear, Gated, SSM, SVD-based, Sparse, Hybrid MoE, and Multi-Head Latent Attention.
 - 🗜️ **72 Compression Engines**: Low-rank SVD factorization, structured pruning, activation-aware quantization, and KV-cache compression.
 - ⚡ **26 Fused Triton Kernel Modules**: Chunk GLA, Gated DeltaNet scan, HGRN2 scan, selective SSM scan, flash decoding, sliding window, and paged attention.
-- 🔄 **Zero-Shot Model Surgery**: Replace standard multi-head self-attention with any subquadratic mechanism in 3 lines of code.
+- 🔄 **Surgical In-Place Transplantation**: Replace standard multi-head self-attention with any subquadratic mechanism in 3 lines of code, enhanced by instantaneous closed-form Procrustes alignment.
 - 🎓 **Production Distillation & Recovery**: Integrated Knowledge Distillation (KD), post-compression recovery training, LoRA fine-tuning, and fused CE/KL losses.
 - 🖥️ **Cross-Platform Readiness**: Full support for NVIDIA CUDA, AMD ROCm, Apple Silicon (MPS), and CPU environments with zero missing dependencies.
 - 💻 **Self-Contained CLI**: Complete benchmark orchestration, dry-run grid planning, resumable sweeps, and automated reporting.
@@ -308,7 +308,7 @@ neuralops run --all-gated --model roberta-base
 
 ```mermaid
 flowchart TD
-    HF[Pretrained Hugging Face Model] --> Surgery[Zero-Shot Surgery replace_attention]
+    HF[Pretrained Hugging Face Model] --> Surgery[In-Place Surgery replace_attention with Calibration]
     Surgery --> Registry{NeuralOps Registry}
     
     Registry --> AttnZoo[131 Attention Modules]
@@ -615,10 +615,10 @@ print(tokenizer.decode(outputs[0]))
 | **Attention Mechanisms** | **131** | ~30 | 1 (Exact Softmax) |
 | **Model Compression Engines** | **72** | ❌ None | ❌ None |
 | **Triton Fused Kernels** | **26 modules** | ~20 | Fused CUDA C++ |
-| **Zero-Shot Architecture Injection** | ✅ Built-in | ❌ None | ❌ None |
+| **In-Place Architecture Injection & Calibration** | ✅ Built-in | ❌ None | ❌ None |
 | **CPU / MPS Metal Fallbacks** | ✅ Verified | ⚠️ Partial | ❌ CUDA only |
 | **Unified Distillation CLI** | ✅ Native | ❌ None | ❌ None |
-| **Preserved Legacy Aliases** | **657 aliases** | ❌ None | ❌ None |
+| **Preserved Legacy Aliases** | **712 aliases** | ❌ None | ❌ None |
 
 ### Quantitative Sequence Length Scaling ($B=1, H=32, D=128$, RTX 4090, fp16)
 

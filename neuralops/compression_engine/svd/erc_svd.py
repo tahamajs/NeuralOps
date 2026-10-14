@@ -270,6 +270,12 @@ class ERCCompressor(BaseCompressor):
             else:
                 err = float(torch.norm(W - W_recon, p="fro").item() / norm_w)
 
+            recon_norm = float(torch.norm(W_recon, p="fro").item())
+            if recon_norm > 1e-12 and norm_w > 1e-12:
+                energy_scale = math.sqrt(norm_w / recon_norm)
+                U_r = U_r * energy_scale
+                V_r = V_r * energy_scale
+
             best_err = err
             chosen_r = r
 
