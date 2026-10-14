@@ -47,7 +47,7 @@ class MoBAAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Any,
+        config: Any = None,
         block_size: int = 64,
         top_k: int = 4,
         rank: int | None = None,
