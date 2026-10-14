@@ -545,7 +545,6 @@ class MoDeGPTCompressor(BaseCompressor):
                         self._comp_storage_bytes += self._storage_bytes(target_l2)
                         continue
 
-                # Build new modules sharing V_shared
                 # MD-FIX-13: LoRA rank inherits from wrapper if present
                 lora_r_1 = getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r)) or self.lora_r
                 lora_r_2 = getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r)) or self.lora_r
@@ -559,6 +558,15 @@ class MoDeGPTCompressor(BaseCompressor):
                 in_f = W1_orig.shape[1]
                 out1 = W1_orig.shape[0]
                 out2 = W2_orig.shape[0]
+
+                # Row-wise L2 norm preservation to prevent activation variance decay
+                with torch.no_grad():
+                    g1 = (torch.linalg.norm(W1_orig, dim=1, keepdim=True).clamp_min(1e-8) /
+                          torch.linalg.norm(W1_rec, dim=1, keepdim=True).clamp_min(1e-8)).clamp(0.2, 5.0)
+                    g2 = (torch.linalg.norm(W2_orig, dim=1, keepdim=True).clamp_min(1e-8) /
+                          torch.linalg.norm(W2_rec, dim=1, keepdim=True).clamp_min(1e-8)).clamp(0.2, 5.0)
+                    U1 = U1 * g1
+                    U2 = U2 * g2
 
                 new1 = MoDeGPTLowRankLinear(
                     in_features=in_f,
