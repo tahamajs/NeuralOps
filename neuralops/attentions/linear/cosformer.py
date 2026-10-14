@@ -306,7 +306,15 @@ class CosformerAttention(BaseAttention):
                         else:
                             tb.data.copy_(b_to_use.to(tb.dtype))
 
-    def _get_cos_sin_weights(self, seq_len, device, dtype):
+    def _get_cos_sin_weights(self, seq_len, device, dtype, pos_ids=None):
+        if pos_ids is not None:
+            pos = pos_ids.float().to(device=device)
+            m = max(16384, self.max_seq_len)
+            angles = (math.pi / 2.0 / m) * pos
+            cos_weight = torch.cos(angles).unsqueeze(1).unsqueeze(-1).to(dtype=dtype)  # [B, 1, seq_len, 1]
+            sin_weight = torch.sin(angles).unsqueeze(1).unsqueeze(-1).to(dtype=dtype)
+            return cos_weight, sin_weight
+
         pos = torch.arange(seq_len, device=device, dtype=torch.float32)
         m = max(16384, self.max_seq_len)
         angles = (math.pi / 2.0 / m) * pos
