@@ -421,15 +421,7 @@ def recalibrate_layernorms(
                 model(calibration_inputs)
             elif isinstance(calibration_inputs, (list, tuple)):
                 model(*calibration_inputs)
-        except (
-            AttributeError,
-            KeyError,
-            RuntimeError,
-            TypeError,
-            ValueError,
-            OSError,
-            ImportError,
-        ):
+        except Exception:
             pass
 
     for h in hooks:
