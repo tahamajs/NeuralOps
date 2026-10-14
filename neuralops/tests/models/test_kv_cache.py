@@ -92,7 +92,7 @@ def test_unified_hybrid_cache_heterogeneous_layers():
 def test_flagship_architectures_forward_and_cache():
     """Test GatedDeltaNet and Cosformer forward and cache."""
     from neuralops.attentions.gated.gated_delta_net import GatedDeltaNet
-    from neuralops.attentions.linear.cosformer_attention import CosformerAttention
+    from neuralops.attentions.linear.cosformer import CosformerAttention
 
     B, T, D = 2, 8, 64
     x = torch.randn(B, T, D, requires_grad=True)
