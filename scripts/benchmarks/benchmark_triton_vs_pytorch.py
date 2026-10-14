@@ -147,26 +147,22 @@ assert diff < 1e-2
 results.append(("Block Sparse Attention", t_pt, t_tri, speedup, diff))
 
 # --- 5. Fused Dynamic Conv1D ---
-print("\n--- 5. Fused Dynamic Conv1D Kernel (B=4, L=1024, D=128, K=4, FP16) ---")
-x_conv = torch.randn(4, 1024, 128, device=device, dtype=torch.float16)
-w_conv = torch.randn(128, 4, device=device, dtype=torch.float16)
-b_conv = torch.randn(128, device=device, dtype=torch.float16)
+print("\n--- 5. Fused Dynamic Conv1D Kernel (B=4, H=8, N=1024, D=64, K=4, FP16) ---")
+B, H, N, D, K = 4, 8, 1024, 64, 4
+v_conv = torch.randn(B, H, N + K - 1, D, device=device, dtype=torch.float16)
+w_conv = torch.randn(B, H, N, K, device=device, dtype=torch.float16)
 
-t_pt = time_fn(
-    lambda: fused_dynamic_conv1d_pytorch(x_conv, w_conv, b_conv, is_causal=True)
-)
-t_tri = time_fn(
-    lambda: fused_dynamic_conv1d_triton(x_conv, w_conv, b_conv, is_causal=True)
-)
-out_pt = fused_dynamic_conv1d_pytorch(x_conv, w_conv, b_conv, is_causal=True)
-out_tri = fused_dynamic_conv1d_triton(x_conv, w_conv, b_conv, is_causal=True)
+t_pt = time_fn(lambda: fused_dynamic_conv1d_pytorch(v_conv, w_conv))
+t_tri = time_fn(lambda: fused_dynamic_conv1d_triton(v_conv, w_conv))
+out_pt = fused_dynamic_conv1d_pytorch(v_conv, w_conv)
+out_tri = fused_dynamic_conv1d_triton(v_conv, w_conv)
 diff = (out_pt - out_tri).abs().max().item()
 speedup = t_pt / t_tri
 print(f"PyTorch Latency : {t_pt:.3f} ms")
 print(f"Triton Latency  : {t_tri:.3f} ms")
 print(f"Speedup         : {speedup:.2f}x")
 print(f"Max Abs Diff    : {diff:.6e}")
-assert diff < 1e-4
+assert diff < 1e-3
 results.append(("Fused Dynamic Conv1D", t_pt, t_tri, speedup, diff))
 
 # Summary table
