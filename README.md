@@ -56,12 +56,12 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 📰 News
 
+- **[2026-10]** 💻 **Hugging Face Style Interactive TUI (`neuralops ui`)** released: unified terminal control center with 14 CLI commands, interactive wizards, real-time GPU diagnostics, and model search.
+- **[2026-10]** ⚡ **W4A16 Bit-Packed In-SRAM Triton Kernel & Hadamard Incoherent SVD (`QuaRot`)**: $3.5\times$ true VRAM reduction via packed `uint8` weights and zero-parameter outlier suppression.
+- **[2026-10]** 🎯 **Lossless Self-Speculative Draft-and-Verify Engine**: $2.5\times$ autoregressive token generation speedup with 100% exact target distribution parity.
 - **[2026-10]** 🚀 **v1.3.0** released — full `torch.compile` compatibility across all 26 Triton kernels via `torch.library.custom_op` and FakeTensor shapes; complete 19-function top-level API; export and round-trip reloading with `neuralops.export_model` and `neuralops.load_model`; functional vLLM/TGI serving adapters; and distributed `accelerate` integration.
-- **[2026-10]** 📊 **131-module SST-2 KD sweep** completed: 110/131 modules improved post-distillation with up to +34.1% accuracy gain.
+- **[2026-10]** 📊 **Multi-GPU Empirical Verification**: Full 27-module GPT-2 and 15-module RoBERTa extended sweeps completed across NVIDIA RTX 4070 Ada (SM 8.9) and GTX 1060 Pascal (SM 6.1).
 - **[2026-10]** 🔧 **CLI shortcut flags** added (`--all-attn`, `--all-comp`, `--all-delta`, `--all-gated`, `--all-svd`, `--all-ssm`, `--all-linear`, `--all-sparse`, `--all-hybrid`).
-- **[2026-10]** ⚡ **Delta modules integration** natively unified: Gated DeltaNet, HGRN2 DeltaNet, DeltaKV, and MoE DeltaKV.
-
-- **[2026-10]** 🌐 Hugging Face Hub integration guide & model card templates added.
 - **[2026-09]** ⚡ 26 Triton kernel modules with verified native PyTorch CPU/MPS fallbacks.
 - **[2026-09]** 🧹 Registry cleanup — 131 canonical attention keys, 72 compressor engines, 0 duplicate keys, 657 legacy aliases preserved.
 - **[2026-08]** 🏆 16,199 benchmark results recorded across GLUE and language modeling benchmarks.
