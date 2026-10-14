@@ -1,0 +1,22 @@
+\begin{table}[h]
+\centering
+\small
+\caption{Top 10 Compressors on GPT-2 WikiText-2 Benchmark (fallback\_to\_original=False).}
+\label{tab:wikitext2_pareto}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Compressor} & \textbf{Perplexity ($\downarrow$)} & \textbf{Param Reduction (\%)} & \textbf{VRAM (MB)} & \textbf{Latency (ms/tok)} \\
+\midrule
+baseline\_gpt2 & 22.79 & 0.0\% & 917.2 & 0.150 \\
+aatc\_xkv\_compressor & 22.79 & 0.0\% & 918.5 & 0.065 \\
+hybridkv\_compressor & 22.79 & 0.0\% & 923.2 & 0.021 \\
+rotational\_slicegpt\_int4 & 22.79 & 0.0\% & 922.2 & 0.035 \\
+salr & 22.79 & 0.0\% & 923.5 & 0.041 \\
+svd\_llm\_compressor & 22.79 & 0.0\% & 924.0 & 0.024 \\
+kmeans\_quantize & 24.20 & 68.2\% & 1094.4 & 0.022 \\
+mlorq\_compressor & 24.93 & 68.2\% & 870.4 & 0.031 \\
+astro\_quantizer & 26.09 & 0.0\% & 923.2 & 0.022 \\
+bonsai\_pruner & 37.61 & 0.0\% & 1094.5 & 0.028 \\
+\bottomrule
+\end{tabular}
+\end{table}
