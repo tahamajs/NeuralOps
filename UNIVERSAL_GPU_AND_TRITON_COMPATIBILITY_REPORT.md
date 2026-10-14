@@ -75,6 +75,9 @@ The test suite [`tests/test_universal_gpu_compatibility.py`](file:///Users/taham
 | `test_architecture_dtype_coercion` | Coerces BF16 to FP16 on SM < 8.0 | **PASSED** | **PASSED** |
 | `test_circuit_breaker` | Simulates runtime failure and validates instant fallback | **PASSED** | **PASSED** |
 | `test_all_26_kernel_modules` | Full functional forward check across all 26 Triton kernel modules | **PASSED** | **PASSED** |
+| `test_triton_parity.py` (29 tests) | Comprehensive mathematical parity & analytical backward gradients | **29 / 29 PASSED** | **29 / 29 PASSED** |
+| `tests/test_padding_invariance.py` | Causal left-vs-right padding invariance & position preparation | **2 / 2 PASSED** | **2 / 2 PASSED** |
+| Full Test Suite (`tests/` exc. benchmarks) | End-to-end integration, surgery, export, amp, checkpointing, parity | **78 / 78 PASSED** | **78 / 78 PASSED** |
 
 ### Registry Count Verification
 Executed `scripts/utils/verify_readme_counts.py` on both systems:
