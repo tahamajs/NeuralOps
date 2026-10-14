@@ -40,9 +40,17 @@ sys.path[:0] = [str(CODES), str(ROOT)]
 
 from datasets import load_dataset, load_from_disk
 
-from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
+try:
+    from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
+except ImportError:
+    evaluate_comprehensive = None
+    prepare_eval_batches = None
+
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.eval_all_models_datasets import apply_module_to_model
+try:
+    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+except ImportError:
+    apply_module_to_model = None
 
 LOG = logging.getLogger("BaselineComparison")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
