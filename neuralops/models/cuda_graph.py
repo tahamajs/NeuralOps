@@ -153,5 +153,10 @@ class CUDAGraphDecodeRunner:
         self.graph.replay()
         return self.static_logits
 
+    def step(self, token_id: Union[int, torch.Tensor]) -> torch.Tensor:
+        """Alias for decode_step."""
+        return self.decode_step(token_id)
+
 
 __all__ = ["CUDAGraphDecodeRunner"]
+

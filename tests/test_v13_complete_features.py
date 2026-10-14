@@ -35,9 +35,9 @@ def test_registry_counts():
 
 
 def test_dx_apis_smoke():
-    assert "gla_edge_speed" in BUILTIN_RECIPES
-    recipe = recommend("edge", "throughput")
-    assert "target_attention" in recipe
+    assert "fast_linear_recovery" in BUILTIN_RECIPES
+    recipe = recommend()
+    assert "recommended_attention" in recipe
 
     model = nn.Sequential(nn.Linear(64, 64), nn.Linear(64, 10))
     info = summary(model)
@@ -87,8 +87,9 @@ def test_cuda_graph_runner():
     runner.capture()
 
     next_tok = torch.tensor([[5]], device=device)
-    logits = runner.step(next_tok)
-    assert logits.shape == (1, 100)
+    logits = runner.decode_step(next_tok)
+    assert logits.shape == (1, 1, 100)
+
 
 
 def test_paper_plot_generator():
