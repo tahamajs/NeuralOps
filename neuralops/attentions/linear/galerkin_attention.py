@@ -105,9 +105,11 @@ class GalerkinAttention(BaseAttention):
             super().__init__(config)
 
         self.num_heads: int = (
-            getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
             if config is not None
-            else 12
+            else kwargs.get("num_heads") or 12
         )
         self.num_kv_heads: int = (
             getattr(config, "num_key_value_heads", self.num_heads)
@@ -115,9 +117,11 @@ class GalerkinAttention(BaseAttention):
             else self.num_heads
         )
         hidden_size: int = (
-            getattr(config, "hidden_size", getattr(config, "d_model", 768))
+            kwargs.get("dim")
+            or kwargs.get("hidden_size")
+            or getattr(config, "hidden_size", getattr(config, "d_model", 768))
             if config is not None
-            else 768
+            else kwargs.get("dim") or kwargs.get("hidden_size") or 768
         )
         cfg_head_dim = getattr(config, "head_dim", None) if config is not None else None
         if cfg_head_dim is None and source_attn is not None:
