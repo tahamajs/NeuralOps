@@ -962,6 +962,12 @@ class NEXUSAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        # Variance-Preserving RMS Scaling
+        v_flat = V.transpose(1, 2).contiguous().view(B, N, H * D)
+        v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
+
         if self.is_nested_encoder:
             output = context
         else:

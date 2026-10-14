@@ -182,6 +182,14 @@ class CRLinear(nn.Module):
         cr_layer.C.data.copy_(C_data.to(dtype=W.dtype))
         cr_layer.P.data.copy_(P_data.to(dtype=W.dtype))
 
+        # Step 4: Row-wise L2 norm preservation to prevent activation variance collapse across deep networks
+        with torch.no_grad():
+            W_hat = (C_data @ P_data).float()
+            row_norms_orig = torch.linalg.norm(W_float_orig, dim=1, keepdim=True).clamp_min(1e-8)
+            row_norms_hat = torch.linalg.norm(W_hat, dim=1, keepdim=True).clamp_min(1e-8)
+            g = (row_norms_orig / row_norms_hat).clamp(0.2, 5.0)
+            cr_layer.C.data.mul_(g.to(dtype=W.dtype, device=W.device))
+
         if bias is not None and cr_layer.bias is not None:
             cr_layer.bias.data.copy_(bias)
 

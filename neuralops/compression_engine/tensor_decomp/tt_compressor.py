@@ -510,6 +510,11 @@ def _try_svd_fallback(
         W_rec = A @ B
         rel_err = (torch.norm(W - W_rec) / norm_orig).item()
         if rel_err <= max_error:
+            # Preserve row-wise L2 norm energy
+            row_orig = torch.linalg.norm(W, dim=1, keepdim=True).clamp_min(1e-8)
+            row_rec = torch.linalg.norm(W_rec, dim=1, keepdim=True).clamp_min(1e-8)
+            gain = (row_orig / row_rec).clamp(0.2, 5.0)
+            A = A * gain
             best = (A, B, rel_err)
             break
 

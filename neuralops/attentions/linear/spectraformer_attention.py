@@ -562,6 +562,12 @@ class SpectraformerAttention(BaseAttention):
 
         context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
+        # Variance-Preserving RMS Scaling
+        v_flat = v.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
+
         if self.is_nested_encoder:
             output = context
         else:
