@@ -87,63 +87,10 @@ class GatedRecurrentMemory(nn.Module):
                 outs.append(h)
             return torch.stack(outs, dim=1).to(target_dtype)
 
-        # ---- Chunked parallel scan ----
-        # Pad L to multiple of chunk_size
-        pad = (-L) % self.chunk_size
-        if pad > 0:
-            g = F.pad(g, (0, 0, 0, pad))
-            v = F.pad(v, (0, 0, 0, pad))
-        Lp = L + pad
-        n_chunks = Lp // self.chunk_size
+        from neuralops.core.triton_kernels.fms_scan import fused_goldfinch_hopfield_lookup_triton
 
-        # Reshape to (B, n_chunks, chunk_size, D)
-        g_c = g.view(B, n_chunks, self.chunk_size, D)
-        v_c = v.view(B, n_chunks, self.chunk_size, D)
+        return fused_goldfinch_hopfield_lookup_triton(g, v, self.chunk_size)
 
-        # ---- Intra-chunk sequential ----
-        # h_local[b, c, t] = recurrence within chunk c
-        h_local = torch.zeros(B, n_chunks, self.chunk_size, D,
-                              device=x.device, dtype=target_dtype)
-        h = torch.zeros(B, n_chunks, D, device=x.device, dtype=target_dtype)
-        for t in range(self.chunk_size):
-            h = (1.0 - g_c[:, :, t]) * h + g_c[:, :, t] * v_c[:, :, t]
-            h_local[:, :, t] = h
-
-        # ---- Inter-chunk scan ----
-        # chunk_out[c] = h_local[c, -1]  (final state of chunk c)
-        chunk_out = h_local[:, :, -1, :]  # (B, n_chunks, D)
-
-        # True product of decays across the entire chunk:
-        # chunk_decay = prod_{t=0}^{chunk_size-1} (1 - g_c[:, :, t, :])
-        # In log space for numerical stability:
-        chunk_decay = torch.exp(torch.sum(torch.log((1.0 - g_c).clamp(min=1e-6, max=1.0)), dim=2))  # (B, n_chunks, D)
-
-        # Inter-chunk recurrence scan
-        h_carry = torch.zeros(B, n_chunks, D, device=x.device, dtype=target_dtype)
-        carry = torch.zeros(B, D, device=x.device, dtype=target_dtype)
-        for c in range(n_chunks):
-            h_carry[:, c] = carry
-            carry = chunk_decay[:, c] * carry + chunk_out[:, c]
-
-        # ---- Combine ----
-        # Full output: h_full[b, c, t] = h_carry[b, c] * prod_{t' <= t}(1-g) + h_local[b, c, t]
-        # The h_local already includes the intra-chunk recurrence from zero state.
-        # To get the correct output, we need:
-        #   h_full[c, t] = h_local[c, t] + h_carry[c] * prod_{t' <= t}(1 - g[c, t'])
-        # Compute prod of (1-g) within chunk
-        omg_local = (1.0 - g_c).clamp(min=1e-6, max=1.0)  # (B, n_chunks, chunk_size, D)
-        log_omg_local = torch.log(omg_local)
-        cum_log_omg_local = torch.cumsum(log_omg_local, dim=2)  # (B, n_chunks, chunk_size, D)
-        prod_local = torch.exp(cum_log_omg_local)  # (B, n_chunks, chunk_size, D)
-
-        # h_full = h_local + h_carry * prod_local
-        h_full = h_local + h_carry.unsqueeze(2) * prod_local
-
-        # Reshape back
-        h_full = h_full.view(B, Lp, D)
-        if pad > 0:
-            h_full = h_full[:, :L, :]
-        return h_full.to(target_dtype)
 
 
 # ===========================================================================

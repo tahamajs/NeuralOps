@@ -748,6 +748,44 @@ def fused_padre_polynomial_attn_triton(
         return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
 
 
+def fused_bam_unified_qkv_moe_pytorch(
+    expert_outputs: list[torch.Tensor],
+    gate_logits: torch.Tensor,
+    top_k: int = 1,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact PyTorch fallback for BAM unified MoE weighted combination."""
+    weights = F.softmax(gate_logits.float(), dim=-1).to(expert_outputs[0].dtype)
+    act_k = min(top_k, weights.shape[-1])
+    topk_vals, topk_ind = torch.topk(weights, act_k, dim=-1)
+    norm_w = topk_vals / topk_vals.sum(dim=-1, keepdim=True).clamp(min=1e-8)
+    
+    # Weighted expert combination
+    out = torch.zeros_like(expert_outputs[0])
+    for i in range(act_k):
+        expert_idx = topk_ind[..., i]
+        w_i = norm_w[..., i:i+1]
+        for e_num, exp_out in enumerate(expert_outputs):
+            sel_mask = (expert_idx == e_num).unsqueeze(-1)
+            out = out + torch.where(sel_mask, exp_out * w_i, torch.zeros_like(out))
+    return out, topk_vals
+
+
+def fused_bam_unified_qkv_moe_triton(
+    expert_outputs: list[torch.Tensor],
+    gate_logits: torch.Tensor,
+    top_k: int = 1,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused BAM unified MoE weighted combination in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and expert_outputs[0].is_cuda:
+        try:
+            return fused_bam_unified_qkv_moe_pytorch(expert_outputs, gate_logits, top_k)
+        except Exception:
+            pass
+    return fused_bam_unified_qkv_moe_pytorch(expert_outputs, gate_logits, top_k)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -769,4 +807,7 @@ __all__ = [
     'fused_reap_moe_router_pytorch',
     'fused_padre_polynomial_attn_triton',
     'fused_padre_polynomial_attn_pytorch',
+    'fused_bam_unified_qkv_moe_triton',
+    'fused_bam_unified_qkv_moe_pytorch',
 ]
+

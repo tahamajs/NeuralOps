@@ -674,20 +674,10 @@ class PHANTOMAttention(BaseAttention):
             else:
                 token_valid = get_token_valid_mask(attention_mask, B, K.shape[2], hidden_states.device)
 
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
+        from neuralops.core.triton_kernels.fms_scan import fused_phantom_ghost_state_scan_triton
 
-        context = lsh_attention(
-            Q,
-            K,
-            V,
-            rounds=self.cfg.lsh_rounds,
-            bucket_size=self.cfg.lsh_bucket_size,
-            softpick_temp=(self.cfg.softpick_temperature if self.cfg.softpick_enabled else 1.0),
-            dropout=self.dropout if self.cfg.softpick_enabled else None,
-            token_valid=token_valid,
-            is_causal=is_causal,
-            past_len=past_len,
-        )
+        context = fused_phantom_ghost_state_scan_triton(Q, K, V, is_causal=is_causal)
+
 
         # head_mask handling
         if head_mask is not None:

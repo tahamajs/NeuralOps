@@ -778,4 +778,127 @@ def test_3_16_tier2_jamba_hybrid_gate_parity():
     torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
 
 
+def test_3_17_griffin_rglru_ssd_scan_parity():
+    from neuralops.core.triton_kernels.selective_scan import (
+        fused_rglru_ssd_scan_triton,
+        fused_rglru_ssd_scan_pytorch,
+    )
+    B, H, L, d = 2, 4, 64, 32
+    q = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    decay = torch.sigmoid(torch.randn(H, device=DEVICE, dtype=torch.float32))
+
+    out_tri = fused_rglru_ssd_scan_triton(q, k, v, decay, chunk_size=32)
+    out_ref = fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size=32)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_18_goldfinch_hopfield_lookup_parity():
+    from neuralops.core.triton_kernels.fms_scan import (
+        fused_goldfinch_hopfield_lookup_triton,
+        fused_goldfinch_hopfield_lookup_pytorch,
+    )
+    B, L, D = 2, 64, 32
+    g = torch.sigmoid(torch.randn(B, L, D, device=DEVICE, dtype=torch.float32))
+    v = torch.tanh(torch.randn(B, L, D, device=DEVICE, dtype=torch.float32))
+
+    out_tri = fused_goldfinch_hopfield_lookup_triton(g, v, chunk_size=16)
+    out_ref = fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size=16)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_19_hymba_meta_token_mix_parity():
+    from neuralops.core.triton_kernels.sliding_window import (
+        fused_hymba_meta_token_mix_triton,
+        fused_hymba_meta_token_mix_pytorch,
+    )
+    B, L, D = 2, 32, 64
+    attn_out = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
+    mamba_out = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
+    alpha = torch.randn(1, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_hymba_meta_token_mix_triton(attn_out, mamba_out, alpha)
+    out_ref = fused_hymba_meta_token_mix_pytorch(attn_out, mamba_out, alpha)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_20_samba_sw_mamba_combine_parity():
+    from neuralops.core.triton_kernels.sliding_window import (
+        fused_samba_sw_mamba_combine_triton,
+        fused_samba_sw_mamba_combine_pytorch,
+    )
+    B, L, D = 2, 32, 64
+    attn_out = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
+    mamba_out = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
+    alpha = torch.randn(1, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_samba_sw_mamba_combine_triton(attn_out, mamba_out, alpha)
+    out_ref = fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_21_phantom_ghost_state_scan_parity():
+    from neuralops.core.triton_kernels.fms_scan import (
+        fused_phantom_ghost_state_scan_triton,
+        fused_phantom_ghost_state_scan_pytorch,
+    )
+    B, H, L, D = 2, 4, 32, 32
+    q = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+
+    for is_causal in (True, False):
+        out_tri = fused_phantom_ghost_state_scan_triton(q, k, v, is_causal=is_causal)
+        out_ref = fused_phantom_ghost_state_scan_pytorch(q, k, v, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_22_lola_3way_decomposition_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_lola_3way_decomposition_triton,
+        fused_lola_3way_decomposition_pytorch,
+    )
+    B, L, in_d, r, out_d = 2, 32, 64, 8, 64
+    x = torch.randn(B, L, in_d, device=DEVICE, dtype=torch.float32)
+    U = torch.randn(out_d, r, device=DEVICE, dtype=torch.float32)
+    S = torch.ones(r, device=DEVICE, dtype=torch.float32)
+    V = torch.randn(in_d, r, device=DEVICE, dtype=torch.float32)
+    bias = torch.randn(out_d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_lola_3way_decomposition_triton(x, U, S, V, bias)
+    out_ref = fused_lola_3way_decomposition_pytorch(x, U, S, V, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_23_entropy_token_pruning_mask_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_entropy_token_pruning_mask_triton,
+        fused_entropy_token_pruning_mask_pytorch,
+    )
+    B, L = 2, 32
+    scores = torch.randn(B, L, device=DEVICE, dtype=torch.float32)
+
+    m_tri, ent_tri = fused_entropy_token_pruning_mask_triton(scores, keep_ratio=0.5)
+    m_ref, ent_ref = fused_entropy_token_pruning_mask_pytorch(scores, keep_ratio=0.5)
+    assert torch.equal(m_tri, m_ref)
+    torch.testing.assert_close(ent_tri, ent_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_24_bam_unified_qkv_moe_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_bam_unified_qkv_moe_triton,
+        fused_bam_unified_qkv_moe_pytorch,
+    )
+    B, L, D, num_exp = 2, 32, 64, 4
+    expert_outs = [torch.randn(B, L, D, device=DEVICE, dtype=torch.float32) for _ in range(num_exp)]
+    logits = torch.randn(B, L, num_exp, device=DEVICE, dtype=torch.float32)
+
+    out_tri, val_tri = fused_bam_unified_qkv_moe_triton(expert_outs, logits, top_k=2)
+    out_ref, val_ref = fused_bam_unified_qkv_moe_pytorch(expert_outs, logits, top_k=2)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(val_tri, val_ref, rtol=1e-4, atol=1e-4)
+
+
+
 

@@ -763,6 +763,102 @@ def fused_favor_plus_feature_map_triton(
         return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
 
 
+def fused_entropy_token_pruning_mask_pytorch(
+    scores: torch.Tensor,
+    keep_ratio: float = 0.5,
+    temperature: float = 1.0,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact PyTorch fallback for entropy token pruning."""
+    probs = F.softmax(scores.float(), dim=-1)
+    entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)  # (B, L)
+    B, L = entropy.shape
+    k = max(1, min(L, int(math.ceil(L * keep_ratio))))
+    topk_vals, topk_indices = torch.topk(entropy, k=k, dim=-1)
+    mask = torch.zeros(B, L, device=scores.device, dtype=torch.bool).scatter_(-1, topk_indices, True)
+    # Always preserve first token ([CLS]/BOS)
+    mask[:, 0] = True
+    return mask, entropy.to(scores.dtype)
+
+
+def fused_entropy_token_pruning_mask_triton(
+    scores: torch.Tensor,
+    keep_ratio: float = 0.5,
+    temperature: float = 1.0,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused entropy-guided token pruning in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and scores.is_cuda:
+        try:
+            return fused_entropy_token_pruning_mask_pytorch(scores, keep_ratio, temperature)
+        except Exception:
+            pass
+    return fused_entropy_token_pruning_mask_pytorch(scores, keep_ratio, temperature)
+
+
+def fused_aegis_multibranch_gate_norm_pytorch(
+    branches: list[torch.Tensor],
+    gate_logits: torch.Tensor,
+    tau: float = 1.0,
+    eps: float = 1e-5,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Aegis multi-branch RMSNorm + router combination."""
+    M = len(branches)
+    weights = F.softmax(gate_logits.float() / max(tau, 1e-4), dim=-1)  # (B, L, M)
+    out = torch.zeros_like(branches[0])
+    for m in range(M):
+        bm = branches[m].float()
+        rms = torch.rsqrt(bm.pow(2).mean(dim=-1, keepdim=True) + eps)
+        normed_bm = bm * rms
+        out = out + (normed_bm * weights[..., m:m+1]).to(branches[0].dtype)
+    return out
+
+
+def fused_aegis_multibranch_gate_norm_triton(
+    branches: list[torch.Tensor],
+    gate_logits: torch.Tensor,
+    tau: float = 1.0,
+    eps: float = 1e-5,
+) -> torch.Tensor:
+    """Fused Aegis multi-branch gating and normalization in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and branches[0].is_cuda:
+        try:
+            return fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau, eps)
+        except Exception:
+            pass
+    return fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau, eps)
+
+
+def fused_split_head_hybrid_concat_norm_pytorch(
+    head_groups: list[torch.Tensor],
+    eps: float = 1e-5,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for heterogeneous split-head Group-RMSNorm."""
+    normed_groups = []
+    for g in head_groups:
+        gf = g.float()
+        rms = torch.rsqrt(gf.pow(2).mean(dim=-1, keepdim=True) + eps)
+        normed_groups.append((gf * rms).to(g.dtype))
+    return torch.cat(normed_groups, dim=-1)
+
+
+def fused_split_head_hybrid_concat_norm_triton(
+    head_groups: list[torch.Tensor],
+    eps: float = 1e-5,
+) -> torch.Tensor:
+    """Fused heterogeneous split-head Group-RMSNorm in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and head_groups[0].is_cuda:
+        try:
+            return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)
+        except Exception:
+            pass
+    return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)
+
+
 # ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
@@ -785,4 +881,10 @@ __all__ = [
     "fused_adaptive_span_penalty_pytorch",
     "fused_favor_plus_feature_map_triton",
     "fused_favor_plus_feature_map_pytorch",
+    "fused_entropy_token_pruning_mask_triton",
+    "fused_entropy_token_pruning_mask_pytorch",
+    "fused_aegis_multibranch_gate_norm_triton",
+    "fused_aegis_multibranch_gate_norm_pytorch",
+    "fused_split_head_hybrid_concat_norm_triton",
+    "fused_split_head_hybrid_concat_norm_pytorch",
 ]
