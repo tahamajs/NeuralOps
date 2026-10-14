@@ -316,8 +316,15 @@ class FRanDILinear(nn.Module):
         )
 
         with torch.no_grad():
+            # Row-wise L2 norm scaling gain to preserve Frobenius energy and output variance
+            W_recon = B_data[:, :r] @ A_data[:r, :]
+            orig_row_norms = torch.norm(W_float, dim=-1, keepdim=True)
+            comp_row_norms = torch.norm(W_recon, dim=-1, keepdim=True).clamp_min(1e-6)
+            row_gain = (orig_row_norms / comp_row_norms).clamp(0.2, 5.0)
+            B_data_scaled = B_data[:, :r] * row_gain
+
             frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
-            frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
+            frandi_layer.B.data.copy_(B_data_scaled.to(dtype=raw_w.dtype, device=raw_w.device))
 
             if bias is not None and frandi_layer.bias is not None:
                 frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
