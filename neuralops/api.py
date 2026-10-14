@@ -700,6 +700,7 @@ __all__ = [
     "AutoNeuralOpsModel",
     "AutoNeuralOpsForCausalLM",
     "AutoNeuralOpsForSequenceClassification",
+    "merge_for_inference",
 ]
 
 from neuralops.recipes import oneshot, recommend
@@ -710,3 +711,4 @@ from neuralops.transformers import (
     AutoNeuralOpsForSequenceClassification,
     patch_transformers,
 )
+from neuralops.export.surgery_manifest import merge_for_inference

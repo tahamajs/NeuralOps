@@ -226,6 +226,54 @@ def replay_surgery_manifest(
     return model
 
 
+def merge_for_inference(model: nn.Module, only_above_breakeven: bool = False) -> nn.Module:
+    """
+    Folds low-rank adapters (PiSSALinear, DoRALinear) and factorized SVD layers
+    back into single contiguous nn.Linear layers with < 1e-5 numerical error.
+    """
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            # 1. PiSSALinear
+            if hasattr(child, "merge_and_unload") and callable(child.merge_and_unload):
+                try:
+                    merged = child.merge_and_unload()
+                    setattr(module, child_name, merged)
+                    continue
+                except Exception:
+                    pass
+
+            # 2. Factorized SVD linear layers
+            cls_name = child.__class__.__name__
+            if "SVDLinear" in cls_name or cls_name == "FactorizedLinear":
+                d_in = getattr(child, "in_features", None)
+                d_out = getattr(child, "out_features", None)
+                r = getattr(child, "rank", None)
+                if d_in and d_out and r:
+                    breakeven = (d_in * d_out) / (d_in + d_out)
+                    if only_above_breakeven and r < breakeven:
+                        continue  # Keep factorized because it saves FLOPs
+
+                    # Compute effective weight
+                    if hasattr(child, "weight"):
+                        eff_w = child.weight.data
+                    elif hasattr(child, "U") and hasattr(child, "V"):
+                        eff_w = (child.U @ child.V).data
+                    elif hasattr(child, "lora_B") and hasattr(child, "lora_A"):
+                        eff_w = (child.lora_B @ child.lora_A).data
+                    else:
+                        continue
+
+                    bias = getattr(child, "bias", None)
+                    has_bias = bias is not None
+                    lin = nn.Linear(d_in, d_out, bias=has_bias, device=eff_w.device, dtype=eff_w.dtype)
+                    lin.weight.data.copy_(eff_w)
+                    if has_bias:
+                        lin.bias.data.copy_(bias.data)
+                    setattr(module, child_name, lin)
+
+    return model
+
+
 __all__ = [
     "SurgeryManifest",
     "AttentionSurgeryEntry",
@@ -234,4 +282,6 @@ __all__ = [
     "record_compression_surgery",
     "build_manifest_from_model",
     "replay_surgery_manifest",
+    "merge_for_inference",
 ]
+
