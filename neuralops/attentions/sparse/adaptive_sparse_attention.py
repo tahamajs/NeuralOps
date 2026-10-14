@@ -715,8 +715,24 @@ class AdaptiveSparseAttention(BaseAttention):
             if valid_m is None:
                 valid_m = torch.ones(B, N_k, device=device, dtype=torch.bool)
 
-        context_chunks = []
-        attn_chunks = [] if output_attentions else None
+        # Fast path: Triton block_sparse attention on CUDA when inputs align to block tiles
+        if Q.is_cuda and not output_attentions and mask is None and head_mask is None and position_bias is None and N_q >= 64 and N_q % 64 == 0 and N_k % 64 == 0:
+            try:
+                from neuralops.core.triton_kernels import triton_dispatch
+                # Build block sparsity mask
+                n_blocks_q = N_q // 64
+                n_blocks_k = N_k // 64
+                block_mask = torch.ones((n_blocks_q, n_blocks_k), device=device, dtype=torch.int32)
+                if is_decoder:
+                    block_mask = torch.tril(block_mask)
+                context_triton = triton_dispatch("sparse_attn", Q, K, V, block_mask=block_mask, block_size=64, is_causal=bool(is_decoder))
+                if not self.is_nested_encoder:
+                    out = self.out_proj(context_triton.transpose(1, 2).contiguous().view(B, N_q, -1))
+                else:
+                    out = context_triton.transpose(1, 2).contiguous().view(B, N_q, -1)
+                return (out, past_key_value) if is_decoder else (out, None)
+            except Exception as e:
+                logger.debug("Triton sparse_attn failed in AdaptiveSparseAttention, falling back: %s", e)
 
         for q_start in range(0, N_q, chunk_size):
             q_end = min(q_start + chunk_size, N_q)
