@@ -32,7 +32,7 @@ from neuralops.trainer.regularizers.attention_stability import (
     GateSaturationPenalty,
     SpectralJacobianRegularizer,
 )
-from neuralops.trainer.curriculum.mohawk_stages import (
+from neuralops.trainer.surgery_schedules.mohawk import (
     AttentionHomotopyScheduler,
 )
 from neuralops.trainer.optimizers import RiemannianAdam
