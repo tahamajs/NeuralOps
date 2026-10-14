@@ -447,5 +447,99 @@ def bwd(
             sin_weight=sin_weight,
             **kwargs,
         )
-        g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out)
     return g_q, g_k, g_v
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  RALA: Fused Rank-Augmented Linear Scan & Head Interaction Kernel
+# ═══════════════════════════════════════════════════════════════════
+
+def fused_rala_augmented_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lora_U: torch.Tensor,
+    lora_V: torch.Tensor,
+    is_causal: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Exact reference PyTorch implementation for RALA linear attention with rank augmentation."""
+    B, H, N, d = q.shape
+    device = q.device
+    q_p = q.float()
+    k_p = k.float()
+    v_m = v.float()
+
+    if is_causal:
+        S = torch.zeros(B, H, d, d, dtype=torch.float32, device=device)
+        z = torch.zeros(B, H, d, dtype=torch.float32, device=device)
+        num_list = []
+        denom_list = []
+        for i in range(N):
+            q_i = q_p[:, :, i, :]
+            k_i = k_p[:, :, i, :]
+            v_i = v_m[:, :, i, :]
+            S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
+            z = z + k_i
+            num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
+            denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
+            num_list.append(num_i)
+            denom_list.append(denom_i)
+        num = torch.stack(num_list, dim=2)
+        denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
+    else:
+        kv = torch.einsum("bhnd,bhne->bhde", k_p, v_m)
+        z = k_p.sum(dim=2)
+        num = torch.einsum("bhnd,bhde->bhne", q_p, kv)
+        denom = torch.einsum("bhnd,bhd->bhn", q_p, z).unsqueeze(-1).clamp(min=1e-4)
+
+    lin_out = torch.nan_to_num(num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+    rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
+    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+    return lin_out, aug_out
+
+
+def fused_rala_augmented_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lora_U: torch.Tensor,
+    lora_V: torch.Tensor,
+    is_causal: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused RALA linear attention with rank augmentation evaluated with GPU Triton acceleration."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
+    if HAS_TRITON and q.is_cuda and suitable:
+        try:
+            # 1. Accelerated standard linear attention component
+            lin_out = fwd(q, k, v, is_causal=is_causal, phi="identity", eps=1e-4)
+            # 2. Denominator and rank augmentation projection
+            q_p = q.float()
+            k_p = k.float()
+            if is_causal:
+                # Causal prefix sum along sequence length for normalizer
+                z = k_p.cumsum(dim=2)  # [B, H, N, d]
+                denom = (q_p * z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            else:
+                z = k_p.sum(dim=2, keepdim=True)  # [B, H, 1, d]
+                denom = (q_p * z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
+
+            # Rank interaction matrix M = U @ V^T in FP32
+            rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
+            aug_num = torch.einsum("bhnd,hde->bhne", q_p, rank_mat)
+            aug_out = torch.nan_to_num(aug_num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+            return lin_out, aug_out
+        except Exception:
+            pass
+
+    return fused_rala_augmented_scan_pytorch(q, k, v, lora_U, lora_V, is_causal=is_causal)
+
+
+__all__ = [
+    "is_supported",
+    "fwd",
+    "bwd",
+    "fused_rala_augmented_scan_triton",
+    "fused_rala_augmented_scan_pytorch",
+]

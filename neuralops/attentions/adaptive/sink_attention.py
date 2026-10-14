@@ -514,6 +514,13 @@ class SinkAttention(BaseAttention):
         if N_k <= W:
             return k, v, positions
 
+        # Try fused Triton kernel in SRAM
+        try:
+            from neuralops.core.triton_kernels.sliding_window import fused_sink_rolling_cache_triton
+            return fused_sink_rolling_cache_triton(k, v, positions, W, S)
+        except Exception:
+            pass
+
         head = slice(0, S)
         tail = slice(N_k - (W - S), N_k)
         idx = torch.arange(N_k, device=k.device)

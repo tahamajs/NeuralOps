@@ -761,6 +761,16 @@ class AdaptiveSpanAttention(BaseAttention):
             q_pos = torch.arange(N_q, device=device, dtype=torch.float32).unsqueeze(0).expand(B, -1)
             k_pos = torch.arange(N_k, device=device, dtype=torch.float32).unsqueeze(0).expand(B, -1)
 
+        # Try fused Triton kernel in SRAM
+        try:
+            from neuralops.core.triton_kernels.elementwise import fused_adaptive_span_penalty_triton
+            penalty = fused_adaptive_span_penalty_triton(
+                span, q_pos, k_pos, float(self.ramp_size), is_causal=is_causal
+            )
+            return penalty.to(scores.dtype)
+        except Exception:
+            pass
+
         # dist: (B, N_q, N_k)
         if is_causal:
             dist = (q_pos.unsqueeze(2) - k_pos.unsqueeze(1)).clamp(min=0.0)
