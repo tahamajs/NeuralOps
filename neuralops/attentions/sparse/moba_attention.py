@@ -636,6 +636,7 @@ class MoBAAttention(BaseAttention):
                 fused_moba_block_router_combine_triton,
                 fused_moba_block_router_combine_pytorch,
             )
+            top_k = min(self.top_k, nb)
             try:
                 block_scores_for_topk, top_idx = fused_moba_block_router_combine_triton(
                     Qb, Kb, Vb, scale, self.top_k, is_causal
