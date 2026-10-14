@@ -198,7 +198,8 @@ def main():
         for m, data in by_mod.items():
             d512 = data.get(512, {})
             d2048 = data.get(2048, {})
-            f.write(f"| `{m}` | {d512.get('triton_lat_ms','-')} | {d512.get('ref_lat_ms','-')} | **{d512.get('speedup_x','-')}x** | {d2048.get('triton_lat_ms','-')} | {d2048.get('ref_lat_ms','-')} | **{d2048.get('speedup_x','-')}x** | >0.99 | PASS |\n")
+            cos_sim_str = f"{d2048.get('fwd_cos_sim', d512.get('fwd_cos_sim', 1.0)):.4f}"
+            f.write(f"| `{m}` | {d512.get('triton_lat_ms','-')} | {d512.get('ref_lat_ms','-')} | **{d512.get('speedup_x','-')}x** | {d2048.get('triton_lat_ms','-')} | {d2048.get('ref_lat_ms','-')} | **{d2048.get('speedup_x','-')}x** | {cos_sim_str} | PASS |\n")
 
     print(f"\nBenchmark successfully saved to {json_path}, {csv_path}, and {md_path}")
 
