@@ -44,16 +44,38 @@ class SimPOLoss(nn.Module):
 class ORPOLoss(nn.Module):
     """Odds-Ratio Preference Optimization (ORPO) without reference model."""
 
-    def __init__(self, lambda_orpo: float = 0.1) -> None:
+    def __init__(self, lambda_orpo: float = 0.1, sft_weight: float = 1.0, odds_ratio_weight: Optional[float] = None) -> None:
         super().__init__()
+        if odds_ratio_weight is not None:
+            lambda_orpo = odds_ratio_weight
         self.lambda_orpo = float(lambda_orpo)
+        self.sft_weight = float(sft_weight)
 
     def forward(
         self,
-        sft_loss: torch.Tensor,
-        chosen_logprobs: torch.Tensor,
-        rejected_logprobs: torch.Tensor,
+        sft_loss: Optional[torch.Tensor] = None,
+        chosen_logprobs: Optional[torch.Tensor] = None,
+        rejected_logprobs: Optional[torch.Tensor] = None,
+        **kwargs,
     ) -> torch.Tensor:
+        # Support flexible argument orders
+        if chosen_logprobs is None and "policy_chosen_logps" in kwargs:
+            chosen_logprobs = kwargs["policy_chosen_logps"]
+        if rejected_logprobs is None and "policy_rejected_logps" in kwargs:
+            rejected_logprobs = kwargs["policy_rejected_logps"]
+        if sft_loss is None and "sft_loss" in kwargs:
+            sft_loss = kwargs["sft_loss"]
+
+        # Support positional calls: forward(chosen, rejected, sft_loss)
+        if sft_loss is not None and chosen_logprobs is not None and rejected_logprobs is None and "sft_loss" in kwargs:
+            # sft_loss was passed as first arg (chosen), chosen was passed as second (rejected)
+            rejected_logprobs = chosen_logprobs
+            chosen_logprobs = sft_loss
+            sft_loss = kwargs["sft_loss"]
+
+        if sft_loss is None:
+            sft_loss = torch.tensor(0.0, device=chosen_logprobs.device if chosen_logprobs is not None else "cpu")
+
         log_p_w = chosen_logprobs.sum(dim=-1)
         log_p_l = rejected_logprobs.sum(dim=-1)
 
@@ -64,7 +86,7 @@ class ORPOLoss(nn.Module):
         ratio = log_odds_w - log_odds_l
         orpo_penalty = -F.logsigmoid(ratio).mean()
 
-        return sft_loss + self.lambda_orpo * orpo_penalty
+        return self.sft_weight * sft_loss + self.lambda_orpo * orpo_penalty
 
 
 class DynamicRoutingAndRankRL(nn.Module):
