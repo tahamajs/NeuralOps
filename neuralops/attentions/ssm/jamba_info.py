@@ -844,30 +844,26 @@ class JambaInfoBlock(BaseAttention):
         # ---- Alpha blending ----
         target_dtype = x.dtype
 
+        from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+
         if self.per_head_alpha:
-            # FIX 7: sigmoid in target dtype
-            alpha = torch.sigmoid(self.alpha_raw.to(target_dtype)).view(
-                1, 1, self.num_heads, 1
-            )
-            attn_out_h = attn_out.view(B, L, self.num_heads, self.head_dim)
-            # FIX 1: project ssm_branch into head-size space if needed
             if self.ssm_adapter is not None:
                 ssm_for_blend = self.ssm_adapter(ssm_branch.to(target_dtype))
             else:
                 ssm_for_blend = ssm_branch
-            ssm_branch_h = ssm_for_blend.view(B, L, self.num_heads, self.head_dim)
-            combined = (1.0 - alpha) * attn_out_h + alpha * ssm_branch_h
-            combined = combined.view(B, L, self.all_head_size)
+            combined = fused_jamba_hybrid_ssm_attn_gate_triton(
+                attn_out, ssm_for_blend, self.alpha_raw
+            )
         else:
-            alpha = torch.sigmoid(self.alpha_raw.to(target_dtype))
-            # ssm_branch is (B,L,dim); attn_out is (B,L,all_head_size).
-            # When dim == all_head_size blending is safe; otherwise we project.
             if ssm_branch.shape[-1] != attn_out.shape[-1]:
                 if self.ssm_adapter is not None:
                     ssm_branch = self.ssm_adapter(ssm_branch.to(target_dtype))
                 else:
                     ssm_branch = ssm_branch[..., :attn_out.shape[-1]]
-            combined = (1.0 - alpha) * attn_out + alpha * ssm_branch
+            combined = fused_jamba_hybrid_ssm_attn_gate_triton(
+                attn_out, ssm_branch, self.alpha_raw
+            )
+
 
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
