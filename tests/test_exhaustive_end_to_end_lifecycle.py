@@ -1,8 +1,8 @@
 """
 Suite 11: Exhaustive Verification Battery for Full End-to-End Model Lifecycles.
-Verifies:
-  11.1 Causal LM Pipeline (Surgery + PiSSA + Forward/Loss + Merge).
-  11.2 Bidirectional Classification Pipeline (Surgery + Probing/Fine-tuning).
+Expanded to 8+ parameterized tests verifying:
+  11.1 Causal LM Pipeline (Surgery + PiSSA + Forward/Loss + Backward + Merge) across sequence lengths and ranks.
+  11.2 Bidirectional Classification Pipeline (Surgery + Differential Training Step).
 """
 
 from __future__ import annotations
@@ -18,17 +18,20 @@ from neuralops.export.surgery_manifest import merge_for_inference
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def test_11_1_causal_lm_lifecycle():
+@pytest.mark.parametrize("attn_mech", ["linear_attention", "gla_attention"])
+@pytest.mark.parametrize("seq_len", [8, 16])
+@pytest.mark.parametrize("rank", [4, 8])
+def test_11_1_causal_lm_lifecycle(attn_mech, seq_len, rank):
     cfg = NeuralOpsConfig(
         vocab_size=64,
         hidden_size=32,
         num_hidden_layers=2,
         num_attention_heads=2,
         intermediate_size=64,
-        attention_mechanism="linear_attention",
+        attention_mechanism=attn_mech,
     )
     model = NeuralOpsForCausalLM(cfg).to(DEVICE)
-    x = torch.randint(0, 64, (2, 8), device=DEVICE)
+    x = torch.randint(0, 64, (2, seq_len), device=DEVICE)
     labels = x.clone()
 
     # Forward pass and loss
