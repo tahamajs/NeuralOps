@@ -66,8 +66,8 @@ class MoBAAttention(BaseAttention):
                 pass
 
             config = _Cfg()
-            config.hidden_size = kwargs.get("hidden_size", 768)
-            config.num_attention_heads = kwargs.get("num_attention_heads", 12)
+            config.hidden_size = kwargs.get("dim") or kwargs.get("hidden_size", 768)
+            config.num_attention_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads", 12)
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
 
@@ -75,10 +75,10 @@ class MoBAAttention(BaseAttention):
             getattr(
                 config,
                 "num_attention_heads",
-                getattr(config, "num_heads", kwargs.get("num_attention_heads", 4)),
+                getattr(config, "num_heads", kwargs.get("num_heads") or kwargs.get("num_attention_heads", 4)),
             )
         )
-        self.hidden_size = int(getattr(config, "hidden_size", kwargs.get("hidden_size", 768)))
+        self.hidden_size = int(getattr(config, "hidden_size", kwargs.get("dim") or kwargs.get("hidden_size", 768)))
         cfg_hd = getattr(config, "head_dim", None)
         self.head_dim = (
             int(cfg_hd)
