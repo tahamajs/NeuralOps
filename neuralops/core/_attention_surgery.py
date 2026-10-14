@@ -685,11 +685,14 @@ def calibrate_surgically_replaced_model(
             surg_mod.register_forward_hook(_affine_forward_hook)
 
     # 4. Attach Convex Subspace Anchoring between orig_mod and surg_mod
-    # In RoBERTa: model.roberta.encoder.layer[i].attention
+    # In RoBERTa: model.roberta.encoder.layer[i].attention.self
     # In GPT2: model.transformer.h[i].attn
     if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):
         for mb, ms in zip(orig_model.roberta.encoder.layer, surg_model.roberta.encoder.layer):
-            ms.attention = SubspaceAnchorWrapper(mb.attention, ms.attention, alpha=blend_alpha)
+            if hasattr(ms.attention, "self") and hasattr(mb.attention, "self"):
+                ms.attention.self = SubspaceAnchorWrapper(mb.attention.self, ms.attention.self, alpha=blend_alpha)
+            else:
+                ms.attention = SubspaceAnchorWrapper(mb.attention, ms.attention, alpha=blend_alpha)
     elif hasattr(orig_model, "transformer") and hasattr(surg_model, "transformer"):
         for mb, ms in zip(orig_model.transformer.h, surg_model.transformer.h):
             ms.attn = SubspaceAnchorWrapper(mb.attn, ms.attn, alpha=blend_alpha)
