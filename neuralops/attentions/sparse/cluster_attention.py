@@ -690,9 +690,9 @@ class ClusterAttention(BaseAttention):
                 or getattr(_cfg, "causal", False)
                 or any(model_type.startswith(p) for p in _decoder_prefixes)
             )
-        is_decoder = self.is_decoder or is_dec_cfg
+        is_decoder = bool(self.is_decoder or is_dec_cfg or kwargs.get("is_causal", False) or kwargs.get("causal", False))
 
-        if is_cross_attention:
+        if is_cross_attention or is_decoder:
             # Exact attention with causal masking to prevent future token leakage
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask")
