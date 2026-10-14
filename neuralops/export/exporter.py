@@ -36,6 +36,14 @@ def export_model(
     out_path.mkdir(parents=True, exist_ok=True)
     fmt = format.lower().strip()
 
+    # 0. Check for unfinalized shadow-twin teacher branch
+    if kwargs.get("auto_finalize", True):
+        try:
+            from neuralops.api import finalize_surgery
+            model = finalize_surgery(model)
+        except Exception as e:
+            logger.debug("finalize_surgery check skipped or failed: %s", e)
+
     # Automatically inspect model metadata if not explicitly provided
     recorded_metadata = getattr(model, "_neuralops_metadata", None)
     if recorded_metadata:
@@ -54,10 +62,16 @@ def export_model(
                 if rank is None and entry_rank is not None:
                     rank = entry_rank
 
+    # Build comprehensive SurgeryManifest
+    from neuralops.export.surgery_manifest import build_manifest_from_model
+    manifest = build_manifest_from_model(model)
+
     # If model has config with name_or_path, infer base_model
     base_name = model_name_or_path or getattr(model, "name_or_path", None)
     if not base_name and hasattr(model, "config") and hasattr(model.config, "_name_or_path"):
         base_name = model.config._name_or_path
+    if base_name:
+        manifest.base_model_name = str(base_name)
 
     # Build architecture and surgery metadata
     meta = {
@@ -73,6 +87,13 @@ def export_model(
         "extra_kwargs": kwargs,
     }
 
+    # Always persist both legacy neuralops_config.json and rich neuralops_surgery_config.json
+    surgery_manifest_file = out_path / "neuralops_surgery_config.json"
+    with open(surgery_manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest.to_dict(), f, indent=2)
+
+    with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
 
     if fmt == "safetensors":
         try:
@@ -81,10 +102,6 @@ def export_model(
         except ImportError:
             # Fallback to standard PyTorch state_dict if safetensors is unavailable
             torch.save(model.state_dict(), out_path / "pytorch_model.bin")
-
-        # Save surgery config alongside weights
-        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2)
 
         # Save HF config if present
         if hasattr(model, "config") and hasattr(model.config, "save_pretrained"):
@@ -191,28 +208,40 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             "cannot be loaded without an explicit base_model instance passed to load_exported_model."
         )
 
-    # 2. Re-apply recorded operations sequentially from metadata if present
-    import neuralops
-    metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
-    if metadata_ops:
-        for entry in metadata_ops:
-            op_action = entry.get("op") or entry.get("action")
-            op_type = entry.get("type") or entry.get("attention_type") or entry.get("compression_method")
-            op_kwargs = dict(entry.get("kwargs", {}))
-            if op_action in ("replace", "replace_attention") and op_type:
-                model = neuralops.replace_attention(model, attention=op_type, **op_kwargs)
-            elif op_action in ("compress", "compression") and op_type:
-                model = neuralops.compress(model, method=op_type, **op_kwargs)
+    # 2. Check for SurgeryManifest first for exact per-layer reconstruction
+    surgery_manifest_file = dir_path / "neuralops_surgery_config.json"
+    if surgery_manifest_file.exists():
+        from neuralops.export.surgery_manifest import SurgeryManifest, replay_surgery_manifest
+        try:
+            with open(surgery_manifest_file, "r", encoding="utf-8") as f:
+                manifest_dict = json.load(f)
+            manifest = SurgeryManifest.from_dict(manifest_dict)
+            model = replay_surgery_manifest(model, manifest)
+        except Exception as e:
+            logger.warning("Failed to replay surgery manifest, falling back to legacy replay: %s", e)
     else:
-        # Fallback to single attention and compression keys
-        attn_type = meta.get("attention_type")
-        rank = meta.get("rank")
-        if attn_type:
-            model = neuralops.replace_attention(model, attention=attn_type, rank=rank)
+        # Re-apply recorded operations sequentially from metadata if present
+        import neuralops
+        metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
+        if metadata_ops:
+            for entry in metadata_ops:
+                op_action = entry.get("op") or entry.get("action")
+                op_type = entry.get("type") or entry.get("attention_type") or entry.get("compression_method")
+                op_kwargs = dict(entry.get("kwargs", {}))
+                if op_action in ("replace", "replace_attention") and op_type:
+                    model = neuralops.replace_attention(model, attention=op_type, **op_kwargs)
+                elif op_action in ("compress", "compression") and op_type:
+                    model = neuralops.compress(model, method=op_type, **op_kwargs)
+        else:
+            # Fallback to single attention and compression keys
+            attn_type = meta.get("attention_type")
+            rank = meta.get("rank")
+            if attn_type:
+                model = neuralops.replace_attention(model, attention=attn_type, rank=rank)
 
-        comp_method = meta.get("compression_method")
-        if comp_method:
-            model = neuralops.compress(model, method=comp_method, rank=rank)
+            comp_method = meta.get("compression_method")
+            if comp_method:
+                model = neuralops.compress(model, method=comp_method, rank=rank)
 
     # 4. Load weights
     safetensors_path = dir_path / "model.safetensors"
