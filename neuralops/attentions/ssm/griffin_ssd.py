@@ -344,11 +344,10 @@ class GriffinSSDBlock(BaseAttention):
         # Positions within chunk
         pos = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
         # diff[i,j] = i - j (causal: i >= j)
-        diff = pos.unsqueeze(0) - pos.unsqueeze(1)  # (C, C)
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # (C, C) where diff[i, j] = i - j
         causal = diff >= 0  # (C, C) bool
 
         # D_intra[i,j] = decay^(i-j) if i>=j else 0
-        # log_decay shape: (1, H, 1, 1) → need (1, H, 1, 1, 1) for broadcasting
         log_decay_5d = log_decay.view(1, H, 1, 1, 1)
         diff_5d = diff.view(1, 1, 1, chunk_size, chunk_size)  # (1,1,1,C,C)
         exp_arg = (diff_5d * log_decay_5d).clamp(min=-40.0, max=0.0)  # (1,H,1,C,C)
