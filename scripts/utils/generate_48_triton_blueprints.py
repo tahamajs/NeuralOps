@@ -259,7 +259,8 @@ def generate_section(idx, key, cls_name, kernel_type, desc):
     return "\n".join(lines)
 
 def main():
-    target_file = "/Users/tahamajs/Documents/uni/Project/docs/FULL_48_MODULES_TRITON_IMPLEMENTATION_BLUEPRINT.md"
+    target_file = os.path.join(os.getcwd(), "docs/FULL_48_MODULES_TRITON_IMPLEMENTATION_BLUEPRINT.md")
+    os.makedirs(os.path.dirname(target_file), exist_ok=True)
     header = [
         "# 📐 FULL 48-MODULE TRITON IMPLEMENTATION BLUEPRINTS & SRAM KERNEL ARCHITECTURES",
         "",
