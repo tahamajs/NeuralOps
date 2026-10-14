@@ -249,12 +249,14 @@ class UnifiedRoPE(BaseAttention):
         cos = cos.to(x.device, x.dtype)
         sin = sin.to(x.device, x.dtype)
 
-        if rotary_dim < x.shape[-1]:
-            x_rot = x[..., :rotary_dim]
-            x_pass = x[..., rotary_dim:]
-            rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
-            return torch.cat((rotated, x_pass), dim=-1)
-        return (x * cos) + (_rotate_half(x) * sin)
+        from neuralops.core.triton_kernels.fused_rope import (
+            fused_unified_rope_offset_triton,
+            fused_unified_rope_offset_pytorch,
+        )
+        try:
+            return fused_unified_rope_offset_triton(x, cos, sin, rotary_dim)
+        except Exception:
+            return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
 
     # ------------------------------------------------------------------
     # copy_weights (same as before, kept intact)

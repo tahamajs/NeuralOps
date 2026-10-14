@@ -583,23 +583,19 @@ class ClusterAttention(BaseAttention):
         counts = torch.ones(B, H, K, 1, dtype=Q.dtype, device=Q.device)
         Q_f = Q.float()
 
+        from neuralops.core.triton_kernels.sparse_attn import (
+            fused_kmeans_centroid_assign_triton,
+            fused_kmeans_centroid_assign_pytorch,
+        )
         for _ in range(iters):
-            centroids_f = centroids.float()
-            dist = torch.cdist(Q_f, centroids_f)
-            if valid_mask is not None:
-                # Disincentivize padding tokens from pulling centroids
-                dist = dist.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), 1e6)
-            cluster_ids = torch.argmin(dist, dim=-1)
-
-            one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
-            if valid_mask is not None:
-                one_hot = one_hot * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
-
-            counts = one_hot.sum(dim=2).unsqueeze(-1)
-            counts_clamped = counts.clamp(min=1.0)
-            sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
-            centroids = torch.where(counts > 0, sum_q / (counts_clamped + 1e-8), centroids)
-            centroids = torch.nan_to_num(centroids, nan=0.0)
+            try:
+                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_triton(
+                    Q, centroids, valid_mask
+                )
+            except Exception:
+                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_pytorch(
+                    Q, centroids, valid_mask
+                )
 
         return centroids, cluster_ids, counts
 

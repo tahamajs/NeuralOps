@@ -562,15 +562,14 @@ class LSHAttention(BaseAttention):
         vectors: (B, H, N, d); proj: (d, num_buckets//2)
         Returns: (B, H, N) bucket indices in [0, num_buckets)
         """
-        norm = F.normalize(vectors.float(), p=2, dim=-1)
-        dots = torch.matmul(norm, proj.float())  # (B, H, N, num_buckets//2)
-        signs = (dots >= 0).long()  # (B, H, N, num_buckets//2)
-        # Combine sign bits into a single bucket index
-        num_planes = signs.shape[-1]
-        weights = (2 ** torch.arange(num_planes, device=signs.device)).long()
-        bucket = (signs * weights).sum(dim=-1)  # (B, H, N)
-        bucket = bucket % self.num_buckets
-        return bucket
+        from neuralops.core.triton_kernels.sparse_attn import (
+            fused_lsh_hash_and_bin_triton,
+            fused_lsh_hash_and_bin_pytorch,
+        )
+        try:
+            return fused_lsh_hash_and_bin_triton(vectors, proj, self.num_buckets)
+        except Exception:
+            return fused_lsh_hash_and_bin_pytorch(vectors, proj, self.num_buckets)
 
     # ------------------------------------------------------------------
     # LSH-09: chunked LSH attention
