@@ -606,11 +606,17 @@ class NystromAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
+        is_causal = bool(
+            self.is_decoder
+            or getattr(self, "is_causal", False)
+            or kwargs.get("is_causal", False)
+            or kwargs.get("causal", False)
+        )
 
         # ============================================================
         # Causal (decoder) → Chunked Causal Nyström
         # ============================================================
-        if self.is_decoder or self.is_causal:
+        if is_causal:
             # Use chunked causal Nyström
             context = self._chunked_causal_nystrom(
                 Q, K, V, valid_mask, chunk_size=256
