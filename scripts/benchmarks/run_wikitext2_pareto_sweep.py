@@ -144,6 +144,10 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         })
         torch.cuda.empty_cache()
 
+    # Incremental write
+    with open(out_dir / "wikitext2_pareto_results.json", "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2)
+
 # Write JSON
 with open(out_dir / "wikitext2_pareto_results.json", "w", encoding="utf-8") as f:
     json.dump(records, f, indent=2)
