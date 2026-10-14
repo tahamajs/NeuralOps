@@ -643,6 +643,8 @@ class JambaInfoBlock(BaseAttention):
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
+        is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
+
         x = hidden_states
         B, L, D = x.shape
         device = x.device
