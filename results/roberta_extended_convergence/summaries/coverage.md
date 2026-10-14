@@ -1,8 +1,8 @@
 # Benchmark Module Coverage Report
 
 - **Registry Total**: 202 modules (131 Attention + 72 Compressors)
-- **Tested Modules**: 10 (5.0% coverage)
-- **Remaining Unbenchmarked**: 192
+- **Tested Modules**: 1 (0.5% coverage)
+- **Remaining Unbenchmarked**: 201
 
 ### Missing Modules
 - `a3_compressor`
@@ -53,6 +53,6 @@
 - `direct_svd`
 - `dobi_svd`
 - `drone_compressor`
+- `dynamic_conv_attention`
 - `dynamic_rank`
-- `eat`
-- ... and 142 more
+- ... and 151 more

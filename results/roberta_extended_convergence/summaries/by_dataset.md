@@ -2,4 +2,4 @@
 
 | Dataset | Total Runs | Unique Modules | Best Module | Best Accuracy |
 |---|---|---|---|---|
-| `sst2` | 10 | 10 | `sink_attention` | 0.8300 |
+| `sst2` | 1 | 1 | `gated_delta_net` | 0.7600 |
