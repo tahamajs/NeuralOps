@@ -89,26 +89,21 @@ def check_triton_suitability(
     if not tensor.is_cuda:
         return False, f"tensor is on {tensor.device}, expected CUDA"
 
-    # Hardware Compute Capability Guard:
-    # Basic Triton kernels require SM >= 7.0 (Volta+).
-    # Pascal (SM 6.1, e.g. GTX 1060 on tahoora) crashes ptxas on Triton JIT kernels.
-    # Advanced Tensor Core dot kernels require SM >= 8.0 (Ampere / Ada SM 8.9).
+    # Hardware Capability Profile Inspection
     try:
-        cap = torch.cuda.get_device_capability(tensor.device)
-        major, minor = cap[0], cap[1]
-        if major < 7:
+        from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
+
+        profile = get_device_hardware_profile(tensor.device)
+        if not profile.supports_triton_jit:
             return (
                 False,
-                f"GPU compute capability {major}.{minor} < 7.0 is unsupported by Triton (Pascal/older architecture requires PyTorch fallback)",
+                f"GPU compute capability {profile.sm_major}.{profile.sm_minor} < 7.0 is unsupported by Triton (Pascal/older architecture requires PyTorch fallback)",
             )
-        # If the kernel utilizes Tensor Core tl.dot instructions and hardware is pre-Ampere
-        if major < 8 and kernel_name in TENSOR_CORE_DOT_KERNELS:
-            # Check if kernel can run or needs fallback to avoid MMA PTX failures
-            if major == 7 and minor < 0:
-                return (
-                    False,
-                    f"Kernel '{kernel_name}' requires Tensor Core hardware (SM >= 7.0/8.0), device is {major}.{minor}",
-                )
+        if kernel_name in TENSOR_CORE_DOT_KERNELS and not profile.supports_tensor_core_dot:
+            return (
+                False,
+                f"Kernel '{kernel_name}' requires Tensor Core hardware (SM >= 7.5/8.0), device is {profile.sm_major}.{profile.sm_minor}",
+            )
     except Exception:
         pass
 
@@ -120,17 +115,20 @@ def check_triton_suitability(
 
     # If tensor is bfloat16 but device does not support native bf16 (requires Ampere SM 8.0+)
     if tensor.dtype == torch.bfloat16:
-        if not hasattr(torch.cuda, "is_bf16_supported") or not torch.cuda.is_bf16_supported():
-            return (
-                False,
-                f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
-            )
-
-    if head_dim is not None and head_dim not in SUPPORTED_HEAD_DIMS:
-        return (
-            False,
-            f"head dimension {head_dim} not in supported set {SUPPORTED_HEAD_DIMS}",
-        )
+        try:
+            from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
+            profile = get_device_hardware_profile(tensor.device)
+            if not profile.supports_bf16:
+                return (
+                    False,
+                    f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
+                )
+        except Exception:
+            if not hasattr(torch.cuda, "is_bf16_supported") or not torch.cuda.is_bf16_supported():
+                return (
+                    False,
+                    f"bfloat16 is not natively supported on device {tensor.device} (requires Ampere SM 8.0+)",
+                )
 
     if seq_len is not None and seq_len > MAX_TRITON_SEQ_LEN:
         return (
