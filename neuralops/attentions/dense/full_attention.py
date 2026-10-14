@@ -399,18 +399,6 @@ class FullAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = d**-0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
-
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        if mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
-
         # Explicit Causal Masking for decoders
         is_decoder = (
             self.is_decoder
@@ -418,30 +406,82 @@ class FullAttention(BaseAttention):
             or getattr(self.config, "model_type", "")
             in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
-        if is_decoder:
-            causal_tril = (
-                torch.tril(
-                    torch.ones((N_q, N_k), device=device, dtype=torch.bool),
-                    diagonal=max(0, N_k - N_q)
+
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
+
+        # Fast-Path: Use FlashAttention / Memory-Efficient SDPA when possible
+        use_sdpa = (
+            not output_attentions
+            and head_mask is None
+            and (mask is None or mask.dim() == 4)
+        )
+
+        if use_sdpa:
+            try:
+                dropout_p = self.dropout.p if self.training else 0.0
+                if is_decoder and mask is None and N_q == N_k:
+                    context = F.scaled_dot_product_attention(
+                        Q, K, V, attn_mask=None, dropout_p=dropout_p, is_causal=True
+                    )
+                else:
+                    attn_mask = None
+                    if mask is not None and mask.dim() == 4:
+                        attn_mask = mask.to(Q.dtype)
+                    if is_decoder and attn_mask is None:
+                        causal_tril = (
+                            torch.tril(
+                                torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                                diagonal=max(0, N_k - N_q)
+                            )
+                            .unsqueeze(0)
+                            .unsqueeze(0)
+                        )
+                        attn_mask = torch.zeros((1, 1, N_q, N_k), device=device, dtype=Q.dtype).masked_fill(~causal_tril, -10000.0)
+
+                    context = F.scaled_dot_product_attention(
+                        Q, K, V, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=False
+                    )
+                attn = None
+            except Exception as e:
+                logger.debug("FullAttention SDPA fast-path failed: %s", e)
+                use_sdpa = False
+
+        if not use_sdpa:
+            scale = d**-0.5
+            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+
+            if mask is not None:
+                if mask.dim() == 4:
+                    scores = scores + mask.to(scores.dtype)
+                else:
+                    valid_m = get_token_valid_mask(mask, B, N_k, device)
+                    if valid_m is not None:
+                        scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+
+            if is_decoder:
+                causal_tril = (
+                    torch.tril(
+                        torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                        diagonal=max(0, N_k - N_q)
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
                 )
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+                scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-        attn = self.dropout(attn)
+            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+            attn = self.dropout(attn)
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            attn = attn * head_mask
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                attn = attn * head_mask
 
-        context = torch.matmul(attn, V)
+            context = torch.matmul(attn, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         if self.is_nested_encoder:
