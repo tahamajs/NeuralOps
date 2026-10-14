@@ -916,7 +916,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if self.is_nested_encoder:
             out = context
         else:
-            out = self.out_proj(context)
+            proj_dtype = self.out_proj.weight.dtype if hasattr(self.out_proj, "weight") else context.dtype
+            out = self.out_proj(context.to(proj_dtype))
 
         # MDP-FIX-13: always return a 2-tuple with attn = tensor or None
         attn_ret = attn_probs if output_attentions else None
