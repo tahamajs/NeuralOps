@@ -900,5 +900,152 @@ def test_3_24_bam_unified_qkv_moe_parity():
     torch.testing.assert_close(val_tri, val_ref, rtol=1e-4, atol=1e-4)
 
 
+def test_3_25_aegis_multibranch_gate_norm_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_aegis_multibranch_gate_norm_triton,
+        fused_aegis_multibranch_gate_norm_pytorch,
+    )
+    B, L, D, M = 2, 32, 64, 3
+    branches = [torch.randn(B, L, D, device=DEVICE, dtype=torch.float32) for _ in range(M)]
+    gate_logits = torch.randn(B, L, M, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_aegis_multibranch_gate_norm_triton(branches, gate_logits, tau=1.0)
+    out_ref = fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau=1.0)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_26_regla_refined_gate_scan_parity():
+    from neuralops.core.triton_kernels.gla_scan import (
+        fused_regla_refined_gate_scan_triton,
+        fused_regla_refined_gate_scan_pytorch,
+    )
+    B, H, L, D = 2, 4, 32, 32
+    q = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    gate = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_regla_refined_gate_scan_triton(q, k, v, gate, is_causal=True)
+    out_ref = fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal=True)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_27_landmark_local_block_attn_parity():
+    from neuralops.core.triton_kernels.sliding_window import (
+        fused_landmark_local_block_attn_triton,
+        fused_landmark_local_block_attn_pytorch,
+    )
+    B, H, L, D = 2, 4, 32, 32
+    q = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_landmark_local_block_attn_triton(q, k, v, window_size=16, is_causal=True)
+    out_ref = fused_landmark_local_block_attn_pytorch(q, k, v, window_size=16, is_causal=True)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_28_split_head_hybrid_concat_norm_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_split_head_hybrid_concat_norm_triton,
+        fused_split_head_hybrid_concat_norm_pytorch,
+    )
+    B, L, D = 2, 32, 32
+    groups = [torch.randn(B, L, D, device=DEVICE, dtype=torch.float32) for _ in range(3)]
+
+    out_tri = fused_split_head_hybrid_concat_norm_triton(groups)
+    out_ref = fused_split_head_hybrid_concat_norm_pytorch(groups)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_29_int4_lut_dequant_matmul_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_int4_lut_dequant_matmul_triton,
+        fused_int4_lut_dequant_matmul_pytorch,
+    )
+    B, L, in_d, out_d = 2, 16, 32, 64
+    x = torch.randn(B, L, in_d, device=DEVICE, dtype=torch.float32)
+    qweight = torch.randint(0, 16, (out_d, in_d), device=DEVICE, dtype=torch.long)
+    lut = torch.linspace(-1.0, 1.0, 16, device=DEVICE, dtype=torch.float32)
+    scales = torch.ones(out_d, 1, device=DEVICE, dtype=torch.float32) * 0.5
+    bias = torch.randn(out_d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_int4_lut_dequant_matmul_triton(x, qweight, lut, scales, bias)
+    out_ref = fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_30_roast_hashed_gather_gemm_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_roast_hashed_gather_gemm_triton,
+        fused_roast_hashed_gather_gemm_pytorch,
+    )
+    B, L, in_d, out_d = 2, 16, 32, 64
+    x = torch.randn(B, L, in_d, device=DEVICE, dtype=torch.float32)
+    weight_comp = torch.randn(128, device=DEVICE, dtype=torch.float32)
+    h_idx = torch.randint(0, 128, (out_d, in_d), device=DEVICE, dtype=torch.long)
+    signs = torch.where(torch.randn(out_d, in_d, device=DEVICE) > 0, 1.0, -1.0)
+    bias = torch.randn(out_d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_roast_hashed_gather_gemm_triton(x, weight_comp, h_idx, signs, bias)
+    out_ref = fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_31_kronecker_batched_gemm_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_kronecker_batched_gemm_triton,
+        fused_kronecker_batched_gemm_pytorch,
+    )
+    B, L = 2, 16
+    p, q = 8, 8
+    r, s = 8, 8
+    x = torch.randn(B, L, q * s, device=DEVICE, dtype=torch.float32)
+    A = torch.randn(p, q, device=DEVICE, dtype=torch.float32)
+    B_mat = torch.randn(r, s, device=DEVICE, dtype=torch.float32)
+    bias = torch.randn(p * r, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_kronecker_batched_gemm_triton(x, A, B_mat, bias)
+    out_ref = fused_kronecker_batched_gemm_pytorch(x, A, B_mat, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_32_tt_core_contraction_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_tt_core_contraction_triton,
+        fused_tt_core_contraction_pytorch,
+    )
+    x = torch.randn(4, 32, device=DEVICE, dtype=torch.float32)
+    cores = [
+        torch.randn(32, 16, device=DEVICE, dtype=torch.float32),
+        torch.randn(16, 8, device=DEVICE, dtype=torch.float32),
+    ]
+    bias = torch.randn(8, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_tt_core_contraction_triton(x, cores, bias)
+    out_ref = fused_tt_core_contraction_pytorch(x, cores, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_33_salt_singular_mod_gemm_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_salt_singular_mod_gemm_triton,
+        fused_salt_singular_mod_gemm_pytorch,
+    )
+    B, L, in_d, rank, out_d = 2, 16, 64, 8, 64
+    x = torch.randn(B, L, in_d, device=DEVICE, dtype=torch.float32)
+    U = torch.randn(out_d, rank, device=DEVICE, dtype=torch.float32)
+    S = torch.ones(rank, device=DEVICE, dtype=torch.float32)
+    V = torch.randn(in_d, rank, device=DEVICE, dtype=torch.float32)
+    gamma = torch.randn(rank, device=DEVICE, dtype=torch.float32)
+    beta = torch.randn(rank, device=DEVICE, dtype=torch.float32)
+    bias = torch.randn(out_d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_salt_singular_mod_gemm_triton(x, U, S, V, gamma, beta, bias)
+    out_ref = fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+
 
 
