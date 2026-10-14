@@ -691,4 +691,22 @@ __all__ = [
     "has_triton",
     "validate",
     "get_version",
+    # DX Ergonomics
+    "oneshot",
+    "recommend",
+    "summary",
+    "compare",
+    "patch_transformers",
+    "AutoNeuralOpsModel",
+    "AutoNeuralOpsForCausalLM",
+    "AutoNeuralOpsForSequenceClassification",
 ]
+
+from neuralops.recipes import oneshot, recommend
+from neuralops.analysis.inspector import summary, compare
+from neuralops.transformers import (
+    AutoNeuralOpsModel,
+    AutoNeuralOpsForCausalLM,
+    AutoNeuralOpsForSequenceClassification,
+    patch_transformers,
+)
