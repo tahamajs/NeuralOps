@@ -84,22 +84,35 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 🚀 Installation
 
-### Choose your backend
+### Install from PyPI (v1.3.0)
+
+Install the core package or select your preferred hardware acceleration extras:
 
 ```bash
-pip install neuralops[cuda]     # NVIDIA GPU (CUDA + PyTorch)
-pip install neuralops[triton]   # NVIDIA GPU + Fused Triton Kernels
+# Standard install
+pip install neuralops
+
+# Hardware acceleration extras
+pip install neuralops[cuda]     # NVIDIA GPU (CUDA + PyTorch + Triton)
 pip install neuralops[rocm]     # AMD ROCm GPUs
 pip install neuralops[mps]      # Apple Silicon (macOS Metal Performance Shaders)
 pip install neuralops[cpu]      # CPU-only execution (zero GPU dependencies)
-pip install neuralops[all]      # Complete suite with all optional trainers and tools
+pip install neuralops[export]   # ONNX, ONNXRuntime, and Safetensors serving
+pip install neuralops[all]      # Complete suite with MLOps, export, and all trainers
 ```
 
-### Verify installation
+### Verify Installation & Hardware Environment
+
+Run the built-in diagnostic doctor to verify hardware backends, registries, and disk hygiene:
 
 ```bash
-python -m neuralops.benchmarks verify
+# Via CLI
+neuralops doctor
+
+# Or via Python module
+python -c "import neuralops; print(neuralops.info())"
 ```
+
 
 ---
 
