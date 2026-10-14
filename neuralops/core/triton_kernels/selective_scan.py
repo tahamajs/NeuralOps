@@ -493,7 +493,12 @@ def selective_scan_fn(
     else:
         u_in, delta_in, B_in, C_in = u, delta, B, C
 
+    suitable, _ = False, None
     if torch.cuda.is_available() and u.is_cuda and hasattr(triton, "jit"):
+        from neuralops.core.triton_kernels._types import check_triton_suitability
+        suitable, _ = check_triton_suitability(u_in, "selective_scan", head_dim=None, seq_len=u_in.shape[1], supports_backward=True)
+
+    if suitable:
         out = TritonSelectiveScanFunction.apply(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
     else:
         out = selective_scan_ref(u_in, delta_in, A, B_in, C_in, D, delta_softplus)

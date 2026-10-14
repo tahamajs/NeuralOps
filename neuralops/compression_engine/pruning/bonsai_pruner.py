@@ -141,15 +141,16 @@ class BonsaiPrunedLoRALinear(nn.Module):
 
         # FIXED: Progressive Sparsity Scheduler during training forward passes
         # Gradually ramp sparsity from 0.0 to target_sp via cubic warmup schedule.
+        active_mask = self.mask
         if self.training and self.current_step < self.target_steps:
             with torch.no_grad():
                 t_ratio = float(self.current_step + 1) / float(self.target_steps)
                 current_sp = self.target_sp * (t_ratio ** 3)
 
                 if self.structured_24 and current_sp > 0.05:
-                    _, new_mask = apply_24_structured_mask(self.weight, dim=1)
+                    _, active_mask = apply_24_structured_mask(self.weight, dim=1)
                 elif self.block_size != (1, 1) and current_sp > 0.01:
-                    _, new_mask = apply_block_mask(
+                    _, active_mask = apply_block_mask(
                         self.weight,
                         block_size=self.block_size,
                         sparsity=current_sp,
@@ -158,14 +159,13 @@ class BonsaiPrunedLoRALinear(nn.Module):
                     flat = torch.abs(self.weight).reshape(-1)
                     k = max(1, int(flat.numel() * (1.0 - current_sp)))
                     thr = torch.topk(flat, k, largest=True).values[-1]
-                    new_mask = (torch.abs(self.weight) >= thr).to(self.weight.dtype)
+                    active_mask = (torch.abs(self.weight) >= thr).to(self.weight.dtype)
                 else:
-                    new_mask = torch.ones_like(self.mask)
+                    active_mask = torch.ones_like(self.mask)
 
-                self.mask.copy_(new_mask)
                 self.current_step += 1
 
-        W_sparse = self.weight * self.mask
+        W_sparse = self.weight * active_mask
         out = F.linear(x_flat, W_sparse, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:

@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
+@ATTENTION_REGISTRY.register("routing_attention")
 class RoutingAttention(BaseAttention):
     is_custom_attention: bool = True
 
