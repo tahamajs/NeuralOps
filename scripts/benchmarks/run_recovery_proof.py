@@ -117,14 +117,14 @@ with torch.no_grad():
 
 print(f"Condition 3 (6-Pillar MOHAWK+PiSSA+DKD 50 steps): Cosine Sim={mohawk_cos:.4f}, KL Div={mohawk_kl:.4f}, Time={t_mohawk:.2f}s, VRAM={vram_mohawk:.1f}MB")
 
-report = f\"\"\"# Live GPU Accuracy-Recovery Proof Benchmark (RTX 4070)
+report = f"""# Live GPU Accuracy-Recovery Proof Benchmark (RTX 4070)
 
 | Protocol | Cosine Similarity to Teacher | KL Divergence to Teacher | Peak VRAM (MB) | Execution Time (s) |
 |---|:---:|:---:|:---:|:---:|
 | **Zero-Shot Post-Surgery (Before Recovery)** | {zero_cos:.4f} | {zero_kl:.4f} | - | - |
 | **Naive Cross-Entropy Fine-Tuning (50 steps)** | {naive_cos:.4f} | {naive_kl:.4f} | {vram_naive:.1f} | {t_naive:.2f}s |
 | **6-Pillar MOHAWK + PiSSA + DKD Engine (50 steps)** | **{mohawk_cos:.4f}** | **{mohawk_kl:.4f}** | **{vram_mohawk:.1f}** | **{t_mohawk:.2f}s** |
-\"\"\"
+"""
 from pathlib import Path
 Path("results/recovery_proof_benchmark.md").write_text(report)
 print("\n" + report)
