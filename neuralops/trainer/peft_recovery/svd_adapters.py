@@ -29,11 +29,14 @@ class PiSSALinear(nn.Module):
         base_layer: nn.Linear,
         rank: int = 16,
         scaling: float = 1.0,
+        alpha: Optional[float] = None,
     ) -> None:
         super().__init__()
         self.in_features = base_layer.in_features
         self.out_features = base_layer.out_features
         self.rank = rank
+        if alpha is not None:
+            scaling = float(alpha) / float(rank) if rank > 0 else 1.0
         self.scaling = scaling
 
         # Decompose base weight in FP32
