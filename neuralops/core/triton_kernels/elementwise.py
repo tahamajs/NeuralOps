@@ -607,16 +607,29 @@ class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
         grid = (N, B * H)
 
         dout_c = dout.contiguous()
-        _fused_dynconv1d_bwd_kernel[grid](
-            v_full, dyn_w, dout_c, dv, dw,
-            B, H, N, d, K,
-            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
-            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
-            dout_c.stride(0), dout_c.stride(1), dout_c.stride(2), dout_c.stride(3),
-            dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
-            dw.stride(0), dw.stride(1), dw.stride(2), dw.stride(3),
-            BLOCK_D=BLOCK_D,
-        )
+        is_modern_gpu = torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 7
+        if is_modern_gpu:
+            try:
+                _fused_dynconv1d_bwd_kernel[grid](
+                    v_full, dyn_w, dout_c, dv, dw,
+                    B, H, N, d, K,
+                    v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
+                    dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
+                    dout_c.stride(0), dout_c.stride(1), dout_c.stride(2), dout_c.stride(3),
+                    dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
+                    dw.stride(0), dw.stride(1), dw.stride(2), dw.stride(3),
+                    BLOCK_D=BLOCK_D,
+                )
+                return dv, dw
+            except Exception:
+                pass
+
+        # Exact PyTorch fallback backward for SM < 70 (e.g. Pascal SM 6.1)
+        v_win = v_full.unfold(dimension=2, size=K, step=1)  # (B, H, N, d, K)
+        dw = torch.einsum("bhnd,bhndk->bhnk", dout_c, v_win)
+        dv = torch.zeros_like(v_full)
+        for k in range(K):
+            dv[:, :, k : k + N, :] += dout_c * dyn_w[:, :, :, k].unsqueeze(-1)
         return dv, dw
 
 
