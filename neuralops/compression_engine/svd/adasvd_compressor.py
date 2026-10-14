@@ -943,7 +943,8 @@ class AdaSVDCompressor(BaseCompressor):
                 rel_err,
                 threshold,
             )
-            return None, rel_err, 0
+            if self.fallback_to_original:
+                return None, rel_err, 0
 
         logger.info(
             "AdaSVD fused-QKV: %s in=%d out=%d split=%d rank=%d err=%.4f",
@@ -1227,6 +1228,8 @@ class AdaSVDCompressor(BaseCompressor):
                             self._comp_storage_bytes += p.numel() * p.element_size()
                     except Exception:
                         pass
+                    continue
+                elif svd_layer is None:
                     continue
 
             # ---- Splice ----

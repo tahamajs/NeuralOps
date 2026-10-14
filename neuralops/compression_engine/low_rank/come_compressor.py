@@ -887,13 +887,14 @@ class CoMeCompressor(BaseCompressor):
             self.model.eval()
             with torch.no_grad():
                 d = next(self.model.parameters()).device
-                p0 = next(self.model.parameters())
-                if p0.dim() >= 2 and p0.shape[1] > 0:
-                    in_dim = p0.shape[1]
-                    dummy = torch.randn(1, in_dim, device=d)
-                else:
+                try:
                     dummy = torch.randint(0, 100, (1, 16), device=d)
-                self.model(dummy)
+                    self.model(dummy)
+                except Exception:
+                    p0 = next(self.model.parameters())
+                    in_dim = p0.shape[1] if p0.dim() >= 2 and p0.shape[1] > 0 else 64
+                    dummy = torch.randn(1, 16, in_dim, device=d)
+                    self.model(dummy)
             forward_check_success = True
         except Exception as e:
             logger.warning("CoMe post-compression forward sanity check failed: %s", e)
