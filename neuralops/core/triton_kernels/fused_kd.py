@@ -354,8 +354,213 @@ def fused_kd_loss(
     return fn(student_logits, teacher_logits)
 
 
+class FusedLinearKLDivergenceFunction(torch.autograd.Function):
+    """
+    Fused Linear Projection + Knowledge Distillation (KL Divergence) Loss.
+    Projects student and teacher hidden states chunk-by-chunk to vocabulary without
+    ever materializing full [B, T, V] logits in GPU HBM.
+    """
+
+    @staticmethod
+    def forward(
+        ctx,
+        student_hidden: torch.Tensor,
+        student_weight: torch.Tensor,
+        student_bias: torch.Tensor | None,
+        teacher_hidden: torch.Tensor,
+        teacher_weight: torch.Tensor,
+        teacher_bias: torch.Tensor | None,
+        temperature: float = 2.0,
+        reduction: str = "batchmean",
+        chunk_size: int = 512,
+    ):
+        ctx.temperature = float(temperature)
+        ctx.reduction = reduction
+        ctx.chunk_size = chunk_size
+        ctx.has_s_bias = student_bias is not None
+
+        orig_shape = student_hidden.shape
+        D_s = student_weight.shape[1]
+        D_t = teacher_weight.shape[1]
+        V = student_weight.shape[0]
+
+        s_h_flat = student_hidden.reshape(-1, D_s).contiguous()
+        t_h_flat = teacher_hidden.reshape(-1, D_t).contiguous()
+        N_tokens = s_h_flat.shape[0]
+
+        total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
+        T = float(temperature)
+        T2 = T * T
+
+        for c_start in range(0, N_tokens, chunk_size):
+            c_end = min(c_start + chunk_size, N_tokens)
+            s_hc = s_h_flat[c_start:c_end]
+            t_hc = t_h_flat[c_start:c_end]
+
+            s_logits_c = F.linear(s_hc, student_weight, student_bias)
+            with torch.no_grad():
+                t_logits_c = F.linear(t_hc, teacher_weight, teacher_bias)
+
+            p_s = F.log_softmax(s_logits_c / T, dim=-1)
+            p_t = F.softmax(t_logits_c / T, dim=-1)
+            loss_c = F.kl_div(p_s, p_t, reduction="sum") * T2
+            total_loss += loss_c
+
+        ctx.save_for_backward(s_h_flat, student_weight, student_bias, t_h_flat, teacher_weight, teacher_bias)
+        ctx.orig_shape = orig_shape
+        ctx.N_tokens = N_tokens
+        ctx.V = V
+
+        if reduction == "batchmean":
+            batch_size = orig_shape[0] if orig_shape[0] > 0 else 1
+            return total_loss / batch_size
+        elif reduction == "mean":
+            return total_loss / (N_tokens * V)
+        elif reduction == "sum":
+            return total_loss
+        else:
+            return total_loss / (orig_shape[0] if orig_shape[0] > 0 else 1)
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        (
+            s_h_flat,
+            student_weight,
+            student_bias,
+            t_h_flat,
+            teacher_weight,
+            teacher_bias,
+        ) = ctx.saved_tensors
+        temperature = ctx.temperature
+        reduction = ctx.reduction
+        chunk_size = ctx.chunk_size
+        N_tokens = ctx.N_tokens
+        V = ctx.V
+
+        if reduction == "batchmean":
+            batch_size = ctx.orig_shape[0] if ctx.orig_shape[0] > 0 else 1
+            scale = grad_output / batch_size
+        elif reduction == "mean":
+            scale = grad_output / (N_tokens * V)
+        elif reduction == "sum":
+            scale = grad_output
+        else:
+            scale = grad_output / (ctx.orig_shape[0] if ctx.orig_shape[0] > 0 else 1)
+
+        grad_s_hidden = torch.empty_like(s_h_flat)
+        grad_s_weight = torch.zeros_like(student_weight, dtype=torch.float32)
+        grad_s_bias = torch.zeros_like(student_bias, dtype=torch.float32) if ctx.has_s_bias else None
+
+        T = float(temperature)
+
+        for c_start in range(0, N_tokens, chunk_size):
+            c_end = min(c_start + chunk_size, N_tokens)
+            s_hc = s_h_flat[c_start:c_end]
+            t_hc = t_h_flat[c_start:c_end]
+
+            s_logits_c = F.linear(s_hc, student_weight, student_bias)
+            with torch.no_grad():
+                t_logits_c = F.linear(t_hc, teacher_weight, teacher_bias)
+
+            p_s = F.softmax(s_logits_c.float() / T, dim=-1)
+            p_t = F.softmax(t_logits_c.float() / T, dim=-1)
+
+            # d(Loss)/d(s_logits) = T * (p_s - p_t) * scale
+            d_s_logits = ((p_s - p_t) * (scale * T)).to(s_h_flat.dtype)
+
+            # Backprop into student hidden and student weight
+            grad_s_hidden[c_start:c_end] = torch.matmul(d_s_logits, student_weight)
+            grad_s_weight += torch.matmul(d_s_logits.t(), s_hc).float()
+            if grad_s_bias is not None:
+                grad_s_bias += d_s_logits.sum(dim=0).float()
+
+        grad_s_weight = grad_s_weight.to(student_weight.dtype)
+        if grad_s_bias is not None:
+            grad_s_bias = grad_s_bias.to(student_bias.dtype)
+
+        return (
+            grad_s_hidden.view(ctx.orig_shape),
+            grad_s_weight,
+            grad_s_bias,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
+
+class FusedLinearKLDivergence(nn.Module):
+    """
+    Fused Linear Projection + Knowledge Distillation (KL Divergence) Loss module.
+    Fuses student and teacher LM head projections into chunked online KL evaluation,
+    preventing multi-gigabyte logits materialization during Knowledge Distillation.
+    """
+
+    def __init__(
+        self,
+        temperature: float = 2.0,
+        reduction: str = "batchmean",
+        chunk_size: int = 512,
+    ):
+        super().__init__()
+        self.temperature = float(temperature)
+        self.reduction = reduction
+        self.chunk_size = chunk_size
+
+    def forward(
+        self,
+        student_hidden: torch.Tensor,
+        student_weight: torch.Tensor,
+        teacher_hidden: torch.Tensor,
+        teacher_weight: torch.Tensor,
+        student_bias: torch.Tensor | None = None,
+        teacher_bias: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        return FusedLinearKLDivergenceFunction.apply(
+            student_hidden,
+            student_weight,
+            student_bias,
+            teacher_hidden,
+            teacher_weight,
+            teacher_bias,
+            self.temperature,
+            self.reduction,
+            self.chunk_size,
+        )
+
+
+def fused_linear_kl_divergence(
+    student_hidden: torch.Tensor,
+    student_weight: torch.Tensor,
+    teacher_hidden: torch.Tensor,
+    teacher_weight: torch.Tensor,
+    student_bias: torch.Tensor | None = None,
+    teacher_bias: torch.Tensor | None = None,
+    temperature: float = 2.0,
+    reduction: str = "batchmean",
+    chunk_size: int = 512,
+) -> torch.Tensor:
+    """Functional entrypoint for FusedLinearKLDivergence."""
+    return FusedLinearKLDivergenceFunction.apply(
+        student_hidden,
+        student_weight,
+        student_bias,
+        teacher_hidden,
+        teacher_weight,
+        teacher_bias,
+        temperature,
+        reduction,
+        chunk_size,
+    )
+
+
 __all__ = [
     "FusedKDLoss",
     "fused_kd_loss",
     "fused_kd_loss_pytorch",
+    "FusedLinearKLDivergence",
+    "FusedLinearKLDivergenceFunction",
+    "fused_linear_kl_divergence",
 ]

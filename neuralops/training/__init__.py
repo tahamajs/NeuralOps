@@ -36,6 +36,15 @@ try:
 except ImportError:
     _has_distill = False
 
+from neuralops.core.triton_kernels.fused_ce import (
+    FusedLinearCrossEntropy,
+    fused_linear_cross_entropy,
+)
+from neuralops.core.triton_kernels.fused_kd import (
+    FusedLinearKLDivergence,
+    fused_linear_kl_divergence,
+)
+
 __all__ = [
     "checkpoint_selective",
     "SelectiveCheckpointModule",
@@ -57,6 +66,10 @@ __all__ = [
     "create_riemannian_stiefel",
     "create_adamw",
     "create_sgd",
+    "FusedLinearCrossEntropy",
+    "fused_linear_cross_entropy",
+    "FusedLinearKLDivergence",
+    "fused_linear_kl_divergence",
 ]
 
 if _has_distill:

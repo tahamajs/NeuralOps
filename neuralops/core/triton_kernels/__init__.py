@@ -84,6 +84,30 @@ except Exception:
     hgrn2_scan = None
     hgrn2_scan_triton = None
 
+from neuralops.core.triton_kernels.fused_ce import (
+    FusedCrossEntropyLoss,
+    fused_cross_entropy,
+    fused_cross_entropy_pytorch,
+    FusedLinearCrossEntropy,
+    FusedLinearCrossEntropyFunction,
+    fused_linear_cross_entropy,
+)
+from neuralops.core.triton_kernels.fused_kd import (
+    FusedKDLoss,
+    fused_kd_loss,
+    fused_kd_loss_pytorch,
+    FusedLinearKLDivergence,
+    FusedLinearKLDivergenceFunction,
+    fused_linear_kl_divergence,
+)
+from neuralops.core.triton_kernels.fused_norm_linear import (
+    FusedRMSNormLinear,
+    fused_norm_linear,
+    fused_norm_linear_pytorch,
+    fused_rmsnorm_linear,
+    fused_rmsnorm_gate,
+)
+
 __all__ = [
     "HAS_TRITON",
     "triton_dispatch",
@@ -111,6 +135,23 @@ __all__ = [
     "autotune_kernel",
     "check_triton_suitability",
     "log_fallback_reason",
+    "FusedCrossEntropyLoss",
+    "fused_cross_entropy",
+    "fused_cross_entropy_pytorch",
+    "FusedLinearCrossEntropy",
+    "FusedLinearCrossEntropyFunction",
+    "fused_linear_cross_entropy",
+    "FusedKDLoss",
+    "fused_kd_loss",
+    "fused_kd_loss_pytorch",
+    "FusedLinearKLDivergence",
+    "FusedLinearKLDivergenceFunction",
+    "fused_linear_kl_divergence",
+    "FusedRMSNormLinear",
+    "fused_norm_linear",
+    "fused_norm_linear_pytorch",
+    "fused_rmsnorm_linear",
+    "fused_rmsnorm_gate",
 ]
 
 # Auto-wired package members
