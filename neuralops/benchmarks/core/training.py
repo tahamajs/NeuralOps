@@ -194,11 +194,11 @@ def train_kd(
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
 
     # Differential learning rates:
-    # Injected attention modules, adapters, and classification heads require higher learning rates
-    # (e.g. 10x or min 3e-4) to calibrate and align with teacher distributions, while the pretrained backbone updates conservatively (lr).
+    # Injected attention modules, adapters, and classification heads require calibrated learning rates
+    # (e.g. 2x backbone or 1e-4) to align with teacher distributions without destabilizing recurrent states.
     classifier_and_adapter_params = []
     backbone_params = []
-    lr_adapter = max(lr * 10.0, 3e-4)
+    lr_adapter = max(lr * 2.0, 1e-4)
 
     for name, p in student.named_parameters():
         if not p.requires_grad:

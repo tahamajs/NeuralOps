@@ -86,17 +86,22 @@ class KDLoss(nn.Module):
                 "Either (student_logits, teacher_logits) or (student_hidden, student_weight, teacher_hidden, teacher_weight) must be provided."
             )
 
-        p_student = F.log_softmax(student_logits / self.temperature, dim=-1)
-        p_teacher = F.softmax(teacher_logits / self.temperature, dim=-1)
+        # Numerical stabilization for SSM/Recurrent activations in FP16/AMP
+        student_logits_stable = torch.nan_to_num(student_logits.float(), nan=0.0, posinf=50.0, neginf=-50.0)
+        teacher_logits_stable = torch.nan_to_num(teacher_logits.float(), nan=0.0, posinf=50.0, neginf=-50.0)
+
+        p_student = F.log_softmax(student_logits_stable / self.temperature, dim=-1)
+        p_teacher = F.softmax(teacher_logits_stable / self.temperature, dim=-1)
 
         distill_loss = self.kl_div(p_student, p_teacher) * (self.temperature**2)
 
         if labels is not None:
             if labels.dtype in (torch.long, torch.int64):
-                task_loss = F.cross_entropy(student_logits, labels)
+                task_loss = F.cross_entropy(student_logits_stable, labels)
             else:
-                task_loss = F.mse_loss(student_logits.squeeze(-1), labels)
-            return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
+                task_loss = F.mse_loss(student_logits_stable.squeeze(-1), labels.float())
+            total_loss = self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
+            return total_loss
 
         return distill_loss
 
