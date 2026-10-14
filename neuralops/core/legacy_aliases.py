@@ -1,52 +1,105 @@
 """
-neuralops/core/legacy_aliases.py
-
-Deprecated attention mechanism and compressor aliases for backward compatibility.
-All canonical attention/compressor keys are in registry.py.
-
-DO NOT add new aliases here. This module will be removed in v2.0.
+Legacy and deprecated alias mappings for NeuralOps.
+Isolated from neuralops.core.registry to maintain clean core architecture.
 """
+from __future__ import annotations
+
+import json
+import os
 import warnings
 
-# Legacy attention key aliases (deprecated string -> canonical string)
-LEGACY_ATTENTION_ALIASES: dict[str, str] = {
-    # spectron variants
-    "aegis_spectron_fp8": "spectron_fp8",
-    "aegis_spectron": "spectron",
-    # svd variants
-    "svd_linear_attn": "svd_linear_attention",
-    "triton_svd": "triton_svd_linear_attention",
-    # gated variants
-    "decay_la": "decay_linear_attention",
-    "gated_la": "gated_linear_attention",
-    # ssm variants
-    "ssm_mamba": "mamba_block",
-    "selective_state": "selective_ssm",
+_DEPRECATED_ALIASES_PATH = os.path.join(os.path.dirname(__file__), "deprecated_aliases.json")
+if os.path.exists(_DEPRECATED_ALIASES_PATH):
+    with open(_DEPRECATED_ALIASES_PATH) as _fp:
+        DEPRECATED_ALIASES: dict[str, str] = json.load(_fp)
+else:
+    DEPRECATED_ALIASES = {}
+
+ATTENTION_FILE_MAP: dict[str, str] = {
+    "gqa": "gqa_attention",
+    "galerkin": "galerkin_attention",
+    "galerkin_inject": "galerkin_attention",
+    "adaptive_span_inject": "adaptive_span_attention",
+    "adaptive_sparse_inject": "adaptive_sparse_attention",
+    "adasplash_inject": "adasplash_attention",
+    "aegis_hybrid_attention": "aegis_hybrid",
+    "cluster_inject": "cluster_attention",
+    "compressed_mha": "compressed_mha_attention",
+    "cosformer_inject": "cosformer",
+    "hla_inject": "hla_attention",
+    "kda_inject": "kda_attention",
+    "hybrid_local_kernel": "hybrid_local_kernel_attention",
+    "split_head_hybrid": "split_head_hybrid_attention",
+    "gated_hybrid_kernel": "gated_hybrid_kernel_attention",
+    "positive_kernel_linear": "positive_kernel_linear_attention",
+    "landmark_local": "landmark_local_attention",
+    "refined_landmark": "refined_landmark_attention",
+    "mamba_attention": "mamba_block",
+    "moba": "moba_attention",
+    "nha_compressor": "nha_attention",
+    "rpc": "rpc_attention",
+    "salt": "salt_attention",
+    "soa_fused_module": "SOAFusedAttention",
+    "soa_module": "soa_attn",
+    "spectra_v2_attention": "spectra_v2",
+    "svd_compressed_attention": "svd_compressed",
+    "svd_llm_v2": "svd_llm_v2_attention",
+    "svd_proj_attn": "svd_projection_attention",
+    "token_compressed": "token_compressed_attention",
+    "tt": "token_compressed_attention",
+    "upi_mamba": "upi_stuffed_mamba",
+    "gdn2": "gated.flagship_fla",
+    "gdn2_attention": "gated.flagship_fla",
+    "pgdn": "gated.flagship_fla",
+    "pgdn_attention": "gated.flagship_fla",
+    "preconditioned_gdn": "gated.flagship_fla",
+    "preconditioned_gdn_attention": "gated.flagship_fla",
+    "delta_product": "gated.flagship_fla",
+    "delta_product_attention": "gated.flagship_fla",
+    "deltaproduct": "gated.flagship_fla",
+    "path_attention": "gated.flagship_fla",
 }
 
-# Legacy compressor key aliases
-LEGACY_COMPRESSOR_ALIASES: dict[str, str] = {}
+COMPRESSOR_FILE_MAP: dict[str, str] = {
+    "aasvd": "aa_svd_compressor",
+    "adasvd": "adasvd_compressor",
+    "cur_moe": "cur_moe_compressor",
+    "frandi": "frandi_compressor",
+    "grecodec": "grecodec_compressor",
+    "hybridkv": "hybridkv_compressor",
+    "kvtc": "kvtc_compressor",
+    "modegpt": "modegpt_compressor",
+    "oats": "oats_compressor",
+    "proxsparse_pruner": "proxsparse",
+    "rpca": "rpca_compressor",
+    "saes_svd": "saes_svd_v2",
+    "saes_svd_compressor": "saes_svd_v2",
+    "sdrm": "sdrm_compressor",
+    "slicegpt_compressor": "slicegpt",
+    "soka": "soka_compressor",
+    "swift_svd_compressor": "swift_svd_act",
+    "zerokv_neo": "zerokv_neo_compressor",
+    "dynamic_entropy_svd": "dynamic_rank",
+    "entropy_rank_allocator": "dynamic_rank",
+    "res_svd": "res_svd",
+    "spectral_residual_lora": "res_svd",
+}
 
 
-def get_canonical_attention_key(key: str) -> str | None:
-    """Returns canonical key if the given key is a deprecated alias, else None."""
-    canonical = LEGACY_ATTENTION_ALIASES.get(key)
-    if canonical is not None:
+def handle_deprecated_alias(name: str) -> str:
+    """Resolve deprecated alias recursively with standard deprecation warning."""
+    k = name.lower()
+    visited = set()
+    while k in DEPRECATED_ALIASES and k not in visited:
+        visited.add(k)
+        new_name = DEPRECATED_ALIASES[k]
+        if new_name is None:
+            raise ValueError(f"Module '{name}' has been deprecated and disabled.")
         warnings.warn(
-            f"'{key}' is deprecated. Use '{canonical}' instead.",
+            f"'{name}' is deprecated. Use '{new_name}' instead.",
             DeprecationWarning,
             stacklevel=3,
         )
-    return canonical
-
-
-def get_canonical_compressor_key(key: str) -> str | None:
-    """Returns canonical key if the given key is a deprecated alias, else None."""
-    canonical = LEGACY_COMPRESSOR_ALIASES.get(key)
-    if canonical is not None:
-        warnings.warn(
-            f"'{key}' is deprecated. Use '{canonical}' instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-    return canonical
+        name = new_name
+        k = name.lower()
+    return name
