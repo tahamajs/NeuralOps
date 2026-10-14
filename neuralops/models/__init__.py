@@ -31,13 +31,17 @@ from neuralops.models.hub import (
 from neuralops.models.cache import UnifiedHybridCache
 from neuralops.models.cuda_graph import CUDAGraphDecodeRunner
 from neuralops.compression_engine.svd.direct_svd import merge_for_inference
+from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "PagedStateTable",
+    "RadixPrefixStateCache",
     "UnifiedHybridCache",
     "CUDAGraphDecodeRunner",
     "merge_for_inference",
+
     "NeuralOpsConfig",
     "NeuralOpsPreTrainedModel",
     "NeuralOpsModel",
