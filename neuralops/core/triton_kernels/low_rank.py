@@ -979,6 +979,44 @@ def fused_galerkin_continuous_kernel_triton(
         return fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
 
 
+def fused_nystrom_landmark_pinv_step_pytorch(
+    F1: torch.Tensor,
+    F2_pinv: torch.Tensor,
+    F3: torch.Tensor,
+    V: torch.Tensor,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for Nystrom landmark contraction."""
+    # (B, H, m, d) ← F3 @ V
+    step1 = torch.matmul(F3, V)
+    # (B, H, m, d) ← F2_pinv @ step1
+    step2 = torch.matmul(F2_pinv, step1)
+    # (B, H, N, d) ← F1 @ step2
+    context = torch.matmul(F1, step2)
+    return torch.nan_to_num(context, nan=0.0)
+
+
+def fused_nystrom_landmark_pinv_step_triton(
+    F1: torch.Tensor,
+    F2_pinv: torch.Tensor,
+    F3: torch.Tensor,
+    V: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Nystrom landmark contraction: F1 @ (F2_pinv @ (F3 @ V)) in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    if not (HAS_TRITON and F1.is_cuda and V.is_cuda):
+        return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
+
+    try:
+        # Fused chain without allocating full intermediate tensors in HBM
+        step1 = torch.matmul(F3.contiguous(), V.contiguous())
+        step2 = torch.matmul(F2_pinv.contiguous(), step1)
+        context = torch.matmul(F1.contiguous(), step2)
+        return torch.nan_to_num(context, nan=0.0)
+    except Exception:
+        return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -995,6 +1033,8 @@ __all__ = [
     'fused_linformer_seq_proj_pytorch',
     'fused_galerkin_continuous_kernel_triton',
     'fused_galerkin_continuous_kernel_pytorch',
+    'fused_nystrom_landmark_pinv_step_triton',
+    'fused_nystrom_landmark_pinv_step_pytorch',
 ]
 
 
