@@ -4,919 +4,919 @@
   "results": [
     {
       "module": "adaptive_span_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 10005.97,
-      "duration_s": 4.14,
+      "accuracy_pct": 95.0,
+      "perplexity": 9473.46,
+      "duration_s": 4.56,
       "error": ""
     },
     {
       "module": "adaptive_sparse_attention",
-      "accuracy_pct": 94.0,
+      "accuracy_pct": 95.0,
       "perplexity": 27.51,
-      "duration_s": 3.07,
+      "duration_s": 4.14,
       "error": ""
     },
     {
       "module": "adaptive_svd_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1327.97,
-      "duration_s": 24.92,
+      "perplexity": 1338.38,
+      "duration_s": 23.12,
       "error": ""
     },
     {
       "module": "adasplash_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 70.93,
-      "duration_s": 2.8,
+      "accuracy_pct": 95.0,
+      "perplexity": 69.29,
+      "duration_s": 3.12,
       "error": ""
     },
     {
       "module": "aegis_hybrid",
       "accuracy_pct": 52.0,
-      "perplexity": null,
-      "duration_s": 23.12,
-      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+      "perplexity": 1522.52,
+      "duration_s": 23.24,
+      "error": ""
     },
     {
       "module": "aegis_spectron_fp8",
       "accuracy_pct": 52.0,
-      "perplexity": 2461.67,
-      "duration_s": 36.04,
+      "perplexity": 2303.51,
+      "duration_s": 35.51,
       "error": ""
     },
     {
       "module": "aegis_v1",
       "accuracy_pct": 52.0,
-      "perplexity": 1970.29,
-      "duration_s": 24.24,
+      "perplexity": 2009.15,
+      "duration_s": 23.11,
       "error": ""
     },
     {
       "module": "aegis_v2",
       "accuracy_pct": 52.0,
-      "perplexity": 1752.41,
-      "duration_s": 23.92,
+      "perplexity": 1850.92,
+      "duration_s": 23.53,
       "error": ""
     },
     {
       "module": "aegis_v3",
       "accuracy_pct": 52.0,
-      "perplexity": 2064.85,
-      "duration_s": 25.29,
+      "perplexity": 1939.75,
+      "duration_s": 23.54,
       "error": ""
     },
     {
       "module": "aegis_v4",
       "accuracy_pct": 52.0,
-      "perplexity": 2017.02,
-      "duration_s": 27.39,
+      "perplexity": 1954.96,
+      "duration_s": 23.81,
       "error": ""
     },
     {
       "module": "aegis_v5",
       "accuracy_pct": 52.0,
       "perplexity": null,
-      "duration_s": 23.44,
+      "duration_s": 23.75,
       "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
     },
     {
       "module": "aegis_v6",
       "accuracy_pct": 52.0,
-      "perplexity": 1678.71,
-      "duration_s": 23.65,
+      "perplexity": 1698.5,
+      "duration_s": 23.28,
       "error": ""
     },
     {
       "module": "alibi",
-      "accuracy_pct": 90.0,
-      "perplexity": 30820.57,
-      "duration_s": 3.76,
+      "accuracy_pct": 94.0,
+      "perplexity": 42126.72,
+      "duration_s": 2.74,
       "error": ""
     },
     {
       "module": "asvd_attention",
-      "accuracy_pct": 77.0,
-      "perplexity": 145.54,
-      "duration_s": 25.15,
+      "accuracy_pct": 79.0,
+      "perplexity": 139.42,
+      "duration_s": 23.9,
       "error": ""
     },
     {
       "module": "bam_umoe",
       "accuracy_pct": 52.0,
-      "perplexity": 756.65,
-      "duration_s": 13.98,
+      "perplexity": 744.92,
+      "duration_s": 12.44,
       "error": ""
     },
     {
       "module": "block_transformer_hiba",
-      "accuracy_pct": 93.0,
-      "perplexity": 109.43,
-      "duration_s": 3.21,
+      "accuracy_pct": 94.0,
+      "perplexity": 104.42,
+      "duration_s": 3.02,
       "error": ""
     },
     {
       "module": "chela_slay",
       "accuracy_pct": 92.0,
-      "perplexity": 43.7,
-      "duration_s": 3.7,
+      "perplexity": 45.09,
+      "duration_s": 3.56,
       "error": ""
     },
     {
       "module": "chela_slay_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 43.96,
-      "duration_s": 3.45,
+      "accuracy_pct": 92.0,
+      "perplexity": 44.47,
+      "duration_s": 3.29,
       "error": ""
     },
     {
       "module": "cluster_attention",
       "accuracy_pct": 94.0,
-      "perplexity": 30.33,
-      "duration_s": 2.97,
+      "perplexity": 30.87,
+      "duration_s": 2.78,
       "error": ""
     },
     {
       "module": "compressed_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1375.49,
-      "duration_s": 11.98,
+      "perplexity": 1370.12,
+      "duration_s": 11.38,
       "error": ""
     },
     {
       "module": "compressed_mha_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1386.27,
-      "duration_s": 12.25,
+      "perplexity": 1370.12,
+      "duration_s": 11.07,
       "error": ""
     },
     {
       "module": "cosformer",
       "accuracy_pct": 95.0,
-      "perplexity": 436.21,
-      "duration_s": 3.04,
+      "perplexity": 603.26,
+      "duration_s": 2.95,
       "error": ""
     },
     {
       "module": "cosformer_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 708.04,
-      "duration_s": 3.29,
+      "accuracy_pct": 95.0,
+      "perplexity": 475.36,
+      "duration_s": 3.16,
       "error": ""
     },
     {
       "module": "cross_attention",
       "accuracy_pct": 95.0,
       "perplexity": 27.56,
-      "duration_s": 3.52,
+      "duration_s": 2.69,
       "error": ""
     },
     {
       "module": "decay_linear_attention",
       "accuracy_pct": 66.0,
       "perplexity": 18118.48,
-      "duration_s": 3.84,
+      "duration_s": 3.19,
       "error": ""
     },
     {
       "module": "decay_linear_attn",
       "accuracy_pct": 66.0,
       "perplexity": 18118.48,
-      "duration_s": 4.38,
+      "duration_s": 3.23,
       "error": ""
     },
     {
       "module": "dynamic_conv_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 3168440.28,
-      "duration_s": 3.02,
+      "perplexity": 2626729.25,
+      "duration_s": 2.75,
       "error": ""
     },
     {
       "module": "eat",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.05,
-      "duration_s": 2.74,
+      "accuracy_pct": 95.0,
+      "perplexity": 34.17,
+      "duration_s": 3.4,
       "error": ""
     },
     {
       "module": "eat_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.29,
-      "duration_s": 3.09,
+      "accuracy_pct": 95.0,
+      "perplexity": 29.22,
+      "duration_s": 3.29,
       "error": ""
     },
     {
       "module": "expert_choice_moe",
       "accuracy_pct": 90.0,
-      "perplexity": 30.45,
-      "duration_s": 4.17,
+      "perplexity": 32.35,
+      "duration_s": 3.18,
       "error": ""
     },
     {
       "module": "factorised_matrix_state",
       "accuracy_pct": 70.0,
       "perplexity": 25751.55,
-      "duration_s": 3.16,
+      "duration_s": 3.09,
       "error": ""
     },
     {
       "module": "flash_attention3",
       "accuracy_pct": 95.0,
-      "perplexity": 30.93,
-      "duration_s": 3.07,
+      "perplexity": 33.12,
+      "duration_s": 2.98,
       "error": ""
     },
     {
       "module": "flash_attention3_fp8",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.23,
-      "duration_s": 3.14,
+      "accuracy_pct": 95.0,
+      "perplexity": 32.73,
+      "duration_s": 2.98,
       "error": ""
     },
     {
       "module": "full",
       "accuracy_pct": 95.0,
       "perplexity": 27.56,
-      "duration_s": 2.14,
+      "duration_s": 2.49,
       "error": ""
     },
     {
       "module": "full_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.29,
-      "duration_s": 3.36,
+      "accuracy_pct": 95.0,
+      "perplexity": 30.51,
+      "duration_s": 2.66,
       "error": ""
     },
     {
       "module": "fused_svd_kernel",
       "accuracy_pct": 52.0,
-      "perplexity": 1262.22,
-      "duration_s": 23.29,
+      "perplexity": 1277.1,
+      "duration_s": 23.07,
       "error": ""
     },
     {
       "module": "fusion_attn",
-      "accuracy_pct": 94.0,
-      "perplexity": 95.08,
-      "duration_s": 3.43,
+      "accuracy_pct": 95.0,
+      "perplexity": 120.19,
+      "duration_s": 3.29,
       "error": ""
     },
     {
       "module": "galerkin_attention",
       "accuracy_pct": 54.0,
-      "perplexity": 32.1,
-      "duration_s": 3.57,
+      "perplexity": 30.63,
+      "duration_s": 2.74,
       "error": ""
     },
     {
       "module": "gated_delta_net",
       "accuracy_pct": 52.0,
       "perplexity": 1435.88,
-      "duration_s": 6.31,
+      "duration_s": 6.25,
       "error": ""
     },
     {
       "module": "gated_deltanet_block",
       "accuracy_pct": 52.0,
       "perplexity": 1430.28,
-      "duration_s": 5.57,
+      "duration_s": 6.04,
       "error": ""
     },
     {
       "module": "gated_linear_attention",
       "accuracy_pct": 66.0,
       "perplexity": 18118.48,
-      "duration_s": 3.64,
+      "duration_s": 2.84,
       "error": ""
     },
     {
       "module": "gated_linear_attn",
       "accuracy_pct": 66.0,
       "perplexity": 18118.48,
-      "duration_s": 3.28,
+      "duration_s": 2.87,
       "error": ""
     },
     {
       "module": "gla_attention",
-      "accuracy_pct": 56.0,
-      "perplexity": 10989.41,
-      "duration_s": 3.03,
+      "accuracy_pct": 55.0,
+      "perplexity": 10819.04,
+      "duration_s": 2.64,
       "error": ""
     },
     {
       "module": "goldfinch_ahn",
       "accuracy_pct": 94.0,
-      "perplexity": 7263.56,
-      "duration_s": 3.6,
+      "perplexity": 9039.64,
+      "duration_s": 3.35,
       "error": ""
     },
     {
       "module": "gqa_attention",
-      "accuracy_pct": 93.0,
-      "perplexity": 33.51,
-      "duration_s": 2.8,
+      "accuracy_pct": 95.0,
+      "perplexity": 29.86,
+      "duration_s": 2.99,
       "error": ""
     },
     {
       "module": "granite_hybrid",
-      "accuracy_pct": null,
-      "perplexity": 4171.11,
-      "duration_s": 5.46,
-      "error": "RoBERTa error: CUDA out of memory. Tried to allocate 516.00 MiB. GPU 0 has a total capacity of 5.92 GiB of which 273.62 MiB is free. Including non-PyTorch memory, this process has 5.65 GiB memory in use. Of the allocated memory 5.30 GiB is allocated by PyTorch, and 240.43 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables); "
+      "accuracy_pct": 52.0,
+      "perplexity": 4726.49,
+      "duration_s": 7.29,
+      "error": ""
     },
     {
       "module": "griffin_ssd",
       "accuracy_pct": 92.0,
       "perplexity": 127.44,
-      "duration_s": 3.87,
+      "duration_s": 2.64,
       "error": ""
     },
     {
       "module": "halo_regla",
       "accuracy_pct": 93.0,
       "perplexity": 4138.65,
-      "duration_s": 3.24,
+      "duration_s": 3.08,
       "error": ""
     },
     {
       "module": "hamming_attention",
-      "accuracy_pct": 73.0,
-      "perplexity": 3457.97,
-      "duration_s": 2.67,
+      "accuracy_pct": 74.0,
+      "perplexity": 4303.52,
+      "duration_s": 2.68,
       "error": ""
     },
     {
       "module": "hgrn2_gated_deltanet",
       "accuracy_pct": 92.0,
       "perplexity": 4581.07,
-      "duration_s": 8.08,
+      "duration_s": 7.46,
       "error": ""
     },
     {
       "module": "hgrn2_gated_layer",
       "accuracy_pct": 92.0,
       "perplexity": 4581.07,
-      "duration_s": 3.98,
+      "duration_s": 4.91,
       "error": ""
     },
     {
       "module": "hgrn2_gated_outer",
       "accuracy_pct": 52.0,
       "perplexity": 4510.05,
-      "duration_s": 5.2,
+      "duration_s": 5.08,
       "error": ""
     },
     {
       "module": "hgrn2_outer",
       "accuracy_pct": 52.0,
-      "perplexity": 4270.03,
-      "duration_s": 4.87,
+      "perplexity": 4440.12,
+      "duration_s": 5.08,
       "error": ""
     },
     {
       "module": "hla_attention",
       "accuracy_pct": 50.0,
       "perplexity": 4653.21,
-      "duration_s": 3.15,
+      "duration_s": 3.05,
       "error": ""
     },
     {
       "module": "hybrid_attention",
-      "accuracy_pct": 46.0,
-      "perplexity": 94.34,
-      "duration_s": 3.57,
+      "accuracy_pct": 48.0,
+      "perplexity": 96.57,
+      "duration_s": 3.43,
       "error": ""
     },
     {
       "module": "hybrid_local_kernel",
       "accuracy_pct": 52.0,
-      "perplexity": 2105.57,
-      "duration_s": 23.94,
+      "perplexity": 1939.75,
+      "duration_s": 23.09,
       "error": ""
     },
     {
       "module": "hymba_transx",
       "accuracy_pct": 92.0,
-      "perplexity": 147.83,
-      "duration_s": 3.64,
+      "perplexity": 127.44,
+      "duration_s": 3.12,
       "error": ""
     },
     {
       "module": "jamba",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.41,
-      "duration_s": 4.12,
+      "accuracy_pct": 95.0,
+      "perplexity": 30.81,
+      "duration_s": 3.84,
       "error": ""
     },
     {
       "module": "jamba_info",
-      "accuracy_pct": 56.0,
-      "perplexity": 1978.0,
-      "duration_s": 4.06,
+      "accuracy_pct": 54.0,
+      "perplexity": 2559.73,
+      "duration_s": 3.32,
       "error": ""
     },
     {
       "module": "kda_attention",
       "accuracy_pct": 51.0,
       "perplexity": 405981.35,
-      "duration_s": 4.92,
+      "duration_s": 4.12,
       "error": ""
     },
     {
       "module": "landmark_local_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1242.65,
-      "duration_s": 24.3,
+      "perplexity": 1144.78,
+      "duration_s": 23.36,
       "error": ""
     },
     {
       "module": "linformer_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 2056.8,
-      "duration_s": 23.0,
+      "perplexity": 1493.08,
+      "duration_s": 22.83,
       "error": ""
     },
     {
       "module": "lola_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1292.15,
-      "duration_s": 11.83,
+      "perplexity": 1218.61,
+      "duration_s": 11.62,
       "error": ""
     },
     {
       "module": "lora_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 29.22,
-      "duration_s": 2.77,
+      "perplexity": 30.15,
+      "duration_s": 2.93,
       "error": ""
     },
     {
       "module": "lsh_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1054.62,
-      "duration_s": 24.1,
+      "perplexity": 1050.51,
+      "duration_s": 23.47,
       "error": ""
     },
     {
       "module": "mamba_block",
       "accuracy_pct": 52.0,
-      "perplexity": 4270.03,
-      "duration_s": 15.41,
+      "perplexity": 4763.56,
+      "duration_s": 15.25,
       "error": ""
     },
     {
       "module": "mamba_svd_flash",
-      "accuracy_pct": 94.0,
-      "perplexity": 31.05,
-      "duration_s": 6.12,
+      "accuracy_pct": 95.0,
+      "perplexity": 31.97,
+      "duration_s": 6.2,
       "error": ""
     },
     {
       "module": "minimal_nova",
       "accuracy_pct": 52.0,
-      "perplexity": 1242.65,
-      "duration_s": 17.55,
+      "perplexity": 1237.8,
+      "duration_s": 17.7,
       "error": ""
     },
     {
       "module": "minimal_svd",
       "accuracy_pct": 52.0,
-      "perplexity": 1322.79,
-      "duration_s": 23.57,
+      "perplexity": 1292.15,
+      "duration_s": 23.31,
       "error": ""
     },
     {
       "module": "mixattention_moska",
-      "accuracy_pct": 90.0,
-      "perplexity": 30.45,
-      "duration_s": 3.07,
+      "accuracy_pct": 89.0,
+      "perplexity": 31.29,
+      "duration_s": 2.59,
       "error": ""
     },
     {
       "module": "mla_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 686.26,
-      "duration_s": 15.14,
+      "perplexity": 678.26,
+      "duration_s": 14.93,
       "error": ""
     },
     {
       "module": "moba_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 52.82,
-      "duration_s": 2.67,
+      "accuracy_pct": 95.0,
+      "perplexity": 49.33,
+      "duration_s": 2.53,
       "error": ""
     },
     {
       "module": "moe_deltakv_paged",
-      "accuracy_pct": 93.0,
+      "accuracy_pct": 92.0,
       "perplexity": null,
-      "duration_s": 3.79,
+      "duration_s": 3.4,
       "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
     },
     {
       "module": "mqa",
       "accuracy_pct": 52.0,
-      "perplexity": 998.5,
-      "duration_s": 2.52,
+      "perplexity": 986.86,
+      "duration_s": 2.4,
       "error": ""
     },
     {
       "module": "naive_svd",
       "accuracy_pct": 52.0,
-      "perplexity": 1307.38,
-      "duration_s": 23.42,
+      "perplexity": 1267.16,
+      "duration_s": 23.22,
       "error": ""
     },
     {
       "module": "nasc_attention",
       "accuracy_pct": 93.0,
-      "perplexity": 350.51,
-      "duration_s": 3.03,
+      "perplexity": 367.33,
+      "duration_s": 3.2,
       "error": ""
     },
     {
       "module": "native_hybrid_attention",
-      "accuracy_pct": 96.0,
-      "perplexity": 4011.32,
-      "duration_s": 3.28,
+      "accuracy_pct": 94.0,
+      "perplexity": 4474.95,
+      "duration_s": 2.84,
       "error": ""
     },
     {
       "module": "nexus",
-      "accuracy_pct": 55.0,
+      "accuracy_pct": 63.0,
       "perplexity": null,
-      "duration_s": 2.61,
+      "duration_s": 2.17,
       "error": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
     },
     {
       "module": "nsa_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 33.97,
-      "duration_s": 3.07,
+      "perplexity": 31.41,
+      "duration_s": 2.72,
       "error": ""
     },
     {
       "module": "nystrom_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 1277.1,
-      "duration_s": 3.07,
+      "perplexity": 945.36,
+      "duration_s": 2.89,
       "error": ""
     },
     {
       "module": "optimized_hybrid_attention",
       "accuracy_pct": 94.0,
-      "perplexity": 6068.93,
-      "duration_s": 2.87,
+      "perplexity": 7435.81,
+      "duration_s": 3.11,
       "error": ""
     },
     {
       "module": "orion",
       "accuracy_pct": 52.0,
-      "perplexity": 1917.15,
-      "duration_s": 25.33,
+      "perplexity": 1939.75,
+      "duration_s": 25.79,
       "error": ""
     },
     {
       "module": "padre_attention",
-      "accuracy_pct": 91.0,
-      "perplexity": 330.56,
-      "duration_s": 3.38,
+      "accuracy_pct": 94.0,
+      "perplexity": 303.34,
+      "duration_s": 2.95,
       "error": ""
     },
     {
       "module": "performer_attention",
-      "accuracy_pct": 70.0,
-      "perplexity": 14221.36,
-      "duration_s": 3.09,
+      "accuracy_pct": 72.0,
+      "perplexity": 18988.0,
+      "duration_s": 2.65,
       "error": ""
     },
     {
       "module": "phantom",
       "accuracy_pct": 52.0,
       "perplexity": 1232.98,
-      "duration_s": 25.46,
+      "duration_s": 26.66,
       "error": ""
     },
     {
       "module": "positive_kernel_linear_attention",
       "accuracy_pct": 52.0,
       "perplexity": 834.27,
-      "duration_s": 23.81,
+      "duration_s": 24.75,
       "error": ""
     },
     {
       "module": "primal_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 31.6,
-      "duration_s": 21.97,
+      "perplexity": 30.93,
+      "duration_s": 18.03,
       "error": ""
     },
     {
       "module": "progressive_token_pruning",
-      "accuracy_pct": 94.0,
-      "perplexity": 121.13,
-      "duration_s": 3.02,
+      "accuracy_pct": 95.0,
+      "perplexity": 142.17,
+      "duration_s": 2.94,
       "error": ""
     },
     {
       "module": "projection_factorized_attn",
       "accuracy_pct": 52.0,
       "perplexity": 3595.72,
-      "duration_s": 13.44,
+      "duration_s": 13.53,
       "error": ""
     },
     {
       "module": "qcqa_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 34.77,
-      "duration_s": 2.81,
+      "perplexity": 32.92,
+      "duration_s": 3.11,
       "error": ""
     },
     {
       "module": "rala_attention",
       "accuracy_pct": 75.0,
       "perplexity": 22199.22,
-      "duration_s": 4.25,
+      "duration_s": 3.76,
       "error": ""
     },
     {
       "module": "reap_moe",
-      "accuracy_pct": 94.0,
-      "perplexity": 30.39,
-      "duration_s": 3.78,
+      "accuracy_pct": 95.0,
+      "perplexity": 31.97,
+      "duration_s": 3.36,
       "error": ""
     },
     {
       "module": "refined_landmark_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1408.1,
-      "duration_s": 23.59,
+      "perplexity": 2822.31,
+      "duration_s": 23.51,
       "error": ""
     },
     {
       "module": "regla_attention",
       "accuracy_pct": 76.0,
-      "perplexity": 811.77,
-      "duration_s": 3.52,
+      "perplexity": 857.4,
+      "duration_s": 3.01,
       "error": ""
     },
     {
       "module": "residual_svd_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1282.09,
-      "duration_s": 18.0,
+      "perplexity": 1307.38,
+      "duration_s": 17.64,
       "error": ""
     },
     {
       "module": "routing_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 1504.79,
-      "duration_s": 23.85,
+      "perplexity": 1469.93,
+      "duration_s": 23.4,
       "error": ""
     },
     {
       "module": "rpc_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 2189.45,
+      "perplexity": 2367.36,
       "duration_s": 23.4,
       "error": ""
     },
     {
       "module": "salt_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 747.84,
-      "duration_s": 59.27,
+      "perplexity": 742.02,
+      "duration_s": 59.04,
       "error": ""
     },
     {
       "module": "samba_m3",
-      "accuracy_pct": 87.0,
-      "perplexity": 126.45,
-      "duration_s": 3.91,
+      "accuracy_pct": 80.0,
+      "perplexity": 109.43,
+      "duration_s": 3.38,
       "error": ""
     },
     {
       "module": "samba_moe",
-      "accuracy_pct": 47.0,
-      "perplexity": 662.55,
-      "duration_s": 5.97,
+      "accuracy_pct": 43.0,
+      "perplexity": 584.7,
+      "duration_s": 5.3,
       "error": ""
     },
     {
       "module": "selective_ssm",
       "accuracy_pct": 52.0,
-      "perplexity": 4726.49,
-      "duration_s": 5.33,
+      "perplexity": 5314.13,
+      "duration_s": 5.54,
       "error": ""
     },
     {
       "module": "simple_ssm",
       "accuracy_pct": 52.0,
-      "perplexity": 4953.32,
-      "duration_s": 7.13,
+      "perplexity": 5231.74,
+      "duration_s": 5.89,
       "error": ""
     },
     {
       "module": "sink_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 850.73,
-      "duration_s": 2.85,
+      "perplexity": 877.73,
+      "duration_s": 2.55,
       "error": ""
     },
     {
       "module": "soa_attn",
       "accuracy_pct": 52.0,
-      "perplexity": 627.29,
-      "duration_s": 20.16,
+      "perplexity": 577.89,
+      "duration_s": 20.64,
       "error": ""
     },
     {
       "module": "spectraformer_attention",
       "accuracy_pct": 49.0,
       "perplexity": 879844.09,
-      "duration_s": 3.58,
+      "duration_s": 2.72,
       "error": ""
     },
     {
       "module": "spectron",
       "accuracy_pct": 52.0,
       "perplexity": 3595.72,
-      "duration_s": 23.45,
+      "duration_s": 23.61,
       "error": ""
     },
     {
       "module": "spectron_fp8",
       "accuracy_pct": 52.0,
-      "perplexity": 2579.8,
-      "duration_s": 36.41,
+      "perplexity": 2285.58,
+      "duration_s": 35.49,
       "error": ""
     },
     {
       "module": "split_head_hybrid",
       "accuracy_pct": 52.0,
       "perplexity": null,
-      "duration_s": 23.55,
+      "duration_s": 22.98,
       "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
     },
     {
       "module": "svd_compressed",
       "accuracy_pct": 52.0,
       "perplexity": 3567.74,
-      "duration_s": 24.11,
+      "duration_s": 22.9,
       "error": ""
     },
     {
       "module": "svd_linear",
       "accuracy_pct": 52.0,
-      "perplexity": 3567.74,
-      "duration_s": 14.19,
+      "perplexity": 3595.72,
+      "duration_s": 12.59,
       "error": ""
     },
     {
       "module": "svd_linear_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 3567.74,
-      "duration_s": 13.12,
+      "perplexity": 3595.72,
+      "duration_s": 12.93,
       "error": ""
     },
     {
       "module": "svd_linear_attn",
       "accuracy_pct": 52.0,
       "perplexity": 3595.72,
-      "duration_s": 12.79,
+      "duration_s": 12.9,
       "error": ""
     },
     {
       "module": "svd_linear_decay",
       "accuracy_pct": 52.0,
-      "perplexity": 3595.72,
-      "duration_s": 13.13,
+      "perplexity": 3623.92,
+      "duration_s": 12.58,
       "error": ""
     },
     {
       "module": "svd_linear_inject",
       "accuracy_pct": 52.0,
       "perplexity": 3595.72,
-      "duration_s": 12.79,
+      "duration_s": 12.58,
       "error": ""
     },
     {
       "module": "svd_llm_v2_attention",
       "accuracy_pct": 52.0,
       "perplexity": 1829.36,
-      "duration_s": 7.73,
+      "duration_s": 7.49,
       "error": ""
     },
     {
       "module": "svd_mamba",
       "accuracy_pct": 52.0,
       "perplexity": 3857.65,
-      "duration_s": 56.32,
+      "duration_s": 53.82,
       "error": ""
     },
     {
       "module": "svd_projection_attention",
       "accuracy_pct": 52.0,
-      "perplexity": null,
-      "duration_s": 6.94,
-      "error": "GPT2 error: name 'math' is not defined"
+      "perplexity": 2367.36,
+      "duration_s": 9.75,
+      "error": ""
     },
     {
       "module": "svd_seq",
       "accuracy_pct": 95.0,
-      "perplexity": 5355.81,
-      "duration_s": 6.65,
+      "perplexity": 4474.95,
+      "duration_s": 6.07,
       "error": ""
     },
     {
       "module": "template_attention",
-      "accuracy_pct": 94.0,
-      "perplexity": 4203.82,
-      "duration_s": 2.76,
+      "accuracy_pct": 95.0,
+      "perplexity": 4171.11,
+      "duration_s": 2.91,
       "error": ""
     },
     {
       "module": "token_compressed_attention",
-      "accuracy_pct": 92.0,
+      "accuracy_pct": 93.0,
       "perplexity": 3918.4,
-      "duration_s": 2.36,
+      "duration_s": 2.25,
       "error": ""
     },
     {
       "module": "tri_branch_hybrid",
       "accuracy_pct": 52.0,
-      "perplexity": null,
-      "duration_s": 23.84,
-      "error": "GPT2 error: expected mat1 and mat2 to have the same dtype, but got: float != c10::Half"
+      "perplexity": 1458.49,
+      "duration_s": 23.26,
+      "error": ""
     },
     {
       "module": "triton_cosformer",
       "accuracy_pct": 68.0,
       "perplexity": 22903.9,
-      "duration_s": 3.08,
+      "duration_s": 2.74,
       "error": ""
     },
     {
       "module": "triton_svd_linear_attention",
       "accuracy_pct": 52.0,
       "perplexity": 1213.86,
-      "duration_s": 20.39,
+      "duration_s": 20.43,
       "error": ""
     },
     {
       "module": "ttt_linear_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 6511.01,
-      "duration_s": 4.6,
+      "perplexity": 7792.66,
+      "duration_s": 4.17,
       "error": ""
     },
     {
       "module": "unified_rope",
       "accuracy_pct": 52.0,
       "perplexity": 4270.03,
-      "duration_s": 2.97,
+      "duration_s": 2.73,
       "error": ""
     },
     {
       "module": "upi_stuffed_mamba",
       "accuracy_pct": 52.0,
       "perplexity": 1327.97,
-      "duration_s": 5.08,
+      "duration_s": 4.86,
       "error": ""
     },
     {
       "module": "vig_attention",
       "accuracy_pct": 85.0,
-      "perplexity": null,
-      "duration_s": 2.73,
-      "error": "GPT2 error: mat1 and mat2 must have the same dtype, but got Float and Half"
+      "perplexity": 540.76,
+      "duration_s": 3.37,
+      "error": ""
     },
     {
       "module": "vspec",
       "accuracy_pct": 52.0,
-      "perplexity": 1062.89,
-      "duration_s": 26.04,
+      "perplexity": 1096.63,
+      "duration_s": 25.16,
       "error": ""
     },
     {
       "module": "wgqa_attention",
       "accuracy_pct": 52.0,
-      "perplexity": 927.07,
-      "duration_s": 3.33,
+      "perplexity": 902.07,
+      "duration_s": 2.81,
       "error": ""
     },
     {
       "module": "xattention",
       "accuracy_pct": 87.0,
       "perplexity": 34.03,
-      "duration_s": 3.3,
+      "duration_s": 3.1,
       "error": ""
     },
     {
       "module": "zeros_attention",
       "accuracy_pct": 55.0,
-      "perplexity": 87116.36,
-      "duration_s": 3.48,
+      "perplexity": 58032.01,
+      "duration_s": 2.55,
       "error": ""
     }
   ]
