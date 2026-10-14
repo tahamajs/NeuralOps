@@ -26,8 +26,8 @@ from neuralops.trainer import (
     SimPOLoss,
     LearnableAttentionSink,
     TTTLinearAttentionLayer,
-    RiemannianAdam,
 )
+from neuralops.trainer.optimizers import RiemannianAdam
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
