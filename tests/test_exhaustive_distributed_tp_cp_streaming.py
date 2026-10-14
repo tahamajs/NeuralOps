@@ -59,12 +59,12 @@ def test_8_1_tensor_parallel_svd_linear_parity():
 
 
 def test_8_2_streaming_dataset():
-    dummy_tokens = list(range(100))
-    ds = PackedTokenStreamDataset(tokens=dummy_tokens, seq_len=10)
+    dummy_docs = [[i, i + 1, i + 2] for i in range(20)]
+    ds = PackedTokenStreamDataset(token_iterator_fn=lambda: iter(dummy_docs), seq_len=6)
     items = []
     for item in ds:
         items.append(item)
         if len(items) >= 3:
             break
     assert len(items) == 3
-    assert len(items[0]) == 10
+    assert len(items[0]) == 6

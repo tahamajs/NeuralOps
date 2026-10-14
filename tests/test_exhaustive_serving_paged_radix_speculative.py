@@ -49,10 +49,10 @@ def test_7_2_radix_prefix_state_cache():
     page = table.allocate_page()
     table.page_pool[page].fill_(1.23)
 
-    cache.insert_prefix(prefix_tokens, [page])
-    matched_pages, matched_len = cache.match_prefix([101, 2054, 2003, 1037, 999])
+    cache.insert_prefix(prefix_tokens, page)
+    matched_page, matched_len = cache.match_prefix([101, 2054, 2003, 1037, 999])
     assert matched_len == 4
-    assert matched_pages == [page]
+    assert matched_page == page
 
 
 def test_7_3_self_speculative_decoder():
