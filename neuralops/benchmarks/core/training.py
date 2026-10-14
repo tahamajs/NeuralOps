@@ -39,7 +39,7 @@ def finetune_classification(
         optimizer = create_riemannian_stiefel(model, lr=lr)
     else:
         trainable_params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = AdamW(trainable_params, lr=lr, weight_decay=0.01)
+        optimizer = AdamW(trainable_params, lr=lr, weight_decay=0.01, foreach=False)
 
     # Distributed backend wrapping via accelerate
     dist_backend = (distributed_backend or "none").lower()
@@ -165,7 +165,7 @@ def train_kd(
 
     kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
     trainable_student = [p for p in student.parameters() if p.requires_grad]
-    optimizer = AdamW(trainable_student, lr=lr, weight_decay=0.01)
+    optimizer = AdamW(trainable_student, lr=lr, weight_decay=0.01, foreach=False)
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
