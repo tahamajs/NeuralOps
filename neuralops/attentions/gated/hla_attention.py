@@ -830,6 +830,84 @@ class HLAAttention(BaseAttention):
 
         return out.to(hidden_states.dtype), new_past_key_value
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for HLAAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, D = x.shape
+        H, Dh = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        # 1. Projections
+        q = self.q_proj(x).view(B, 1, H, Dh).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
+
+        if self.num_kv_heads != self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        # 2. Kernel feature map: ELU + 1
+        q_act = (F.elu(q.float() * self.scale) + 1.0)
+        k_act = (F.elu(k.float()) + 1.0)
+
+        # 3. Per-head exponential decay
+        gamma = self._effective_decay()  # [H]
+        gamma_t = gamma.view(1, H, 1, 1).to(device=device, dtype=torch.float32)
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, Dh, Dh), device=device, dtype=torch.float32)
+            state["z_state"] = torch.zeros((B, H, Dh, 1), device=device, dtype=torch.float32)
+
+        S = state["kv_state"].float()
+        Z = state["z_state"].float()
+
+        kt = k_act.float()
+        vt = v.float()
+        qt = q_act.float()
+
+        S_next = gamma_t * S + torch.matmul(kt.transpose(-1, -2), vt)
+        Z_next = gamma_t * Z + kt.transpose(-1, -2)
+
+        num = torch.matmul(qt, S_next)
+        den = torch.matmul(qt, Z_next) + self.eps
+        yt = num / den
+
+        state["kv_state"] = S_next
+        state["z_state"] = Z_next
+        state["step_idx"] = step_idx + 1
+
+        context = yt.transpose(1, 2).contiguous().view(B, 1, H * Dh)
+
+        # Variance-preserving RMS gain
+        v_flat = v.transpose(1, 2).contiguous().view(B, 1, -1)
+        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        scale = (v_rms / c_rms).clamp(0.25, 4.0)
+        context = context * scale
+
+        if self.is_nested_encoder:
+            out = context * self.lora_output_scale
+        else:
+            out = self.out_proj(context.to(dtype)) * self.lora_output_scale
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
     def get_ortho_loss(self) -> torch.Tensor:
         p = next(self.parameters(), None)
         dev = p.device if p is not None else torch.device("cpu")

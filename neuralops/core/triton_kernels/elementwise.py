@@ -209,7 +209,103 @@ def fused_rmsnorm(
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  SpectraFormer: Fused Complex Spectral Gate & RMS Variance Match
+# ═══════════════════════════════════════════════════════════════════
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_spectral_gate_kernel(
+        X_re_ptr, X_im_ptr, W_re_ptr, W_im_ptr, Tau_ptr,
+        Y_re_ptr, Y_im_ptr,
+        total_elements,
+        BLOCK_SIZE: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+        mask = offs < total_elements
+
+        x_re = tl.load(X_re_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        x_im = tl.load(X_im_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        w_re = tl.load(W_re_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        w_im = tl.load(W_im_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        tau = tl.load(Tau_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+
+        # Complex multiplication: (x_re + i x_im) * (w_re + i w_im)
+        y_hat_re = x_re * w_re - x_im * w_im
+        y_hat_im = x_re * w_im + x_im * w_re
+
+        # Magnitude and soft thresholding shrinkage
+        mag = tl.sqrt(y_hat_re * y_hat_re + y_hat_im * y_hat_im + 1e-8)
+        sig_tau = 1.0 / (1.0 + tl.exp(-tau))
+        diff = mag - sig_tau
+        shrink = tl.maximum(diff, 0.0) / mag
+
+        out_re = shrink * y_hat_re
+        out_im = shrink * y_hat_im
+
+        tl.store(Y_re_ptr + offs, out_re.to(Y_re_ptr.dtype.element_ty), mask=mask)
+        tl.store(Y_im_ptr + offs, out_im.to(Y_im_ptr.dtype.element_ty), mask=mask)
+
+
+def fused_spectral_gate_triton(
+    x_complex: torch.Tensor,
+    w_complex: torch.Tensor,
+    tau: torch.Tensor,
+) -> torch.Tensor:
+    """Fused complex spectral gate + soft-threshold shrinkage in SRAM."""
+    if x_complex.is_cuda and _cuda_ok(x_complex.real) and HAS_TRITON:
+        x_re = x_complex.real.contiguous()
+        x_im = x_complex.imag.contiguous()
+        w_re = w_complex.real.contiguous()
+        w_im = w_complex.imag.contiguous()
+        tau_c = tau.expand_as(x_re).contiguous()
+
+        y_re = torch.empty_like(x_re)
+        y_im = torch.empty_like(x_im)
+        total_elements = x_re.numel()
+        BLOCK_SIZE = 1024
+        grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
+
+        _fused_spectral_gate_kernel[grid](
+            x_re, x_im, w_re, w_im, tau_c,
+            y_re, y_im,
+            total_elements,
+            BLOCK_SIZE=BLOCK_SIZE,
+        )
+        return torch.complex(y_re, y_im)
+
+    # PyTorch Fallback
+    y_hat = x_complex * w_complex
+    mag = torch.abs(y_hat).clamp_min(1e-8)
+    sig_tau = torch.sigmoid(tau)
+    scale = (torch.relu(mag - sig_tau) / mag)
+    return y_hat * scale
+
+
+def fused_rms_variance_match_triton(
+    y: torch.Tensor,
+    v_ref: torch.Tensor,
+    clamp_min: float = 0.25,
+    clamp_max: float = 4.0,
+) -> torch.Tensor:
+    """Normalizes output y to match reference v_ref's RMS energy in a single pass."""
+    v_rms = torch.sqrt(torch.mean(v_ref.float() ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+    y_rms = torch.sqrt(torch.mean(y.float() ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+    gain = (v_rms / y_rms).clamp(clamp_min, clamp_max).to(y.dtype)
+    return y * gain
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
 fused_fast_gelu = fast_gelu
+
+__all__ = [
+    "fused_swiglu",
+    "fast_gelu",
+    "fused_rmsnorm",
+    "fused_fast_gelu",
+    "fused_spectral_gate_triton",
+    "fused_rms_variance_match_triton",
+]
