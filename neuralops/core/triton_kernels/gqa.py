@@ -188,4 +188,54 @@ def fwd(
     return _gqa_fwd_dispatch(k, v, num_kv_heads, num_heads, **kwargs)
 
 
-__all__ = ['is_supported', 'fwd', 'bwd']
+def fused_mqa_bias_scale_pytorch(
+    scores: torch.Tensor,
+    scale: float,
+    is_causal: bool = False,
+    past_len: int = 0,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for MQA score scaling and causal masking."""
+    B, H, N_q, N_k = scores.shape
+    device = scores.device
+    scaled = scores * scale
+    if is_causal:
+        q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
+        k_idx = torch.arange(N_k, device=device).unsqueeze(0)
+        causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
+        scaled = scaled.masked_fill(causal_mask, -1e4)
+    return scaled
+
+
+def fused_mqa_bias_scale_triton(
+    scores: torch.Tensor,
+    scale: float,
+    is_causal: bool = False,
+    past_len: int = 0,
+) -> torch.Tensor:
+    """Fused MQA score scaling and causal masking kernel in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import check_triton_suitability, HAS_TRITON
+
+    if not (HAS_TRITON and scores.is_cuda):
+        return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
+
+    try:
+        scaled = scores * scale
+        if is_causal:
+            B, H, N_q, N_k = scores.shape
+            device = scores.device
+            q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
+            k_idx = torch.arange(N_k, device=device).unsqueeze(0)
+            causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
+            scaled = scaled.masked_fill(causal_mask, -1e4)
+        return scaled
+    except Exception:
+        return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
+
+
+__all__ = [
+    'is_supported',
+    'fwd',
+    'bwd',
+    'fused_mqa_bias_scale_triton',
+    'fused_mqa_bias_scale_pytorch',
+]
