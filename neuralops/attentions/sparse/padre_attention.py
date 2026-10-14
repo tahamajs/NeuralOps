@@ -561,6 +561,8 @@ class PADReAttention(BaseAttention):
             invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
             invalid_mask = invalid_mask | invalid_causal
 
+        from neuralops.core.triton_kernels.sparse_attn import fused_padre_polynomial_attn_triton
+
         # Apply temperature and re-center over valid scores for numerical stability
         fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
         masked_for_max = scores.masked_fill(invalid_mask, fill_val)
@@ -581,6 +583,7 @@ class PADReAttention(BaseAttention):
         # Normalize across key dimension
         denom = attn_weights.sum(dim=-1, keepdim=True) + 1e-8
         attn_weights = attn_weights / denom
+
 
         if head_mask is not None:
             hm = head_mask.to(scores.device)
