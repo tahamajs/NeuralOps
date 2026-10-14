@@ -139,6 +139,20 @@ class AdaptiveSVDLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # ASVD-FIX-09: dtype-safe
         orig_dtype = x.dtype
+        try:
+            from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+            return fused_svd_lora_sparse_attn_triton(
+                x,
+                w_down=self.V,
+                w_up=self.U,
+                lora_A=self.lora_A,
+                lora_B=self.lora_B,
+                lora_scale=getattr(self, "lora_scaling", 1.0),
+                bias=self.bias,
+            ).to(orig_dtype)
+        except Exception:
+            pass
+
         V = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
         U = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
 
