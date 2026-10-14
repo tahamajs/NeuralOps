@@ -294,6 +294,9 @@ def execute_single(
     # Free VRAM check if using CUDA
     if target_device.startswith("cuda") and torch.cuda.is_available():
         try:
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()
             free_bytes, total_bytes = torch.cuda.mem_get_info()
             free_mb = free_bytes / (1024 * 1024)
             if free_mb < 500:
@@ -472,6 +475,8 @@ def execute_single(
                 adapter.cleanup()
             except Exception:
                 pass
+        import gc
+        gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
