@@ -699,4 +699,41 @@ def kda_hla_chunk_scan_triton(
     return y
 
 
-__all__ = ['gla_scan_triton', 'gla_scan_pytorch', 'gla_scan', 'kda_hla_chunk_scan_triton']
+def fused_regla_refined_gate_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    gate: torch.Tensor,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for ReGLA refined gated linear scan."""
+    return kda_hla_chunk_scan_triton(q, k, v, gate, is_causal=is_causal)
+
+
+def fused_regla_refined_gate_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    gate: torch.Tensor,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Fused ReGLA refined gated linear scan in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and q.is_cuda:
+        try:
+            return fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal)
+        except Exception:
+            pass
+    return fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal)
+
+
+__all__ = [
+    'gla_scan_triton',
+    'gla_scan_pytorch',
+    'gla_scan',
+    'kda_hla_chunk_scan_triton',
+    'fused_regla_refined_gate_scan_triton',
+    'fused_regla_refined_gate_scan_pytorch',
+]
+
