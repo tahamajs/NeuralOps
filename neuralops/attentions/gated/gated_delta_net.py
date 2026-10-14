@@ -159,7 +159,7 @@ def chunked_delta_rule_scan(
             step_beta = alpha_f.transpose(1, 2).to(q.dtype).contiguous()
             res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
             out_fl = res[0] if isinstance(res, tuple) else res
-            out = out_fl.transpose(1, 2).contiguous().to(q.dtype)
+            out = torch.nan_to_num(out_fl.transpose(1, 2).contiguous(), nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             return out, S_final
         except Exception:
@@ -176,7 +176,8 @@ def chunked_delta_rule_scan(
         and q.dtype in (torch.float16, torch.bfloat16, torch.float32)
     ):
         try:
-            out = gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f).to(q.dtype)
+            out = gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f)
+            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             return out, S_final
         except Exception as e:
