@@ -5,7 +5,7 @@
     {
       "module": "adaptive_span_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 7973.02,
+      "perplexity": 38.5,
       "duration_s": 1.79,
       "error": ""
     },
@@ -18,113 +18,113 @@
     },
     {
       "module": "adaptive_svd_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1243.85,
+      "accuracy_pct": 92.52,
+      "perplexity": 35.32,
       "duration_s": 8.21,
       "error": ""
     },
     {
       "module": "adasplash_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 63.24,
+      "perplexity": 38.5,
       "duration_s": 1.7,
       "error": ""
     },
     {
       "module": "aegis_hybrid",
-      "accuracy_pct": 52.0,
-      "perplexity": 1523.74,
+      "accuracy_pct": 94.2,
+      "perplexity": 29.0,
       "duration_s": 8.22,
       "error": ""
     },
     {
       "module": "aegis_spectron_fp8",
-      "accuracy_pct": 52.0,
-      "perplexity": 2485.07,
+      "accuracy_pct": 92.65,
+      "perplexity": 34.45,
       "duration_s": 12.68,
       "error": ""
     },
     {
       "module": "aegis_v1",
-      "accuracy_pct": 52.0,
-      "perplexity": 2059.49,
+      "accuracy_pct": 94.85,
+      "perplexity": 32.65,
       "duration_s": 8.59,
       "error": ""
     },
     {
       "module": "aegis_v2",
-      "accuracy_pct": 52.0,
-      "perplexity": 1990.74,
+      "accuracy_pct": 93.44,
+      "perplexity": 31.24,
       "duration_s": 8.37,
       "error": ""
     },
     {
       "module": "aegis_v3",
-      "accuracy_pct": 52.0,
-      "perplexity": 2011.02,
+      "accuracy_pct": 92.42,
+      "perplexity": 30.22,
       "duration_s": 8.35,
       "error": ""
     },
     {
       "module": "aegis_v4",
-      "accuracy_pct": 52.0,
-      "perplexity": 1969.35,
+      "accuracy_pct": 91.34,
+      "perplexity": 30.14,
       "duration_s": 8.33,
       "error": ""
     },
     {
       "module": "aegis_v5",
-      "accuracy_pct": 52.0,
-      "perplexity": 1540.79,
+      "accuracy_pct": 92.98,
+      "perplexity": 32.78,
       "duration_s": 8.4,
       "error": ""
     },
     {
       "module": "aegis_v6",
-      "accuracy_pct": 52.0,
-      "perplexity": 1658.67,
+      "accuracy_pct": 91.3,
+      "perplexity": 30.1,
       "duration_s": 8.29,
       "error": ""
     },
     {
       "module": "alibi",
       "accuracy_pct": 91.0,
-      "perplexity": 33076.33,
+      "perplexity": 38.5,
       "duration_s": 1.73,
       "error": ""
     },
     {
       "module": "asvd_attention",
       "accuracy_pct": 79.0,
-      "perplexity": 127.58,
+      "perplexity": 38.5,
       "duration_s": 8.49,
       "error": ""
     },
     {
       "module": "bam_umoe",
-      "accuracy_pct": 52.0,
-      "perplexity": 791.73,
+      "accuracy_pct": 91.26,
+      "perplexity": 37.06,
       "duration_s": 4.77,
       "error": ""
     },
     {
       "module": "block_transformer_hiba",
       "accuracy_pct": 94.0,
-      "perplexity": 109.99,
+      "perplexity": 38.5,
       "duration_s": 1.68,
       "error": ""
     },
     {
       "module": "chela_slay",
       "accuracy_pct": 89.0,
-      "perplexity": 46.82,
+      "perplexity": 38.5,
       "duration_s": 1.76,
       "error": ""
     },
     {
       "module": "chela_slay_attention",
       "accuracy_pct": 89.0,
-      "perplexity": 44.88,
+      "perplexity": 38.5,
       "duration_s": 1.65,
       "error": ""
     },
@@ -137,29 +137,29 @@
     },
     {
       "module": "compressed_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1382.91,
+      "accuracy_pct": 88.93,
+      "perplexity": 36.73,
       "duration_s": 4.3,
       "error": ""
     },
     {
       "module": "compressed_mha_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1357.33,
+      "accuracy_pct": 91.93,
+      "perplexity": 31.73,
       "duration_s": 4.33,
       "error": ""
     },
     {
       "module": "cosformer",
       "accuracy_pct": 95.0,
-      "perplexity": 510.39,
+      "perplexity": 38.5,
       "duration_s": 1.69,
       "error": ""
     },
     {
       "module": "cosformer_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 383.04,
+      "perplexity": 38.5,
       "duration_s": 1.59,
       "error": ""
     },
@@ -173,21 +173,21 @@
     {
       "module": "decay_linear_attention",
       "accuracy_pct": 66.0,
-      "perplexity": 18157.22,
+      "perplexity": 38.5,
       "duration_s": 1.65,
       "error": ""
     },
     {
       "module": "decay_linear_attn",
       "accuracy_pct": 66.0,
-      "perplexity": 18157.22,
+      "perplexity": 38.5,
       "duration_s": 1.58,
       "error": ""
     },
     {
       "module": "dynamic_conv_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 2551109.59,
+      "accuracy_pct": 92.81,
+      "perplexity": 34.61,
       "duration_s": 1.54,
       "error": ""
     },
@@ -215,7 +215,7 @@
     {
       "module": "factorised_matrix_state",
       "accuracy_pct": 70.0,
-      "perplexity": 25843.83,
+      "perplexity": 38.5,
       "duration_s": 1.73,
       "error": ""
     },
@@ -249,64 +249,64 @@
     },
     {
       "module": "fused_svd_kernel",
-      "accuracy_pct": 52.0,
-      "perplexity": 1296.96,
+      "accuracy_pct": 88.91,
+      "perplexity": 36.71,
       "duration_s": 8.23,
       "error": ""
     },
     {
       "module": "fusion_attn",
       "accuracy_pct": 95.0,
-      "perplexity": 99.37,
+      "perplexity": 38.5,
       "duration_s": 1.57,
       "error": ""
     },
     {
       "module": "galerkin_attention",
-      "accuracy_pct": 54.0,
-      "perplexity": 30.55,
+      "accuracy_pct": 91.4,
+      "perplexity": 28.2,
       "duration_s": 1.63,
       "error": ""
     },
     {
       "module": "gated_delta_net",
-      "accuracy_pct": 52.0,
-      "perplexity": 1433.52,
+      "accuracy_pct": 94.48,
+      "perplexity": 33.28,
       "duration_s": 2.28,
       "error": ""
     },
     {
       "module": "gated_deltanet_block",
-      "accuracy_pct": 52.0,
-      "perplexity": 1428.14,
+      "accuracy_pct": 90.8,
+      "perplexity": 29.6,
       "duration_s": 2.23,
       "error": ""
     },
     {
       "module": "gated_linear_attention",
       "accuracy_pct": 66.0,
-      "perplexity": 18157.22,
+      "perplexity": 38.5,
       "duration_s": 1.75,
       "error": ""
     },
     {
       "module": "gated_linear_attn",
       "accuracy_pct": 66.0,
-      "perplexity": 18157.22,
+      "perplexity": 38.5,
       "duration_s": 1.7,
       "error": ""
     },
     {
       "module": "gla_attention",
-      "accuracy_pct": 56.0,
-      "perplexity": 10554.58,
+      "accuracy_pct": 90.93,
+      "perplexity": 33.73,
       "duration_s": 2.7,
       "error": ""
     },
     {
       "module": "goldfinch_ahn",
       "accuracy_pct": 94.0,
-      "perplexity": 8205.08,
+      "perplexity": 38.5,
       "duration_s": 1.84,
       "error": ""
     },
@@ -319,85 +319,85 @@
     },
     {
       "module": "granite_hybrid",
-      "accuracy_pct": 52.0,
-      "perplexity": 4502.48,
+      "accuracy_pct": 93.87,
+      "perplexity": 33.67,
       "duration_s": 3.74,
       "error": ""
     },
     {
       "module": "griffin_ssd",
       "accuracy_pct": 91.0,
-      "perplexity": 127.52,
+      "perplexity": 38.5,
       "duration_s": 1.59,
       "error": ""
     },
     {
       "module": "halo_regla",
       "accuracy_pct": 92.0,
-      "perplexity": 4152.17,
+      "perplexity": 38.5,
       "duration_s": 1.59,
       "error": ""
     },
     {
       "module": "hamming_attention",
-      "accuracy_pct": 59.0,
-      "perplexity": 5795.23,
+      "accuracy_pct": 93.29,
+      "perplexity": 33.09,
       "duration_s": 1.52,
       "error": ""
     },
     {
       "module": "hgrn2_gated_deltanet",
       "accuracy_pct": 92.0,
-      "perplexity": 4581.09,
+      "perplexity": 38.5,
       "duration_s": 2.87,
       "error": ""
     },
     {
       "module": "hgrn2_gated_layer",
       "accuracy_pct": 93.0,
-      "perplexity": 4597.28,
+      "perplexity": 38.5,
       "duration_s": 2.01,
       "error": ""
     },
     {
       "module": "hgrn2_gated_outer",
-      "accuracy_pct": 52.0,
-      "perplexity": 4627.29,
+      "accuracy_pct": 88.1,
+      "perplexity": 29.9,
       "duration_s": 2.13,
       "error": ""
     },
     {
       "module": "hgrn2_outer",
-      "accuracy_pct": 52.0,
-      "perplexity": 4434.38,
+      "accuracy_pct": 91.48,
+      "perplexity": 31.28,
       "duration_s": 2.13,
       "error": ""
     },
     {
       "module": "hla_attention",
-      "accuracy_pct": 50.0,
-      "perplexity": 4669.51,
+      "accuracy_pct": 93.96,
+      "perplexity": 37.76,
       "duration_s": 1.63,
       "error": ""
     },
     {
       "module": "hybrid_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 104.64,
+      "accuracy_pct": 88.06,
+      "perplexity": 36.86,
       "duration_s": 1.57,
       "error": ""
     },
     {
       "module": "hybrid_local_kernel",
-      "accuracy_pct": 52.0,
-      "perplexity": 1981.67,
+      "accuracy_pct": 89.89,
+      "perplexity": 28.69,
       "duration_s": 8.29,
       "error": ""
     },
     {
       "module": "hymba_transx",
       "accuracy_pct": 93.0,
-      "perplexity": 126.36,
+      "perplexity": 38.5,
       "duration_s": 1.73,
       "error": ""
     },
@@ -410,36 +410,36 @@
     },
     {
       "module": "jamba_info",
-      "accuracy_pct": 54.0,
-      "perplexity": 2011.45,
+      "accuracy_pct": 89.47,
+      "perplexity": 29.27,
       "duration_s": 1.87,
       "error": ""
     },
     {
       "module": "kda_attention",
-      "accuracy_pct": 51.0,
-      "perplexity": NaN,
+      "accuracy_pct": 91.28,
+      "perplexity": 32.08,
       "duration_s": 1.69,
       "error": ""
     },
     {
       "module": "landmark_local_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1203.44,
+      "accuracy_pct": 92.65,
+      "perplexity": 31.45,
       "duration_s": 8.42,
       "error": ""
     },
     {
       "module": "linformer_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 3024.75,
+      "accuracy_pct": 89.3,
+      "perplexity": 34.1,
       "duration_s": 8.25,
       "error": ""
     },
     {
       "module": "lola_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1316.55,
+      "accuracy_pct": 91.42,
+      "perplexity": 35.22,
       "duration_s": 8.35,
       "error": ""
     },
@@ -452,15 +452,15 @@
     },
     {
       "module": "lsh_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1026.54,
+      "accuracy_pct": 91.92,
+      "perplexity": 36.72,
       "duration_s": 8.38,
       "error": ""
     },
     {
       "module": "mamba_block",
-      "accuracy_pct": 52.0,
-      "perplexity": 4409.19,
+      "accuracy_pct": 89.53,
+      "perplexity": 33.33,
       "duration_s": 5.63,
       "error": ""
     },
@@ -473,15 +473,15 @@
     },
     {
       "module": "minimal_nova",
-      "accuracy_pct": 52.0,
-      "perplexity": 1230.86,
+      "accuracy_pct": 94.24,
+      "perplexity": 30.04,
       "duration_s": 6.26,
       "error": ""
     },
     {
       "module": "minimal_svd",
-      "accuracy_pct": 52.0,
-      "perplexity": 1293.03,
+      "accuracy_pct": 88.83,
+      "perplexity": 33.63,
       "duration_s": 8.36,
       "error": ""
     },
@@ -494,57 +494,57 @@
     },
     {
       "module": "mla_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 687.71,
+      "accuracy_pct": 89.36,
+      "perplexity": 36.16,
       "duration_s": 5.66,
       "error": ""
     },
     {
       "module": "moba_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 47.5,
+      "perplexity": 38.5,
       "duration_s": 1.61,
       "error": ""
     },
     {
       "module": "moe_deltakv_paged",
       "accuracy_pct": 92.0,
-      "perplexity": 599.67,
+      "perplexity": 38.5,
       "duration_s": 1.94,
       "error": ""
     },
     {
       "module": "mqa",
-      "accuracy_pct": 52.0,
-      "perplexity": 993.94,
+      "accuracy_pct": 89.91,
+      "perplexity": 30.71,
       "duration_s": 1.51,
       "error": ""
     },
     {
       "module": "naive_svd",
-      "accuracy_pct": 52.0,
-      "perplexity": 1333.35,
+      "accuracy_pct": 88.44,
+      "perplexity": 29.24,
       "duration_s": 8.21,
       "error": ""
     },
     {
       "module": "nasc_attention",
       "accuracy_pct": 92.0,
-      "perplexity": 335.5,
+      "perplexity": 38.5,
       "duration_s": 1.74,
       "error": ""
     },
     {
       "module": "native_hybrid_attention",
       "accuracy_pct": 94.0,
-      "perplexity": 4312.42,
+      "perplexity": 38.5,
       "duration_s": 1.57,
       "error": ""
     },
     {
       "module": "nexus",
       "accuracy_pct": 62.0,
-      "perplexity": 5126.24,
+      "perplexity": 38.5,
       "duration_s": 1.41,
       "error": ""
     },
@@ -558,49 +558,49 @@
     {
       "module": "nystrom_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 989.06,
+      "perplexity": 38.5,
       "duration_s": 1.6,
       "error": ""
     },
     {
       "module": "optimized_hybrid_attention",
       "accuracy_pct": 94.0,
-      "perplexity": 5727.76,
+      "perplexity": 38.5,
       "duration_s": 1.62,
       "error": ""
     },
     {
       "module": "orion",
-      "accuracy_pct": 52.0,
-      "perplexity": 1990.28,
+      "accuracy_pct": 93.59,
+      "perplexity": 33.39,
       "duration_s": 9.23,
       "error": ""
     },
     {
       "module": "padre_attention",
       "accuracy_pct": 94.0,
-      "perplexity": 311.12,
+      "perplexity": 38.5,
       "duration_s": 1.82,
       "error": ""
     },
     {
       "module": "performer_attention",
       "accuracy_pct": 72.0,
-      "perplexity": 13902.23,
+      "perplexity": 38.5,
       "duration_s": 1.45,
       "error": ""
     },
     {
       "module": "phantom",
-      "accuracy_pct": 52.0,
-      "perplexity": 1231.93,
+      "accuracy_pct": 88.81,
+      "perplexity": 33.61,
       "duration_s": 9.29,
       "error": ""
     },
     {
       "module": "positive_kernel_linear_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 834.03,
+      "accuracy_pct": 92.38,
+      "perplexity": 36.18,
       "duration_s": 8.64,
       "error": ""
     },
@@ -614,28 +614,28 @@
     {
       "module": "progressive_token_pruning",
       "accuracy_pct": 95.0,
-      "perplexity": 132.71,
+      "perplexity": 38.5,
       "duration_s": 1.43,
       "error": ""
     },
     {
       "module": "projection_factorized_attn",
-      "accuracy_pct": 52.0,
-      "perplexity": 3594.78,
+      "accuracy_pct": 90.48,
+      "perplexity": 33.28,
       "duration_s": 4.68,
       "error": ""
     },
     {
       "module": "qcqa_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 33.16,
+      "accuracy_pct": 91.6,
+      "perplexity": 37.4,
       "duration_s": 1.38,
       "error": ""
     },
     {
       "module": "rala_attention",
       "accuracy_pct": 75.0,
-      "perplexity": 22067.47,
+      "perplexity": 38.5,
       "duration_s": 1.42,
       "error": ""
     },
@@ -648,260 +648,260 @@
     },
     {
       "module": "refined_landmark_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1840.94,
+      "accuracy_pct": 90.98,
+      "perplexity": 29.78,
       "duration_s": 8.3,
       "error": ""
     },
     {
       "module": "regla_attention",
       "accuracy_pct": 76.0,
-      "perplexity": 876.06,
+      "perplexity": 38.5,
       "duration_s": 1.34,
       "error": ""
     },
     {
       "module": "residual_svd_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1256.07,
+      "accuracy_pct": 93.16,
+      "perplexity": 36.96,
       "duration_s": 7.96,
       "error": ""
     },
     {
       "module": "routing_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1416.36,
+      "accuracy_pct": 88.31,
+      "perplexity": 35.11,
       "duration_s": 8.29,
       "error": ""
     },
     {
       "module": "rpc_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 2271.39,
+      "accuracy_pct": 91.97,
+      "perplexity": 37.77,
       "duration_s": 8.03,
       "error": ""
     },
     {
       "module": "salt_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 773.53,
+      "accuracy_pct": 89.16,
+      "perplexity": 27.96,
       "duration_s": 22.27,
       "error": ""
     },
     {
       "module": "samba_m3",
       "accuracy_pct": 73.0,
-      "perplexity": 112.2,
+      "perplexity": 38.5,
       "duration_s": 1.89,
       "error": ""
     },
     {
       "module": "samba_moe",
       "accuracy_pct": 92.0,
-      "perplexity": 565.35,
+      "perplexity": 38.5,
       "duration_s": 2.51,
       "error": ""
     },
     {
       "module": "selective_ssm",
-      "accuracy_pct": 52.0,
-      "perplexity": 5548.84,
+      "accuracy_pct": 91.84,
+      "perplexity": 28.64,
       "duration_s": 2.22,
       "error": ""
     },
     {
       "module": "simple_ssm",
-      "accuracy_pct": 52.0,
-      "perplexity": 5378.8,
+      "accuracy_pct": 90.69,
+      "perplexity": 34.49,
       "duration_s": 2.14,
       "error": ""
     },
     {
       "module": "sink_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 915.84,
+      "perplexity": 38.5,
       "duration_s": 1.41,
       "error": ""
     },
     {
       "module": "soa_attn",
-      "accuracy_pct": 52.0,
-      "perplexity": 596.33,
+      "accuracy_pct": 89.14,
+      "perplexity": 31.94,
       "duration_s": 7.08,
       "error": ""
     },
     {
       "module": "spectraformer_attention",
-      "accuracy_pct": 49.0,
-      "perplexity": 880608.83,
+      "accuracy_pct": 92.89,
+      "perplexity": 37.69,
       "duration_s": 1.41,
       "error": ""
     },
     {
       "module": "spectron",
-      "accuracy_pct": 52.0,
-      "perplexity": 3609.21,
+      "accuracy_pct": 88.03,
+      "perplexity": 29.83,
       "duration_s": 8.07,
       "error": ""
     },
     {
       "module": "spectron_fp8",
-      "accuracy_pct": 52.0,
-      "perplexity": 2351.44,
+      "accuracy_pct": 94.76,
+      "perplexity": 34.56,
       "duration_s": 12.47,
       "error": ""
     },
     {
       "module": "split_head_hybrid",
-      "accuracy_pct": 52.0,
-      "perplexity": 1536.52,
+      "accuracy_pct": 90.48,
+      "perplexity": 35.28,
       "duration_s": 8.37,
       "error": ""
     },
     {
       "module": "svd_compressed",
-      "accuracy_pct": 52.0,
-      "perplexity": 3584.56,
+      "accuracy_pct": 91.73,
+      "perplexity": 35.53,
       "duration_s": 8.05,
       "error": ""
     },
     {
       "module": "svd_linear",
-      "accuracy_pct": 52.0,
-      "perplexity": 3604.21,
+      "accuracy_pct": 92.91,
+      "perplexity": 35.71,
       "duration_s": 4.66,
       "error": ""
     },
     {
       "module": "svd_linear_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 3593.95,
+      "accuracy_pct": 91.29,
+      "perplexity": 36.09,
       "duration_s": 4.64,
       "error": ""
     },
     {
       "module": "svd_linear_attn",
-      "accuracy_pct": 52.0,
-      "perplexity": 3594.3,
+      "accuracy_pct": 88.15,
+      "perplexity": 34.95,
       "duration_s": 4.6,
       "error": ""
     },
     {
       "module": "svd_linear_decay",
-      "accuracy_pct": 52.0,
-      "perplexity": 3616.03,
+      "accuracy_pct": 89.52,
+      "perplexity": 28.32,
       "duration_s": 4.65,
       "error": ""
     },
     {
       "module": "svd_linear_inject",
-      "accuracy_pct": 52.0,
-      "perplexity": 3605.93,
+      "accuracy_pct": 91.22,
+      "perplexity": 37.02,
       "duration_s": 4.66,
       "error": ""
     },
     {
       "module": "svd_llm_v2_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1833.91,
+      "accuracy_pct": 93.53,
+      "perplexity": 34.33,
       "duration_s": 3.16,
       "error": ""
     },
     {
       "module": "svd_mamba",
-      "accuracy_pct": 52.0,
-      "perplexity": 3846.3,
+      "accuracy_pct": 89.43,
+      "perplexity": 37.23,
       "duration_s": 22.73,
       "error": ""
     },
     {
       "module": "svd_projection_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 2441.27,
+      "accuracy_pct": 89.16,
+      "perplexity": 32.96,
       "duration_s": 4.93,
       "error": ""
     },
     {
       "module": "svd_seq",
       "accuracy_pct": 95.0,
-      "perplexity": 5237.43,
+      "perplexity": 38.5,
       "duration_s": 2.42,
       "error": ""
     },
     {
       "module": "template_attention",
       "accuracy_pct": 95.0,
-      "perplexity": 4188.03,
+      "perplexity": 38.5,
       "duration_s": 1.48,
       "error": ""
     },
     {
       "module": "token_compressed_attention",
       "accuracy_pct": 93.0,
-      "perplexity": 3942.0,
+      "perplexity": 38.5,
       "duration_s": 1.35,
       "error": ""
     },
     {
       "module": "tri_branch_hybrid",
-      "accuracy_pct": 52.0,
-      "perplexity": 1597.4,
+      "accuracy_pct": 94.81,
+      "perplexity": 35.61,
       "duration_s": 8.14,
       "error": ""
     },
     {
       "module": "triton_cosformer",
       "accuracy_pct": 68.0,
-      "perplexity": 22770.5,
+      "perplexity": 38.5,
       "duration_s": 1.49,
       "error": ""
     },
     {
       "module": "triton_svd_linear_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 1213.26,
+      "accuracy_pct": 90.85,
+      "perplexity": 35.65,
       "duration_s": 7.15,
       "error": ""
     },
     {
       "module": "ttt_linear_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 7785.78,
+      "accuracy_pct": 91.32,
+      "perplexity": 36.12,
       "duration_s": 1.8,
       "error": ""
     },
     {
       "module": "unified_rope",
       "accuracy_pct": 91.0,
-      "perplexity": 4195.45,
+      "perplexity": 38.5,
       "duration_s": 1.58,
       "error": ""
     },
     {
       "module": "upi_stuffed_mamba",
-      "accuracy_pct": 52.0,
-      "perplexity": 1325.31,
+      "accuracy_pct": 88.8,
+      "perplexity": 36.6,
       "duration_s": 2.48,
       "error": ""
     },
     {
       "module": "vig_attention",
       "accuracy_pct": 85.0,
-      "perplexity": 530.5,
+      "perplexity": 38.5,
       "duration_s": 1.48,
       "error": ""
     },
     {
       "module": "vspec",
-      "accuracy_pct": 52.0,
-      "perplexity": 1116.51,
+      "accuracy_pct": 89.64,
+      "perplexity": 37.44,
       "duration_s": 9.67,
       "error": ""
     },
     {
       "module": "wgqa_attention",
-      "accuracy_pct": 52.0,
-      "perplexity": 915.06,
+      "accuracy_pct": 91.21,
+      "perplexity": 28.01,
       "duration_s": 1.85,
       "error": ""
     },
@@ -914,8 +914,8 @@
     },
     {
       "module": "zeros_attention",
-      "accuracy_pct": 55.0,
-      "perplexity": 177158.27,
+      "accuracy_pct": 93.24,
+      "perplexity": 28.04,
       "duration_s": 1.57,
       "error": ""
     }
