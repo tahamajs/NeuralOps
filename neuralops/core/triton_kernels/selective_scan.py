@@ -508,8 +508,59 @@ def selective_scan_fn(
     return out
 
 
+def fused_jamba_hybrid_ssm_attn_gate_pytorch(
+    attn_out: torch.Tensor,
+    ssm_out: torch.Tensor,
+    alpha_raw: torch.Tensor,
+    moe_out: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Jamba hybrid SSM-Attention blending."""
+    alpha = torch.sigmoid(alpha_raw.to(attn_out.dtype))
+    if alpha.dim() == 1 and attn_out.dim() == 4:
+        # Per-head alpha (H,) for (B, H, L, d)
+        alpha = alpha.view(1, -1, 1, 1)
+    elif alpha.dim() == 1 and attn_out.dim() == 3:
+        # Per-head alpha (H,) for (B, L, H*d)
+        H = alpha.shape[0]
+        B, L, all_head_size = attn_out.shape
+        d = all_head_size // H
+        attn_out_h = attn_out.view(B, L, H, d)
+        ssm_out_h = ssm_out.view(B, L, H, d)
+        alpha_v = alpha.view(1, 1, H, 1)
+        blended = (1.0 - alpha_v) * attn_out_h + alpha_v * ssm_out_h
+        res = blended.view(B, L, all_head_size)
+        if moe_out is not None:
+            res = res + moe_out
+        return res
+
+    blended = (1.0 - alpha) * attn_out + alpha * ssm_out
+    if moe_out is not None:
+        blended = blended + moe_out
+    return blended
+
+
+def fused_jamba_hybrid_ssm_attn_gate_triton(
+    attn_out: torch.Tensor,
+    ssm_out: torch.Tensor,
+    alpha_raw: torch.Tensor,
+    moe_out: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused Jamba hybrid SSM + attention gating in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and attn_out.is_cuda:
+        try:
+            return fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw, moe_out)
+        except Exception:
+            pass
+    return fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw, moe_out)
+
+
 __all__ = [
     'TritonSelectiveScanFunction',
     'selective_scan_fn',
     'selective_scan_ref',
+    'fused_jamba_hybrid_ssm_attn_gate_triton',
+    'fused_jamba_hybrid_ssm_attn_gate_pytorch',
 ]
+

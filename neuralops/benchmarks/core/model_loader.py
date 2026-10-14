@@ -62,6 +62,7 @@ def load_model_and_tokenizer(
     num_labels: int | None = None,
     is_causal: bool = False,
     task: str | None = None,
+    dataset: str | None = None,
     trust_remote_code: bool = True,
 ) -> tuple[nn.Module, Any, Any]:
     """
@@ -75,8 +76,16 @@ def load_model_and_tokenizer(
         ("distilbert-base-uncased", "sst2"): "distilbert-base-uncased-finetuned-sst-2-english",
         ("bert-base-uncased", "sst2"): "textattack/bert-base-uncased-SST-2",
     }
-    if task == "classification" and num_labels is not None:
-        target_ds = str(getattr(config if 'config' in locals() else None, "dataset", "")).lower()
+    if task == "classification" and dataset:
+        target_ds = dataset.lower().replace("-", "").replace("_", "")
+        for (base_m, ds_key), tuned_m in TASK_CLASSIFICATION_CHECKPOINTS.items():
+            if model_name == base_m and ds_key in target_ds:
+                LOG.info(
+                    "Resolving downstream classification checkpoint for %s on %s -> %s",
+                    model_name, dataset, tuned_m,
+                )
+                model_name = tuned_m
+                break
 
     if task == "lm":
         is_causal = True
