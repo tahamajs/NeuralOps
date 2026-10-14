@@ -979,6 +979,26 @@ class ChelaSlayAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
+        can_causal = bool(self.is_causal and not is_cross and kv_len == L)
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        valid_mask = None
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                valid_mask = (eff_mask > 0).float().unsqueeze(1).unsqueeze(-1)
+            elif eff_mask.dim() == 3:
+                valid_mask = (eff_mask[:, 0, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
+            elif eff_mask.dim() == 4:
+                valid_mask = (eff_mask[:, 0, -1, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
+
+        head_mask_b = None
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask_b = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask_b = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+            elif head_mask.dim() == 4:
+                head_mask_b = head_mask
+
         # ---- Dense stream (FlashAttention / SDPA accelerated) ----
         dense_out = None
         if eff_mask is None and head_mask_b is None and not output_attentions:
