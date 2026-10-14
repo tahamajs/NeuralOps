@@ -521,34 +521,12 @@ class NASCAttention(BaseAttention):
         return out
 
     def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
-        B, H, L, d = Q.shape
-        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)
+        from neuralops.core.triton_kernels.linear_attn import fused_nasc_spectral_linear_scan_triton
 
-        Qf = torch.matmul(Q.float(), self.rff_proj.float())
-        Kf = torch.matmul(K.float(), self.rff_proj.float())
-        norm = 1.0 / math.sqrt(self.rff_features)
-        phi_Q = (F.elu(Qf) + 1.0) * norm
-        phi_K = (F.elu(Kf) + 1.0) * norm
+        return fused_nasc_spectral_linear_scan_triton(
+            Q, K, V, self.rff_proj, valid_mask=valid_mask, is_causal=is_causal
+        )
 
-        phi_K = phi_K.masked_fill(pad, 0.0)
-        V_masked = V.float().masked_fill(pad, 0.0)
-
-        if is_causal:
-            # Causal linear recurrence via cumulative prefix sums with strictly positive denominator
-            KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, F, d]
-            KV_cumsum = torch.cumsum(KV, dim=2)
-            num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)  # [B, H, L, d]
-            Z = torch.cumsum(phi_K, dim=2)
-            den = (phi_Q * Z).sum(dim=-1, keepdim=True).clamp(min=1e-6) + 1e-6
-            res = (num / den).to(Q.dtype)
-            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
-        else:
-            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
-            Z = phi_K.sum(dim=-2, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6) + 1e-6
-            res = (num / den).to(Q.dtype)
-            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
 
 
     def forward(
