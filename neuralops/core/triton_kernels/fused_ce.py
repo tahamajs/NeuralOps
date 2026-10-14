@@ -317,7 +317,7 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
         grad_bias = torch.zeros_like(bias, dtype=torch.float32) if compute_grads and ctx.has_bias and bias.requires_grad else None
 
         total_loss = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
-        chunk_size = max(512, min(chunk_size, N_tokens))
+        chunk_size = max(1, min(chunk_size, N_tokens))
 
         with torch.no_grad():
             for c_start in range(0, N_tokens, chunk_size):
@@ -413,11 +413,19 @@ class FusedLinearCrossEntropy(nn.Module):
         targets: torch.Tensor,
         bias: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        if isinstance(targets, torch.Tensor) and targets.dtype in (torch.float16, torch.float32, torch.bfloat16) and bias is not None and bias.dtype in (torch.int32, torch.int64):
+            # Arguments passed as (hidden_states, weight, bias, targets)
+            actual_bias = targets
+            actual_targets = bias
+        else:
+            actual_bias = bias
+            actual_targets = targets
+
         return FusedLinearCrossEntropyFunction.apply(
             hidden_states,
             weight,
-            bias,
-            targets,
+            actual_bias,
+            actual_targets,
             self.ignore_index,
             self.reduction,
             self.chunk_size,

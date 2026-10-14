@@ -419,7 +419,7 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         grad_s_bias = torch.zeros_like(student_bias, dtype=torch.float32) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
 
         total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
-        chunk_size = max(512, min(chunk_size, N_tokens))
+        chunk_size = max(1, min(chunk_size, N_tokens))
 
         with torch.no_grad():
             for c_start in range(0, N_tokens, chunk_size):
