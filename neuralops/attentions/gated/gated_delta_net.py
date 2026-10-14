@@ -1112,7 +1112,7 @@ class GatedDeltaNet(BaseAttention):
 
         # 4. Fused GDN step: S_t = beta * S_{t-1} + alpha * k_t \otimes (v_t - S_{t-1}^T @ k_t)
         out_t, kv_state = fused_recurrent_gdn_step(
-            q_t, k_t, v_t, beta, alpha, kv_state, scale=self.scale
+            q_t, k_t, v_t, beta, alpha, kv_state, scale=1.0
         )
         state["kv_state"] = kv_state
         state["step_idx"] = step_idx + 1
