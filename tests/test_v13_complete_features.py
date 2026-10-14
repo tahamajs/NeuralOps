@@ -43,8 +43,10 @@ def test_dx_apis_smoke():
     info = summary(model)
     assert info["total_parameters"] > 0
 
-    comp = compare(model, model)
+    x = torch.randn(2, 64)
+    comp = compare(model, model, x)
     assert comp["param_ratio"] == 1.0
+
 
 
 def test_training_engine_pissa():
