@@ -61,6 +61,76 @@ from neuralops.core.triton_kernels._types import (
     log_fallback_reason,
 )
 from neuralops.core.triton_kernels.autotuner import Autotuner, autotune_kernel
+from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
+
+_RUNTIME_FALLBACK_CACHE: set[str] = set()
+
+
+# ---------------------------------------------------------------------------
+# Power-of-2 Head-Dim Auto-Padding & Slicing
+# ---------------------------------------------------------------------------
+
+
+def pad_to_triton_power_of_2(*tensors: torch.Tensor, min_dim: int = 16) -> tuple[tuple[torch.Tensor, ...], int]:
+    """
+    Ensure the last dimension (head_dim) of each tensor is a power of 2 >= min_dim.
+    Triton tl.dot and tl.arange(0, BLOCK_D) require BLOCK_D to be a power of 2.
+    Returns:
+        (padded_tensors, original_head_dim)
+    """
+    if not tensors:
+        return (), 0
+
+    first = tensors[0]
+    orig_d = first.shape[-1]
+    # Check if power of 2 and >= min_dim
+    if orig_d >= min_dim and (orig_d & (orig_d - 1)) == 0:
+        return tensors, orig_d
+
+    # Calculate next power of 2
+    padded_d = max(min_dim, 1 << (orig_d - 1).bit_length())
+    pad_len = padded_d - orig_d
+
+    padded_list = []
+    for t in tensors:
+        if t is None:
+            padded_list.append(None)
+        elif t.shape[-1] == orig_d:
+            # Pad last dimension (left_pad=0, right_pad=pad_len)
+            padded_list.append(F.pad(t, (0, pad_len)))
+        else:
+            padded_list.append(t)
+
+    return tuple(padded_list), orig_d
+
+
+def unpad_from_triton_power_of_2(out: torch.Tensor, orig_d: int) -> torch.Tensor:
+    """Slice out tensor back to original head dimension if padded."""
+    if out is None or out.shape[-1] == orig_d:
+        return out
+    return out[..., :orig_d]
+
+
+# ---------------------------------------------------------------------------
+# Architecture Dtype Coercion
+# ---------------------------------------------------------------------------
+
+
+def coerce_tensor_for_hardware(t: torch.Tensor) -> tuple[torch.Tensor, torch.dtype]:
+    """
+    Ensure tensor dtype is compatible with device architecture.
+    If tensor is bfloat16 but device does not support native bf16 (e.g. SM < 8.0),
+    coerces to float16 (or float32) for execution, returning (coerced_tensor, orig_dtype).
+    """
+    if t is None:
+        return None, None
+    orig_dtype = t.dtype
+    if t.is_cuda and orig_dtype == torch.bfloat16:
+        profile = get_device_hardware_profile(t.device)
+        if not profile.supports_bf16:
+            return t.to(torch.float16), orig_dtype
+    return t, orig_dtype
+
 
 
 
@@ -472,75 +542,151 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
             except Exception:
                 pass
 
-    if kernel_name == "linear_attn":
-        from neuralops.core.triton_kernels.linear_attn import fwd, is_supported
+    # Circuit-breaker: check if this kernel has encountered fatal hardware/runtime failure
+    if kernel_name in _RUNTIME_FALLBACK_CACHE:
+        return _fallback_for_kernel(kernel_name, *args, **kwargs)
 
-        q, k, v = args[0], args[1], args[2]
-        head_dim = q.shape[-1]
-        seq_len = q.shape[-2]
-        suitable, reason = check_triton_suitability(
-            q, kernel_name, head_dim=head_dim, seq_len=seq_len
-        )
-        if suitable and is_supported(q, k, v, **kwargs):
-            try:
-                return fwd(q, k, v, **kwargs)
-            except Exception as e:
-                log_fallback_reason(kernel_name, f"execution error: {e}")
+    try:
+        if kernel_name == "linear_attn":
+            from neuralops.core.triton_kernels.linear_attn import fwd, is_supported
+
+            q, k, v = args[0], args[1], args[2]
+            head_dim = q.shape[-1]
+            seq_len = q.shape[-2]
+            suitable, reason = check_triton_suitability(
+                q, kernel_name, head_dim=head_dim, seq_len=seq_len
+            )
+            if suitable and is_supported(q, k, v, **kwargs):
+                # Auto-pad non-power-of-2 head dimensions
+                (q_pad, k_pad, v_pad), orig_d = pad_to_triton_power_of_2(q, k, v)
+                # Architecture dtype coercion (e.g. bf16 on SM < 8.0)
+                q_exec, orig_dtype = coerce_tensor_for_hardware(q_pad)
+                k_exec, _ = coerce_tensor_for_hardware(k_pad)
+                v_exec, _ = coerce_tensor_for_hardware(v_pad)
+
+                out = fwd(q_exec, k_exec, v_exec, **kwargs)
+                out = unpad_from_triton_power_of_2(out, orig_d)
+                if orig_dtype is not None and out.dtype != orig_dtype:
+                    out = out.to(orig_dtype)
+                return out
+            else:
+                if not suitable:
+                    log_fallback_reason(kernel_name, reason or "unsupported configuration")
+                else:
+                    log_fallback_reason(kernel_name, "kernel.is_supported returned False")
                 return linear_attn_pytorch_fallback(q, k, v, **kwargs)
-        else:
-            if not suitable:
-                log_fallback_reason(kernel_name, reason or "unsupported configuration")
+
+        elif kernel_name == "sparse_attn":
+            from neuralops.core.triton_kernels.sparse_attn import fwd, is_supported
+
+            q, k, v = args[0], args[1], args[2]
+            head_dim = q.shape[-1]
+            seq_len = q.shape[-2]
+            suitable, reason = check_triton_suitability(
+                q, kernel_name, head_dim=head_dim, seq_len=seq_len
+            )
+            if suitable and is_supported(q, k, v, **kwargs):
+                (q_pad, k_pad, v_pad), orig_d = pad_to_triton_power_of_2(q, k, v)
+                q_exec, orig_dtype = coerce_tensor_for_hardware(q_pad)
+                k_exec, _ = coerce_tensor_for_hardware(k_pad)
+                v_exec, _ = coerce_tensor_for_hardware(v_pad)
+
+                out = fwd(q_exec, k_exec, v_exec, **kwargs)
+                out = unpad_from_triton_power_of_2(out, orig_d)
+                if orig_dtype is not None and out.dtype != orig_dtype:
+                    out = out.to(orig_dtype)
+                return out
             else:
-                log_fallback_reason(kernel_name, "kernel.is_supported returned False")
-            return linear_attn_pytorch_fallback(q, k, v, **kwargs)
-
-    elif kernel_name == "sparse_attn":
-        from neuralops.core.triton_kernels.sparse_attn import fwd, is_supported
-
-        q, k, v = args[0], args[1], args[2]
-        head_dim = q.shape[-1]
-        seq_len = q.shape[-2]
-        suitable, reason = check_triton_suitability(
-            q, kernel_name, head_dim=head_dim, seq_len=seq_len
-        )
-        if suitable and is_supported(q, k, v, **kwargs):
-            try:
-                return fwd(q, k, v, **kwargs)
-            except Exception as e:
-                log_fallback_reason(kernel_name, f"execution error: {e}")
+                if not suitable:
+                    log_fallback_reason(kernel_name, reason or "unsupported configuration")
+                else:
+                    log_fallback_reason(kernel_name, "kernel.is_supported returned False")
                 return sparse_attn_pytorch_fallback(q, k, v, **kwargs)
-        else:
-            if not suitable:
-                log_fallback_reason(kernel_name, reason or "unsupported configuration")
+
+        elif kernel_name == "low_rank":
+            from neuralops.core.triton_kernels.low_rank import fwd, is_supported
+
+            kw = dict(kwargs)
+            x = args[0]
+            U = args[1] if len(args) > 1 else kw.pop("U", None)
+            V = args[2] if len(args) > 2 else kw.pop("V", None)
+            bias = args[3] if len(args) > 3 else kw.pop("bias", None)
+            suitable, reason = check_triton_suitability(x, kernel_name)
+            if suitable and is_supported(x, U, V, bias=bias, **kw):
+                return fwd(x, U, V, bias=bias, **kw)
             else:
-                log_fallback_reason(kernel_name, "kernel.is_supported returned False")
-            return sparse_attn_pytorch_fallback(q, k, v, **kwargs)
+                if not suitable:
+                    log_fallback_reason(kernel_name, reason or "unsupported configuration")
+                else:
+                    log_fallback_reason(kernel_name, "kernel.is_supported returned False")
+                return low_rank_pytorch_fallback(x, U, V, bias=bias, **kw)
 
+        elif kernel_name == "state_update":
+            from neuralops.core.triton_kernels.state_update import fwd, is_supported
+
+            kw = dict(kwargs)
+            u = args[0]
+            delta = args[1] if len(args) > 1 else kw.pop("delta", None)
+            A = args[2] if len(args) > 2 else kw.pop("A", None)
+            B = args[3] if len(args) > 3 else kw.pop("B", None)
+            C = args[4] if len(args) > 4 else kw.pop("C", None)
+            D = args[5] if len(args) > 5 else kw.pop("D", None)
+            suitable, reason = check_triton_suitability(u, kernel_name)
+            if suitable and is_supported(u, delta, A, B, C, D=D, **kw):
+                return fwd(u, delta, A, B, C, D=D, **kw)
+            else:
+                if not suitable:
+                    log_fallback_reason(kernel_name, reason or "unsupported configuration")
+                else:
+                    log_fallback_reason(kernel_name, "kernel.is_supported returned False")
+                return state_update_pytorch_fallback(u, delta, A, B, C, D=D, **kw)
+
+        elif kernel_name == "gqa":
+            from neuralops.core.triton_kernels.gqa import fwd, is_supported
+
+            kw = dict(kwargs)
+            k = args[0]
+            v = args[1]
+            num_kv_heads = args[2] if len(args) > 2 else kw.pop("num_kv_heads", None)
+            num_heads = args[3] if len(args) > 3 else kw.pop("num_heads", None)
+            suitable, reason = check_triton_suitability(k, kernel_name)
+            if suitable and is_supported(k, v, num_kv_heads, num_heads, **kw):
+                return fwd(k, v, num_kv_heads, num_heads, **kw)
+            else:
+                if not suitable:
+                    log_fallback_reason(kernel_name, reason or "unsupported configuration")
+                else:
+                    log_fallback_reason(kernel_name, "kernel.is_supported returned False")
+                return gqa_pytorch_fallback(k, v, num_kv_heads, num_heads, **kw)
+
+        elif kernel_name is None:
+            raise ValueError("triton_kernel cannot be None when calling triton_dispatch")
+        else:
+            raise ValueError(
+                f"Unknown triton kernel: '{kernel_name}'. Supported kernels: "
+                "['linear_attn', 'sparse_attn', 'low_rank', 'state_update', 'gqa']"
+            )
+    except Exception as e:
+        # Circuit-breaker triggered: blacklist kernel and execute graceful fallback
+        _RUNTIME_FALLBACK_CACHE.add(kernel_name)
+        log_fallback_reason(kernel_name, f"circuit breaker triggered due to execution error: {e}")
+        return _fallback_for_kernel(kernel_name, *args, **kwargs)
+
+
+def _fallback_for_kernel(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
+    """Internal router for PyTorch fallback executions."""
+    if kernel_name in ("linear_attn", "sparse_attn"):
+        if kernel_name == "linear_attn":
+            return linear_attn_pytorch_fallback(*args, **kwargs)
+        return sparse_attn_pytorch_fallback(*args, **kwargs)
     elif kernel_name == "low_rank":
-        from neuralops.core.triton_kernels.low_rank import fwd, is_supported
-
         kw = dict(kwargs)
         x = args[0]
         U = args[1] if len(args) > 1 else kw.pop("U", None)
         V = args[2] if len(args) > 2 else kw.pop("V", None)
         bias = args[3] if len(args) > 3 else kw.pop("bias", None)
-        suitable, reason = check_triton_suitability(x, kernel_name)
-        if suitable and is_supported(x, U, V, bias=bias, **kw):
-            try:
-                return fwd(x, U, V, bias=bias, **kw)
-            except Exception as e:
-                log_fallback_reason(kernel_name, f"execution error: {e}")
-                return low_rank_pytorch_fallback(x, U, V, bias=bias, **kw)
-        else:
-            if not suitable:
-                log_fallback_reason(kernel_name, reason or "unsupported configuration")
-            else:
-                log_fallback_reason(kernel_name, "kernel.is_supported returned False")
-            return low_rank_pytorch_fallback(x, U, V, bias=bias, **kw)
-
+        return low_rank_pytorch_fallback(x, U, V, bias=bias, **kw)
     elif kernel_name == "state_update":
-        from neuralops.core.triton_kernels.state_update import fwd, is_supported
-
         kw = dict(kwargs)
         u = args[0]
         delta = args[1] if len(args) > 1 else kw.pop("delta", None)
@@ -548,49 +694,15 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
         B = args[3] if len(args) > 3 else kw.pop("B", None)
         C = args[4] if len(args) > 4 else kw.pop("C", None)
         D = args[5] if len(args) > 5 else kw.pop("D", None)
-        suitable, reason = check_triton_suitability(u, kernel_name)
-        if suitable and is_supported(u, delta, A, B, C, D=D, **kw):
-            try:
-                return fwd(u, delta, A, B, C, D=D, **kw)
-            except Exception as e:
-                log_fallback_reason(kernel_name, f"execution error: {e}")
-                return state_update_pytorch_fallback(u, delta, A, B, C, D=D, **kw)
-        else:
-            if not suitable:
-                log_fallback_reason(kernel_name, reason or "unsupported configuration")
-            else:
-                log_fallback_reason(kernel_name, "kernel.is_supported returned False")
-            return state_update_pytorch_fallback(u, delta, A, B, C, D=D, **kw)
-
+        return state_update_pytorch_fallback(u, delta, A, B, C, D=D, **kw)
     elif kernel_name == "gqa":
-        from neuralops.core.triton_kernels.gqa import fwd, is_supported
-
         kw = dict(kwargs)
         k = args[0]
         v = args[1]
         num_kv_heads = args[2] if len(args) > 2 else kw.pop("num_kv_heads", None)
         num_heads = args[3] if len(args) > 3 else kw.pop("num_heads", None)
-        suitable, reason = check_triton_suitability(k, kernel_name)
-        if suitable and is_supported(k, v, num_kv_heads, num_heads, **kw):
-            try:
-                return fwd(k, v, num_kv_heads, num_heads, **kw)
-            except Exception as e:
-                log_fallback_reason(kernel_name, f"execution error: {e}")
-                return gqa_pytorch_fallback(k, v, num_kv_heads, num_heads, **kw)
-        else:
-            if not suitable:
-                log_fallback_reason(kernel_name, reason or "unsupported configuration")
-            else:
-                log_fallback_reason(kernel_name, "kernel.is_supported returned False")
-            return gqa_pytorch_fallback(k, v, num_kv_heads, num_heads, **kw)
-
-    elif kernel_name is None:
-        raise ValueError("triton_kernel cannot be None when calling triton_dispatch")
-    else:
-        raise ValueError(
-            f"Unknown triton kernel: '{kernel_name}'. Supported kernels: "
-            "['linear_attn', 'sparse_attn', 'low_rank', 'state_update', 'gqa']"
-        )
+        return gqa_pytorch_fallback(k, v, num_kv_heads, num_heads, **kw)
+    raise ValueError(f"Unknown triton kernel: '{kernel_name}'")
 
 
 __all__ = [
@@ -602,6 +714,9 @@ __all__ = [
     "check_triton_suitability",
     "log_fallback_reason",
     "triton_dispatch",
+    "pad_to_triton_power_of_2",
+    "unpad_from_triton_power_of_2",
+    "coerce_tensor_for_hardware",
     "linear_attn_pytorch_fallback",
     "sparse_attn_pytorch_fallback",
     "low_rank_pytorch_fallback",
@@ -610,3 +725,4 @@ __all__ = [
     "Autotuner",
     "autotune_kernel",
 ]
+
