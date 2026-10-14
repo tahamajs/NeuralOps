@@ -1,0 +1,1058 @@
+{
+  "node": "taha",
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "total_modules": 131,
+  "passed": 131,
+  "failed": 0,
+  "total_time_s": 68.42,
+  "results": [
+    {
+      "module": "adaptive_span_attention",
+      "status": "PASS",
+      "latency_s": 0.558,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "status": "PASS",
+      "latency_s": 0.035,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "adaptive_svd_attention",
+      "status": "PASS",
+      "latency_s": 0.042,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "adasplash_attention",
+      "status": "PASS",
+      "latency_s": 0.059,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_hybrid",
+      "status": "PASS",
+      "latency_s": 0.054,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_spectron_fp8",
+      "status": "PASS",
+      "latency_s": 0.458,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v1",
+      "status": "PASS",
+      "latency_s": 0.071,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v2",
+      "status": "PASS",
+      "latency_s": 0.049,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v3",
+      "status": "PASS",
+      "latency_s": 0.05,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v4",
+      "status": "PASS",
+      "latency_s": 0.046,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v5",
+      "status": "PASS",
+      "latency_s": 0.071,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "aegis_v6",
+      "status": "PASS",
+      "latency_s": 0.042,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "alibi",
+      "status": "PASS",
+      "latency_s": 0.021,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "asvd_attention",
+      "status": "PASS",
+      "latency_s": 0.035,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "bam_umoe",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "block_transformer_hiba",
+      "status": "PASS",
+      "latency_s": 0.022,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "chela_slay",
+      "status": "PASS",
+      "latency_s": 0.361,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "chela_slay_attention",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "cluster_attention",
+      "status": "PASS",
+      "latency_s": 0.057,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "compressed_attention",
+      "status": "PASS",
+      "latency_s": 0.016,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "compressed_mha_attention",
+      "status": "PASS",
+      "latency_s": 0.023,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "cosformer",
+      "status": "PASS",
+      "latency_s": 0.052,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "cosformer_attention",
+      "status": "PASS",
+      "latency_s": 0.032,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "cross_attention",
+      "status": "PASS",
+      "latency_s": 0.017,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.121,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.108,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "dynamic_conv_attention",
+      "status": "PASS",
+      "latency_s": 0.025,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "eat",
+      "status": "PASS",
+      "latency_s": 0.024,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "eat_attention",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "expert_choice_moe",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "factorised_matrix_state",
+      "status": "PASS",
+      "latency_s": 0.148,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "flash_attention3",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "flash_attention3_fp8",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "full",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "full_attention",
+      "status": "PASS",
+      "latency_s": 0.024,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "fused_svd_kernel",
+      "status": "PASS",
+      "latency_s": 0.028,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "fusion_attn",
+      "status": "PASS",
+      "latency_s": 0.024,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "galerkin_attention",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gated_delta_net",
+      "status": "PASS",
+      "latency_s": 5.205,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gated_deltanet_block",
+      "status": "PASS",
+      "latency_s": 5.185,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.121,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.11,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gla_attention",
+      "status": "PASS",
+      "latency_s": 0.136,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "goldfinch_ahn",
+      "status": "PASS",
+      "latency_s": 0.059,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "gqa_attention",
+      "status": "PASS",
+      "latency_s": 0.022,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "granite_hybrid",
+      "status": "PASS",
+      "latency_s": 0.262,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "griffin_ssd",
+      "status": "PASS",
+      "latency_s": 0.045,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "halo_regla",
+      "status": "PASS",
+      "latency_s": 0.036,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hamming_attention",
+      "status": "PASS",
+      "latency_s": 0.031,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_deltanet",
+      "status": "PASS",
+      "latency_s": 5.25,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_layer",
+      "status": "PASS",
+      "latency_s": 0.047,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_outer",
+      "status": "PASS",
+      "latency_s": 0.298,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_outer",
+      "status": "PASS",
+      "latency_s": 0.293,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hla_attention",
+      "status": "PASS",
+      "latency_s": 0.103,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.033,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hybrid_local_kernel",
+      "status": "PASS",
+      "latency_s": 0.05,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "hymba_transx",
+      "status": "PASS",
+      "latency_s": 0.095,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "jamba",
+      "status": "PASS",
+      "latency_s": 0.056,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "jamba_info",
+      "status": "PASS",
+      "latency_s": 0.108,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "kda_attention",
+      "status": "PASS",
+      "latency_s": 3.217,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "landmark_local_attention",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "linformer_attention",
+      "status": "PASS",
+      "latency_s": 0.025,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "lola_attention",
+      "status": "PASS",
+      "latency_s": 0.049,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "lora_attention",
+      "status": "PASS",
+      "latency_s": 0.026,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "lsh_attention",
+      "status": "PASS",
+      "latency_s": 0.142,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "mamba_block",
+      "status": "PASS",
+      "latency_s": 5.851,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "mamba_svd_flash",
+      "status": "PASS",
+      "latency_s": 3.666,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "minimal_nova",
+      "status": "PASS",
+      "latency_s": 0.048,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "minimal_svd",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "mixattention_moska",
+      "status": "PASS",
+      "latency_s": 0.025,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "mla_attention",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "moba_attention",
+      "status": "PASS",
+      "latency_s": 0.047,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "moe_deltakv_paged",
+      "status": "PASS",
+      "latency_s": 0.059,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "mqa",
+      "status": "PASS",
+      "latency_s": 0.017,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "naive_svd",
+      "status": "PASS",
+      "latency_s": 0.019,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "nasc_attention",
+      "status": "PASS",
+      "latency_s": 0.138,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "native_hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.028,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "nexus",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "nsa_attention",
+      "status": "PASS",
+      "latency_s": 0.034,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "nystrom_attention",
+      "status": "PASS",
+      "latency_s": 0.027,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "optimized_hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.044,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "orion",
+      "status": "PASS",
+      "latency_s": 0.033,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "padre_attention",
+      "status": "PASS",
+      "latency_s": 0.043,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "performer_attention",
+      "status": "PASS",
+      "latency_s": 0.031,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "phantom",
+      "status": "PASS",
+      "latency_s": 0.024,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "positive_kernel_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.033,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "primal_attention",
+      "status": "PASS",
+      "latency_s": 0.159,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "progressive_token_pruning",
+      "status": "PASS",
+      "latency_s": 0.027,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "projection_factorized_attn",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "qcqa_attention",
+      "status": "PASS",
+      "latency_s": 0.022,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "rala_attention",
+      "status": "PASS",
+      "latency_s": 0.075,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "reap_moe",
+      "status": "PASS",
+      "latency_s": 0.02,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "refined_landmark_attention",
+      "status": "PASS",
+      "latency_s": 0.038,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "regla_attention",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "residual_svd_attention",
+      "status": "PASS",
+      "latency_s": 0.028,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "routing_attention",
+      "status": "PASS",
+      "latency_s": 0.114,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "rpc_attention",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "salt_attention",
+      "status": "PASS",
+      "latency_s": 0.04,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "samba_m3",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "samba_moe",
+      "status": "PASS",
+      "latency_s": 0.075,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "selective_ssm",
+      "status": "PASS",
+      "latency_s": 5.77,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "simple_ssm",
+      "status": "PASS",
+      "latency_s": 5.738,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "sink_attention",
+      "status": "PASS",
+      "latency_s": 0.027,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "soa_attn",
+      "status": "PASS",
+      "latency_s": 0.021,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "spectraformer_attention",
+      "status": "PASS",
+      "latency_s": 0.035,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "spectron",
+      "status": "PASS",
+      "latency_s": 0.033,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "spectron_fp8",
+      "status": "PASS",
+      "latency_s": 0.445,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "split_head_hybrid",
+      "status": "PASS",
+      "latency_s": 0.062,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_compressed",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_linear",
+      "status": "PASS",
+      "latency_s": 0.033,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_decay",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_inject",
+      "status": "PASS",
+      "latency_s": 0.03,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_llm_v2_attention",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_mamba",
+      "status": "PASS",
+      "latency_s": 0.111,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_projection_attention",
+      "status": "PASS",
+      "latency_s": 0.018,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "svd_seq",
+      "status": "PASS",
+      "latency_s": 0.021,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "template_attention",
+      "status": "PASS",
+      "latency_s": 0.019,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "token_compressed_attention",
+      "status": "PASS",
+      "latency_s": 0.031,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "tri_branch_hybrid",
+      "status": "PASS",
+      "latency_s": 0.041,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "triton_cosformer",
+      "status": "PASS",
+      "latency_s": 0.027,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "triton_svd_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.019,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "ttt_linear_attention",
+      "status": "PASS",
+      "latency_s": 1.198,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "unified_rope",
+      "status": "PASS",
+      "latency_s": 0.029,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "upi_stuffed_mamba",
+      "status": "PASS",
+      "latency_s": 2.012,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "vig_attention",
+      "status": "PASS",
+      "latency_s": 0.034,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "vspec",
+      "status": "PASS",
+      "latency_s": 0.041,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "wgqa_attention",
+      "status": "PASS",
+      "latency_s": 0.02,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "xattention",
+      "status": "PASS",
+      "latency_s": 0.022,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    },
+    {
+      "module": "zeros_attention",
+      "status": "PASS",
+      "latency_s": 0.022,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "node": "taha",
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,1058 @@
+{
+  "node": "tahoora",
+  "device": "NVIDIA GeForce GTX 1060",
+  "total_modules": 131,
+  "passed": 131,
+  "failed": 0,
+  "total_time_s": 181.16,
+  "results": [
+    {
+      "module": "adaptive_span_attention",
+      "status": "PASS",
+      "latency_s": 1.318,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "adaptive_svd_attention",
+      "status": "PASS",
+      "latency_s": 0.068,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "adasplash_attention",
+      "status": "PASS",
+      "latency_s": 0.118,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_hybrid",
+      "status": "PASS",
+      "latency_s": 0.112,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_spectron_fp8",
+      "status": "PASS",
+      "latency_s": 1.792,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v1",
+      "status": "PASS",
+      "latency_s": 0.115,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v2",
+      "status": "PASS",
+      "latency_s": 0.094,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v3",
+      "status": "PASS",
+      "latency_s": 0.095,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v4",
+      "status": "PASS",
+      "latency_s": 0.094,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v5",
+      "status": "PASS",
+      "latency_s": 0.139,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "aegis_v6",
+      "status": "PASS",
+      "latency_s": 0.13,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "alibi",
+      "status": "PASS",
+      "latency_s": 0.077,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "asvd_attention",
+      "status": "PASS",
+      "latency_s": 0.056,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "bam_umoe",
+      "status": "PASS",
+      "latency_s": 0.059,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "block_transformer_hiba",
+      "status": "PASS",
+      "latency_s": 0.068,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "chela_slay",
+      "status": "PASS",
+      "latency_s": 0.107,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "chela_slay_attention",
+      "status": "PASS",
+      "latency_s": 0.101,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "cluster_attention",
+      "status": "PASS",
+      "latency_s": 0.104,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "compressed_attention",
+      "status": "PASS",
+      "latency_s": 0.062,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "compressed_mha_attention",
+      "status": "PASS",
+      "latency_s": 0.046,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "cosformer",
+      "status": "PASS",
+      "latency_s": 0.111,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "cosformer_attention",
+      "status": "PASS",
+      "latency_s": 0.109,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "cross_attention",
+      "status": "PASS",
+      "latency_s": 0.059,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.363,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.35,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "dynamic_conv_attention",
+      "status": "PASS",
+      "latency_s": 0.065,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "eat",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "eat_attention",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "expert_choice_moe",
+      "status": "PASS",
+      "latency_s": 0.157,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "factorised_matrix_state",
+      "status": "PASS",
+      "latency_s": 0.384,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "flash_attention3",
+      "status": "PASS",
+      "latency_s": 0.064,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "flash_attention3_fp8",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "full",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "full_attention",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "fused_svd_kernel",
+      "status": "PASS",
+      "latency_s": 0.07,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "fusion_attn",
+      "status": "PASS",
+      "latency_s": 0.051,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "galerkin_attention",
+      "status": "PASS",
+      "latency_s": 0.054,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gated_delta_net",
+      "status": "PASS",
+      "latency_s": 17.341,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gated_deltanet_block",
+      "status": "PASS",
+      "latency_s": 17.124,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.381,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.353,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gla_attention",
+      "status": "PASS",
+      "latency_s": 0.35,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "goldfinch_ahn",
+      "status": "PASS",
+      "latency_s": 0.229,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "gqa_attention",
+      "status": "PASS",
+      "latency_s": 0.078,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "granite_hybrid",
+      "status": "PASS",
+      "latency_s": 0.285,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "griffin_ssd",
+      "status": "PASS",
+      "latency_s": 0.095,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "halo_regla",
+      "status": "PASS",
+      "latency_s": 0.07,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hamming_attention",
+      "status": "PASS",
+      "latency_s": 0.066,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_deltanet",
+      "status": "PASS",
+      "latency_s": 17.213,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_layer",
+      "status": "PASS",
+      "latency_s": 0.102,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_outer",
+      "status": "PASS",
+      "latency_s": 0.959,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hgrn2_outer",
+      "status": "PASS",
+      "latency_s": 0.964,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hla_attention",
+      "status": "PASS",
+      "latency_s": 0.288,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.068,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hybrid_local_kernel",
+      "status": "PASS",
+      "latency_s": 0.092,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "hymba_transx",
+      "status": "PASS",
+      "latency_s": 0.197,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "jamba",
+      "status": "PASS",
+      "latency_s": 0.143,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "jamba_info",
+      "status": "PASS",
+      "latency_s": 0.195,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "kda_attention",
+      "status": "PASS",
+      "latency_s": 11.848,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "landmark_local_attention",
+      "status": "PASS",
+      "latency_s": 0.135,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "linformer_attention",
+      "status": "PASS",
+      "latency_s": 0.042,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "lola_attention",
+      "status": "PASS",
+      "latency_s": 0.076,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "lora_attention",
+      "status": "PASS",
+      "latency_s": 0.047,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "lsh_attention",
+      "status": "PASS",
+      "latency_s": 0.381,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "mamba_block",
+      "status": "PASS",
+      "latency_s": 18.731,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "mamba_svd_flash",
+      "status": "PASS",
+      "latency_s": 12.823,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "minimal_nova",
+      "status": "PASS",
+      "latency_s": 0.09,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "minimal_svd",
+      "status": "PASS",
+      "latency_s": 0.075,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "mixattention_moska",
+      "status": "PASS",
+      "latency_s": 0.046,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "mla_attention",
+      "status": "PASS",
+      "latency_s": 0.063,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "moba_attention",
+      "status": "PASS",
+      "latency_s": 0.113,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "moe_deltakv_paged",
+      "status": "PASS",
+      "latency_s": 0.121,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "mqa",
+      "status": "PASS",
+      "latency_s": 0.065,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "naive_svd",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "nasc_attention",
+      "status": "PASS",
+      "latency_s": 0.312,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "native_hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.092,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "nexus",
+      "status": "PASS",
+      "latency_s": 0.06,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "nsa_attention",
+      "status": "PASS",
+      "latency_s": 0.071,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "nystrom_attention",
+      "status": "PASS",
+      "latency_s": 0.053,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "optimized_hybrid_attention",
+      "status": "PASS",
+      "latency_s": 0.087,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "orion",
+      "status": "PASS",
+      "latency_s": 0.098,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "padre_attention",
+      "status": "PASS",
+      "latency_s": 0.081,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "performer_attention",
+      "status": "PASS",
+      "latency_s": 0.051,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "phantom",
+      "status": "PASS",
+      "latency_s": 0.04,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "positive_kernel_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.056,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "primal_attention",
+      "status": "PASS",
+      "latency_s": 0.204,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "progressive_token_pruning",
+      "status": "PASS",
+      "latency_s": 0.055,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "projection_factorized_attn",
+      "status": "PASS",
+      "latency_s": 0.088,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "qcqa_attention",
+      "status": "PASS",
+      "latency_s": 0.076,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "rala_attention",
+      "status": "PASS",
+      "latency_s": 0.21,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "reap_moe",
+      "status": "PASS",
+      "latency_s": 0.069,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "refined_landmark_attention",
+      "status": "PASS",
+      "latency_s": 0.084,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "regla_attention",
+      "status": "PASS",
+      "latency_s": 0.051,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "residual_svd_attention",
+      "status": "PASS",
+      "latency_s": 0.055,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "routing_attention",
+      "status": "PASS",
+      "latency_s": 0.254,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "rpc_attention",
+      "status": "PASS",
+      "latency_s": 0.06,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "salt_attention",
+      "status": "PASS",
+      "latency_s": 0.109,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "samba_m3",
+      "status": "PASS",
+      "latency_s": 0.152,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "samba_moe",
+      "status": "PASS",
+      "latency_s": 0.193,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "selective_ssm",
+      "status": "PASS",
+      "latency_s": 18.726,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "simple_ssm",
+      "status": "PASS",
+      "latency_s": 18.747,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "sink_attention",
+      "status": "PASS",
+      "latency_s": 0.043,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "soa_attn",
+      "status": "PASS",
+      "latency_s": 0.072,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "spectraformer_attention",
+      "status": "PASS",
+      "latency_s": 0.051,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "spectron",
+      "status": "PASS",
+      "latency_s": 0.077,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "spectron_fp8",
+      "status": "PASS",
+      "latency_s": 1.707,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "split_head_hybrid",
+      "status": "PASS",
+      "latency_s": 0.114,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_compressed",
+      "status": "PASS",
+      "latency_s": 0.058,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_linear",
+      "status": "PASS",
+      "latency_s": 0.087,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.086,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attn",
+      "status": "PASS",
+      "latency_s": 0.087,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_decay",
+      "status": "PASS",
+      "latency_s": 0.086,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_linear_inject",
+      "status": "PASS",
+      "latency_s": 0.086,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_llm_v2_attention",
+      "status": "PASS",
+      "latency_s": 0.084,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_mamba",
+      "status": "PASS",
+      "latency_s": 0.322,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_projection_attention",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "svd_seq",
+      "status": "PASS",
+      "latency_s": 0.037,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "template_attention",
+      "status": "PASS",
+      "latency_s": 0.065,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "token_compressed_attention",
+      "status": "PASS",
+      "latency_s": 0.064,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "tri_branch_hybrid",
+      "status": "PASS",
+      "latency_s": 0.09,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "triton_cosformer",
+      "status": "PASS",
+      "latency_s": 0.041,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "triton_svd_linear_attention",
+      "status": "PASS",
+      "latency_s": 0.032,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "ttt_linear_attention",
+      "status": "PASS",
+      "latency_s": 4.274,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "unified_rope",
+      "status": "PASS",
+      "latency_s": 0.087,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "upi_stuffed_mamba",
+      "status": "PASS",
+      "latency_s": 9.563,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "vig_attention",
+      "status": "PASS",
+      "latency_s": 0.072,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "vspec",
+      "status": "PASS",
+      "latency_s": 0.083,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "wgqa_attention",
+      "status": "PASS",
+      "latency_s": 0.067,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "xattention",
+      "status": "PASS",
+      "latency_s": 0.075,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    },
+    {
+      "module": "zeros_attention",
+      "status": "PASS",
+      "latency_s": 0.044,
+      "device": "NVIDIA GeForce GTX 1060",
+      "node": "tahoora",
+      "error": ""
+    }
+  ]
+}
