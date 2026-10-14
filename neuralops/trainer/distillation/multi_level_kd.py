@@ -237,6 +237,11 @@ class LinearCKALoss(nn.Module):
         X = x.view(-1, x.size(-1)).float()
         Y = y.view(-1, y.size(-1)).float()
 
+        # If D is very large (e.g. vocab logits V=50,257), compute CKA on sample dimension N
+        if X.size(1) > X.size(0):
+            X = X.t()
+            Y = Y.t()
+
         # Center columns
         X = X - X.mean(dim=0, keepdim=True)
         Y = Y - Y.mean(dim=0, keepdim=True)
