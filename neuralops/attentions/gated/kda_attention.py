@@ -1028,8 +1028,7 @@ class KDAAttention(BaseAttention):
         k_act = (F.elu(k.float()) + 1.0)
 
         # 3. Decay gate: beta in [1e-4, 1 - 1e-4]
-        beta_t = self._effective_beta()  # [H]
-        beta_t = beta_t.view(1, H, 1, 1).to(device=device, dtype=torch.float32)
+        beta_t = torch.sigmoid(self.lora_beta).view(1, H, 1, 1).to(device=device, dtype=torch.float32)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, Dh, Dh), device=device, dtype=torch.float32)
