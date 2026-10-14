@@ -44,7 +44,7 @@ def main():
     v = torch.randn(B, H, L, D, device=device, dtype=torch.float16)
     
     slopes = torch.linspace(0.1, 0.9, H, device=device)
-    w_conv = torch.randn(D * H, 1, 4, device=device, dtype=torch.float16)
+    w_conv = torch.randn(B, H, L, 4, device=device, dtype=torch.float16)
     proj_lsh = torch.randn(D, 8, device=device, dtype=torch.float32)
 
     total_tokens_processed = 0
@@ -54,7 +54,7 @@ def main():
         _ = fused_alibi_bias_triton(slopes, L, L, past_len=0, is_causal=True)
 
         # 2. Dynamic Conv1d
-        _ = fused_dynamic_conv1d_triton(x, w_conv)
+        _ = fused_dynamic_conv1d_triton(v, w_conv)
 
         # 3. LSH Hashing
         _ = fused_lsh_hash_and_bin_triton(q.float(), proj_lsh, num_buckets=16)
