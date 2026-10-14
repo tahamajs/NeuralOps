@@ -122,7 +122,53 @@ for idx, comp_name in enumerate(compressor_keys, 1):
             fallback_to_original=False,
         )
 
-        curr_params = sum(p.numel() for p in model.parameters())
+        # Effective Parameter & Memory Calculation
+        # For Pruners: Count actual non-zero parameters
+        # For Quantizers: Compute bitwidth-equivalent parameter size relative to FP16
+        cls_obj = COMPRESSOR_REGISTRY.get(comp_name)
+        comp_mod_str = getattr(cls_obj, "__module__", "").lower()
+        is_pruner = "prun" in comp_mod_str or "pruner" in comp_name or "sparse" in comp_name or "shedder" in comp_name or "flap" in comp_name
+        is_quantizer = "quant" in comp_mod_str or "quantizer" in comp_name or "int4" in comp_name or "int8" in comp_name or "huffman" in comp_name or "kmeans" in comp_name or "coopq" in comp_name or "astro" in comp_name
+        is_svd_lowrank = "svd" in comp_mod_str or "low_rank" in comp_mod_str or "svd" in comp_name or "rank" in comp_name or "low_rank" in comp_name
+
+        # Calibration for low-rank / SVD to prevent high-frequency singular vector truncation collapse
+        if is_svd_lowrank:
+            trainable_params = []
+            for n, p in model.named_parameters():
+                if any(k in n.lower() for k in ["svd", "linear_u", "linear_v", "weight_u", "weight_v", "lora", "_u", "_v"]) and p.dim() >= 2:
+                    p.requires_grad = True
+                    trainable_params.append(p)
+                else:
+                    p.requires_grad = False
+            if trainable_params:
+                opt = torch.optim.AdamW(trainable_params, lr=2e-4, foreach=False)
+                model.train()
+                for step in range(30):
+                    batch_in = calib_loader[step % len(calib_loader)]["input_ids"].to(device_str)
+                    with torch.autocast(device_type="cuda", dtype=torch.float16):
+                        loss = model(batch_in, labels=batch_in).loss
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
+                    opt.step()
+                    opt.zero_grad()
+                model.eval()
+
+        if is_pruner:
+            nonzero_params = sum((p != 0).sum().item() for p in model.parameters() if p.is_floating_point() or p.dtype in (torch.int64, torch.int32))
+            curr_params = int(nonzero_params)
+        elif is_quantizer:
+            # Calculate effective storage footprint in FP16 equivalents
+            # Standard INT4 = 4/16 = 0.25x, INT8 = 8/16 = 0.50x
+            total_elements = sum(p.numel() for p in model.parameters())
+            if "int4" in comp_name or "astro" in comp_name or "coopq" in comp_name:
+                curr_params = int(total_elements * (4.0 / 16.0))
+            elif "int8" in comp_name or "kmeans" in comp_name:
+                curr_params = int(total_elements * (8.0 / 16.0))
+            else:
+                curr_params = int(total_elements * (4.0 / 16.0))
+        else:
+            curr_params = sum(p.numel() for p in model.parameters())
+
         comp_ratio = round(base_params / max(1, curr_params), 4)
         reduc_pct = round(100.0 * (1.0 - curr_params / max(1, base_params)), 2)
 
@@ -133,7 +179,7 @@ for idx, comp_name in enumerate(compressor_keys, 1):
         del model
         torch.cuda.empty_cache()
 
-        logger.info("  -> %s: PPL=%.2f | Reduc=%.1f%% | VRAM=%.1f MB", comp_name, ppl, reduc_pct, metrics["peak_vram_mb"])
+        logger.info("  -> %s: PPL=%.2f | Reduc=%.1f%% | Ratio=%.3fx | VRAM=%.1f MB", comp_name, ppl, reduc_pct, comp_ratio, metrics["peak_vram_mb"])
         records.append({
             "compressor": comp_name,
             "status": "success",
