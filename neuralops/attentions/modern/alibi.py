@@ -102,7 +102,8 @@ class ALiBiAttention(BaseAttention):
         # ---------- Resolve dims ----------
         if hidden_size is None:
             hidden_size = (
-                _cfg_get(config, "hidden_size", None)
+                kwargs.get("dim")
+                or _cfg_get(config, "hidden_size", None)
                 or _cfg_get(config, "n_embd", None)
                 or _cfg_get(config, "d_model", None)
                 or _cfg_get(config, "dim", None)
@@ -111,7 +112,8 @@ class ALiBiAttention(BaseAttention):
             )
         if num_heads is None:
             num_heads = (
-                _cfg_get(config, "num_attention_heads", None)
+                kwargs.get("num_heads")
+                or _cfg_get(config, "num_attention_heads", None)
                 or _cfg_get(config, "num_heads", None)
                 or _cfg_get(config, "n_head", None)
                 or kwargs.get("n_head")
