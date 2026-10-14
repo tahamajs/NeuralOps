@@ -25,9 +25,19 @@ from neuralops.trainer.distillation.multi_level_kd import (
 class AttentionHomotopyScheduler:
     """Schedules homotopy parameter alpha: 0.0 (teacher) -> 1.0 (student)."""
 
-    def __init__(self, total_steps: int, schedule: str = "cosine") -> None:
+    def __init__(
+        self,
+        total_steps: int,
+        schedule: str = "cosine",
+        warmup_steps: int = 0,
+        schedule_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         self.total_steps = max(1, total_steps)
+        if schedule_type is not None:
+            schedule = schedule_type
         self.schedule = schedule.lower()
+        self.warmup_steps = max(0, warmup_steps)
 
     def get_alpha(self, step: int) -> float:
         progress = min(1.0, max(0.0, step / self.total_steps))
