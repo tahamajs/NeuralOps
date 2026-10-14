@@ -7,8 +7,6 @@ Provides seamless support for `torch.compile(model, fullgraph=False)` without gr
   3. Falls back gracefully on older PyTorch versions or non-CUDA environments.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any, Callable, Dict, Optional, Tuple
 import torch
