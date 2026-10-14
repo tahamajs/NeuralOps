@@ -241,21 +241,43 @@ model = merge_for_inference(model)
 runner = CUDAGraphDecodeRunner(model, max_batch_size=4, max_seq_len=512)
 ```
 
-### Recipe 7: Benchmark via Unified CLI
-Plan and execute sweeps directly from the terminal without custom scripts:
+### Recipe 7: HuggingFace-Style CLI & Interactive TUI
+NeuralOps provides an end-to-end command-line toolkit and interactive Terminal UI (`neuralops ui` or `nops ui`) modeled after Hugging Face Hub tools:
 
 ```bash
-# Plan run across all 131 attention modules
+# Launch interactive terminal control center (interactive menu, doctor, search, benchmarks)
+neuralops ui
+
+# All 14 CLI subcommands
+neuralops run --module mamba_block --model roberta-base --dataset sst2 --device cuda
+neuralops compress --model distilbert-base-uncased --method hadamard_incoherent_svd --rank 32
+neuralops generate --model gpt2 --prompt "Deep learning is" --attention fast_rn_rn --speculative
+neuralops niah --model gpt2 --attention mamba_block --context-lengths 512,1024,2048,4096
+neuralops benchmark-fused --kernel selective_scan --device cuda
+neuralops search --query "svd"
+neuralops info mamba_block
+neuralops doctor
+neuralops list --attentions
 neuralops plan --all-attn
-
-# Run knowledge distillation on all delta rule modules
-neuralops run --all-delta --training-type kd --dataset sst2 --device cuda
-
-# Run calibrated WikiText-2 Pareto evaluation suite
-python scripts/benchmarks/run_wikitext2_pareto_sweep.py --device cuda
-
-# Resume an interrupted sweep
+neuralops results --latest
+neuralops export --model ./checkpoint --format onnx
+neuralops verify
 neuralops resume --output-dir results/sweep
+```
+
+#### Family Shortcuts
+```bash
+# Plan sweeps across families
+neuralops plan --all-attn         # All 131 attention mechanisms
+neuralops plan --all-comp         # All 72 compression engines
+neuralops plan --all-modules      # Full 203 canonical modules sweep
+
+# Direct executions across architectures
+neuralops run --all-delta --training-type kd --dataset sst2 --device cuda
+neuralops run --all-ssm --model roberta-base --dataset sst2 --epochs 3
+neuralops run --all-svd --model gpt2 --dataset wikitext2
+neuralops run --all-linear --dataset sst2 --device cuda
+neuralops run --all-gated --model roberta-base
 ```
 
 ---
