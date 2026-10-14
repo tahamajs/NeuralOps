@@ -126,6 +126,49 @@ This token-variance deflation across 12 stacked layers accounts for the baseline
 
 ---
 
+## 8. ToMoE Clustering & Expert Routing (`tomoe_compressor`)
+### Root Cause:
+`ToMoELinear` partitions output neuron dimensions into $E=4$ experts using KMeans clustering. When $k < E$ (e.g. $k=2$), each token only computes half the output neuron coordinates ($3072 \times \frac{2}{4} = 1536$). The inactive coordinates remain zero while active coordinates are scaled by router softmax probabilities ($\sim 0.5$). This scales down activation norms by $0.387\times$, causing high pre-injection perplexity ($\Delta\text{pre} = 78,188.73$).
+
+### Recovery Performance:
+Because the expert sub-layers preserve original weights without corruption, the router aligns quickly under distillation. In the full 300-step recovery run (`kd_tomoe_compressor_C_20261012_112748.json`), perplexity recovered from $25,782.07 \to 206.67$, achieving a **99.34% recovery rate**.
+
+---
+
+## 9. Low-Rank Spectral & Fourier Compressor (`lsc_compressor`)
+### Root Cause:
+In [`neuralops/compression_engine/low_rank/lsc_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/compression_engine/low_rank/lsc_compressor.py), 2D DFT coefficients of deep transformer linear layers are distributed broadly across high frequencies without low-frequency concentration (unlike natural 2D images). Retaining $k = \text{rank}^2 = 32^2 = 1024$ coefficients out of $768 \times 768 = 589,824$ captures only $1.26\%$ of spectral energy, resulting in a $99.37\%$ Frobenius error.
+
+Additionally, `fallback_to_original` was disabled by default (`False`), allowing filtered layers with $99.4\%$ error to replace original weights across all 48 layers ($\Delta\text{pre} = 71,977.03$).
+
+### Remediation Applied:
+Set `fallback_to_original = True` by default in `LSCCompressor` and `lsc_factory`. Layers exceeding the adaptive error threshold safely fall back to original weights with zero degradation.
+
+---
+
+## 10. REAP-MoE Attention (`reap_moe`)
+### Root Cause:
+In [`neuralops/attentions/sparse/reap_moe.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/attentions/sparse/reap_moe.py), `REAPMoEAttention` implements a compound block:
+$$\text{Attention} \to \text{Dropout} \to \text{Residual} \to \text{LayerNorm} \to \text{MoE} \to \text{Dropout} \to \text{Residual}$$
+When injected into standard transformer architectures (e.g. `model.transformer.h[i].attn`), the model's outer block already applies:
+$$x_{\text{mid}} = x + \text{attn}(x)$$
+Because `REAPMoEAttention` added its own internal residual and LayerNorm on the input, the residual connection was applied twice and activations were re-normalized, inflating the output variance from $1.80 \to 11.09$ and causing layer 0 perplexity to spike from $227.28 \to 6,409.76$.
+
+### Remediation Applied:
+1. Introduced `standalone_attn` mode in `REAPMoEAttention` (enabled by default for drop-in attention replacement).
+2. When `standalone_attn = True`, bypassed the inner LayerNorm (`self.norm1`) and returned the direct attention projection `proj` without adding duplicate external residual connections.
+3. **Live CUDA Verification**: Layer-0 perplexity dropped from $6,409.76 \to \mathbf{227.2788}$ (lossless parity with the $227.2793$ baseline).
+
+---
+
+## 11. Column-Row Interpolative Decomposition (`cr_compressor`)
+### Analysis & Verification:
+`CRLinear` decomposes weight matrices $W \approx C P$ via pivoted QR column selection and Tikhonov-regularized pseudoinverse projection. In dense transformer weights, rank 32 preserves $\sim 11.5\%$ singular energy (relative reconstruction error $\approx 0.8849$).
+- Verified live on CUDA: all 48 layers compressed stably with finite outputs.
+- In KD recovery (`kd_cr_compressor_C_20261012_084328.json`), interpolative skeletons recover from initial $28,182.20 \to 1,101.77$, achieving a **96.21% recovery rate**.
+
+---
+
 ## Summary of All Modulated Files
 | Module / File | Identified Bug | Fix Applied | Result |
 |---|---|---|---|
@@ -133,5 +176,8 @@ This token-variance deflation across 12 stacked layers accounts for the baseline
 | `neuralops/compression_engine/experimental/roast_hashed_linear.py` | Tile averaging collapsed weight variance, lacked error fallback | Connected `adaptive_max_error` + enabled `fallback_to_original` | Guaranteed stability and protected baseline accuracy |
 | `neuralops/compression_engine/quantization/rotational_slicegpt_int4.py` | Averaged centroids destroyed channel scale; hardcoded `fallback=False` | Implemented per-column centroids table via `torch.gather` + `adaptive_max_error` + default fallback | Error dropped from $1.05 \to 0.46$; baseline PPL protected |
 | `neuralops/attentions/modern/dynamic_conv_attention.py` | Sliced fused Conv1D along wrong dimension, un-transposed projection | Transposed before slicing + transposed `c_proj` | Cosine similarity jumped from $0.004 \to 0.42$; layer 0 PPL = $28.15$ |
+| `neuralops/attentions/sparse/reap_moe.py` | Compounded inner residual and LayerNorm created double residual connection | Added `standalone_attn` mode bypassing inner norm & duplicate residual | Layer 0 PPL dropped from $6,409.76 \to 227.2788$ (exact baseline parity) |
+| `neuralops/compression_engine/low_rank/lsc_compressor.py` | Fourier energy is non-sparse in transformer weights; hardcoded `fallback=False` | Enabled `fallback_to_original=True` by default | Protected baseline model from unconstrained spectral filtering |
 | `neuralops/models/cache.py` | File was gitignored by `**/models/` pattern in `.gitignore` | Whitelisted `!neuralops/models/**` in `.gitignore` | Fixed broken imports across package |
+
 
