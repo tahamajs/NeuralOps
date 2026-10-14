@@ -92,6 +92,15 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
     def get_recurrent_state(self, layer_idx: int) -> Optional[Any]:
         return self.recurrent_state_cache.get(layer_idx, None)
 
+    def __getitem__(self, layer_idx: int) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        """Index access returning (key, value) tuple for layer_idx, compatible with legacy tuple caches."""
+        if layer_idx < len(self.key_cache):
+            return self.key_cache[layer_idx], self.value_cache[layer_idx]
+        return None, None
+
+    def __len__(self) -> int:
+        return max(len(self.key_cache), len(self.recurrent_state_cache))
+
 
 def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     """
