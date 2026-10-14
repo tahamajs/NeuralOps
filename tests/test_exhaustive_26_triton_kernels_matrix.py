@@ -285,3 +285,178 @@ def test_3_5_state_update_idempotency():
     torch.testing.assert_close(out1, out2, rtol=1e-5, atol=1e-5)
     torch.testing.assert_close(next_kv1, next_kv2, rtol=1e-5, atol=1e-5)
     torch.testing.assert_close(next_z1, next_z2, rtol=1e-5, atol=1e-5)
+
+
+# ============================================================================
+# 3.7: Exhaustive Verification Battery for 10 Newly Accelerated Triton Kernel Engines
+# ============================================================================
+
+
+def test_3_7_alibi_bias_triton_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_alibi_bias_triton,
+        fused_alibi_bias_pytorch,
+    )
+
+    num_heads = 4
+    slopes = torch.tensor([2**(-8/num_heads * i) for i in range(1, num_heads + 1)], device=DEVICE, dtype=torch.float32)
+    for is_causal in (True, False):
+        out_tri = fused_alibi_bias_triton(slopes, N_q=32, N_k=64, past_len=8, is_causal=is_causal)
+        out_ref = fused_alibi_bias_pytorch(slopes, N_q=32, N_k=64, past_len=8, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_7_dynamic_conv1d_triton_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_dynamic_conv1d_triton,
+        fused_dynamic_conv1d_pytorch,
+    )
+
+    B, H, N, d, K = 2, 2, 16, 32, 5
+    v_full = torch.randn(B, H, K - 1 + N, d, device=DEVICE, dtype=torch.float32)
+    dyn_w = torch.softmax(torch.randn(B, H, N, K, device=DEVICE, dtype=torch.float32), dim=-1)
+
+    out_tri = fused_dynamic_conv1d_triton(v_full, dyn_w)
+    out_ref = fused_dynamic_conv1d_pytorch(v_full, dyn_w)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_7_adaptive_span_penalty_triton_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_adaptive_span_penalty_triton,
+        fused_adaptive_span_penalty_pytorch,
+    )
+
+    B, H, N_q, N_k = 2, 4, 16, 32
+    spans = torch.tensor([16.0, 32.0, 48.0, 64.0], device=DEVICE, dtype=torch.float32)
+    q_pos = torch.arange(N_q, device=DEVICE, dtype=torch.float32).unsqueeze(0).expand(B, -1)
+    k_pos = torch.arange(N_k, device=DEVICE, dtype=torch.float32).unsqueeze(0).expand(B, -1)
+
+    for is_causal in (True, False):
+        out_tri = fused_adaptive_span_penalty_triton(spans, q_pos, k_pos, ramp_size=16.0, is_causal=is_causal)
+        out_ref = fused_adaptive_span_penalty_pytorch(spans, q_pos, k_pos, ramp_size=16.0, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_7_rala_augmented_scan_triton_parity():
+    from neuralops.core.triton_kernels.linear_attn import (
+        fused_rala_augmented_scan_triton,
+        fused_rala_augmented_scan_pytorch,
+    )
+
+    B, H, N, d, r = 2, 2, 16, 32, 4
+    q = F.softplus(torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32))
+    k = F.softplus(torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32))
+    v = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    lora_U = torch.randn(H, d, r, device=DEVICE, dtype=torch.float32)
+    lora_V = torch.randn(H, d, r, device=DEVICE, dtype=torch.float32)
+
+    for is_causal in (True, False):
+        lin_tri, aug_tri = fused_rala_augmented_scan_triton(q, k, v, lora_U, lora_V, is_causal=is_causal)
+        lin_ref, aug_ref = fused_rala_augmented_scan_pytorch(q, k, v, lora_U, lora_V, is_causal=is_causal)
+        torch.testing.assert_close(lin_tri, lin_ref, rtol=1e-3, atol=1e-3)
+        torch.testing.assert_close(aug_tri, aug_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_7_sink_rolling_cache_triton_parity():
+    from neuralops.core.triton_kernels.sliding_window import (
+        fused_sink_rolling_cache_triton,
+        fused_sink_rolling_cache_pytorch,
+    )
+
+    B, H, N_in, d = 2, 2, 32, 16
+    W, S = 16, 4
+    k = torch.randn(B, H, N_in, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, N_in, d, device=DEVICE, dtype=torch.float32)
+    positions = torch.arange(N_in, device=DEVICE, dtype=torch.long).unsqueeze(0).expand(B, -1)
+
+    k_tri, v_tri, pos_tri = fused_sink_rolling_cache_triton(k, v, positions, window_size=W, num_sink_tokens=S)
+    k_ref, v_ref, pos_ref = fused_sink_rolling_cache_pytorch(k, v, positions, window_size=W, num_sink_tokens=S)
+
+    torch.testing.assert_close(k_tri, k_ref, rtol=1e-5, atol=1e-5)
+    torch.testing.assert_close(v_tri, v_ref, rtol=1e-5, atol=1e-5)
+    torch.testing.assert_close(pos_tri, pos_ref)
+
+
+def test_3_7_linformer_seq_proj_triton_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_linformer_seq_proj_triton,
+        fused_linformer_seq_proj_pytorch,
+    )
+
+    B, H, L, d = 2, 2, 32, 16
+    k_eff = 8
+    proj_mat = torch.randn(k_eff, L, device=DEVICE, dtype=torch.float32)
+    seq_tensor = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_linformer_seq_proj_triton(proj_mat, seq_tensor)
+    out_ref = fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_7_galerkin_continuous_kernel_triton_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_galerkin_continuous_kernel_triton,
+        fused_galerkin_continuous_kernel_pytorch,
+    )
+
+    B, H, N, d, r = 2, 2, 16, 16, 4
+    Q = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    K = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    V = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    Phi = torch.randn(N, r, device=DEVICE, dtype=torch.float32)
+    scale = d**-0.5
+
+    out_tri = fused_galerkin_continuous_kernel_triton(Q, K, V, Phi, scale)
+    out_ref = fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_7_nystrom_landmark_pinv_step_triton_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_nystrom_landmark_pinv_step_triton,
+        fused_nystrom_landmark_pinv_step_pytorch,
+    )
+
+    B, H, N, m, d = 2, 2, 16, 4, 16
+    F1 = F.softmax(torch.randn(B, H, N, m, device=DEVICE, dtype=torch.float32), dim=-1)
+    F2_pinv = torch.randn(B, H, m, m, device=DEVICE, dtype=torch.float32)
+    F3 = F.softmax(torch.randn(B, H, m, N, device=DEVICE, dtype=torch.float32), dim=-1)
+    V = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V)
+    out_ref = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_7_mqa_bias_scale_triton_parity():
+    from neuralops.core.triton_kernels.gqa import (
+        fused_mqa_bias_scale_triton,
+        fused_mqa_bias_scale_pytorch,
+    )
+
+    B, H, N_q, N_k = 2, 4, 16, 32
+    scores = torch.randn(B, H, N_q, N_k, device=DEVICE, dtype=torch.float32)
+    scale = 0.25
+
+    for is_causal in (True, False):
+        out_tri = fused_mqa_bias_scale_triton(scores, scale, is_causal=is_causal, past_len=4)
+        out_ref = fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=4)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_7_favor_plus_feature_map_triton_parity():
+    from neuralops.core.triton_kernels.elementwise import (
+        fused_favor_plus_feature_map_triton,
+        fused_favor_plus_feature_map_pytorch,
+    )
+
+    B, H, N, d, M = 2, 2, 16, 16, 32
+    x = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    omega = torch.randn(M, d, device=DEVICE, dtype=torch.float32)
+
+    for ktype in ("favor_plus", "elu", "relu"):
+        out_tri = fused_favor_plus_feature_map_triton(x, omega, num_features=M, kernel_type=ktype)
+        out_ref = fused_favor_plus_feature_map_pytorch(x, omega, num_features=M, kernel_type=ktype)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
