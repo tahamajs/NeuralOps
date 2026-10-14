@@ -225,6 +225,8 @@ def train_kd(
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
+    amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
+    amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
     scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
 
     # Pre-cache teacher outputs for all batches to eliminate redundant teacher forward passes across epochs!
