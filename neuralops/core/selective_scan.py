@@ -141,14 +141,31 @@ def selective_scan_chunked(
     if L <= 128:
         dA_exp = torch.exp(dA)  # (B, D, L, N)
         h = torch.zeros(B_size, D_dim, N, device=device, dtype=torch.float32)
+        use_cp = torch.is_grad_enabled()
+        if use_cp:
+            import torch.utils.checkpoint as cp
+
+        def _step_subchunk_scan(h_in: torch.Tensor, s_idx: int, e_idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+            curr_h = h_in
+            sub_ys = []
+            for t in range(s_idx, e_idx):
+                dA_t = dA_exp[:, :, t, :]
+                dBu_t = dB_u[:, :, t, :]
+                curr_h = dA_t * curr_h + dBu_t
+                yt = torch.sum(curr_h * C_f[:, :, t].unsqueeze(1), dim=-1)
+                sub_ys.append(yt)
+            return torch.stack(sub_ys, dim=2), curr_h
+
         ys = []
-        for t in range(L):
-            dA_t = dA_exp[:, :, t, :]  # (B, D, N)
-            dBu_t = dB_u[:, :, t, :]   # (B, D, N)
-            h = dA_t * h + dBu_t
-            yt = torch.sum(h * C_f[:, :, t].unsqueeze(1), dim=-1)  # (B, D)
-            ys.append(yt)
-        y = torch.stack(ys, dim=2)
+        c_step = 16
+        for s in range(0, L, c_step):
+            e = min(s + c_step, L)
+            if use_cp:
+                chunk_y, h = cp.checkpoint(_step_subchunk_scan, h, s, e, use_reentrant=False)
+            else:
+                chunk_y, h = _step_subchunk_scan(h, s, e)
+            ys.append(chunk_y)
+        y = torch.cat(ys, dim=2)
     else:
         # SC-FIX-01: auto-tune chunk size to bound the (B, D, C, C, N) tensor.
         if chunk_size <= 0:
