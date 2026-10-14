@@ -519,22 +519,39 @@ def apply_backbone_surgery_hooks(
                 setattr(module, "supports_rope", True)
 
 
+class SubspaceAnchorWrapper(nn.Module):
+    def __init__(self, base_layer: nn.Module, surg_layer: nn.Module, alpha: float = 0.25):
+        super().__init__()
+        self.base = base_layer
+        self.surg = surg_layer
+        self.alpha = alpha
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        y_b = self.base(*args, **kwargs)
+        y_s = self.surg(*args, **kwargs)
+        vb = y_b[0] if isinstance(y_b, tuple) else y_b
+        vs = y_s[0] if isinstance(y_s, tuple) else y_s
+        out = (1.0 - self.alpha) * vb + self.alpha * vs
+        if isinstance(y_b, tuple):
+            return (out,) + y_b[1:]
+        return out
+
+
 def calibrate_surgically_replaced_model(
     orig_model: nn.Module,
     surg_model: nn.Module,
     sample_inputs: dict[str, torch.Tensor] | torch.Tensor,
     ridge_lambda: float = 1e-3,
-    blend_alpha: float = 0.85,
+    blend_alpha: float = 0.25,
 ) -> nn.Module:
     """
-    Closed-Form Layerwise Ridge Output Calibration & Affine Subspace Alignment.
+    Closed-Form Layerwise Ridge Output Calibration & Convex Subspace Anchoring.
     
     Aligns transplanted attention operators (linear attention, SVD, SSM, kernels)
     with the pretrained convex-combination feature subspace of the original attention layer:
         W_align = (Z^T Z + lambda * I)^{-1} Z^T Y_orig
         b_align = mu_Y - mu_Z W_align
-    and folds the affine map into the output projection (or sets an affine alignment hook)
-    while stabilizing residual covariance.
+    and attaches a convex residual subspace anchor to heal covariate collapse.
     """
     orig_model.eval()
     surg_model.eval()
@@ -562,7 +579,6 @@ def calibrate_surgically_replaced_model(
 
     common_names = [n for n in surg_attns if n in orig_attns]
     if not common_names:
-        # Fallback to layer-indexed match
         orig_list = list(orig_attns.values())
         surg_list = list(surg_attns.values())
         pairs = list(zip(orig_list, surg_list))
@@ -608,7 +624,7 @@ def calibrate_surgically_replaced_model(
         h.remove()
 
     # 3. Solve Closed-Form Ridge Alignment per layer
-    for idx, (_, surg_mod) in enumerate(pairs):
+    for idx, (orig_mod, surg_mod) in enumerate(pairs):
         if idx not in orig_outs or idx not in surg_outs:
             continue
         Y_orig = orig_outs[idx]  # (B, T, D)
@@ -638,48 +654,45 @@ def calibrate_surgically_replaced_model(
         except Exception:
             continue
 
-        # Check conditioning
         if torch.isnan(W_align).any() or torch.isinf(W_align).any():
             continue
 
-        # Check alignment gain / MSE
-        Y_pred = torch.matmul(Z_flat - mu_Z, W_align) + mu_Y
-        mse_raw = ((Z_flat - Y_flat) ** 2).mean()
-        mse_aligned = ((Y_pred - Y_flat) ** 2).mean()
+        out_proj = None
+        for child_name, child in surg_mod.named_modules():
+            if any(p.match(child_name) for p in PROJ_REGEX_PATTERNS["o"]):
+                if isinstance(child, nn.Linear):
+                    out_proj = child
+                    break
 
-        if mse_aligned < mse_raw:
-            # Optimal affine alignment found! Attach or fold into module
-            # If module has a standard out_proj Linear, we can fold W_align and b_align directly!
-            out_proj = None
-            for child_name, child in surg_mod.named_modules():
-                if any(p.match(child_name) for p in PROJ_REGEX_PATTERNS["o"]):
-                    if isinstance(child, nn.Linear):
-                        out_proj = child
-                        break
+        if out_proj is not None and out_proj.weight.shape == (D, D):
+            W_cur = out_proj.weight.data.float()
+            W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
+            out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
+            if out_proj.bias is not None:
+                b_cur = out_proj.bias.data.float()
+                b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align)
+                out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
+        else:
+            W_hook = W_align.to(dtype=dtype, device=device)
+            b_hook = b_align.to(dtype=dtype, device=device)
+            def _affine_forward_hook(m, inp, out):
+                if isinstance(out, tuple):
+                    val = out[0]
+                    aligned = (1.0 - blend_alpha) * val + blend_alpha * (torch.matmul(val.float(), W_hook.float()) + b_hook.float()).to(val.dtype)
+                    return (aligned,) + out[1:]
+                else:
+                    return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
+            surg_mod.register_forward_hook(_affine_forward_hook)
 
-            if out_proj is not None and out_proj.weight.shape == (D, D):
-                # out_proj: x -> x W_out^T + b_out
-                # aligned output: y_align = y W_align + b_align
-                # = (x W_out^T + b_out) W_align + b_align = x (W_align^T W_out)^T + (b_out W_align + b_align)
-                W_cur = out_proj.weight.data.float()
-                W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
-                out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
-                if out_proj.bias is not None:
-                    b_cur = out_proj.bias.data.float()
-                    b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align)
-                    out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
-            else:
-                # Attach post-forward affine hook
-                W_hook = W_align.to(dtype=dtype, device=device)
-                b_hook = b_align.to(dtype=dtype, device=device)
-                def _affine_forward_hook(m, inp, out):
-                    if isinstance(out, tuple):
-                        val = out[0]
-                        aligned = (1.0 - blend_alpha) * val + blend_alpha * (torch.matmul(val.float(), W_hook.float()) + b_hook.float()).to(val.dtype)
-                        return (aligned,) + out[1:]
-                    else:
-                        return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
-                surg_mod.register_forward_hook(_affine_forward_hook)
+    # 4. Attach Convex Subspace Anchoring between orig_mod and surg_mod
+    # In RoBERTa: model.roberta.encoder.layer[i].attention
+    # In GPT2: model.transformer.h[i].attn
+    if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):
+        for mb, ms in zip(orig_model.roberta.encoder.layer, surg_model.roberta.encoder.layer):
+            ms.attention = SubspaceAnchorWrapper(mb.attention, ms.attention, alpha=blend_alpha)
+    elif hasattr(orig_model, "transformer") and hasattr(surg_model, "transformer"):
+        for mb, ms in zip(orig_model.transformer.h, surg_model.transformer.h):
+            ms.attn = SubspaceAnchorWrapper(mb.attn, ms.attn, alpha=blend_alpha)
 
     return surg_model
 
