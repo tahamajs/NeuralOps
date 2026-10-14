@@ -131,7 +131,10 @@ def load_dataset_by_name(
     if "wikitext" in name_clean:
         subset = "wikitext-2-raw-v1" if "wikitext2" in name_clean or "wikitext-2" in name_clean else "wikitext-103-raw-v1"
         split_name = "test" if split in ("val", "validation", "test") else split
-        raw_ds = load_dataset("wikitext", subset, split=split_name)
+        try:
+            raw_ds = load_dataset("Salesforce/wikitext", subset, split=split_name)
+        except Exception:
+            raw_ds = load_dataset("wikitext", subset, split=split_name)
         full_text = "\n\n".join(raw_ds["text"])
         enc = tokenizer(full_text, return_tensors="pt")
         input_ids = enc.input_ids[0]
