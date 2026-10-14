@@ -49,8 +49,10 @@ def test_dynamo_explain_zero_graph_breaks():
     explanation = torch._dynamo.explain(model, x, q, k, v)
     assert explanation.graph_break_count == 0, f"Expected 0 graph breaks, got {explanation.graph_break_count}: {explanation.graph_breaks}"
 
-    # Also test compile execution
-    compiled_model = torch.compile(model, fullgraph=True, backend="inductor")
+    # Also test compile execution (Inductor requires SM >= 7.0)
+    major, _ = torch.cuda.get_device_capability()
+    backend = "inductor" if major >= 7 else "aot_eager"
+    compiled_model = torch.compile(model, fullgraph=True, backend=backend)
     out = compiled_model(x, q, k, v)
     assert out.shape == (B * H, T, D) or out.shape == (B, H, T, D) or out.numel() > 0
 
