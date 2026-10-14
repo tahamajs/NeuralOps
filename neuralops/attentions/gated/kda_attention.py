@@ -681,6 +681,15 @@ class KDAAttention(BaseAttention):
             den = torch.matmul(q_f, Z_new).clamp(min=1e-5)
             y = num / den
             return y.to(out_dtype), (S_new, Z_new)
+        # ---- [KDA-TRITON] Fast path on CUDA via kda_hla_chunk_scan_triton ----
+        if q.is_cuda and initial_state is None and mask_bool is None and d <= 64 and L > 1:
+            try:
+                from neuralops.core.triton_kernels.gla_scan import kda_hla_chunk_scan_triton
+                log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1)
+                y_triton = kda_hla_chunk_scan_triton(q_f, k_f, v_f, log_dec)
+                return y_triton.to(out_dtype), (torch.zeros(B, H, d, D_dim, device=device, dtype=torch.float32), torch.zeros(B, H, d, 1, device=device, dtype=torch.float32))
+            except Exception as e:
+                logger.debug("Triton KDA scan failed, using chunked PyTorch: %s", e)
 
         # ---- Chunked path ----
         chunk_size = min(self.chunk_size, L)
