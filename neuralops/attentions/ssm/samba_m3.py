@@ -85,6 +85,15 @@ class SpectralMamba(nn.Module):
         out = out * gate
         return out, present_state
 
+    def step(self, x: torch.Tensor, state: Any | None = None, **kwargs: Any) -> tuple[torch.Tensor, Any]:
+        """Autoregressive step for SpectralMamba."""
+        if hasattr(self.mamba, "step") and callable(getattr(self.mamba, "step")):
+            out, next_state = self.mamba.step(x, state=state, **kwargs)
+        else:
+            # Fallback for SimpleSSM / identity if step is not implemented
+            out, next_state = self.forward(x, **kwargs)
+        return out, next_state
+
 
 @ATTENTION_REGISTRY.register("samba_m3", supports_causal=True, supports_gqa=True)
 class SAMBAM3Block(nn.Module):
