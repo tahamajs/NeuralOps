@@ -173,6 +173,56 @@ def compress(
     return out_model
 
 
+# =====================================================================
+# Model Surgery & Transplantation Aliases & Functions
+# =====================================================================
+
+def transplant_attention(
+    model: nn.Module,
+    attention: Optional[str] = None,
+    rank: Optional[int] = None,
+    copy_weights: bool = True,
+    layers: Optional[List[int]] = None,
+    attention_type: Optional[str] = None,
+    **kwargs: Any,
+) -> nn.Module:
+    """Canonical alias for replace_attention."""
+    return replace_attention(
+        model=model,
+        attention=attention,
+        rank=rank,
+        copy_weights=copy_weights,
+        layers=layers,
+        attention_type=attention_type,
+        **kwargs,
+    )
+
+
+def collect_surgery_distillation_loss(model: nn.Module) -> torch.Tensor:
+    """Collect shadow twin distillation loss across all transplanted attention layers."""
+    from neuralops.surgery.shadow_twin import collect_surgery_distillation_loss as _collect
+    return _collect(model)
+
+
+def set_surgery_alpha(model: nn.Module, alpha: float) -> None:
+    """Adjust distillation blending weight alpha in [0, 1] across all transplanted layers."""
+    from neuralops.surgery.shadow_twin import set_surgery_alpha as _set_alpha
+    _set_alpha(model, alpha)
+
+
+def set_surgery_stage(model: nn.Module, stage: int) -> None:
+    """Set multi-stage recovery training curriculum stage (1: Shadow, 2: Joint, 3: Finalized)."""
+    from neuralops.surgery.shadow_twin import set_surgery_stage as _set_stage
+    _set_stage(model, stage)
+
+
+def finalize_surgery(model: nn.Module) -> nn.Module:
+    """Sever teacher branches and permanently finalize student attention transplantation."""
+    from neuralops.surgery.shadow_twin import finalize_surgery as _finalize
+    return _finalize(model)
+
+
+
 def export_model(
     model: nn.Module,
     output_dir: Union[str, Path],
@@ -570,9 +620,15 @@ __all__ = [
     # Model/Export
     "load_model",
     "replace_attention",
+    "transplant_attention",
     "compress",
     "export_model",
     "load_exported_model",
+    # Surgery operations
+    "collect_surgery_distillation_loss",
+    "set_surgery_alpha",
+    "set_surgery_stage",
+    "finalize_surgery",
     # Discovery
     "list_attentions",
     "list_compressors",
