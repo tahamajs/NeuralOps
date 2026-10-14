@@ -302,12 +302,11 @@ class UniversalAttentionBridge(nn.Module):
             # GPT2Attention returns (attn_output, present) or (attn_output, present, attentions)
             use_cache = kwargs.get("use_cache", False)
             output_attentions = kwargs.get("output_attentions", False)
-            ret = [core_tensor]
-            if use_cache:
-                ret.append(extra_outputs[0] if len(extra_outputs) > 0 else None)
+            present = extra_outputs[0] if len(extra_outputs) > 0 else None
+            ret = [core_tensor, present]
             if output_attentions:
                 ret.append(None)
-            return tuple(ret) if len(ret) > 1 else core_tensor
+            return tuple(ret)
 
         # Standard HuggingFace tuple preservation
         if len(extra_outputs) > 0:
