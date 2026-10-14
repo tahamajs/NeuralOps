@@ -620,6 +620,8 @@ class PHANTOMAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
+        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
