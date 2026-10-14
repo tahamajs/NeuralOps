@@ -410,7 +410,7 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         else:
             scale_norm = 1.0 / (orig_shape[0] if orig_shape[0] > 0 else 1)
 
-        compute_grads = torch.is_grad_enabled() and (
+        compute_grads = (
             student_hidden.requires_grad or student_weight.requires_grad or (student_bias is not None and student_bias.requires_grad)
         )
 
