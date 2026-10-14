@@ -38,18 +38,17 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
 
-    # Native Ada Lovelace SM 8.9 Triton Hardware Path
-    if x.is_cuda and hasattr(torch, "float8_e4m3fn"):
-        try:
-            from neuralops.core.triton_kernels.low_rank import quantize_to_fp8_dynamic
-            x_fp8, scale = quantize_to_fp8_dynamic(x)
-            # Reconstruct for autograd with straight-through estimator (scale is [M], align with [..., 1])
-            x_dequant = (x_fp8.float() * scale.view(*x.shape[:-1], 1)).to(orig_dtype)
-            if use_ste:
-                return x + (x_dequant - x).detach()
-            return x_dequant
-        except Exception:
-            pass
+    # Fast hardware / native FP8 path on PyTorch 2.1+ CUDA
+    if x.is_cuda and hasattr(torch, "float8_e4m3fn") and format.lower() in ("e4m3", "float8_e4m3fn"):
+        x_f = x.float()
+        amax = (x_f.abs().amax(dim=-1, keepdim=True) if per_channel else x_f.abs().amax()).clamp(min=1e-12)
+        scale = 448.0 / amax
+        x_scaled = (x_f * scale).clamp(min=-448.0, max=448.0)
+        x_dequant = (x_scaled.to(torch.float8_e4m3fn).to(orig_dtype) / scale.to(orig_dtype))
+        if use_ste:
+            return x + (x_dequant - x).detach()
+        return x_dequant
+
 
     x_f = x.float()
     fmt = format.lower()
