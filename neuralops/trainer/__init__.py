@@ -75,11 +75,15 @@ __all__ = [
     "plot_training_curves",
     "HuggingFaceTrainer",
     "CustomLoopTrainer",
+    "InfiniteContextFoundationPretrainer",
     "OPTIMIZER_REGISTRY",
     "RiemannianStiefelOptimizer",
     "project_stiefel_gradient",
     "stiefel_qr_retraction",
 ]
+
+from .foundation_pretrainer import InfiniteContextFoundationPretrainer
+
 
 # Optimizer factories
 from .optimizers import (  # noqa: E402
