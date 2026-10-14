@@ -651,9 +651,9 @@ class ViGAttention(BaseAttention):
         else:
             out_global = self._linear_attention_encoder(q_lin, k_lin, v_f).to(dtype)
 
-        # ---- [FIX-10 + FIX-12] Gated fusion in fp32 ----
+        # ---- [FIX-10 + FIX-12] Gated fusion ----
         gates = F.softmax(
-            self.gate_net(hidden_states.float()).view(B, N, Hh, 2), dim=-1
+            self.gate_net(hidden_states.to(self.gate_net.weight.dtype)).view(B, N, Hh, 2), dim=-1
         ).to(dtype)
         gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1)    # (B, H, N, 1)
         gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1)   # (B, H, N, 1)

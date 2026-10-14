@@ -5,6 +5,7 @@ Unified attention surgery module: weight slicing, regex extraction, and low-rank
 from __future__ import annotations
 
 import logging
+import math
 import re
 
 import torch
