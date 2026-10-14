@@ -11,7 +11,18 @@ import torch.nn.functional as F
 try:
     import triton
     import triton.language as tl
-    TRITON_AVAILABLE = torch.cuda.is_available()
+
+    def _check_triton_available():
+        if not torch.cuda.is_available():
+            return False
+        try:
+            from neuralops.core.triton_kernels.hardware_profile import get_device_hardware_profile
+
+            return get_device_hardware_profile(0).supports_triton_jit
+        except Exception:
+            return torch.cuda.get_device_capability()[0] >= 7
+
+    TRITON_AVAILABLE = _check_triton_available()
 except ImportError:
     triton = None
     tl = None
@@ -22,6 +33,7 @@ def _jit_guard(fn):
     if triton is not None and hasattr(triton, "jit"):
         return triton.jit(fn)
     return fn
+
 
 
 @_jit_guard
