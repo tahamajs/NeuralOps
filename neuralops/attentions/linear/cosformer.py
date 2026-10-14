@@ -390,8 +390,11 @@ class CosformerAttention(BaseAttention):
                     scores = scores.masked_fill(~causal_bool, 0.0)
 
                 if padding_mask is not None:
-                    # Zero contribution from padded keys.
-                    scores = scores * (padding_mask == 0).float()
+                    # Zero contribution from padded keys if shape matches sequence length
+                    if padding_mask.shape[-1] == N:
+                        scores = scores * (padding_mask == 0).float()
+                    elif padding_mask.shape[-1] == scores.shape[-1]:
+                        scores = scores * (padding_mask == 0).float()
 
                 scores = torch.clamp(scores, min=0.0, max=1e4)
                 num = torch.matmul(scores, V)
