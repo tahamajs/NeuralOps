@@ -308,6 +308,12 @@ class UniversalAttentionBridge(nn.Module):
                 ret.append(None)
             return tuple(ret)
 
+        if self.pattern_type == "split_4proj":
+            # Modern causal decoders (Llama, Mistral, Qwen) expect (attn_output, attn_weights) or (attn_output, attn_weights, past_key_value)
+            # When caller expects 2 elements: (attn_output, attn_weights)
+            attn_weights = extra_outputs[0] if len(extra_outputs) > 0 else None
+            return (core_tensor, attn_weights)
+
         # Standard HuggingFace tuple preservation
         if len(extra_outputs) > 0:
             return (core_tensor, *extra_outputs)
