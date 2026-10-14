@@ -477,6 +477,7 @@ class DeltaProductAttention(BaseAttention):
                 y = y[:, :, :L, :]
             present_state = curr
 
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
         out = self.out_proj(y)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         return out, present_kv
