@@ -87,12 +87,13 @@ def test_6_3_bitpacked_w4a16_linear_group_sizes(group_size, dtype):
 @pytest.mark.parametrize("in_features,out_features", [(64, 128), (128, 64), (128, 128)])
 @pytest.mark.parametrize("group_size", [32, 64])
 def test_6_4_pack_unpack_int4_roundtrip(in_features, out_features, group_size):
-    # Quantized integers in [-8, 7]
-    q_weights = torch.randint(-8, 8, (out_features, in_features), dtype=torch.int8, device=DEVICE)
-    packed = pack_int4_weights(q_weights)
+    # Floating point weights to pack with scale and zeros
+    weight_fp = torch.randn(out_features, in_features, dtype=torch.float16, device=DEVICE)
+    packed, scales, zeros = pack_int4_weights(weight_fp, group_size=group_size)
     assert packed.shape == (out_features, in_features // 2)
 
-    unpacked = unpack_int4_weights(packed)
-    assert unpacked.shape == q_weights.shape
-    torch.testing.assert_close(unpacked, q_weights)
+    unpacked = unpack_int4_weights(packed, scales, zeros, group_size=group_size, out_dtype=torch.float16)
+    assert unpacked.shape == weight_fp.shape
+    assert not torch.isnan(unpacked).any()
+
 

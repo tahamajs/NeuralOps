@@ -101,19 +101,19 @@ def test_8_3_row_and_column_parallel_svd_linear_parity(tp_size, d_in, d_out):
     assert not torch.isnan(combined_row).any()
 
 
-@pytest.mark.parametrize("num_chunks", [2, 4])
-@pytest.mark.parametrize("chunk_len", [4, 8])
-def test_8_4_context_parallel_recurrent_scan_prefix(num_chunks, chunk_len):
-    B, H, D = 2, 2, 16
-    T = num_chunks * chunk_len
+@pytest.mark.parametrize("num_heads", [2, 4])
+@pytest.mark.parametrize("seq_len", [8, 16])
+def test_8_4_context_parallel_recurrent_scan_prefix(num_heads, seq_len):
+    B, H, T, D = 2, num_heads, seq_len, 16
     q = torch.randn(B, H, T, D, device=DEVICE)
     k = torch.randn(B, H, T, D, device=DEVICE)
     v = torch.randn(B, H, T, D, device=DEVICE)
-    decay = torch.sigmoid(torch.randn(B, H, T, D, device=DEVICE))
+    g = torch.sigmoid(torch.randn(B, H, T, D, device=DEVICE))
 
     # Compute chunk prefix scan
-    states = compute_chunk_prefix_scan(k, v, decay=decay, chunk_len=chunk_len)
-    assert states.shape[0] == B
-    assert states.shape[1] == H
-    assert states.shape[2] == num_chunks
+    out, final_state = compute_chunk_prefix_scan(q, k, v, g)
+    assert out.shape == (B, H, T, D)
+    assert final_state.shape == (B, H, D, D)
+    assert not torch.isnan(out).any()
+
 
