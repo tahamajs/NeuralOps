@@ -511,7 +511,8 @@ class ZeroSAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # Variance-preserving RMS gain to prevent signal decay before output projection
-        v_rms = torch.sqrt(torch.mean(V ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        v_flat = V.transpose(1, 2).contiguous().view(B, N_k, -1)
+        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / c_rms).clamp(0.25, 4.0)
         context = context * scale
