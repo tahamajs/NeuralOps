@@ -1,4 +1,4 @@
-"""Real Triton kernel for Sliding Window Attention with CPU/CUDA fallback."""
+"""Real Triton kernel for Sliding Window Attention with CPU/CUDA fallback and autograd backward."""
 from __future__ import annotations
 import math
 import torch
@@ -7,7 +7,6 @@ import torch.nn.functional as F
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
 
 __all__ = ["sliding_window_attention_kernel", "sliding_window_triton", "sliding_window_attention", "sliding_window_pytorch"]
-
 
 
 if HAS_TRITON and tl is not None:
@@ -48,7 +47,6 @@ if HAS_TRITON and tl is not None:
             k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
             scores = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
-            # Mask out outside window: (offs_m[:, None] - offs_n[None, :] > WINDOW) | (offs_n[None, :] > offs_m[:, None])
             dist = offs_m[:, None] - offs_n[None, :]
             mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
             scores = tl.where(mask_window, scores, float("-inf"))
@@ -81,7 +79,6 @@ def sliding_window_pytorch(
     scale = 1.0 / math.sqrt(D)
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
 
-    # Causal sliding window mask: (i - j >= 0) and (i - j < window_size)
     q_idx = torch.arange(N, device=q.device).unsqueeze(1)
     k_idx = torch.arange(N, device=q.device).unsqueeze(0)
     dist = q_idx - k_idx
@@ -93,13 +90,48 @@ def sliding_window_pytorch(
     return torch.matmul(weights, v)
 
 
+class _SlidingWindowAutograd(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int):
+        ctx.window_size = window_size
+        ctx.save_for_backward(q, k, v)
+        if HAS_TRITON and q.is_cuda and not (q.requires_grad or k.requires_grad or v.requires_grad):
+            B, H, N, D = q.shape
+            out = torch.empty_like(q)
+            grid = (triton.cdiv(N, 64), B * H)
+            sliding_window_attn_fwd_kernel[grid](
+                q, k, v, out,
+                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                H, N, WINDOW=window_size,
+                BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+            )
+            return out
+        return sliding_window_pytorch(q, k, v, window_size=window_size)
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        q, k, v = ctx.saved_tensors
+        q_r = q.detach().requires_grad_(True)
+        k_r = k.detach().requires_grad_(True)
+        v_r = v.detach().requires_grad_(True)
+        with torch.enable_grad():
+            out = sliding_window_pytorch(q_r, k_r, v_r, window_size=ctx.window_size)
+            g_q, g_k, g_v = torch.autograd.grad(out, [q_r, k_r, v_r], grad_output, retain_graph=False)
+        return g_q, g_k, g_v, None
+
+
 def sliding_window_attention_kernel(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
     window_size: int = 256,
 ) -> torch.Tensor:
-    """Dispatches sliding window attention to Triton GPU kernel if available, else PyTorch."""
+    """Dispatches sliding window attention with full autograd backward support."""
+    if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
+        return _SlidingWindowAutograd.apply(q, k, v, window_size)
     if not HAS_TRITON or q.device.type != "cuda":
         return sliding_window_pytorch(q, k, v, window_size=window_size)
 

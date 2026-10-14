@@ -53,19 +53,8 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
 
 
 FORWARD_ONLY_KERNELS: set[str] = {
-    "sliding_window",
-    "fused_rope",
-    "fused_ce",
-    "cosformer",
-    "cosformer_triton_kernel",
     "paged_attention",
     "flash_decoding",
-    "softplus",
-    "varlen_attention",
-    "block_sparse",
-    "fused_kd",
-    "fused_norm_linear",
-    "gqa",
 }
 
 
