@@ -975,6 +975,67 @@ class NEXUSAttention(BaseAttention):
 
         return (output, None)
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for NEXUSAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        Q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        K = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        V = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+
+        if self.num_kv_heads != self.num_heads:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
+
+        # Maintain bounded past cache
+        if "k_cache" not in state or state["k_cache"] is None:
+            state["k_cache"] = K
+            state["v_cache"] = V
+        else:
+            state["k_cache"] = torch.cat([state["k_cache"], K], dim=2)
+            state["v_cache"] = torch.cat([state["v_cache"], V], dim=2)
+
+        k_all = state["k_cache"]
+        v_all = state["v_cache"]
+
+        scores = torch.matmul(Q, k_all.transpose(-1, -2)) / math.sqrt(D)
+        attn_w = F.softmax(scores, dim=-1)
+        context = torch.matmul(attn_w, v_all)
+
+        state["step_idx"] = step_idx + 1
+
+        context = context.transpose(1, 2).contiguous().view(B, 1, H * D)
+        v_flat = V.transpose(1, 2).contiguous().view(B, 1, H * D)
+        v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(dtype)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
     def get_ortho_loss(self) -> torch.Tensor:
         loss = torch.tensor(0.0, device=self.query.weight.device, dtype=self.query.weight.dtype)
         for proj in (self.query, self.key):

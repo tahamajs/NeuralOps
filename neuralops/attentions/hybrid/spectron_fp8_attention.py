@@ -37,6 +37,20 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
     if not isinstance(x, torch.Tensor) or not x.is_floating_point(): return x
     if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
+
+    # Native Ada Lovelace SM 8.9 Triton Hardware Path
+    if x.is_cuda and hasattr(torch, "float8_e4m3fn"):
+        try:
+            from neuralops.core.triton_kernels.low_rank import quantize_to_fp8_dynamic
+            x_fp8, scale = quantize_to_fp8_dynamic(x)
+            # Reconstruct for autograd with straight-through estimator
+            x_dequant = (x_fp8.float() * scale.view(*scale.shape, *([1] * (x.dim() - scale.dim())))).to(orig_dtype)
+            if use_ste:
+                return x + (x_dequant - x).detach()
+            return x_dequant
+        except Exception:
+            pass
+
     x_f = x.float()
     fmt = format.lower()
     if fmt in ("e4m3", "float8_e4m3fn"):
@@ -1019,6 +1033,101 @@ class SpectronFP8Attention(BaseAttention):
 
         attn_ret = attn_loc if output_attentions else None
         return final.to(hidden_states.dtype), attn_ret
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for SpectronFP8Attention."""
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, D = x.shape
+        H, d = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        alpha = self.router(x)
+        alpha_loc = alpha[:, :, 0].view(B, 1, 1, 1)
+        alpha_glob = alpha[:, :, 1].view(B, 1, 1, 1)
+        alpha_lin = alpha[:, :, 2].view(B, 1, 1, 1)
+
+        Q_new = fp8_cast_simulate(self.q_proj(x), format=self.fp8_format, use_ste=False)
+        K_new = fp8_cast_simulate(self.k_proj(x), format=self.fp8_format, use_ste=False)
+        V_new = fp8_cast_simulate(self.v_proj(x), format=self.fp8_format, use_ste=False)
+
+        Q = Q_new.view(B, 1, H, d).transpose(1, 2)
+        K = K_new.view(B, 1, self.num_kv_heads, d).transpose(1, 2)
+        V = V_new.view(B, 1, self.num_kv_heads, d).transpose(1, 2)
+
+        if self.num_kv_heads != self.num_heads:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
+
+        # 1. Sliding window branch cache
+        if "k_cache" not in state or state["k_cache"] is None:
+            state["k_cache"] = K
+            state["v_cache"] = V
+        else:
+            state["k_cache"] = torch.cat([state["k_cache"], K], dim=2)[:, :, -self.window_size:]
+            state["v_cache"] = torch.cat([state["v_cache"], V], dim=2)[:, :, -self.window_size:]
+
+        scores = torch.matmul(Q, state["k_cache"].transpose(-1, -2)) / math.sqrt(d)
+        attn_loc = F.softmax(scores, dim=-1)
+        out_loc = torch.matmul(attn_loc, state["v_cache"])
+
+        # 2. Global low-rank linear step
+        q_elu = F.elu(Q.float() / math.sqrt(d)) + 1.0
+        k_elu = F.elu(K.float()) + 1.0
+        v_float = V.float()
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
+            state["z_state"] = torch.zeros((B, H, d), device=device, dtype=torch.float32)
+
+        kv_state = state["kv_state"]
+        z_state = state["z_state"]
+
+        out_glob_t, kv_state, z_state = fused_recurrent_linear_step(
+            q_elu.squeeze(2), k_elu.squeeze(2), v_float.squeeze(2), kv_state, z_state, eps=1e-5
+        )
+        state["kv_state"] = kv_state
+        state["z_state"] = z_state
+        out_glob = out_glob_t.unsqueeze(2).to(dtype)
+
+        # 3. Recurrent state branch
+        gamma = torch.sigmoid(self.gamma_log.to(device=device, dtype=torch.float32)).view(1, H, 1, 1)
+        if "lin_state" not in state or state["lin_state"] is None:
+            state["lin_state"] = torch.zeros((B, H, 1, d), device=device, dtype=torch.float32)
+
+        lin_state = state["lin_state"]
+        u = self.linear_B(x.float()).view(B, 1, H, d).transpose(1, 2)
+        lin_state = gamma * lin_state + u
+        state["lin_state"] = lin_state
+
+        out_lin_h = self.state_norm(lin_state.transpose(1, 2).contiguous().view(B, 1, -1))
+        out_lin = out_lin_h.view(B, 1, H, d).transpose(1, 2) * self.linear_C.view(1, H, 1, d)
+
+        # Combine 3 branches
+        fused = alpha_loc * out_loc + alpha_glob * out_glob + alpha_lin * out_lin.to(dtype)
+        state["step_idx"] = step_idx + 1
+
+        out = fused.transpose(1, 2).contiguous().view(B, 1, self.all_head_size)
+        final = self.out_proj(out)
+
+        if is_2d:
+            final = final.squeeze(1)
+
+        return final.to(dtype), state
 
     # ------------------------------------------------------------------
     @staticmethod
