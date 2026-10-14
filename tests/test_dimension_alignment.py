@@ -44,7 +44,7 @@ def test_svd_linear_rank_tensor_core_alignment():
 def test_all_131_attentions_direct_dim_256():
     """Verify all 131 registered attentions support direct class instantiation cls(dim=256, num_heads=4)."""
     from neuralops.core.registry import ATTENTION_REGISTRY
-    names = ATTENTION_REGISTRY.list_registered()
+    names = list(ATTENTION_REGISTRY.keys())
     assert len(names) >= 131, f"Expected >= 131 registered attentions, got {len(names)}"
     
     for name in names:
@@ -75,4 +75,5 @@ def test_all_131_attentions_direct_dim_256():
             assert out_tensor.shape == (2, 16, 256), f"Shape mismatch in {name}: expected (2, 16, 256), got {out_tensor.shape}"
         except Exception as e:
             pytest.fail(f"Direct instantiation forward failed for {name}: {e}")
+
 
