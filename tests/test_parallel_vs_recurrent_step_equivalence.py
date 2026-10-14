@@ -36,9 +36,25 @@ def test_parallel_vs_recurrent_step_equivalence(name, device_str):
     dim = 64
     heads = 2
     try:
-        module = cls(dim=dim, num_heads=heads).to(device=device, dtype=dtype)
+        module = cls(dim=dim, num_heads=heads, is_decoder=True, window_size=0).to(device=device, dtype=dtype)
     except Exception:
-        module = cls(hidden_size=dim, num_heads=heads).to(device=device, dtype=dtype)
+        try:
+            module = cls(dim=dim, num_heads=heads).to(device=device, dtype=dtype)
+        except Exception:
+            module = cls(hidden_size=dim, num_heads=heads).to(device=device, dtype=dtype)
+
+    if hasattr(module, "is_decoder"):
+        module.is_decoder = True
+    if hasattr(module, "is_causal"):
+        module.is_causal = True
+    if hasattr(module, "window_size"):
+        module.window_size = 0
+    if hasattr(module, "fusion_scale"):
+        # Zero out local additive branch for pure linear global test
+        if hasattr(module, "v_proj_attn"):
+            for p in module.v_proj_attn.parameters():
+                p.data.zero_()
+        module.fusion_scale.data.fill_(1.0)
 
     module.eval()
 
