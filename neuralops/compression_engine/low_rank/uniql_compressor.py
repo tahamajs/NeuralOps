@@ -419,6 +419,18 @@ class UniQLCompressor(BaseCompressor):
                     b = bq.float() * bs
                 bias_tensor = b.to(dtype=orig_dtype, device=orig_device)
 
+            # Preserve row-wise L2 norm energy across quantization & truncation
+            scale_u = result["scale_u"].to(orig_device).clone()
+            with torch.no_grad():
+                U_hat = result["U_q"].float().to(orig_device) * scale_u.unsqueeze(1)
+                S_hat = result["S_q"].float().to(orig_device) * result["scale_s"].to(orig_device)
+                Vt_hat = result["Vt_q"].float().to(orig_device) * result["scale_v"].to(orig_device).unsqueeze(1)
+                W_rec = (U_hat * S_hat.unsqueeze(0)) @ Vt_hat
+                row_norms_orig = torch.linalg.norm(W.to(orig_device), dim=1).clamp_min(1e-8)
+                row_norms_rec = torch.linalg.norm(W_rec, dim=1).clamp_min(1e-8)
+                gain = (row_norms_orig / row_norms_rec).clamp(0.2, 5.0)
+                scale_u.mul_(gain)
+
             new_layer = UniQLinear(
                 in_features=in_f,
                 out_features=out_f,
@@ -426,7 +438,7 @@ class UniQLCompressor(BaseCompressor):
                 U_q=result["U_q"],
                 S_q=result["S_q"],
                 Vt_q=result["Vt_q"],
-                scale_u=result["scale_u"].to(orig_device),
+                scale_u=scale_u,
                 scale_s=result["scale_s"].to(orig_device),
                 scale_v=result["scale_v"].to(orig_device),
                 bias=bias_tensor,
