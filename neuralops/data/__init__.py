@@ -32,6 +32,8 @@ from .synthetic_generator import generate_synthetic_data, run_universal_generati
 from .task_mapper import get_metric_name, get_num_labels, get_text_columns
 from .validation import DataValidator, ValidationReport
 
+from .streaming import PackedTokenStreamDataset
+
 __all__ = [
     # Base
     "DataConfig",
@@ -40,6 +42,7 @@ __all__ = [
     "preprocess_function",
     "create_dataloader",
     "get_calibration_dataloader",
+    "PackedTokenStreamDataset",
     # Benchmark datasets
     "BenchmarkDatasetInfo",
     "BenchmarkDatasetRegistry",
@@ -68,6 +71,7 @@ __all__ = [
     "AUGMENTATION_REGISTRY",
     "random_mask_augment",
 ]
+
 
 # Re-exported dataset utilities
 from .dataset_discovery import list_local_datasets  # noqa: E402
