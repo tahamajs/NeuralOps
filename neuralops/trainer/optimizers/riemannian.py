@@ -351,4 +351,7 @@ class RiemannianStiefelOptimizer(Optimizer):
         return loss
 
 
-__all__ = ["RiemannianStiefelOptimizer"]
+# Alias for Riemannian Adam on Stiefel manifolds
+RiemannianAdam = RiemannianStiefelOptimizer
+
+__all__ = ["RiemannianStiefelOptimizer", "RiemannianAdam"]
