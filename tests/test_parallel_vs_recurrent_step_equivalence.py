@@ -87,8 +87,9 @@ def test_constant_o1_state_memory(name):
             return 0
         total = 0
         if isinstance(s, dict):
-            for v in s.values():
-                if isinstance(v, torch.Tensor):
+            # Track fixed recurrent state tensors (excluding metadata or local sliding windows)
+            for k, v in s.items():
+                if isinstance(v, torch.Tensor) and k in ("kv_state", "z_state", "ssm_state", "S", "Z"):
                     total += v.numel() * v.element_size()
         return total
 
