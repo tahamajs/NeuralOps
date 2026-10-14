@@ -252,6 +252,42 @@ def export_model(
     return _export_model(model=model, output_dir=output_dir, format=format, **kwargs)
 
 
+def push_to_hub(
+    model: nn.Module,
+    repo_id: str,
+    tokenizer: Any = None,
+    token: Optional[str] = None,
+    private: bool = False,
+    commit_message: str = "Upload NeuralOps model",
+    **kwargs: Any,
+) -> str:
+    """Export a self-contained NeuralOps model and push directly to Hugging Face Hub.
+
+    Configures auto_map so the model can be loaded by anyone via:
+        AutoModel.from_pretrained(repo_id, trust_remote_code=True)
+
+    Args:
+        model: PyTorch/HuggingFace model to upload.
+        repo_id: Target HuggingFace repository ID (e.g., 'username/my-model').
+        tokenizer: Optional tokenizer to upload alongside model.
+        token: HuggingFace API token (or read from HF_TOKEN env var).
+        private: Whether the repository should be private.
+        commit_message: Git commit message for upload.
+
+    Returns:
+        URL string of the uploaded HuggingFace Hub repository.
+    """
+    from neuralops.models.hub import push_model_to_hub as _push
+    return _push(
+        model=model,
+        repo_id=repo_id,
+        tokenizer=tokenizer,
+        token=token,
+        private=private,
+        commit_message=commit_message,
+    )
+
+
 def load_model(
     export_dir: Union[str, Path],
     base_model: Optional[nn.Module] = None,
@@ -630,6 +666,7 @@ __all__ = [
     "transplant_attention",
     "compress",
     "export_model",
+    "push_to_hub",
     "load_exported_model",
     # Surgery operations
     "collect_surgery_distillation_loss",
