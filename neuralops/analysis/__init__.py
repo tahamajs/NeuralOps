@@ -36,8 +36,18 @@ from .utils import (
     get_best_configurations,
     statistical_tests,
 )
+from .paper_plots import (
+    plot_singular_value_spectrum,
+    plot_attention_entropy_heatmap,
+    plot_pareto_frontier,
+    generate_all_paper_plots,
+)
 
 __all__ = [
+    "plot_singular_value_spectrum",
+    "plot_attention_entropy_heatmap",
+    "plot_pareto_frontier",
+    "generate_all_paper_plots",
     "get_best_configurations",
     "plot_loss_curve",
     "plot_accuracy_curve",
