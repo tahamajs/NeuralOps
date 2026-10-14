@@ -542,7 +542,12 @@ class FactorisedMatrixState(BaseAttention):
         """
         B, H, L, d = q.shape
 
+        suitable = False
         if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+            from neuralops.core.triton_kernels._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(q, "fms_scan", head_dim=d, seq_len=L, supports_backward=True)
+
+        if suitable:
             try:
                 decay_scalar = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).squeeze()
                 if decay_scalar.dim() == 0:

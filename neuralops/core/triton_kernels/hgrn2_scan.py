@@ -277,7 +277,9 @@ def hgrn2_scan_triton(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch
 
 def hgrn2_scan(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
     """Dispatches HGRN2 scan to Triton GPU kernel when suitable, else PyTorch fallback."""
-    if torch.cuda.is_available() and f.is_cuda and hasattr(triton, "jit"):
+    from neuralops.core.triton_kernels._types import check_triton_suitability
+    suitable, _ = check_triton_suitability(f, "hgrn2_scan", head_dim=f.shape[-1], seq_len=f.shape[1], supports_backward=True)
+    if suitable and hasattr(triton, "jit"):
         try:
             return hgrn2_scan_triton(f, iv, res_clip=res_clip)
         except Exception:

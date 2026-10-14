@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # ReGLAAttention
 # ===========================================================================
+@ATTENTION_REGISTRY.register("regla_attention")
 class ReGLAAttention(BaseAttention):
     is_custom_attention: bool = True
 

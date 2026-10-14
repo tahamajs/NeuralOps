@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Main LEKAv1
 # ===========================================================================
+@ATTENTION_REGISTRY.register("inject_leka_v1")
+@ATTENTION_REGISTRY.register("positive_kernel_linear_attention")
 class PositiveKernelLinearAttention(BaseAttention):
     """Linear-time attention via ELU+1 kernel feature map.
 

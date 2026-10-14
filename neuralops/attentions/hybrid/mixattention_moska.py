@@ -519,6 +519,7 @@ class MixAttentionMoSKA(BaseAttention):
             importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
 
         # ---- Normalize mask to (B, L) ----
+        eff_m = None
         if mask_2d is not None:
             eff_m = mask_2d
             if eff_m.dim() == 4:

@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
+@ATTENTION_REGISTRY.register("rpc_attention")
 class RPCAttention(BaseAttention):
     is_custom_attention: bool = True
 
