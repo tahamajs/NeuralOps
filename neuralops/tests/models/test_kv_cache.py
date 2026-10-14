@@ -47,13 +47,17 @@ def test_integration_across_attention_families(attn_type):
     model = NeuralOpsForCausalLM(config)
     model.eval()
 
+    inputs = torch.randint(0, 64, (1, 4))
+    outputs = model(inputs)
+    assert outputs.logits.shape == (1, 4, 64)
+    gen = model.generate(inputs, max_new_tokens=2, do_sample=False)
     assert gen.shape == (1, 6)
 
 
 def test_unified_hybrid_cache_heterogeneous_layers():
     """Verify UnifiedHybridCache maintains states across Full, Sliding Window, and GDN2/Linear layers."""
     from neuralops.models.cache import UnifiedHybridCache
-    from neuralops.models import HybridAttentionSpec
+    from neuralops.models.hybrid_spec import HybridAttentionSpec
 
     cache = UnifiedHybridCache(num_layers=3)
     B, H, D = 2, 4, 32
