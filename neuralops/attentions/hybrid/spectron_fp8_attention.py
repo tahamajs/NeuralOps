@@ -578,7 +578,14 @@ class SpectronFP8Attention(BaseAttention):
             W = w.detach().float()
             if W.ndim != 2:
                 raise ValueError(f"Expected 2D weight, got shape {tuple(W.shape)}")
-            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            dev = W.device
+            try:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            except Exception:
+                U, S, Vh = torch.linalg.svd(W.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vh = Vh.to(dev)
             r = min(proj.rank, U.size(1), Vh.size(0))
             proj.lin1.weight.data.zero_()
             proj.lin2.weight.data.zero_()

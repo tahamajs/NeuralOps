@@ -504,16 +504,24 @@ class TriBranchHybridAttention(BaseAttention):
                     eps = 1e-6 * torch.trace(Lw @ Lw.t()).item() / max(1, target_in)
                     L = Lw + eps * torch.eye(target_in, device=W.device, dtype=W.dtype)
 
+            dev = W.device
+            def _calc_svd(mat):
+                try:
+                    return torch.linalg.svd(mat, full_matrices=False)
+                except Exception:
+                    u, s, vh = torch.linalg.svd(mat.detach().cpu().float(), full_matrices=False)
+                    return u.to(dev), s.to(dev), vh.to(dev)
+
             if L is not None:
                 try:
                     W_eff = W @ L
-                    U, S, Vh = torch.linalg.svd(W_eff, full_matrices=False)
+                    U, S, Vh = _calc_svd(W_eff)
                     L_inv = torch.linalg.inv(L)
                     Vh = Vh @ L_inv
                 except Exception:
-                    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                    U, S, Vh = _calc_svd(W)
             else:
-                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                U, S, Vh = _calc_svd(W)
 
             r = min(proj.rank, U.size(1), Vh.size(0))
             dev = proj.down.weight.device
