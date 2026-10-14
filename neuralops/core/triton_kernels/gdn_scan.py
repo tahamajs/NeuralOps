@@ -343,6 +343,57 @@ def _gdn_bwd_kernel(
         dS = dS_prev
 
 
+def _gdn_fwd_inference(q, k, v, beta, alpha):
+    """Fast forward path without s_workspace allocation for inference."""
+    B, H, L, D = q.shape
+    y = torch.empty_like(q)
+    BLOCK_D = triton.next_power_of_2(D)
+    grid = (B, H)
+
+    # Use a dummy 1-element tensor for workspace when STORE_S is False
+    dummy_ws = torch.empty((1,), device=q.device, dtype=torch.float32)
+
+    _gdn_fwd_kernel[grid](
+        q,
+        k,
+        v,
+        beta,
+        alpha,
+        y,
+        dummy_ws,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        beta.stride(0),
+        beta.stride(1),
+        beta.stride(2),
+        alpha.stride(0),
+        alpha.stride(1),
+        alpha.stride(2),
+        y.stride(0),
+        y.stride(1),
+        y.stride(2),
+        y.stride(3),
+        0, 0, 0, 0, 0,
+        B,
+        L,
+        H,
+        D,
+        STORE_S=False,
+        BLOCK_D=BLOCK_D,
+    )
+    return y
+
+
 class _GatedDeltaNetScanFn(torch.autograd.Function):
     @staticmethod
     def forward(ctx, q, k, v, beta, alpha):
@@ -543,6 +594,13 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     v = v.contiguous()
     beta = beta.contiguous()
     alpha = alpha.contiguous()
+
+    # If gradients are not needed, use fast inference path without L*D*D workspace allocation
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (q, k, v, beta, alpha) if isinstance(t, torch.Tensor)
+    )
+    if not needs_grad:
+        return _gdn_fwd_inference(q, k, v, beta, alpha)
 
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
 
