@@ -321,6 +321,7 @@ class Registry:
         return k.lower() in self._dict
 
     def __len__(self) -> int:
+        self._load_all()
         return len(self._dict)
 
     def __repr__(self) -> str:
