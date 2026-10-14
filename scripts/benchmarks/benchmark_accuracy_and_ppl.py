@@ -21,6 +21,7 @@ from datasets import load_dataset
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
+from neuralops.core._attention_surgery import calibrate_surgically_replaced_model
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -85,11 +86,17 @@ def main():
         acc = None
         ppl = None
         err = ""
-        
         # A. Evaluate SST-2 Accuracy on RoBERTa
         try:
+            base_ref = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
             m_rob = AutoModelForSequenceClassification.from_pretrained("textattack/roberta-base-SST-2").to(device)
             m_rob, _ = apply_module_to_model(m_rob, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
+            
+            # Closed-Form Layerwise Ridge Output Calibration (32 samples)
+            calib_batch = {k: v[:32] for k, v in enc_sst2.items()}
+            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.88)
+            del base_ref
+            
             m_rob.eval()
             all_preds = []
             bs = 25
@@ -111,8 +118,15 @@ def main():
         
         # B. Evaluate WikiText-2 PPL on GPT-2
         try:
+            base_gpt_ref = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
             m_gpt = AutoModelForCausalLM.from_pretrained("gpt2", torch_dtype=torch.float16).to(device)
             m_gpt, _ = apply_module_to_model(m_gpt, name, module_type="attention", rank=64, device=torch.device(device), fallback_to_original=False)
+            
+            # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
+            calib_wiki = enc_wiki[:, :128]
+            m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.88)
+            del base_gpt_ref
+            
             with torch.no_grad():
                 loss = m_gpt(enc_wiki, labels=enc_wiki).loss.item()
                 ppl = round(math.exp(min(loss, 20.0)), 2)
