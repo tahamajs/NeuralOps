@@ -78,39 +78,43 @@ Benchmarked on `NVIDIA GeForce RTX 4070 Laptop GPU` ($B=2, D=768, H=12$ heads, b
 
 ### Attention Forward & Backward Throughput vs. VRAM
 
-| Mechanism | Sequence Length ($T$) | Forward Time (ms) | Forward+Backward Time (ms) | Peak VRAM (MB) | Complexity |
+| Mechanism | Sequence Length ($T$) | Forward Time (ms) | Forward+Backward Time (ms) | Peak VRAM (MB) | Complexity & Status |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **PyTorch SDPA** | 512 | 0.36 | 1.02 | 46.5 | $\mathcal{O}(T^2)$ |
-| **PyTorch SDPA** | 1024 | 0.71 | 1.82 | 71.8 | $\mathcal{O}(T^2)$ |
-| **PyTorch SDPA** | 2048 | 1.68 | 4.43 | 120.5 | $\mathcal{O}(T^2)$ |
-| **PyTorch SDPA** | 4096 | 4.33 | 10.84 | 217.9 | $\mathcal{O}(T^2)$ |
-| **PyTorch SDPA** | 8192 | 11.52 | 32.88 | 412.6 | $\mathcal{O}(T^2)$ |
-| **Chunk GLA (fla)** | 512 | 0.42 | 1.54 | 72.6 | $\mathcal{O}(T)$ |
-| **Chunk GLA (fla)** | 1024 | 0.57 | 2.06 | 116.3 | $\mathcal{O}(T)$ |
-| **Chunk GLA (fla)** | 2048 | 1.28 | 4.52 | 203.7 | $\mathcal{O}(T)$ |
-| **Chunk GLA (fla)** | 4096 | 2.78 | 9.42 | 376.0 | $\mathcal{O}(T)$ |
-| **Chunk GLA (fla)** | 8192 | **5.64** | **19.35** | **724.4** | **$\mathcal{O}(T)$ (1.70x faster than SDPA)** |
-| **Chunk GDN** | 512 | 1.60 | 4.43 | 471.1 | $\mathcal{O}(T)$ |
-| **Chunk GDN** | 1024 | 3.43 | 8.65 | 915.8 | $\mathcal{O}(T)$ |
-| **Chunk GDN** | 2048 | 6.53 | 17.82 | 1,805.6 | $\mathcal{O}(T)$ |
-| **Chunk GDN** | 4096 | 13.72 | 38.45 | 3,586.4 | $\mathcal{O}(T)$ |
-| **Chunk GDN** | 8192 | 39.03 | 87.93 | 7,148.0 | $\mathcal{O}(T)$ |
-| **GDN-2 (Decoupled)** | 512 | 92.42 | 325.58 | 1,632.7 | $\mathcal{O}(T)$ |
-| **GDN-2 (Decoupled)** | 1024 | 202.66 | 644.77 | 3,231.6 | $\mathcal{O}(T)$ |
-| **GDN-2 (Decoupled)** | 2048 | 421.26 | 1,349.66 | 6,430.7 | $\mathcal{O}(T)$ |
-| **GDN-2 (Decoupled)** | 4096 | OOM | OOM | OOM (8GB) | $\mathcal{O}(T)$ |
-| **PGDN (Preconditioned)**| 512 | 53.54 | 173.53 | 834.9 | $\mathcal{O}(T)$ |
-| **PGDN (Preconditioned)**| 1024 | 108.23 | 355.38 | 1,639.7 | $\mathcal{O}(T)$ |
-| **PGDN (Preconditioned)**| 2048 | 233.01 | 731.91 | 3,249.7 | $\mathcal{O}(T)$ |
-| **PGDN (Preconditioned)**| 4096 | 464.34 | 2,276.12 | 6,469.1 | $\mathcal{O}(T)$ |
-| **DeltaProduct / PaTH** | 512 | 71.02 | 226.64 | 849.6 | $\mathcal{O}(T)$ |
-| **DeltaProduct / PaTH** | 1024 | 153.41 | 458.78 | 1,664.9 | $\mathcal{O}(T)$ |
-| **DeltaProduct / PaTH** | 2048 | 304.56 | 958.71 | 3,296.7 | $\mathcal{O}(T)$ |
-| **DeltaProduct / PaTH** | 4096 | 631.66 | 2,981.61 | 6,559.7 | $\mathcal{O}(T)$ |
-| **Cosformer** | 512 | 2.53 | 6.07 | 288.5 | $\mathcal{O}(T)$ |
-| **Cosformer** | 1024 | 8.48 | 22.66 | 842.0 | $\mathcal{O}(T)$ |
-| **Cosformer** | 2048 | 33.22 | 84.22 | 2,823.4 | $\mathcal{O}(T)$ |
-| **Cosformer** | 4096 | OOM | OOM | OOM (8GB) | Full map OOM |
+| **PyTorch SDPA** | 512 | 0.36 | 1.11 | 46.5 | $\mathcal{O}(T^2)$ |
+| **PyTorch SDPA** | 1024 | 0.71 | 1.83 | 71.8 | $\mathcal{O}(T^2)$ |
+| **PyTorch SDPA** | 2048 | 1.65 | 4.33 | 120.5 | $\mathcal{O}(T^2)$ |
+| **PyTorch SDPA** | 4096 | 4.21 | 11.35 | 217.9 | $\mathcal{O}(T^2)$ |
+| **PyTorch SDPA** | 8192 | 11.06 | 32.45 | 412.6 | $\mathcal{O}(T^2)$ |
+| **Chunk GLA (fla)** | 512 | 0.42 | 1.29 | 72.6 | $\mathcal{O}(T)$ |
+| **Chunk GLA (fla)** | 1024 | 0.57 | 2.05 | 116.3 | $\mathcal{O}(T)$ |
+| **Chunk GLA (fla)** | 2048 | 1.29 | 4.52 | 203.7 | $\mathcal{O}(T)$ |
+| **Chunk GLA (fla)** | 4096 | 2.79 | 9.44 | 376.0 | $\mathcal{O}(T)$ |
+| **Chunk GLA (fla)** | 8192 | **5.66** | **19.39** | **724.4** | **$\mathcal{O}(T)$ (1.67x faster than SDPA)** |
+| **Chunk GDN** | 512 | 26.80 | 28.89 | 471.1 | $\mathcal{O}(T)$ |
+| **Chunk GDN** | 1024 | 56.73 | 61.97 | 915.8 | $\mathcal{O}(T)$ |
+| **Chunk GDN** | 2048 | 116.19 | 138.80 | 1,805.6 | $\mathcal{O}(T)$ |
+| **Chunk GDN** | 4096 | 241.12 | 335.81 | 3,586.4 | $\mathcal{O}(T)$ |
+| **Chunk GDN** | 8192 | 491.42 | 880.38 | 7,148.0 | $\mathcal{O}(T)$ (Zero OOM) |
+| **GDN-2 (Decoupled)** | 512 | 134.92 | 487.21 | 152.6 | $\mathcal{O}(T)$ (Checkpointed) |
+| **GDN-2 (Decoupled)** | 1024 | 285.78 | 979.03 | 171.0 | $\mathcal{O}(T)$ (Checkpointed) |
+| **GDN-2 (Decoupled)** | 2048 | 568.69 | 1,997.36 | 210.0 | $\mathcal{O}(T)$ (Checkpointed) |
+| **GDN-2 (Decoupled)** | 4096 | 1,118.64 | 4,047.35 | 342.6 | $\mathcal{O}(T)$ (Zero OOM) |
+| **GDN-2 (Decoupled)** | 8192 | 2,151.98 | 8,110.26 | **655.2** | **$\mathcal{O}(T)$ (Zero OOM, 90% VRAM drop)** |
+| **PGDN (Preconditioned)**| 512 | 33.08 | 35.89 | 441.8 | $\mathcal{O}(T)$ (Vectorized) |
+| **PGDN (Preconditioned)**| 1024 | 70.75 | 80.91 | 854.6 | $\mathcal{O}(T)$ (Vectorized) |
+| **PGDN (Preconditioned)**| 2048 | 146.00 | 167.74 | 1,680.7 | $\mathcal{O}(T)$ (Vectorized) |
+| **PGDN (Preconditioned)**| 4096 | 298.42 | 350.04 | 3,329.1 | $\mathcal{O}(T)$ (Zero OOM) |
+| **PGDN (Preconditioned)**| 8192 | 1,445.23 | 11,758.73 | 6,562.8 | $\mathcal{O}(T)$ (Zero OOM) |
+| **DeltaProduct / PaTH** | 512 | 107.37 | 341.52 | 102.9 | $\mathcal{O}(T)$ (Checkpointed) |
+| **DeltaProduct / PaTH** | 1024 | 193.91 | 692.71 | 124.2 | $\mathcal{O}(T)$ (Checkpointed) |
+| **DeltaProduct / PaTH** | 2048 | 393.79 | 1,400.58 | 165.5 | $\mathcal{O}(T)$ (Checkpointed) |
+| **DeltaProduct / PaTH** | 4096 | 821.29 | 2,791.32 | 258.8 | $\mathcal{O}(T)$ (Zero OOM) |
+| **DeltaProduct / PaTH** | 8192 | 1,604.44 | 5,821.12 | **487.2** | **$\mathcal{O}(T)$ (Zero OOM, 92% VRAM drop)** |
+| **Cosformer** | 512 | 3.19 | 7.78 | 197.5 | $\mathcal{O}(T)$ (True Linear) |
+| **Cosformer** | 1024 | 6.87 | 21.67 | 371.5 | $\mathcal{O}(T)$ (True Linear) |
+| **Cosformer** | 2048 | 13.90 | 63.43 | 733.1 | $\mathcal{O}(T)$ (True Linear) |
+| **Cosformer** | 4096 | 40.61 | 260.67 | 1,544.2 | **$\mathcal{O}(T)$ (Zero OOM, fixed quadratic)** |
+| **Cosformer** | 8192 | 137.74 | 1,628.05 | 3,705.1 | **$\mathcal{O}(T)$ (Zero OOM at 8k!)** |
 
 ---
 
@@ -118,22 +122,22 @@ Benchmarked on `NVIDIA GeForce RTX 4070 Laptop GPU` ($B=2, D=768, H=12$ heads, b
 
 | Loss Mechanism | Sequence Length ($T$) | Forward+Backward Time (ms) | Peak VRAM (MB) | VRAM Reduction |
 | :--- | :---: | :---: | :---: | :---: |
-| **Standard Linear CE** | 512 | 11.15 | 485.0 | Baseline |
-| **Fused Linear CE (FLA)** | 512 | 30.84 | 1,494.1 | Small chunk overhead |
-| **Standard Linear CE** | 1024 | 19.76 | 1,301.2 | Baseline |
-| **Fused Linear CE (FLA)** | 1024 | 55.99 | 2,117.7 | Chunk overhead |
-| **Standard Linear CE** | 2048 | 37.79 | 2,289.9 | Baseline |
-| **Fused Linear CE (FLA)** | 2048 | 110.40 | 2,522.8 | Equalizing |
-| **Standard Linear CE** | 4096 | 78.03 | 4,271.1 | Baseline |
-| **Fused Linear CE (FLA)** | 4096 | 219.77 | **3,336.6** | **-21.9% Peak VRAM** |
-| **Standard Linear KL-Div** | 512 | 19.47 | 906.7 | Baseline |
-| **Fused Linear KL-Div (FLA)** | 512 | 46.97 | 1,405.1 | Small chunk overhead |
-| **Standard Linear KL-Div** | 1024 | 38.13 | 1,501.6 | Baseline |
-| **Fused Linear KL-Div (FLA)** | 1024 | 92.09 | 1,707.5 | Equalizing |
-| **Standard Linear KL-Div** | 2048 | 74.60 | 2,691.6 | Baseline |
-| **Fused Linear KL-Div (FLA)** | 2048 | 182.89 | **2,312.4** | **-14.1% Peak VRAM** |
-| **Standard Linear KL-Div** | 4096 | 151.87 | 5,075.8 | Baseline |
-| **Fused Linear KL-Div (FLA)** | 4096 | 364.97 | **3,531.3** | **-30.4% Peak VRAM** |
+| **Standard Linear CE** | 512 | 28.07 | 386.2 | Baseline |
+| **Fused Linear CE (FLA)** | 512 | 38.57 | 1,396.9 | Minimal chunk overhead |
+| **Standard Linear CE** | 1024 | 19.91 | 1,104.6 | Baseline |
+| **Fused Linear CE (FLA)** | 1024 | 53.31 | 1,823.0 | Chunk overhead |
+| **Standard Linear CE** | 2048 | 37.49 | 1,896.7 | Baseline |
+| **Fused Linear CE (FLA)** | 2048 | 104.45 | 2,031.4 | Equalizing |
+| **Standard Linear CE** | 4096 | 78.04 | 3,484.1 | Baseline |
+| **Fused Linear CE (FLA)** | 4096 | 207.24 | **2,451.4** | **-29.6% Peak VRAM Savings** |
+| **Standard Linear KL-Div** | 512 | 20.48 | 733.5 | Baseline |
+| **Fused Linear KL-Div (FLA)** | 512 | 36.58 | 1,257.0 | Minimal chunk overhead |
+| **Standard Linear KL-Div** | 1024 | 37.96 | 1,227.7 | Baseline |
+| **Fused Linear KL-Div (FLA)** | 1024 | 70.63 | 1,458.5 | Chunk overhead |
+| **Standard Linear KL-Div** | 2048 | 74.39 | 2,218.7 | Baseline |
+| **Fused Linear KL-Div (FLA)** | 2048 | 138.82 | **1,864.1** | **-16.0% Peak VRAM Savings** |
+| **Standard Linear KL-Div** | 4096 | 152.02 | 4,203.2 | Baseline |
+| **Fused Linear KL-Div (FLA)** | 4096 | 276.14 | **2,683.4** | **-36.2% Peak VRAM Savings** |
 
 ---
 
