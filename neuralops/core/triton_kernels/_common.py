@@ -57,6 +57,7 @@ from neuralops.core.triton_kernels._types import (
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,
     FORWARD_ONLY_KERNELS,
+    FORCE_PYTORCH_FALLBACK,
     check_triton_suitability,
     log_fallback_reason,
 )

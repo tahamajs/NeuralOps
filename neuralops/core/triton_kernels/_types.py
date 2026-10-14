@@ -41,6 +41,9 @@ SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
 MAX_TRITON_SEQ_LEN: int = 16384
 BLOCK_SIZE: int = 64
 
+# Global runtime flag for testing and benchmarking pure PyTorch references
+FORCE_PYTORCH_FALLBACK: bool = False
+
 _WARNED_REASONS: set[str] = set()
 
 
@@ -80,6 +83,9 @@ def check_triton_suitability(
     supports_backward: bool = True,
 ) -> tuple[bool, str | None]:
     """Validate whether the input tensor satisfies all requirements for Triton execution."""
+    if FORCE_PYTORCH_FALLBACK:
+        return False, "FORCE_PYTORCH_FALLBACK is enabled"
+
     if not HAS_TRITON:
         return False, "triton package is not installed"
 
