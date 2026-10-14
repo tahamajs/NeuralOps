@@ -97,8 +97,11 @@ def export_model(
 
     if fmt == "safetensors":
         try:
-            from safetensors.torch import save_model
-            save_model(model, str(out_path / "model.safetensors"))
+            from safetensors.torch import save_model, save_file
+            try:
+                save_model(model, str(out_path / "model.safetensors"), metadata={"format": "pt"})
+            except TypeError:
+                save_file(model.state_dict(), str(out_path / "model.safetensors"), metadata={"format": "pt"})
         except ImportError:
             # Fallback to standard PyTorch state_dict if safetensors is unavailable
             torch.save(model.state_dict(), out_path / "pytorch_model.bin")
