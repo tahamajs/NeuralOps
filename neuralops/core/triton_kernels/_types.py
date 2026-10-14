@@ -365,37 +365,36 @@ def sparse_attn_pytorch_fallback(
         k = k.unsqueeze(1)
         v = v.unsqueeze(1)
 
-    scale = 1.0 / math.sqrt(q.shape[-1])
-    scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
-    N_q, N_k = scores.shape[-2], scores.shape[-1]
+    N_q, N_k = q.shape[-2], k.shape[-2]
+    attn_mask = None
 
     if block_mask is not None:
-        # Expand block_mask to element-wise boolean mask
         bm = block_mask.to(torch.bool)
         if bm.dim() == 2:
             expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(
                 block_size, dim=1
             )
-            expanded_mask = expanded_mask[:N_q, :N_k]
-            scores = scores.masked_fill(~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+            attn_mask = expanded_mask[:N_q, :N_k].unsqueeze(0).unsqueeze(0)
         elif bm.dim() == 4:
             expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(
                 block_size, dim=3
             )
-            expanded_mask = expanded_mask[..., :N_q, :N_k]
-            scores = scores.masked_fill(~expanded_mask, float("-inf"))
+            attn_mask = expanded_mask[..., :N_q, :N_k]
 
     if is_causal:
-        causal_mask = torch.tril(torch.ones(N_q, N_k, device=q.device, dtype=torch.bool))
-        scores = scores.masked_fill(~causal_mask, float("-inf"))
+        causal_mask = torch.tril(torch.ones(N_q, N_k, device=q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+        if attn_mask is not None:
+            attn_mask = attn_mask & causal_mask
+        else:
+            attn_mask = causal_mask
 
-    attn_probs = F.softmax(scores, dim=-1)
-    attn_probs = torch.nan_to_num(attn_probs, nan=0.0)
-    out = torch.matmul(attn_probs, v.float()).to(orig_dtype)
+    out = F.scaled_dot_product_attention(
+        q, k, v, attn_mask=attn_mask, scale=1.0 / math.sqrt(q.shape[-1])
+    )
 
     if orig_dim == 3:
         out = out.squeeze(1)
-    return out
+    return out.to(orig_dtype)
 
 
 def low_rank_pytorch_fallback(
