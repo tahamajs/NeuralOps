@@ -1,10 +1,12 @@
-# NeuralOps Complete API Reference (v1.2.0)
+# NeuralOps Complete API Reference (v1.3.0)
 
-This reference documents all registered Attention mechanisms (130) and Compression modules (73).
+This reference documents the production API, all registered Attention mechanisms (131), and Compression modules (72).
 
 ## Table of Contents
-- [Attention Mechanisms (130)](#attention-mechanisms)
-- [Compression Modules (73)](#compression-modules)
+- [Core Framework API](#core-framework-api)
+- [Attention Mechanisms (131)](#attention-mechanisms)
+- [Compression Modules (72)](#compression-modules)
+- [Triton Kernels (26)](#triton-kernels)
 
 ---
 

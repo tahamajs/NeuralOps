@@ -534,6 +534,7 @@ Zero-shot replacement via `neuralops.replace_attention` is verified across 8 maj
 
 ## 📖 Documentation
 
+- [Framework Overview & Developer Manual](docs/FRAMEWORK_OVERVIEW.md) — Unified framework topology, step decoding, hybrid caching, and serving adapters.
 - [Quick Start Guide](docs/QUICKSTART.md) — 5-minute onboarding and setup.
 - [Module Reference](docs/MODULES.md) — Complete inventory of all 131 attention mechanisms.
 - [Compression Guide](docs/COMPRESSOR_TRIAGE.md) — Guide to 72 model compression algorithms.
@@ -541,6 +542,7 @@ Zero-shot replacement via `neuralops.replace_attention` is verified across 8 maj
 - [Architecture Manual](docs/ARCHITECTURE.md) — Framework internals and system design.
 - [Library Comparison](docs/COMPARISON.md) — Feature matrix and benchmark comparisons.
 - [Troubleshooting & FAQ](docs/FAQ.md) — Common error resolutions and platform configuration.
+
 
 ---
 
