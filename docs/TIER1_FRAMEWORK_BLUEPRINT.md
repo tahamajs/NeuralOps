@@ -194,6 +194,11 @@ Q4 2027: NeuralOps v2.0.0 (Enterprise Production Framework)
 - [x] Complete FakeTensor meta-shape registration across all 26 Triton kernels (`neuralops/core/triton_kernels/op_registry.py`).
 - [x] Paged recurrent state tables (`PagedStateTable`) & associative prefix caching (`RadixPrefixStateCache`) for continuous batching.
 - [x] Automated Fisher-information & Activation-Gram AutoSVD rank search CLI (`neuralops search` & `auto_svd.py`).
+- [x] True Bit-Packed `uint8` (`INT4`/`NF4`) Weight Storage & Fused `@triton.jit` `W4A16` Dequant-GEMM (`BitPackedW4A16Linear`, `BitPackedLowRankSVDLinear`).
+- [x] Fast Walsh-Hadamard Transform (`FWHT`) & Orthogonal Incoherent SVD (`HadamardIncoherentSVDCompressor`, `fast_hadamard_transform`).
+- [x] Lossless Self-Speculative Draft-and-Verify Decoding Engine (`SelfSpeculativeDecoder`).
+- [x] Multi-Depth Needle-In-A-Haystack (`NIAH`) / Passkey Retrieval 2D Vector Benchmark & `lm-evaluation-harness` Adapter (`NeedleInAHaystackEvaluator`, `NeuralOpsLMEvalAdapter`).
+- [x] Multi-Vendor Hardware Profiler & Universal GPU Dispatch (`HardwareProfile` with NVIDIA, AMD ROCm, Apple Metal, and CPU SIMD).
 - [ ] First-class vLLM attention backend registration (Scheduled v1.4).
 - [ ] Context parallelism ring state-passing for 1M+ sequences (Scheduled v1.6).
 
