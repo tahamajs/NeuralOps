@@ -7,33 +7,33 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 917.2,
-    "latency_ms_per_token": 0.087,
-    "throughput_tok_sec": 11536.2,
-    "error": null
+    "latency_ms_per_token": 0.15,
+    "throughput_tok_sec": 6647.9,
+    "error": ""
   },
   {
     "compressor": "a3_compressor",
     "status": "success",
-    "perplexity": 80.57,
-    "param_reduction_pct": 7.38,
-    "compression_ratio": 1.0796,
-    "total_params": 115260672,
-    "peak_vram_mb": 901.5,
-    "latency_ms_per_token": 0.021,
-    "throughput_tok_sec": 47148.7,
-    "error": null
+    "perplexity": 273.01,
+    "param_reduction_pct": 8.88,
+    "compression_ratio": 1.0974,
+    "total_params": 113392896,
+    "peak_vram_mb": 895.1,
+    "latency_ms_per_token": 0.044,
+    "throughput_tok_sec": 22514.9,
+    "error": ""
   },
   {
     "compressor": "aa_svd_compressor",
     "status": "success",
-    "perplexity": 1351.7,
+    "perplexity": 599.3,
     "param_reduction_pct": 5.84,
     "compression_ratio": 1.062,
     "total_params": 117174528,
-    "peak_vram_mb": 903.5,
-    "latency_ms_per_token": 0.036,
-    "throughput_tok_sec": 27983.0,
-    "error": null
+    "peak_vram_mb": 903.1,
+    "latency_ms_per_token": 0.043,
+    "throughput_tok_sec": 23212.2,
+    "error": ""
   },
   {
     "compressor": "aatc_xkv_compressor",
@@ -43,9 +43,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 918.5,
-    "latency_ms_per_token": 0.022,
-    "throughput_tok_sec": 45316.3,
-    "error": null
+    "latency_ms_per_token": 0.065,
+    "throughput_tok_sec": 15280.9,
+    "error": ""
   },
   {
     "compressor": "adaptive_ranks",
@@ -55,9 +55,9 @@
     "compression_ratio": 1.208,
     "total_params": 103015680,
     "peak_vram_mb": 886.7,
-    "latency_ms_per_token": 0.037,
-    "throughput_tok_sec": 27018.1,
-    "error": null
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48389.9,
+    "error": ""
   },
   {
     "compressor": "adasvd_compressor",
@@ -67,9 +67,9 @@
     "compression_ratio": 1.2412,
     "total_params": 100257024,
     "peak_vram_mb": 868.5,
-    "latency_ms_per_token": 0.046,
-    "throughput_tok_sec": 21742.7,
-    "error": null
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48595.5,
+    "error": ""
   },
   {
     "compressor": "admm_compressor",
@@ -79,9 +79,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 918.0,
-    "latency_ms_per_token": 0.063,
-    "throughput_tok_sec": 15900.5,
-    "error": null
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48659.6,
+    "error": ""
   },
   {
     "compressor": "admm_pruner",
@@ -91,9 +91,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 918.0,
-    "latency_ms_per_token": 0.038,
-    "throughput_tok_sec": 26619.5,
-    "error": null
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48778.5,
+    "error": ""
   },
   {
     "compressor": "armor_pruner",
@@ -102,10 +102,10 @@
     "param_reduction_pct": -3.79,
     "compression_ratio": 0.9635,
     "total_params": 129158400,
-    "peak_vram_mb": 1096.2,
-    "latency_ms_per_token": 0.049,
-    "throughput_tok_sec": 20307.9,
-    "error": null
+    "peak_vram_mb": 1104.3,
+    "latency_ms_per_token": 0.028,
+    "throughput_tok_sec": 36057.5,
+    "error": ""
   },
   {
     "compressor": "ast_pruner",
@@ -115,9 +115,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 1102.2,
-    "latency_ms_per_token": 0.049,
-    "throughput_tok_sec": 20440.2,
-    "error": null
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 41352.4,
+    "error": ""
   },
   {
     "compressor": "astro_quantizer",
@@ -127,9 +127,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 923.2,
-    "latency_ms_per_token": 0.021,
-    "throughput_tok_sec": 48292.2,
-    "error": null
+    "latency_ms_per_token": 0.022,
+    "throughput_tok_sec": 45229.5,
+    "error": ""
   },
   {
     "compressor": "bonsai_pruner",
@@ -139,21 +139,21 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 1094.5,
-    "latency_ms_per_token": 0.044,
-    "throughput_tok_sec": 22976.2,
-    "error": null
+    "latency_ms_per_token": 0.028,
+    "throughput_tok_sec": 36025.4,
+    "error": ""
   },
   {
     "compressor": "cachenotes_compressor",
     "status": "success",
-    "perplexity": 3210.9,
+    "perplexity": 3224.7,
     "param_reduction_pct": 0.0,
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 923.7,
-    "latency_ms_per_token": 0.039,
-    "throughput_tok_sec": 25768.2,
-    "error": null
+    "latency_ms_per_token": 0.02,
+    "throughput_tok_sec": 48782.9,
+    "error": ""
   },
   {
     "compressor": "come_compressor",
@@ -163,9 +163,9 @@
     "compression_ratio": 1.1085,
     "total_params": 112256258,
     "peak_vram_mb": 889.9,
-    "latency_ms_per_token": 0.036,
-    "throughput_tok_sec": 27419.9,
-    "error": null
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 41528.8,
+    "error": ""
   },
   {
     "compressor": "compot_compressor",
@@ -175,9 +175,9 @@
     "compression_ratio": 2.3448,
     "total_params": 53071104,
     "peak_vram_mb": 783.2,
-    "latency_ms_per_token": 0.033,
-    "throughput_tok_sec": 30212.5,
-    "error": null
+    "latency_ms_per_token": 0.016,
+    "throughput_tok_sec": 63556.2,
+    "error": ""
   },
   {
     "compressor": "coopq_quantizer",
@@ -187,21 +187,21 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 1092.4,
-    "latency_ms_per_token": 0.072,
-    "throughput_tok_sec": 13944.8,
-    "error": null
+    "latency_ms_per_token": 0.034,
+    "throughput_tok_sec": 29362.0,
+    "error": ""
   },
   {
     "compressor": "cr_compressor",
     "status": "success",
-    "perplexity": 145078.84,
-    "param_reduction_pct": 59.78,
-    "compression_ratio": 2.4864,
-    "total_params": 50048256,
-    "peak_vram_mb": 777.4,
+    "perplexity": 11199.53,
+    "param_reduction_pct": 63.64,
+    "compression_ratio": 2.7504,
+    "total_params": 45243648,
+    "peak_vram_mb": 768.2,
     "latency_ms_per_token": 0.018,
-    "throughput_tok_sec": 55865.1,
-    "error": null
+    "throughput_tok_sec": 56816.6,
+    "error": ""
   },
   {
     "compressor": "cur_compressor",
@@ -211,9 +211,9 @@
     "compression_ratio": 2.5198,
     "total_params": 49384000,
     "peak_vram_mb": 775.7,
-    "latency_ms_per_token": 0.016,
-    "throughput_tok_sec": 61380.4,
-    "error": null
+    "latency_ms_per_token": 0.025,
+    "throughput_tok_sec": 39961.9,
+    "error": ""
   },
   {
     "compressor": "cur_moe_compressor",
@@ -223,9 +223,9 @@
     "compression_ratio": 1.6829,
     "total_params": 73945600,
     "peak_vram_mb": 825.3,
-    "latency_ms_per_token": 0.017,
-    "throughput_tok_sec": 57571.4,
-    "error": null
+    "latency_ms_per_token": 0.032,
+    "throughput_tok_sec": 31234.9,
+    "error": ""
   },
   {
     "compressor": "delta_kv",
@@ -235,9 +235,9 @@
     "compression_ratio": 1.0,
     "total_params": 124439808,
     "peak_vram_mb": 923.7,
-    "latency_ms_per_token": 0.021,
-    "throughput_tok_sec": 46725.8,
-    "error": null
+    "latency_ms_per_token": 0.044,
+    "throughput_tok_sec": 22673.0,
+    "error": ""
   },
   {
     "compressor": "direct_svd",
@@ -247,9 +247,9 @@
     "compression_ratio": 2.4827,
     "total_params": 50121984,
     "peak_vram_mb": 776.7,
-    "latency_ms_per_token": 0.017,
-    "throughput_tok_sec": 59771.9,
-    "error": null
+    "latency_ms_per_token": 0.033,
+    "throughput_tok_sec": 30381.7,
+    "error": ""
   },
   {
     "compressor": "dobi_svd",
@@ -259,9 +259,9 @@
     "compression_ratio": 1.7511,
     "total_params": 71061888,
     "peak_vram_mb": 820.0,
-    "latency_ms_per_token": 0.018,
-    "throughput_tok_sec": 56870.0,
-    "error": null
+    "latency_ms_per_token": 0.037,
+    "throughput_tok_sec": 27269.7,
+    "error": ""
   },
   {
     "compressor": "drone_compressor",
@@ -271,9 +271,9 @@
     "compression_ratio": 1.2711,
     "total_params": 97897728,
     "peak_vram_mb": 871.7,
-    "latency_ms_per_token": 0.02,
-    "throughput_tok_sec": 50100.8,
-    "error": null
+    "latency_ms_per_token": 0.043,
+    "throughput_tok_sec": 23489.6,
+    "error": ""
   },
   {
     "compressor": "dynamic_rank",
@@ -283,8 +283,596 @@
     "compression_ratio": 2.8085,
     "total_params": 44308224,
     "peak_vram_mb": 766.1,
+    "latency_ms_per_token": 0.016,
+    "throughput_tok_sec": 61974.2,
+    "error": ""
+  },
+  {
+    "compressor": "enlighten_compressor",
+    "status": "success",
+    "perplexity": 681.38,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.2,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48761.0,
+    "error": ""
+  },
+  {
+    "compressor": "entropy_budget_allocation",
+    "status": "success",
+    "perplexity": 5945.19,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.0,
+    "latency_ms_per_token": 0.016,
+    "throughput_tok_sec": 63190.1,
+    "error": ""
+  },
+  {
+    "compressor": "erc_svd",
+    "status": "success",
+    "perplexity": 3434.91,
+    "param_reduction_pct": 67.0,
+    "compression_ratio": 3.0303,
+    "total_params": 41064960,
+    "peak_vram_mb": 419.0,
+    "latency_ms_per_token": 0.028,
+    "throughput_tok_sec": 35758.9,
+    "error": ""
+  },
+  {
+    "compressor": "faq_quantizer",
+    "status": "success",
+    "perplexity": 2262784.75,
+    "param_reduction_pct": -1.9,
+    "compression_ratio": 0.9814,
+    "total_params": 126799104,
+    "peak_vram_mb": 934.5,
+    "latency_ms_per_token": 0.041,
+    "throughput_tok_sec": 24154.9,
+    "error": ""
+  },
+  {
+    "compressor": "flap",
+    "status": "success",
+    "perplexity": 668.27,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 922.7,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48709.3,
+    "error": ""
+  },
+  {
+    "compressor": "flat_llm",
+    "status": "success",
+    "perplexity": 4833.42,
+    "param_reduction_pct": 20.48,
+    "compression_ratio": 1.2576,
+    "total_params": 98951124,
+    "peak_vram_mb": 877.8,
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 41253.3,
+    "error": ""
+  },
+  {
+    "compressor": "frandi_compressor",
+    "status": "success",
+    "perplexity": 7709.43,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.3,
+    "latency_ms_per_token": 0.015,
+    "throughput_tok_sec": 66314.1,
+    "error": ""
+  },
+  {
+    "compressor": "fwsvd_compressor",
+    "status": "success",
+    "perplexity": 1988.66,
+    "param_reduction_pct": 21.33,
+    "compression_ratio": 1.2711,
+    "total_params": 97897728,
+    "peak_vram_mb": 871.7,
+    "latency_ms_per_token": 0.02,
+    "throughput_tok_sec": 50368.7,
+    "error": ""
+  },
+  {
+    "compressor": "gfws",
+    "status": "success",
+    "perplexity": 2887.92,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.1,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48455.1,
+    "error": ""
+  },
+  {
+    "compressor": "grecodec_compressor",
+    "status": "success",
+    "perplexity": 2552.71,
+    "param_reduction_pct": 21.33,
+    "compression_ratio": 1.2711,
+    "total_params": 97897728,
+    "peak_vram_mb": 872.0,
+    "latency_ms_per_token": 0.019,
+    "throughput_tok_sec": 52197.5,
+    "error": ""
+  },
+  {
+    "compressor": "hashed_net_compressor",
+    "status": "success",
+    "perplexity": 6546.29,
+    "param_reduction_pct": 66.36,
+    "compression_ratio": 2.9723,
+    "total_params": 41865984,
+    "peak_vram_mb": 1341.1,
+    "latency_ms_per_token": 0.027,
+    "throughput_tok_sec": 37061.2,
+    "error": ""
+  },
+  {
+    "compressor": "huffman_coder",
+    "status": "success",
+    "perplexity": 485.26,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 924.5,
+    "latency_ms_per_token": 0.042,
+    "throughput_tok_sec": 23742.5,
+    "error": ""
+  },
+  {
+    "compressor": "hybrid_svd_layer",
+    "status": "success",
+    "perplexity": 10958.68,
+    "param_reduction_pct": 53.09,
+    "compression_ratio": 2.1316,
+    "total_params": 58379520,
+    "peak_vram_mb": 792.5,
+    "latency_ms_per_token": 0.018,
+    "throughput_tok_sec": 56950.3,
+    "error": ""
+  },
+  {
+    "compressor": "hybridkv_compressor",
+    "status": "success",
+    "perplexity": 22.79,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.2,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48250.2,
+    "error": ""
+  },
+  {
+    "compressor": "kmeans_quantize",
+    "status": "success",
+    "perplexity": 24.2,
+    "param_reduction_pct": 68.24,
+    "compression_ratio": 3.149,
+    "total_params": 39517440,
+    "peak_vram_mb": 1094.4,
+    "latency_ms_per_token": 0.022,
+    "throughput_tok_sec": 45010.9,
+    "error": ""
+  },
+  {
+    "compressor": "kronecker_compressor",
+    "status": "success",
+    "perplexity": 8660.37,
+    "param_reduction_pct": 52.41,
+    "compression_ratio": 2.1015,
+    "total_params": 59215104,
+    "peak_vram_mb": 795.0,
+    "latency_ms_per_token": 0.019,
+    "throughput_tok_sec": 51923.9,
+    "error": ""
+  },
+  {
+    "compressor": "kronecker_tt_lora",
+    "status": "success",
+    "perplexity": 7776.11,
+    "param_reduction_pct": -7.01,
+    "compression_ratio": 0.9345,
+    "total_params": 133163520,
+    "peak_vram_mb": 942.5,
+    "latency_ms_per_token": 0.105,
+    "throughput_tok_sec": 9549.0,
+    "error": ""
+  },
+  {
+    "compressor": "kvtc_compressor",
+    "status": "success",
+    "perplexity": 5754.53,
+    "param_reduction_pct": 68.25,
+    "compression_ratio": 3.15,
+    "total_params": 39505152,
+    "peak_vram_mb": 848.4,
+    "latency_ms_per_token": 0.023,
+    "throughput_tok_sec": 42947.5,
+    "error": ""
+  },
+  {
+    "compressor": "liftr",
+    "status": "success",
+    "perplexity": 8459.41,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.2,
+    "latency_ms_per_token": 0.019,
+    "throughput_tok_sec": 52863.4,
+    "error": ""
+  },
+  {
+    "compressor": "lsc_compressor",
+    "status": "success",
+    "perplexity": 77822.29,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 920.7,
+    "latency_ms_per_token": 0.026,
+    "throughput_tok_sec": 38737.5,
+    "error": ""
+  },
+  {
+    "compressor": "mamba_shedder",
+    "status": "success",
+    "perplexity": 933.2,
+    "param_reduction_pct": 13.68,
+    "compression_ratio": 1.1585,
+    "total_params": 107410464,
+    "peak_vram_mb": 896.4,
+    "latency_ms_per_token": 0.027,
+    "throughput_tok_sec": 37208.4,
+    "error": ""
+  },
+  {
+    "compressor": "mgie_budget",
+    "status": "success",
+    "perplexity": 7707.71,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.5,
+    "latency_ms_per_token": 0.019,
+    "throughput_tok_sec": 53172.0,
+    "error": ""
+  },
+  {
+    "compressor": "mlorq_compressor",
+    "status": "success",
+    "perplexity": 24.93,
+    "param_reduction_pct": 68.25,
+    "compression_ratio": 3.15,
+    "total_params": 39505152,
+    "peak_vram_mb": 870.4,
+    "latency_ms_per_token": 0.031,
+    "throughput_tok_sec": 32771.1,
+    "error": ""
+  },
+  {
+    "compressor": "modegpt_compressor",
+    "status": "success",
+    "perplexity": 7713.98,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 765.8,
+    "latency_ms_per_token": 0.015,
+    "throughput_tok_sec": 66112.5,
+    "error": ""
+  },
+  {
+    "compressor": "nmf_compressor",
+    "status": "success",
+    "perplexity": 9456.96,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 939.2,
+    "latency_ms_per_token": 0.031,
+    "throughput_tok_sec": 32757.4,
+    "error": ""
+  },
+  {
+    "compressor": "oats_compressor",
+    "status": "success",
+    "perplexity": 4797.47,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 925.7,
+    "latency_ms_per_token": 0.043,
+    "throughput_tok_sec": 22997.6,
+    "error": ""
+  },
+  {
+    "compressor": "optimal_subspace_projection",
+    "status": "success",
+    "perplexity": 6614.38,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.0,
     "latency_ms_per_token": 0.025,
-    "throughput_tok_sec": 40696.5,
-    "error": null
+    "throughput_tok_sec": 40469.3,
+    "error": ""
+  },
+  {
+    "compressor": "proxsparse",
+    "status": "success",
+    "perplexity": 297.84,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 924.0,
+    "latency_ms_per_token": 0.035,
+    "throughput_tok_sec": 28351.7,
+    "error": ""
+  },
+  {
+    "compressor": "residual_svd_compressor",
+    "status": "success",
+    "perplexity": 5076.23,
+    "param_reduction_pct": 63.51,
+    "compression_ratio": 2.7408,
+    "total_params": 45403392,
+    "peak_vram_mb": 768.7,
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 41831.9,
+    "error": ""
+  },
+  {
+    "compressor": "roast_hashed_linear",
+    "status": "success",
+    "perplexity": 36232120.0,
+    "param_reduction_pct": 68.21,
+    "compression_ratio": 3.146,
+    "total_params": 39554304,
+    "peak_vram_mb": 924.8,
+    "latency_ms_per_token": 0.026,
+    "throughput_tok_sec": 38928.2,
+    "error": ""
+  },
+  {
+    "compressor": "rotational_slicegpt_int4",
+    "status": "success",
+    "perplexity": 22.79,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 922.2,
+    "latency_ms_per_token": 0.035,
+    "throughput_tok_sec": 28180.7,
+    "error": ""
+  },
+  {
+    "compressor": "rpca_compressor",
+    "status": "success",
+    "perplexity": 7660.85,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.5,
+    "latency_ms_per_token": 0.028,
+    "throughput_tok_sec": 35750.0,
+    "error": ""
+  },
+  {
+    "compressor": "saes_svd_v2",
+    "status": "success",
+    "perplexity": 7709.32,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.5,
+    "latency_ms_per_token": 0.031,
+    "throughput_tok_sec": 32024.3,
+    "error": ""
+  },
+  {
+    "compressor": "salr",
+    "status": "success",
+    "perplexity": 22.79,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.5,
+    "latency_ms_per_token": 0.041,
+    "throughput_tok_sec": 24113.8,
+    "error": ""
+  },
+  {
+    "compressor": "sdrm_compressor",
+    "status": "success",
+    "perplexity": 1589.43,
+    "param_reduction_pct": 11.95,
+    "compression_ratio": 1.1358,
+    "total_params": 109565184,
+    "peak_vram_mb": 903.1,
+    "latency_ms_per_token": 0.038,
+    "throughput_tok_sec": 26437.4,
+    "error": ""
+  },
+  {
+    "compressor": "slicegpt",
+    "status": "success",
+    "perplexity": 1551.39,
+    "param_reduction_pct": 20.49,
+    "compression_ratio": 1.2577,
+    "total_params": 98939136,
+    "peak_vram_mb": 880.3,
+    "latency_ms_per_token": 0.039,
+    "throughput_tok_sec": 25650.6,
+    "error": ""
+  },
+  {
+    "compressor": "slicegpt_pca",
+    "status": "success",
+    "perplexity": 22835.33,
+    "param_reduction_pct": 3.95,
+    "compression_ratio": 1.0412,
+    "total_params": 119518464,
+    "peak_vram_mb": 917.9,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 47843.9,
+    "error": ""
+  },
+  {
+    "compressor": "slim_compressor",
+    "status": "success",
+    "perplexity": 31990.0,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 933.3,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48254.0,
+    "error": ""
+  },
+  {
+    "compressor": "soka_compressor",
+    "status": "success",
+    "perplexity": 7708.07,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 765.5,
+    "latency_ms_per_token": 0.016,
+    "throughput_tok_sec": 61997.9,
+    "error": ""
+  },
+  {
+    "compressor": "sparsegpt",
+    "status": "success",
+    "perplexity": 274.09,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 925.3,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48277.9,
+    "error": ""
+  },
+  {
+    "compressor": "subspace_projection",
+    "status": "success",
+    "perplexity": 7713.98,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.0,
+    "latency_ms_per_token": 0.015,
+    "throughput_tok_sec": 66105.4,
+    "error": ""
+  },
+  {
+    "compressor": "svd_linear",
+    "status": "success",
+    "perplexity": 60337.18,
+    "param_reduction_pct": 37.68,
+    "compression_ratio": 1.6047,
+    "total_params": 77548800,
+    "peak_vram_mb": 834.4,
+    "latency_ms_per_token": 0.018,
+    "throughput_tok_sec": 56392.2,
+    "error": ""
+  },
+  {
+    "compressor": "svd_llm_compressor",
+    "status": "success",
+    "perplexity": 22.79,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 924.0,
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 40833.9,
+    "error": ""
+  },
+  {
+    "compressor": "swift_svd",
+    "status": "success",
+    "perplexity": 5258.28,
+    "param_reduction_pct": 26.18,
+    "compression_ratio": 1.3547,
+    "total_params": 91858176,
+    "peak_vram_mb": 0.0,
+    "latency_ms_per_token": 4.596,
+    "throughput_tok_sec": 217.6,
+    "error": ""
+  },
+  {
+    "compressor": "swift_svd_act",
+    "status": "success",
+    "perplexity": 2677.81,
+    "param_reduction_pct": 64.46,
+    "compression_ratio": 2.8139,
+    "total_params": 44223744,
+    "peak_vram_mb": 766.3,
+    "latency_ms_per_token": 0.016,
+    "throughput_tok_sec": 62376.1,
+    "error": ""
+  },
+  {
+    "compressor": "tomoe_compressor",
+    "status": "success",
+    "perplexity": 78652.8,
+    "param_reduction_pct": -0.18,
+    "compression_ratio": 0.9982,
+    "total_params": 124661136,
+    "peak_vram_mb": 930.0,
+    "latency_ms_per_token": 0.163,
+    "throughput_tok_sec": 6135.4,
+    "error": ""
+  },
+  {
+    "compressor": "tt_compressor",
+    "status": "success",
+    "perplexity": 5334.6,
+    "param_reduction_pct": 64.96,
+    "compression_ratio": 2.8535,
+    "total_params": 43609344,
+    "peak_vram_mb": 588.5,
+    "latency_ms_per_token": 0.023,
+    "throughput_tok_sec": 43268.1,
+    "error": ""
+  },
+  {
+    "compressor": "uniql_compressor",
+    "status": "success",
+    "perplexity": 8012.58,
+    "param_reduction_pct": 68.25,
+    "compression_ratio": 3.15,
+    "total_params": 39505152,
+    "peak_vram_mb": 762.2,
+    "latency_ms_per_token": 0.024,
+    "throughput_tok_sec": 41984.7,
+    "error": ""
+  },
+  {
+    "compressor": "zerokv_neo_compressor",
+    "status": "success",
+    "perplexity": 1449.13,
+    "param_reduction_pct": 0.0,
+    "compression_ratio": 1.0,
+    "total_params": 124439808,
+    "peak_vram_mb": 923.5,
+    "latency_ms_per_token": 0.021,
+    "throughput_tok_sec": 48656.1,
+    "error": ""
   }
 ]
