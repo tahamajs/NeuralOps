@@ -470,20 +470,39 @@ We follow open-source engineering standards and semantic versioning:
 
 ## 🤗 Hugging Face Integration
 
-NeuralOps models and compressed checkpoints integrate natively with the Hugging Face Hub:
+NeuralOps supports **two seamless integration modes** with Hugging Face Hub:
+
+### Mode 1: Zero-Dependency Loading (Standard `transformers`)
+Models exported with `merge_for_inference(model)` or serialized with standard architecture heads can be loaded directly using standard Hugging Face `transformers` **without requiring the `neuralops` package at all**:
+
+```python
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+# Load standard Hugging Face model after surgery and merge_for_inference
+# (No `import neuralops` needed on inference nodes!)
+model = AutoModelForSequenceClassification.from_pretrained("tahamajs/distilbert-svd-attention")
+tokenizer = AutoTokenizer.from_pretrained("tahamajs/distilbert-svd-attention")
+
+inputs = tokenizer("Subquadratic attention enables long context scaling.", return_tensors="pt")
+outputs = model(**inputs)
+```
+
+### Mode 2: Native NeuralOps Hub Checkpoints
+For models leveraging subquadratic Triton kernels (e.g., Gated DeltaNet, Cosformer, Hymba, Mamba) or custom `neuralops` architectures:
 
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import neuralops.models
+import neuralops  # Registers 'neuralops' & 'gla' architectures with AutoModel
 
-# Load a community or published NeuralOps checkpoint
-model = AutoModelForCausalLM.from_pretrained("tahamajs/distilbert-svd-attention")
+# Load custom subquadratic architecture directly via Hugging Face AutoModel
+model = AutoModelForCausalLM.from_pretrained("tahamajs/distilbert-svd-attention", trust_remote_code=True)
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
 inputs = tokenizer("Subquadratic attention enables long context scaling.", return_tensors="pt")
 outputs = model.generate(**inputs, max_new_tokens=50)
 print(tokenizer.decode(outputs[0]))
 ```
+
 
 ---
 
