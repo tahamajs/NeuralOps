@@ -152,7 +152,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # 10. search
     search_p = subparsers.add_parser("search", help="Automated Fisher-information & Pareto rank allocation search (AutoSVD)")
     search_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
-    search_p.add_argument("--target-param-ratio", type=float, default=0.5, help="Target compression parameter ratio (e.g. 0.5 for 50%)")
+    search_p.add_argument("--target-param-ratio", type=float, default=0.5, help="Target compression parameter ratio (e.g. 0.5 for 50 percent)")
     search_p.add_argument("--min-rank", type=int, default=16, help="Minimum allowable rank per linear layer")
     search_p.add_argument("--max-rank", type=int, default=None, help="Maximum allowable rank per linear layer")
     search_p.add_argument("--output-json", type=str, default=None, help="Optional output JSON path for allocated ranks")
