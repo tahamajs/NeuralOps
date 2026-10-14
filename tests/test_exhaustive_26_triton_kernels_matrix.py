@@ -666,3 +666,116 @@ def test_3_9_fused_ce_ignore_index_and_chunked():
     assert not torch.isnan(logits.grad).any()
 
 
+def test_3_10_tier2_svd_mamba_proj_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_svd_mamba_proj_triton,
+        fused_svd_mamba_proj_pytorch,
+    )
+    B, L, in_d, r, out_d = 2, 32, 64, 8, 64
+    x = torch.randn(B, L, in_d, device=DEVICE, dtype=torch.float32)
+    U = torch.randn(out_d, r, device=DEVICE, dtype=torch.float32)
+    S = torch.ones(r, device=DEVICE, dtype=torch.float32)
+    V = torch.randn(in_d, r, device=DEVICE, dtype=torch.float32)
+    bias = torch.randn(out_d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_svd_mamba_proj_triton(x, U, S, V, bias)
+    out_ref = fused_svd_mamba_proj_pytorch(x, U, S, V, bias)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_11_tier2_vig_knn_graph_agg_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_vig_knn_graph_agg_triton,
+        fused_vig_knn_graph_agg_pytorch,
+    )
+    B, H, L, d = 2, 4, 32, 32
+    q = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+
+    for is_causal in (True, False):
+        out_tri = fused_vig_knn_graph_agg_triton(q, k, v, top_k=8, scale=0.125, is_causal=is_causal)
+        out_ref = fused_vig_knn_graph_agg_pytorch(q, k, v, top_k=8, scale=0.125, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_12_tier2_nsa_hierarchical_sparse_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_nsa_hierarchical_sparse_triton,
+        fused_nsa_hierarchical_sparse_pytorch,
+    )
+    B, H, L = 2, 4, 64
+    scores = torch.randn(B, H, L, L, device=DEVICE, dtype=torch.float32)
+    idx = torch.arange(L, device=DEVICE)
+    local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= 16
+    local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
+    key_valid_4d = torch.ones(B, 1, 1, L, device=DEVICE, dtype=torch.bool)
+
+    for is_causal in (True, False):
+        out_tri = fused_nsa_hierarchical_sparse_triton(scores, local_mask_4d, key_valid_4d, top_k=8, is_causal=is_causal)
+        out_ref = fused_nsa_hierarchical_sparse_pytorch(scores, local_mask_4d, key_valid_4d, top_k=8, is_causal=is_causal)
+        assert torch.equal(out_tri, out_ref)
+
+
+def test_3_13_tier2_reap_moe_router_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_reap_moe_router_triton,
+        fused_reap_moe_router_pytorch,
+    )
+    B, L, E = 2, 32, 8
+    logits = torch.randn(B, L, E, device=DEVICE, dtype=torch.float32)
+
+    v_tri, idx_tri = fused_reap_moe_router_triton(logits, top_k=2)
+    v_ref, idx_ref = fused_reap_moe_router_pytorch(logits, top_k=2)
+    torch.testing.assert_close(v_tri, v_ref, rtol=1e-4, atol=1e-4)
+    assert torch.equal(idx_tri, idx_ref)
+
+
+def test_3_14_tier2_padre_polynomial_attn_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_padre_polynomial_attn_triton,
+        fused_padre_polynomial_attn_pytorch,
+    )
+    B, H, L, d = 2, 4, 32, 32
+    q = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_padre_polynomial_attn_triton(q, k, v, scale=0.125, order=2, temperature=1.0)
+    out_ref = fused_padre_polynomial_attn_pytorch(q, k, v, scale=0.125, order=2, temperature=1.0)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_15_tier2_nasc_spectral_linear_scan_parity():
+    from neuralops.core.triton_kernels.linear_attn import (
+        fused_nasc_spectral_linear_scan_triton,
+        fused_nasc_spectral_linear_scan_pytorch,
+    )
+    B, H, L, d, F = 2, 4, 32, 32, 16
+    q = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    rff_proj = torch.randn(d, F, device=DEVICE, dtype=torch.float32)
+
+    for is_causal in (True, False):
+        out_tri = fused_nasc_spectral_linear_scan_triton(q, k, v, rff_proj, is_causal=is_causal)
+        out_ref = fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, is_causal=is_causal)
+        torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_16_tier2_jamba_hybrid_gate_parity():
+    from neuralops.core.triton_kernels.selective_scan import (
+        fused_jamba_hybrid_ssm_attn_gate_triton,
+        fused_jamba_hybrid_ssm_attn_gate_pytorch,
+    )
+    B, L, H, d = 2, 32, 4, 32
+    attn_out = torch.randn(B, L, H * d, device=DEVICE, dtype=torch.float32)
+    ssm_out = torch.randn(B, L, H * d, device=DEVICE, dtype=torch.float32)
+    alpha_raw = torch.randn(H, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, ssm_out, alpha_raw)
+    out_ref = fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+
