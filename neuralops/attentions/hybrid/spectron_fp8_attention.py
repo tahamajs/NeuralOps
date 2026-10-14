@@ -43,8 +43,8 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
         try:
             from neuralops.core.triton_kernels.low_rank import quantize_to_fp8_dynamic
             x_fp8, scale = quantize_to_fp8_dynamic(x)
-            # Reconstruct for autograd with straight-through estimator
-            x_dequant = (x_fp8.float() * scale.view(*scale.shape, *([1] * (x.dim() - scale.dim())))).to(orig_dtype)
+            # Reconstruct for autograd with straight-through estimator (scale is [M], align with [..., 1])
+            x_dequant = (x_fp8.float() * scale.view(*x.shape[:-1], 1)).to(orig_dtype)
             if use_ste:
                 return x + (x_dequant - x).detach()
             return x_dequant
