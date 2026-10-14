@@ -138,7 +138,8 @@ class XAttention(BaseAttention):
 
         # ---- Resolve dims ----
         d_model = (
-            kwargs.get("hidden_size")
+            kwargs.get("dim")
+            or kwargs.get("hidden_size")
             or _cfg_get(config, "hidden_size")
             or _cfg_get(config, "d_model")
             or _cfg_get(config, "dim")
