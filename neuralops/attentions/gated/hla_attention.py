@@ -865,8 +865,7 @@ class HLAAttention(BaseAttention):
         k_act = (F.elu(k.float()) + 1.0)
 
         # 3. Per-head exponential decay
-        gamma = self._effective_decay()  # [H]
-        gamma_t = gamma.view(1, H, 1, 1).to(device=device, dtype=torch.float32)
+        gamma_t = torch.sigmoid(self.lora_beta).view(1, H, 1, 1).to(device=device, dtype=torch.float32)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, Dh, Dh), device=device, dtype=torch.float32)
