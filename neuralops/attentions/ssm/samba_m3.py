@@ -464,7 +464,8 @@ class SAMBAM3Block(nn.Module):
             q_abs_end = past_len + end
 
             # Key range: absolute positions in [max(0, q_abs_start - window), q_abs_end + window) for bidir
-            if self.is_decoder:
+            is_dec = getattr(self, "_active_is_decoder", self.is_decoder)
+            if is_dec:
                 k_abs_start = max(0, q_abs_start - self.window)
                 k_abs_end = q_abs_end
             else:
@@ -543,6 +544,9 @@ class SAMBAM3Block(nn.Module):
         B, L, D = hidden_states.shape
         target_dtype = hidden_states.dtype
 
+        is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
+        self._active_is_decoder = is_dec
+
         # ---- SM3-FIX-05: read cache ----
         past_k = past_v = past_mamba = None
         past_len = 0
@@ -618,6 +622,8 @@ class SAMBAM3Block(nn.Module):
         # ---- Mamba branch ----
         kwargs_mamba = dict(kwargs)
         past_mamba = kwargs_mamba.pop("past_state", past_mamba)
+        kwargs_mamba["is_decoder"] = is_dec
+        kwargs_mamba["is_causal"] = is_dec
         m_res = self.mamba(
             hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba
         )

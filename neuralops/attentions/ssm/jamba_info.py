@@ -364,14 +364,21 @@ class JambaInfoBlock(BaseAttention):
         ssm: nn.Module | None,
         x: torch.Tensor,
         attention_mask: torch.Tensor | None,
+        **kwargs: Any,
     ) -> torch.Tensor:
         if ssm is None:
             return torch.zeros_like(x)
         try:
-            out = ssm(x, attention_mask=attention_mask)
+            out = ssm(x, attention_mask=attention_mask, **kwargs)
         except TypeError:
             try:
-                out = ssm(x)
+                out = ssm(x, **kwargs)
+            except TypeError:
+                try:
+                    out = ssm(x)
+                except Exception as e:
+                    logger.debug("SSM forward failed: %s", e)
+                    return torch.zeros_like(x)
             except Exception as e:
                 logger.debug("SSM forward failed: %s", e)
                 return torch.zeros_like(x)
@@ -727,7 +734,7 @@ class JambaInfoBlock(BaseAttention):
         scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
         # ---- Causal mask ----
-        if self.is_decoder and L > 1:
+        if is_dec and L > 1:
             kv_len = k1.shape[-2]
             causal = torch.tril(
                 torch.ones(L, kv_len, device=device, dtype=torch.bool),
@@ -795,8 +802,8 @@ class JambaInfoBlock(BaseAttention):
         # To connect bottleneck to attention, replace `x` with `attn_out` below.
         z = self.bottleneck.down(x)
 
-        if self.is_decoder:
-            z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask)
+        if is_dec:
+            z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask, is_decoder=True)
         else:
             if self.ssm_bwd is not None:
                 z_rev = torch.flip(z, dims=[1]).contiguous()
