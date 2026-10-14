@@ -66,12 +66,15 @@ if wikitext_json.exists():
     with open(wikitext_json, "r") as f:
         records = json.load(f)
 
-    succ = [r for r in records if r.get("status") == "success" and r.get("perplexity") is not None]
+    succ = [
+        r for r in records
+        if r.get("status") == "success" and r.get("perplexity") is not None and str(r.get("perplexity")).lower() != "nan"
+    ]
 
     # Plot Pareto Frontier
     fig, ax = plt.subplots(figsize=(7.0, 4.8))
-    x_reduc = [r["param_reduction_pct"] for r in succ]
-    y_ppl = [min(r["perplexity"], 10000.0) for r in succ]
+    x_reduc = [float(r["param_reduction_pct"]) for r in succ]
+    y_ppl = [min(float(r["perplexity"]), 10000.0) for r in succ]
 
     ax.scatter(x_reduc, y_ppl, c="#1f77b4", s=45, alpha=0.7, edgecolors="none", label="Compressors (72 total)")
     ax.set_yscale("log")
@@ -83,8 +86,10 @@ if wikitext_json.exists():
     notable = ["baseline_gpt2", "aatc_xkv_compressor", "kmeans_quantize", "mlorq_compressor", "bonsai_pruner", "aa_svd_compressor", "direct_svd"]
     for r in succ:
         if r["compressor"] in notable:
-            ax.scatter([r["param_reduction_pct"]], [min(r["perplexity"], 10000.0)], c="#d62728", s=70, zorder=5)
-            ax.annotate(r["compressor"], (r["param_reduction_pct"], min(r["perplexity"], 10000.0)),
+            p_red = float(r["param_reduction_pct"])
+            p_val = min(float(r["perplexity"]), 10000.0)
+            ax.scatter([p_red], [p_val], c="#d62728", s=70, zorder=5)
+            ax.annotate(r["compressor"], (p_red, p_val),
                         fontsize=8, xytext=(4, 4), textcoords="offset points")
 
     ax.legend(frameon=True, loc="upper left")

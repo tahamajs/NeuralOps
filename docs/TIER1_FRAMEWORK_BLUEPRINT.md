@@ -199,6 +199,9 @@ Q4 2027: NeuralOps v2.0.0 (Enterprise Production Framework)
 - [x] Lossless Self-Speculative Draft-and-Verify Decoding Engine (`SelfSpeculativeDecoder`).
 - [x] Multi-Depth Needle-In-A-Haystack (`NIAH`) / Passkey Retrieval 2D Vector Benchmark & `lm-evaluation-harness` Adapter (`NeedleInAHaystackEvaluator`, `NeuralOpsLMEvalAdapter`).
 - [x] Multi-Vendor Hardware Profiler & Universal GPU Dispatch (`HardwareProfile` with NVIDIA, AMD ROCm, Apple Metal, and CPU SIMD).
-- [ ] First-class vLLM attention backend registration (Scheduled v1.4).
-- [ ] Context parallelism ring state-passing for 1M+ sequences (Scheduled v1.6).
+- [x] First-class vLLM attention backend registration (`neuralops/integrations/vllm.py` & `vllm.general_plugins` entrypoint).
+- [x] Context parallelism ring state-passing for 1M+ sequences (`neuralops/distributed/context_parallel.py`).
+- [x] Ahead-of-Time C++ AOTInductor compilation runner (`neuralops/export/exporter.py` & `compile_to_so`).
+- [x] Megatron-style Tensor Parallelism for recurrent linear layers (`neuralops/distributed/tensor_parallel.py`).
+- [x] Stateful Truncated-BPTT infinite-context streaming pretrainer (`neuralops/trainer/foundation_pretrainer.py`).
 
