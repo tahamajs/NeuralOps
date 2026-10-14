@@ -690,8 +690,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_bar = (k_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
 
         # ---- Routing ----
+        rg_dtype = self.W_rg.weight.dtype if hasattr(self.W_rg, "weight") else q_bar.dtype
         router_logits = torch.matmul(
-            self.W_rg(q_bar), k_bar.transpose(-1, -2).contiguous()
+            self.W_rg(q_bar.to(rg_dtype)), k_bar.to(rg_dtype).transpose(-1, -2).contiguous()
         ) / math.sqrt(d)
 
         # Page validity: at least one valid token in the page
