@@ -157,7 +157,7 @@ class _AdaptiveSparseAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -331,7 +331,7 @@ class _MoBAAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -505,7 +505,7 @@ class _XAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -679,7 +679,7 @@ class _ALiBiAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -853,7 +853,7 @@ class _DynamicConvAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1027,7 +1027,7 @@ class _MLAAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1201,7 +1201,7 @@ class _MultiQueryAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1375,7 +1375,7 @@ class _CosformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1549,7 +1549,7 @@ class _CosformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1723,7 +1723,7 @@ class _TritonCosformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -1897,7 +1897,7 @@ class _LinformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2071,7 +2071,7 @@ class _PerformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2245,7 +2245,7 @@ class _ChelaSlayAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2419,7 +2419,7 @@ class _ChelaSlayAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2593,7 +2593,7 @@ class _GalerkinAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2767,7 +2767,7 @@ class _GLAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -2941,7 +2941,7 @@ class _NystromAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3115,7 +3115,7 @@ class _RALALinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3289,7 +3289,7 @@ class _SpectraformerAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3463,7 +3463,7 @@ class _DecayLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3637,7 +3637,7 @@ class _DecayLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3811,7 +3811,7 @@ class _DecayLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -3985,7 +3985,7 @@ class _DecayLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -4159,7 +4159,7 @@ class _GatedDeltaNetTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -4333,7 +4333,7 @@ class _HGRN2LayerTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -4507,7 +4507,7 @@ class _KDAAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -4681,7 +4681,7 @@ class _PositiveKernelLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -4855,7 +4855,7 @@ class _SpectronFP8AttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5029,7 +5029,7 @@ class _AdaptiveSpanAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5203,7 +5203,7 @@ class _SinkAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5377,7 +5377,7 @@ class _MambaBlockTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5551,7 +5551,7 @@ class _SelectiveSSMTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5725,7 +5725,7 @@ class _SelectiveSSMTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -5899,7 +5899,7 @@ class _SelectiveMambaTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6073,7 +6073,7 @@ class _VSpecAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6247,7 +6247,7 @@ class _SVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6421,7 +6421,7 @@ class _SVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6595,7 +6595,7 @@ class _SVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6769,7 +6769,7 @@ class _DecayDecayLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -6943,7 +6943,7 @@ class _SVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7117,7 +7117,7 @@ class _TritonSVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7291,7 +7291,7 @@ class _ASVDAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7465,7 +7465,7 @@ class _FactorisedMatrixStateTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7639,7 +7639,7 @@ class _FusedSVDKernelAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7813,7 +7813,7 @@ class _ProjectionFactorizedAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -7987,7 +7987,7 @@ class _SVDLLMV2AttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -8161,7 +8161,7 @@ class _SVDProjectionAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
@@ -8335,7 +8335,7 @@ class _SVDLinearAttentionTritonFunction(torch.autograd.Function):
         if sm_scale is None:
             sm_scale = 1.0 / (D ** 0.5)
         
-        out = torch.empty_like(q)
+        out = torch.empty((B, H, M, D), device=q.device, dtype=q.dtype)
         BLOCK_M = 64
         BLOCK_N = 64
         grid = (triton.cdiv(M, BLOCK_M), B * H)
