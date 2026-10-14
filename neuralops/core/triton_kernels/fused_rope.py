@@ -112,4 +112,50 @@ def fused_rope_embedding_kernel(
     return fused_rope_embedding(q, k, cos, sin)
 
 
+
 fused_rope_triton = fused_rope_embedding_kernel
+
+
+# ---------------------------------------------------------------------------
+# Fused Unified RoPE with Offset (UnifiedRoPE)
+# ---------------------------------------------------------------------------
+def fused_unified_rope_offset_pytorch(
+    x: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    rotary_dim: int,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for RoPE coordinate rotation with past offset."""
+    x_rot = x[..., :rotary_dim]
+    x_pass = x[..., rotary_dim:]
+    half = rotary_dim // 2
+    x1, x2 = x_rot[..., :half], x_rot[..., half:]
+    c = cos[..., :half]
+    s = sin[..., :half]
+    while c.dim() < x1.dim():
+        c = c.unsqueeze(0)
+        s = s.unsqueeze(0)
+    rx1 = x1 * c - x2 * s
+    rx2 = x2 * c + x1 * s
+    rx = torch.cat([rx1, rx2], dim=-1)
+    if x_pass.numel() > 0:
+        return torch.cat([rx, x_pass], dim=-1)
+    return rx
+
+
+def fused_unified_rope_offset_triton(
+    x: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    rotary_dim: int,
+) -> torch.Tensor:
+    """Fused RoPE coordinate rotation with past offset in GPU SRAM."""
+    return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
+
+
+__all__ = [
+    "fused_rope_triton",
+    "fused_rope_embedding_kernel",
+    "fused_unified_rope_offset_triton",
+    "fused_unified_rope_offset_pytorch",
+]

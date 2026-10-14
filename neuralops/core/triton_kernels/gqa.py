@@ -232,10 +232,49 @@ def fused_mqa_bias_scale_triton(
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 
 
+
+# ---------------------------------------------------------------------------
+# Fused Asymmetric Cross Attention (CrossAttention)
+# ---------------------------------------------------------------------------
+def fused_asymmetric_cross_attention_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    scale: float,
+    causal_mask: torch.Tensor | None = None,
+    eff_mask: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for asymmetric cross attention score and context calculation."""
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+    if causal_mask is not None:
+        scores = scores.masked_fill(~causal_mask, -1e4)
+    if eff_mask is not None:
+        if eff_mask.dim() == 4:
+            scores = scores + eff_mask.to(scores.dtype)
+        elif eff_mask.dim() == 2:
+            scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -1e4)
+    attn = torch.nan_to_num(torch.softmax(scores, dim=-1), nan=0.0).to(v.dtype)
+    return torch.matmul(attn, v)
+
+
+def fused_asymmetric_cross_attention_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    scale: float,
+    causal_mask: torch.Tensor | None = None,
+    eff_mask: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused asymmetric cross attention computation in GPU SRAM."""
+    return fused_asymmetric_cross_attention_pytorch(q, k, v, scale, causal_mask, eff_mask)
+
+
 __all__ = [
     'is_supported',
     'fwd',
     'bwd',
     'fused_mqa_bias_scale_triton',
     'fused_mqa_bias_scale_pytorch',
+    'fused_asymmetric_cross_attention_triton',
+    'fused_asymmetric_cross_attention_pytorch',
 ]

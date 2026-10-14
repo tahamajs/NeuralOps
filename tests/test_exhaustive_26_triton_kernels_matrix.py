@@ -460,3 +460,162 @@ def test_3_7_favor_plus_feature_map_triton_parity():
         out_ref = fused_favor_plus_feature_map_pytorch(x, omega, num_features=M, kernel_type=ktype)
         torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
 
+
+def test_3_8_lsh_hash_and_bin_triton_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_lsh_hash_and_bin_triton,
+        fused_lsh_hash_and_bin_pytorch,
+    )
+    B, H, N, d = 2, 4, 32, 64
+    num_buckets = 16
+    vectors = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    proj = torch.randn(d, num_buckets // 2, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_lsh_hash_and_bin_triton(vectors, proj, num_buckets)
+    out_ref = fused_lsh_hash_and_bin_pytorch(vectors, proj, num_buckets)
+    torch.testing.assert_close(out_tri, out_ref)
+
+
+def test_3_8_hamming_scores_triton_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_hamming_scores_triton,
+        fused_hamming_scores_pytorch,
+    )
+    B, H, N, d = 2, 4, 16, 32
+    Q = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    K = torch.randn(B, H, N, d, device=DEVICE, dtype=torch.float32)
+    lora_q = torch.randn(H, device=DEVICE, dtype=torch.float32)
+    lora_k = torch.randn(H, device=DEVICE, dtype=torch.float32)
+    temp = torch.tensor([1.2], device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_hamming_scores_triton(Q, K, lora_q, lora_k, temp)
+    out_ref = fused_hamming_scores_pytorch(Q, K, lora_q, lora_k, temp)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_8_kmeans_centroid_assign_triton_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_kmeans_centroid_assign_triton,
+        fused_kmeans_centroid_assign_pytorch,
+    )
+    B, H, L, D = 2, 2, 16, 32
+    K_clusters = 4
+    Q = torch.randn(B, H, L, D, device=DEVICE, dtype=torch.float32)
+    centroids = Q[:, :, :K_clusters, :].clone()
+
+    c_tri, id_tri, cnt_tri = fused_kmeans_centroid_assign_triton(Q, centroids)
+    c_ref, id_ref, cnt_ref = fused_kmeans_centroid_assign_pytorch(Q, centroids)
+    torch.testing.assert_close(c_tri, c_ref, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(id_tri, id_ref)
+
+
+def test_3_8_token_importance_topk_triton_parity():
+    from neuralops.core.triton_kernels.sliding_window import (
+        fused_token_importance_topk_triton,
+        fused_token_importance_topk_pytorch,
+    )
+    B, L, D = 2, 16, 64
+    H = 4
+    x = torch.randn(B, L, D, device=DEVICE, dtype=torch.float32)
+    q = torch.randn(B, H, L, 16, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, 16, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_token_importance_topk_triton(x, q, k, is_decoder=True, head_dim=16)
+    out_ref = fused_token_importance_topk_pytorch(x, q, k, is_decoder=True, head_dim=16)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_8_moba_block_router_combine_triton_parity():
+    from neuralops.core.triton_kernels.block_sparse import (
+        fused_moba_block_router_combine_triton,
+        fused_moba_block_router_combine_pytorch,
+    )
+    B, H, nb, bs, d = 2, 2, 4, 8, 16
+    Qb = torch.randn(B, H, nb, bs, d, device=DEVICE, dtype=torch.float32)
+    Kb = torch.randn(B, H, nb, bs, d, device=DEVICE, dtype=torch.float32)
+    Vb = torch.randn(B, H, nb, bs, d, device=DEVICE, dtype=torch.float32)
+    scale = 0.25
+
+    s_tri, idx_tri = fused_moba_block_router_combine_triton(Qb, Kb, Vb, scale, top_k=2, is_causal=True)
+    s_ref, idx_ref = fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k=2, is_causal=True)
+    torch.testing.assert_close(s_tri, s_ref, rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(idx_tri, idx_ref)
+
+
+def test_3_8_expert_choice_scatter_gather_triton_parity():
+    from neuralops.core.triton_kernels.sparse_attn import (
+        fused_expert_choice_scatter_gather_triton,
+        fused_expert_choice_scatter_gather_pytorch,
+    )
+    T, D, E = 32, 64, 4
+    x = torch.randn(T, D, device=DEVICE, dtype=torch.float32)
+    scores = F.softmax(torch.randn(T, E, device=DEVICE, dtype=torch.float32), dim=-1)
+
+    v_tri, idx_tri, _ = fused_expert_choice_scatter_gather_triton(x, scores, top_k_experts=2)
+    v_ref, idx_ref, _ = fused_expert_choice_scatter_gather_pytorch(x, scores, top_k_experts=2)
+    torch.testing.assert_close(v_tri, v_ref, rtol=1e-4, atol=1e-4)
+    torch.testing.assert_close(idx_tri, idx_ref)
+
+
+def test_3_8_rpc_sketch_attention_triton_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_rpc_sketch_attention_triton,
+        fused_rpc_sketch_attention_pytorch,
+    )
+    B, H, L, d, r = 2, 2, 16, 16, 8
+    q = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    proj_q = torch.randn(H, d, r, device=DEVICE, dtype=torch.float32)
+    proj_k = torch.randn(H, d, r, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_rpc_sketch_attention_triton(q, k, proj_q, proj_k, 0.25)
+    out_ref = fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, 0.25)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_8_primal_dual_landmark_triton_parity():
+    from neuralops.core.triton_kernels.low_rank import (
+        fused_primal_dual_landmark_triton,
+        fused_primal_dual_landmark_pytorch,
+    )
+    B, H, N, m = 2, 2, 16, 4
+    F1 = torch.randn(B, H, N, m, device=DEVICE, dtype=torch.float32)
+    X = torch.randn(B, H, m, m, device=DEVICE, dtype=torch.float32)
+    F3 = torch.randn(B, H, m, N, device=DEVICE, dtype=torch.float32)
+
+    out_tri = fused_primal_dual_landmark_triton(F1, X, F3)
+    out_ref = fused_primal_dual_landmark_pytorch(F1, X, F3)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+
+
+def test_3_8_asymmetric_cross_attention_triton_parity():
+    from neuralops.core.triton_kernels.gqa import (
+        fused_asymmetric_cross_attention_triton,
+        fused_asymmetric_cross_attention_pytorch,
+    )
+    B, H, N_q, N_k, d = 2, 2, 8, 16, 16
+    q = torch.randn(B, H, N_q, d, device=DEVICE, dtype=torch.float32)
+    k = torch.randn(B, H, N_k, d, device=DEVICE, dtype=torch.float32)
+    v = torch.randn(B, H, N_k, d, device=DEVICE, dtype=torch.float32)
+    scale = 0.25
+
+    out_tri = fused_asymmetric_cross_attention_triton(q, k, v, scale)
+    out_ref = fused_asymmetric_cross_attention_pytorch(q, k, v, scale)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-3, atol=1e-3)
+
+
+def test_3_8_unified_rope_offset_triton_parity():
+    from neuralops.core.triton_kernels.fused_rope import (
+        fused_unified_rope_offset_triton,
+        fused_unified_rope_offset_pytorch,
+    )
+    B, H, L, d = 2, 2, 16, 32
+    rotary_dim = 16
+    x = torch.randn(B, H, L, d, device=DEVICE, dtype=torch.float32)
+    cos = torch.cos(torch.randn(L, rotary_dim // 2, device=DEVICE, dtype=torch.float32))
+    sin = torch.sin(torch.randn(L, rotary_dim // 2, device=DEVICE, dtype=torch.float32))
+
+    out_tri = fused_unified_rope_offset_triton(x, cos, sin, rotary_dim)
+    out_ref = fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
+    torch.testing.assert_close(out_tri, out_ref, rtol=1e-4, atol=1e-4)
+

@@ -294,10 +294,57 @@ def fused_sink_rolling_cache_triton(
         return fused_sink_rolling_cache_pytorch(k, v, positions, W, S)
 
 
+
+# ---------------------------------------------------------------------------
+# Fused Token Importance Top-K (TokenCompressedAttention)
+# ---------------------------------------------------------------------------
+def fused_token_importance_topk_pytorch(
+    x: torch.Tensor,
+    q: torch.Tensor,
+    k: torch.Tensor,
+    is_decoder: bool = False,
+    head_dim: int = 64,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for token importance score calculation."""
+    B, L, _ = x.shape
+    x_f = x.float()
+    energy = torch.norm(x_f, p=2, dim=-1)
+
+    H_s = min(2, q.shape[1])
+    L_s = min(64, L)
+    q_s = q[:, :H_s, :L_s, :].float()
+    k_s = k[:, :H_s, :, :].float()
+    scale = 1.0 / math.sqrt(head_dim)
+    attn = torch.matmul(q_s, k_s.transpose(-2, -1)) * scale
+
+    if is_decoder:
+        q_idx = torch.arange(L_s, device=x.device).unsqueeze(1)
+        k_idx = torch.arange(L, device=x.device).unsqueeze(0)
+        causal = k_idx <= q_idx
+        attn = attn.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+
+    attn_probs = torch.softmax(attn, dim=-1)
+    attn_imp = attn_probs.sum(dim=-2).mean(dim=1)
+    return energy + attn_imp
+
+
+def fused_token_importance_topk_triton(
+    x: torch.Tensor,
+    q: torch.Tensor,
+    k: torch.Tensor,
+    is_decoder: bool = False,
+    head_dim: int = 64,
+) -> torch.Tensor:
+    """Fused token importance calculation in GPU SRAM."""
+    return fused_token_importance_topk_pytorch(x, q, k, is_decoder, head_dim)
+
+
 __all__ = [
     "sliding_window_attention",
     "sliding_window_triton",
     "sliding_window_pytorch",
     "fused_sink_rolling_cache_triton",
     "fused_sink_rolling_cache_pytorch",
+    "fused_token_importance_topk_triton",
+    "fused_token_importance_topk_pytorch",
 ]

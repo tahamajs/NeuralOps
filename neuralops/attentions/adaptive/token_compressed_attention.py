@@ -604,28 +604,41 @@ class TokenCompressedAttention(BaseAttention):
         )
 
         # 3) Sampled attention importance — WITH CAUSAL MASK
+        from neuralops.core.triton_kernels.sliding_window import (
+            fused_token_importance_topk_triton,
+            fused_token_importance_topk_pytorch,
+        )
         with torch.no_grad():
-            H_s = min(2, q.shape[1])
-            L_s = min(64, L)
-            q_s = q[:, :H_s, :L_s, :].float()
-            k_s = k[:, :H_s, :, :].float()
-            scale = 1.0 / math.sqrt(self.head_dim)
-            attn = torch.matmul(q_s, k_s.transpose(-2, -1)) * scale
-
-            # FIX: apply causal mask during decoder scoring
-            if self.is_decoder:
-                q_idx = torch.arange(L_s, device=x.device).unsqueeze(1)
-                k_idx = torch.arange(L, device=x.device).unsqueeze(0)
-                causal = k_idx <= q_idx  # (L_s, L)
-                attn = attn.masked_fill(
-                    ~causal.unsqueeze(0).unsqueeze(0), float("-inf")
+            try:
+                attn_combined = fused_token_importance_topk_triton(
+                    x, q, k, is_decoder=self.is_decoder, head_dim=self.head_dim
                 )
+                attn_importance = (attn_combined - energy).mean(dim=0, keepdim=True).expand(B, -1)
+                attn_importance = attn_importance / (
+                    attn_importance.max(dim=-1, keepdim=True).values + 1e-6
+                )
+            except Exception:
+                H_s = min(2, q.shape[1])
+                L_s = min(64, L)
+                q_s = q[:, :H_s, :L_s, :].float()
+                k_s = k[:, :H_s, :, :].float()
+                scale = 1.0 / math.sqrt(self.head_dim)
+                attn = torch.matmul(q_s, k_s.transpose(-2, -1)) * scale
 
-            attn = F.softmax(attn, dim=-1)
-            attn_importance = attn.mean(dim=(1, 2))  # (B, L)
-            attn_importance = attn_importance / (
-                attn_importance.max(dim=-1, keepdim=True).values + 1e-6
-            )
+                # FIX: apply causal mask during decoder scoring
+                if self.is_decoder:
+                    q_idx = torch.arange(L_s, device=x.device).unsqueeze(1)
+                    k_idx = torch.arange(L, device=x.device).unsqueeze(0)
+                    causal = k_idx <= q_idx  # (L_s, L)
+                    attn = attn.masked_fill(
+                        ~causal.unsqueeze(0).unsqueeze(0), float("-inf")
+                    )
+
+                attn = F.softmax(attn, dim=-1)
+                attn_importance = attn.mean(dim=(1, 2))  # (B, L)
+                attn_importance = attn_importance / (
+                    attn_importance.max(dim=-1, keepdim=True).values + 1e-6
+                )
 
         total = energy + learned + 0.5 * attn_importance
 

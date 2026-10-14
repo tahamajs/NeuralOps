@@ -481,25 +481,33 @@ class CrossAttention(BaseAttention):
                 logger.debug("CrossAttention SDPA failed, falling back: %s", e)
 
         # -------- Manual path --------
-        scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
-
-        if is_causal:
-            causal = self._causal_mask(N_q, N_kv, device)
-            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-
-        if eff_mask is not None:
-            if eff_mask.dim() == 4:
-                scores = scores + eff_mask.to(scores.dtype)
-            else:
-                valid_kv = get_token_valid_mask(eff_mask, B, N_kv, device)
-                if valid_kv is not None:
-                    scores = scores.masked_fill(~valid_kv.unsqueeze(1).unsqueeze(2), -1e4)
-
-        attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
-        attn = self.dropout(attn)
-
-        # head_mask
-        if head_mask is not None:
+        causal = self._causal_mask(N_q, N_kv, device).unsqueeze(0).unsqueeze(0) if is_causal else None
+        from neuralops.core.triton_kernels.gqa import (
+            fused_asymmetric_cross_attention_triton,
+            fused_asymmetric_cross_attention_pytorch,
+        )
+        if head_mask is None:
+            try:
+                context_out = fused_asymmetric_cross_attention_triton(
+                    Q, K_full, V_full, self.scale, causal, eff_mask
+                )
+            except Exception:
+                context_out = fused_asymmetric_cross_attention_pytorch(
+                    Q, K_full, V_full, self.scale, causal, eff_mask
+                )
+        else:
+            scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
+            if is_causal and causal is not None:
+                scores = scores.masked_fill(~causal, -1e4)
+            if eff_mask is not None:
+                if eff_mask.dim() == 4:
+                    scores = scores + eff_mask.to(scores.dtype)
+                else:
+                    valid_kv = get_token_valid_mask(eff_mask, B, N_kv, device)
+                    if valid_kv is not None:
+                        scores = scores.masked_fill(~valid_kv.unsqueeze(1).unsqueeze(2), -1e4)
+            attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
+            attn = self.dropout(attn)
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
@@ -507,8 +515,7 @@ class CrossAttention(BaseAttention):
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(-1)
             attn = attn * head_mask.to(attn.dtype)
-
-        context_out = torch.matmul(attn, V_full)
+            context_out = torch.matmul(attn, V_full)
         context_out = context_out.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
         context_out = torch.nan_to_num(context_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
