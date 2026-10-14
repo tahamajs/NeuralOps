@@ -66,15 +66,23 @@ if wikitext_json.exists():
     with open(wikitext_json, "r") as f:
         records = json.load(f)
 
-    succ = [
-        r for r in records
-        if r.get("status") == "success" and r.get("perplexity") is not None and str(r.get("perplexity")).lower() != "nan"
-    ]
+    succ = []
+    for r in records:
+        if r.get("status") == "success" and r.get("perplexity") is not None and str(r.get("perplexity")).lower() != "nan":
+            entry = dict(r)
+            try:
+                entry["perplexity"] = float(r["perplexity"])
+                entry["param_reduction_pct"] = float(r.get("param_reduction_pct", 0.0))
+                entry["peak_vram_mb"] = float(r.get("peak_vram_mb", 0.0))
+                entry["latency_ms_per_token"] = float(r.get("latency_ms_per_token", 0.0))
+                succ.append(entry)
+            except (ValueError, TypeError):
+                continue
 
     # Plot Pareto Frontier
     fig, ax = plt.subplots(figsize=(7.0, 4.8))
-    x_reduc = [float(r["param_reduction_pct"]) for r in succ]
-    y_ppl = [min(float(r["perplexity"]), 10000.0) for r in succ]
+    x_reduc = [r["param_reduction_pct"] for r in succ]
+    y_ppl = [min(r["perplexity"], 10000.0) for r in succ]
 
     ax.scatter(x_reduc, y_ppl, c="#1f77b4", s=45, alpha=0.7, edgecolors="none", label="Compressors (72 total)")
     ax.set_yscale("log")
@@ -86,8 +94,8 @@ if wikitext_json.exists():
     notable = ["baseline_gpt2", "aatc_xkv_compressor", "kmeans_quantize", "mlorq_compressor", "bonsai_pruner", "aa_svd_compressor", "direct_svd"]
     for r in succ:
         if r["compressor"] in notable:
-            p_red = float(r["param_reduction_pct"])
-            p_val = min(float(r["perplexity"]), 10000.0)
+            p_red = r["param_reduction_pct"]
+            p_val = min(r["perplexity"], 10000.0)
             ax.scatter([p_red], [p_val], c="#d62728", s=70, zorder=5)
             ax.annotate(r["compressor"], (p_red, p_val),
                         fontsize=8, xytext=(4, 4), textcoords="offset points")
