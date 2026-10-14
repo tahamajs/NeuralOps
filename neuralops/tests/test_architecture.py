@@ -32,7 +32,7 @@ class TestGetAttentionModules:
         assert len(modules) == 2
         for name, mod in modules:
             assert name.endswith(".attention.self")
-            assert mod.__class__.__name__ == "BertSelfAttention"
+            assert mod.__class__.__name__ in ("BertSelfAttention", "BertSdpaSelfAttention")
 
     def test_roberta_returns_leaf_self_attention_only(self):
         cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
@@ -41,7 +41,7 @@ class TestGetAttentionModules:
         assert len(modules) == 2
         for name, mod in modules:
             assert name.endswith(".attention.self")
-            assert mod.__class__.__name__ == "RobertaSelfAttention"
+            assert mod.__class__.__name__ in ("RobertaSelfAttention", "RobertaSdpaSelfAttention")
 
     def test_distilbert_returns_leaf_attention(self):
         cfg = DistilBertConfig(n_layers=2, n_heads=2, dim=32, hidden_dim=64, vocab_size=100)
@@ -50,7 +50,7 @@ class TestGetAttentionModules:
         assert len(modules) == 2
         for name, mod in modules:
             assert name.endswith(".attention")
-            assert mod.__class__.__name__ in ("DistilBertSelfAttention", "MultiHeadSelfAttention")
+            assert mod.__class__.__name__ in ("DistilBertSelfAttention", "MultiHeadSelfAttention", "DistilBertSdpaAttention")
 
     def test_gpt2_returns_correct_attention_block(self):
         cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)
@@ -59,7 +59,7 @@ class TestGetAttentionModules:
         assert len(modules) == 2
         for name, mod in modules:
             assert name.endswith(".attn")
-            assert mod.__class__.__name__ == "GPT2Attention"
+            assert mod.__class__.__name__ in ("GPT2Attention", "GPT2SdpaAttention")
 
     def test_t5_returns_encoder_and_decoder_attentions(self):
         cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)

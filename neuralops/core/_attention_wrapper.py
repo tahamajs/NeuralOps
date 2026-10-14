@@ -408,7 +408,7 @@ class ReplaceAttention(BaseAttention):
     # ------------------------------------------------------------------
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         head_mask: torch.Tensor | None = None,
         encoder_hidden_states: torch.Tensor | None = None,
@@ -417,6 +417,10 @@ class ReplaceAttention(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        if hidden_states is None:
+            hidden_states = kwargs.pop("query", kwargs.pop("x", None))
+        if hidden_states is None:
+            raise ValueError("ReplaceAttention.forward() requires input tensor (hidden_states/query/x)")
         if encoder_hidden_states is not None:
             raise NotImplementedError("ReplaceAttention: cross-attention is not supported.")
 
