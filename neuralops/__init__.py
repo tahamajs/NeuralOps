@@ -248,6 +248,14 @@ _API_EXPORTS = {
     "has_triton": "neuralops.api",
     "validate": "neuralops.api",
     "get_version": "neuralops.api",
+    "oneshot": "neuralops.api",
+    "recommend": "neuralops.api",
+    "summary": "neuralops.api",
+    "compare": "neuralops.api",
+    "patch_transformers": "neuralops.api",
+    "AutoNeuralOpsModel": "neuralops.api",
+    "AutoNeuralOpsForCausalLM": "neuralops.api",
+    "AutoNeuralOpsForSequenceClassification": "neuralops.api",
     # Specific attention and optimizer classes
     "GLAttention": "neuralops.attentions.linear.gla_attention",
     "CosformerAttention": "neuralops.attentions.linear.cosformer",
@@ -353,6 +361,14 @@ __all__ = [
     "RiemannianAdam",
     "HybridAttentionSpec",
     "probe_optimal_batch_size",
+    "oneshot",
+    "recommend",
+    "summary",
+    "compare",
+    "patch_transformers",
+    "AutoNeuralOpsModel",
+    "AutoNeuralOpsForCausalLM",
+    "AutoNeuralOpsForSequenceClassification",
 ] + sorted(list(_LAZY_EXPORTS.keys()))
 
 
