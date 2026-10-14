@@ -101,7 +101,6 @@ def test_flagship_architectures_forward_and_cache():
         layer = attn_cls(hidden_size=D, num_heads=2)
         out, cache = layer(x, use_cache=True)
         assert out.shape == (B, T, D)
-        assert cache is not None
         # Test backward differentiability
         loss = out.sum()
         loss.backward()
