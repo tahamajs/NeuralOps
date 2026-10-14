@@ -149,6 +149,15 @@ def _build_parser() -> argparse.ArgumentParser:
     # 9. info
     subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
 
+    # 10. search
+    search_p = subparsers.add_parser("search", help="Automated Fisher-information & Pareto rank allocation search (AutoSVD)")
+    search_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
+    search_p.add_argument("--target-param-ratio", type=float, default=0.5, help="Target compression parameter ratio (e.g. 0.5 for 50%)")
+    search_p.add_argument("--min-rank", type=int, default=16, help="Minimum allowable rank per linear layer")
+    search_p.add_argument("--max-rank", type=int, default=None, help="Maximum allowable rank per linear layer")
+    search_p.add_argument("--output-json", type=str, default=None, help="Optional output JSON path for allocated ranks")
+    search_p.add_argument("--save-compressed", type=str, default=None, help="Directory to save the compressed model")
+
     return parser
 
 
@@ -336,6 +345,57 @@ def handle_export(args: argparse.Namespace) -> None:
     print(f"[+] Successfully exported model to {out}")
 
 
+def handle_search(args: argparse.Namespace) -> int:
+    """Executes AutoSVD Fisher & Gram sensitivity search and Pareto rank allocation."""
+    import json
+    from transformers import AutoModel
+    from neuralops.compression_engine.svd.auto_svd import AutoSVDCompressor, solve_optimal_rank_allocation
+
+    print(f"Loading model '{args.model}' for AutoSVD Pareto rank search...")
+    model = AutoModel.from_pretrained(args.model)
+
+    print(f"Solving optimal rank allocation for target_param_ratio={args.target_param_ratio} (min_rank={args.min_rank})...")
+    ranks, stats = solve_optimal_rank_allocation(
+        model,
+        target_param_ratio=args.target_param_ratio,
+        min_rank=args.min_rank,
+        max_rank=args.max_rank,
+    )
+
+    print("\n═════════════════════════════════════════════════════")
+    print(f"AutoSVD Pareto Allocation Results for {args.model}:")
+    print(f"  Original Params:   {stats.get('original_params', 0):,}")
+    print(f"  Compressed Params: {stats.get('compressed_params', 0):,}")
+    print(f"  Compression Ratio: {stats.get('compression_ratio', 1.0):.2f}x")
+    print(f"  Param Savings:     {stats.get('param_savings_pct', 0.0):.1f}%")
+    print(f"  Optimized Layers:  {stats.get('num_layers_optimized', 0)}")
+    print("─────────────────────────────────────────────────────")
+    for name, r in list(ranks.items())[:10]:
+        print(f"  {name:40s} -> rank {r}")
+    if len(ranks) > 10:
+        print(f"  ... and {len(ranks) - 10} more layers.")
+    print("═════════════════════════════════════════════════════\n")
+
+    if args.output_json:
+        with open(args.output_json, "w") as f:
+            json.dump({"allocated_ranks": ranks, "stats": stats}, f, indent=2)
+        print(f"[+] Saved allocated ranks JSON to {args.output_json}")
+
+    if args.save_compressed:
+        print(f"Applying compression and saving model to {args.save_compressed}...")
+        compressor = AutoSVDCompressor(
+            model,
+            target_param_ratio=args.target_param_ratio,
+            min_rank=args.min_rank,
+            max_rank=args.max_rank,
+        )
+        c_model, _ = compressor.compress()
+        c_model.save_pretrained(args.save_compressed)
+        print(f"[+] Compressed model successfully saved to {args.save_compressed}")
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -356,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
         handle_run(args)
     elif args.subcommand == "export":
         handle_export(args)
+    elif args.subcommand == "search":
+        return handle_search(args)
     elif args.subcommand == "resume":
         runner = Runner(output_dir=args.output_dir, resume=True)
         runner.resume()
@@ -367,6 +429,7 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_info()
 
     return 0
+
 
 
 if __name__ == "__main__":
