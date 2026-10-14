@@ -294,11 +294,12 @@ _API_EXPORTS = {
 # Subpackages made available lazily
 _SUBPACKAGES = {
     "analysis", "attentions", "benchmarks", "cli", "compression_engine",
-    "config", "core", "data", "evaluation", "experiment_logging",
+    "config", "core", "data", "distributed", "evaluation", "experiment_logging",
     "experiment_utils", "inference", "integrations", "models",
     "results_saver", "runners", "tests", "tracking", "trainer",
     "training", "utils", "main", "surgery", "export",
 }
+
 
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
