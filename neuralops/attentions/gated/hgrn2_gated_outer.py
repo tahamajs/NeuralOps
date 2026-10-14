@@ -527,19 +527,19 @@ class HGRN2GatedOuterBlock(BaseAttention):
             S_intra = S_intra_flat.view(B, H, C, d, d)  # (B, H, C, d, d)
 
             # ---- Inter-chunk contribution from initial state ----
-            # S_inter[i] = exp(log_F_c[i]) · S_prev
             inter_decay = torch.exp(log_F_c).unsqueeze(-1).unsqueeze(-1)  # (B, H, C, 1, 1)
-            S_inter = S_prev.unsqueeze(2) * inter_decay  # (B, H, C, d, d)
 
-            # ---- Total state for this chunk ----
-            S_total = S_intra + S_inter  # (B, H, C, d, d)
-
-            # ---- Output for this chunk ----
-            y_c = torch.einsum("bhjd,bhjde->bhje", q_c, S_total)  # (B, H, C, d)
+            # ---- Memory-efficient chunk output computation: q @ S_intra + q @ S_inter ----
+            # S_intra has shape (B, H, C, d, d), y_intra = einsum(q_c, S_intra)
+            y_intra = torch.einsum("bhjd,bhjde->bhje", q_c, S_intra)
+            # S_inter = S_prev * inter_decay -> y_inter = q_c @ S_prev * exp(log_F_c)
+            q_S_prev = torch.matmul(q_c, S_prev)  # (B, H, C, d)
+            y_inter = q_S_prev * torch.exp(log_F_c).unsqueeze(-1)
+            y_c = y_intra + y_inter
             outputs.append(y_c)
 
-            # ---- Update state for next chunk ----
-            S_prev = S_total[:, :, -1]
+            # ---- Update state for next chunk: S_total at last token of chunk ----
+            S_prev = S_intra[:, :, -1] + S_prev * inter_decay[:, :, -1]
 
         y_out = torch.cat(outputs, dim=2)  # (B, H, L, d)
         return y_out.to(q.dtype), S_prev
