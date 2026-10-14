@@ -274,6 +274,21 @@ _API_EXPORTS = {
     "WeightCopyError": "neuralops.core.exceptions",
     "BackendError": "neuralops.core.exceptions",
     "NumericalError": "neuralops.core.exceptions",
+    # Hardware Quantization & Incoherent Rotations
+    "BitPackedW4A16Linear": "neuralops.core.triton_kernels.low_rank",
+    "BitPackedLowRankSVDLinear": "neuralops.core.triton_kernels.low_rank",
+    "pack_int4_weights": "neuralops.core.triton_kernels.low_rank",
+    "unpack_int4_weights": "neuralops.core.triton_kernels.low_rank",
+    "fused_w4a16_gemm_triton": "neuralops.core.triton_kernels.low_rank",
+    "fast_hadamard_transform": "neuralops.core.triton_kernels.elementwise",
+    "HadamardIncoherentSVDCompressor": "neuralops.compression_engine.svd.hadamard_incoherent_svd",
+    # Self-Speculative Decoding & Evaluation
+    "SelfSpeculativeDecoder": "neuralops.inference.speculative_decoding",
+    "SpeculativeDecodeStats": "neuralops.inference.speculative_decoding",
+    "NeedleInAHaystackEvaluator": "neuralops.evaluation.niah_passkey",
+    "plot_niah_heatmap": "neuralops.evaluation.niah_passkey",
+    "NeuralOpsLMEvalAdapter": "neuralops.evaluation.lm_eval_adapter",
+    "evaluate_zero_shot_tasks": "neuralops.evaluation.lm_eval_adapter",
 }
 
 # Subpackages made available lazily

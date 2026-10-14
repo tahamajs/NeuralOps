@@ -10,6 +10,11 @@ from neuralops.inference.engine import (
     ContinuousBatcher,
 )
 
+from neuralops.inference.speculative_decoding import (
+    SelfSpeculativeDecoder,
+    SpeculativeDecodeStats,
+)
+
 __all__ = [
     "PagedKVCache",
     "NeuralOpsInferenceEngine",
@@ -17,8 +22,12 @@ __all__ = [
     "speculative_generate",
     "beam_search_generate",
     "ContinuousBatcher",
+    "SelfSpeculativeDecoder",
+    "SpeculativeDecodeStats",
 ]
 
 # Auto-wired package members
 from neuralops.inference import engine
 from neuralops.inference import paged_cache
+from neuralops.inference import speculative_decoding
+

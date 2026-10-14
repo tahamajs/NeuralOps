@@ -198,6 +198,140 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
             out = q_t.new_empty(q_t.shape[0], q_t.shape[1], v_t.shape[-1])
             return out, torch.empty_like(kv_state)
 
+        # 14. FMS Scan Op
+        @torch.library.custom_op("neuralops::fms_scan", mutates_args=())
+        def _op_fms_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.fms_scan import fms_scan
+            return fms_scan(q, k, v, decay)
+
+        @_op_fms_scan.register_fake
+        def _op_fms_scan_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(v)
+
+        # 15. Selective Scan Op (Mamba)
+        @torch.library.custom_op("neuralops::selective_scan", mutates_args=())
+        def _op_selective_scan(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, D: Optional[torch.Tensor] = None, delta_softplus: bool = True) -> torch.Tensor:
+            from neuralops.core.triton_kernels.selective_scan import selective_scan_fn
+            return selective_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
+
+        @_op_selective_scan.register_fake
+        def _op_selective_scan_fake(u: torch.Tensor, delta: torch.Tensor, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, D: Optional[torch.Tensor] = None, delta_softplus: bool = True) -> torch.Tensor:
+            return torch.empty_like(u)
+
+        # 16. Cosformer Attention Op
+        @torch.library.custom_op("neuralops::cosformer_attn", mutates_args=())
+        def _op_cosformer_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool = False, eps: float = 1e-4) -> torch.Tensor:
+            from neuralops.core.triton_kernels.cosformer_triton_kernel import cosformer_triton_fwd
+            return cosformer_triton_fwd(q, k, v, is_causal=is_causal, eps=eps)
+
+        @_op_cosformer_attn.register_fake
+        def _op_cosformer_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool = False, eps: float = 1e-4) -> torch.Tensor:
+            return torch.empty_like(v)
+
+        # 17. Sliding Window Attention Op
+        @torch.library.custom_op("neuralops::sliding_window_attn", mutates_args=())
+        def _op_sliding_window_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int = 256) -> torch.Tensor:
+            from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
+            return sliding_window_attention_kernel(q, k, v, window_size=window_size)
+
+        @_op_sliding_window_attn.register_fake
+        def _op_sliding_window_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int = 256) -> torch.Tensor:
+            return torch.empty_like(q)
+
+        # 18. Block Sparse Attention Op
+        @torch.library.custom_op("neuralops::block_sparse_attn", mutates_args=())
+        def _op_block_sparse_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.block_sparse import block_sparse_attention
+            return block_sparse_attention(q, k, v, mask)
+
+        @_op_block_sparse_attn.register_fake
+        def _op_block_sparse_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(q)
+
+        # 19. Varlen Attention Op
+        @torch.library.custom_op("neuralops::varlen_attn", mutates_args=())
+        def _op_varlen_attn(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, cu_seqlens_q: torch.Tensor, cu_seqlens_k: torch.Tensor, causal: bool = False) -> torch.Tensor:
+            from neuralops.core.triton_kernels.varlen_attention import _varlen_attention_fwd
+            return _varlen_attention_fwd(q, k, v, cu_seqlens_q, cu_seqlens_k, causal=causal)
+
+        @_op_varlen_attn.register_fake
+        def _op_varlen_attn_fake(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, cu_seqlens_q: torch.Tensor, cu_seqlens_k: torch.Tensor, causal: bool = False) -> torch.Tensor:
+            return torch.empty_like(q)
+
+        # 20. Fused RoPE Op
+        @torch.library.custom_op("neuralops::fused_rope", mutates_args=())
+        def _op_fused_rope(q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            from neuralops.core.triton_kernels.fused_rope import fused_rope_embedding_kernel
+            return fused_rope_embedding_kernel(q, k, cos, sin)
+
+        @_op_fused_rope.register_fake
+        def _op_fused_rope_fake(q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+            return torch.empty_like(q), torch.empty_like(k)
+
+        # 21. Fused SwiGLU Op
+        @torch.library.custom_op("neuralops::fused_swiglu", mutates_args=())
+        def _op_fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
+            from neuralops.core.triton_kernels.elementwise import fused_swiglu
+            return fused_swiglu(x, gate)
+
+        @_op_fused_swiglu.register_fake
+        def _op_fused_swiglu_fake(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
+            return torch.empty_like(x)
+
+        # 22. Fused RMSNorm Op
+        @torch.library.custom_op("neuralops::fused_rmsnorm", mutates_args=())
+        def _op_fused_rmsnorm(x: torch.Tensor, weight: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+            from neuralops.core.triton_kernels.elementwise import fused_rmsnorm
+            return fused_rmsnorm(x, weight, eps=eps)
+
+        @_op_fused_rmsnorm.register_fake
+        def _op_fused_rmsnorm_fake(x: torch.Tensor, weight: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+            return torch.empty_like(x)
+
+        # 23. Fused Linear Cross Entropy Op
+        @torch.library.custom_op("neuralops::fused_linear_ce", mutates_args=())
+        def _op_fused_linear_ce(hidden_states: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor], targets: torch.Tensor, ignore_index: int = -100, reduction: str = "mean", chunk_size: int = 1024) -> torch.Tensor:
+            from neuralops.core.triton_kernels.fused_ce import fused_linear_cross_entropy
+            return fused_linear_cross_entropy(hidden_states, weight, targets, bias=bias, ignore_index=ignore_index, reduction=reduction, chunk_size=chunk_size)
+
+        @_op_fused_linear_ce.register_fake
+        def _op_fused_linear_ce_fake(hidden_states: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor], targets: torch.Tensor, ignore_index: int = -100, reduction: str = "mean", chunk_size: int = 1024) -> torch.Tensor:
+            if reduction == "none":
+                return hidden_states.new_empty(targets.shape)
+            return hidden_states.new_empty(())
+
+        # 24. Fused Linear KL Divergence (KD) Op
+        @torch.library.custom_op("neuralops::fused_linear_kd", mutates_args=())
+        def _op_fused_linear_kd(student_hidden: torch.Tensor, student_weight: torch.Tensor, student_bias: Optional[torch.Tensor], teacher_hidden: torch.Tensor, teacher_weight: torch.Tensor, teacher_bias: Optional[torch.Tensor], temperature: float = 2.0, reduction: str = "batchmean", chunk_size: int = 512) -> torch.Tensor:
+            from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_divergence
+            return fused_linear_kl_divergence(student_hidden, student_weight, teacher_hidden, teacher_weight, student_bias=student_bias, teacher_bias=teacher_bias, temperature=temperature, reduction=reduction, chunk_size=chunk_size)
+
+        @_op_fused_linear_kd.register_fake
+        def _op_fused_linear_kd_fake(student_hidden: torch.Tensor, student_weight: torch.Tensor, student_bias: Optional[torch.Tensor], teacher_hidden: torch.Tensor, teacher_weight: torch.Tensor, teacher_bias: Optional[torch.Tensor], temperature: float = 2.0, reduction: str = "batchmean", chunk_size: int = 512) -> torch.Tensor:
+            if reduction == "none":
+                return student_hidden.new_empty(student_hidden.shape[:-1])
+            return student_hidden.new_empty(())
+
+        # 25. Paged Attention Op
+        @torch.library.custom_op("neuralops::paged_attn", mutates_args=())
+        def _op_paged_attn(q: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, block_tables: torch.Tensor, seq_lens: torch.Tensor, block_size: int = 16) -> torch.Tensor:
+            from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
+            return paged_attention_kernel(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
+
+        @_op_paged_attn.register_fake
+        def _op_paged_attn_fake(q: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, block_tables: torch.Tensor, seq_lens: torch.Tensor, block_size: int = 16) -> torch.Tensor:
+            return torch.empty_like(q)
+
+        # 26. Paged Recurrent State Step Op
+        @torch.library.custom_op("neuralops::paged_recurrent_state_step", mutates_args=())
+        def _op_paged_recurrent_state_step(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, page_slot: int = 0, decay: float = 1.0) -> torch.Tensor:
+            from neuralops.core.triton_kernels.paged_attention import paged_recurrent_state_step_triton
+            return paged_recurrent_state_step_triton(q_t, k_t, v_t, page_pool, block_tables, page_slot=page_slot, decay=decay)
+
+        @_op_paged_recurrent_state_step.register_fake
+        def _op_paged_recurrent_state_step_fake(q_t: torch.Tensor, k_t: torch.Tensor, v_t: torch.Tensor, page_pool: torch.Tensor, block_tables: torch.Tensor, page_slot: int = 0, decay: float = 1.0) -> torch.Tensor:
+            return torch.empty_like(q_t)
+
         _CUSTOM_OPS_REGISTERED = True
     except Exception as exc:
         logger.debug("Failed registering custom ops with torch.library: %s", exc)
