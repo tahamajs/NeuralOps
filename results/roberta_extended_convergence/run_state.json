@@ -18,6 +18,36 @@
       "textattack/roberta-base-SST-2",
       "sst2",
       64
+    ],
+    [
+      "gated_delta_net",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "gla_attention",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "mamba_block",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "svd_mamba",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "hgrn2_gated_outer",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
     ]
   ],
   "failed": [
@@ -26,10 +56,22 @@
       "textattack/roberta-base-SST-2",
       "sst2",
       64
+    ],
+    [
+      "gla_attention",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
+    ],
+    [
+      "svd_mamba",
+      "textattack/roberta-base-SST-2",
+      "sst2",
+      64
     ]
   ],
   "skipped": [],
   "total_runs": 1,
-  "status": "running",
+  "status": "finished",
   "start_time": 1792001962.1931384
 }

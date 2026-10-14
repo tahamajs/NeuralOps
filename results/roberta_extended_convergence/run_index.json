@@ -42,5 +42,71 @@
     "rank": 64,
     "accuracy": 0.495,
     "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/selective_ssm/textattack_roberta-base-SST-2/sst2/rank_64/7717fbd8-ebe3-4676-9846-a35473764699.json"
+  },
+  "gated_delta_net__textattack/roberta-base-SST-2__sst2__rank64__3bb0b712e255": {
+    "run_id": "431f9f9d-e5ff-47c0-8ebc-700fdef63aa9",
+    "timestamp": "2026-10-14T20:14:51Z",
+    "status": "success",
+    "module": "gated_delta_net",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.695,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/gated_delta_net/textattack_roberta-base-SST-2/sst2/rank_64/431f9f9d-e5ff-47c0-8ebc-700fdef63aa9.json"
+  },
+  "gla_attention__textattack/roberta-base-SST-2__sst2__rank64__df174af1547e": {
+    "run_id": "a698c6aa-1c14-4d77-8fd7-6ff0e68089dc",
+    "timestamp": "2026-10-14T20:16:42Z",
+    "status": "success",
+    "module": "gla_attention",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.495,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/gla_attention/textattack_roberta-base-SST-2/sst2/rank_64/a698c6aa-1c14-4d77-8fd7-6ff0e68089dc.json"
+  },
+  "mamba_block__textattack/roberta-base-SST-2__sst2__rank64__01a82b32bdfe": {
+    "run_id": "ad367e7e-05a3-4dfd-9c55-af12a46a7feb",
+    "timestamp": "2026-10-14T20:21:01Z",
+    "status": "success",
+    "module": "mamba_block",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.495,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/mamba_block/textattack_roberta-base-SST-2/sst2/rank_64/ad367e7e-05a3-4dfd-9c55-af12a46a7feb.json"
+  },
+  "svd_mamba__textattack/roberta-base-SST-2__sst2__rank64__01a82b32bdfe": {
+    "run_id": "7cac9d58-5834-48d8-b4ae-efd70c3c65af",
+    "timestamp": "2026-10-14T20:21:38Z",
+    "status": "failed",
+    "module": "svd_mamba",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": null,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/svd_mamba/textattack_roberta-base-SST-2/sst2/rank_64/7cac9d58-5834-48d8-b4ae-efd70c3c65af.json"
+  },
+  "svd_mamba__textattack/roberta-base-SST-2__sst2__rank64__3bb0b712e255": {
+    "run_id": "b46f077b-9688-41cb-b34c-005f1144c37e",
+    "timestamp": "2026-10-14T20:25:15Z",
+    "status": "success",
+    "module": "svd_mamba",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.495,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/svd_mamba/textattack_roberta-base-SST-2/sst2/rank_64/b46f077b-9688-41cb-b34c-005f1144c37e.json"
+  },
+  "hgrn2_gated_outer__textattack/roberta-base-SST-2__sst2__rank64__3bb0b712e255": {
+    "run_id": "f807a032-5f5c-4a60-bdab-0c9e5ea3c4e2",
+    "timestamp": "2026-10-14T20:27:56Z",
+    "status": "success",
+    "module": "hgrn2_gated_outer",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.75,
+    "result_path": "/mnt/d/SVD_linear_Attention/results/roberta_extended_convergence/05_glue_finetuning/hgrn2_gated_outer/textattack_roberta-base-SST-2/sst2/rank_64/f807a032-5f5c-4a60-bdab-0c9e5ea3c4e2.json"
   }
 }
