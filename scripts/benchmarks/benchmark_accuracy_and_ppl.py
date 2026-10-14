@@ -94,8 +94,7 @@ def main():
             
             # Closed-Form Layerwise Ridge Output Calibration (32 samples)
             calib_batch = {k: v[:32] for k, v in enc_sst2.items()}
-            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.35)
-            del base_ref
+            m_rob = calibrate_surgically_replaced_model(base_ref, m_rob, calib_batch, ridge_lambda=1e-3, blend_alpha=0.15)
             
             m_rob.eval()
             all_preds = []
@@ -110,6 +109,7 @@ def main():
                 preds = torch.cat(all_preds, dim=0)
                 acc = round((preds == labels_sst2).float().mean().item() * 100, 2)
             del m_rob
+            del base_ref
         except Exception as e:
             err += f"RoBERTa error: {e}; "
             
@@ -125,12 +125,12 @@ def main():
             # Closed-Form Layerwise Ridge Output Calibration (first 128 tokens)
             calib_wiki = enc_wiki[:, :128]
             m_gpt = calibrate_surgically_replaced_model(base_gpt_ref, m_gpt, calib_wiki, ridge_lambda=1e-3, blend_alpha=0.03)
-            del base_gpt_ref
             
             with torch.no_grad():
                 loss = m_gpt(enc_wiki, labels=enc_wiki).loss.item()
                 ppl = round(math.exp(min(loss, 20.0)), 2)
             del m_gpt
+            del base_gpt_ref
         except Exception as e:
             err += f"GPT2 error: {e}"
             
