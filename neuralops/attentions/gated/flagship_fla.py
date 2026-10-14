@@ -267,6 +267,56 @@ class GDN2Attention(BaseAttention):
         present_kv = (next_state,) if use_cache else None
         return out, present_kv
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for GDN2Attention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)  # [B, H, 1, D]
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        z = self.z_proj(x)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)        # [B, H, 1, 1]
+        beta_erase = torch.sigmoid(self.erase_proj(x)).transpose(1, 2).unsqueeze(-1)   # [B, H, 1, 1]
+        beta_write = torch.sigmoid(self.write_proj(x)).transpose(1, 2).unsqueeze(-1)   # [B, H, 1, 1]
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        S = state["kv_state"]
+        y_t, next_S = gdn2_recurrent_step(S, q.float(), k.float(), v.float(), alpha.float(), beta_erase.float(), beta_write.float())
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = y_t.transpose(1, 2).contiguous().view(B, 1, H * D)
+        y_gated = fused_rmsnorm_gate(y.to(dtype), z, self.norm_weight, eps=1e-5, activation="silu")
+        out = self.out_proj(y_gated)
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
 
 # ==============================================================================
 # 2. Householder Product & PaTH Attention (DeltaProductAttention)
@@ -427,10 +477,67 @@ class DeltaProductAttention(BaseAttention):
                 y = y[:, :, :L, :]
             present_state = curr
 
-        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
         out = self.out_proj(y)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         return out, present_kv
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for DeltaProductAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        u = self.u_proj(x).view(B, 1, H, D).transpose(1, 2)
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)  # [B, H, 1, 1]
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        curr = state["kv_state"].float()
+        qt = q.float()
+        kt = k.float()
+        vt = v.float()
+        ut = u.float()
+        bt = beta.float()
+
+        u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6
+        u_S = torch.matmul(ut, curr)
+        refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
+        S_reflected = curr - refl
+        next_S = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+        yt = torch.matmul(qt, next_S)
+
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = yt.transpose(1, 2).contiguous().view(B, 1, H * D)
+        out = self.out_proj(y.to(dtype))
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
 
 
 # ==============================================================================
@@ -586,6 +693,70 @@ class PreconditionedGDNAttention(BaseAttention):
         out = self.out_proj(y)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         return out, present_kv
+
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for PreconditionedGDNAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, L, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)  # [B, H, 1, 1]
+        beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)    # [B, H, 1, 1]
+
+        # Update curvature state: running EMA s_t = rho * s_{t-1} + (1 - rho) * k^2
+        if "curvature_state" not in state or state["curvature_state"] is None:
+            state["curvature_state"] = torch.zeros((B, H, 1, D), device=device, dtype=torch.float32)
+
+        curv = state["curvature_state"]
+        rho = 0.95
+        k_f = k.float()
+        curv = rho * curv + (1.0 - rho) * (k_f * k_f)
+        state["curvature_state"] = curv
+
+        p_scale = torch.rsqrt(curv + self.lambda_diag)
+        k_prec = k_f * p_scale
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
+        curr = state["kv_state"].float()
+        inter_v = torch.matmul(k_prec, curr)
+        err = v.float() - inter_v
+        next_S = alpha.float() * curr + beta.float() * torch.matmul(k_prec.transpose(-1, -2), err)
+        yt = torch.matmul(q.float(), next_S)
+
+        state["kv_state"] = next_S
+        state["step_idx"] = step_idx + 1
+
+        y = yt.transpose(1, 2).contiguous().view(B, 1, H * D)
+        out = self.out_proj(y.to(dtype))
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
 
 
 __all__ = [

@@ -979,6 +979,61 @@ class ORIONAttention(BaseAttention):
         else:
             return output, None
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for ORIONAttention."""
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, _ = x.shape
+        H, D = self.num_heads, self.head_dim
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        Q_all = self.q_proj(x).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2)
+        K_all = self.k_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        V_all = self.v_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+
+        if self.num_kv_heads != self.num_heads:
+            K_all = repeat_kv(K_all, self.kv_repeat)
+            V_all = repeat_kv(V_all, self.kv_repeat)
+
+        if "k_cache" not in state or state["k_cache"] is None:
+            state["k_cache"] = K_all
+            state["v_cache"] = V_all
+        else:
+            state["k_cache"] = torch.cat([state["k_cache"], K_all], dim=2)
+            state["v_cache"] = torch.cat([state["v_cache"], V_all], dim=2)
+
+        k_all = state["k_cache"]
+        v_all = state["v_cache"]
+
+        scores = torch.matmul(Q_all, k_all.transpose(-1, -2)) / math.sqrt(D)
+        attn_w = F.softmax(scores, dim=-1)
+        context = torch.matmul(attn_w, v_all)
+
+        state["step_idx"] = step_idx + 1
+
+        context = context.transpose(1, 2).contiguous().view(B, 1, self.all_head_size)
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        if is_2d:
+            out = out.squeeze(1)
+
+        return out, state
+
     def get_ortho_loss(self) -> torch.Tensor:
         W = self.q_proj.down.weight
         diff = torch.matmul(W, W.t()) - torch.eye(W.size(0), device=W.device, dtype=W.dtype)

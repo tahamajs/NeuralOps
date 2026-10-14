@@ -601,4 +601,102 @@ def gla_scan(
     return gla_scan_pytorch(q, k, v, lambdas)
 
 
-__all__ = ['gla_scan_triton', 'gla_scan_pytorch', 'gla_scan']
+def kda_hla_chunk_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    log_decay: torch.Tensor,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Triton & FLA accelerated chunked scan for KDA and HLA.
+
+    Args:
+        q, k, v: [B, H, L, D]
+        log_decay: [B, H, L] or [B, H, L, D] (log decay factors <= 0)
+    """
+    B, H, L, D = q.shape
+    if scale is None:
+        scale = 1.0 / math.sqrt(D)
+
+    # 1. Try FLA chunk_gla when available on CUDA SM >= 8.0
+    if q.is_cuda and q.dtype in (torch.float16, torch.bfloat16):
+        try:
+            from fla.ops.gla import chunk_gla
+            q_fl = q.transpose(1, 2).contiguous()
+            k_fl = k.transpose(1, 2).contiguous()
+            v_fl = v.transpose(1, 2).contiguous()
+            if log_decay.dim() == 3:
+                g_fl = log_decay.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).contiguous()
+            else:
+                g_fl = log_decay.transpose(1, 2).contiguous()
+            out, _ = chunk_gla(q_fl, k_fl, v_fl, g_fl, scale=scale, output_final_state=False)
+            return out.transpose(1, 2).contiguous()
+        except Exception:
+            pass
+
+    # 2. Try Triton gla_scan when D <= 64
+    if D <= MAX_REGISTER_DIM:
+        lam = torch.exp(log_decay).clamp(1e-4, 1.0 - 1e-4)
+        if lam.dim() == 4:
+            lam = lam.mean(dim=-1)
+        try:
+            return gla_scan(q, k, v, lam)
+        except Exception:
+            pass
+
+    # 3. Vectorized Chunked Scan Fallback
+    chunk_size = 64
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+    if pad_len > 0:
+        q_p = F.pad(q, (0, 0, 0, pad_len))
+        k_p = F.pad(k, (0, 0, 0, pad_len))
+        v_p = F.pad(v, (0, 0, 0, pad_len))
+        if log_decay.dim() == 3:
+            g_p = F.pad(log_decay, (0, pad_len), value=0.0)
+        else:
+            g_p = F.pad(log_decay, (0, 0, 0, pad_len), value=0.0)
+    else:
+        q_p, k_p, v_p, g_p = q, k, v, log_decay
+
+    S = torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
+    Z = torch.zeros((B, H, D, 1), device=q.device, dtype=torch.float32)
+    outs = []
+
+    for c in range(num_chunks):
+        st = c * chunk_size
+        en = (c + 1) * chunk_size
+        qc = q_p[:, :, st:en].float()
+        kc = k_p[:, :, st:en].float()
+        vc = v_p[:, :, st:en].float()
+        gc = g_p[:, :, st:en].float()
+
+        decay = torch.exp(gc).unsqueeze(-1) if gc.dim() == 3 else torch.exp(gc)  # [B, H, chunk, 1] or [B, H, chunk, D]
+        chunk_outs = []
+        for t in range(qc.shape[2]):
+            qt = qc[:, :, t : t + 1]
+            kt = kc[:, :, t : t + 1]
+            vt = vc[:, :, t : t + 1]
+            dt = decay[:, :, t : t + 1]
+
+            if dt.shape[-1] == D:
+                S = dt.unsqueeze(-1) * S + torch.matmul(kt.transpose(-1, -2), vt)
+                Z = dt.unsqueeze(-1) * Z + kt.transpose(-1, -2)
+            else:
+                S = dt.unsqueeze(-1) * S + torch.matmul(kt.transpose(-1, -2), vt)
+                Z = dt.unsqueeze(-1) * Z + kt.transpose(-1, -2)
+
+            num = torch.matmul(qt, S)
+            den = torch.matmul(qt, Z) + 1e-4
+            yt = (num / den).to(q.dtype)
+            chunk_outs.append(yt)
+
+        outs.append(torch.cat(chunk_outs, dim=2))
+
+    y = torch.cat(outs, dim=2)
+    if pad_len > 0:
+        y = y[:, :, :L, :]
+    return y
+
+
+__all__ = ['gla_scan_triton', 'gla_scan_pytorch', 'gla_scan', 'kda_hla_chunk_scan_triton']

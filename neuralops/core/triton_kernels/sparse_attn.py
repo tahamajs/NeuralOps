@@ -289,3 +289,88 @@ def bwd(
         )
         g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out)
     return g_q, g_k, g_v
+
+
+# ==============================================================================
+# Fused Multi-Scale Top-k Sparse Block Routing & Combine Kernel (NEXUS & Orion)
+# ==============================================================================
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_topk_route_kernel(
+        Branches_ptr, Weights_ptr, Out_ptr,
+        B, T, D, NUM_BRANCHES: tl.constexpr,
+        stride_bb, stride_bt, stride_bd,
+        stride_wb, stride_wt, stride_wm,
+        stride_ob, stride_ot, stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_bt = tl.program_id(0)
+        b = pid_bt // T
+        t = pid_bt % T
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D
+
+        acc = tl.zeros((BLOCK_D,), dtype=tl.float32)
+
+        for m in range(NUM_BRANCHES):
+            w = tl.load(Weights_ptr + b * stride_wb + t * stride_wt + m * stride_wm).to(tl.float32)
+            b_val = tl.load(Branches_ptr + m * (B * T * D) + b * stride_bb + t * stride_bt + offs_d * stride_bd, mask=mask_d, other=0.0).to(tl.float32)
+            acc = acc + w * b_val
+
+        out_ptr = Out_ptr + b * stride_ob + t * stride_ot + offs_d * stride_od
+        tl.store(out_ptr, acc.to(Out_ptr.dtype.element_ty), mask=mask_d)
+
+
+def fused_topk_sparse_route_and_combine_triton(
+    branch_outputs: list[torch.Tensor],
+    router_weights: torch.Tensor,
+) -> torch.Tensor:
+    """Combines multi-scale branch outputs using router weights in a single SRAM pass.
+
+    Args:
+        branch_outputs: List of M tensors each [B, T, D]
+        router_weights: [B, T, M] or [B, 1, M] normalized routing probabilities
+    Returns:
+        Combined output tensor [B, T, D]
+    """
+    M = len(branch_outputs)
+    if M == 1:
+        return branch_outputs[0]
+
+    b0 = branch_outputs[0]
+    B, T, D = b0.shape
+
+    if b0.is_cuda and HAS_TRITON and _cuda_ok(b0):
+        try:
+            stacked_branches = torch.stack(branch_outputs, dim=0).contiguous()  # [M, B, T, D]
+            w_c = router_weights.expand(B, T, M).contiguous()
+            out = torch.empty((B, T, D), device=b0.device, dtype=b0.dtype)
+            BLOCK_D = triton.next_power_of_2(D)
+            grid = (B * T,)
+
+            _fused_topk_route_kernel[grid](
+                stacked_branches, w_c, out,
+                B, T, D, NUM_BRANCHES=M,
+                b0.stride(0), b0.stride(1), b0.stride(2),
+                w_c.stride(0), w_c.stride(1), w_c.stride(2),
+                out.stride(0), out.stride(1), out.stride(2),
+                BLOCK_D=BLOCK_D,
+            )
+            return out
+        except Exception:
+            pass
+
+    # Exact PyTorch Fallback
+    stacked = torch.stack(branch_outputs, dim=-1)  # [B, T, D, M]
+    w = router_weights.unsqueeze(-2)              # [B, T, 1, M]
+    return (stacked * w).sum(dim=-1).to(b0.dtype)
+
+
+__all__ = [
+    'is_supported',
+    'fwd',
+    'bwd',
+    'fused_topk_sparse_route_and_combine_triton',
+]

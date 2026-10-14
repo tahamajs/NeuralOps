@@ -575,6 +575,75 @@ class SpectraformerAttention(BaseAttention):
 
         return (output, None)
 
+    def step(
+        self,
+        x: torch.Tensor,
+        state: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Exact O(1) single-step autoregressive recurrent update for SpectraformerAttention."""
+        from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(1)
+
+        B, N, _ = x.shape
+        device = x.device
+        dtype = x.dtype
+
+        if state is None:
+            state = {}
+        step_idx = state.get("step_idx", 0)
+
+        q = self.q_proj(x).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(x).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        R = self.R.to(device=device, dtype=q.dtype)
+        Q_proj = (F.elu(torch.matmul(q, R)) + 1.0).squeeze(2)  # [B, H, r]
+        K_proj = (F.elu(torch.matmul(k, R)) + 1.0).squeeze(2)  # [B, H, r]
+        v_in = v.squeeze(2)                                    # [B, H, d]
+
+        r = Q_proj.shape[-1]
+        d = v_in.shape[-1]
+
+        if "kv_state" not in state or state["kv_state"] is None:
+            state["kv_state"] = torch.zeros((B, self.num_heads, r, d), device=device, dtype=torch.float32)
+            state["z_state"] = torch.zeros((B, self.num_heads, r), device=device, dtype=torch.float32)
+
+        kv_state = state["kv_state"]
+        z_state = state["z_state"]
+
+        out_token, kv_state, z_state = fused_recurrent_linear_step(
+            Q_proj, K_proj, v_in, kv_state, z_state, eps=1e-8
+        )
+        state["kv_state"] = kv_state
+        state["z_state"] = z_state
+        state["step_idx"] = step_idx + 1
+
+        context = out_token.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+
+        # Variance-Preserving RMS Scaling
+        v_flat = v_in.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+        v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
+        if is_2d:
+            output = output.squeeze(1)
+
+        return output, state
+
 
 def inject_spectraformer(
     layer: Any = None,
