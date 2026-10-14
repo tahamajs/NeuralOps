@@ -256,6 +256,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             logger.warning("Could not load safetensors file: %s", err)
     elif bin_path.exists():
         state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
+        model.load_state_dict(state_dict, strict=False)
     # 5. Restore metadata onto model instance
     saved_metadata = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
     if saved_metadata:
