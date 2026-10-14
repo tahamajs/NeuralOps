@@ -349,31 +349,39 @@ class AOTICompiledModelRunner:
         self.fallback_module = fallback_module
         self._runner = None
 
-        if self.fallback_module is None:
-            self._init_runner()
+        self._init_runner()
 
     def _init_runner(self) -> None:
-        if not self.artifact_path.exists():
+        # Check for pt2 package sibling if .so was requested
+        load_target = self.artifact_path
+        if not load_target.exists():
+            pt2_sibling = load_target.with_suffix(".pt2")
+            if pt2_sibling.exists():
+                load_target = pt2_sibling
+
+        if not load_target.exists():
             if self.fallback_module is not None:
                 return
             raise FileNotFoundError(f"AOTInductor artifact not found at {self.artifact_path}")
 
-        ext = self.artifact_path.suffix.lower()
         try:
             if hasattr(torch, "_inductor"):
-                if ext == ".pt2" and hasattr(torch._inductor, "aoti_load_package"):
-                    self._runner = torch._inductor.aoti_load_package(str(self.artifact_path))
+                # Try loading pt2 archive with aoti_load_package
+                if load_target.suffix.lower() == ".pt2" and hasattr(torch._inductor, "aoti_load_package"):
+                    self._runner = torch._inductor.aoti_load_package(str(load_target))
                     return
-                elif ext == ".so" and hasattr(torch._inductor, "AOTIRunnerUtil"):
-                    self._runner = torch._inductor.AOTIRunnerUtil.load(str(self.artifact_path))
-                    return
-            # Fallback loader
-            if hasattr(torch, "export") and hasattr(torch.export, "load"):
-                ep = torch.export.load(str(self.artifact_path))
+                # Try loading .so with AOTIRunnerUtil or torch._export.aot_load
+                if load_target.suffix.lower() == ".so":
+                    if hasattr(torch._inductor, "AOTIRunnerUtil"):
+                        self._runner = torch._inductor.AOTIRunnerUtil.load(str(load_target))
+                        return
+
+            if load_target.suffix.lower() == ".pt2" and hasattr(torch, "export") and hasattr(torch.export, "load"):
+                ep = torch.export.load(str(load_target))
                 self.fallback_module = ep.module()
                 return
         except Exception as err:
-            logger.warning("Could not native-load AOT artifact %s (%s). Using fallback if available.", self.artifact_path, err)
+            logger.warning("Could not native-load AOT artifact %s (%s). Using fallback if available.", load_target, err)
             if self.fallback_module is None:
                 raise
 
@@ -463,17 +471,20 @@ def compile_to_so(
     pt2_path = out_file.with_suffix(".pt2")
 
     if exported_program is not None and hasattr(torch, "_inductor"):
-        # Option A: aoti_compile_and_package
+        # Option A: aoti_compile_and_package (requires .pt2 target)
         if hasattr(torch._inductor, "aoti_compile_and_package"):
             try:
-                package_target = str(pt2_path) if out_file.suffix == ".pt2" else str(out_file)
                 result_path = torch._inductor.aoti_compile_and_package(
                     exported_program,
-                    package_path=package_target,
+                    package_path=str(pt2_path),
                 )
-                if Path(result_path).exists() and str(result_path) != str(out_file):
-                    import shutil
-                    shutil.copyfile(result_path, str(out_file))
+                if Path(result_path).exists() and out_file.suffix.lower() == ".so":
+                    # Create companion .so symlink or copy if applicable
+                    try:
+                        import shutil
+                        shutil.copyfile(result_path, str(out_file))
+                    except Exception:
+                        pass
                 compiled_success = True
             except Exception as e:
                 logger.warning("aoti_compile_and_package failed (%s). Trying aot_compile.", e)
@@ -507,10 +518,11 @@ def compile_to_so(
         fallback_mod = torch.compile(wrapper, backend="inductor") if hasattr(torch, "compile") else wrapper
 
     return AOTICompiledModelRunner(
-        artifact_path=out_file if out_file.exists() else pt2_path,
+        artifact_path=pt2_path if pt2_path.exists() else out_file,
         device=device,
-        fallback_module=fallback_mod,
+        fallback_module=fallback_mod or wrapper,
     )
+
 
 
 __all__ = [
