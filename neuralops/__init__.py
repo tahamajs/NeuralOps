@@ -279,12 +279,33 @@ def inject_gla(model, **kwargs):
     from neuralops.core._attention_surgery import replace_attention_in_model
     return replace_attention_in_model(model, _GLA, **kwargs)
 
-def create_attention(name: str, **kwargs):
+def create_attention(name: str, config: Any = None, dim: int | None = None, num_heads: int | None = None, **kwargs: Any) -> Any:
     from neuralops.core.registry import ATTENTION_REGISTRY
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
         raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
-    return cls(**kwargs)
+    
+    # If dim or num_heads is specified and config is None, build a minimal compliant config
+    resolved_dim = dim or kwargs.get("hidden_size") or kwargs.get("d_model") or getattr(config, "hidden_size", None) or getattr(config, "n_embd", None) or getattr(config, "d_model", None)
+    resolved_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", None) or getattr(config, "num_heads", None) or getattr(config, "n_head", None)
+    
+    if config is None and resolved_dim is not None:
+        from transformers import BertConfig
+        h = resolved_heads or max(1, resolved_dim // 64)
+        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+    
+    # Try instantiation with config, falling back gracefully
+    if config is not None:
+        try:
+            return cls(config=config, **kwargs)
+        except TypeError:
+            pass
+    if resolved_dim is not None and resolved_heads is not None:
+        try:
+            return cls(resolved_dim, num_heads=resolved_heads, **kwargs)
+        except TypeError:
+            pass
+    return cls(config, **kwargs) if config is not None else cls(**kwargs)
 
 __all__ = [
     "__version__",
