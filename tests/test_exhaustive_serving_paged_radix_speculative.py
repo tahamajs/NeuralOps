@@ -62,7 +62,8 @@ def test_7_2_radix_prefix_state_cache_lengths(prefix_len):
 
 
 @pytest.mark.parametrize("max_draft_k", [1, 2, 3])
-def test_7_3_self_speculative_decoder_draft_k(max_draft_k):
+@pytest.mark.parametrize("temperature", [0.0, 0.7])
+def test_7_3_self_speculative_decoder_draft_k(max_draft_k, temperature):
     config = GPT2Config(
         vocab_size=100,
         n_positions=64,
@@ -84,6 +85,24 @@ def test_7_3_self_speculative_decoder_draft_k(max_draft_k):
 
     decoder = SelfSpeculativeDecoder(target_model=target_model, draft_model=draft_model, max_draft_k=max_draft_k)
     prompt = torch.tensor([[10, 20]], device=DEVICE)
-    tokens, stats = decoder.generate(prompt, max_new_tokens=4, temperature=0.0)
+    tokens, stats = decoder.generate(prompt, max_new_tokens=4, temperature=temperature)
     assert tokens.shape[1] == 6
     assert stats.total_tokens_generated == 4
+
+
+@pytest.mark.parametrize("num_prefixes", [2, 4, 8])
+def test_7_4_radix_prefix_cache_eviction_pressure(num_prefixes):
+    table = PagedStateTable(num_pages=16, num_heads=2, head_dim=16, device=DEVICE)
+    cache = RadixPrefixStateCache(table)
+    allocated_pages = []
+    for i in range(num_prefixes):
+        page = table.allocate_page()
+        allocated_pages.append(page)
+        cache.insert_prefix([1000 + i, 2000 + i], page)
+
+    # All inserted prefixes should match exactly
+    for i in range(num_prefixes):
+        matched_page, matched_len = cache.match_prefix([1000 + i, 2000 + i])
+        assert matched_len == 2
+        assert matched_page == allocated_pages[i]
+
