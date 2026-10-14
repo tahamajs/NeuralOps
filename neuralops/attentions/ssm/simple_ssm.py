@@ -220,6 +220,8 @@ class SimpleSSM(BaseAttention):
         H = self.num_heads
         d = self.head_dim
 
+        is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
+
         # In-projection
         u = self.in_proj(hidden_states).to(target_dtype)
         u_heads = u.view(B, L, H, d).transpose(1, 2)  # [B, H, L, d]
@@ -238,7 +240,7 @@ class SimpleSSM(BaseAttention):
         pos = torch.arange(L, device=hidden_states.device, dtype=target_dtype)
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
 
-        if self.is_decoder:
+        if is_dec:
             # Replace O(L^2) dense matrix with O(L) recurrent scan
             y_heads = torch.empty_like(u_heads)
             state = torch.zeros(B, H, 1, d, device=u_heads.device, dtype=target_dtype)

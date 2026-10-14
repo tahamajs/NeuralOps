@@ -524,8 +524,18 @@ class SpectraformerAttention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
         # Q_proj, K_proj: (B, H, N, r) - positive ELU+1 feature map with single scale on Q
-        Q_proj = (F.elu(torch.matmul(q, R)) + 1.0) * scale
-        K_proj = F.elu(torch.matmul(k, R)) + 1.0
+        Q_proj = torch.nan_to_num(
+            (F.elu(torch.matmul(q, R)) + 1.0) * scale,
+            nan=0.0,
+            posinf=1e4,
+            neginf=0.0,
+        )
+        K_proj = torch.nan_to_num(
+            F.elu(torch.matmul(k, R)) + 1.0,
+            nan=0.0,
+            posinf=1e4,
+            neginf=0.0,
+        )
 
         # Mask padding in K_proj
         if attention_mask is not None:
@@ -560,6 +570,8 @@ class SpectraformerAttention(BaseAttention):
                 den = torch.matmul(Q_proj.float(), Z) + 1e-8  # (B, H, N, 1)
                 context = (num / den).to(hidden_states.dtype)
 
+            context = torch.nan_to_num(context.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(hidden_states.dtype)
+
         if head_mask is not None:
             hm = head_mask.to(context.device)
             if hm.dim() == 1:
@@ -577,11 +589,13 @@ class SpectraformerAttention(BaseAttention):
         v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
+        context = torch.nan_to_num(context.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(context.dtype)
 
         if self.is_nested_encoder:
             output = context
         else:
             output = self.out_proj(context)
+        output = torch.nan_to_num(output.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(output.dtype)
 
         return (output, None)
 
