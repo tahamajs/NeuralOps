@@ -18,8 +18,12 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.transformers import AutoNeuralOpsModel, patch_transformers
 from neuralops.recipes import oneshot, recommend, BUILTIN_RECIPES
 from neuralops.analysis.inspector import summary, compare
-from neuralops.trainer import PiSSALinear, inject_pissa_adapters
-from neuralops.trainer.losses import LogitDistillationLoss, SimPOLoss
+from neuralops.trainer import (
+    PiSSALinear,
+    inject_pissa_adapters,
+    LogitDistillationLoss,
+    SimPOLoss,
+)
 from neuralops.export.surgery_manifest import SurgeryManifest, merge_for_inference
 from neuralops.models import NeuralOpsConfig, NeuralOpsForCausalLM, CUDAGraphDecodeRunner
 from neuralops.analysis.paper_plots import PaperPlotGenerator
