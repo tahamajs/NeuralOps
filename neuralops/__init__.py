@@ -315,6 +315,9 @@ def create_attention(name: str, config: Any = None, dim: int | None = None, num_
             return cls(resolved_dim, num_heads=resolved_heads, **kwargs)
         except TypeError:
             pass
+    return cls(config, **kwargs) if config is not None else cls(**kwargs)
+
+
 def create_compressor(name: str, **kwargs):
     """Factory helper to instantiate a compression engine from COMPRESSOR_REGISTRY."""
     from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -322,6 +325,7 @@ def create_compressor(name: str, **kwargs):
     if cls is None:
         raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
     return cls(**kwargs)
+
 
 
 __all__ = [
