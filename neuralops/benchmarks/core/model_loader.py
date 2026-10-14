@@ -70,6 +70,14 @@ def load_model_and_tokenizer(
     Returns:
         Tuple of (model, tokenizer, config)
     """
+    TASK_CLASSIFICATION_CHECKPOINTS: dict[tuple[str, str], str] = {
+        ("roberta-base", "sst2"): "textattack/roberta-base-SST-2",
+        ("distilbert-base-uncased", "sst2"): "distilbert-base-uncased-finetuned-sst-2-english",
+        ("bert-base-uncased", "sst2"): "textattack/bert-base-uncased-SST-2",
+    }
+    if task == "classification" and num_labels is not None:
+        target_ds = str(getattr(config if 'config' in locals() else None, "dataset", "")).lower()
+
     if task == "lm":
         is_causal = True
     elif task == "classification" and num_labels is None:

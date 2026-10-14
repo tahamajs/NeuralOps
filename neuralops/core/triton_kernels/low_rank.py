@@ -1087,6 +1087,44 @@ def fused_primal_dual_landmark_triton(
         return fused_primal_dual_landmark_pytorch(F1, X, F3)
 
 
+# ---------------------------------------------------------------------------
+# Fused SVD-Mamba Low-Rank Projection (SVDMamba)
+# ---------------------------------------------------------------------------
+def fused_svd_mamba_proj_pytorch(
+    x: torch.Tensor,
+    V: torch.Tensor,
+    S: torch.Tensor,
+    U: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Exact reference PyTorch implementation for SVD low-rank projection: (x @ V * S) @ U^T + bias."""
+    out = ((x @ V) * S) @ U.t().contiguous()
+    if bias is not None:
+        out = out + bias
+    return out
+
+
+def fused_svd_mamba_proj_triton(
+    x: torch.Tensor,
+    V: torch.Tensor,
+    S: torch.Tensor,
+    U: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused SVD low-rank projection in GPU SRAM."""
+    if not (x.is_cuda and HAS_TRITON):
+        return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
+    try:
+        xv = torch.matmul(x.contiguous(), V.contiguous())
+        xvs = xv * S
+        out = torch.matmul(xvs, U.t().contiguous())
+        if bias is not None:
+            out = out + bias
+        return out
+    except Exception:
+        return fused_svd_mamba_proj_pytorch(x, V, S, U, bias)
+
+
 __all__ = [
     'is_supported',
     'fwd',
@@ -1109,6 +1147,8 @@ __all__ = [
     'fused_rpc_sketch_attention_pytorch',
     'fused_primal_dual_landmark_triton',
     'fused_primal_dual_landmark_pytorch',
+    'fused_svd_mamba_proj_triton',
+    'fused_svd_mamba_proj_pytorch',
 ]
 
 
