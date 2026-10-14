@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register(
     "cross_attention",
-    supports_causal=False,
+    supports_causal=True,
     supports_gqa=True,
 )
 class CrossAttention(BaseAttention):
@@ -46,7 +46,7 @@ class CrossAttention(BaseAttention):
     - `context=...`    → cross-attention (query from hidden_states, K/V from context)
     """
 
-    supports_causal: bool = False
+    supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = False
