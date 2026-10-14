@@ -154,12 +154,14 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         R, _ = V.shape
         K_out, _ = U.shape
 
-        # Use Triton kernel on CUDA when available and rank is power-of-2 up to 128
+        # Use Triton kernel on CUDA when available and device supports Triton JIT (SM >= 7.0)
+        device_sm = torch.cuda.get_device_capability(x.device)[0] if (torch.cuda.is_available() and x.is_cuda) else 0
         use_triton = (
             HAS_TRITON
             and x.is_cuda
             and V.is_cuda
             and U.is_cuda
+            and device_sm >= 7
             and (R & (R - 1) == 0)
             and (16 <= R <= 128)
             and x_2d.dtype in [torch.float16, torch.bfloat16, torch.float32]
