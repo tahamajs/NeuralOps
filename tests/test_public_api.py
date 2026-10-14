@@ -65,12 +65,12 @@ def test_public_api_symbols_and_callables():
 
 
 def test_version_and_info():
-    assert get_version() == "1.3.0"
-    assert neuralops.__version__ == "1.3.0"
+    assert get_version() == "1.3.2"
+    assert neuralops.__version__ == "1.3.2"
 
     inf = info()
     assert isinstance(inf, dict)
-    assert inf["version"] == "1.3.0"
+    assert inf["version"] == "1.3.2"
     assert inf["attentions_count"] >= 130
     assert inf["compressors_count"] >= 70
     assert isinstance(inf["backends"], list)
