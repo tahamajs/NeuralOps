@@ -882,7 +882,7 @@ class HLAAttention(BaseAttention):
         Z_next = gamma_t * Z + kt.transpose(-1, -2)
 
         num = torch.matmul(qt, S_next)
-        den = torch.matmul(qt, Z_next) + self.eps
+        den = torch.matmul(qt, Z_next) + 1e-5
         yt = num / den
 
         state["kv_state"] = S_next
