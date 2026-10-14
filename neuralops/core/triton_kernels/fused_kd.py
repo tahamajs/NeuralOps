@@ -415,12 +415,13 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         )
 
         grad_s_hidden = torch.empty_like(s_h_flat) if compute_grads and student_hidden.requires_grad else None
-        grad_s_weight = torch.zeros_like(student_weight, dtype=torch.float32) if compute_grads and student_weight.requires_grad else None
-        grad_s_bias = torch.zeros_like(student_bias, dtype=torch.float32) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
+        grad_s_weight = torch.zeros_like(student_weight) if compute_grads and student_weight.requires_grad else None
+        grad_s_bias = torch.zeros_like(student_bias) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
 
         total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
         chunk_size = max(1, min(chunk_size, N_tokens))
 
+        inv_T = 1.0 / T
         with torch.no_grad():
             for c_start in range(0, N_tokens, chunk_size):
                 c_end = min(c_start + chunk_size, N_tokens)
@@ -430,30 +431,25 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
                 s_logits_c = F.linear(s_hc, student_weight, student_bias)
                 t_logits_c = F.linear(t_hc, teacher_weight, teacher_bias)
 
-                p_s = F.log_softmax(s_logits_c / T, dim=-1)
-                p_t = F.softmax(t_logits_c / T, dim=-1)
+                p_s = F.log_softmax(s_logits_c * inv_T, dim=-1)
+                p_t = F.softmax(t_logits_c * inv_T, dim=-1)
                 loss_c = F.kl_div(p_s, p_t, reduction="sum") * T2
                 total_loss += loss_c
 
                 if compute_grads:
                     # Analytical gradient: dL / d(s_logits) = T * (softmax(s_logits/T) - p_t) * scale_norm
-                    probs_s = F.softmax(s_logits_c.float() / T, dim=-1)
-                    probs_t = p_t.float()
-                    d_s_logits = ((probs_s - probs_t) * (T * scale_norm)).to(s_h_flat.dtype)
+                    probs_s = F.softmax(s_logits_c * inv_T, dim=-1)
+                    d_s_logits = probs_s
+                    d_s_logits.sub_(p_t).mul_(T * scale_norm)
 
                     if grad_s_hidden is not None:
                         grad_s_hidden[c_start:c_end] = torch.matmul(d_s_logits, student_weight)
                     if grad_s_weight is not None:
-                        grad_s_weight.addmm_(d_s_logits.t().float(), s_hc.float())
+                        grad_s_weight.addmm_(d_s_logits.t(), s_hc)
                     if grad_s_bias is not None:
-                        grad_s_bias += d_s_logits.sum(dim=0).float()
+                        grad_s_bias.add_(d_s_logits.sum(dim=0))
 
-                    del s_logits_c, t_logits_c, p_s, p_t, probs_s, probs_t, d_s_logits
-
-        if grad_s_weight is not None:
-            grad_s_weight = grad_s_weight.to(student_weight.dtype)
-        if grad_s_bias is not None:
-            grad_s_bias = grad_s_bias.to(student_bias.dtype)
+                    del s_logits_c, t_logits_c, p_s, p_t, probs_s, d_s_logits
 
         ctx.save_for_backward(grad_s_hidden, grad_s_weight, grad_s_bias)
         ctx.orig_shape = orig_shape
