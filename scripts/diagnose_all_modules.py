@@ -150,32 +150,41 @@ for idx, name in enumerate(comp_keys):
         model = DummyContainer().to(device)
         linear_layer = model.fc1
         
-        compressor = None
-        for init_attempt in [
-            lambda: cls(model, rank=16),
-            lambda: cls(model),
-            lambda: cls(linear_layer, rank=16),
-            lambda: cls(linear_layer),
-            lambda: cls(),
-        ]:
-            try:
-                compressor = init_attempt()
-                break
-            except Exception:
-                continue
+        # Check if cls is a factory function or class
+        res = None
+        # Attempt 1: factory function call (returns compressed model directly)
+        try:
+            res = cls(model)
+        except Exception:
+            pass
 
-        if compressor is None:
-            raise RuntimeError(f"Could not instantiate compressor {name}")
+        if res is None:
+            # Attempt 2: compressor instance with .compress() or other methods
+            compressor = None
+            for init_attempt in [
+                lambda: cls(model, rank=16),
+                lambda: cls(model),
+                lambda: cls(linear_layer, rank=16),
+                lambda: cls(linear_layer),
+                lambda: cls(),
+            ]:
+                try:
+                    compressor = init_attempt()
+                    break
+                except Exception:
+                    continue
 
-        # Execute compression if available
-        if hasattr(compressor, "compress"):
-            res = compressor.compress()
-        elif hasattr(compressor, "fit_transform"):
-            res = compressor.fit_transform(linear_layer.weight.data)
-        elif hasattr(compressor, "apply"):
-            res = compressor.apply(model)
-        else:
-            res = model
+            if compressor is None:
+                raise RuntimeError(f"Could not instantiate compressor {name}")
+
+            if hasattr(compressor, "compress"):
+                res = compressor.compress()
+            elif hasattr(compressor, "fit_transform"):
+                res = compressor.fit_transform(linear_layer.weight.data)
+            elif hasattr(compressor, "apply"):
+                res = compressor.apply(model)
+            else:
+                res = model
 
         comp_passed.append(name)
     except Exception as exc:
