@@ -769,15 +769,26 @@ def fused_entropy_token_pruning_mask_pytorch(
     temperature: float = 1.0,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Exact PyTorch fallback for entropy token pruning."""
-    probs = F.softmax(scores.float(), dim=-1)
-    entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)  # (B, L)
-    B, L = entropy.shape
+    if scores.dim() == 2:
+        probs = F.softmax(scores.float(), dim=-1)
+        entropy = -probs * torch.log(probs + 1e-8)  # (B, L)
+        B, L = entropy.shape
+    elif scores.dim() >= 3:
+        probs = F.softmax(scores.float(), dim=-1)
+        entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)  # (B, H, L) or (B, L)
+        if entropy.dim() == 3:
+            entropy = entropy.mean(dim=1)  # (B, L)
+        B, L = entropy.shape
+    else:
+        raise ValueError(f"scores must be at least 2D, got shape {scores.shape}")
+
     k = max(1, min(L, int(math.ceil(L * keep_ratio))))
     topk_vals, topk_indices = torch.topk(entropy, k=k, dim=-1)
     mask = torch.zeros(B, L, device=scores.device, dtype=torch.bool).scatter_(-1, topk_indices, True)
     # Always preserve first token ([CLS]/BOS)
     mask[:, 0] = True
     return mask, entropy.to(scores.dtype)
+
 
 
 def fused_entropy_token_pruning_mask_triton(
