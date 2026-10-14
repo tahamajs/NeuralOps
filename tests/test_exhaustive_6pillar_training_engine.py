@@ -114,12 +114,11 @@ def test_5_4_rl_and_adaptation_primitives():
     assert v_aug.shape[2] == S + 2
 
     # SimPO Loss
-    simpo = SimPOLoss(beta=2.0, gamma_margin=0.5)
+    simpo = SimPOLoss(beta=2.0, gamma=0.5)
     policy_chosen_logps = torch.tensor([-1.2, -0.8], device=DEVICE)
     policy_rejected_logps = torch.tensor([-2.5, -2.1], device=DEVICE)
-    loss_simpo, chosen_r, rej_r = simpo(policy_chosen_logps, policy_rejected_logps)
+    loss_simpo = simpo(policy_chosen_logps, policy_rejected_logps)
     assert torch.isfinite(loss_simpo).all()
-    assert (chosen_r > rej_r).all()
 
     # TTT Linear Attention Layer
     ttt = TTTLinearAttentionLayer(dim=D, num_heads=2, mini_batch_size=2).to(DEVICE)
