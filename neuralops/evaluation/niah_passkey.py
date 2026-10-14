@@ -107,6 +107,11 @@ class NeedleInAHaystackEvaluator:
                         + haystack_tokens[insert_idx:]
                         + q_tokens
                     )
+                    # Ensure context length does not exceed position embeddings
+                    max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", 1024)
+                    max_allowed = max_pos - (self.passkey_digits + 4)
+                    if len(full_tokens) > max_allowed:
+                        full_tokens = full_tokens[:max_allowed]
 
                     input_ids = torch.tensor([full_tokens], device=self.device)
 
