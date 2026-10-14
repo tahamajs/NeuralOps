@@ -276,6 +276,11 @@ class REAPMoEAttention(BaseAttention):
         if pre_ln is None:
             pre_ln = getattr(config, "pre_ln", True) if config is not None else True
         self.pre_ln = bool(pre_ln)
+        # Standalone attention mode: when replacing a pure attention submodule (e.g. model.h[i].attn),
+        # return the attention projection without adding external residual/LayerNorm/MoE block twice.
+        self.standalone_attn = bool(
+            kwargs.get("standalone_attn", kwargs.get("pure_attention", True))
+        )
 
         self.lora_rank = (
             getattr(
@@ -832,6 +837,10 @@ class REAPMoEAttention(BaseAttention):
             proj = self.out_lin(attn_out)
 
         proj = torch.nan_to_num(proj, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # Standalone attention mode: return pure attention output for drop-in replacement
+        if getattr(self, "standalone_attn", False):
+            return proj.to(target_dtype), attn_ret
 
         # Residual + MoE (RP-FIX-17)
         n2_dtype = (
