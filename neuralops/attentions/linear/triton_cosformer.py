@@ -606,10 +606,11 @@ class TritonCosformerAttention(BaseAttention):
         }
 
         self.embed_dim = (
-            embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
+            embed_dim or kwargs.get("dim") or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
         )
         self.num_heads = (
             num_heads
+            or kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
             or getattr(config, "num_attention_heads", 12)
         )
