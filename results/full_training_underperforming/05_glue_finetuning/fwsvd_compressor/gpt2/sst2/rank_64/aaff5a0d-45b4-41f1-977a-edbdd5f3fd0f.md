@@ -1,0 +1,34 @@
+# Benchmark Run Summary: fwsvd_compressor
+
+- **Run ID**: `aaff5a0d-45b4-41f1-977a-edbdd5f3fd0f`
+- **Status**: **SUCCESS**
+- **Timestamp**: 2026-10-14T16:31:13Z
+- **Git Commit**: `cf1991be3e` (dirty=True)
+
+## Architecture & Configuration
+| Field | Value |
+|---|---|
+| **Module** | `fwsvd_compressor` |
+| **Model** | `gpt2` |
+| **Dataset** | `sst2` |
+| **Rank** | `64` |
+| **Training Type** | `finetune` |
+| **Batch Size** | `4` |
+
+## Primary Metrics
+| Metric | Value |
+|---|---|
+| **Pre-KD Perplexity** | N/A |
+| **Post-KD Perplexity** | N/A |
+| **Recovery %** | N/A |
+| **KD Gain** | N/A |
+| **Accuracy** | 0.5000 |
+| **F1 Score** | 0.6667 |
+| **Loss** | 0.7378 |
+| **Duration (s)** | 31.94s |
+| **Peak VRAM** | 835.19775390625 MB |
+
+## Reproduction Command
+```bash
+python -m neuralops.benchmarks run --module fwsvd_compressor --model gpt2 --dataset sst2 --rank 64
+```
