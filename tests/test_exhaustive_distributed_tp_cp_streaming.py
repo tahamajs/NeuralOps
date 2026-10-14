@@ -67,4 +67,5 @@ def test_8_2_streaming_dataset():
         if len(items) >= 3:
             break
     assert len(items) == 3
-    assert len(items[0]) == 6
+    assert items[0]["input_ids"].shape[0] == 6
+    assert items[0]["labels"].shape[0] == 6
