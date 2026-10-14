@@ -37,6 +37,8 @@ class HardwareProfile:
     supports_bf16: bool
     supports_tf32: bool
     warp_size: int
+    vendor: str = "nvidia"
+    fp8_dtype: Any = None
 
 
 # Default architecture-based shared memory limits (in bytes)
@@ -95,6 +97,8 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             supports_bf16=True,
             supports_tf32=False,
             warp_size=1,
+            vendor="cpu",
+            fp8_dtype=None,
         )
 
     if device_type == "mps":
@@ -109,6 +113,8 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             supports_bf16=True,
             supports_tf32=False,
             warp_size=32,
+            vendor="apple",
+            fp8_dtype=None,
         )
 
     if device_type == "xpu":
@@ -129,6 +135,8 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             supports_bf16=True,
             supports_tf32=False,
             warp_size=32,
+            vendor="intel",
+            fp8_dtype=None,
         )
 
     # 2. CUDA / ROCm Branches
@@ -136,6 +144,7 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         # Check for AMD ROCm
         is_rocm = bool(hasattr(torch.version, "hip") and torch.version.hip is not None)
         backend: BackendType = "rocm" if is_rocm else "cuda"
+        vendor = "amd" if is_rocm else "nvidia"
 
         device_idx = device.index if device.index is not None else torch.cuda.current_device()
         device_name = torch.cuda.get_device_name(device_idx)
@@ -145,7 +154,6 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         props = torch.cuda.get_device_properties(device_idx)
 
         # Shared Memory Calculation
-        # Prefer opt-in shared memory per block if available in PyTorch, else fallback to standard arch mapping
         shmem = getattr(props, "shared_memory_per_block_optin", None)
         if shmem is None or shmem <= 0:
             shmem = getattr(props, "shared_memory_per_block", None)
@@ -162,28 +170,25 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
                 else:
                     shmem = 49152
 
-        # Capability Flags
-        # Basic Triton JIT requires SM >= 7.0 on CUDA (or any ROCm device)
         supports_triton_jit = is_rocm or (sm_major >= 7)
-
-        # Tensor Core Dot support:
-        # Volta (SM 7.0) had HMMA instructions, Turing (SM 7.5) and Ampere+ (SM 8.0+) have full mma.sync
-        # Triton tl.dot requires SM >= 8.0 for modern mma, or SM >= 7.5 for Turing
         supports_tensor_core_dot = is_rocm or (sm_major >= 8) or (sm_major == 7 and sm_minor >= 5)
 
-        # BF16 hardware support: Ampere (SM 8.0) and above on NVIDIA
-        # Note: torch.cuda.is_bf16_supported() can report True on older drivers if emulation exists;
-        # strictly enforce SM >= 8.0 for native hardware BF16!
         if is_rocm:
             supports_bf16 = True
         else:
             supports_bf16 = (sm_major >= 8) and bool(torch.cuda.is_bf16_supported())
 
-        # TF32 hardware support: Ampere (SM 8.0) and above
         supports_tf32 = (not is_rocm) and (sm_major >= 8)
-
-        # Warp size: 64 on AMD ROCm, 32 on NVIDIA CUDA
         warp_size = int(getattr(props, "warp_size", 64 if is_rocm else 32))
+
+        # FP8 detection
+        fp8_dtype = None
+        if not is_rocm and sm_major >= 8 and (sm_minor >= 9 or sm_major >= 9):
+            if hasattr(torch, "float8_e4m3fn"):
+                fp8_dtype = torch.float8_e4m3fn
+        elif is_rocm:
+            if hasattr(torch, "float8_e4m3fnuz"):
+                fp8_dtype = torch.float8_e4m3fnuz
 
         return HardwareProfile(
             backend=backend,
@@ -196,6 +201,8 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
             supports_bf16=bool(supports_bf16),
             supports_tf32=bool(supports_tf32),
             warp_size=warp_size,
+            vendor=vendor,
+            fp8_dtype=fp8_dtype,
         )
 
     # Fallback default
@@ -210,4 +217,7 @@ def get_device_hardware_profile(device: torch.device | str | int | None = None) 
         supports_bf16=False,
         supports_tf32=False,
         warp_size=32,
+        vendor="unknown",
+        fp8_dtype=None,
     )
+
