@@ -1118,8 +1118,7 @@ class GatedDeltaNet(BaseAttention):
         state["step_idx"] = step_idx + 1
 
         y = out_t.unsqueeze(2).transpose(1, 2).contiguous().view(B, 1, H * d)
-        y = self.norm(y.to(dtype))
-        gated_y = y * self.gate_act(z)
+        gated_y = y.to(z.dtype) * F.silu(z)
 
         if self.is_nested_encoder:
             out = gated_y
