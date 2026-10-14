@@ -74,8 +74,8 @@ def gdn2_chunk_scan(
     chunk_size: int = 64,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Chunk-wise parallel forward execution for GDN2.
-    Processes sequence in chunks, accumulating intermediate states with WY representation.
+    Chunk-wise parallel forward execution for GDN2 with gradient checkpointing.
+    Processes sequence in chunks of size 64 to avoid recording L separate autograd nodes on tape.
     """
     B, H, L, d_k = q.shape
     d_v = v.shape[-1]
@@ -87,19 +87,70 @@ def gdn2_chunk_scan(
     else:
         S = initial_state.to(device=device, dtype=torch.float32)
 
-    outs = []
-    for t in range(L):
-        qt = q[:, :, t : t + 1].float()
-        kt = k[:, :, t : t + 1].float()
-        vt = v[:, :, t : t + 1].float()
-        at = alpha[:, :, t : t + 1, None].float()
-        be = beta_erase[:, :, t : t + 1, None].float()
-        bw = beta_write[:, :, t : t + 1, None].float()
+    # For short sequences, unroll directly
+    if L <= 64 or not torch.is_grad_enabled():
+        outs = []
+        for t in range(L):
+            qt = q[:, :, t : t + 1].float()
+            kt = k[:, :, t : t + 1].float()
+            vt = v[:, :, t : t + 1].float()
+            at = alpha[:, :, t : t + 1, None].float()
+            be = beta_erase[:, :, t : t + 1, None].float()
+            bw = beta_write[:, :, t : t + 1, None].float()
 
-        yt, S = gdn2_recurrent_step(S, qt, kt, vt, at, be, bw)
-        outs.append(yt.to(dtype))
+            yt, S = gdn2_recurrent_step(S, qt, kt, vt, at, be, bw)
+            outs.append(yt.to(dtype))
+        return torch.cat(outs, dim=2), S.to(dtype)
+
+    # Chunked execution with torch.utils.checkpoint
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+
+    if pad_len > 0:
+        q_p = F.pad(q, (0, 0, 0, pad_len))
+        k_p = F.pad(k, (0, 0, 0, pad_len))
+        v_p = F.pad(v, (0, 0, 0, pad_len))
+        alpha_p = F.pad(alpha, (0, pad_len), value=1.0)
+        be_p = F.pad(beta_erase, (0, pad_len), value=0.0)
+        bw_p = F.pad(beta_write, (0, pad_len), value=0.0)
+    else:
+        q_p, k_p, v_p, alpha_p, be_p, bw_p = q, k, v, alpha, beta_erase, beta_write
+
+    def _run_chunk(s_in, qc, kc, vc, ac, bec, bwc):
+        curr = s_in
+        c_outs = []
+        for t in range(qc.shape[2]):
+            yt, curr = gdn2_recurrent_step(
+                curr,
+                qc[:, :, t : t + 1].float(),
+                kc[:, :, t : t + 1].float(),
+                vc[:, :, t : t + 1].float(),
+                ac[:, :, t : t + 1, None].float(),
+                bec[:, :, t : t + 1, None].float(),
+                bwc[:, :, t : t + 1, None].float(),
+            )
+            c_outs.append(yt)
+        return torch.cat(c_outs, dim=2), curr
+
+    outs = []
+    for c in range(num_chunks):
+        st = c * chunk_size
+        en = (c + 1) * chunk_size
+        qc = q_p[:, :, st:en]
+        kc = k_p[:, :, st:en]
+        vc = v_p[:, :, st:en]
+        ac = alpha_p[:, :, st:en]
+        bec = be_p[:, :, st:en]
+        bwc = bw_p[:, :, st:en]
+
+        yc, S = torch.utils.checkpoint.checkpoint(
+            _run_chunk, S, qc, kc, vc, ac, bec, bwc, use_reentrant=False
+        )
+        outs.append(yc.to(dtype))
 
     y = torch.cat(outs, dim=2)
+    if pad_len > 0:
+        y = y[:, :, :L, :]
     return y, S.to(dtype)
 
 
@@ -279,30 +330,66 @@ class DeltaProductAttention(BaseAttention):
             else init_state.to(device=q.device, dtype=torch.float32)
         )
 
-        outs = []
-        for t in range(L):
-            qt = q[:, :, t : t + 1].float()
-            kt = k[:, :, t : t + 1].float()
-            vt = v[:, :, t : t + 1].float()
-            ut = u[:, :, t : t + 1].float()
-            bt = beta[:, :, t : t + 1].float()
+        # Chunked execution with torch.utils.checkpoint
+        def _run_delta_product_chunk(s_in, qc, kc, vc, uc, bc):
+            curr = s_in
+            c_outs = []
+            for t in range(qc.shape[2]):
+                qt = qc[:, :, t : t + 1].float()
+                kt = kc[:, :, t : t + 1].float()
+                vt = vc[:, :, t : t + 1].float()
+                ut = uc[:, :, t : t + 1].float()
+                bt = bc[:, :, t : t + 1].float()
 
-            # Apply Householder reflection to state S: H_t @ S_{t-1}
-            # H_t = I - 2 * beta * (u u^T) / ||u||^2
-            # H_t @ S = S - 2 * beta * u^T @ (u @ S) / ||u||^2
-            # Shapes: S: (B, H, D, D), ut: (B, H, 1, D)
-            u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6  # (B, H, 1, 1)
-            u_S = torch.matmul(ut, S)  # (B, H, 1, D)
-            refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)  # (B, H, D, D)
-            S_reflected = S - refl
-            # Rank-1 associative outer product update
-            S = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
-            yt = torch.matmul(qt, S)  # (B, H, 1, D)
-            outs.append(yt.to(q.dtype))
+                u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6
+                u_S = torch.matmul(ut, curr)
+                refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
+                S_reflected = curr - refl
+                curr = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+                yt = torch.matmul(qt, curr)
+                c_outs.append(yt.to(qc.dtype))
+            return torch.cat(c_outs, dim=2), curr
 
-        y = torch.cat(outs, dim=2).transpose(1, 2).contiguous().view(B, L, H * D)
+        chunk_size = 64
+        if L <= 64 or not torch.is_grad_enabled():
+            _, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
+            y, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
+        else:
+            num_chunks = (L + chunk_size - 1) // chunk_size
+            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(q, (0, 0, 0, pad_len))
+                k_p = F.pad(k, (0, 0, 0, pad_len))
+                v_p = F.pad(v, (0, 0, 0, pad_len))
+                u_p = F.pad(u, (0, 0, 0, pad_len))
+                b_p = F.pad(beta, (0, 0, 0, pad_len), value=0.0)
+            else:
+                q_p, k_p, v_p, u_p, b_p = q, k, v, u, beta
+
+            outs = []
+            curr = S
+            for c in range(num_chunks):
+                st = c * chunk_size
+                en = (c + 1) * chunk_size
+                qc = q_p[:, :, st:en]
+                kc = k_p[:, :, st:en]
+                vc = v_p[:, :, st:en]
+                uc = u_p[:, :, st:en]
+                bc = b_p[:, :, st:en]
+
+                yc, curr = torch.utils.checkpoint.checkpoint(
+                    _run_delta_product_chunk, curr, qc, kc, vc, uc, bc, use_reentrant=False
+                )
+                outs.append(yc)
+
+            y = torch.cat(outs, dim=2)
+            if pad_len > 0:
+                y = y[:, :, :L, :]
+            present_state = curr
+
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
         out = self.out_proj(y)
-        present_kv = (S.to(q.dtype),) if use_cache else None
+        present_kv = (present_state.to(q.dtype),) if use_cache else None
         return out, present_kv
 
 
@@ -364,7 +451,7 @@ class PreconditionedGDNAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
 
-        # Precondition keys with curvature diagonal P = (diag(s) + damping)^{-1/2}
+        # Precondition keys with curvature diagonal P = (diag(s) + damping)^{-1/2} across entire sequence in parallel
         p_scale = torch.rsqrt(F.softplus(self.curvature_diag) + self.damping).view(1, H, 1, D)
         k_preconditioned = k * p_scale
 
@@ -378,29 +465,80 @@ class PreconditionedGDNAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
+        # Fast path via Triton gdn_scan when suitable and without cache
+        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+            try:
+                from neuralops.core.triton_kernels.gdn_scan import gdn_scan
+                y_scan = gdn_scan(q, k_preconditioned, v, beta, alpha)
+                y = y_scan.transpose(1, 2).contiguous().view(B, L, H * D)
+                out = self.out_proj(y)
+                return out, None
+            except Exception:
+                pass
+
+        # Checkpointed chunked recurrence fallback
+        def _run_pgdn_chunk(s_in, qc, kc, vc, ac, bc):
+            curr = s_in
+            c_outs = []
+            for t in range(qc.shape[2]):
+                qt = qc[:, :, t : t + 1].float()
+                kt = kc[:, :, t : t + 1].float()
+                vt = vc[:, :, t : t + 1].float()
+                at = ac[:, :, t : t + 1, None].float()
+                bt = bc[:, :, t : t + 1, None].float()
+
+                inter_v = torch.matmul(kt, curr)
+                err = vt - inter_v
+                curr = at * curr + bt * torch.matmul(kt.transpose(-1, -2), err)
+                yt = torch.matmul(qt, curr)
+                c_outs.append(yt.to(qc.dtype))
+            return torch.cat(c_outs, dim=2), curr
+
         S = (
             torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
             if init_state is None
             else init_state.to(device=q.device, dtype=torch.float32)
         )
 
-        outs = []
-        for t in range(L):
-            qt = q[:, :, t : t + 1].float()
-            kt = k_preconditioned[:, :, t : t + 1].float()
-            vt = v[:, :, t : t + 1].float()
-            at = alpha[:, :, t : t + 1, None].float()
-            bt = beta[:, :, t : t + 1, None].float()
+        chunk_size = 64
+        if L <= 64 or not torch.is_grad_enabled():
+            y, present_state = _run_pgdn_chunk(S, q, k_preconditioned, v, alpha, beta)
+        else:
+            num_chunks = (L + chunk_size - 1) // chunk_size
+            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(q, (0, 0, 0, pad_len))
+                k_p = F.pad(k_preconditioned, (0, 0, 0, pad_len))
+                v_p = F.pad(v, (0, 0, 0, pad_len))
+                a_p = F.pad(alpha, (0, pad_len), value=1.0)
+                b_p = F.pad(beta, (0, pad_len), value=0.0)
+            else:
+                q_p, k_p, v_p, a_p, b_p = q, k_preconditioned, v, alpha, beta
 
-            inter_v = torch.matmul(kt, S)
-            err = vt - inter_v
-            S = at * S + bt * torch.matmul(kt.transpose(-1, -2), err)
-            yt = torch.matmul(qt, S)
-            outs.append(yt.to(q.dtype))
+            outs = []
+            curr = S
+            for c in range(num_chunks):
+                st = c * chunk_size
+                en = (c + 1) * chunk_size
+                qc = q_p[:, :, st:en]
+                kc = k_p[:, :, st:en]
+                vc = v_p[:, :, st:en]
+                ac = a_p[:, :, st:en]
+                bc = b_p[:, :, st:en]
 
-        y = torch.cat(outs, dim=2).transpose(1, 2).contiguous().view(B, L, H * D)
+                yc, curr = torch.utils.checkpoint.checkpoint(
+                    _run_pgdn_chunk, curr, qc, kc, vc, ac, bc, use_reentrant=False
+                )
+                outs.append(yc)
+
+            y = torch.cat(outs, dim=2)
+            if pad_len > 0:
+                y = y[:, :, :L, :]
+            present_state = curr
+
+        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
         out = self.out_proj(y)
-        present_kv = (S.to(q.dtype),) if use_cache else None
+        present_kv = (present_state.to(q.dtype),) if use_cache else None
         return out, present_kv
 
 
