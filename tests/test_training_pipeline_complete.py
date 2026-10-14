@@ -13,7 +13,7 @@ from neuralops.trainer.hf_callback import NeuralOpsSurgeryCallback
 from neuralops.trainer.losses import get_loss_function
 from neuralops.trainer.schedulers import get_lr_scheduler
 from neuralops.trainer.optimizers.riemannian import RiemannianAdam
-from neuralops.trainer.callbacks import EarlyStoppingCallback, MetricsLoggingCallback
+from neuralops.trainer.callbacks import MemoryCallback, TimeCallback, GradientNormCallback
 from neuralops.trainer.results_manager import ResultsManager
 
 
