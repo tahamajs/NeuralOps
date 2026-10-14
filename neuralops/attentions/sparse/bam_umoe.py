@@ -224,16 +224,14 @@ class UnifiedMoE(nn.Module):
         else:
             self._aux_loss = None
 
-        experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
-        topk_out = torch.gather(
-            experts_out,
-            2,
-            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim),
-        )
-        out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
+        from neuralops.core.triton_kernels.sparse_attn import fused_bam_unified_qkv_moe_triton
+
+        exp_outs = [exp(x) for exp in self.experts]
+        out, _ = fused_bam_unified_qkv_moe_triton(exp_outs, logits, self.top_k)
         out = torch.clamp(torch.nan_to_num(out, nan=0.0), -65000.0, 65000.0)
         gate = torch.sigmoid(self.gate_bias).to(x.dtype)
         return (out * gate).to(x.dtype)
+
 
     def get_aux_loss(self, device: torch.device) -> torch.Tensor:
         """BAM-FIX-04: return aux loss on the correct device."""

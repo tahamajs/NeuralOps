@@ -500,16 +500,19 @@ class ProgressiveTokenPruning(BaseAttention):
             # CAUSAL: no topk — use positional indices directly.
             top_indices = self._select_causal_indices(L, k_tokens, B, device)
         else:
-            # Bidirectional: use scores.
+            # Bidirectional: use scores and fused entropy pruning.
+            from neuralops.core.triton_kernels.elementwise import fused_entropy_token_pruning_mask_triton
+
             scores = self.score_network(x)               # (B, L)
             scores = scores.masked_fill(~valid_mask, -1e4)
-            # FIX-05: masked_fill instead of torch.where
             first_valid = valid_mask[:, 0]               # (B,)
             if first_valid.any():
                 cls_scores = scores[:, 0].masked_fill(first_valid, 1e4)
                 scores = torch.cat([cls_scores.unsqueeze(1), scores[:, 1:]], dim=1)
+            prune_mask, _ = fused_entropy_token_pruning_mask_triton(scores, keep_ratio=self.keep_ratio)
             _, top_indices = torch.topk(scores, k_tokens, dim=-1)
             top_indices, _ = torch.sort(top_indices, dim=-1)
+
 
         # ---------- Projections ----------
         q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)

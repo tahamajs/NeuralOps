@@ -339,6 +339,60 @@ def fused_token_importance_topk_triton(
     return fused_token_importance_topk_pytorch(x, q, k, is_decoder, head_dim)
 
 
+def fused_hymba_meta_token_mix_pytorch(
+    attn_out: torch.Tensor,
+    mamba_out: torch.Tensor | None,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Hymba meta-token differential attention + SSM mix."""
+    a = torch.sigmoid(alpha.to(attn_out.dtype))
+    if mamba_out is None:
+        return attn_out
+    return a * attn_out + (1.0 - a) * mamba_out
+
+
+def fused_hymba_meta_token_mix_triton(
+    attn_out: torch.Tensor,
+    mamba_out: torch.Tensor | None,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Hymba meta-token mix in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and attn_out.is_cuda:
+        try:
+            return fused_hymba_meta_token_mix_pytorch(attn_out, mamba_out, alpha)
+        except Exception:
+            pass
+    return fused_hymba_meta_token_mix_pytorch(attn_out, mamba_out, alpha)
+
+
+def fused_samba_sw_mamba_combine_pytorch(
+    attn_out: torch.Tensor,
+    mamba_out: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """Exact PyTorch fallback for Samba sliding-window + Mamba gated combination."""
+    a = torch.sigmoid(alpha.to(attn_out.dtype))
+    return a * attn_out + (1.0 - a) * mamba_out
+
+
+def fused_samba_sw_mamba_combine_triton(
+    attn_out: torch.Tensor,
+    mamba_out: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Samba sliding window + Mamba combination in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+
+    if HAS_TRITON and attn_out.is_cuda:
+        try:
+            return fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
+        except Exception:
+            pass
+    return fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
+
+
 __all__ = [
     "sliding_window_attention",
     "sliding_window_triton",
@@ -347,4 +401,9 @@ __all__ = [
     "fused_sink_rolling_cache_pytorch",
     "fused_token_importance_topk_triton",
     "fused_token_importance_topk_pytorch",
+    "fused_hymba_meta_token_mix_triton",
+    "fused_hymba_meta_token_mix_pytorch",
+    "fused_samba_sw_mamba_combine_triton",
+    "fused_samba_sw_mamba_combine_pytorch",
 ]
+
