@@ -474,7 +474,7 @@ class RoutingAttention(BaseAttention):
     def _kmeans_assign(feat: torch.Tensor, K: int, n_iters: int) -> torch.Tensor:
         """
         Deterministic k-means assignment on (B, H, L, d).
-        Uses evenly-spaced initialization + squared-distance expansion.
+        Accelerated with fused Triton KMeans kernel when running on CUDA.
         """
         B, H, L, d = feat.shape
         K = min(K, L)
@@ -486,8 +486,17 @@ class RoutingAttention(BaseAttention):
 
         feat_f = feat.float()
         centroids = feat_f[:, :, init_idx, :].clone()  # (B, H, K, d)
-        cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
 
+        if feat.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.sparse_attn import fused_kmeans_centroid_assign_triton
+                for _ in range(n_iters):
+                    centroids, cluster_ids, _ = fused_kmeans_centroid_assign_triton(feat_f, centroids)
+                return cluster_ids
+            except Exception:
+                pass
+
+        cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
         for _ in range(n_iters):
             # (B, H, L, K) via squared-distance expansion
             x_norm = (feat_f**2).sum(dim=-1, keepdim=True)  # (B, H, L, 1)
