@@ -104,6 +104,15 @@ class CoMeBridge(nn.Module):
             A = self.A.to(device=t.device, dtype=t.dtype)
             B = self.B.to(device=t.device, dtype=t.dtype)
             cb = self.correction_bias.to(device=t.device, dtype=t.dtype)
+            if t.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                    orig_shape = t.shape
+                    t_flat = t.reshape(-1, self.hidden_size)
+                    low = fused_down_up_gemm_bias_triton(t_flat, A.t().contiguous(), B.t().contiguous(), bias=cb)
+                    return t + self.alpha.to(device=t.device, dtype=t.dtype) * low.reshape(orig_shape)
+                except Exception:
+                    pass
             # residual = B @ (A @ t^T)^T + bias
             low = F.linear(F.linear(t, A), B) + cb
             return t + self.alpha.to(device=t.device, dtype=t.dtype) * low
@@ -304,6 +313,19 @@ class CoMeLoRALinear(nn.Module):
             self.bias.to(x_flat.dtype) if self.bias is not None else None,
         )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            if x.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x_flat,
+                        self.lora_A.t().to(x_flat.dtype).contiguous(),
+                        self.lora_B.t().to(x_flat.dtype).contiguous(),
+                        bias=None,
+                    )
+                    out = out + (self.scaling * lora_out).to(out.dtype)
+                    return out.reshape(*orig_shape[:-1], self.out_features)
+                except Exception:
+                    pass
             lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).to(out.dtype)
         return out.reshape(*orig_shape[:-1], self.out_features)
