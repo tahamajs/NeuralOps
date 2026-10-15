@@ -133,6 +133,21 @@ class ResSVDLinear(nn.Module):
         y = Base(x) + scaling * (x @ A^T) @ B^T + bias
         """
         # RESEARCH FIX: Two-stage factorized forward for frozen base to minimize memory footprint
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda and self.factorize_base:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                # Base projection
+                base_bias = self.bias if (self.residual_rank == 0 or self.lora_A is None) else None
+                base_out = fused_down_up_gemm_bias_triton(x, self.base_V, self.base_U.t().contiguous(), bias=base_bias)
+                if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    res_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
+                    return base_out + res_out
+                return base_out
+            except Exception:
+                pass
+
         if self.factorize_base:
             base_intermediate = F.linear(x, self.base_V)
             base_out = F.linear(base_intermediate, self.base_U)

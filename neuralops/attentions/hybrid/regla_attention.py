@@ -552,37 +552,54 @@ class ReGLAAttention(BaseAttention):
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         if is_causal:
-            chunk = self.chunk_size
-            S = torch.zeros(
-                B,
-                self.num_heads,
-                self.head_dim,
-                self.head_dim,
-                device=device,
-                dtype=q_act.dtype,
-            )
-            Z = torch.zeros(B, self.num_heads, self.head_dim, device=device, dtype=q_act.dtype)
-            out_list = []
+            from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+            if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q_act.is_cuda and self.head_dim <= 128:
+                try:
+                    from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                    out = fused_svd_linear_chunk_scan_triton(
+                        q_act.to(v_gated.dtype),
+                        k_gated.to(v_gated.dtype),
+                        v_gated,
+                        chunk_size=self.chunk_size,
+                        eps=1e-4,
+                    )
+                except Exception:
+                    out = None
+            else:
+                out = None
 
-            for start in range(0, L, chunk):
-                end = min(start + chunk, L)
-                q_c = q_act[:, :, start:end]
-                k_c = k_gated[:, :, start:end]
-                v_c = v_gated[:, :, start:end]
+            if out is None:
+                chunk = self.chunk_size
+                S = torch.zeros(
+                    B,
+                    self.num_heads,
+                    self.head_dim,
+                    self.head_dim,
+                    device=device,
+                    dtype=q_act.dtype,
+                )
+                Z = torch.zeros(B, self.num_heads, self.head_dim, device=device, dtype=q_act.dtype)
+                out_list = []
 
-                intra_kv = torch.cumsum(k_c.unsqueeze(-1) * v_c.unsqueeze(-2), dim=2)
-                num_intra = (q_c.unsqueeze(-2) @ intra_kv).squeeze(-2)
-                num_inter = (q_c.unsqueeze(-2) @ S.unsqueeze(2)).squeeze(-2)
-                num = num_intra + num_inter
+                for start in range(0, L, chunk):
+                    end = min(start + chunk, L)
+                    q_c = q_act[:, :, start:end]
+                    k_c = k_gated[:, :, start:end]
+                    v_c = v_gated[:, :, start:end]
 
-                z_intra = torch.cumsum(k_c, dim=2)
-                den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1e-4)
-                out_list.append(num / den)
+                    intra_kv = torch.cumsum(k_c.unsqueeze(-1) * v_c.unsqueeze(-2), dim=2)
+                    num_intra = (q_c.unsqueeze(-2) @ intra_kv).squeeze(-2)
+                    num_inter = (q_c.unsqueeze(-2) @ S.unsqueeze(2)).squeeze(-2)
+                    num = num_intra + num_inter
 
-                S = S + (k_c.unsqueeze(-1) * v_c.unsqueeze(-2)).sum(dim=2)
-                Z = Z + k_c.sum(dim=2)
+                    z_intra = torch.cumsum(k_c, dim=2)
+                    den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1e-4)
+                    out_list.append(num / den)
 
-            out = torch.cat(out_list, dim=2)
+                    S = S + (k_c.unsqueeze(-1) * v_c.unsqueeze(-2)).sum(dim=2)
+                    Z = Z + k_c.sum(dim=2)
+
+                out = torch.cat(out_list, dim=2)
         else:
             kv = torch.matmul(k_gated.transpose(-2, -1).contiguous(), v_gated)
             z = k_gated.sum(dim=2, keepdim=True)
