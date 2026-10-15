@@ -60,18 +60,23 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         "BonsaiPrunedLoRALinear",
     }
 
-    from neuralops.core.registry import ATTENTION_REGISTRY
+    registered_attn_classes = tuple(ATTENTION_REGISTRY.values())
+    cataloged_attn_names: list[str] = []
 
     for name, sub in model.named_modules():
         if not name:
             continue
         cls_name = sub.__class__.__name__
 
+        # Skip submodules that belong inside an already-cataloged attention block
+        if any(name.startswith(p + ".") for p in cataloged_attn_names):
+            continue
+
         # Check if Attention module (AttentionWrapper, ComposableAttention, or registered attention)
         is_attention = (
-            cls_name in ("AttentionWrapper", "ComposableAttention", "ReplaceAttention")
+            cls_name in ("AttentionWrapper", "ComposableAttention", "ReplaceAttention", "UniversalAttentionWrapper")
             or getattr(sub, "is_custom_attention", False)
-            or any(sub.__class__ == c for c in ATTENTION_REGISTRY.values())
+            or any(isinstance(sub, c) or sub.__class__ == c for c in registered_attn_classes)
         )
 
         is_compressed = (
@@ -82,6 +87,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         )
 
         if is_attention:
+            cataloged_attn_names.append(name)
             # If sub is a wrapper, inspect its inner attention module
             is_wrapper = hasattr(sub, "_wrapped_attention") and getattr(sub, "_wrapped_attention") is not None
             effective_sub = sub._wrapped_attention if is_wrapper else sub
