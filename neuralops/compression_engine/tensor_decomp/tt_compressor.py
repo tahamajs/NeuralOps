@@ -134,6 +134,17 @@ class SVDLinearLayer(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
+
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x_flat, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                out = fused_down_up_gemm_bias_triton(x_flat, self.B, self.A.t().contiguous(), bias=self.bias)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         out = F.linear(F.linear(x_flat, self.B), self.A)
         if self.bias is not None:
             out = out + self.bias
