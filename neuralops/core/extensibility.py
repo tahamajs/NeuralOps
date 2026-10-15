@@ -340,12 +340,23 @@ def validate_module_contract(
     # 6. Surgical Serialization Save/Load Roundtrip Parity
     tmp_dir = Path(tempfile.mkdtemp(prefix="neuralops_contract_"))
     try:
-        toy_student.eval()
+        # Build clean surgical student without hooks to verify serialization parity
+        persist_student = copy.deepcopy(toy_teacher)
+        if isinstance(module_or_name, str):
+            persist_mod = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
+        else:
+            try:
+                persist_mod = copy.deepcopy(module)
+            except Exception:
+                persist_mod = module
+        replace_attention(persist_student, target_module=persist_mod)
+
+        persist_student.eval()
         test_x = torch.randn(batch_size, seq_len, embed_dim, device=target_dev)
         with torch.no_grad():
-            orig_out = toy_student(test_x)
+            orig_out = persist_student(test_x)
 
-        save_surgical_checkpoint(toy_student, tmp_dir)
+        save_surgical_checkpoint(persist_student, tmp_dir)
         fresh_base = nn.Sequential(ToyBlock(embed_dim, num_heads)).to(device=target_dev)
         reloaded_model, manifest = load_surgical_checkpoint(fresh_base, tmp_dir, map_location=target_dev)
         reloaded_model.eval()
