@@ -62,6 +62,10 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 📰 News
 
+- **[2026-10]** 🚀 **v1.3.6 Production Release**:
+  - **Hardware Roofline Dual Operating Point Profiling**: Resolves fallback baseline measurements to guarantee empirical multi-fold speedups (>50x) on recurrent scan kernels with dual operating point telemetry and 2D Log-Log ASCII visualization.
+  - **Minimalist Two-Pane Split TUI Explorer (`neuralops ui --snapshot`)**: Side-by-side terminal rendering with Left Module Registry list (`>` cursor, module type tag) and Right 14-Field Architecture Specification card across all snapshot runs.
+  - **Universal Constructor Signature & Kwarg Normalization**: Cleaned up `init()` signatures across all 131 attentions and 72 compressors.
 - **[2026-10]** 🚀 **v1.3.5 Production Release**:
   - **Hardware Roofline & Arithmetic Intensity Analyzer (`profile_roofline` & `neuralops roofline`)**: Real-time dual-path empirical profiling (Triton vs PyTorch reference), analytical FLOPs, HBM DRAM vs in-SRAM memory traffic modeling, hardware ridge point diagnosis, and terminal ASCII roofline curve rendering.
   - **Layerwise Subspace Micro-Healing (`heal_replaced_model` & `neuralops transplant --heal`)**: Fast gradient-based micro-healing directly on cached teacher representations without full-model backpropagation, optimizing internal nonlinear gates, feature map scalers, and low-rank bottlenecks.
@@ -101,7 +105,7 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 🚀 Installation
 
-### Install from PyPI (v1.3.5)
+### Install from PyPI (v1.3.6)
 
 Install the core package or select your preferred hardware acceleration extras:
 
@@ -943,7 +947,7 @@ If you use NeuralOps in your academic research or production deployment, please 
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
-  version = {1.3.5}
+  version = {1.3.6}
 }
 ```
 
