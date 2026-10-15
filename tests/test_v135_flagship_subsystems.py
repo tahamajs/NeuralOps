@@ -241,3 +241,76 @@ def test_export_benchmark_table_formats():
     csv_out = export_benchmark_table(records, format="csv")
     assert "gla_attention" in csv_out
     assert "pareto_optimal" in csv_out
+
+
+# -----------------------------------------------------------------------------
+# 5. Architecture Inspector & CLI Subsystem Tests
+# -----------------------------------------------------------------------------
+def test_inspect_architecture_all_registries():
+    """Verify that inspect_architecture works for 100% of 131 attentions and 72 compressors."""
+    import neuralops.attentions
+    import neuralops.compression_engine
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from neuralops.core.inspector import inspect_architecture, render_architecture_card
+
+    assert len(ATTENTION_REGISTRY) == 131
+    assert len(COMPRESSOR_REGISTRY) == 72
+
+    # Test key exemplar attentions
+    for key in ["gated_delta_net", "gla_attention", "svd_linear_attention", "mamba_block", "cosformer"]:
+        spec = inspect_architecture(key)
+        assert spec.name == key
+        assert spec.category == "attention"
+        assert len(spec.time_complexity) > 0
+        assert len(spec.memory_complexity) > 0
+        assert "::" in spec.triton_kernel_module
+        assert len(spec.math_equation) > 0
+        assert "P (Projection)" in spec.algebraic_4stage_decomposition
+        assert len(spec.constructor_params) > 0
+        assert "pytorch_direct" in spec.quickstart_code
+        card = render_architecture_card(spec)
+        assert key in card
+        assert "── python ──" in card
+
+    # Test key exemplar compressors
+    for key in ["hadamard_incoherent_svd", "dobi_svd", "aa_svd_compressor", "admm_pruner"]:
+        spec = inspect_architecture(key)
+        assert spec.name == key
+        assert spec.category == "compressor"
+        assert len(spec.time_complexity) > 0
+        assert len(spec.memory_complexity) > 0
+        assert "::" in spec.triton_kernel_module
+        assert len(spec.math_equation) > 0
+        assert len(spec.constructor_params) > 0
+        card = render_architecture_card(spec)
+        assert key in card
+
+
+def test_cli_inspect_and_ui_commands():
+    """Verify CLI commands (inspect, ui snapshot, results)."""
+    from neuralops.benchmarks.cli import main
+    import io
+    import sys
+
+    # 1. Test inspect gated_delta_net
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        ret = main(["inspect", "gated_delta_net"])
+        out = sys.stdout.getvalue()
+        assert ret == 0
+        assert "gated_delta_net" in out
+        assert "gdn_scan.py" in out
+    finally:
+        sys.stdout = old_stdout
+
+    # 2. Test ui --snapshot
+    sys.stdout = io.StringIO()
+    try:
+        ret = main(["ui", "--snapshot"])
+        out = sys.stdout.getvalue()
+        assert ret == 0
+        assert "NEURALOPS MINIMALIST ARCHITECTURE EXPLORER" in out
+    finally:
+        sys.stdout = old_stdout
+

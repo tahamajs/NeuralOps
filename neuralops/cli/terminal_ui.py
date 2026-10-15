@@ -70,11 +70,13 @@ SUBCOMMAND_GROUPS = [
     {
         "title": "System Diagnostics & Module Registry",
         "commands": [
+            ("inspect", "UNIX-style architectural specification sheet for any registered module"),
+            ("roofline", "Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels"),
             ("list", "List and filter 131 attention mechanisms and 72 compressors"),
             ("doctor", "Run comprehensive health diagnostics on GPU, Triton, and packages"),
             ("info", "Print detailed GPU hardware telemetry and registry metrics"),
             ("verify", "Fast environment sanity check (PyTorch, CUDA, MPS)"),
-            ("ui", "Launch full interactive terminal interface (TUI mode)"),
+            ("ui", "Launch minimalist flat two-pane terminal inspector (fzf-style)"),
         ],
     },
 ]
@@ -289,9 +291,33 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
     return None
 
 
-def run_interactive_ui() -> None:
-    """Interactive terminal UI for exploring modules, compression, benchmarks, and help documentation."""
-    from neuralops.benchmarks.discovery import CATALOG_PATH
+def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = False) -> None:
+    """Minimalist, flat UNIX-style terminal inspector and interactive control center."""
+    from neuralops.core.inspector import inspect_architecture, render_architecture_card
+
+    # 1. Direct Module Inspection Mode (e.g. neuralops ui --inspect gated_delta_net [--snapshot])
+    if inspect_target:
+        try:
+            spec = inspect_architecture(inspect_target)
+            card = render_architecture_card(spec)
+            print(card)
+        except Exception as e:
+            print(f"[-] Could not inspect '{inspect_target}': {e}")
+        return
+
+    # 2. Snapshot Mode (Flat, high-density two-pane rendering to stdout for CI/terminal logs)
+    if snapshot:
+        import torch
+        dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
+        w = 78
+        print("=" * w)
+        print(f"  🏛️ NEURALOPS MINIMALIST ARCHITECTURE EXPLORER (v1.3.5)")
+        print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · 26 Triton Kernels")
+        print("=" * w)
+        spec = inspect_architecture("gated_delta_net")
+        print(render_architecture_card(spec))
+        print("=" * w)
+        return
 
     print_banner()
     if not HAS_RICH or console is None:
