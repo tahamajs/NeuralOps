@@ -150,6 +150,24 @@ class SVDLinearLayer(nn.Module):
                 use_rms_norm=self.use_rms_norm,
             )
 
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton, fused_svd_lora_sparse_attn_triton
+                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                    return fused_svd_lora_sparse_attn_triton(
+                        x,
+                        w_down=self.V,
+                        w_up=self.U,
+                        lora_A=self.lora_A,
+                        lora_B=self.lora_B,
+                        lora_scale=self.scaling,
+                        bias=self.bias,
+                    )
+                else:
+                    return fused_down_up_gemm_bias_triton(x, self.U, self.V, bias=self.bias)
+            except Exception:
+                pass
+
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U, self.bias)
 
