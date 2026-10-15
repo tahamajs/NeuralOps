@@ -834,13 +834,152 @@ def fused_chunk_svd_decay_linear_triton(
     return context, (S_chunk, Z_chunk)
 
 
+@triton.jit
+def _gla_step_kernel(
+    q_ptr,
+    k_ptr,
+    v_ptr,
+    lam_ptr,
+    s_ptr,
+    z_ptr,
+    y_ptr,
+    stride_qb,
+    stride_qh,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vd,
+    stride_lamb,
+    stride_lamh,
+    stride_sb,
+    stride_sh,
+    stride_sd,
+    stride_sn,
+    stride_zb,
+    stride_zh,
+    stride_zd,
+    stride_yb,
+    stride_yh,
+    stride_yd,
+    B_size,
+    H_size,
+    D_size,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_h = tl.program_id(1)
+    if pid_b >= B_size or pid_h >= H_size:
+        return
+
+    offs_d = tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D_size
+
+    # Load 1-token q, k, v
+    q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+    k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+    v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+
+    lam_val = tl.load(lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh).to(tl.float32)
+    lam_t = tl.maximum(tl.minimum(lam_val, 1.0 - 1e-4), 1e-4)
+
+    # Load persistent state S (BLOCK_D x BLOCK_D) and Z (BLOCK_D)
+    s_ptrs = s_ptr + pid_b * stride_sb + pid_h * stride_sh + offs_d[:, None] * stride_sd + offs_d[None, :] * stride_sn
+    mask_2d = mask_d[:, None] & mask_d[None, :]
+    S = tl.load(s_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
+
+    z_ptrs = z_ptr + pid_b * stride_zb + pid_h * stride_zh + offs_d * stride_zd
+    Z = tl.load(z_ptrs, mask=mask_d, other=0.0).to(tl.float32)
+
+    # In-SRAM Recurrence:
+    # S_t = lam_t * S_{t-1} + k_t^T @ v_t
+    kv_outer = k_t[:, None] * v_t[None, :]
+    S_new = lam_t * S + kv_outer
+
+    # Z_t = lam_t * Z_{t-1} + k_t
+    Z_new = lam_t * Z + k_t
+
+    # Write back updated states in-place!
+    tl.store(s_ptrs, S_new.to(s_ptr.dtype.element_ty), mask=mask_2d)
+    tl.store(z_ptrs, Z_new.to(z_ptr.dtype.element_ty), mask=mask_d)
+
+    # Compute output y_t = (q_t @ S_new) / (q_t @ Z_new + 1e-4)
+    num_t = tl.sum(q_t[:, None] * S_new, axis=0)
+    denom_t = tl.sum(q_t * Z_new) + 1e-4
+    y_t = num_t / denom_t
+
+    tl.store(y_ptr + pid_b * stride_yb + pid_h * stride_yh + offs_d * stride_yd, y_t.to(y_ptr.dtype.element_ty), mask=mask_d)
+
+
+def gla_recurrent_step_triton(
+    q_t: torch.Tensor,
+    k_t: torch.Tensor,
+    v_t: torch.Tensor,
+    lambda_t: torch.Tensor,
+    state_s: torch.Tensor,
+    state_z: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+    """Fast O(1) single-token recurrent step update for GLA autoregressive decoding."""
+    has_l_dim = q_t.dim() == 4
+    if has_l_dim:
+        q_t = q_t.squeeze(2)
+        k_t = k_t.squeeze(2)
+        v_t = v_t.squeeze(2)
+    if lambda_t.dim() >= 3:
+        lambda_t = lambda_t.view(q_t.shape[0], q_t.shape[1])
+
+    B, H, D = q_t.shape
+    if state_z is None:
+        state_z = torch.zeros((B, H, D), device=q_t.device, dtype=q_t.dtype)
+
+    out = torch.empty((B, H, D), device=q_t.device, dtype=q_t.dtype)
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q_t.is_cuda and D <= MAX_REGISTER_DIM:
+        try:
+            BLOCK_D = triton.next_power_of_2(D)
+            grid = (B, H)
+            _gla_step_kernel[grid](
+                q_t.contiguous(), k_t.contiguous(), v_t.contiguous(), lambda_t.contiguous(),
+                state_s, state_z, out,
+                q_t.stride(0), q_t.stride(1), q_t.stride(2),
+                k_t.stride(0), k_t.stride(1), k_t.stride(2),
+                v_t.stride(0), v_t.stride(1), v_t.stride(2),
+                lambda_t.stride(0), lambda_t.stride(1),
+                state_s.stride(0), state_s.stride(1), state_s.stride(2), state_s.stride(3),
+                state_z.stride(0), state_z.stride(1), state_z.stride(2),
+                out.stride(0), out.stride(1), out.stride(2),
+                B, H, D,
+                BLOCK_D=BLOCK_D,
+            )
+            return (out.unsqueeze(2) if has_l_dim else out), state_s, state_z
+        except Exception:
+            pass
+
+    # PyTorch reference step fallback
+    lam = torch.clamp(lambda_t.float().unsqueeze(-1).unsqueeze(-1), min=1e-4, max=1.0 - 1e-4)
+    kv = torch.matmul(k_t.unsqueeze(-1).float(), v_t.unsqueeze(-2).float())
+    state_s.copy_((lam * state_s.float() + kv).to(state_s.dtype))
+    lam_z = torch.clamp(lambda_t.float().unsqueeze(-1), min=1e-4, max=1.0 - 1e-4)
+    state_z.copy_((lam_z * state_z.float() + k_t.float()).to(state_z.dtype))
+
+    num = torch.matmul(q_t.unsqueeze(-2).float(), state_s.float()).squeeze(-2)
+    den = (q_t.float() * state_z.float()).sum(dim=-1, keepdim=True) + 1e-4
+    y = (num / den).to(q_t.dtype)
+    return (y.unsqueeze(2) if has_l_dim else y), state_s, state_z
+
+
 __all__ = [
     'gla_scan_triton',
     'gla_scan_pytorch',
     'gla_scan',
+    'gla_recurrent_step_triton',
     'kda_hla_chunk_scan_triton',
     'fused_regla_refined_gate_scan_triton',
     'fused_regla_refined_gate_scan_pytorch',
     'fused_chunk_svd_decay_linear_triton',
 ]
+
 

@@ -691,16 +691,144 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
 
 
-def gdn_scan(q, k, v, beta, alpha):
-    """Dispatches GDN scan to Triton GPU kernel when suitable, else PyTorch fallback."""
-    from neuralops.core.triton_kernels._types import check_triton_suitability
-    suitable, _ = check_triton_suitability(q, "gdn_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
-    if suitable and hasattr(triton, "jit"):
+@triton.jit
+def _gdn_step_kernel(
+    q_ptr,
+    k_ptr,
+    v_ptr,
+    beta_ptr,
+    alpha_ptr,
+    s_ptr,
+    y_ptr,
+    stride_qb,
+    stride_qh,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vd,
+    stride_bb,
+    stride_bh,
+    stride_ab,
+    stride_ah,
+    stride_sb,
+    stride_sh,
+    stride_sd,
+    stride_sn,
+    stride_yb,
+    stride_yh,
+    stride_yd,
+    B_size,
+    H_size,
+    D_size,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_h = tl.program_id(1)
+    if pid_b >= B_size or pid_h >= H_size:
+        return
+
+    offs_d = tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D_size
+
+    # Load 1-token q, k, v
+    q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+    k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+    v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+
+    beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh).to(tl.float32)
+    alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah).to(tl.float32)
+
+    # Load persistent state S (BLOCK_D x BLOCK_D)
+    s_ptrs = s_ptr + pid_b * stride_sb + pid_h * stride_sh + offs_d[:, None] * stride_sd + offs_d[None, :] * stride_sn
+    mask_2d = mask_d[:, None] & mask_d[None, :]
+    S = tl.load(s_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
+
+    # In-SRAM Recurrence:
+    # inter_v = sum_i k_t[i] * S[i, :]
+    inter_v = tl.sum(k_t[:, None] * S, axis=0)
+    err = v_t - inter_v
+    norm_sq = tl.sum(k_t * k_t)
+    denom = tl.maximum(1.0 + norm_sq, 1.0)
+    step = alpha_t / denom
+
+    outer = k_t[:, None] * err[None, :]
+    S_new = beta_t * S + step * outer
+
+    # Write back updated state in-place!
+    tl.store(s_ptrs, S_new.to(s_ptr.dtype.element_ty), mask=mask_2d)
+
+    # Compute output y_t = q_t @ S_new
+    y_t = tl.sum(q_t[:, None] * S_new, axis=0)
+    tl.store(y_ptr + pid_b * stride_yb + pid_h * stride_yh + offs_d * stride_yd, y_t.to(y_ptr.dtype.element_ty), mask=mask_d)
+
+
+def gdn_recurrent_step_triton(
+    q_t: torch.Tensor,
+    k_t: torch.Tensor,
+    v_t: torch.Tensor,
+    beta_t: torch.Tensor,
+    alpha_t: torch.Tensor,
+    state: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fast O(1) single-token recurrent step update for autoregressive decoding.
+
+    Args:
+        q_t, k_t, v_t: [B, H, D] or [B, H, 1, D]
+        beta_t, alpha_t: [B, H] or [B, H, 1]
+        state: Persistent recurrent state [B, H, D, D]
+    Returns:
+        (out_t [B, H, 1, D], state [B, H, D, D])
+    """
+    has_l_dim = q_t.dim() == 4
+    if has_l_dim:
+        q_t = q_t.squeeze(2)
+        k_t = k_t.squeeze(2)
+        v_t = v_t.squeeze(2)
+    if beta_t.dim() >= 3:
+        beta_t = beta_t.view(q_t.shape[0], q_t.shape[1])
+    if alpha_t.dim() >= 3:
+        alpha_t = alpha_t.view(q_t.shape[0], q_t.shape[1])
+
+    B, H, D = q_t.shape
+    out = torch.empty((B, H, D), device=q_t.device, dtype=q_t.dtype)
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q_t.is_cuda and D <= MAX_REGISTER_DIM:
         try:
-            return gdn_scan_triton(q, k, v, beta, alpha)
+            BLOCK_D = triton.next_power_of_2(D)
+            grid = (B, H)
+            _gdn_step_kernel[grid](
+                q_t.contiguous(), k_t.contiguous(), v_t.contiguous(),
+                beta_t.contiguous(), alpha_t.contiguous(), state, out,
+                q_t.stride(0), q_t.stride(1), q_t.stride(2),
+                k_t.stride(0), k_t.stride(1), k_t.stride(2),
+                v_t.stride(0), v_t.stride(1), v_t.stride(2),
+                beta_t.stride(0), beta_t.stride(1),
+                alpha_t.stride(0), alpha_t.stride(1),
+                state.stride(0), state.stride(1), state.stride(2), state.stride(3),
+                out.stride(0), out.stride(1), out.stride(2),
+                B, H, D,
+                BLOCK_D=BLOCK_D,
+            )
+            return (out.unsqueeze(2) if has_l_dim else out), state
         except Exception:
             pass
-    return gdn_scan_pytorch(q, k, v, beta, alpha)
+
+    # PyTorch reference step fallback
+    inter_v = torch.matmul(k_t.unsqueeze(-2).float(), state.float()).squeeze(-2)
+    err = v_t.float() - inter_v
+    norm_sq = (k_t.float() * k_t.float()).sum(dim=-1)
+    denom = torch.clamp(1.0 + norm_sq, min=1.0)
+    step = (alpha_t.float() / denom).unsqueeze(-1).unsqueeze(-1)
+    b_fac = beta_t.float().unsqueeze(-1).unsqueeze(-1)
+    outer = torch.matmul(k_t.float().unsqueeze(-1), err.unsqueeze(-2))
+    state.copy_((b_fac * state.float() + step * outer).to(state.dtype))
+    y = torch.matmul(q_t.unsqueeze(-2).float(), state.float()).squeeze(-2).to(q_t.dtype)
+    return (y.unsqueeze(2) if has_l_dim else y), state
 
 
-__all__ = ['gdn_scan_triton', 'gdn_scan_pytorch', 'gdn_scan']
+__all__ = ['gdn_scan_triton', 'gdn_scan_pytorch', 'gdn_scan', 'gdn_recurrent_step_triton']
+
