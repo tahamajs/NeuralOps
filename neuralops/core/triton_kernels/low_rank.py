@@ -1492,7 +1492,7 @@ if HAS_TRITON and tl is not None:
             w_vals = tl.load(W_table_ptr + h_indices, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=0.0)
             w_tile = w_vals * signs
 
-            acc += tl.dot(x_tile.to(tl.float32), tl.trans(w_tile.to(tl.float32)))
+            acc += tl.dot(x_tile.to(tl.float32), tl.trans(w_tile.to(tl.float32)), allow_tf32=False)
 
         if HAS_BIAS:
             b = tl.load(Bias_ptr + offs_n, mask=offs_n < N, other=0.0)
