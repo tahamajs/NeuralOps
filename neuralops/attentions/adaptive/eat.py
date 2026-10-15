@@ -755,13 +755,15 @@ class EATBlock(BaseAttention):
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
             
-            # حالا اعمال کن
+            # Apply head mask
             if probs is not None:
                 probs = probs * hm
                 context = torch.matmul(probs.to(v.dtype), v)
             else:
                 _sdpa_out = _sdpa_out * hm
                 context = _sdpa_out
+        else:
+            context = torch.matmul(probs.to(v.dtype), v) if probs is not None else _sdpa_out
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # ---- Output projection ----
