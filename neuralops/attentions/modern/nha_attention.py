@@ -413,6 +413,15 @@ class NativeHybridAttention(BaseAttention):
             den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
             return num / den
 
+        # Hardware-accelerated Triton linear chunk scan
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and past_len == 0 and valid_mask is None and phi_Q.shape[-1] <= 128:
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                return fused_svd_linear_chunk_scan_triton(phi_Q, phi_K, V_masked, chunk_size=64, eps=_DENOM_EPS).to(dtype)
+            except Exception:
+                pass
+
         # ==========================================================
         # Fully Vectorized Memory-Efficient Causal RFF (Inference-Safe)
         # ==========================================================

@@ -717,10 +717,22 @@ class GraniteHybridBlock(BaseAttention):
             hidden_states, past_state=past_mamba_state
         )
 
-        # ---- [FIX] Per-head gated fusion using lora_gate ----
+        # ---- Fused Triton / PyTorch Gated Fusion ----
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))  # (B, N, H)
-        g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)  # (B, N, 1)
-        x = g * attn_out + (1.0 - g) * mamba_out
+        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == mamba_out.shape:
+            try:
+                from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+                # Note: gate_out represents logit for alpha where blended = (1-alpha)*attn + alpha*ssm
+                # Here g = sigmoid(gate_out) weights attn, so alpha_ssm = -gate_out
+                alpha_ssm = -gate_out.mean(dim=-1, keepdim=True)
+                x = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, alpha_ssm)
+            except Exception:
+                g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)
+                x = g * attn_out + (1.0 - g) * mamba_out
+        else:
+            g = torch.sigmoid(gate_out).mean(dim=-1, keepdim=True).to(attn_out.dtype)  # (B, N, 1)
+            x = g * attn_out + (1.0 - g) * mamba_out
 
         # ---- MoE branch ----
         moe_out, moe_aux_loss = self.moe(x)

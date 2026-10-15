@@ -673,7 +673,22 @@ if HAS_TRITON and tl is not None:
                     else:
                         grad_alpha = grad_alpha_exp.sum()
                 else:
-                    grad_alpha = grad_alpha_exp.view(ctx.orig_alpha_shape)
+                    # General broadcast reduction
+                    dims_to_sum = []
+                    target_shape = list(ctx.orig_alpha_shape)
+                    # Align trailing dimensions
+                    diff = grad_alpha_exp.dim() - len(target_shape)
+                    if diff > 0:
+                        dims_to_sum.extend(range(diff))
+                        target_shape = [1] * diff + target_shape
+                    for i, (actual_s, target_s) in enumerate(zip(grad_alpha_exp.shape, target_shape)):
+                        if target_s == 1 and actual_s != 1:
+                            dims_to_sum.append(i)
+                    if dims_to_sum:
+                        grad_alpha = grad_alpha_exp.sum(dim=tuple(dims_to_sum), keepdim=True)
+                    else:
+                        grad_alpha = grad_alpha_exp
+                    grad_alpha = grad_alpha.view(ctx.orig_alpha_shape)
             else:
                 grad_alpha = grad_alpha_exp
 
