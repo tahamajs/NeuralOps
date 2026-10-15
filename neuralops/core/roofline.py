@@ -114,6 +114,26 @@ def get_device_roofline_specs(device: Optional[Union[str, torch.device]] = None)
     return device_name, f"SM {sm_version}", est_tflops, est_bw
 
 
+def _set_global_fallback(flag: bool) -> None:
+    """Recursively set FORCE_PYTORCH_FALLBACK across all loaded neuralops modules."""
+    import sys
+    from neuralops.core.triton_kernels import _types as tt_types
+    tt_types.FORCE_PYTORCH_FALLBACK = flag
+
+    for name, mod in list(sys.modules.items()):
+        if name.startswith("neuralops.") and mod is not None:
+            if hasattr(mod, "FORCE_PYTORCH_FALLBACK"):
+                try:
+                    setattr(mod, "FORCE_PYTORCH_FALLBACK", flag)
+                except Exception:
+                    pass
+            if hasattr(mod, "HAS_TRITON_GDN"):
+                try:
+                    setattr(mod, "HAS_TRITON_GDN", not flag)
+                except Exception:
+                    pass
+
+
 def estimate_module_flops_and_bytes(
     module: nn.Module,
     batch_size: int,
@@ -133,22 +153,44 @@ def estimate_module_flops_and_bytes(
     # 1. Inspect module architecture for projections and SVD ranks
     proj_flops = 0.0
     svd_intermediate_bytes = 0.0
+    found_projections = 0
 
-    # Count parameters and inspect linear/factorized modules
+    # Count parameters and inspect linear/factorized modules (including custom LoRALinear, Conv, etc.)
     for name, sub in module.named_modules():
+        sub_cls = sub.__class__.__name__
         if isinstance(sub, nn.Linear):
             in_f = sub.in_features
             out_f = sub.out_features
             proj_flops += 2.0 * B * T * in_f * out_f
-        elif sub.__class__.__name__ in ("SVDLinear", "FactorizedLinear", "DynamicSVDLinear"):
-            r = getattr(sub, "rank", getattr(sub, "current_rank", 32))
-            in_f = getattr(sub, "in_features", D)
-            out_f = getattr(sub, "out_features", D)
-            proj_flops += 2.0 * B * T * (in_f * r + r * out_f)
-            svd_intermediate_bytes += 2.0 * element_bytes * B * T * r
+            found_projections += 1
+        elif sub_cls in ("LoRALinear", "SVDLinear", "FactorizedLinear", "DynamicSVDLinear", "DobiSVDLinearLayer", "ResSVDLinear"):
+            # Check for standard weight matrix or rank factorization
+            if hasattr(sub, "weight") and sub.weight is not None and hasattr(sub.weight, "shape") and len(sub.weight.shape) == 2:
+                out_f, in_f = sub.weight.shape
+                proj_flops += 2.0 * B * T * in_f * out_f
+                found_projections += 1
+            else:
+                in_f = getattr(sub, "in_features", D)
+                out_f = getattr(sub, "out_features", D)
+                r = getattr(sub, "rank", getattr(sub, "current_rank", getattr(sub, "r", 32)))
+                proj_flops += 2.0 * B * T * (in_f * r + r * out_f)
+                svd_intermediate_bytes += 2.0 * element_bytes * B * T * r
+                found_projections += 1
+            # Add LoRA path FLOPs if present
+            if hasattr(sub, "lora_A") and hasattr(sub, "lora_B") and sub.lora_A is not None and sub.lora_B is not None:
+                r_lora = sub.lora_A.shape[0] if sub.lora_A.dim() == 2 else 16
+                proj_flops += 2.0 * B * T * (in_f * r_lora + r_lora * out_f)
+                svd_intermediate_bytes += 2.0 * element_bytes * B * T * r_lora
+        elif isinstance(sub, nn.Conv1d):
+            # Conv1d projection
+            k = sub.kernel_size[0]
+            in_c = sub.in_channels
+            out_c = sub.out_channels
+            proj_flops += 2.0 * B * T * in_c * out_c * k
+            found_projections += 1
 
-    # Default projection FLOPs if module doesn't expose standard nn.Linear layers
-    if proj_flops == 0.0:
+    # Default projection FLOPs if module doesn't expose recognized projection layers
+    if found_projections == 0:
         # Standard Q, K, V, O projections: 4 * (2 * B * T * D^2) = 8 * B * T * D^2
         proj_flops = 8.0 * B * T * D * D
 
@@ -157,7 +199,7 @@ def estimate_module_flops_and_bytes(
     if hasattr(module, "target_attention"):
         name_lower += " " + str(getattr(module, "target_attention")).lower()
 
-    is_quadratic = any(k in name_lower for k in ("softmax", "full", "mha", "exact", "window"))
+    is_quadratic = any(k in name_lower for k in ("softmax", "full", "mha", "exact", "standard"))
     is_sliding = "window" in name_lower or "sliding" in name_lower
     is_linear_recurrent = any(
         k in name_lower for k in ("linear", "gdn", "delta", "gla", "mamba", "ssm", "hgrn", "decay", "kda", "cosformer")
@@ -207,8 +249,8 @@ def profile_roofline(
     embed_dim: int = 768,
     num_heads: int = 12,
     dtype: str = "float16",
-    warmup: int = 5,
-    rep: int = 15,
+    warmup: int = 10,
+    rep: int = 20,
     device: Optional[Union[str, torch.device]] = None,
     **module_kwargs: Any,
 ) -> RooflineReport:
@@ -278,9 +320,6 @@ def profile_roofline(
         return out[0] if isinstance(out, tuple) else out
 
     # 4. Measure Peak VRAM & Dual-Path Timing
-    from neuralops.core.triton_kernels import _types as tt_types
-    orig_fallback = getattr(tt_types, "FORCE_PYTORCH_FALLBACK", False)
-
     is_cuda = target_device.type == "cuda"
     latency_triton_ms = 0.0
     latency_pytorch_ms = 0.0
@@ -288,10 +327,12 @@ def profile_roofline(
 
     try:
         # A. Warmup & Measure Triton Path (FORCE_PYTORCH_FALLBACK = False)
-        tt_types.FORCE_PYTORCH_FALLBACK = False
+        _set_global_fallback(False)
         with torch.no_grad():
             for _ in range(warmup):
                 _ = _run_forward(module, x)
+        if is_cuda:
+            torch.cuda.synchronize(target_device)
 
         if is_cuda:
             torch.cuda.reset_peak_memory_stats(target_device)
@@ -314,30 +355,34 @@ def profile_roofline(
             peak_vram_mb = 0.0
 
         # B. Measure PyTorch Reference Path (FORCE_PYTORCH_FALLBACK = True)
-        tt_types.FORCE_PYTORCH_FALLBACK = True
+        _set_global_fallback(True)
+        py_warmup = min(3, warmup)
+        py_rep = min(5, rep)
         with torch.no_grad():
-            for _ in range(warmup):
+            for _ in range(py_warmup):
                 _ = _run_forward(module, x)
+        if is_cuda:
+            torch.cuda.synchronize(target_device)
 
         if is_cuda:
             start_evt = torch.cuda.Event(enable_timing=True)
             end_evt = torch.cuda.Event(enable_timing=True)
             start_evt.record()
             with torch.no_grad():
-                for _ in range(rep):
+                for _ in range(py_rep):
                     _ = _run_forward(module, x)
             end_evt.record()
             torch.cuda.synchronize(target_device)
-            latency_pytorch_ms = float(start_evt.elapsed_time(end_evt) / rep)
+            latency_pytorch_ms = float(start_evt.elapsed_time(end_evt) / py_rep)
         else:
             t0 = time.perf_counter()
             with torch.no_grad():
-                for _ in range(rep):
+                for _ in range(py_rep):
                     _ = _run_forward(module, x)
-            latency_pytorch_ms = float((time.perf_counter() - t0) * 1000.0 / rep)
+            latency_pytorch_ms = float((time.perf_counter() - t0) * 1000.0 / py_rep)
 
     finally:
-        tt_types.FORCE_PYTORCH_FALLBACK = orig_fallback
+        _set_global_fallback(False)
 
     # 5. Roofline Calculations
     total_flops, hbm_bytes_naive, hbm_bytes_fused = estimate_module_flops_and_bytes(
@@ -361,10 +406,10 @@ def profile_roofline(
     achieved_tflops = (total_flops / (t_sec * 1e12)) if t_sec > 0 else 0.0
     achieved_bandwidth_gb_s = (hbm_bytes_fused / (t_sec * 1e9)) if t_sec > 0 else 0.0
 
-    # Bottleneck Regime Classification
+    # Bottleneck classification
     if ai_fused >= 0.85 * ridge_point:
         regime = "Compute-Bound (Tensor Core Saturated)"
-    elif ai_fused > 1.35 * ai_naive:
+    elif ai_fused > 1.5 * ai_naive:
         regime = "SRAM-Fused Transition Regime (Memory Wall Mitigated)"
     else:
         regime = "Memory-Bandwidth Bound (HBM Limited)"
@@ -422,30 +467,84 @@ def render_roofline_terminal(report: RooflineReport) -> str:
     lines.append(f"  Achieved Performance:     {report.achieved_tflops:>8.2f} TFLOPS ({report.achieved_bandwidth_gb_s:.1f} GB/s HBM bandwidth)")
     lines.append("=" * w)
 
-    # ASCII Log-Log Roofline Chart
-    chart = [
-        "  LOG-LOG ROOFLINE OPERATING CURVE:",
-        "  Attainable TFLOPS",
-        "     ^",
-        f"     |                                Peak Compute: {report.peak_tflops:.1f} TFLOPS",
-        "     |                          +----------------------------------+",
-        "     |                         /                                   |",
-        "     |                        /  <- Ridge Point:                   |",
-        f"     |                       /      I_ridge = {report.ridge_point:.1f} FLOPs/B     |",
-        "     |                      /                                      |",
-        "     |        [T]          /                                       |",
-        "     |       (Fused)      /                                        |",
-        "     |         *         /                                         |",
-        "     |                  /                                          |",
-        "     |        [P]      /                                           |",
-        "     |      (Naive)   /   Memory-Bandwidth Roof:                   |",
-        f"     |         o     /    Slope = {report.peak_bandwidth_gb_s:.1f} GB/s                   |",
-        "     +-------------------------------------------------------------+--->",
-        f"     0.1            1.0          10.0           100.0         1000.0  Arithmetic Intensity",
-        "                                                                      (FLOPs / HBM Byte)",
-        "     Legend: [o] Naive PyTorch Path       [*] NeuralOps Fused Triton Kernel",
-    ]
-    lines.extend(chart)
+    # -------------------------------------------------------------------------
+    # Dynamic 2D Log-Log ASCII Roofline Chart (14 rows x 60 cols)
+    # -------------------------------------------------------------------------
+    plot_rows = 14
+    plot_cols = 58
+    # Log10 ranges: AI from 0.25 to 1024 -> [-0.60, 3.01]
+    min_log_ai = math.log10(0.25)
+    max_log_ai = math.log10(1024.0)
+
+    # Performance Y-axis: Log10 TFLOPS from 0.05 to peak_tflops * 1.2
+    min_tflops = 0.05
+    max_tflops = max(10.0, report.peak_tflops * 1.25)
+    min_log_p = math.log10(min_tflops)
+    max_log_p = math.log10(max_tflops)
+
+    grid = [[" " for _ in range(plot_cols)] for _ in range(plot_rows)]
+
+    def _ai_to_col(ai_val: float) -> int:
+        l_ai = math.log10(max(0.25, min(1024.0, ai_val)))
+        frac = (l_ai - min_log_ai) / (max_log_ai - min_log_ai)
+        c = int(round(frac * (plot_cols - 1)))
+        return max(0, min(plot_cols - 1, c))
+
+    def _perf_to_row(p_val: float) -> int:
+        l_p = math.log10(max(min_tflops, min(max_tflops, p_val)))
+        frac = (l_p - min_log_p) / (max_log_p - min_log_p)
+        r = int(round((1.0 - frac) * (plot_rows - 1)))
+        return max(0, min(plot_rows - 1, r))
+
+    ridge_col = _ai_to_col(report.ridge_point)
+    peak_row = _perf_to_row(report.peak_tflops)
+
+    # Draw Roofline Curve:
+    # For cols < ridge_col: attainable = min(peak_tflops, ai * peak_bw / 1000)
+    for c in range(plot_cols):
+        l_ai = min_log_ai + (c / (plot_cols - 1)) * (max_log_ai - min_log_ai)
+        ai_at_col = 10.0 ** l_ai
+        attainable_p = min(report.peak_tflops, (ai_at_col * report.peak_bandwidth_gb_s) / 1000.0)
+        r = _perf_to_row(attainable_p)
+        if c >= ridge_col:
+            grid[peak_row][c] = "─"
+        else:
+            grid[r][c] = "/"
+
+    if 0 <= peak_row < plot_rows and 0 <= ridge_col < plot_cols:
+        grid[peak_row][ridge_col] = "┬"
+
+    # Plot [P] (Naive PyTorch Point)
+    py_tflops = (report.total_flops / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e12))
+    p_row = _perf_to_row(py_tflops)
+    p_col = _ai_to_col(report.arithmetic_intensity_naive)
+    if 0 <= p_row < plot_rows and 0 <= p_col < plot_cols:
+        grid[p_row][p_col] = "P"
+
+    # Plot [T] (Fused Triton Point)
+    t_row = _perf_to_row(report.achieved_tflops)
+    t_col = _ai_to_col(report.arithmetic_intensity_fused)
+    if 0 <= t_row < plot_rows and 0 <= t_col < plot_cols:
+        grid[t_row][t_col] = "T"
+
+    lines.append("  LOG-LOG ROOFLINE HARDWARE CHARACTERISTIC CURVE:")
+    lines.append(f"  TFLOPS (Peak: {report.peak_tflops:.1f} TFLOPS │ Ridge: {report.ridge_point:.1f} FLOPs/B │ Slope: {report.peak_bandwidth_gb_s:.1f} GB/s)")
+    lines.append("    ^")
+    for r_idx, row_chars in enumerate(grid):
+        # Y-axis tick labels
+        if r_idx == peak_row:
+            lbl = f"{report.peak_tflops:>5.1f} |"
+        elif r_idx == 0:
+            lbl = f"{max_tflops:>5.1f} |"
+        elif r_idx == plot_rows - 1:
+            lbl = f"{min_tflops:>5.2f} |"
+        else:
+            lbl = "      |"
+        lines.append(f"  {lbl} " + "".join(row_chars))
+
+    lines.append("      +-" + "─" * plot_cols + "-> Arithmetic Intensity")
+    lines.append("        0.25         1.0         4.0        16.0        64.0       256.0      1024.0 (FLOPs/Byte)")
+    lines.append("     Legend: [P] Naive PyTorch Path       [T] NeuralOps Fused Triton Kernel")
     lines.append("=" * w)
     return "\n".join(lines)
 
