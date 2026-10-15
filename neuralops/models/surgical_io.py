@@ -228,6 +228,14 @@ def load_surgical_checkpoint(
     submodules_info = manifest.get("submodules", {})
     from neuralops.core.model_utils import replace_module
 
+    # Infer base_model device if map_location is not explicitly passed
+    target_device = map_location
+    if target_device is None:
+        try:
+            target_device = next(base_model.parameters()).device
+        except (StopIteration, Exception):
+            target_device = torch.device("cpu")
+
     # 1. Reconstruct all modified submodules
     for module_path, info in submodules_info.items():
         category = info.get("category")
@@ -259,6 +267,7 @@ def load_surgical_checkpoint(
             else:
                 embed_dim = info.get("embed_dim", 768)
                 num_heads = info.get("num_heads", 12)
+                num_kv_heads = info.get("num_kv_heads", None)
                 rank = info.get("rank", 32)
                 from transformers import BertConfig
                 cfg = BertConfig(
@@ -267,14 +276,28 @@ def load_surgical_checkpoint(
                     rank=rank,
                     svd_rank=rank,
                 )
+                if num_kv_heads is not None:
+                    cfg.num_key_value_heads = num_kv_heads
+                    cfg.num_kv_heads = num_kv_heads
+
+                init_kwargs = {
+                    "rank": rank,
+                    "embed_dim": embed_dim,
+                    "num_heads": num_heads,
+                    "d_model": embed_dim,
+                }
+                if num_kv_heads is not None:
+                    init_kwargs["num_kv_heads"] = num_kv_heads
+                    init_kwargs["num_key_value_heads"] = num_kv_heads
+
                 try:
-                    new_sub = cls(config=cfg, rank=rank, embed_dim=embed_dim, num_heads=num_heads)
+                    new_sub = cls(config=cfg, **init_kwargs)
                 except Exception:
                     try:
                         new_sub = cls(config=cfg)
                     except Exception:
                         try:
-                            new_sub = cls(embed_dim=embed_dim, num_heads=num_heads, rank=rank)
+                            new_sub = cls(**init_kwargs)
                         except Exception:
                             new_sub = cls()
 
@@ -296,6 +319,8 @@ def load_surgical_checkpoint(
                     wrapped_sub.is_t5 = bool(info["is_t5"])
                 new_sub = wrapped_sub
 
+            if target_device is not None:
+                new_sub = new_sub.to(target_device)
             replace_module(base_model, module_path, new_sub)
 
         elif category == "compressed_linear":
@@ -314,6 +339,8 @@ def load_surgical_checkpoint(
                 except Exception:
                     new_sub = cls(in_features=in_f, out_features=out_f)
 
+            if target_device is not None:
+                new_sub = new_sub.to(target_device)
             replace_module(base_model, module_path, new_sub)
 
     # 2. Load Weights into reconstructed model
@@ -323,17 +350,17 @@ def load_surgical_checkpoint(
     if st_file.exists():
         try:
             from safetensors.torch import load_file
-            state_dict = load_file(str(st_file), device=str(map_location or "cpu"))
+            state_dict = load_file(str(st_file), device=str(target_device or "cpu"))
         except Exception:
-            state_dict = torch.load(str(pt_file), map_location=map_location, weights_only=True)
+            state_dict = torch.load(str(pt_file), map_location=target_device, weights_only=True)
     elif pt_file.exists():
-        state_dict = torch.load(str(pt_file), map_location=map_location, weights_only=True)
+        state_dict = torch.load(str(pt_file), map_location=target_device, weights_only=True)
     else:
         raise FileNotFoundError(f"No valid state dict found in {load_dir}")
 
     base_model.load_state_dict(state_dict, strict=strict)
-    if map_location is not None:
-        base_model.to(device=map_location)
+    if target_device is not None:
+        base_model.to(device=target_device)
     base_model.eval()
 
     logger.info("Successfully loaded surgical model checkpoint from %s", path)
