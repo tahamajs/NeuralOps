@@ -1348,6 +1348,64 @@ def fused_int4_lut_dequant_matmul_pytorch(
     return out
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _int4_lut_dequant_gemm_kernel(
+        X_ptr, QW_ptr, LUT_ptr, Scales_ptr, Bias_ptr, Out_ptr,
+        M, N, K,
+        stride_xm, stride_xk,
+        stride_wn, stride_wk,
+        stride_om, stride_on,
+        HAS_BIAS: tl.constexpr,
+        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        # Accumulator in FP32
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        # Loop over K tiles
+        num_k_blocks = tl.cdiv(K, BLOCK_K)
+        for k_blk in range(num_k_blocks):
+            k_indices = k_blk * BLOCK_K + offs_k
+
+            # Load X tile [BLOCK_M, BLOCK_K]
+            x_ptrs = X_ptr + offs_m[:, None] * stride_xm + k_indices[None, :] * stride_xk
+            x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M) & (k_indices[None, :] < K), other=0.0)
+
+            # Load QW tile [BLOCK_N, BLOCK_K]
+            qw_ptrs = QW_ptr + offs_n[:, None] * stride_wn + k_indices[None, :] * stride_wk
+            qw_tile = tl.load(qw_ptrs, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=0)
+
+            # Map through LUT: lut has 16 elements
+            # Dequantize in SRAM: w = scales * lut[qw]
+            w_dequant = tl.zeros((BLOCK_N, BLOCK_K), dtype=tl.float32)
+            for lut_idx in range(16):
+                lut_val = tl.load(LUT_ptr + lut_idx)
+                w_dequant = tl.where(qw_tile == lut_idx, lut_val, w_dequant)
+
+            # Apply per-row scales if present
+            s_ptrs = Scales_ptr + offs_n[:, None]
+            s_tile = tl.load(s_ptrs, mask=offs_n[:, None] < N, other=1.0)
+            w_tile = w_dequant * s_tile
+
+            # GEMM dot: X [BLOCK_M, BLOCK_K] @ W^T [BLOCK_K, BLOCK_N]
+            acc += tl.dot(x_tile.to(tl.float32), tl.trans(w_tile.to(tl.float32)))
+
+        if HAS_BIAS:
+            b_ptrs = Bias_ptr + offs_n
+            b = tl.load(b_ptrs, mask=offs_n < N, other=0.0)
+            acc += b[None, :]
+
+        out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
+        tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < M) & (offs_n[None, :] < N))
+
+
 def fused_int4_lut_dequant_matmul_triton(
     x: torch.Tensor,
     qweight: torch.Tensor,
@@ -1356,11 +1414,36 @@ def fused_int4_lut_dequant_matmul_triton(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused INT4 LUT dequantization + matmul in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
 
-    if HAS_TRITON and x.is_cuda:
+    if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK:
         try:
-            return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
+            orig_shape = x.shape
+            K = x.shape[-1]
+            x_2d = x.contiguous().view(-1, K)
+            M = x_2d.shape[0]
+            N = qweight.shape[0]
+
+            out = torch.empty((M, N), device=x.device, dtype=x.dtype)
+            BLOCK_M = 32
+            BLOCK_N = 32
+            BLOCK_K = 64
+            grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N, BLOCK_N))
+
+            has_bias = bias is not None
+            bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
+            scales_2d = scales.view(N, 1).contiguous() if scales.dim() == 1 else scales.contiguous()
+
+            _int4_lut_dequant_gemm_kernel[grid](
+                x_2d, qweight.contiguous(), lut.contiguous(), scales_2d, bias_ptr, out,
+                M, N, K,
+                x_2d.stride(0), x_2d.stride(1),
+                qweight.stride(0), qweight.stride(1),
+                out.stride(0), out.stride(1),
+                HAS_BIAS=has_bias,
+                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
+            )
+            return out.view(*orig_shape[:-1], N)
         except Exception:
             pass
     return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)

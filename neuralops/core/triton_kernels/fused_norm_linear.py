@@ -176,10 +176,87 @@ class FusedRMSNormLinear(nn.Module):
         return self.linear(self.norm(x))
 
 
+from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
+
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _fused_rmsnorm_silu_gate_fwd_kernel(
+        X_ptr, Gate_ptr, W_ptr, Out_ptr,
+        N, D,
+        stride_xn, stride_xd,
+        stride_gn, stride_gd,
+        stride_on, stride_od,
+        eps,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        offs_d = tl.arange(0, BLOCK_D)
+
+        x_ptrs = X_ptr + pid * stride_xn + offs_d * stride_xd
+        g_ptrs = Gate_ptr + pid * stride_gn + offs_d * stride_gd
+        w_ptrs = W_ptr + offs_d
+
+        x = tl.load(x_ptrs, mask=offs_d < D, other=0.0).to(tl.float32)
+        gate = tl.load(g_ptrs, mask=offs_d < D, other=0.0).to(tl.float32)
+        w = tl.load(w_ptrs, mask=offs_d < D, other=1.0).to(tl.float32)
+
+        # RMSNorm: rstd = 1 / sqrt(mean(x^2) + eps)
+        var = tl.sum(x * x, 0) / tl.cast(D, tl.float32)
+        rstd = 1.0 / tl.sqrt(var + eps)
+        x_norm = x * rstd * w
+
+        # SiLU: gate * sigmoid(gate)
+        sig = 1.0 / (1.0 + tl.exp(-gate))
+        gate_act = gate * sig
+
+        out = x_norm * gate_act
+
+        out_ptrs = Out_ptr + pid * stride_on + offs_d * stride_od
+        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=offs_d < D)
+
+
+def fused_rmsnorm_gate_triton(
+    x: torch.Tensor,
+    gate: torch.Tensor,
+    norm_weight: torch.Tensor,
+    eps: float = 1e-6,
+    activation: str = "silu",
+) -> torch.Tensor:
+    """Hardware-accelerated fused RMSNorm + SiLU gating via Triton kernel."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK and activation == "silu":
+        try:
+            orig_shape = x.shape
+            D = orig_shape[-1]
+            x_2d = x.contiguous().view(-1, D)
+            gate_2d = gate.contiguous().view(-1, D)
+            N = x_2d.shape[0]
+
+            out = torch.empty((N, D), device=x.device, dtype=x.dtype)
+            BLOCK_D = triton.next_power_of_2(D)
+            grid = (N,)
+
+            _fused_rmsnorm_silu_gate_fwd_kernel[grid](
+                x_2d, gate_2d, norm_weight.contiguous(), out,
+                N, D,
+                x_2d.stride(0), x_2d.stride(1),
+                gate_2d.stride(0), gate_2d.stride(1),
+                out.stride(0), out.stride(1),
+                eps,
+                BLOCK_D=BLOCK_D,
+            )
+            return out.view(*orig_shape)
+        except Exception:
+            pass
+    return fused_rmsnorm_gate(x, gate, norm_weight, eps=eps, activation=activation)
+
+
 __all__ = [
     "FusedRMSNormLinear",
     "fused_norm_linear",
     "fused_norm_linear_pytorch",
     "fused_rmsnorm_linear",
     "fused_rmsnorm_gate",
+    "fused_rmsnorm_gate_triton",
 ]
