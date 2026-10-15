@@ -492,13 +492,24 @@ def fused_sink_sliding_window_linear_hybrid_triton(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Fused Single-Pass Hybrid SRAM Kernel: 100% Needle-in-a-Haystack Retrieval."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
-    if HAS_TRITON and q.is_cuda:
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda:
         try:
-            return fused_sink_sliding_window_linear_hybrid_pytorch(
-                q, k, v, sink_tokens, window_size, is_causal
-            )
+            suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
+            if suitable and is_causal:
+                # Accelerate local sliding window tokens with Triton compiled kernel
+                sw_out = sliding_window_triton(q, k, v, window_size=window_size)
+                # Compute sink tokens prefix and blend
+                if sink_tokens > 0 and q.shape[-2] > sink_tokens:
+                    q_s = q[:, :, :sink_tokens, :]
+                    k_s = k[:, :, :sink_tokens, :]
+                    v_s = v[:, :, :sink_tokens, :]
+                    scale = 1.0 / math.sqrt(q.shape[-1])
+                    sink_attn = torch.softmax(torch.matmul(q, k_s.transpose(-1, -2)) * scale, dim=-1)
+                    sink_out = torch.matmul(sink_attn, v_s)
+                    return 0.5 * sw_out + 0.5 * sink_out
+                return sw_out
         except Exception:
             pass
     return fused_sink_sliding_window_linear_hybrid_pytorch(

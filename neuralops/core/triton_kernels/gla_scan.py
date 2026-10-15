@@ -743,11 +743,18 @@ def fused_regla_refined_gate_scan_triton(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Fused ReGLA refined gated linear scan in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
-    if HAS_TRITON and q.is_cuda:
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda:
         try:
-            return fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal)
+            D = q.shape[-1]
+            suitable, _ = check_triton_suitability(q, "gla_scan", head_dim=D, seq_len=q.shape[-2])
+            if suitable and D <= 64 and is_causal:
+                # Convert gate to log decay (<= 0)
+                log_decay = -F.softplus(gate)
+                if log_decay.shape != q.shape[:-1]:
+                    log_decay = log_decay.expand(q.shape[:-1]).contiguous()
+                return gla_scan_triton(q, k, v, log_decay)
         except Exception:
             pass
     return fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal)

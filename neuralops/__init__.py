@@ -203,6 +203,8 @@ _LAZY_EXPORTS = {
     "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
     "BaseAttention": ("neuralops.core.base", "BaseAttention"),
     "BaseCompressor": ("neuralops.core.base", "BaseCompressor"),
+    "ComposableAttention": ("neuralops.core.composable", "ComposableAttention"),
+    "compose_attention": ("neuralops.core.composable", "compose_attention"),
     "BaseTrainer": ("neuralops.trainer.base_trainer", "BaseTrainer"),
     "BenchmarkDatasetInfo": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetInfo"),
     "BenchmarkDatasetRegistry": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetRegistry"),
@@ -430,6 +432,8 @@ __all__ = [
     "AutoNeuralOpsForCausalLM",
     "AutoNeuralOpsForSequenceClassification",
     "merge_for_inference",
+    "ComposableAttention",
+    "compose_attention",
 ] + sorted(list(_LAZY_EXPORTS.keys()))
 
 

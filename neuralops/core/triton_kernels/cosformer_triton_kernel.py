@@ -184,6 +184,19 @@ class _CosformerAutograd(torch.autograd.Function):
     def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool, eps: float):
         ctx.is_causal = is_causal
         ctx.eps = eps
+        from neuralops.core.triton_kernels._types import check_triton_suitability
+        suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2])
+        if suitable and is_causal:
+            try:
+                B, H, N, D = q.shape
+                m = torch.arange(N, device=q.device, dtype=torch.float32) * (3.141592653589793 / (2.0 * N))
+                cos_m = torch.cos(m).view(1, 1, N, 1).to(q.dtype)
+                sin_m = torch.sin(m).view(1, 1, N, 1).to(q.dtype)
+                out = cosformer_global_triton(q * cos_m, q * sin_m, k * cos_m, k * sin_m, v, is_decoder=is_causal)
+                ctx.save_for_backward(q, k, v)
+                return out
+            except Exception:
+                pass
         out = cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
         ctx.save_for_backward(q, k, v)
         return out
@@ -208,9 +221,20 @@ def cosformer_triton_fwd(
     eps: float = 1e-4,
 ) -> torch.Tensor:
     """Dispatches cosformer forward pass with full autograd backward support."""
-    if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
-        return _CosformerAutograd.apply(q, k, v, is_causal, eps)
-    return cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
+    from neuralops.core.triton_kernels._types import check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2])
+    if not (torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad):
+        if suitable and is_causal:
+            try:
+                B, H, N, D = q.shape
+                m = torch.arange(N, device=q.device, dtype=torch.float32) * (3.141592653589793 / (2.0 * N))
+                cos_m = torch.cos(m).view(1, 1, N, 1).to(q.dtype)
+                sin_m = torch.sin(m).view(1, 1, N, 1).to(q.dtype)
+                return cosformer_global_triton(q * cos_m, q * sin_m, k * cos_m, k * sin_m, v, is_decoder=is_causal)
+            except Exception:
+                pass
+        return cosformer_pytorch_fwd(q, k, v, is_causal=is_causal, eps=eps)
+    return _CosformerAutograd.apply(q, k, v, is_causal, eps)
 
 
 __all__ = [
