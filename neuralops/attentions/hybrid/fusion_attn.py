@@ -718,6 +718,29 @@ class FUSIONATTN(BaseAttention):
         # --- Top-k block selection ---
         _, top_idx = torch.topk(gate_scores, top_k, dim=-1)  # (B, H, nb_q, top_k)
 
+        # Hardware-accelerated Triton Block-Sparse Attention
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and q.is_cuda
+            and not output_attentions
+            and head_mask is None
+            and D in (16, 32, 64, 128)
+            and bs in (16, 32, 64, 128)
+        ):
+            try:
+                from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
+                block_mask = torch.zeros((B, H, num_blocks, num_blocks), device=device, dtype=torch.bool)
+                block_mask.scatter_(-1, top_idx, True)
+                out_triton = triton_block_sparse_attention(
+                    q_pad, k_pad, v_pad, block_mask=block_mask, block_size=bs, is_causal=is_causal
+                )
+                context = out_triton[:, :, :N, :].transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                return context, None
+            except Exception:
+                pass
+
         # --- Gather K / V / valid ---
         top_idx_exp = top_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)
         k_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)

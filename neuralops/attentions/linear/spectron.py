@@ -186,7 +186,17 @@ class LowRankSparseLinear(nn.Module):
         up_w = self.up.weight.to(x.dtype)
         up_b = self.up.bias.to(x.dtype) if self.up.bias is not None else None
 
-        x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
+        if x.is_cuda and down_w.shape[0] <= 128:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fwd as fused_low_rank_fwd
+                # F.linear(F.linear(x, down_w), up_w, up_b) is x @ down_w.T @ up_w.T + up_b
+                # fused_low_rank_fwd computes x @ V.T @ U.T + bias where V is down_w and U is up_w
+                x_lr = fused_low_rank_fwd(x, up_w, down_w, bias=up_b)
+            except Exception:
+                x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
+        else:
+            x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
+
         x_sp = F.linear(x, self.sparse_weight.to(x.dtype))
         out = x_lr + x_sp
         if self.bias is not None:
