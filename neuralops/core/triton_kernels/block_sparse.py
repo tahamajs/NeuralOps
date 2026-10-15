@@ -95,7 +95,7 @@ def fused_moba_block_router_combine_pytorch(
         block_scores[:, :, :, 0] = block_scores[:, :, :, 0] + 1e4
     else:
         causal_block = torch.triu(
-            torch.full((nb, nb), float("-inf"), device=Qb.device, dtype=torch.float32),
+            torch.full((nb, nb), -1e4, device=Qb.device, dtype=torch.float32),
             diagonal=1,
         )
         block_scores = block_scores + causal_block.unsqueeze(0).unsqueeze(0)
