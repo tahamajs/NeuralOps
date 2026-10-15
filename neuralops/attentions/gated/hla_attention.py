@@ -547,7 +547,8 @@ class HLAAttention(BaseAttention):
             return y.to(q.dtype), (S_curr, Z_curr)
 
         # ---- Accelerated Triton Path ----
-        if initial_state is None and q_f.is_cuda and not reverse:
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+        if not FORCE_PYTORCH_FALLBACK and initial_state is None and q_f.is_cuda and not reverse:
             try:
                 from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
                 # decay is (1, H, 1, 1), expand to (B, H, L)
@@ -555,7 +556,9 @@ class HLAAttention(BaseAttention):
                 y_triton = fused_svd_linear_chunk_scan_triton(
                     q, k, v, decay=dec_expanded, chunk_size=self.chunk_size, eps=1e-5
                 )
-                return y_triton.to(q.dtype), (None, None)
+                # Ensure parity with recurrent normalizer
+                if y_triton is not None and not torch.isnan(y_triton).any():
+                    return y_triton.to(q.dtype), (None, None)
             except Exception:
                 pass
 
