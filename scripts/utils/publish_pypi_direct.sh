@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NeuralOps Direct PyPI Release Script (v1.3.6)
+# NeuralOps Direct PyPI Release Script (v1.3.7)
 # ==============================================================================
 set -euo pipefail
 
 echo "======================================================================"
-echo "  🚀 NEURALOPS PYPI DIRECT RELEASE SCRIPT (v1.3.6)"
+echo "  🚀 NEURALOPS PYPI DIRECT RELEASE SCRIPT (v1.3.7)"
 echo "======================================================================"
 
 PYTHON_BIN="/mnt/d/venv/bin/python3"
