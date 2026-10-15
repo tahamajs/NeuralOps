@@ -1051,6 +1051,59 @@ def fused_entmax_bisect_pytorch(
     return (p / p.sum(dim=dim, keepdim=True).clamp(min=1e-9)).to(dtype)
 
 
+if HAS_TRITON:
+    @triton.jit
+    def _entmax15_bisect_fwd_kernel(
+        Scores_ptr,
+        Out_ptr,
+        stride_sb,
+        stride_sn,
+        stride_ob,
+        stride_on,
+        N: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+        N_ITER: tl.constexpr,
+    ):
+        """Compiled Triton kernel for row-wise exact alpha=1.5 entmax via register bisection."""
+        pid = tl.program_id(0)
+        row_s = Scores_ptr + pid * stride_sb
+        row_o = Out_ptr + pid * stride_ob
+
+        offs = tl.arange(0, BLOCK_SIZE)
+        mask = offs < N
+
+        x = tl.load(row_s + offs * stride_sn, mask=mask, other=-10000.0).to(tl.float32)
+
+        # 1. Row max
+        m = tl.max(tl.where(mask, x, -10000.0), axis=0)
+
+        # 2. Bisection bounds: low = m - 1.0, high = m
+        low = m - 1.0
+        high = m
+
+        for _ in range(N_ITER):
+            mid = 0.5 * (low + high)
+            # p = clamp((x - mid) * 0.5, min=0.0) ** 2.0
+            diff = (x - mid) * 0.5
+            p = tl.where(diff > 0.0, diff * diff, 0.0)
+            p = tl.where(mask, p, 0.0)
+            total = tl.sum(p, axis=0)
+            if total > 1.0:
+                low = mid
+            else:
+                high = mid
+
+        final_mid = 0.5 * (low + high)
+        diff_final = (x - final_mid) * 0.5
+        p_final = tl.where(diff_final > 0.0, diff_final * diff_final, 0.0)
+        p_final = tl.where(mask, p_final, 0.0)
+        denom = tl.sum(p_final, axis=0)
+        denom_safe = tl.maximum(denom, 1e-9)
+        out_val = p_final / denom_safe
+
+        tl.store(row_o + offs * stride_on, out_val.to(Out_ptr.dtype.element_ty), mask=mask)
+
+
 def fused_entmax_bisect_triton(
     scores: torch.Tensor,
     alpha: float = 1.5,
@@ -1058,11 +1111,38 @@ def fused_entmax_bisect_triton(
     dim: int = -1,
     n_iter: int = 15,
 ) -> torch.Tensor:
-    """Dispatches accelerated alpha-entmax bisection with hardware safety checks."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
-    if HAS_TRITON and scores.is_cuda:
+    """Dispatches genuine compiled Triton alpha=1.5 entmax bisection kernel."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if (
+        HAS_TRITON
+        and not FORCE_PYTORCH_FALLBACK
+        and scores.is_cuda
+        and abs(alpha - 1.5) < 1e-3
+        and valid_mask is None
+        and dim in (-1, scores.ndim - 1)
+        and scores.shape[-1] <= 4096
+    ):
         try:
-            return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
+            orig_shape = scores.shape
+            N = orig_shape[-1]
+            scores_2d = scores.contiguous().view(-1, N)
+            num_rows = scores_2d.shape[0]
+            out = torch.empty_like(scores_2d)
+
+            BLOCK_SIZE = triton.next_power_of_2(N)
+            grid = (num_rows,)
+            _entmax15_bisect_fwd_kernel[grid](
+                scores_2d,
+                out,
+                scores_2d.stride(0),
+                scores_2d.stride(1),
+                out.stride(0),
+                out.stride(1),
+                N=N,
+                BLOCK_SIZE=BLOCK_SIZE,
+                N_ITER=n_iter,
+            )
+            return out.view(orig_shape)
         except Exception:
             pass
     return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
