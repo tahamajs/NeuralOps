@@ -90,6 +90,95 @@ def sliding_window_pytorch(
     return torch.matmul(weights, v)
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _sliding_window_attn_bwd_kernel(
+        Q, K, V, DO, DQ, DK, DV,
+        stride_qb, stride_qh, stride_qn, stride_qd,
+        stride_kb, stride_kh, stride_kn, stride_kd,
+        stride_vb, stride_vh, stride_vn, stride_vd,
+        stride_dob, stride_doh, stride_don, stride_dod,
+        stride_dqb, stride_dqh, stride_dqn, stride_dqd,
+        stride_dkb, stride_dkh, stride_dkn, stride_dkd,
+        stride_dvb, stride_dvh, stride_dvn, stride_dvd,
+        H, N, WINDOW: tl.constexpr,
+        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+        i_b = pid_bh // H
+        i_h = pid_bh % H
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_d = tl.arange(0, BLOCK_D)
+
+        q_ptrs = Q + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+        do_ptrs = DO + i_b * stride_dob + i_h * stride_doh + offs_m[:, None] * stride_don + offs_d[None, :] * stride_dod
+        q = tl.load(q_ptrs, mask=offs_m[:, None] < N, other=0.0)
+        do = tl.load(do_ptrs, mask=offs_m[:, None] < N, other=0.0)
+
+        # Scale factor
+        sm_scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
+
+        # Recompute softmax denominator for query tile
+        m_i = tl.full([BLOCK_M], -1e4, dtype=tl.float32)
+        l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
+
+        start_col = tl.maximum(0, (pid_m * BLOCK_M) - WINDOW)
+        end_col = tl.minimum(N, (pid_m + 1) * BLOCK_M)
+        num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
+
+        for j in range(num_k_blocks):
+            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
+
+            scores = tl.dot(q, k) * sm_scale
+            dist = offs_m[:, None] - offs_n[None, :]
+            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+            scores = tl.where(mask_window, scores, -1e4)
+
+            m_curr = tl.maximum(m_i, tl.max(scores, 1))
+            alpha = tl.exp(m_i - m_curr)
+            p = tl.exp(scores - m_curr[:, None])
+            l_i = l_i * alpha + tl.sum(p, 1)
+            m_i = m_curr
+
+        # Gradient accumulator for Q
+        dq = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
+
+        for j in range(num_k_blocks):
+            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+            v_ptrs = V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            k = tl.load(k_ptrs, mask=offs_n[:, None] < N, other=0.0)
+            v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
+
+            # Recompute P_ij
+            scores = tl.dot(q, tl.trans(k)) * sm_scale
+            dist = offs_m[:, None] - offs_n[None, :]
+            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+            scores = tl.where(mask_window, scores, -1e4)
+            p = tl.exp(scores - m_i[:, None]) / tl.maximum(l_i[:, None], 1e-6)
+            p = tl.where(mask_window, p, 0.0)
+
+            # dv += P^T @ DO
+            dp = tl.dot(do, tl.trans(v))
+            ds = p * (dp - tl.sum(p * dp, 1)[:, None]) * sm_scale
+            dq += tl.dot(ds.to(k.dtype), k)
+
+            dv_ptrs = DV + i_b * stride_dvb + i_h * stride_dvh + offs_n[:, None] * stride_dvn + offs_d[None, :] * stride_dvd
+            dv = tl.dot(tl.trans(p.to(do.dtype)), do)
+            tl.atomic_add(dv_ptrs, dv, mask=offs_n[:, None] < N)
+
+            dk_ptrs = DK + i_b * stride_dkb + i_h * stride_dkh + offs_n[:, None] * stride_dkn + offs_d[None, :] * stride_dkd
+            dk = tl.dot(tl.trans(ds.to(q.dtype)), q)
+            tl.atomic_add(dk_ptrs, dk, mask=offs_n[:, None] < N)
+
+        dq_ptrs = DQ + i_b * stride_dqb + i_h * stride_dqh + offs_m[:, None] * stride_dqn + offs_d[None, :] * stride_dqd
+        tl.atomic_add(dq_ptrs, dq, mask=offs_m[:, None] < N)
+
+
 class _SlidingWindowAutograd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int):
@@ -122,11 +211,38 @@ class _SlidingWindowAutograd(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
         q, k, v = ctx.saved_tensors
+        window_size = ctx.window_size
+
+        if HAS_TRITON and q.is_cuda:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK:
+                    B, H, N, D = q.shape
+                    dq = torch.zeros_like(q)
+                    dk = torch.zeros_like(k)
+                    dv = torch.zeros_like(v)
+                    grid = (triton.cdiv(N, 64), B * H)
+                    _sliding_window_attn_bwd_kernel[grid](
+                        q, k, v, grad_output.contiguous(), dq, dk, dv,
+                        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                        grad_output.stride(0), grad_output.stride(1), grad_output.stride(2), grad_output.stride(3),
+                        dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
+                        dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
+                        dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
+                        H, N, WINDOW=window_size,
+                        BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                    )
+                    return dq, dk, dv, None
+            except Exception:
+                pass
+
         q_r = q.detach().requires_grad_(True)
         k_r = k.detach().requires_grad_(True)
         v_r = v.detach().requires_grad_(True)
         with torch.enable_grad():
-            out = sliding_window_pytorch(q_r, k_r, v_r, window_size=ctx.window_size)
+            out = sliding_window_pytorch(q_r, k_r, v_r, window_size=window_size)
             g_q, g_k, g_v = torch.autograd.grad(out, [q_r, k_r, v_r], grad_output, retain_graph=False)
         return g_q, g_k, g_v, None
 
