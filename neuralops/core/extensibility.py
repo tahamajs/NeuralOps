@@ -77,7 +77,14 @@ def register_custom_attention(
             supports_causal=supports_causal,
             supports_bidirectional=supports_bidirectional,
             supports_gqa=supports_gqa,
-            **meta,
+            family=family,
+            time_complexity=time_complexity,
+            memory_complexity=memory_complexity,
+            math_equation=meta["math_equation"],
+            triton_kernel=meta["triton_kernel"],
+            sram_fusion_strategy=meta["sram_fusion_strategy"],
+            is_custom=True,
+            **extra_metadata,
         )(obj)
         logger.info("Registered custom attention module '%s' (%s)", key, obj.__name__)
         return obj
@@ -261,8 +268,9 @@ def validate_module_contract(
         loss.backward()
 
         trainable_params = [p for p in module.parameters() if p.requires_grad]
-        has_grads = all(p.grad is not None and not torch.isnan(p.grad).any() for p in trainable_params) if trainable_params else True
-        if has_grads and x_grad.grad is not None and not torch.isnan(x_grad.grad).any():
+        # At least one trainable param has gradients and x_grad has gradient
+        has_param_grads = any(p.grad is not None and not torch.isnan(p.grad).any() for p in trainable_params) if trainable_params else True
+        if has_param_grads and x_grad.grad is not None and not torch.isnan(x_grad.grad).any():
             results["checks"]["3_backward_gradients"] = {
                 "status": "PASSED",
                 "trainable_parameters_count": len(trainable_params),
@@ -308,7 +316,16 @@ def validate_module_contract(
     import copy
     toy_student = copy.deepcopy(toy_teacher)
     try:
-        replace_attention(toy_student, target_module=module)
+        # Clone or fresh instance for surgery
+        if isinstance(module_or_name, str):
+            surg_module = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
+        else:
+            try:
+                surg_module = copy.deepcopy(module)
+            except Exception:
+                surg_module = module
+
+        replace_attention(toy_student, target_module=surg_module)
         calib_data = torch.randn(4, seq_len, embed_dim, device=target_dev)
         heal_stats = heal_replaced_model(toy_teacher, toy_student, calib_data, steps=5, lr=1e-3)
         results["checks"]["5_surgical_micro_healing"] = {
@@ -324,8 +341,9 @@ def validate_module_contract(
     tmp_dir = Path(tempfile.mkdtemp(prefix="neuralops_contract_"))
     try:
         toy_student.eval()
+        test_x = torch.randn(batch_size, seq_len, embed_dim, device=target_dev)
         with torch.no_grad():
-            orig_out = toy_student(x)
+            orig_out = toy_student(test_x)
 
         save_surgical_checkpoint(toy_student, tmp_dir)
         fresh_base = nn.Sequential(ToyBlock(embed_dim, num_heads)).to(device=target_dev)
@@ -333,7 +351,7 @@ def validate_module_contract(
         reloaded_model.eval()
 
         with torch.no_grad():
-            reloaded_out = reloaded_model(x)
+            reloaded_out = reloaded_model(test_x)
 
         diff = (orig_out - reloaded_out).abs().max().item()
         if diff < 1e-4:

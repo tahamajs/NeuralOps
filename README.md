@@ -519,6 +519,61 @@ latex_table = neuralops.export_benchmark_table(records, format="latex")
 print(latex_table)
 ```
 
+### Recipe 14: 🔌 Extending NeuralOps: Custom Attentions, Compressors & 4-Stage Algebraic Stages
+Researchers and developers who fork or import NeuralOps can effortlessly register custom attention mechanisms, compressors, or algebraic stages ($\mathcal{P} \to \phi \to \mathcal{M} \to \mathcal{E}$) in under 10 lines of Python, with automatic recognition across every framework subsystem (Inspector, Roofline, Surgery, Micro-Healing, Serialization, and Benchmark Tables):
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import neuralops
+
+# 1. Register a custom attention mechanism with rich metadata
+@neuralops.register_custom_attention(
+    "my_research_attn",
+    family="linear-scan",
+    time_complexity="O(T·d²)",
+    memory_complexity="O(d²) state",
+    math_equation=r"S_t = S_{t-1} + \phi(k_t) \otimes v_t  \mid  o_t = \phi(q_t) \cdot S_t",
+    triton_kernel="my_kernel.py",
+)
+class MyResearchAttention(nn.Module):
+    def __init__(self, embed_dim: int = 768, num_heads: int = 12, **kwargs):
+        super().__init__()
+        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=False)
+
+    def forward(self, hidden_states: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        q, k, v = self.q_proj(hidden_states), self.k_proj(hidden_states), self.v_proj(hidden_states)
+        scores = torch.matmul(F.elu(q) + 1.0, (F.elu(k) + 1.0).transpose(-1, -2))
+        return self.out_proj(torch.matmul(scores, v))
+
+# 2. Automated 6-Point Contract Diagnostic Validation
+contract_report = neuralops.validate_module_contract("my_research_attn")
+print("Contract status:", contract_report["all_passed"])  # True (6/6 checks passed)
+
+# 3. Register a custom algebraic kernel map into ComposableAttention
+@neuralops.register_composable_kernel("mish_feature_map")
+def mish_feature_map(x: torch.Tensor) -> torch.Tensor:
+    return F.mish(x.float())
+
+# 4. Synthesize declarative ComposableAttention with custom kernel
+custom_layer = neuralops.compose_attention(
+    projection="svd(rank=64)",
+    kernel_map="mish_feature_map",
+    mask="causal",
+    engine="sdpa",
+    embed_dim=768,
+    num_heads=12,
+)
+
+# 5. CLI commands for scaffolding and validation
+# $ neuralops scaffold my_new_attn --category attention --family linear-scan
+# $ neuralops validate my_research_attn
+```
+
 ---
 
 ## 🏗️ Architecture Overview
