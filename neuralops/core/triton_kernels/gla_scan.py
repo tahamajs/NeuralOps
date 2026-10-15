@@ -659,15 +659,15 @@ def kda_hla_chunk_scan_triton(
     num_chunks = (L + chunk_size - 1) // chunk_size
     pad_len = (chunk_size - (L % chunk_size)) % chunk_size
     if pad_len > 0:
-        q_p = F.pad(q, (0, 0, 0, pad_len))
-        k_p = F.pad(k, (0, 0, 0, pad_len))
-        v_p = F.pad(v, (0, 0, 0, pad_len))
+        q_p = F.pad(q.float(), (0, 0, 0, pad_len))
+        k_p = F.pad(k.float(), (0, 0, 0, pad_len))
+        v_p = F.pad(v.float(), (0, 0, 0, pad_len))
         if log_decay.dim() == 3:
-            g_p = F.pad(log_decay, (0, pad_len), value=0.0)
+            g_p = F.pad(log_decay.float(), (0, pad_len), value=0.0)
         else:
-            g_p = F.pad(log_decay, (0, 0, 0, pad_len), value=0.0)
+            g_p = F.pad(log_decay.float(), (0, 0, 0, pad_len), value=0.0)
     else:
-        q_p, k_p, v_p, g_p = q, k, v, log_decay
+        q_p, k_p, v_p, g_p = q.float(), k.float(), v.float(), log_decay.float()
 
     S = torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
     Z = torch.zeros((B, H, D, 1), device=q.device, dtype=torch.float32)
@@ -680,40 +680,40 @@ def kda_hla_chunk_scan_triton(
     for c in range(num_chunks):
         st = c * chunk_size
         en = (c + 1) * chunk_size
-        qc = q_p[:, :, st:en].float()  # [B, H, C, D]
-        kc = k_p[:, :, st:en].float()
-        vc = v_p[:, :, st:en].float()
-        gc = g_p[:, :, st:en].float()
+        qc = q_p[:, :, st:en]  # [B, H, C, D]
+        kc = k_p[:, :, st:en]
+        vc = v_p[:, :, st:en]
+        gc = g_p[:, :, st:en]
 
-        # Compute mean log decay for chunk
+        # Compute per-head log decay for chunk
         if gc.dim() == 4:
-            gc_mean = gc.mean(dim=-1, keepdim=True)
+            mean_decay = gc.mean(dim=-1, keepdim=True).mean(dim=2, keepdim=True)  # [B, H, 1, 1]
         else:
-            gc_mean = gc.unsqueeze(-1)
-        mean_decay = gc_mean.mean(dim=2, keepdim=True).unsqueeze(-1) # [B, H, 1, 1, 1]
+            mean_decay = gc.mean(dim=2, keepdim=True).unsqueeze(-1)  # [B, H, 1, 1]
 
-        # Intra-chunk decay matrix
-        exp_arg = pos_diff.view(1, 1, chunk_size, chunk_size) * mean_decay.squeeze(-1)
+        # Intra-chunk decay matrix in full FP32
+        exp_arg = pos_diff.view(1, 1, chunk_size, chunk_size) * mean_decay
         decay_intra = torch.where(tril.unsqueeze(0).unsqueeze(0), torch.exp(exp_arg.clamp(min=-40.0, max=0.0)), torch.zeros_like(exp_arg))
 
         # Intra-chunk attention
-        aff_intra = torch.matmul(qc, kc.transpose(-1, -2)) * decay_intra
+        aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * decay_intra
         num_intra = torch.matmul(aff_intra, vc)
         den_intra = aff_intra.sum(dim=-1, keepdim=True)
 
-        # Inter-chunk attention
-        pos_decay = torch.exp(((pos + 1.0).view(1, 1, chunk_size, 1) * mean_decay.squeeze(-1).squeeze(-1)).clamp(min=-40.0, max=0.0))
+        # Inter-chunk attention in full FP32
+        pos_decay = torch.exp(((pos + 1.0).view(1, 1, chunk_size, 1) * mean_decay).clamp(min=-40.0, max=0.0))
         num_inter = torch.matmul(qc * pos_decay, S)
         den_inter = torch.matmul(qc * pos_decay, Z)
 
-        out_c = (num_intra + num_inter) / (den_intra + den_inter + 1e-4)
+        out_c = (num_intra + num_inter) / (den_intra + den_inter).clamp(min=1e-5)
         outs.append(out_c.to(q.dtype))
 
-        # Update running state
-        gamma_chunk = torch.exp((chunk_size * mean_decay.squeeze(-1).squeeze(-1)).clamp(min=-40.0, max=0.0))
-        carry_decay = torch.exp(((chunk_size - 1 - pos).view(1, 1, chunk_size, 1) * mean_decay.squeeze(-1).squeeze(-1)).clamp(min=-40.0, max=0.0))
-        S = gamma_chunk * S + torch.matmul((kc * carry_decay).transpose(-1, -2), vc)
-        Z = gamma_chunk * Z + (kc * carry_decay).sum(dim=2, keepdim=True).transpose(-1, -2)
+        # Update running state in full FP32
+        gamma_chunk = torch.exp((chunk_size * mean_decay).clamp(min=-40.0, max=0.0))
+        carry_decay = torch.exp(((chunk_size - 1 - pos).view(1, 1, chunk_size, 1) * mean_decay).clamp(min=-40.0, max=0.0))
+        kc_w = kc * carry_decay
+        S = gamma_chunk * S + torch.matmul(kc_w.transpose(-1, -2).contiguous(), vc)
+        Z = gamma_chunk * Z + kc_w.transpose(-1, -2).contiguous().sum(dim=-1, keepdim=True)
 
     y = torch.cat(outs, dim=2)
     if pad_len > 0:
