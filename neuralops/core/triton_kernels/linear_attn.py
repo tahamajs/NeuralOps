@@ -686,7 +686,7 @@ if HAS_TRITON:
         EPS: tl.constexpr,
         HAS_DECAY: tl.constexpr,
     ):
-        """Fused Chunked SVD Linear Scan Kernel in GPU SRAM.
+        r"""Fused Chunked SVD Linear Scan Kernel in GPU SRAM.
         Maintains recurrent memory state S \in [D_K, D_V] and normalizer Z \in [D_K] in registers,
         applying intra-chunk and inter-chunk associative scan with per-token decay gating.
         Zero Python loops, zero intermediate allocations in HBM!

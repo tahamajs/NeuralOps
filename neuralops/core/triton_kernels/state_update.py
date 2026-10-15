@@ -512,7 +512,7 @@ def fused_recurrent_gdn_step(
     kv_state: torch.Tensor,
     scale: float | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Single-step recurrent Gated DeltaNet Householder update in O(1).
+    r"""Single-step recurrent Gated DeltaNet Householder update in O(1).
 
     Recurrence:
         v_pred = S_{t-1}^T @ k_t
@@ -556,7 +556,7 @@ def fused_recurrent_hgrn2_step(
     f_t: torch.Tensor,
     kv_state: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Single-step recurrent HGRN2 lower-bound gated update:
+    r"""Single-step recurrent HGRN2 lower-bound gated update:
     S_t = f_t * S_{t-1} + ((1 - f_t) * k_t) \otimes v_t
     o_t = S_t^T @ q_t
     """
