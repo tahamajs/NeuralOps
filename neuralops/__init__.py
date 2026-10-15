@@ -168,32 +168,36 @@ class _ModuleAliasFinder(MetaPathFinder):
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
-# Configure PyTorch CUDA Linear Algebra Backend Robustness on Pascal / legacy architectures
-try:
-    import torch
-    if torch.cuda.is_available():
-        cap = torch.cuda.get_device_capability()
-        # On Pascal / GTX 1060 (SM 6.1) cuSOLVER and MAGMA frequently encounter illegal memory access in SVD
-        if cap < (7, 0):
-            _orig_torch_linalg_svd = torch.linalg.svd
-            def _safe_pascal_linalg_svd(A, full_matrices=True, *, driver=None, out=None):
-                if isinstance(A, torch.Tensor) and A.is_cuda:
-                    dev = A.device
-                    A_cpu = A.detach().cpu().float()
-                    U_cpu, S_cpu, Vh_cpu = _orig_torch_linalg_svd(A_cpu, full_matrices=full_matrices)
-                    U = U_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                    S = S_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                    Vh = Vh_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
-                    if out is not None:
-                        out[0].copy_(U)
-                        out[1].copy_(S)
-                        out[2].copy_(Vh)
-                        return out
-                    return (U, S, Vh)
-                return _orig_torch_linalg_svd(A, full_matrices=full_matrices, driver=driver, out=out)
-            torch.linalg.svd = _safe_pascal_linalg_svd
-except Exception:
-    pass
+# Configure PyTorch CUDA Linear Algebra Backend Robustness on Pascal / legacy architectures lazily
+def _patch_pascal_svd_if_needed():
+    if "torch" in sys.modules:
+        try:
+            import torch
+            if torch.cuda.is_available():
+                cap = torch.cuda.get_device_capability()
+                if cap < (7, 0) and not getattr(torch.linalg, "_pascal_patched", False):
+                    _orig_torch_linalg_svd = torch.linalg.svd
+                    def _safe_pascal_linalg_svd(A, full_matrices=True, *, driver=None, out=None):
+                        if isinstance(A, torch.Tensor) and A.is_cuda:
+                            dev = A.device
+                            A_cpu = A.detach().cpu().float()
+                            U_cpu, S_cpu, Vh_cpu = _orig_torch_linalg_svd(A_cpu, full_matrices=full_matrices)
+                            U = U_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
+                            S = S_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
+                            Vh = Vh_cpu.to(device=dev, dtype=A.dtype if A.dtype != torch.float16 else torch.float32)
+                            if out is not None:
+                                out[0].copy_(U)
+                                out[1].copy_(S)
+                                out[2].copy_(Vh)
+                                return out
+                            return (U, S, Vh)
+                        return _orig_torch_linalg_svd(A, full_matrices=full_matrices, driver=driver, out=out)
+                    torch.linalg.svd = _safe_pascal_linalg_svd
+                    torch.linalg._pascal_patched = True
+        except Exception:
+            pass
+
+_patch_pascal_svd_if_needed()
 
 
 # Symbol to (module_path, attr_name) mapping for fast, lazy resolution
