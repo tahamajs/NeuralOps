@@ -565,19 +565,43 @@ if HAS_TRITON and tl is not None:
 
         tl.store(Out_ptr + offs, blended.to(Out_ptr.dtype.element_ty), mask=mask)
 
+    @triton.jit
+    def _fused_jamba_gate_bwd_kernel(
+        GradOut_ptr, Attn_ptr, SSM_ptr, Alpha_ptr,
+        GradAttn_ptr, GradSSM_ptr, GradAlpha_ptr, GradMoE_ptr,
+        total_elements,
+        HAS_MOE: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+    ):
+        """In-SRAM Fused Jamba Hybrid Gating Backward Kernel."""
+        pid = tl.program_id(0)
+        offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+        mask = offs < total_elements
 
-def fused_jamba_hybrid_ssm_attn_gate_triton(
-    attn_out: torch.Tensor,
-    ssm_out: torch.Tensor,
-    alpha_raw: torch.Tensor,
-    moe_out: torch.Tensor | None = None,
-) -> torch.Tensor:
-    """Fused Jamba hybrid SSM + attention gating in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+        dout = tl.load(GradOut_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        attn_val = tl.load(Attn_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        ssm_val = tl.load(SSM_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+        alpha_raw = tl.load(Alpha_ptr + offs, mask=mask, other=0.0).to(tl.float32)
 
-    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == ssm_out.shape:
-        try:
+        alpha = tl.sigmoid(alpha_raw)
+        d_attn = dout * (1.0 - alpha)
+        d_ssm = dout * alpha
+        # d_alpha_raw = dout * (ssm_val - attn_val) * alpha * (1 - alpha)
+        d_alpha = dout * (ssm_val - attn_val) * (alpha * (1.0 - alpha))
+
+        tl.store(GradAttn_ptr + offs, d_attn.to(GradAttn_ptr.dtype.element_ty), mask=mask)
+        tl.store(GradSSM_ptr + offs, d_ssm.to(GradSSM_ptr.dtype.element_ty), mask=mask)
+        tl.store(GradAlpha_ptr + offs, d_alpha.to(GradAlpha_ptr.dtype.element_ty), mask=mask)
+        if HAS_MOE:
+            tl.store(GradMoE_ptr + offs, dout.to(GradMoE_ptr.dtype.element_ty), mask=mask)
+
+
+    class _FusedJambaGateAutograd(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, attn_out, ssm_out, alpha_raw, moe_out):
             total_elements = attn_out.numel()
+            has_moe = moe_out is not None and moe_out.is_cuda
+
             alpha_expanded = alpha_raw.to(attn_out.dtype)
             if alpha_expanded.numel() != total_elements:
                 if alpha_expanded.dim() == 1 and attn_out.dim() == 4:
@@ -589,8 +613,9 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
                     alpha_expanded = alpha_expanded.view(1, 1, H, 1).expand(B, L, H, d).reshape(B, L, all_head_size).contiguous()
                 else:
                     alpha_expanded = alpha_expanded.expand_as(attn_out).contiguous()
+            else:
+                alpha_expanded = alpha_expanded.contiguous()
 
-            has_moe = moe_out is not None and moe_out.is_cuda
             out = torch.empty_like(attn_out)
             BLOCK_SIZE = 1024
             grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
@@ -604,7 +629,72 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
                 HAS_MOE=has_moe,
                 BLOCK_SIZE=BLOCK_SIZE,
             )
+            ctx.save_for_backward(attn_out, ssm_out, alpha_expanded)
+            ctx.has_moe = has_moe
+            ctx.orig_alpha_shape = alpha_raw.shape
             return out
+
+        @staticmethod
+        def backward(ctx, dout):
+            attn_out, ssm_out, alpha_expanded = ctx.saved_tensors
+            total_elements = attn_out.numel()
+            grad_attn = torch.empty_like(attn_out)
+            grad_ssm = torch.empty_like(ssm_out)
+            grad_alpha_exp = torch.empty_like(alpha_expanded)
+            grad_moe = torch.empty_like(attn_out) if ctx.has_moe else None
+
+            BLOCK_SIZE = 1024
+            grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
+            _fused_jamba_gate_bwd_kernel[grid](
+                dout.contiguous(),
+                attn_out.contiguous(),
+                ssm_out.contiguous(),
+                alpha_expanded.contiguous(),
+                grad_attn,
+                grad_ssm,
+                grad_alpha_exp,
+                grad_moe if ctx.has_moe else grad_attn,
+                total_elements,
+                HAS_MOE=ctx.has_moe,
+                BLOCK_SIZE=BLOCK_SIZE,
+            )
+            # Reduce grad_alpha_exp to ctx.orig_alpha_shape
+            if grad_alpha_exp.shape != ctx.orig_alpha_shape:
+                if ctx.orig_alpha_shape == torch.Size([]) or len(ctx.orig_alpha_shape) == 0:
+                    grad_alpha = grad_alpha_exp.sum()
+                elif len(ctx.orig_alpha_shape) == 1:
+                    H = ctx.orig_alpha_shape[0]
+                    if grad_alpha_exp.dim() == 4:
+                        grad_alpha = grad_alpha_exp.sum(dim=(0, 2, 3))
+                    elif grad_alpha_exp.dim() == 3:
+                        B, L, all_head_size = grad_alpha_exp.shape
+                        d = all_head_size // H
+                        grad_alpha = grad_alpha_exp.view(B, L, H, d).sum(dim=(0, 1, 3))
+                    else:
+                        grad_alpha = grad_alpha_exp.sum()
+                else:
+                    grad_alpha = grad_alpha_exp.view(ctx.orig_alpha_shape)
+            else:
+                grad_alpha = grad_alpha_exp
+
+            return grad_attn, grad_ssm, grad_alpha, grad_moe
+
+
+def fused_jamba_hybrid_ssm_attn_gate_triton(
+    attn_out: torch.Tensor,
+    ssm_out: torch.Tensor,
+    alpha_raw: torch.Tensor,
+    moe_out: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fused Jamba hybrid SSM + attention gating in GPU SRAM with full autograd."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == ssm_out.shape:
+        try:
+            has_moe = moe_out is not None and moe_out.is_cuda
+            return _FusedJambaGateAutograd.apply(
+                attn_out, ssm_out, alpha_raw, moe_out if has_moe else None
+            )
         except Exception:
             pass
     return fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw, moe_out)
