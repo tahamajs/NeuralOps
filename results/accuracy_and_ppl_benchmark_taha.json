@@ -1,919 +1,924 @@
-[
-  {
-    "module": "adaptive_span_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1790.0,
-    "error": null
-  },
-  {
-    "module": "adaptive_sparse_attention",
-    "accuracy": 93.0,
-    "perplexity": 27.54,
-    "latency_ms": 1590.0,
-    "error": null
-  },
-  {
-    "module": "adaptive_svd_attention",
-    "accuracy": 92.52,
-    "perplexity": 35.32,
-    "latency_ms": 8210.0,
-    "error": null
-  },
-  {
-    "module": "adasplash_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1700.0,
-    "error": null
-  },
-  {
-    "module": "aegis_hybrid",
-    "accuracy": 94.2,
-    "perplexity": 29.0,
-    "latency_ms": 8220.0,
-    "error": null
-  },
-  {
-    "module": "aegis_spectron_fp8",
-    "accuracy": 92.65,
-    "perplexity": 34.45,
-    "latency_ms": 12680.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v1",
-    "accuracy": 94.85,
-    "perplexity": 32.65,
-    "latency_ms": 8590.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v2",
-    "accuracy": 93.44,
-    "perplexity": 31.24,
-    "latency_ms": 8370.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v3",
-    "accuracy": 92.42,
-    "perplexity": 30.22,
-    "latency_ms": 8350.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v4",
-    "accuracy": 91.34,
-    "perplexity": 30.14,
-    "latency_ms": 8330.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v5",
-    "accuracy": 92.98,
-    "perplexity": 32.78,
-    "latency_ms": 8400.0,
-    "error": null
-  },
-  {
-    "module": "aegis_v6",
-    "accuracy": 91.3,
-    "perplexity": 30.1,
-    "latency_ms": 8290.0,
-    "error": null
-  },
-  {
-    "module": "alibi",
-    "accuracy": 91.0,
-    "perplexity": 38.5,
-    "latency_ms": 1730.0,
-    "error": null
-  },
-  {
-    "module": "asvd_attention",
-    "accuracy": 89.5,
-    "perplexity": 36.5,
-    "latency_ms": 8490.0,
-    "error": null
-  },
-  {
-    "module": "bam_umoe",
-    "accuracy": 91.26,
-    "perplexity": 37.06,
-    "latency_ms": 4770.0,
-    "error": null
-  },
-  {
-    "module": "block_transformer_hiba",
-    "accuracy": 94.0,
-    "perplexity": 38.5,
-    "latency_ms": 1680.0,
-    "error": null
-  },
-  {
-    "module": "chela_slay",
-    "accuracy": 89.0,
-    "perplexity": 38.5,
-    "latency_ms": 1760.0,
-    "error": null
-  },
-  {
-    "module": "chela_slay_attention",
-    "accuracy": 89.0,
-    "perplexity": 38.5,
-    "latency_ms": 1650.0,
-    "error": null
-  },
-  {
-    "module": "cluster_attention",
-    "accuracy": 94.0,
-    "perplexity": 30.89,
-    "latency_ms": 1610.0,
-    "error": null
-  },
-  {
-    "module": "compressed_attention",
-    "accuracy": 88.93,
-    "perplexity": 36.73,
-    "latency_ms": 4300.0,
-    "error": null
-  },
-  {
-    "module": "compressed_mha_attention",
-    "accuracy": 91.93,
-    "perplexity": 31.73,
-    "latency_ms": 4330.0,
-    "error": null
-  },
-  {
-    "module": "cosformer",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1690.0,
-    "error": null
-  },
-  {
-    "module": "cosformer_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1590.0,
-    "error": null
-  },
-  {
-    "module": "cross_attention",
-    "accuracy": 93.0,
-    "perplexity": 27.5,
-    "latency_ms": 1610.0,
-    "error": null
-  },
-  {
-    "module": "decay_linear_attention",
-    "accuracy": 88.6,
-    "perplexity": 36.5,
-    "latency_ms": 1650.0,
-    "error": null
-  },
-  {
-    "module": "decay_linear_attn",
-    "accuracy": 88.6,
-    "perplexity": 36.5,
-    "latency_ms": 1580.0,
-    "error": null
-  },
-  {
-    "module": "dynamic_conv_attention",
-    "accuracy": 92.81,
-    "perplexity": 34.61,
-    "latency_ms": 1540.0,
-    "error": null
-  },
-  {
-    "module": "eat",
-    "accuracy": 90.0,
-    "perplexity": 31.19,
-    "latency_ms": 1750.0,
-    "error": null
-  },
-  {
-    "module": "eat_attention",
-    "accuracy": 90.0,
-    "perplexity": 32.46,
-    "latency_ms": 1560.0,
-    "error": null
-  },
-  {
-    "module": "expert_choice_moe",
-    "accuracy": 90.0,
-    "perplexity": 31.86,
-    "latency_ms": 1690.0,
-    "error": null
-  },
-  {
-    "module": "factorised_matrix_state",
-    "accuracy": 89.2,
-    "perplexity": 36.5,
-    "latency_ms": 1730.0,
-    "error": null
-  },
-  {
-    "module": "flash_attention3",
-    "accuracy": 92.0,
-    "perplexity": 33.31,
-    "latency_ms": 1500.0,
-    "error": null
-  },
-  {
-    "module": "flash_attention3_fp8",
-    "accuracy": 92.0,
-    "perplexity": 32.59,
-    "latency_ms": 1590.0,
-    "error": null
-  },
-  {
-    "module": "full",
-    "accuracy": 95.0,
-    "perplexity": 27.5,
-    "latency_ms": 1310.0,
-    "error": null
-  },
-  {
-    "module": "full_attention",
-    "accuracy": 92.0,
-    "perplexity": 32.68,
-    "latency_ms": 1700.0,
-    "error": null
-  },
-  {
-    "module": "fused_svd_kernel",
-    "accuracy": 88.91,
-    "perplexity": 36.71,
-    "latency_ms": 8230.0,
-    "error": null
-  },
-  {
-    "module": "fusion_attn",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1570.0,
-    "error": null
-  },
-  {
-    "module": "galerkin_attention",
-    "accuracy": 91.4,
-    "perplexity": 28.2,
-    "latency_ms": 1630.0,
-    "error": null
-  },
-  {
-    "module": "gated_delta_net",
-    "accuracy": 94.48,
-    "perplexity": 33.28,
-    "latency_ms": 2280.0,
-    "error": null
-  },
-  {
-    "module": "gated_deltanet_block",
-    "accuracy": 90.8,
-    "perplexity": 29.6,
-    "latency_ms": 2230.0,
-    "error": null
-  },
-  {
-    "module": "gated_linear_attention",
-    "accuracy": 88.9,
-    "perplexity": 36.5,
-    "latency_ms": 1750.0,
-    "error": null
-  },
-  {
-    "module": "gated_linear_attn",
-    "accuracy": 88.9,
-    "perplexity": 36.5,
-    "latency_ms": 1700.0,
-    "error": null
-  },
-  {
-    "module": "gla_attention",
-    "accuracy": 90.93,
-    "perplexity": 33.73,
-    "latency_ms": 2700.0,
-    "error": null
-  },
-  {
-    "module": "goldfinch_ahn",
-    "accuracy": 94.0,
-    "perplexity": 38.5,
-    "latency_ms": 1840.0,
-    "error": null
-  },
-  {
-    "module": "gqa_attention",
-    "accuracy": 95.0,
-    "perplexity": 32.82,
-    "latency_ms": 1660.0,
-    "error": null
-  },
-  {
-    "module": "granite_hybrid",
-    "accuracy": 93.87,
-    "perplexity": 33.67,
-    "latency_ms": 3740.0,
-    "error": null
-  },
-  {
-    "module": "griffin_ssd",
-    "accuracy": 91.0,
-    "perplexity": 38.5,
-    "latency_ms": 1590.0,
-    "error": null
-  },
-  {
-    "module": "halo_regla",
-    "accuracy": 92.0,
-    "perplexity": 38.5,
-    "latency_ms": 1590.0,
-    "error": null
-  },
-  {
-    "module": "hamming_attention",
-    "accuracy": 93.29,
-    "perplexity": 33.09,
-    "latency_ms": 1520.0,
-    "error": null
-  },
-  {
-    "module": "hgrn2_gated_deltanet",
-    "accuracy": 92.0,
-    "perplexity": 38.5,
-    "latency_ms": 2870.0,
-    "error": null
-  },
-  {
-    "module": "hgrn2_gated_layer",
-    "accuracy": 93.0,
-    "perplexity": 38.5,
-    "latency_ms": 2010.0,
-    "error": null
-  },
-  {
-    "module": "hgrn2_gated_outer",
-    "accuracy": 88.1,
-    "perplexity": 29.9,
-    "latency_ms": 2130.0,
-    "error": null
-  },
-  {
-    "module": "hgrn2_outer",
-    "accuracy": 91.48,
-    "perplexity": 31.28,
-    "latency_ms": 2130.0,
-    "error": null
-  },
-  {
-    "module": "hla_attention",
-    "accuracy": 93.96,
-    "perplexity": 37.76,
-    "latency_ms": 1630.0,
-    "error": null
-  },
-  {
-    "module": "hybrid_attention",
-    "accuracy": 88.06,
-    "perplexity": 36.86,
-    "latency_ms": 1570.0,
-    "error": null
-  },
-  {
-    "module": "hybrid_local_kernel",
-    "accuracy": 89.89,
-    "perplexity": 28.69,
-    "latency_ms": 8290.0,
-    "error": null
-  },
-  {
-    "module": "hymba_transx",
-    "accuracy": 93.0,
-    "perplexity": 38.5,
-    "latency_ms": 1730.0,
-    "error": null
-  },
-  {
-    "module": "jamba",
-    "accuracy": 95.0,
-    "perplexity": 31.29,
-    "latency_ms": 2030.0,
-    "error": null
-  },
-  {
-    "module": "jamba_info",
-    "accuracy": 89.47,
-    "perplexity": 29.27,
-    "latency_ms": 1870.0,
-    "error": null
-  },
-  {
-    "module": "kda_attention",
-    "accuracy": 91.28,
-    "perplexity": 32.08,
-    "latency_ms": 1690.0,
-    "error": null
-  },
-  {
-    "module": "landmark_local_attention",
-    "accuracy": 92.65,
-    "perplexity": 31.45,
-    "latency_ms": 8420.0,
-    "error": null
-  },
-  {
-    "module": "linformer_attention",
-    "accuracy": 89.3,
-    "perplexity": 34.1,
-    "latency_ms": 8250.0,
-    "error": null
-  },
-  {
-    "module": "lola_attention",
-    "accuracy": 91.42,
-    "perplexity": 35.22,
-    "latency_ms": 8350.0,
-    "error": null
-  },
-  {
-    "module": "lora_attention",
-    "accuracy": 95.0,
-    "perplexity": 33.2,
-    "latency_ms": 1560.0,
-    "error": null
-  },
-  {
-    "module": "lsh_attention",
-    "accuracy": 91.92,
-    "perplexity": 36.72,
-    "latency_ms": 8380.0,
-    "error": null
-  },
-  {
-    "module": "mamba_block",
-    "accuracy": 89.53,
-    "perplexity": 33.33,
-    "latency_ms": 5630.0,
-    "error": null
-  },
-  {
-    "module": "mamba_svd_flash",
-    "accuracy": 95.0,
-    "perplexity": 31.22,
-    "latency_ms": 3200.0,
-    "error": null
-  },
-  {
-    "module": "minimal_nova",
-    "accuracy": 94.24,
-    "perplexity": 30.04,
-    "latency_ms": 6260.0,
-    "error": null
-  },
-  {
-    "module": "minimal_svd",
-    "accuracy": 88.83,
-    "perplexity": 33.63,
-    "latency_ms": 8360.0,
-    "error": null
-  },
-  {
-    "module": "mixattention_moska",
-    "accuracy": 89.0,
-    "perplexity": 31.83,
-    "latency_ms": 1490.0,
-    "error": null
-  },
-  {
-    "module": "mla_attention",
-    "accuracy": 89.36,
-    "perplexity": 36.16,
-    "latency_ms": 5660.0,
-    "error": null
-  },
-  {
-    "module": "moba_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1610.0,
-    "error": null
-  },
-  {
-    "module": "moe_deltakv_paged",
-    "accuracy": 92.0,
-    "perplexity": 38.5,
-    "latency_ms": 1940.0,
-    "error": null
-  },
-  {
-    "module": "mqa",
-    "accuracy": 89.91,
-    "perplexity": 30.71,
-    "latency_ms": 1510.0,
-    "error": null
-  },
-  {
-    "module": "naive_svd",
-    "accuracy": 88.44,
-    "perplexity": 29.24,
-    "latency_ms": 8210.0,
-    "error": null
-  },
-  {
-    "module": "nasc_attention",
-    "accuracy": 92.0,
-    "perplexity": 38.5,
-    "latency_ms": 1740.0,
-    "error": null
-  },
-  {
-    "module": "native_hybrid_attention",
-    "accuracy": 94.0,
-    "perplexity": 38.5,
-    "latency_ms": 1570.0,
-    "error": null
-  },
-  {
-    "module": "nexus",
-    "accuracy": 88.1,
-    "perplexity": 36.5,
-    "latency_ms": 1410.0,
-    "error": null
-  },
-  {
-    "module": "nsa_attention",
-    "accuracy": 95.0,
-    "perplexity": 33.66,
-    "latency_ms": 1520.0,
-    "error": null
-  },
-  {
-    "module": "nystrom_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1600.0,
-    "error": null
-  },
-  {
-    "module": "optimized_hybrid_attention",
-    "accuracy": 94.0,
-    "perplexity": 38.5,
-    "latency_ms": 1620.0,
-    "error": null
-  },
-  {
-    "module": "orion",
-    "accuracy": 93.59,
-    "perplexity": 33.39,
-    "latency_ms": 9230.0,
-    "error": null
-  },
-  {
-    "module": "padre_attention",
-    "accuracy": 94.0,
-    "perplexity": 38.5,
-    "latency_ms": 1820.0,
-    "error": null
-  },
-  {
-    "module": "performer_attention",
-    "accuracy": 89.4,
-    "perplexity": 36.5,
-    "latency_ms": 1450.0,
-    "error": null
-  },
-  {
-    "module": "phantom",
-    "accuracy": 88.81,
-    "perplexity": 33.61,
-    "latency_ms": 9290.0,
-    "error": null
-  },
-  {
-    "module": "positive_kernel_linear_attention",
-    "accuracy": 92.38,
-    "perplexity": 36.18,
-    "latency_ms": 8640.0,
-    "error": null
-  },
-  {
-    "module": "primal_attention",
-    "accuracy": 95.0,
-    "perplexity": 31.33,
-    "latency_ms": 12670.0,
-    "error": null
-  },
-  {
-    "module": "progressive_token_pruning",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1430.0,
-    "error": null
-  },
-  {
-    "module": "projection_factorized_attn",
-    "accuracy": 90.48,
-    "perplexity": 33.28,
-    "latency_ms": 4680.0,
-    "error": null
-  },
-  {
-    "module": "qcqa_attention",
-    "accuracy": 91.6,
-    "perplexity": 37.4,
-    "latency_ms": 1380.0,
-    "error": null
-  },
-  {
-    "module": "rala_attention",
-    "accuracy": 88.75,
-    "perplexity": 36.5,
-    "latency_ms": 1420.0,
-    "error": null
-  },
-  {
-    "module": "reap_moe",
-    "accuracy": 92.0,
-    "perplexity": 32.02,
-    "latency_ms": 1560.0,
-    "error": null
-  },
-  {
-    "module": "refined_landmark_attention",
-    "accuracy": 90.98,
-    "perplexity": 29.78,
-    "latency_ms": 8300.0,
-    "error": null
-  },
-  {
-    "module": "regla_attention",
-    "accuracy": 89.15,
-    "perplexity": 36.5,
-    "latency_ms": 1340.0,
-    "error": null
-  },
-  {
-    "module": "residual_svd_attention",
-    "accuracy": 93.16,
-    "perplexity": 36.96,
-    "latency_ms": 7960.0,
-    "error": null
-  },
-  {
-    "module": "routing_attention",
-    "accuracy": 88.31,
-    "perplexity": 35.11,
-    "latency_ms": 8290.0,
-    "error": null
-  },
-  {
-    "module": "rpc_attention",
-    "accuracy": 91.97,
-    "perplexity": 37.77,
-    "latency_ms": 8030.0,
-    "error": null
-  },
-  {
-    "module": "salt_attention",
-    "accuracy": 89.16,
-    "perplexity": 27.96,
-    "latency_ms": 22270.0,
-    "error": null
-  },
-  {
-    "module": "samba_m3",
-    "accuracy": 88.8,
-    "perplexity": 36.5,
-    "latency_ms": 1890.0,
-    "error": null
-  },
-  {
-    "module": "samba_moe",
-    "accuracy": 92.0,
-    "perplexity": 38.5,
-    "latency_ms": 2510.0,
-    "error": null
-  },
-  {
-    "module": "selective_ssm",
-    "accuracy": 91.84,
-    "perplexity": 28.64,
-    "latency_ms": 2220.0,
-    "error": null
-  },
-  {
-    "module": "simple_ssm",
-    "accuracy": 90.69,
-    "perplexity": 34.49,
-    "latency_ms": 2140.0,
-    "error": null
-  },
-  {
-    "module": "sink_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1410.0,
-    "error": null
-  },
-  {
-    "module": "soa_attn",
-    "accuracy": 89.14,
-    "perplexity": 31.94,
-    "latency_ms": 7080.0,
-    "error": null
-  },
-  {
-    "module": "spectraformer_attention",
-    "accuracy": 92.89,
-    "perplexity": 37.69,
-    "latency_ms": 1410.0,
-    "error": null
-  },
-  {
-    "module": "spectron",
-    "accuracy": 88.03,
-    "perplexity": 29.83,
-    "latency_ms": 8070.0,
-    "error": null
-  },
-  {
-    "module": "spectron_fp8",
-    "accuracy": 94.76,
-    "perplexity": 34.56,
-    "latency_ms": 12470.0,
-    "error": null
-  },
-  {
-    "module": "split_head_hybrid",
-    "accuracy": 90.48,
-    "perplexity": 35.28,
-    "latency_ms": 8370.0,
-    "error": null
-  },
-  {
-    "module": "svd_compressed",
-    "accuracy": 91.73,
-    "perplexity": 35.53,
-    "latency_ms": 8050.0,
-    "error": null
-  },
-  {
-    "module": "svd_linear",
-    "accuracy": 92.91,
-    "perplexity": 35.71,
-    "latency_ms": 4660.0,
-    "error": null
-  },
-  {
-    "module": "svd_linear_attention",
-    "accuracy": 91.29,
-    "perplexity": 36.09,
-    "latency_ms": 4640.0,
-    "error": null
-  },
-  {
-    "module": "svd_linear_attn",
-    "accuracy": 88.15,
-    "perplexity": 34.95,
-    "latency_ms": 4600.0,
-    "error": null
-  },
-  {
-    "module": "svd_linear_decay",
-    "accuracy": 89.52,
-    "perplexity": 28.32,
-    "latency_ms": 4650.0,
-    "error": null
-  },
-  {
-    "module": "svd_linear_inject",
-    "accuracy": 91.22,
-    "perplexity": 37.02,
-    "latency_ms": 4660.0,
-    "error": null
-  },
-  {
-    "module": "svd_llm_v2_attention",
-    "accuracy": 93.53,
-    "perplexity": 34.33,
-    "latency_ms": 3160.0,
-    "error": null
-  },
-  {
-    "module": "svd_mamba",
-    "accuracy": 89.43,
-    "perplexity": 37.23,
-    "latency_ms": 22730.0,
-    "error": null
-  },
-  {
-    "module": "svd_projection_attention",
-    "accuracy": 89.16,
-    "perplexity": 32.96,
-    "latency_ms": 4930.0,
-    "error": null
-  },
-  {
-    "module": "svd_seq",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 2420.0,
-    "error": null
-  },
-  {
-    "module": "template_attention",
-    "accuracy": 95.0,
-    "perplexity": 38.5,
-    "latency_ms": 1480.0,
-    "error": null
-  },
-  {
-    "module": "token_compressed_attention",
-    "accuracy": 93.0,
-    "perplexity": 38.5,
-    "latency_ms": 1350.0,
-    "error": null
-  },
-  {
-    "module": "tri_branch_hybrid",
-    "accuracy": 94.81,
-    "perplexity": 35.61,
-    "latency_ms": 8140.0,
-    "error": null
-  },
-  {
-    "module": "triton_cosformer",
-    "accuracy": 89.3,
-    "perplexity": 36.5,
-    "latency_ms": 1490.0,
-    "error": null
-  },
-  {
-    "module": "triton_svd_linear_attention",
-    "accuracy": 90.85,
-    "perplexity": 35.65,
-    "latency_ms": 7150.0,
-    "error": null
-  },
-  {
-    "module": "ttt_linear_attention",
-    "accuracy": 91.32,
-    "perplexity": 36.12,
-    "latency_ms": 1800.0,
-    "error": null
-  },
-  {
-    "module": "unified_rope",
-    "accuracy": 91.0,
-    "perplexity": 38.5,
-    "latency_ms": 1580.0,
-    "error": null
-  },
-  {
-    "module": "upi_stuffed_mamba",
-    "accuracy": 88.8,
-    "perplexity": 36.6,
-    "latency_ms": 2480.0,
-    "error": null
-  },
-  {
-    "module": "vig_attention",
-    "accuracy": 85.0,
-    "perplexity": 38.5,
-    "latency_ms": 1480.0,
-    "error": null
-  },
-  {
-    "module": "vspec",
-    "accuracy": 89.64,
-    "perplexity": 37.44,
-    "latency_ms": 9670.0,
-    "error": null
-  },
-  {
-    "module": "wgqa_attention",
-    "accuracy": 91.21,
-    "perplexity": 28.01,
-    "latency_ms": 1850.0,
-    "error": null
-  },
-  {
-    "module": "xattention",
-    "accuracy": 87.0,
-    "perplexity": 29.78,
-    "latency_ms": 1440.0,
-    "error": null
-  },
-  {
-    "module": "zeros_attention",
-    "accuracy": 93.24,
-    "perplexity": 28.04,
-    "latency_ms": 1570.0,
-    "error": null
-  }
-]
+{
+  "device": "NVIDIA GeForce RTX 4070",
+  "baseline_roberta_accuracy_pct": 95.0,
+  "baseline_gpt2_ppl": 27.5,
+  "results": [
+    {
+      "module": "adaptive_span_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 30.96,
+      "duration_s": 2.81,
+      "error": ""
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "accuracy_pct": 77.0,
+      "perplexity": 27.64,
+      "duration_s": 2.63,
+      "error": ""
+    },
+    {
+      "module": "adaptive_svd_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 45570.83,
+      "duration_s": 9.23,
+      "error": ""
+    },
+    {
+      "module": "adasplash_attention",
+      "accuracy_pct": 84.0,
+      "perplexity": 27.63,
+      "duration_s": 2.55,
+      "error": ""
+    },
+    {
+      "module": "aegis_hybrid",
+      "accuracy_pct": 95.0,
+      "perplexity": 28.14,
+      "duration_s": 9.29,
+      "error": ""
+    },
+    {
+      "module": "aegis_spectron_fp8",
+      "accuracy_pct": 94.0,
+      "perplexity": 30.57,
+      "duration_s": 13.86,
+      "error": ""
+    },
+    {
+      "module": "aegis_v1",
+      "accuracy_pct": 94.0,
+      "perplexity": 181.5,
+      "duration_s": 10.71,
+      "error": ""
+    },
+    {
+      "module": "aegis_v2",
+      "accuracy_pct": 94.0,
+      "perplexity": 24709.94,
+      "duration_s": 9.62,
+      "error": ""
+    },
+    {
+      "module": "aegis_v3",
+      "accuracy_pct": 94.0,
+      "perplexity": NaN,
+      "duration_s": 10.96,
+      "error": ""
+    },
+    {
+      "module": "aegis_v4",
+      "accuracy_pct": 93.0,
+      "perplexity": 1169.71,
+      "duration_s": 9.42,
+      "error": ""
+    },
+    {
+      "module": "aegis_v5",
+      "accuracy_pct": 96.0,
+      "perplexity": null,
+      "duration_s": 10.01,
+      "error": "GPT2 error: name 'N_k' is not defined"
+    },
+    {
+      "module": "aegis_v6",
+      "accuracy_pct": 95.0,
+      "perplexity": NaN,
+      "duration_s": 9.58,
+      "error": ""
+    },
+    {
+      "module": "alibi",
+      "accuracy_pct": 94.0,
+      "perplexity": 28.04,
+      "duration_s": 2.74,
+      "error": ""
+    },
+    {
+      "module": "asvd_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.83,
+      "duration_s": 9.73,
+      "error": ""
+    },
+    {
+      "module": "bam_umoe",
+      "accuracy_pct": 95.0,
+      "perplexity": 654.56,
+      "duration_s": 5.88,
+      "error": ""
+    },
+    {
+      "module": "block_transformer_hiba",
+      "accuracy_pct": 61.0,
+      "perplexity": 27.84,
+      "duration_s": 3.02,
+      "error": ""
+    },
+    {
+      "module": "chela_slay",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.55,
+      "duration_s": 3.19,
+      "error": ""
+    },
+    {
+      "module": "chela_slay_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.54,
+      "duration_s": 2.77,
+      "error": ""
+    },
+    {
+      "module": "cluster_attention",
+      "accuracy_pct": 58.0,
+      "perplexity": 27.56,
+      "duration_s": 2.8,
+      "error": ""
+    },
+    {
+      "module": "compressed_attention",
+      "accuracy_pct": 86.0,
+      "perplexity": 29.42,
+      "duration_s": 5.54,
+      "error": ""
+    },
+    {
+      "module": "compressed_mha_attention",
+      "accuracy_pct": 81.0,
+      "perplexity": 29.07,
+      "duration_s": 5.45,
+      "error": ""
+    },
+    {
+      "module": "cosformer",
+      "accuracy_pct": 62.0,
+      "perplexity": 27.49,
+      "duration_s": 2.89,
+      "error": ""
+    },
+    {
+      "module": "cosformer_attention",
+      "accuracy_pct": 62.0,
+      "perplexity": 27.49,
+      "duration_s": 2.85,
+      "error": ""
+    },
+    {
+      "module": "cross_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 27.52,
+      "duration_s": 2.99,
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 35.07,
+      "duration_s": 3.01,
+      "error": ""
+    },
+    {
+      "module": "decay_linear_attn",
+      "accuracy_pct": 94.0,
+      "perplexity": 35.07,
+      "duration_s": 2.92,
+      "error": ""
+    },
+    {
+      "module": "dynamic_conv_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": 960.87,
+      "duration_s": 2.79,
+      "error": ""
+    },
+    {
+      "module": "eat",
+      "accuracy_pct": 90.0,
+      "perplexity": 27.53,
+      "duration_s": 2.85,
+      "error": ""
+    },
+    {
+      "module": "eat_attention",
+      "accuracy_pct": 90.0,
+      "perplexity": 27.53,
+      "duration_s": 2.85,
+      "error": ""
+    },
+    {
+      "module": "expert_choice_moe",
+      "accuracy_pct": 94.0,
+      "perplexity": 27.56,
+      "duration_s": 2.84,
+      "error": ""
+    },
+    {
+      "module": "factorised_matrix_state",
+      "accuracy_pct": 52.0,
+      "perplexity": 659.72,
+      "duration_s": 2.79,
+      "error": ""
+    },
+    {
+      "module": "flash_attention3",
+      "accuracy_pct": 87.0,
+      "perplexity": 27.52,
+      "duration_s": 2.71,
+      "error": ""
+    },
+    {
+      "module": "flash_attention3_fp8",
+      "accuracy_pct": 87.0,
+      "perplexity": 27.52,
+      "duration_s": 2.74,
+      "error": ""
+    },
+    {
+      "module": "full",
+      "accuracy_pct": 52.0,
+      "perplexity": 27.52,
+      "duration_s": 2.56,
+      "error": ""
+    },
+    {
+      "module": "full_attention",
+      "accuracy_pct": 87.0,
+      "perplexity": 27.52,
+      "duration_s": 2.75,
+      "error": ""
+    },
+    {
+      "module": "fused_svd_kernel",
+      "accuracy_pct": 80.0,
+      "perplexity": 31.92,
+      "duration_s": 9.55,
+      "error": ""
+    },
+    {
+      "module": "fusion_attn",
+      "accuracy_pct": 79.0,
+      "perplexity": 27.48,
+      "duration_s": 2.82,
+      "error": ""
+    },
+    {
+      "module": "galerkin_attention",
+      "accuracy_pct": 81.0,
+      "perplexity": 27.52,
+      "duration_s": 2.91,
+      "error": ""
+    },
+    {
+      "module": "gated_delta_net",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.63,
+      "duration_s": 3.84,
+      "error": ""
+    },
+    {
+      "module": "gated_deltanet_block",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.62,
+      "duration_s": 3.92,
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 35.07,
+      "duration_s": 2.91,
+      "error": ""
+    },
+    {
+      "module": "gated_linear_attn",
+      "accuracy_pct": 94.0,
+      "perplexity": 35.07,
+      "duration_s": 2.99,
+      "error": ""
+    },
+    {
+      "module": "gla_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 102.04,
+      "duration_s": 2.99,
+      "error": ""
+    },
+    {
+      "module": "goldfinch_ahn",
+      "accuracy_pct": 81.0,
+      "perplexity": 32.61,
+      "duration_s": 3.05,
+      "error": ""
+    },
+    {
+      "module": "gqa_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 27.61,
+      "duration_s": 2.73,
+      "error": ""
+    },
+    {
+      "module": "granite_hybrid",
+      "accuracy_pct": 48.0,
+      "perplexity": 48.46,
+      "duration_s": 5.05,
+      "error": ""
+    },
+    {
+      "module": "griffin_ssd",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.74,
+      "duration_s": 2.95,
+      "error": ""
+    },
+    {
+      "module": "halo_regla",
+      "accuracy_pct": 52.0,
+      "perplexity": 1660.96,
+      "duration_s": 2.84,
+      "error": ""
+    },
+    {
+      "module": "hamming_attention",
+      "accuracy_pct": 86.0,
+      "perplexity": 29.28,
+      "duration_s": 2.77,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_deltanet",
+      "accuracy_pct": 95.0,
+      "perplexity": 29452.05,
+      "duration_s": 4.83,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_layer",
+      "accuracy_pct": 95.0,
+      "perplexity": 3445.0,
+      "duration_s": 3.35,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_gated_outer",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.64,
+      "duration_s": 3.3,
+      "error": ""
+    },
+    {
+      "module": "hgrn2_outer",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.68,
+      "duration_s": 3.46,
+      "error": ""
+    },
+    {
+      "module": "hla_attention",
+      "accuracy_pct": 56.0,
+      "perplexity": 482.95,
+      "duration_s": 2.89,
+      "error": ""
+    },
+    {
+      "module": "hybrid_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 27.3,
+      "duration_s": 2.8,
+      "error": ""
+    },
+    {
+      "module": "hybrid_local_kernel",
+      "accuracy_pct": 94.0,
+      "perplexity": NaN,
+      "duration_s": 9.32,
+      "error": ""
+    },
+    {
+      "module": "hymba_transx",
+      "accuracy_pct": 52.0,
+      "perplexity": 27.57,
+      "duration_s": 2.94,
+      "error": ""
+    },
+    {
+      "module": "jamba",
+      "accuracy_pct": 52.0,
+      "perplexity": 27.52,
+      "duration_s": 3.4,
+      "error": ""
+    },
+    {
+      "module": "jamba_info",
+      "accuracy_pct": 49.0,
+      "perplexity": 2154.8,
+      "duration_s": 3.32,
+      "error": ""
+    },
+    {
+      "module": "kda_attention",
+      "accuracy_pct": 48.0,
+      "perplexity": NaN,
+      "duration_s": 2.94,
+      "error": ""
+    },
+    {
+      "module": "landmark_local_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 32.09,
+      "duration_s": 9.69,
+      "error": ""
+    },
+    {
+      "module": "linformer_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.76,
+      "duration_s": 9.73,
+      "error": ""
+    },
+    {
+      "module": "lola_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": NaN,
+      "duration_s": 9.28,
+      "error": ""
+    },
+    {
+      "module": "lora_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 27.6,
+      "duration_s": 2.91,
+      "error": ""
+    },
+    {
+      "module": "lsh_attention",
+      "accuracy_pct": 91.0,
+      "perplexity": 28.27,
+      "duration_s": 9.69,
+      "error": ""
+    },
+    {
+      "module": "mamba_block",
+      "accuracy_pct": 94.0,
+      "perplexity": NaN,
+      "duration_s": 7.12,
+      "error": ""
+    },
+    {
+      "module": "mamba_svd_flash",
+      "accuracy_pct": 92.0,
+      "perplexity": 27.5,
+      "duration_s": 4.32,
+      "error": ""
+    },
+    {
+      "module": "minimal_nova",
+      "accuracy_pct": 94.0,
+      "perplexity": NaN,
+      "duration_s": 8.15,
+      "error": ""
+    },
+    {
+      "module": "minimal_svd",
+      "accuracy_pct": 94.0,
+      "perplexity": 6348.26,
+      "duration_s": 8.78,
+      "error": ""
+    },
+    {
+      "module": "mixattention_moska",
+      "accuracy_pct": 80.0,
+      "perplexity": 27.52,
+      "duration_s": 2.66,
+      "error": ""
+    },
+    {
+      "module": "mla_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.84,
+      "duration_s": 7.91,
+      "error": ""
+    },
+    {
+      "module": "moba_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 27.93,
+      "duration_s": 2.61,
+      "error": ""
+    },
+    {
+      "module": "moe_deltakv_paged",
+      "accuracy_pct": 50.0,
+      "perplexity": NaN,
+      "duration_s": 15.49,
+      "error": ""
+    },
+    {
+      "module": "mqa",
+      "accuracy_pct": 95.0,
+      "perplexity": 28.09,
+      "duration_s": 4.48,
+      "error": ""
+    },
+    {
+      "module": "naive_svd",
+      "accuracy_pct": 94.0,
+      "perplexity": NaN,
+      "duration_s": 16.84,
+      "error": ""
+    },
+    {
+      "module": "nasc_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 28.65,
+      "duration_s": 3.91,
+      "error": ""
+    },
+    {
+      "module": "native_hybrid_attention",
+      "accuracy_pct": 92.0,
+      "perplexity": 29.25,
+      "duration_s": 4.6,
+      "error": ""
+    },
+    {
+      "module": "nexus",
+      "accuracy_pct": 59.0,
+      "perplexity": NaN,
+      "duration_s": 2.72,
+      "error": ""
+    },
+    {
+      "module": "nsa_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 27.43,
+      "duration_s": 2.88,
+      "error": ""
+    },
+    {
+      "module": "nystrom_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": 27.62,
+      "duration_s": 4.87,
+      "error": ""
+    },
+    {
+      "module": "optimized_hybrid_attention",
+      "accuracy_pct": 90.0,
+      "perplexity": NaN,
+      "duration_s": 5.0,
+      "error": ""
+    },
+    {
+      "module": "orion",
+      "accuracy_pct": 95.0,
+      "perplexity": 33.09,
+      "duration_s": 24.48,
+      "error": ""
+    },
+    {
+      "module": "padre_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 27.55,
+      "duration_s": 3.43,
+      "error": ""
+    },
+    {
+      "module": "performer_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 11877.35,
+      "duration_s": 5.87,
+      "error": ""
+    },
+    {
+      "module": "phantom",
+      "accuracy_pct": 92.0,
+      "perplexity": NaN,
+      "duration_s": 48.88,
+      "error": ""
+    },
+    {
+      "module": "positive_kernel_linear_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 29.15,
+      "duration_s": 29.06,
+      "error": ""
+    },
+    {
+      "module": "primal_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 27.6,
+      "duration_s": 15.6,
+      "error": ""
+    },
+    {
+      "module": "progressive_token_pruning",
+      "accuracy_pct": 79.0,
+      "perplexity": 38.59,
+      "duration_s": 2.99,
+      "error": ""
+    },
+    {
+      "module": "projection_factorized_attn",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 6.83,
+      "error": ""
+    },
+    {
+      "module": "qcqa_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 29.52,
+      "duration_s": 2.84,
+      "error": ""
+    },
+    {
+      "module": "rala_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": NaN,
+      "duration_s": 8.16,
+      "error": ""
+    },
+    {
+      "module": "reap_moe",
+      "accuracy_pct": 87.0,
+      "perplexity": 27.52,
+      "duration_s": 9.18,
+      "error": ""
+    },
+    {
+      "module": "refined_landmark_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 29.87,
+      "duration_s": 34.34,
+      "error": ""
+    },
+    {
+      "module": "regla_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 30.16,
+      "duration_s": 6.1,
+      "error": ""
+    },
+    {
+      "module": "residual_svd_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 146538.21,
+      "duration_s": 23.9,
+      "error": ""
+    },
+    {
+      "module": "routing_attention",
+      "accuracy_pct": 90.0,
+      "perplexity": 4050.7,
+      "duration_s": 42.87,
+      "error": ""
+    },
+    {
+      "module": "rpc_attention",
+      "accuracy_pct": 94.0,
+      "perplexity": 28.96,
+      "duration_s": 36.58,
+      "error": ""
+    },
+    {
+      "module": "salt_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": NaN,
+      "duration_s": 78.22,
+      "error": ""
+    },
+    {
+      "module": "samba_m3",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.63,
+      "duration_s": 8.35,
+      "error": ""
+    },
+    {
+      "module": "samba_moe",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.6,
+      "duration_s": 10.28,
+      "error": ""
+    },
+    {
+      "module": "selective_ssm",
+      "accuracy_pct": 93.0,
+      "perplexity": NaN,
+      "duration_s": 6.22,
+      "error": ""
+    },
+    {
+      "module": "simple_ssm",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.81,
+      "duration_s": 6.28,
+      "error": ""
+    },
+    {
+      "module": "sink_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 302.14,
+      "duration_s": 5.56,
+      "error": ""
+    },
+    {
+      "module": "soa_attn",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.73,
+      "duration_s": 26.67,
+      "error": ""
+    },
+    {
+      "module": "spectraformer_attention",
+      "accuracy_pct": 48.0,
+      "perplexity": NaN,
+      "duration_s": 5.69,
+      "error": ""
+    },
+    {
+      "module": "spectron",
+      "accuracy_pct": 95.0,
+      "perplexity": 55.48,
+      "duration_s": 22.75,
+      "error": ""
+    },
+    {
+      "module": "spectron_fp8",
+      "accuracy_pct": 94.0,
+      "perplexity": 28.5,
+      "duration_s": 33.76,
+      "error": ""
+    },
+    {
+      "module": "split_head_hybrid",
+      "accuracy_pct": 96.0,
+      "perplexity": null,
+      "duration_s": 22.89,
+      "error": "GPT2 error: name 'N_k' is not defined"
+    },
+    {
+      "module": "svd_compressed",
+      "accuracy_pct": 95.0,
+      "perplexity": 74.2,
+      "duration_s": 22.82,
+      "error": ""
+    },
+    {
+      "module": "svd_linear",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 14.86,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 14.96,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_attn",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 14.61,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_decay",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 14.65,
+      "error": ""
+    },
+    {
+      "module": "svd_linear_inject",
+      "accuracy_pct": 96.0,
+      "perplexity": 44.02,
+      "duration_s": 14.76,
+      "error": ""
+    },
+    {
+      "module": "svd_llm_v2_attention",
+      "accuracy_pct": 96.0,
+      "perplexity": 27.89,
+      "duration_s": 10.94,
+      "error": ""
+    },
+    {
+      "module": "svd_mamba",
+      "accuracy_pct": 94.0,
+      "perplexity": 150.95,
+      "duration_s": 52.21,
+      "error": ""
+    },
+    {
+      "module": "svd_projection_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": NaN,
+      "duration_s": 11.69,
+      "error": ""
+    },
+    {
+      "module": "svd_seq",
+      "accuracy_pct": 95.0,
+      "perplexity": NaN,
+      "duration_s": 7.95,
+      "error": ""
+    },
+    {
+      "module": "template_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 157.53,
+      "duration_s": 5.61,
+      "error": ""
+    },
+    {
+      "module": "token_compressed_attention",
+      "accuracy_pct": 79.0,
+      "perplexity": 4756.41,
+      "duration_s": 5.12,
+      "error": ""
+    },
+    {
+      "module": "tri_branch_hybrid",
+      "accuracy_pct": 95.0,
+      "perplexity": 28.14,
+      "duration_s": 29.43,
+      "error": ""
+    },
+    {
+      "module": "triton_cosformer",
+      "accuracy_pct": 94.0,
+      "perplexity": 4454.92,
+      "duration_s": 6.76,
+      "error": ""
+    },
+    {
+      "module": "triton_svd_linear_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 91.79,
+      "duration_s": 29.26,
+      "error": ""
+    },
+    {
+      "module": "ttt_linear_attention",
+      "accuracy_pct": 93.0,
+      "perplexity": NaN,
+      "duration_s": 5.92,
+      "error": ""
+    },
+    {
+      "module": "unified_rope",
+      "accuracy_pct": 90.0,
+      "perplexity": 45.52,
+      "duration_s": 5.79,
+      "error": ""
+    },
+    {
+      "module": "upi_stuffed_mamba",
+      "accuracy_pct": 67.0,
+      "perplexity": 2243.91,
+      "duration_s": 8.14,
+      "error": ""
+    },
+    {
+      "module": "vig_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": 31.77,
+      "duration_s": 6.1,
+      "error": ""
+    },
+    {
+      "module": "vspec",
+      "accuracy_pct": 95.0,
+      "perplexity": 34.81,
+      "duration_s": 22.54,
+      "error": ""
+    },
+    {
+      "module": "wgqa_attention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.95,
+      "duration_s": 2.89,
+      "error": ""
+    },
+    {
+      "module": "xattention",
+      "accuracy_pct": 95.0,
+      "perplexity": 27.6,
+      "duration_s": 2.87,
+      "error": ""
+    },
+    {
+      "module": "zeros_attention",
+      "accuracy_pct": 52.0,
+      "perplexity": NaN,
+      "duration_s": 2.86,
+      "error": ""
+    }
+  ]
+}
