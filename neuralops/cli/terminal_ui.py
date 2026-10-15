@@ -295,35 +295,28 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
     """Minimalist, flat UNIX-style terminal inspector and interactive control center."""
     from neuralops.core.inspector import inspect_architecture, render_architecture_card
 
-    # 1. Direct Module Inspection Mode (e.g. neuralops ui --inspect gated_delta_net [--snapshot])
-    if inspect_target:
-        try:
-            spec = inspect_architecture(inspect_target)
-            card = render_architecture_card(spec)
-            print(card)
-        except Exception as e:
-            print(f"[-] Could not inspect '{inspect_target}': {e}")
-        return
-
-    # 2. Snapshot Mode (Flat, high-density two-pane rendering to stdout for CI/terminal logs)
+    # Snapshot Mode (Flat, high-density two-pane rendering to stdout for CI/terminal logs)
     if snapshot:
         import torch
         dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
-        w = 110
+        w = 118
         target = inspect_target or "gated_delta_net"
-        spec = inspect_architecture(target)
-        card_lines = render_architecture_card(spec).split("\n")
+        try:
+            spec = inspect_architecture(target)
+            card_lines = render_architecture_card(spec).split("\n")
+        except Exception as e:
+            print(f"[-] Could not inspect '{target}': {e}")
+            return
 
         # Collect compact module list for the left pane
-        from neuralops.core.registry import ATTENTION_REGISTRY
-        all_modules = list(ATTENTION_REGISTRY.keys())
-        if target not in all_modules:
-            from neuralops.core.registry import COMPRESSOR_REGISTRY
-            all_modules = list(COMPRESSOR_REGISTRY.keys())
+        from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+        all_attns = list(ATTENTION_REGISTRY.keys())
+        all_comps = list(COMPRESSOR_REGISTRY.keys())
+        all_modules = all_attns + all_comps
 
         # Center target in left pane
         target_idx = all_modules.index(target) if target in all_modules else 0
-        left_pane_width = 28
+        left_pane_width = 34
         right_pane_width = 80
         total_rows = max(len(card_lines), 26)
 
@@ -335,17 +328,18 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · 26 Triton Kernels")
         print("=" * w)
         print(f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}")
-        print("─" * left_pane_width + "─┼─" + "─" * right_pane_width)
+        print("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
 
         for row_idx in range(total_rows):
             # Left pane entry
             if row_idx < len(visible_modules):
                 m_name = visible_modules[row_idx]
-                prefix = "▶ " if m_name == target else "  "
-                left_entry = f"{prefix}{m_name}"[:left_pane_width]
+                prefix = "> " if m_name == target else "  "
+                tag = "attn" if m_name in ATTENTION_REGISTRY else "comp"
+                left_entry = f"{prefix}{m_name} ({tag})"[:left_pane_width]
             else:
                 left_entry = ""
-            left_str = f"{left_entry:<{left_pane_width}}"
+            left_str = f"  {left_entry:<{left_pane_width}}"
 
             # Right pane line
             right_entry = card_lines[row_idx] if row_idx < len(card_lines) else ""
@@ -354,6 +348,16 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             print(f"{left_str} │ {right_str}")
 
         print("=" * w)
+        return
+
+    # Direct Module Inspection Mode without snapshot (prints standalone spec sheet for piping)
+    if inspect_target:
+        try:
+            spec = inspect_architecture(inspect_target)
+            card = render_architecture_card(spec)
+            print(card)
+        except Exception as e:
+            print(f"[-] Could not inspect '{inspect_target}': {e}")
         return
 
     print_banner()

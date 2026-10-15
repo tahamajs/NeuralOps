@@ -463,10 +463,13 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
     param_strs = []
     for p in spec.constructor_params[:5]:
         def_val = p.get("default", "req")
-        if def_val != "req":
-            param_strs.append(f"{p['param']}: {p.get('type', 'Any')}={def_val}")
+        p_type = p.get("type", "Any")
+        if def_val == "req":
+            param_strs.append(f"{p['param']}: {p_type}")
+        elif def_val in ("None", "inspect._empty"):
+            param_strs.append(f"{p['param']}: {p_type}=None")
         else:
-            param_strs.append(f"{p['param']}: {p.get('type', 'Any')}")
+            param_strs.append(f"{p['param']}: {p_type}={def_val}")
     if len(spec.constructor_params) > 5:
         param_strs.append("...")
     lines.append(f"init():   {', '.join(param_strs)}")
