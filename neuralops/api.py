@@ -62,6 +62,30 @@ def replace_attention(
     Returns:
         The model with attention layers replaced in-place.
     """
+    # Allow passing target_module or attention as an instantiated nn.Module
+    target_mod = kwargs.pop("target_module", None)
+    if isinstance(attention, nn.Module):
+        target_mod = attention
+        attention = None
+
+    if target_mod is not None:
+        from neuralops.core.model_utils import replace_module
+        from neuralops.core.architecture import detect_architecture, get_attention_modules
+        arch = detect_architecture(model)
+        modules_list = list(get_attention_modules(model))
+        for layer_i, (name, old_attn) in enumerate(modules_list):
+            if layers is not None and layer_i not in layers:
+                continue
+            import copy
+            mod_copy = copy.deepcopy(target_mod)
+            old_param = next(old_attn.parameters(), None)
+            if old_param is not None:
+                mod_copy = mod_copy.to(device=old_param.device, dtype=old_param.dtype)
+            from neuralops.utils.replace_attention import UniversalAttentionWrapper
+            wrapped = UniversalAttentionWrapper(mod_copy, layer_name=name, return_tuple=True)
+            replace_module(model, name, wrapped)
+        return model
+
     attn_name = attention or attention_type
     if not attn_name:
         raise ValueError("Must specify attention or attention_type.")
