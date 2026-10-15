@@ -678,12 +678,17 @@ def calibrate_surgically_replaced_model(
                 if isinstance(child, nn.Linear):
                     out_proj = child
                     break
+                elif hasattr(child, "up") and isinstance(child.up, nn.Linear):
+                    # FactorizedLinear / SVDLinear
+                    out_proj = child.up
+                    break
 
-        if out_proj is not None and out_proj.weight.shape == (D, D):
+        if out_proj is not None and out_proj.weight.shape[0] == D:
             W_cur = out_proj.weight.data.float()
+            # W_align is (D, D), out_proj.weight is (out_features=D, in_features)
             W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
             out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
-            if out_proj.bias is not None:
+            if getattr(out_proj, "bias", None) is not None:
                 b_cur = out_proj.bias.data.float()
                 b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align)
                 out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
