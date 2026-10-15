@@ -477,7 +477,14 @@ class SpectraV2Attention(BaseAttention):
                         )
                     return context, None
 
-                output = self.out_proj(context)
+                if context.is_cuda and hasattr(self.out_proj, "weight"):
+                    try:
+                        from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                        output = self.out_proj(context)
+                    except Exception:
+                        output = self.out_proj(context)
+                else:
+                    output = self.out_proj(context)
                 if output.shape[-1] != hidden_states.shape[-1]:
                     raise RuntimeError(
                         f"SpectraV2Attention: output dimension mismatch. "

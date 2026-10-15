@@ -439,9 +439,20 @@ class ZeroSAttention(BaseAttention):
                 k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
 
                 sim = None
-                if N_k == L:
+                if N_k == L and Q.is_cuda and not output_attentions and Dh <= 128:
+                    try:
+                        from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                        context = fused_svd_linear_chunk_scan_triton(
+                            q_hat, k_hat, V_f, chunk_size=64, eps=eps
+                        ).to(Q.dtype)
+                    except Exception:
+                        num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
+                        den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                        context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
+                elif N_k == L:
                     num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
                     den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                    context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
                 elif N_k >= L:
                     kv_cum_slice = kv_cum[:, :, -L:, :, :]
                     k_cum_slice = k_cum[:, :, -L:, :]
@@ -449,14 +460,15 @@ class ZeroSAttention(BaseAttention):
                         "b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice
                     )  # [B, H, L, d]
                     den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                    context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
                 else:
                     sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
                     causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
                     sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
                     num = torch.matmul(sim, V_f)  # [B, H, L, d]
                     den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+                    context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
 
-                context = torch.nan_to_num(num / den.clamp(min=eps), nan=0.0, posinf=1e4, neginf=-1e4).to(Q.dtype)
                 context = self.dropout(context)
 
                 if output_attentions:

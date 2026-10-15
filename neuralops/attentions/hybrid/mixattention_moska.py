@@ -547,8 +547,17 @@ class MixAttentionMoSKA(BaseAttention):
         # k has shape (B, H, L, D_h). We gather along dim 2 (the L axis).
         # idx_exp must be (B, H, keep, D_h)
         idx_exp = idx.unsqueeze(1).unsqueeze(-1).expand(B, H, keep, D_h)
-        k_pruned = torch.gather(k, 2, idx_exp)   # (B, H, keep, D_h)
-        v_pruned = torch.gather(v, 2, idx_exp)
+        if k.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
+                k_pruned = torch.gather(k, 2, idx_exp)
+                v_pruned = torch.gather(v, 2, idx_exp)
+            except Exception:
+                k_pruned = torch.gather(k, 2, idx_exp)
+                v_pruned = torch.gather(v, 2, idx_exp)
+        else:
+            k_pruned = torch.gather(k, 2, idx_exp)   # (B, H, keep, D_h)
+            v_pruned = torch.gather(v, 2, idx_exp)
 
         # ---- [FIX-4] Correct mask pruning ----
         pruned_mask = None
