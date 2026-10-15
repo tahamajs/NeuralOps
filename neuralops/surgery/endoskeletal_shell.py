@@ -156,7 +156,17 @@ class SidecarGateBranch(nn.Module):
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # x: (B, T, D)
         B, T, D = x.shape
-        x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.triton_kernels.elementwise import dynconv1d_fwd_triton
+                # conv1d weight: (D, 1, K)
+                w = self.conv1d.weight.squeeze(1)
+                b = self.conv1d.bias
+                x_conv = dynconv1d_fwd_triton(x, w, b)
+            except Exception:
+                x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
+        else:
+            x_conv = self.conv1d(x.transpose(1, 2))[:, :, :T].transpose(1, 2).contiguous()
         gates = torch.sigmoid(self.gate_proj(x))
         return x_conv, gates
 
