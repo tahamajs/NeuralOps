@@ -101,6 +101,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "target_attention": getattr(effective_sub, "target_attention", eff_cls_name.lower()),
                 "embed_dim": getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", 768)),
                 "num_heads": getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
+                "rank": getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32)),
                 "is_wrapped": is_wrapper,
                 "wrapper_class_name": cls_name if is_wrapper else None,
                 "wrapper_import_path": sub.__class__.__module__ if is_wrapper else None,
@@ -212,21 +213,26 @@ def load_surgical_checkpoint(
                     engine=info.get("engine", "sdpa"),
                 )
             else:
+                embed_dim = info.get("embed_dim", 768)
+                num_heads = info.get("num_heads", 12)
+                rank = info.get("rank", 32)
+                from transformers import BertConfig
+                cfg = BertConfig(
+                    hidden_size=embed_dim,
+                    num_attention_heads=num_heads,
+                    rank=rank,
+                    svd_rank=rank,
+                )
                 try:
-                    new_sub = cls(
-                        embed_dim=info.get("embed_dim", 768),
-                        num_heads=info.get("num_heads", 12),
-                    )
+                    new_sub = cls(config=cfg, rank=rank, embed_dim=embed_dim, num_heads=num_heads)
                 except Exception:
                     try:
-                        from transformers import BertConfig
-                        cfg = BertConfig(
-                            hidden_size=info.get("embed_dim", 768),
-                            num_attention_heads=info.get("num_heads", 12),
-                        )
                         new_sub = cls(config=cfg)
                     except Exception:
-                        new_sub = cls()
+                        try:
+                            new_sub = cls(embed_dim=embed_dim, num_heads=num_heads, rank=rank)
+                        except Exception:
+                            new_sub = cls()
 
             if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
                 from neuralops.utils.replace_attention import UniversalAttentionWrapper
