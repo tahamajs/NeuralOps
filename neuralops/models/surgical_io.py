@@ -288,6 +288,7 @@ def load_surgical_checkpoint(
     base_model.load_state_dict(state_dict, strict=strict)
     if map_location is not None:
         base_model.to(device=map_location)
+    base_model.eval()
 
     logger.info("Successfully loaded surgical model checkpoint from %s", path)
     return base_model, manifest
