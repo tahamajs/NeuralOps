@@ -131,6 +131,241 @@ if HAS_TRITON:
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_q[:, None])
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _triton_block_sparse_bwd_kernel(
+        Q_ptr, K_ptr, V_ptr, DO_ptr, DQ_ptr, DK_ptr, DV_ptr,
+        Mask_ptr,
+        stride_qb, stride_qn, stride_qd,
+        stride_kb, stride_kn, stride_kd,
+        stride_vb, stride_vn, stride_vd,
+        stride_dob, stride_don, stride_dod,
+        stride_dqb, stride_dqn, stride_dqd,
+        stride_dkb, stride_dkn, stride_dkd,
+        stride_dvb, stride_dvn, stride_dvd,
+        stride_mb, stride_mh, stride_mq, stride_mk,
+        sm_scale,
+        N_Q: tl.constexpr, N_K: tl.constexpr, D: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr, HAS_MASK: tl.constexpr, IS_CAUSAL: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+
+        offs_q = pid_m * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+        offs_d = tl.arange(0, D)
+        mask_q = offs_q < N_Q
+
+        q_ptrs = Q_ptr + pid_bh * stride_qb + offs_q[:, None] * stride_qn + offs_d[None, :] * stride_qd
+        do_ptrs = DO_ptr + pid_bh * stride_dob + offs_q[:, None] * stride_don + offs_d[None, :] * stride_dod
+        q = tl.load(q_ptrs, mask=mask_q[:, None], other=0.0)
+        do = tl.load(do_ptrs, mask=mask_q[:, None], other=0.0)
+
+        # Recompute normalizer for query tile
+        m_i = tl.full([BLOCK_SIZE], -1e4, dtype=tl.float32)
+        l_i = tl.zeros([BLOCK_SIZE], dtype=tl.float32)
+
+        num_k_blocks = tl.cdiv(N_K, BLOCK_SIZE)
+        for k_blk in range(num_k_blocks):
+            skip = False
+            if HAS_MASK:
+                mask_val = tl.load(Mask_ptr + pid_m * stride_mq + k_blk * stride_mk)
+                if mask_val == 0:
+                    skip = True
+            if IS_CAUSAL and (k_blk * BLOCK_SIZE > (pid_m + 1) * BLOCK_SIZE):
+                skip = True
+
+            if not skip:
+                offs_k = k_blk * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+                mask_k = offs_k < N_K
+                k_ptrs = K_ptr + pid_bh * stride_kb + offs_k[None, :] * stride_kn + offs_d[:, None] * stride_kd
+                k = tl.load(k_ptrs, mask=mask_k[None, :], other=0.0)
+
+                s = tl.dot(q, k) * sm_scale
+                if IS_CAUSAL:
+                    causal_cond = offs_q[:, None] >= offs_k[None, :]
+                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                else:
+                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+
+                m_curr = tl.maximum(m_i, tl.max(s, 1))
+                alpha = tl.exp(m_i - m_curr)
+                p = tl.exp(s - m_curr[:, None])
+                l_i = l_i * alpha + tl.sum(p, 1)
+                m_i = m_curr
+
+        dq = tl.zeros([BLOCK_SIZE, D], dtype=tl.float32)
+
+        for k_blk in range(num_k_blocks):
+            skip = False
+            if HAS_MASK:
+                mask_val = tl.load(Mask_ptr + pid_m * stride_mq + k_blk * stride_mk)
+                if mask_val == 0:
+                    skip = True
+            if IS_CAUSAL and (k_blk * BLOCK_SIZE > (pid_m + 1) * BLOCK_SIZE):
+                skip = True
+
+            if not skip:
+                offs_k = k_blk * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+                mask_k = offs_k < N_K
+                k_ptrs = K_ptr + pid_bh * stride_kb + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+                v_ptrs = V_ptr + pid_bh * stride_vb + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
+                v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
+
+                s = tl.dot(q, tl.trans(k)) * sm_scale
+                if IS_CAUSAL:
+                    causal_cond = offs_q[:, None] >= offs_k[None, :]
+                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                else:
+                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+
+                p = tl.exp(s - m_i[:, None]) / tl.maximum(l_i[:, None], 1e-6)
+                p = tl.where(mask_q[:, None] & mask_k[None, :], p, 0.0)
+
+                dp = tl.dot(do, tl.trans(v))
+                ds = p * (dp - tl.sum(p * dp, 1)[:, None]) * sm_scale
+                dq += tl.dot(ds.to(k.dtype), k)
+
+                dv_ptrs = DV_ptr + pid_bh * stride_dvb + offs_k[:, None] * stride_dvn + offs_d[None, :] * stride_dvd
+                dv = tl.dot(tl.trans(p.to(do.dtype)), do)
+                tl.atomic_add(dv_ptrs, dv, mask=mask_k[:, None])
+
+                dk_ptrs = DK_ptr + pid_bh * stride_dkb + offs_k[:, None] * stride_dkn + offs_d[None, :] * stride_dkd
+                dk = tl.dot(tl.trans(ds.to(q.dtype)), q)
+                tl.atomic_add(dk_ptrs, dk, mask=mask_k[:, None])
+
+        dq_ptrs = DQ_ptr + pid_bh * stride_dqb + offs_q[:, None] * stride_dqn + offs_d[None, :] * stride_dqd
+        tl.atomic_add(dq_ptrs, dq, mask=mask_q[:, None])
+
+
+    @triton.jit
+    def _triton_block_sparse_bwd_kernel(
+        Q_ptr, K_ptr, V_ptr, Mask_ptr, DO_ptr,
+        DQ_ptr, DK_ptr, DV_ptr,
+        stride_qbh, stride_qn, stride_qd,
+        stride_kbh, stride_kn, stride_kd,
+        stride_vbh, stride_vn, stride_vd,
+        stride_dobh, stride_don, stride_dod,
+        stride_dqbh, stride_dqn, stride_dqd,
+        stride_dkbh, stride_dkn, stride_dkd,
+        stride_dvbh, stride_dvn, stride_dvd,
+        stride_mq, stride_mk,
+        sm_scale,
+        N_Q: tl.constexpr,
+        N_K: tl.constexpr,
+        D: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+        HAS_MASK: tl.constexpr,
+        IS_CAUSAL: tl.constexpr,
+    ):
+        """Analytic Block-Sparse Backward Kernel in GPU SRAM.
+        Iterates over active blocks to compute exact dQ, dK, and dV gradients.
+        Zero autograd graph tape, zero PyTorch fallback!
+        """
+        bh_id = tl.program_id(0)
+        q_blk_idx = tl.program_id(1)
+
+        q_start = q_blk_idx * BLOCK_SIZE
+        offs_q = q_start + tl.arange(0, BLOCK_SIZE)
+        offs_d = tl.arange(0, D)
+        mask_q = offs_q < N_Q
+
+        q_base = Q_ptr + bh_id * stride_qbh
+        k_base = K_ptr + bh_id * stride_kbh
+        v_base = V_ptr + bh_id * stride_vbh
+        do_base = DO_ptr + bh_id * stride_dobh
+        dq_base = DQ_ptr + bh_id * stride_dqbh
+        dk_base = DK_ptr + bh_id * stride_dkbh
+        dv_base = DV_ptr + bh_id * stride_dvbh
+
+        q_ptrs = q_base + (offs_q[:, None] * stride_qn + offs_d[None, :] * stride_qd)
+        do_ptrs = do_base + (offs_q[:, None] * stride_don + offs_d[None, :] * stride_dod)
+        q = tl.load(q_ptrs, mask=mask_q[:, None], other=0.0)
+        do = tl.load(do_ptrs, mask=mask_q[:, None], other=0.0)
+
+        # First pass to compute normalizer
+        m_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32) - float("inf")
+        l_prev = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+        n_k_blocks = (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE
+
+        for k_blk_idx in range(0, n_k_blocks):
+            process_block = True
+            if IS_CAUSAL:
+                process_block = process_block and (k_blk_idx <= q_blk_idx)
+            if HAS_MASK:
+                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                process_block = process_block and (mask_val != 0)
+
+            if process_block:
+                k_start = k_blk_idx * BLOCK_SIZE
+                offs_k = k_start + tl.arange(0, BLOCK_SIZE)
+                mask_k = offs_k < N_K
+                k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
+                k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
+
+                s = tl.dot(q, tl.trans(k)) * sm_scale
+                if IS_CAUSAL:
+                    causal_cond = offs_q[:, None] >= offs_k[None, :]
+                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                else:
+                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+
+                m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
+                alpha = tl.exp(m_prev - m_curr)
+                p = tl.exp(s - m_curr[:, None])
+                l_curr = l_prev * alpha + tl.sum(p, axis=1)
+                m_prev = m_curr
+                l_prev = l_curr
+
+        denom = l_prev[:, None] + 1e-6
+        dq_acc = tl.zeros((BLOCK_SIZE, D), dtype=tl.float32)
+
+        # Second pass to compute gradients dQ, dK, dV
+        for k_blk_idx in range(0, n_k_blocks):
+            process_block = True
+            if IS_CAUSAL:
+                process_block = process_block and (k_blk_idx <= q_blk_idx)
+            if HAS_MASK:
+                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                process_block = process_block and (mask_val != 0)
+
+            if process_block:
+                k_start = k_blk_idx * BLOCK_SIZE
+                offs_k = k_start + tl.arange(0, BLOCK_SIZE)
+                mask_k = offs_k < N_K
+                k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
+                v_ptrs = v_base + (offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+                k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
+                v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
+
+                s = tl.dot(q, tl.trans(k)) * sm_scale
+                cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
+                s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                p = tl.exp(s - m_prev[:, None]) / denom
+                p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
+
+                # dV += P^T @ DO
+                dv = tl.dot(tl.trans(p.to(do.dtype)), do)
+                dv_ptrs = dv_base + (offs_k[:, None] * stride_dvn + offs_d[None, :] * stride_dvd)
+                tl.atomic_add(dv_ptrs, dv, mask=mask_k[:, None])
+
+                # dP = DO @ V^T
+                dp = tl.dot(do, tl.trans(v))
+                # dS = P * (dP - sum(P * dP)) * sm_scale
+                ds = p * (dp - tl.sum(p * dp, axis=1)[:, None]) * sm_scale
+
+                # dQ += dS @ K
+                dq_acc += tl.dot(ds.to(k.dtype), k)
+
+                # dK += dS^T @ Q
+                dk = tl.dot(tl.trans(ds.to(q.dtype)), q)
+                dk_ptrs = dk_base + (offs_k[:, None] * stride_dkn + offs_d[None, :] * stride_dkd)
+                tl.atomic_add(dk_ptrs, dk, mask=mask_k[:, None])
+
+        dq_ptrs = dq_base + (offs_q[:, None] * stride_dqn + offs_d[None, :] * stride_dqd)
+        tl.atomic_add(dq_ptrs, dq_acc.to(DQ_ptr.dtype.element_ty), mask=mask_q[:, None])
+
+
 class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(
@@ -207,6 +442,66 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         q, k, v, block_mask = ctx.saved_tensors
+        block_size = ctx.block_size
+        is_causal = ctx.is_causal
+
+        if HAS_TRITON and q.is_cuda:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK:
+                    orig_shape = q.shape
+                    D = q.shape[-1]
+                    N_Q = q.shape[-2]
+                    N_K = k.shape[-2]
+                    BH = q.numel() // (N_Q * D)
+
+                    q_flat = q.contiguous().view(BH, N_Q, D)
+                    k_flat = k.contiguous().view(BH, N_K, D)
+                    v_flat = v.contiguous().view(BH, N_K, D)
+                    grad_flat = grad_out.contiguous().view(BH, N_Q, D)
+
+                    dq = torch.zeros_like(q_flat)
+                    dk = torch.zeros_like(k_flat)
+                    dv = torch.zeros_like(v_flat)
+
+                    has_mask = block_mask is not None
+                    if has_mask:
+                        bm_flat = block_mask.to(torch.int32).contiguous()
+                        stride_mq, stride_mk = bm_flat.stride(-2), bm_flat.stride(-1)
+                    else:
+                        bm_flat = torch.empty((1, 1), dtype=torch.int32, device=q.device)
+                        stride_mq, stride_mk = 0, 0
+
+                    sm_scale = 1.0 / math.sqrt(D)
+                    n_q_blocks = (N_Q + block_size - 1) // block_size
+                    grid = (BH, n_q_blocks)
+
+                    _triton_block_sparse_bwd_kernel[grid](
+                        q_flat, k_flat, v_flat, bm_flat, grad_flat,
+                        dq, dk, dv,
+                        q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
+                        k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
+                        v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
+                        grad_flat.stride(0), grad_flat.stride(1), grad_flat.stride(2),
+                        dq.stride(0), dq.stride(1), dq.stride(2),
+                        dk.stride(0), dk.stride(1), dk.stride(2),
+                        dv.stride(0), dv.stride(1), dv.stride(2),
+                        stride_mq, stride_mk,
+                        sm_scale,
+                        N_Q=N_Q,
+                        N_K=N_K,
+                        D=D,
+                        BLOCK_SIZE=block_size,
+                        HAS_MASK=has_mask,
+                        IS_CAUSAL=is_causal,
+                    )
+                    g_q = dq.view(*orig_shape) if ctx.needs_input_grad[0] else None
+                    g_k = dk.view(*k.shape) if ctx.needs_input_grad[1] else None
+                    g_v = dv.view(*v.shape) if ctx.needs_input_grad[2] else None
+                    return g_q, g_k, g_v, None, None, None, None
+            except Exception:
+                pass
+
         q_req = q.detach().requires_grad_(True)
         k_req = k.detach().requires_grad_(True)
         v_req = v.detach().requires_grad_(True)
