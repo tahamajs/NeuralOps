@@ -61,6 +61,12 @@ class RMSNorm(nn.Module):
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
 
         # FIX: Explicitly cast accumulators to torch.float32 to avoid FP16 sum-of-squares overflow/underflow
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and self.weight is not None and len(self.normalized_shape) == 1:
+            try:
+                from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
+                return rmsnorm_triton(x, self.weight, self.eps)
+            except Exception:
+                pass
         variance = torch.mean(x.float() ** 2, dim=reduction_dims, keepdim=True)
         x_normed = (x.float() * torch.rsqrt(variance + self.eps)).to(input_dtype)
 
