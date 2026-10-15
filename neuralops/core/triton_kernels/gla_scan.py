@@ -622,8 +622,12 @@ def kda_hla_chunk_scan_triton(
     if scale is None:
         scale = 1.0 / math.sqrt(D)
 
+    from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+    if FORCE_PYTORCH_FALLBACK:
+        # Fall straight to PyTorch chunked scan
+        pass
     # 1. Try FLA chunk_gla when available on CUDA SM >= 8.0
-    if q.is_cuda:
+    elif q.is_cuda and torch.cuda.is_available() and torch.cuda.get_device_capability(q.device)[0] >= 8:
         try:
             from fla.ops.gla import chunk_gla
             target_dtype = q.dtype if q.dtype in (torch.float16, torch.bfloat16) else torch.float16
