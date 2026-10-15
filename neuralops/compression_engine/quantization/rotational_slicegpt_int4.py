@@ -152,6 +152,23 @@ class RotationalSliceGPTINT4Linear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (..., D_in)
         x_proj = torch.matmul(x, self.Q_P_r)  # (..., r)
+        # Attempt Triton fused INT4 LUT dequant GEMM if 1D centroids and CUDA
+        if self.W_centroids.ndim == 1 and x.is_cuda and self.W_centroids.shape[0] == 16:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_int4_lut_dequant_matmul_triton
+                # W_indices is (D_out, r). We compute y = x_proj @ W_q.T
+                orig_shape = x_proj.shape
+                x_2d = x_proj.reshape(-1, orig_shape[-1])
+                y_2d = fused_int4_lut_dequant_matmul_triton(
+                    x_2d,
+                    self.W_indices,
+                    self.W_centroids,
+                    torch.ones(self.W_indices.shape[0], device=x.device, dtype=x.dtype),
+                    bias=self.bias,
+                )
+                return y_2d.reshape(*orig_shape[:-1], self.W_indices.shape[0])
+            except Exception:
+                pass
         W_q = self._dequantize_W()  # (D_out, r)
         y = torch.matmul(x_proj, W_q.T)  # (..., D_out)
         if self.bias is not None:

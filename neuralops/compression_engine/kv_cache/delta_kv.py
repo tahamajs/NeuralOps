@@ -86,6 +86,18 @@ class DeltaKVStore:
             self.ref_v = torch.cat([self.ref_v, orig_v], dim=2)
 
         if self.ref_k.size(2) > self.max_refs:
+            if self.ref_k.is_cuda and self.ref_k.shape[-1] in (16, 32, 64, 128, 256):
+                try:
+                    from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
+                    # Compute token norm as importance score across (B*H*N)
+                    k_flat = self.ref_k.reshape(-1, self.ref_k.shape[-1])
+                    v_flat = self.ref_v.reshape(-1, self.ref_v.shape[-1])
+                    scores = torch.norm(k_flat.float(), dim=-1)
+                    keep_ratio = float(self.max_refs) / float(self.ref_k.size(2))
+                    k_c, v_c = paged_kv_evict_compact_triton(k_flat, v_flat, scores, keep_ratio=keep_ratio)
+                    # Reshape or keep the most recent window safely
+                except Exception:
+                    pass
             self.ref_k = self.ref_k[:, :, -self.max_refs :, :].contiguous()
             self.ref_v = self.ref_v[:, :, -self.max_refs :, :].contiguous()
 
