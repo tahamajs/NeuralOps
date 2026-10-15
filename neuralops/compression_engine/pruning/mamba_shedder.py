@@ -142,19 +142,34 @@ class MambaShedderPrunedLinear(nn.Module):
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+        h = F.linear(x_flat, self.W_kept, self.bias_kept)  # (..., k)
         out = torch.zeros(
-            *x.shape[:-1],
+            *x_flat.shape[:-1],
             self.original_out_features,
             dtype=h.dtype,
             device=h.device,
         )
         idx = self.keep_idx.to(device=h.device)
-        out.scatter_(-1, idx.expand(*x.shape[:-1], -1), h)
+        out.scatter_(-1, idx.expand(*x_flat.shape[:-1], -1), h)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
+            if x.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x_flat,
+                        self.lora_A.t().to(x_flat.dtype).contiguous(),
+                        self.lora_B.t().to(x_flat.dtype).contiguous(),
+                        bias=None,
+                    )
+                    out = out + (self.scaling * lora_out).to(out.dtype)
+                    return out.reshape(*orig_shape[:-1], self.original_out_features)
+                except Exception:
+                    pass
+            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
-        return out
+        return out.reshape(*orig_shape[:-1], self.original_out_features)
 
     def storage_bytes(self) -> int:
         total = self.W_kept.numel() * self.W_kept.element_size()
