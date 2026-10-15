@@ -378,6 +378,13 @@ class RefinedLandmarkAttention(BaseAttention):
             )
 
         W = max(1, int(self.local_window_size))
+        if q.is_cuda and not self.training and valid_mask is None:
+            try:
+                from neuralops.core.triton_kernels.sliding_window import fused_landmark_local_block_attn_triton
+                return fused_landmark_local_block_attn_triton(q, k, v, window_size=W, is_causal=self.is_decoder)
+            except Exception:
+                pass
+
         pad_len = (W - N % W) % W
 
         if pad_len > 0:
