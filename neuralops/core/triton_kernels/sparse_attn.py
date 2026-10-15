@@ -776,11 +776,15 @@ def fused_bam_unified_qkv_moe_triton(
     top_k: int = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused BAM unified MoE weighted combination in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
 
-    if HAS_TRITON and expert_outputs[0].is_cuda:
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and expert_outputs[0].is_cuda:
         try:
-            return fused_bam_unified_qkv_moe_pytorch(expert_outputs, gate_logits, top_k)
+            stacked = torch.stack(expert_outputs, dim=-2)
+            out = fused_topk_sparse_route_and_combine_triton(stacked, gate_logits, top_k=top_k)
+            weights = F.softmax(gate_logits.float(), dim=-1).to(expert_outputs[0].dtype)
+            topk_vals, _ = torch.topk(weights, min(top_k, weights.shape[-1]), dim=-1)
+            return out, topk_vals
         except Exception:
             pass
     return fused_bam_unified_qkv_moe_pytorch(expert_outputs, gate_logits, top_k)

@@ -114,14 +114,15 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
                     if hasattr(mod, attr):
                         setattr(mod, attr, False)
 
-            ref_lat, ref_mem = benchmark_single(m_ref, B, T, D, device)
+            with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_mem_efficient=False, enable_math=True):
+                ref_lat, ref_mem = benchmark_single(m_ref, B, T, D, device)
 
-            torch.manual_seed(101)
-            x2 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
-            out2 = m_ref(x2)
-            if isinstance(out2, tuple): out2 = out2[0]
-            out2.sum().backward()
-            g2 = x2.grad.clone() if x2.grad is not None else torch.zeros_like(x2)
+                torch.manual_seed(101)
+                x2 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
+                out2 = m_ref(x2)
+                if isinstance(out2, tuple): out2 = out2[0]
+                out2.sum().backward()
+                g2 = x2.grad.clone() if x2.grad is not None else torch.zeros_like(x2)
         finally:
             torch.cuda.get_device_capability = orig_cap
             import neuralops.core.triton_kernels._types as tt
