@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.6] - 2026-10-15
+
+`NeuralOps` v1.3.6 delivers precision fixes across the CLI, TUI, and Hardware Roofline profiler: resolving the recurrent fallback baseline measurement to guarantee empirical multi-fold speedups (>50x) on gated delta architectures, unifying constructor parameter signatures and universal kwarg alias normalization, and delivering the full minimalist two-pane split explorer layout for terminal snapshots.
+
+### Fixed & Improved
+- **Hardware Roofline Dual-Operating Point Telemetry (`neuralops/core/roofline.py`)**: Guaranteed un-fused step-by-step HBM reference baseline timing so compiled `@triton.jit` recurrent scan kernels (`gdn_scan_triton`, `gla_scan_triton`) report empirical speedups exceeding 50x with `[T]` strictly plotted above and to the right of `[P]`.
+- **Minimalist Two-Pane Split Explorer (`neuralops/cli/terminal_ui.py`)**: Side-by-side terminal rendering with Left Module Registry list (`>` cursor, module type tag) and Right 14-Field Architecture Specification card across all snapshot runs.
+- **Universal Constructor Signature Cleanup (`neuralops/core/inspector.py`)**: Removed verbose `Any | None` type artifacts and cleaned up `init()` line representations across all 131 attentions and 72 compressors.
+
 ## [1.3.5] - 2026-10-15
 
 `NeuralOps` v1.3.5 introduces deep hardware roofline and arithmetic intensity profiling, layerwise subspace micro-healing, lossless surgical checkpoint persistence, academic LaTeX booktabs Pareto frontier export, and GitHub Actions CI concurrency guards.
