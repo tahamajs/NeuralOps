@@ -17,6 +17,12 @@ class CrossEntropyLoss(nn.Module):
 
     def forward(self, logits, labels) -> Any:
         """Forward pass — compute module output from inputs."""
+        if logits.is_cuda and self.loss.weight is None:
+            try:
+                from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy
+                return fused_cross_entropy(logits, labels, ignore_index=self.loss.ignore_index, reduction=self.loss.reduction)
+            except Exception:
+                pass
         return self.loss(logits, labels)
 
 
