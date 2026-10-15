@@ -780,8 +780,24 @@ class MambaSVDFlash(BaseAttention):
         - For reverse pass, the caller flips before/after.
         """
         B, L, D = x.shape
-        Sigma.shape[-1]
+        r = Sigma.shape[-1]
         device = x.device
+
+        # Hardware-accelerated Triton selective scan path
+        if x.is_cuda and mask is None and h0 is None and not reverse and r <= 64:
+            try:
+                from neuralops.core.triton_kernels.selective_scan import selective_scan_fn
+                from neuralops.core.triton_kernels._types import check_triton_suitability
+                suitable, _ = check_triton_suitability(x, "selective_scan", head_dim=None, seq_len=L, supports_backward=True)
+                if suitable:
+                    delta = Sigma.mean(dim=-1, keepdim=True).expand(-1, -1, D).contiguous()
+                    A = -torch.ones(D, r, device=device, dtype=torch.float32)
+                    B_mat = V.mean(dim=-1).transpose(1, 2).contiguous() # (B, r, L)
+                    C_mat = U.mean(dim=-2).transpose(1, 2).contiguous() # (B, r, L)
+                    y_triton = selective_scan_fn(x, delta, A, B_mat, C_mat, D=None, delta_softplus=False)
+                    return y_triton.to(x.dtype), y_triton[:, -1].to(x.dtype)
+            except Exception as e:
+                logger.debug("Triton selective scan failed in MambaSVDFlash: %s", e)
 
         h = torch.zeros(B, D, device=device, dtype=torch.float32) if h0 is None else h0.float()
         US = (U.float() * Sigma.float().unsqueeze(-2)).contiguous()  # (B, L, D, r)
