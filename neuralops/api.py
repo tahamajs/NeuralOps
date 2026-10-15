@@ -542,8 +542,23 @@ def surgical_transplant_and_heal_pipeline(
     else:
         student = student_base_model
 
+    # Detect dimension from teacher model or calibration inputs if not passed
+    call_kwargs = dict(kwargs)
+    if "embed_dim" not in call_kwargs and "d_model" not in call_kwargs and "hidden_size" not in call_kwargs and "dim" not in call_kwargs:
+        t_dim = getattr(teacher_model, "dim", getattr(teacher_model, "hidden_size", getattr(teacher_model, "d_model", None)))
+        if t_dim is None and hasattr(teacher_model, "config"):
+            t_dim = getattr(teacher_model.config, "hidden_size", getattr(teacher_model.config, "d_model", None))
+        if t_dim is None:
+            # Check calibration inputs shape: (B, T, D)
+            if calibration_inputs is not None and isinstance(calibration_inputs, torch.Tensor) and calibration_inputs.ndim >= 2:
+                t_dim = calibration_inputs.shape[-1]
+            elif isinstance(calibration_inputs, (list, tuple)) and len(calibration_inputs) > 0 and isinstance(calibration_inputs[0], torch.Tensor):
+                t_dim = calibration_inputs[0].shape[-1]
+        if t_dim is not None:
+            call_kwargs["embed_dim"] = t_dim
+
     # 1. Raw Surgical Replacement
-    student = replace_attention(student, attention=target_attention, **kwargs)
+    student = replace_attention(student, attention=target_attention, **call_kwargs)
 
     # Measure raw student error if inputs provided
     initial_metrics: Dict[str, float] = {}
