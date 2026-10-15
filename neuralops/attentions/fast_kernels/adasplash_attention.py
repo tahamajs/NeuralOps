@@ -18,9 +18,9 @@ from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
+from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 from neuralops.core.triton_kernels.elementwise import fused_entmax_bisect_triton
 from neuralops.utils.compat import maybe_apply_rotary, repeat_kv
-from neuralops.utils.device import should_use_triton
 from neuralops.utils.model_family import ModelAdapter
 
 
@@ -35,7 +35,8 @@ def entmax_bisect(
     Compute α-entmax via stabilized bisection strictly over valid tokens.
     Includes an Early Stopping mechanism to drastically improve Inference Speed.
     """
-    if should_use_triton(scores) and dim == -1:
+    suitable, _ = check_triton_suitability(scores, "elementwise")
+    if not FORCE_PYTORCH_FALLBACK and suitable and scores.is_cuda and dim == -1:
         return fused_entmax_bisect_triton(scores, alpha=alpha, valid_mask=valid_mask, n_iter=n_iter)
 
     device = scores.device
