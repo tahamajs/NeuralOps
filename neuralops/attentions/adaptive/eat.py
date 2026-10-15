@@ -762,8 +762,7 @@ class EATBlock(BaseAttention):
             else:
                 _sdpa_out = _sdpa_out * hm
                 context = _sdpa_out
-        else:
-            context = torch.matmul(probs.to(v.dtype), v) if probs is not None else _sdpa_out
+        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # ---- Output projection ----
         if context.is_cuda and hasattr(self.out_lin, "weight"):

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from neuralops.benchmarks.result import ModuleMetadata
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 LOG = logging.getLogger(__name__)
 
@@ -109,8 +108,8 @@ CATALOG_PATH = Path(__file__).parent / "static_catalog.json"
 
 def discover_all_modules() -> list[ModuleMetadata]:
     """Discover and return capabilities for all registered modules (131 attentions + 72 compressors = 203)."""
-    # Fast path: use cached static catalog if registries are not yet fully populated
-    if CATALOG_PATH.exists() and len(ATTENTION_REGISTRY._dict) < 50:
+    # Fast path: use cached static catalog to avoid importing torch and heavy attention registries
+    if CATALOG_PATH.exists():
         try:
             with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
                 data = json.load(fp)
@@ -119,7 +118,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
                 discovered.append(ModuleMetadata(
                     name=item["name"],
                     type="attention",
-                    cls=None,
+                    module_type="attention",
                     supports_causal=item.get("supports_causal", True),
                     supports_gqa=item.get("supports_gqa", False),
                     supports_rope=item.get("supports_rope", False),
@@ -129,7 +128,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
                 discovered.append(ModuleMetadata(
                     name=item["name"],
                     type="compressor",
-                    cls=None,
+                    module_type="compressor",
                     supports_causal=item.get("supports_causal", True),
                     supports_gqa=item.get("supports_gqa", False),
                     supports_rope=item.get("supports_rope", False),
@@ -140,6 +139,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
         except Exception:
             pass
 
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []
 
