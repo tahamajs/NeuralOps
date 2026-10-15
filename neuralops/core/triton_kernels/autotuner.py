@@ -248,7 +248,9 @@ def select_optimal_triton_config(
     if sm_major <= 7:
         sram_budget = min(sram_budget, 49152)
 
-    est_sram = estimate_kernel_sram_bytes(block_m, block_n, max(K, 32), dtype_bytes, stages)
+    # In GEMM, the live K tile resident in SRAM per stage is block_k, not full tensor K!
+    k_tile = min(K, block_k)
+    est_sram = estimate_kernel_sram_bytes(block_m, block_n, k_tile, dtype_bytes, stages)
     while est_sram > sram_budget and (block_m > 16 or block_n > 16 or stages > 1):
         if stages > 2:
             stages -= 1
@@ -261,7 +263,7 @@ def select_optimal_triton_config(
         else:
             block_m = max(16, block_m // 2)
             block_n = max(16, block_n // 2)
-        est_sram = estimate_kernel_sram_bytes(block_m, block_n, max(K, 32), dtype_bytes, stages)
+        est_sram = estimate_kernel_sram_bytes(block_m, block_n, k_tile, dtype_bytes, stages)
 
     config = {
         "BLOCK_M": block_m,
