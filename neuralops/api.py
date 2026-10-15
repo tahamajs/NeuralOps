@@ -450,6 +450,37 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     return neuralops.create_compressor(name=name, model=model, rank=rank, **kwargs)
 
 
+def register_custom_attention(*args: Any, **kwargs: Any) -> Any:
+    """Register a custom attention mechanism with full framework compatibility."""
+    from neuralops.core.extensibility import register_custom_attention as _reg
+    return _reg(*args, **kwargs)
+
+
+def register_custom_compressor(*args: Any, **kwargs: Any) -> Any:
+    """Register a custom compression engine with full framework compatibility."""
+    from neuralops.core.extensibility import register_custom_compressor as _reg
+    return _reg(*args, **kwargs)
+
+
+def unregister_custom_module(name: str, category: Optional[str] = None) -> bool:
+    """Cleanly unregister a custom module to restore the canonical registry counts."""
+    from neuralops.core.extensibility import unregister_custom_module as _unreg
+    return _unreg(name, category)
+
+
+def validate_module_contract(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+    """Automated 6-point contract diagnostic check for any module."""
+    from neuralops.core.extensibility import validate_module_contract as _val
+    return _val(*args, **kwargs)
+
+
+def scaffold_module(name: str, category: str = "attention", family: str = "linear-scan", output_file: Optional[str] = None) -> str:
+    """Generate boilerplate code for a new custom module."""
+    from neuralops.core.extensibility import scaffold_module as _scaff
+    return _scaff(name, category=category, family=family, output_file=output_file)
+
+
+
 def compare_attentions_ablation(
     attention_names: Sequence[str],
     batch_size: int = 2,
@@ -910,6 +941,11 @@ __all__ = [
     "create_attention",
     "create_compressor",
     "list_families",
+    "register_custom_attention",
+    "register_custom_compressor",
+    "unregister_custom_module",
+    "validate_module_contract",
+    "scaffold_module",
     # Workflows & Pipelines
     "compare_attentions_ablation",
     "surgical_transplant_and_heal_pipeline",
