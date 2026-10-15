@@ -36,6 +36,7 @@ def _prepare_layer_config(
     family: str,
     is_dec: bool,
     adapter: Any,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """Resolve hidden_size, num_heads, head_dim, num_kv_heads, and projection aliases."""
     hidden_size = None
@@ -57,6 +58,14 @@ def _prepare_layer_config(
         if hd:
             head_dim = hd
 
+    # Allow kwargs overrides (e.g. embed_dim, num_heads) if provided
+    override_dim = kwargs.get("embed_dim", kwargs.get("dim", kwargs.get("d_model", kwargs.get("hidden_size", None))))
+    override_heads = kwargs.get("num_heads", kwargs.get("n_heads", kwargs.get("num_attention_heads", None)))
+    if override_dim is not None:
+        hidden_size = override_dim
+    if override_heads is not None:
+        num_heads = override_heads
+
     if hidden_size is None or num_heads is None:
         for _, child in old_attn.named_children():
             if (
@@ -67,12 +76,20 @@ def _prepare_layer_config(
                 if hidden_size is None:
                     hidden_size = child.weight.shape[1]
                 break
+        if hidden_size is None:
+            # Check direct parameters on old_attn
+            for _, p in old_attn.named_parameters():
+                if p.ndim == 2:
+                    hidden_size = p.shape[1]
+                    break
         if num_heads is None:
             num_heads = getattr(
                 old_attn,
                 "num_heads",
-                getattr(old_attn, "num_attention_heads", None),
+                getattr(old_attn, "num_attention_heads", 4),
             )
+        if num_heads is None:
+            num_heads = 4
         if num_kv_heads is None:
             num_kv_heads = getattr(old_attn, "num_key_value_heads", num_heads)
         if head_dim is None and hidden_size is not None and num_heads is not None:
@@ -94,6 +111,14 @@ def _prepare_layer_config(
             model_type=family,
         )
     else:
+        if getattr(config, "hidden_size", None) is None and hidden_size is not None:
+            config.hidden_size = hidden_size
+        if getattr(config, "num_attention_heads", None) is None and num_heads is not None:
+            config.num_attention_heads = num_heads
+        if getattr(config, "head_dim", None) is None and head_dim is not None:
+            config.head_dim = head_dim
+        if getattr(config, "num_key_value_heads", None) is None and num_kv_heads is not None:
+            config.num_key_value_heads = num_kv_heads
         if family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral") or is_dec:
             config.is_decoder = True
             config.is_causal = True
@@ -501,6 +526,7 @@ def _inject_attention_loop(
             family,
             is_dec,
             adapter,
+            **kwargs,
         )
         layer_cfg = prep["config"]
         effective_rank = rank if rank is not None else getattr(layer_cfg, "rank", 32)
