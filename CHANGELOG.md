@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.7] - 2026-10-15
+
+`NeuralOps` v1.3.7 delivers advanced ecosystem maturation: lossless bit-exact surgical serialization roundtrips for complex architectures (including T5 encoder-decoder and deep causal decoders), an automated cross-framework comparative benchmarking harness against standard PyTorch baselines, interactive Jupyter/Colab tutorial notebooks, and comprehensive verification across our physical Ada Lovelace GPU cluster.
+
+### Added & Improved
+- **Bit-Exact Surgical Serialization Roundtrip (`neuralops/models/surgical_io.py`)**: Lossless serialization and reconstruction of all wrapper attributes (`is_t5`, `is_nested_encoder`, `is_decoder`, `layer_idx`, `layer_name`), guaranteeing bit-exact output reproduction (`max_diff < 1e-6`) upon reload.
+- **Cross-Framework Comparative Benchmark Harness (`scripts/benchmarks/run_competitive_comparison.py`)**: Automated latency, throughput (tokens/sec), peak VRAM allocation, speedup vs PyTorch reference, and numerical cosine similarity benchmarking across sequence lengths $T \in \{512, 1024, 2048, 4096\}$.
+- **Interactive Jupyter / Colab Tutorials (`notebooks/`)**:
+  - `01_quickstart_surgery_and_healing.ipynb`: 1-line attention replacement, Ridge calibration, and layerwise micro-healing on GPT-2.
+  - `02_roofline_and_triton_kernels.ipynb`: Hardware roofline profiling, arithmetic intensity, and ASCII curve visualization.
+  - `03_custom_plugins_and_extensibility.ipynb`: Custom attention registration, composable stages, and automated 6-point contract diagnostic checks.
+
 ## [1.3.6] - 2026-10-15
 
 `NeuralOps` v1.3.6 delivers precision fixes across the CLI, TUI, and Hardware Roofline profiler: resolving the recurrent fallback baseline measurement to guarantee empirical multi-fold speedups (>50x) on gated delta architectures, unifying constructor parameter signatures and universal kwarg alias normalization, and delivering the full minimalist two-pane split explorer layout for terminal snapshots.
