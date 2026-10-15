@@ -657,13 +657,15 @@ class DecayLinearAttention(BaseAttention):
                         q_fl = q.to(target_dtype).transpose(1, 2).contiguous()
                         k_fl = k.to(target_dtype).transpose(1, 2).contiguous()
                         v_fl = v.to(target_dtype).transpose(1, 2).contiguous()
+                        v_ones = torch.ones_like(v_fl)
                         if reverse:
                             q_fl = q_fl.flip(dims=[1])
                             k_fl = k_fl.flip(dims=[1])
                             v_fl = v_fl.flip(dims=[1])
                             g = g.flip(dims=[1])
-                        out, _ = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0 / math.sqrt(d))
-                        out = out.transpose(1, 2)
+                        out_num, _ = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0 / math.sqrt(d))
+                        out_den, _ = chunk_gla(q_fl, k_fl, v_ones, g, scale=1.0 / math.sqrt(d))
+                        out = out_num.transpose(1, 2) / out_den.transpose(1, 2).clamp(min=1e-6)
                         if reverse:
                             out = out.flip(dims=[2])
                         return out.to(q.dtype)
@@ -673,6 +675,7 @@ class DecayLinearAttention(BaseAttention):
                     return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
             except Exception as e:
                 logger.debug("Triton decay scan failed, falling back to chunked PyTorch: %s", e)
+
 
         q_f = q.float()
         k_f = k.float()
