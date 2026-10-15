@@ -379,21 +379,7 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
     if b < 2:
         return x
 
-    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
-    if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK and (d % b == 0) and (b in (32, 64, 128, 256)):
-        try:
-            x_blocks = x.contiguous().view(-1, b)
-            total_rows = x_blocks.shape[0]
-            y_blocks = torch.empty_like(x_blocks)
-            grid = (total_rows,)
-            _fwht_sram_kernel[grid](
-                x_blocks, y_blocks,
-                total_rows,
-                BLOCK_D=b,
-            )
-            return y_blocks.view(orig_shape)
-        except Exception:
-            pass
+    # Chunk along last dimension using exact vectorized butterfly stages
         
     # Chunk along last dimension
     rem = d % b
