@@ -53,7 +53,7 @@ def test_universal_registry_and_inspector_contract():
         assert "init():" in card
         assert "Any | None=None" not in card
 
-    for k in ["hadamard_incoherent_svd", "w4a16_linear", "dobi_svd", "autosvd", "cur_compressor"]:
+    for k in ["hadamard_incoherent_svd", "cur_compressor", "dobi_svd", "direct_svd", "slicegpt"]:
         spec = inspect_architecture(k, category="compressor")
         assert spec.name == k
         assert spec.category == "compressor"
@@ -132,7 +132,9 @@ def test_custom_plugin_lifecycle_and_contract_validation():
                 self.attn = nn.MultiheadAttention(d, 4, batch_first=True)
                 self.dense = nn.Linear(d, d)
             def forward(self, x):
-                o, _ = self.attn(x, x, x)
+                o = self.attn(x, x, x)
+                if isinstance(o, tuple):
+                    o = o[0]
                 return self.dense(o)
 
         teacher = HostModel(d=64)
