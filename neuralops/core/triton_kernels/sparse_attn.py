@@ -528,8 +528,15 @@ def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: An
     """Check whether block-sparse attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
+    # Triton tl.arange requires powers of 2
+    if head_dim <= 0 or (head_dim & (head_dim - 1)) != 0:
+        return False
+    block_size = kwargs.get("block_size", 64)
+    if block_size <= 0 or (block_size & (block_size - 1)) != 0:
+        return False
     suitable, _ = check_triton_suitability(q, "sparse_attn", head_dim=head_dim, seq_len=seq_len)
     return suitable
+
 
 
 def fwd(
