@@ -760,8 +760,22 @@ class MoEDeltaKVPagedAttention(nn.Module):
         context_per_expert = torch.matmul(attn_probs, v_gathered)  # (B,H,num_pages,k,page_size,d)
 
         # ---- Mix experts with gate weights ----
-        g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)  # (B,H,num_pages,k,1,1)
-        context = (context_per_expert * g_j_exp).sum(dim=3)  # (B,H,num_pages,page_size,d)
+        if context_per_expert.is_cuda and g_j.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
+                # context_per_expert: (B, H, num_pages, k, page_size, d) -> flatten page_size * d as expert output dim
+                B_e, H_e, P_e, K_e, S_e, D_e = context_per_expert.shape
+                ctx_flat = context_per_expert.view(B_e * H_e * P_e, K_e, S_e * D_e)
+                # g_j: (B, H, num_pages, k) -> (B*H*P, k)
+                g_flat = g_j.view(B_e * H_e * P_e, K_e)
+                combined = fused_topk_sparse_route_and_combine_triton(ctx_flat, g_flat, top_k=K_e)
+                context = combined.view(B_e, H_e, P_e, S_e, D_e)
+            except Exception:
+                g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)  # (B,H,num_pages,k,1,1)
+                context = (context_per_expert * g_j_exp).sum(dim=3)  # (B,H,num_pages,page_size,d)
+        else:
+            g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)  # (B,H,num_pages,k,1,1)
+            context = (context_per_expert * g_j_exp).sum(dim=3)  # (B,H,num_pages,page_size,d)
 
         # ---- Reshape to (B,H,padded_N,d) ----
         context = context.reshape(B, H, padded_N, d)

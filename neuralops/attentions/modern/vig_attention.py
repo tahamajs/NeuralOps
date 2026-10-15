@@ -484,15 +484,25 @@ class ViGAttention(BaseAttention):
         past_len: int,
         chunk_size: int = 128,
     ) -> torch.Tensor:
-        """Fully vectorized causal cumsum without memory allocation loops."""
+        """Fused causal scan accelerated with Triton GPU kernel when applicable."""
         L = q_lin.shape[2]
+        N_kv = k_lin.shape[2]
 
-        # ضرب خارجی و جمع تجمعی بدون حلقه پایتون و بدون ساخت متغیرهای ۵-بعدی صفر
+        if q_lin.is_cuda and past_len == 0 and L == N_kv and q_lin.shape[-1] <= 128:
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                return fused_svd_linear_chunk_scan_triton(
+                    q_lin, k_lin, v_f, chunk_size=min(chunk_size, 64), eps=1e-4
+                )
+            except Exception:
+                pass
+
+        # Fully vectorized causal cumsum fallback without memory allocation loops
         kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)  # (B, H, N_kv, Dh, Dh)
         kv_cumsum = kv_outer.cumsum(dim=2)
         k_cumsum = k_lin.cumsum(dim=2)
 
-        # اسلایس مستقیم برای طول کوئری فعلی
+        # Direct slice for current query length
         kv_at_q = kv_cumsum[:, :, past_len : past_len + L, :, :]
         k_at_q = k_cumsum[:, :, past_len : past_len + L, :]
 
