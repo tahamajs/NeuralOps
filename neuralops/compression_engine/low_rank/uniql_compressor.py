@@ -99,14 +99,23 @@ class UniQLinear(nn.Module):
         return self._reconstruct_weight()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                # W_down = diag(S) @ Vt : (r, in)
+                # W_up = U : (out, r)
+                U = (self.U_q.float() * self.scale_u.unsqueeze(1)).to(x.dtype)
+                S = (self.S_q.float() * self.scale_s).to(x.dtype)
+                Vt = (self.Vt_q.float() * self.scale_v.unsqueeze(1)).to(x.dtype)
+                w_down = S.unsqueeze(1) * Vt  # (r, in)
+                return fused_down_up_gemm_bias_triton(x, w_down, U.t().contiguous(), bias=self.bias)
+            except Exception:
+                pass
+
         W = self._reconstruct_weight()
-        if self.is_conv1d:
-            # Conv1D stores weight as (in, out); our W is (out, in).
-            out = F.linear(x, W)
-        else:
-            out = F.linear(x, W)
-        if self.bias is not None:
-            out = out + self.bias
+        out = F.linear(x, W, self.bias)
         return out
 
     def extra_repr(self) -> str:

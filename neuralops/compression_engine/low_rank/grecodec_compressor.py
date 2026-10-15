@@ -116,6 +116,20 @@ class GreCoDeCLinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x_flat, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
+                out = fused_down_up_gemm_bias_triton(x_flat, self.V, self.U.t().contiguous(), bias=base_bias)
+                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=self.bias) * self.scaling
+                    return (out + lora_out).view(*orig_shape[:-1], self.out_features)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         x_v = F.linear(x_flat, self.V)
         out = F.linear(x_v, self.U, self.bias)
 
@@ -124,7 +138,6 @@ class GreCoDeCLinear(nn.Module):
                 F.linear(x_flat.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
-        out = out
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:

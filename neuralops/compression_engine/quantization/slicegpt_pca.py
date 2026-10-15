@@ -169,6 +169,16 @@ class SliceGPTPCALoRALinear(nn.Module):
             self.bias.to(x.dtype) if self.bias is not None else None,
         )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+            suitable, _ = check_triton_suitability(x, "low_rank")
+            if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                    lora_delta = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
+                    return out + (self.scaling * lora_delta)
+                except Exception:
+                    pass
+
             lora_delta = (
                 F.linear(
                     F.linear(x.float(), self.lora_A),
