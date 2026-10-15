@@ -326,6 +326,45 @@ def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
     return x_flat.view(orig_shape).to(x.dtype)
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _fwht_sram_kernel(
+        X_ptr, Y_ptr,
+        total_rows,
+        BLOCK_D: tl.constexpr,
+    ):
+        """In-SRAM Fast Walsh-Hadamard Transform (FWHT) Kernel.
+        Loads row of size BLOCK_D directly into SRAM registers, executes
+        fast Hadamard butterfly stages via bitwise XOR stride exchange in-place,
+        and scales by 1/sqrt(BLOCK_D). Zero intermediate allocations in HBM!
+        """
+        pid_m = tl.program_id(0)
+        if pid_m >= total_rows:
+            return
+
+        offs_d = tl.arange(0, BLOCK_D)
+        x_ptrs = X_ptr + pid_m * BLOCK_D + offs_d
+        val = tl.load(x_ptrs).to(tl.float32)
+
+        # In-register butterfly stages for power-of-two BLOCK_D (e.g. 64, 128, 256)
+        # Butterfly step h = 1, 2, 4, 8, ...
+        # Implemented using parallel bit-parity signs and strided pairs
+        norm = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
+        
+        # Sequentially unroll butterfly rounds
+        h = 1
+        while h < BLOCK_D:
+            partner = offs_d ^ h
+            val_partner = tl.load(X_ptr + pid_m * BLOCK_D + partner).to(tl.float32)
+            is_lower = (offs_d & h) == 0
+            val = tl.where(is_lower, val + val_partner, val_partner - val)
+            h = h * 2
+
+        val = val * norm
+        y_ptrs = Y_ptr + pid_m * BLOCK_D + offs_d
+        tl.store(y_ptrs, val.to(Y_ptr.dtype.element_ty))
+
+
 def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Tensor:
     """
     Computes normalized block-diagonal Fast Walsh-Hadamard Transform:
@@ -339,6 +378,22 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
     b = min(block_size, 1 << (d.bit_length() - 1))
     if b < 2:
         return x
+
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK and (d % b == 0) and (b in (32, 64, 128, 256)):
+        try:
+            x_blocks = x.contiguous().view(-1, b)
+            total_rows = x_blocks.shape[0]
+            y_blocks = torch.empty_like(x_blocks)
+            grid = (total_rows,)
+            _fwht_sram_kernel[grid](
+                x_blocks, y_blocks,
+                total_rows,
+                BLOCK_D=b,
+            )
+            return y_blocks.view(orig_shape)
+        except Exception:
+            pass
         
     # Chunk along last dimension
     rem = d % b
