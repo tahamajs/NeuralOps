@@ -136,6 +136,16 @@ def _local_window_attention_chunked(
     else:
         radius = max(1, window // 2)
 
+    if Q.is_cuda and past_len == 0 and N == N_kv and token_valid is None:
+        try:
+            from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+            from neuralops.core.triton_kernels._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(Q, "sliding_window", head_dim=D, seq_len=N)
+            if suitable:
+                return sliding_window_triton(Q, K, V, window_size=radius), None
+        except Exception:
+            pass
+
     scale = D**-0.5
     device = Q.device
 
