@@ -209,6 +209,14 @@ class FusedQKVSVDLinear(nn.Module):
     # ------------------------------------------------------------------
     @staticmethod
     def _forward_factor(x: torch.Tensor, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                return fused_down_up_gemm_bias_triton(x, B.to(x.dtype), A.t().to(x.dtype).contiguous(), bias=None)
+            except Exception:
+                pass
         h = F.linear(x.to(B.dtype), B)
         return F.linear(h, A)
 
