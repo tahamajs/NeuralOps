@@ -76,6 +76,16 @@ class CRLinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x_flat, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                out = fused_down_up_gemm_bias_triton(x_flat, self.P, self.C.t().contiguous(), bias=self.bias)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         x_p = F.linear(x_flat, self.P)
         out = F.linear(x_p, self.C, self.bias)
 
