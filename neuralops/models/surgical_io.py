@@ -103,6 +103,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "num_heads": getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
                 "rank": getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32)),
                 "is_wrapped": is_wrapper,
+                "return_tuple": getattr(sub, "return_tuple", None) if is_wrapper else None,
                 "wrapper_class_name": cls_name if is_wrapper else None,
                 "wrapper_import_path": sub.__class__.__module__ if is_wrapper else None,
                 "param_shapes": {p_name: list(p.shape) for p_name, p in sub.named_parameters(recurse=False)},
@@ -236,7 +237,11 @@ def load_surgical_checkpoint(
 
             if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
                 from neuralops.utils.replace_attention import UniversalAttentionWrapper
-                new_sub = UniversalAttentionWrapper(new_sub, layer_name=module_path)
+                new_sub = UniversalAttentionWrapper(
+                    new_sub,
+                    layer_name=module_path,
+                    return_tuple=info.get("return_tuple", None),
+                )
 
             replace_module(base_model, module_path, new_sub)
 
