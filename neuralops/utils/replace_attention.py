@@ -129,6 +129,7 @@ class UniversalAttentionWrapper(nn.Module):
             ),
             lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs),
             lambda: self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, **kwargs),
             lambda: self._wrapped_attention(
                 query=hidden_states,
                 key=hidden_states,
@@ -136,7 +137,11 @@ class UniversalAttentionWrapper(nn.Module):
                 mask=attention_mask,
                 **kwargs,
             ),
-            lambda: self._wrapped_attention(hidden_states, **kwargs),
+            # Filter kwargs down to supported params if wrapped module has strict signature
+            lambda: self._wrapped_attention(
+                hidden_states,
+                **{k: v for k, v in kwargs.items() if k in ("position_embeddings", "past_key_value", "past_key_values", "use_cache", "cache_position")}
+            ),
             lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask),
             lambda: self._wrapped_attention(hidden_states),
         ]
@@ -578,9 +583,11 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
             continue
 
         # Copy weights if supported
+        copied_custom = False
         if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
             try:
                 new_attn.copy_weights(old_module)
+                copied_custom = True
             except (
                 AttributeError,
                 KeyError,
@@ -590,6 +597,54 @@ def replace_attention(model, attention_key=None, layer_indices=None, new_attenti
                 OSError,
                 ImportError,
             ):
+                pass
+
+        if not copied_custom:
+            # Automatic GQA-aware subspace expansion and projection transfer
+            try:
+                from neuralops.core._attention_surgery import PROJ_REGEX_PATTERNS, _find_submodule_by_regex, _copy_projection_weights
+                old_q = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["q"])
+                old_k = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["k"])
+                old_v = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["v"])
+                old_o = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["o"])
+
+                new_q = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["q"])
+                new_k = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["k"])
+                new_v = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["v"])
+                new_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
+
+                # Transfer Q
+                if old_q is not None and new_q is not None and hasattr(old_q, "weight"):
+                    _copy_projection_weights(new_q, old_q.weight, getattr(old_q, "bias", None))
+
+                # Transfer K (with GQA subspace expansion if needed)
+                if old_k is not None and new_k is not None and hasattr(old_k, "weight"):
+                    w_k = old_k.weight
+                    b_k = getattr(old_k, "bias", None)
+                    if old_q is not None and hasattr(old_q, "weight") and w_k.shape[0] < old_q.weight.shape[0]:
+                        # GQA detected: expand W_k across query groups
+                        g = old_q.weight.shape[0] // w_k.shape[0]
+                        w_k = w_k.repeat_interleave(g, dim=0)
+                        if b_k is not None:
+                            b_k = b_k.repeat_interleave(g, dim=0)
+                    _copy_projection_weights(new_k, w_k, b_k)
+
+                # Transfer V (with GQA subspace expansion if needed)
+                if old_v is not None and new_v is not None and hasattr(old_v, "weight"):
+                    w_v = old_v.weight
+                    b_v = getattr(old_v, "bias", None)
+                    if old_q is not None and hasattr(old_q, "weight") and w_v.shape[0] < old_q.weight.shape[0]:
+                        # GQA detected: expand W_v across query groups
+                        g = old_q.weight.shape[0] // w_v.shape[0]
+                        w_v = w_v.repeat_interleave(g, dim=0)
+                        if b_v is not None:
+                            b_v = b_v.repeat_interleave(g, dim=0)
+                    _copy_projection_weights(new_v, w_v, b_v)
+
+                # Transfer Output projection
+                if old_o is not None and new_o is not None and hasattr(old_o, "weight"):
+                    _copy_projection_weights(new_o, old_o.weight, getattr(old_o, "bias", None))
+            except Exception as e:
                 pass
 
         # Match device and dtype of old_module
