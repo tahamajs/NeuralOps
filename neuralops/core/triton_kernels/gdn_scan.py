@@ -691,6 +691,10 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
 
 
+# Canonical alias for test suites and benchmark runners
+gdn_scan = gdn_scan_triton
+
+
 @triton.jit
 def _gdn_step_kernel(
     q_ptr,
