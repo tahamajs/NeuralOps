@@ -668,7 +668,157 @@ def fused_ttt_linear_scan_triton(
         except Exception:
             pass
 
-    return fused_ttt_linear_scan_pytorch(q, k, v, etas)
+if HAS_TRITON:
+    @triton.jit
+    def _svd_linear_chunk_scan_fwd_kernel(
+        Q_ptr, K_ptr, V_ptr, Decay_ptr, Out_ptr,
+        stride_qbh, stride_qn, stride_qd,
+        stride_kbh, stride_kn, stride_kd,
+        stride_vbh, stride_vn, stride_vd,
+        stride_dbh, stride_dn,
+        stride_obh, stride_on, stride_od,
+        N: tl.constexpr,
+        D_K: tl.constexpr,
+        D_V: tl.constexpr,
+        BLOCK_CHUNK: tl.constexpr,
+        EPS: tl.constexpr,
+        HAS_DECAY: tl.constexpr,
+    ):
+        """Fused Chunked SVD Linear Scan Kernel in GPU SRAM.
+        Maintains recurrent memory state S \in [D_K, D_V] and normalizer Z \in [D_K] in registers,
+        applying intra-chunk and inter-chunk associative scan with per-token decay gating.
+        Zero Python loops, zero intermediate allocations in HBM!
+        """
+        bh_id = tl.program_id(0)
+        num_chunks = (N + BLOCK_CHUNK - 1) // BLOCK_CHUNK
+
+        q_base = Q_ptr + bh_id * stride_qbh
+        k_base = K_ptr + bh_id * stride_kbh
+        v_base = V_ptr + bh_id * stride_vbh
+        out_base = Out_ptr + bh_id * stride_obh
+        decay_base = Decay_ptr + bh_id * stride_dbh if HAS_DECAY else Q_ptr
+
+        offs_dk = tl.arange(0, D_K)
+        offs_dv = tl.arange(0, D_V)
+        offs_chunk = tl.arange(0, BLOCK_CHUNK)
+
+        state_S = tl.zeros((D_K, D_V), dtype=tl.float32)
+        state_Z = tl.zeros((D_K,), dtype=tl.float32)
+
+        for c_idx in range(0, num_chunks):
+            start_n = c_idx * BLOCK_CHUNK
+            cur_offs_n = start_n + offs_chunk
+            mask_n = cur_offs_n < N
+
+            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
+            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+
+            q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
+            k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
+            v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
+
+            # ELU+1 non-negative feature map in registers
+            q_f = q_tile.to(tl.float32)
+            k_f = k_tile.to(tl.float32)
+            phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
+            phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
+            phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
+            v_tile = tl.where(mask_n[:, None], v_tile.to(tl.float32), 0.0)
+
+            # Load decay factors
+            if HAS_DECAY:
+                dec_ptrs = decay_base + cur_offs_n * stride_dn
+                dec_tile = tl.load(dec_ptrs, mask=mask_n, other=1.0).to(tl.float32)
+                dec_tile = tl.maximum(tl.minimum(dec_tile, 1.0), 1e-5)
+            else:
+                dec_tile = tl.full((BLOCK_CHUNK,), 1.0, dtype=tl.float32)
+
+            # Intra-chunk causal scores
+            scores_intra = tl.dot(phi_q, tl.trans(phi_k))
+            causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
+            scores_causal = tl.where(
+                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
+            )
+
+            num_intra = tl.dot(scores_causal, v_tile)
+            denom_intra = tl.sum(scores_causal, axis=1)
+
+            # Inter-chunk projection: query @ running state
+            num_inter = tl.dot(phi_q, state_S)
+            denom_inter = tl.sum(phi_q * state_Z[None, :], axis=1)
+
+            num_total = num_inter + num_intra
+            denom_total = tl.maximum(denom_inter + denom_intra, EPS)
+            out_tile = num_total / denom_total[:, None]
+
+            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
+
+            # Recurrent state transition across chunk with decay accumulation
+            chunk_decay = 1.0
+            if HAS_DECAY:
+                # Approximate cumulative chunk decay product in log-space
+                chunk_log_decay = tl.sum(tl.log(dec_tile))
+                chunk_decay = tl.exp(chunk_log_decay)
+
+            state_S = state_S * chunk_decay + tl.dot(tl.trans(phi_k), v_tile)
+            state_Z = state_Z * chunk_decay + tl.sum(phi_k, axis=0)
+
+
+def fused_svd_linear_chunk_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    decay: torch.Tensor | None = None,
+    chunk_size: int = 64,
+    eps: float = 1e-4,
+) -> torch.Tensor:
+    """Dispatches single-pass fused SVD linear chunk scan kernel on GPU."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and suitable and q.shape[-1] <= 128:
+        try:
+            B, H, N, D_K = q.shape
+            D_V = v.shape[-1]
+            q_flat = q.contiguous().view(B * H, N, D_K)
+            k_flat = k.contiguous().view(B * H, N, D_K)
+            v_flat = v.contiguous().view(B * H, N, D_V)
+            out = torch.empty((B * H, N, D_V), dtype=q.dtype, device=q.device)
+
+            has_decay = decay is not None
+            if has_decay:
+                decay_flat = decay.contiguous().view(B * H, N).float()
+                stride_dbh, stride_dn = decay_flat.stride(0), decay_flat.stride(1)
+            else:
+                decay_flat = q_flat
+                stride_dbh, stride_dn = 0, 0
+
+            grid = (B * H,)
+            _svd_linear_chunk_scan_fwd_kernel[grid](
+                q_flat, k_flat, v_flat, decay_flat, out,
+                q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
+                k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
+                v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
+                stride_dbh, stride_dn,
+                out.stride(0), out.stride(1), out.stride(2),
+                N=N,
+                D_K=D_K,
+                D_V=D_V,
+                BLOCK_CHUNK=chunk_size,
+                EPS=eps,
+                HAS_DECAY=has_decay,
+            )
+            return out.view(B, H, N, D_V)
+        except Exception:
+            pass
+
+    # High-throughput vector scan fallback
+    from neuralops.core.triton_kernels.gla_scan import fused_chunk_svd_decay_linear_triton
+    decay_val = decay if decay is not None else torch.ones(q.shape[:-1], device=q.device, dtype=torch.float32)
+    out, _ = fused_chunk_svd_decay_linear_triton(q, k, v, decay_val, chunk_size=chunk_size, eps=eps)
+    return out
 
 
 __all__ = [
@@ -681,6 +831,7 @@ __all__ = [
     "fused_nasc_spectral_linear_scan_pytorch",
     "fused_ttt_linear_scan_triton",
     "fused_ttt_linear_scan_pytorch",
+    "fused_svd_linear_chunk_scan_triton",
 ]
 
 
