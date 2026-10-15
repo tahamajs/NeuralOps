@@ -1007,6 +1007,67 @@ def fused_split_head_hybrid_concat_norm_triton(
     return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)
 
 
+def fused_entmax_bisect_pytorch(
+    scores: torch.Tensor,
+    alpha: float = 1.5,
+    valid_mask: torch.Tensor | None = None,
+    dim: int = -1,
+    n_iter: int = 15,
+) -> torch.Tensor:
+    """Exact stabilized bisection for alpha-entmax in PyTorch."""
+    device = scores.device
+    dtype = scores.dtype
+    neg_inf_val = torch.tensor(-10000.0, device=device, dtype=dtype)
+    scores_cl = torch.where(torch.isfinite(scores), scores, neg_inf_val)
+
+    if abs(alpha - 1.0) < 1e-4:
+        if valid_mask is not None:
+            scores_cl = scores_cl.masked_fill(~valid_mask, -10000.0)
+        sf = torch.nan_to_num(F.softmax(scores_cl.float(), dim=dim), nan=0.0).to(dtype)
+        if valid_mask is not None:
+            sf = sf.masked_fill(~valid_mask, 0.0)
+        return (sf / sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)).to(dtype)
+
+    alpha_m1 = max(1e-4, alpha - 1.0)
+    inv_alpha_m1 = 1.0 / alpha_m1
+    scores_valid = scores_cl.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores_cl
+
+    low = scores_valid.max(dim=dim, keepdim=True)[0] - 1.0
+    high = scores_valid.max(dim=dim, keepdim=True)[0]
+
+    for _ in range(n_iter):
+        mid = 0.5 * (low + high)
+        p = torch.clamp((scores_valid - mid) * alpha_m1, min=0.0) ** inv_alpha_m1
+        if valid_mask is not None:
+            p = p.masked_fill(~valid_mask, 0.0)
+        diff = p.sum(dim=dim, keepdim=True) - 1.0
+        low = torch.where(diff > 0, mid, low)
+        high = torch.where(diff <= 0, mid, high)
+
+    mid = 0.5 * (low + high)
+    p = torch.clamp((scores_valid - mid) * alpha_m1, min=0.0) ** inv_alpha_m1
+    if valid_mask is not None:
+        p = p.masked_fill(~valid_mask, 0.0)
+    return (p / p.sum(dim=dim, keepdim=True).clamp(min=1e-9)).to(dtype)
+
+
+def fused_entmax_bisect_triton(
+    scores: torch.Tensor,
+    alpha: float = 1.5,
+    valid_mask: torch.Tensor | None = None,
+    dim: int = -1,
+    n_iter: int = 15,
+) -> torch.Tensor:
+    """Dispatches accelerated alpha-entmax bisection with hardware safety checks."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON
+    if HAS_TRITON and scores.is_cuda:
+        try:
+            return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
+        except Exception:
+            pass
+    return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
+
+
 # ═══════════════════════════════════════════════════════════════════
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
@@ -1035,4 +1096,6 @@ __all__ = [
     "fused_aegis_multibranch_gate_norm_pytorch",
     "fused_split_head_hybrid_concat_norm_triton",
     "fused_split_head_hybrid_concat_norm_pytorch",
+    "fused_entmax_bisect_triton",
+    "fused_entmax_bisect_pytorch",
 ]
