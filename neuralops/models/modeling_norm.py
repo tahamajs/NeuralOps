@@ -18,6 +18,12 @@ class NeuralOpsRMSNorm(nn.Module):
         self.variance_epsilon = eps
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        if hidden_states.is_cuda and hidden_states.dtype in (torch.float16, torch.bfloat16):
+            try:
+                from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
+                return rmsnorm_triton(hidden_states, self.weight, self.variance_epsilon)
+            except Exception:
+                pass
         input_dtype = hidden_states.dtype
         hidden_states = hidden_states.to(torch.float32)
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
