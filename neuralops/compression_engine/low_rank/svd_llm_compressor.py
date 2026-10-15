@@ -200,6 +200,15 @@ class SVDLLMLinear(nn.Module):
             self.lora_B_v.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda and (self.lora_rank == 0 or self.lora_A_v is None):
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                return fused_down_up_gemm_bias_triton(x, self.W_v, self.W_u.t().contiguous(), bias=self.bias)
+            except Exception:
+                pass
+
         # 1. Compute latent representation through W_v
         # latent = x @ W_v.T + (optional LoRA_v)
         latent = F.linear(x, self.W_v)

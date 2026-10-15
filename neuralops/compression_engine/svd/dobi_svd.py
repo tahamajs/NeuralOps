@@ -108,6 +108,17 @@ class DobiSVDLinearLayer(nn.Module):
 
         g = torch.sigmoid(self.gate).unsqueeze(1)  # [rank, 1]
         V_gated = self.V * g  # [rank, in_features]
+
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x_flat, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                out = fused_down_up_gemm_bias_triton(x_flat, V_gated, self.U.t().contiguous(), bias=self.bias)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         latent = F.linear(x_flat, V_gated)  # [..., rank]
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
         return out.view(*orig_shape[:-1], self.out_features)

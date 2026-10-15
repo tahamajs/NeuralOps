@@ -533,6 +533,21 @@ class HALOReGLAAttention(BaseAttention):
             return out, (S_next, Z_next)
 
         # ─── Prefill mode: chunked cumsum ───
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and linear_state is None and d <= 128:
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                y_triton = fused_svd_linear_chunk_scan_triton(
+                    (q * lin_scale).contiguous(),
+                    (k_new * lin_scale).contiguous(),
+                    v_new.contiguous(),
+                    chunk_size=chunk_size,
+                    eps=1e-5,
+                )
+                return y_triton.to(q.dtype), (None, None)
+            except Exception:
+                pass
+
         # Memory: O(chunk_size · d²) per iteration — no full N² materialization
         outs = torch.empty(B, H, N_q, d, device=device, dtype=torch.float32)
         S_cur = S_state
