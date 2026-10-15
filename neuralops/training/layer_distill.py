@@ -62,6 +62,14 @@ class LayerAttentionDistillLoss(nn.Module):
                 layer_loss = F.smooth_l1_loss(s_out, t_out)
             elif self.loss_type == "cosine":
                 layer_loss = 1.0 - F.cosine_similarity(s_out, t_out, dim=-1).mean()
+            elif self.loss_type in ("kl", "kd"):
+                try:
+                    from neuralops.core.triton_kernels.fused_kd import fused_kd_loss
+                    layer_loss = fused_kd_loss(s_out, t_out, temperature=1.0)
+                except Exception:
+                    s_log = F.log_softmax(s_out, dim=-1)
+                    t_prob = F.softmax(t_out, dim=-1)
+                    layer_loss = F.kl_div(s_log, t_prob, reduction="batchmean")
             else:
                 layer_loss = F.mse_loss(s_out, t_out)
 
