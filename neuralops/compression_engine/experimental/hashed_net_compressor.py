@@ -215,7 +215,11 @@ class HashedLinear(nn.Module):
         out = F.linear(x, W, self.bias)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                lora = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.scaling
+            except Exception:
+                lora = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora
 
         return out

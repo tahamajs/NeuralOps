@@ -351,7 +351,11 @@ class KroneckerTTLoRALayer(nn.Module):
         base_out = F.linear(x, self.base_layer.weight, getattr(self.base_layer, "bias", None))
         delta_w = self.get_delta_w()
         kron_tt_out = F.linear(x, delta_w)
-        lora_bypass = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        try:
+            from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+            lora_bypass = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.lora_scaling
+        except Exception:
+            lora_bypass = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         out = base_out + kron_tt_out + lora_bypass
         if not torch.isfinite(out).all():
             out = torch.nan_to_num(out, nan=0.0, posinf=65000.0, neginf=-65000.0)

@@ -378,7 +378,11 @@ class KMeansLinear(nn.Module):
             out = F.linear(x, W, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t())
+            except Exception:
+                lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
 
         return out
