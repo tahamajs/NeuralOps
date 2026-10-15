@@ -712,6 +712,277 @@ def calibrate_surgically_replaced_model(
     return surg_model
 
 
+def calibrate_attention_subspace(
+    teacher_model: nn.Module,
+    student_model: nn.Module,
+    calibration_inputs: Union[torch.Tensor, Sequence[torch.Tensor], Dict[str, torch.Tensor]],
+    ridge_lambda: float = 1e-3,
+    blend_alpha: float = 0.25,
+) -> nn.Module:
+    """Convenience alias for calibrate_surgically_replaced_model."""
+    return calibrate_surgically_replaced_model(
+        orig_model=teacher_model,
+        surg_model=student_model,
+        sample_inputs=calibration_inputs,
+        ridge_lambda=ridge_lambda,
+        blend_alpha=blend_alpha,
+    )
+
+
+def heal_replaced_model(
+    teacher_model: nn.Module,
+    student_model: nn.Module,
+    calibration_inputs: Union[torch.Tensor, Sequence[torch.Tensor], Dict[str, torch.Tensor]],
+    steps: int = 30,
+    lr: float = 2e-3,
+    weight_decay: float = 1e-4,
+    cosine_weight: float = 0.5,
+    also_ridge_init: bool = True,
+    device: Optional[Union[str, torch.device]] = None,
+) -> Dict[str, Any]:
+    """Fast Layerwise Subspace Micro-Healing without full-model backpropagation.
+
+    Optimizes nonlinear internal parameters (recurrent gates, low-rank bottleneck factors,
+    mixing weights, and feature map scalers) directly on cached teacher input/output representations.
+    """
+    t0 = time.perf_counter()
+    target_dev = device or next(student_model.parameters()).device
+    teacher_model.eval()
+    student_model.eval()
+
+    # Step 1: Analytical Warm-Start via Closed-Form Ridge if requested
+    if also_ridge_init:
+        try:
+            calibrate_attention_subspace(
+                teacher_model=teacher_model,
+                student_model=student_model,
+                calibration_inputs=calibration_inputs,
+                ridge_lambda=1e-3,
+                blend_alpha=0.35,
+            )
+        except Exception as e_ridge:
+            logger.debug("Ridge warm-start skipped or failed: %s", e_ridge)
+
+    # Format inputs into a clean list of batch inputs
+    batches = []
+    if isinstance(calibration_inputs, dict):
+        batches.append({k: v.to(target_dev) for k, v in calibration_inputs.items()})
+    elif isinstance(calibration_inputs, torch.Tensor):
+        batches.append(calibration_inputs.to(target_dev))
+    elif isinstance(calibration_inputs, (list, tuple)):
+        for item in calibration_inputs:
+            if isinstance(item, dict):
+                batches.append({k: v.to(target_dev) for k, v in item.items()})
+            elif isinstance(item, torch.Tensor):
+                batches.append(item.to(target_dev))
+
+    # Helper forward execution
+    def _run_forward(m: nn.Module, b: Any) -> Any:
+        if isinstance(b, dict):
+            return m(**b)
+        return m(b)
+
+    # Step 2: Identify leaf attention modules
+    def _collect_attention_modules(m: nn.Module) -> dict[str, nn.Module]:
+        attns = {}
+        for name, sub in m.named_modules():
+            leaf = name.split(".")[-1].lower()
+            if leaf in ("self", "self_attn", "attn", "attention"):
+                attns[name] = sub
+        return attns
+
+    teacher_attns = _collect_attention_modules(teacher_model)
+    student_attns = _collect_attention_modules(student_model)
+
+    common_names = [n for n in student_attns if n in teacher_attns]
+    if not common_names:
+        teacher_list = list(teacher_attns.values())
+        student_list = list(student_attns.values())
+        layer_pairs = [(f"layer_{i}", t_mod, s_mod) for i, (t_mod, s_mod) in enumerate(zip(teacher_list, student_list))]
+    else:
+        layer_pairs = [(n, teacher_attns[n], student_attns[n]) for n in common_names]
+
+    if not layer_pairs:
+        return {
+            "num_healed_layers": 0,
+            "steps": steps,
+            "also_ridge_init": also_ridge_init,
+            "initial_mse": 0.0,
+            "final_mse": 0.0,
+            "initial_cosine_sim": 1.0,
+            "final_cosine_sim": 1.0,
+            "elapsed_sec": time.perf_counter() - t0,
+            "per_layer": {},
+        }
+
+    # Cache teacher inputs and outputs across all batches
+    cached_inputs: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
+    cached_targets: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
+    hooks = []
+
+    for name, t_mod, _ in layer_pairs:
+        def _make_capture_hook(layer_name: str):
+            def _hook(mod, inp, out):
+                in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
+                out_tensor = out[0] if isinstance(out, tuple) else out
+                if isinstance(in_tensor, torch.Tensor):
+                    cached_inputs[layer_name].append(in_tensor.detach().float())
+                if isinstance(out_tensor, torch.Tensor):
+                    cached_targets[layer_name].append(out_tensor.detach().float())
+            return _hook
+        hooks.append(t_mod.register_forward_hook(_make_capture_hook(name)))
+
+    with torch.no_grad():
+        for b in batches:
+            try:
+                _run_forward(teacher_model, b)
+            except Exception as e:
+                logger.debug("Teacher caching error: %s", e)
+
+    for h in hooks:
+        h.remove()
+
+    # Step 3: Freeze whole student backbone
+    for p in student_model.parameters():
+        p.requires_grad = False
+
+    per_layer_stats: Dict[str, Dict[str, float]] = {}
+    init_mses = []
+    final_mses = []
+    init_coss = []
+    final_coss = []
+
+    for layer_name, _, s_mod in layer_pairs:
+        in_list = cached_inputs.get(layer_name, [])
+        tgt_list = cached_targets.get(layer_name, [])
+        if not in_list or not tgt_list:
+            continue
+
+        H_in = in_list[0].to(target_dev)
+        Y_tgt = tgt_list[0].to(target_dev)
+
+        # Unfreeze only this module's parameters
+        trainable_params = [p for p in s_mod.parameters() if p.numel() > 0]
+        if not trainable_params:
+            continue
+        for p in trainable_params:
+            p.requires_grad = True
+
+        # Initial metrics calculation
+        with torch.no_grad():
+            s_mod.eval()
+            try:
+                pred0 = s_mod(H_in.to(p.dtype))
+            except Exception:
+                try:
+                    pred0 = s_mod(hidden_states=H_in.to(p.dtype))
+                except Exception:
+                    pred0 = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+            pred0_val = pred0[0] if isinstance(pred0, tuple) else pred0
+            pred0_f = pred0_val.float()
+
+            denom_mse = float(torch.norm(Y_tgt, p="fro").item() ** 2 + 1e-6)
+            init_mse = float(torch.norm(pred0_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
+
+            cos_sim0 = F.cosine_similarity(
+                pred0_f.reshape(-1, Y_tgt.shape[-1]),
+                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                dim=-1,
+            ).mean().item()
+
+        # Optimizer and Scheduler
+        optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=weight_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, steps))
+
+        best_loss = float("inf")
+        best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
+
+        s_mod.train()
+        for step in range(steps):
+            optimizer.zero_grad()
+            try:
+                pred = s_mod(H_in.to(p.dtype))
+            except Exception:
+                try:
+                    pred = s_mod(hidden_states=H_in.to(p.dtype))
+                except Exception:
+                    pred = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+
+            pred_val = pred[0] if isinstance(pred, tuple) else pred
+            pred_f = pred_val.float()
+
+            loss_fro = torch.norm(pred_f - Y_tgt, p="fro") ** 2 / denom_mse
+            loss_cos = 1.0 - F.cosine_similarity(
+                pred_f.reshape(-1, Y_tgt.shape[-1]),
+                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                dim=-1,
+            ).mean()
+
+            loss = loss_fro + cosine_weight * loss_cos
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                break
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+            optimizer.step()
+            scheduler.step()
+
+            cur_loss_val = float(loss.item())
+            if cur_loss_val < best_loss:
+                best_loss = cur_loss_val
+                best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
+
+        # Restore best finite parameters
+        s_mod.load_state_dict(best_state)
+        s_mod.eval()
+
+        # Compute final evaluation metrics
+        with torch.no_grad():
+            try:
+                pred_final = s_mod(H_in.to(p.dtype))
+            except Exception:
+                try:
+                    pred_final = s_mod(hidden_states=H_in.to(p.dtype))
+                except Exception:
+                    pred_final = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+            pred_final_val = pred_final[0] if isinstance(pred_final, tuple) else pred_final
+            pred_final_f = pred_final_val.float()
+
+            final_mse = float(torch.norm(pred_final_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
+            final_cos = F.cosine_similarity(
+                pred_final_f.reshape(-1, Y_tgt.shape[-1]),
+                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                dim=-1,
+            ).mean().item()
+
+        for p in trainable_params:
+            p.requires_grad = False
+
+        per_layer_stats[layer_name] = {
+            "initial_mse": init_mse,
+            "final_mse": final_mse,
+            "initial_cosine_sim": cos_sim0,
+            "final_cosine_sim": final_cos,
+        }
+        init_mses.append(init_mse)
+        final_mses.append(final_mse)
+        init_coss.append(cos_sim0)
+        final_coss.append(final_cos)
+
+    return {
+        "num_healed_layers": len(per_layer_stats),
+        "steps": steps,
+        "also_ridge_init": also_ridge_init,
+        "initial_mse": float(sum(init_mses) / max(1, len(init_mses))),
+        "final_mse": float(sum(final_mses) / max(1, len(final_mses))),
+        "initial_cosine_sim": float(sum(init_coss) / max(1, len(init_coss))),
+        "final_cosine_sim": float(sum(final_coss) / max(1, len(final_coss))),
+        "elapsed_sec": float(time.perf_counter() - t0),
+        "per_layer": per_layer_stats,
+    }
+
+
 __all__ = [
     "PROJ_REGEX_PATTERNS",
     "FUSED_QKV_REGEX",
@@ -725,4 +996,7 @@ __all__ = [
     "adapt_decoder_attention_forward",
     "apply_backbone_surgery_hooks",
     "calibrate_surgically_replaced_model",
+    "calibrate_attention_subspace",
+    "heal_replaced_model",
 ]
+

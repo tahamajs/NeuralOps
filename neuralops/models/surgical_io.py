@@ -1,0 +1,263 @@
+"""Surgical Model Persistence & HuggingFace-Compatible Checkpoint IO.
+
+Losslessly serializes, reconstructs, and reloads models with surgically replaced
+attention layers (AttentionWrapper, ComposableAttention, 131 registered attentions)
+and compressed low-rank / quantized linear layers (72 compression engines).
+"""
+
+from __future__ import annotations
+
+import importlib
+import json
+import logging
+from pathlib import Path
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
+import torch
+import torch.nn as nn
+
+logger = logging.getLogger(__name__)
+
+
+def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
+    """Walk model tree and extract exact metadata for all surgical modules.
+
+    Captures:
+      - Category: 'attention' vs 'compressed_linear'
+      - Exact hierarchical module_path
+      - Module class, registration key, constructor parameters, and parameter shapes
+    """
+    manifest: Dict[str, Any] = {
+        "neuralops_version": "1.3.5",
+        "model_class": model.__class__.__name__,
+        "submodules": {},
+    }
+
+    # Set of known compressor linear class names
+    known_compressed_linears = {
+        "SVDLinear",
+        "FactorizedLinear",
+        "DobiSVDLinearLayer",
+        "DynamicSVDLinear",
+        "ResSVDLinear",
+        "SubspaceLinear",
+        "A3FactorizedLinear",
+        "COMPOTLinear",
+        "CURLinear",
+        "SVDLLMLinear",
+        "CacheNotesLoRALinear",
+        "RotationalSliceGPTINT4Linear",
+        "KMeansLinear",
+        "FAQLinear",
+        "BitPackedW4A16Linear",
+        "BitPackedLowRankSVDLinear",
+        "SliceGPTPCALoRALinear",
+        "ADMMMaskedLinear",
+        "ASTPrunedLoRALinear",
+        "ProxSparsePrunedLoRALinear",
+        "MambaShedderPrunedLinear",
+        "ARMORLinear",
+        "BonsaiPrunedLoRALinear",
+    }
+
+    from neuralops.core.registry import ATTENTION_REGISTRY
+
+    for name, sub in model.named_modules():
+        if not name:
+            continue
+        cls_name = sub.__class__.__name__
+
+        # Check if Attention module (AttentionWrapper, ComposableAttention, or registered attention)
+        is_attention = (
+            cls_name in ("AttentionWrapper", "ComposableAttention", "ReplaceAttention")
+            or getattr(sub, "is_custom_attention", False)
+            or any(sub.__class__ == c for c in ATTENTION_REGISTRY.values())
+        )
+
+        is_compressed = (
+            cls_name in known_compressed_linears
+            or getattr(sub, "is_custom_linear", False)
+            or (hasattr(sub, "U") and hasattr(sub, "V"))
+            or (hasattr(sub, "w_down") and hasattr(sub, "w_up"))
+        )
+
+        if is_attention:
+            sub_info: Dict[str, Any] = {
+                "category": "attention",
+                "class_name": cls_name,
+                "module_import_path": sub.__class__.__module__,
+                "target_attention": getattr(sub, "target_attention", cls_name.lower()),
+                "embed_dim": getattr(sub, "embed_dim", getattr(sub, "hidden_size", 768)),
+                "num_heads": getattr(sub, "num_heads", getattr(sub, "num_attention_heads", 12)),
+                "param_shapes": {p_name: list(p.shape) for p_name, p in sub.named_parameters(recurse=False)},
+                "buffer_shapes": {b_name: list(b.shape) for b_name, b in sub.named_buffers(recurse=False)},
+            }
+            if cls_name == "ComposableAttention":
+                sub_info["projection"] = getattr(sub, "projection_type", "dense")
+                sub_info["positional"] = getattr(sub, "positional_type", "none")
+                sub_info["kernel_map"] = getattr(sub, "kernel_map_type", "softmax")
+                sub_info["mask"] = getattr(sub, "mask_type", "causal")
+                sub_info["engine"] = getattr(sub, "engine", "sdpa")
+
+            manifest["submodules"][name] = sub_info
+
+        elif is_compressed:
+            in_f = getattr(sub, "in_features", None)
+            out_f = getattr(sub, "out_features", None)
+            rank = getattr(sub, "rank", getattr(sub, "current_rank", None))
+
+            manifest["submodules"][name] = {
+                "category": "compressed_linear",
+                "class_name": cls_name,
+                "module_import_path": sub.__class__.__module__,
+                "in_features": in_f,
+                "out_features": out_f,
+                "rank": rank,
+                "has_bias": getattr(sub, "bias", None) is not None,
+                "param_shapes": {p_name: list(p.shape) for p_name, p in sub.named_parameters(recurse=False)},
+                "buffer_shapes": {b_name: list(b.shape) for b_name, b in sub.named_buffers(recurse=False)},
+            }
+
+    return manifest
+
+
+def save_surgical_checkpoint(
+    model: nn.Module,
+    save_dir: Union[str, Path],
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Save surgical manifest and full state dict to a clean directory."""
+    path = Path(save_dir)
+    path.mkdir(parents=True, exist_ok=True)
+
+    manifest = extract_surgical_manifest(model)
+    if metadata is not None:
+        manifest["user_metadata"] = metadata
+
+    manifest_file = path / "surgical_manifest.json"
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    state_dict = model.state_dict()
+
+    # Try saving with safetensors if available
+    saved_safetensors = False
+    try:
+        from safetensors.torch import save_file
+        # Clone tensors to ensure contiguous unshared storage
+        clean_state = {k: v.contiguous().clone() for k, v in state_dict.items()}
+        save_file(clean_state, str(path / "model.safetensors"))
+        saved_safetensors = True
+    except Exception as e_st:
+        logger.debug("Safetensors save skipped: %s", e_st)
+
+    # Always write standard PyTorch checkpoint as reliable companion
+    torch.save(state_dict, str(path / "surgical_model_state.pt"))
+    logger.info("Saved surgical checkpoint with %d modified submodules to %s", len(manifest["submodules"]), path)
+    return path
+
+
+def load_surgical_checkpoint(
+    base_model: nn.Module,
+    load_dir: Union[str, Path],
+    map_location: Optional[Union[str, torch.device]] = None,
+    strict: bool = True,
+) -> Tuple[nn.Module, Dict[str, Any]]:
+    """Reconstruct surgical modules inside base_model and load saved weights."""
+    path = Path(load_dir)
+    manifest_file = path / "surgical_manifest.json"
+    if not manifest_file.exists():
+        raise FileNotFoundError(f"Missing surgical_manifest.json in {load_dir}")
+
+    with open(manifest_file, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    submodules_info = manifest.get("submodules", {})
+    from neuralops.core.model_utils import replace_module
+
+    # 1. Reconstruct all modified submodules
+    for module_path, info in submodules_info.items():
+        category = info.get("category")
+        cls_name = info.get("class_name")
+        import_path = info.get("module_import_path")
+
+        # Import class dynamically
+        mod = importlib.import_module(import_path)
+        cls = getattr(mod, cls_name)
+
+        if category == "attention":
+            if cls_name == "ComposableAttention":
+                new_sub = cls(
+                    embed_dim=info.get("embed_dim", 768),
+                    num_heads=info.get("num_heads", 12),
+                    projection=info.get("projection", "dense"),
+                    positional=info.get("positional", "none"),
+                    kernel_map=info.get("kernel_map", "softmax"),
+                    mask=info.get("mask", "causal"),
+                    engine=info.get("engine", "sdpa"),
+                )
+            else:
+                try:
+                    new_sub = cls(
+                        embed_dim=info.get("embed_dim", 768),
+                        num_heads=info.get("num_heads", 12),
+                    )
+                except Exception:
+                    try:
+                        from transformers import BertConfig
+                        cfg = BertConfig(
+                            hidden_size=info.get("embed_dim", 768),
+                            num_attention_heads=info.get("num_heads", 12),
+                        )
+                        new_sub = cls(config=cfg)
+                    except Exception:
+                        new_sub = cls()
+
+            replace_module(base_model, module_path, new_sub)
+
+        elif category == "compressed_linear":
+            in_f = info.get("in_features", 768)
+            out_f = info.get("out_features", 768)
+            rank = info.get("rank", 32)
+            has_b = info.get("has_bias", True)
+
+            # Reconstruct factorized linear
+            try:
+                new_sub = cls(in_features=in_f, out_features=out_f, rank=rank, bias=has_b)
+            except Exception:
+                try:
+                    dummy_linear = nn.Linear(in_f, out_f, bias=has_b)
+                    new_sub = cls.from_linear(dummy_linear, rank=rank)
+                except Exception:
+                    new_sub = cls(in_features=in_f, out_features=out_f)
+
+            replace_module(base_model, module_path, new_sub)
+
+    # 2. Load Weights into reconstructed model
+    pt_file = path / "surgical_model_state.pt"
+    st_file = path / "model.safetensors"
+
+    if st_file.exists():
+        try:
+            from safetensors.torch import load_file
+            state_dict = load_file(str(st_file), device=str(map_location or "cpu"))
+        except Exception:
+            state_dict = torch.load(str(pt_file), map_location=map_location, weights_only=True)
+    elif pt_file.exists():
+        state_dict = torch.load(str(pt_file), map_location=map_location, weights_only=True)
+    else:
+        raise FileNotFoundError(f"No valid state dict found in {load_dir}")
+
+    base_model.load_state_dict(state_dict, strict=strict)
+    if map_location is not None:
+        base_model.to(device=map_location)
+
+    logger.info("Successfully loaded surgical model checkpoint from %s", path)
+    return base_model, manifest
+
+
+__all__ = [
+    "extract_surgical_manifest",
+    "save_surgical_checkpoint",
+    "load_surgical_checkpoint",
+]

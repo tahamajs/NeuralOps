@@ -1,5 +1,22 @@
 name: Test
-on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'paper/**'
+      - 'results/**'
 jobs:
   test:
     runs-on: ubuntu-latest

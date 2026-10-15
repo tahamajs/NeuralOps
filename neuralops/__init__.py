@@ -10,7 +10,7 @@ and interactive visualization.
 import importlib
 from typing import Any
 
-__version__ = "1.3.4"
+__version__ = "1.3.5"
 
 import importlib.machinery
 import importlib.util
@@ -209,6 +209,16 @@ _LAZY_EXPORTS = {
     "BaseCompressor": ("neuralops.core.base", "BaseCompressor"),
     "ComposableAttention": ("neuralops.core.composable", "ComposableAttention"),
     "compose_attention": ("neuralops.core.composable", "compose_attention"),
+    "calibrate_attention_subspace": ("neuralops.core._attention_surgery", "calibrate_attention_subspace"),
+    "heal_replaced_model": ("neuralops.core._attention_surgery", "heal_replaced_model"),
+    "RooflineReport": ("neuralops.core.roofline", "RooflineReport"),
+    "profile_roofline": ("neuralops.core.roofline", "profile_roofline"),
+    "render_roofline_terminal": ("neuralops.core.roofline", "render_roofline_terminal"),
+    "extract_surgical_manifest": ("neuralops.models.surgical_io", "extract_surgical_manifest"),
+    "save_surgical_checkpoint": ("neuralops.models.surgical_io", "save_surgical_checkpoint"),
+    "load_surgical_checkpoint": ("neuralops.models.surgical_io", "load_surgical_checkpoint"),
+    "compute_pareto_frontier": ("neuralops.core.paper_export", "compute_pareto_frontier"),
+    "export_benchmark_table": ("neuralops.core.paper_export", "export_benchmark_table"),
     "BaseTrainer": ("neuralops.trainer.base_trainer", "BaseTrainer"),
     "BenchmarkDatasetInfo": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetInfo"),
     "BenchmarkDatasetRegistry": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetRegistry"),
