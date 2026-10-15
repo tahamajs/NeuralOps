@@ -668,6 +668,8 @@ def fused_ttt_linear_scan_triton(
         except Exception:
             pass
 
+    return fused_ttt_linear_scan_pytorch(q, k, v, etas)
+
 if HAS_TRITON:
     @triton.jit
     def _svd_linear_chunk_scan_fwd_kernel(
