@@ -368,6 +368,93 @@ summary = neuralops.summary(surg_model)
 print("Active parameters:", summary["total_parameters"])
 print("State cache at 4k:", summary["state_cache_at_4096_mb"], "MB")
 
+### Recipe 9: Minimalist UNIX-Style Architecture Inspector (`neuralops inspect`)
+Quickly inspect mathematical specifications, hardware strategies, and constructor signatures for any of the 131 attentions or 72 compressors:
+
+```bash
+# Clean flat specification card
+neuralops inspect gated_delta_net
+
+# Live empirical Roofline analysis directly appended to card
+neuralops inspect gated_delta_net --roofline
+
+# Raw 14-field specification JSON
+neuralops inspect hadamard_incoherent_svd --json
+
+# Minimalist two-pane TUI explorer snapshot
+neuralops ui --snapshot
+```
+
+### Recipe 10: Hardware Roofline & Arithmetic Intensity Analyzer
+Analyze compute vs memory-bandwidth saturation, empirical Triton speedups, and in-SRAM memory traffic savings:
+
+```python
+import neuralops
+
+# Profile any attention mechanism against hardware Ridge point
+report = neuralops.profile_roofline(
+    module_or_name="gated_delta_net",
+    batch_size=2,
+    seq_len=2048,
+    embed_dim=768,
+    num_heads=12,
+)
+
+print(f"Speedup: {report.speedup_x:.2f}x")
+print(f"SRAM Bytes Saved: {report.sram_bytes_saved_mb:.2f} MB")
+print(f"Bottleneck: {report.bottleneck_regime}")
+
+# Render publication-grade ASCII log-log roofline curve
+print(neuralops.render_roofline_terminal(report))
+```
+
+### Recipe 11: Layerwise Subspace Micro-Healing & Surgical Persistence
+Fast in-memory alignment of replaced nonlinear attention operators directly on cached teacher representations, followed by lossless serialization:
+
+```python
+import torch
+from transformers import AutoModelForCausalLM
+import neuralops
+
+teacher = AutoModelForCausalLM.from_pretrained("gpt2")
+student = AutoModelForCausalLM.from_pretrained("gpt2")
+student = neuralops.replace_attention(student, "gated_delta_net")
+
+calib_inputs = torch.randint(0, 50257, (4, 64))
+
+# Fast layerwise micro-healing (optimizes gates, feature maps, and low-rank factors)
+stats = neuralops.heal_replaced_model(
+    teacher_model=teacher,
+    student_model=student,
+    calibration_inputs=calib_inputs,
+    steps=25,
+    lr=2e-3,
+    also_ridge_init=True,
+)
+print(f"Healed MSE: {stats['initial_mse']:.4f} -> {stats['final_mse']:.4f}")
+
+# Lossless surgical checkpoint persistence
+neuralops.save_surgical_checkpoint(student, "./checkpoints/healed_gdn_gpt2")
+reloaded_model, manifest = neuralops.load_surgical_checkpoint(teacher, "./checkpoints/healed_gdn_gpt2")
+```
+
+### Recipe 12: Academic LaTeX Booktabs & Pareto Frontier Exporter
+Automatically determine multi-objective Pareto-optimal configurations and export publication-ready LaTeX tables:
+
+```python
+import neuralops
+
+records = [
+    {"module": "full_attention", "latency_ms": 12.4, "speedup_x": 1.0, "ppl": 18.2},
+    {"module": "gla_attention", "latency_ms": 3.2, "speedup_x": 3.88, "ppl": 18.5},
+    {"module": "gated_delta_net", "latency_ms": 2.1, "speedup_x": 5.90, "ppl": 18.4},
+]
+
+# Export publication-ready NeurIPS/ICML booktabs LaTeX table with star markers ($^\star$)
+latex_table = neuralops.export_benchmark_table(records, format="latex")
+print(latex_table)
+```
+
 # 4. Compare baseline vs transplanted model output parity and latency speedup
 sample_input = torch.randint(0, 50257, (1, 32))
 diff_metrics = neuralops.compare(base_model, surg_model, sample_input=sample_input)
