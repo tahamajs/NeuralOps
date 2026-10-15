@@ -82,22 +82,30 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         )
 
         if is_attention:
+            # If sub is a wrapper, inspect its inner attention module
+            is_wrapper = hasattr(sub, "_wrapped_attention") and getattr(sub, "_wrapped_attention") is not None
+            effective_sub = sub._wrapped_attention if is_wrapper else sub
+            eff_cls_name = effective_sub.__class__.__name__
+
             sub_info: Dict[str, Any] = {
                 "category": "attention",
-                "class_name": cls_name,
-                "module_import_path": sub.__class__.__module__,
-                "target_attention": getattr(sub, "target_attention", cls_name.lower()),
-                "embed_dim": getattr(sub, "embed_dim", getattr(sub, "hidden_size", 768)),
-                "num_heads": getattr(sub, "num_heads", getattr(sub, "num_attention_heads", 12)),
+                "class_name": eff_cls_name,
+                "module_import_path": effective_sub.__class__.__module__,
+                "target_attention": getattr(effective_sub, "target_attention", eff_cls_name.lower()),
+                "embed_dim": getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", 768)),
+                "num_heads": getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
+                "is_wrapped": is_wrapper,
+                "wrapper_class_name": cls_name if is_wrapper else None,
+                "wrapper_import_path": sub.__class__.__module__ if is_wrapper else None,
                 "param_shapes": {p_name: list(p.shape) for p_name, p in sub.named_parameters(recurse=False)},
                 "buffer_shapes": {b_name: list(b.shape) for b_name, b in sub.named_buffers(recurse=False)},
             }
-            if cls_name == "ComposableAttention":
-                sub_info["projection"] = getattr(sub, "projection_type", "dense")
-                sub_info["positional"] = getattr(sub, "positional_type", "none")
-                sub_info["kernel_map"] = getattr(sub, "kernel_map_type", "softmax")
-                sub_info["mask"] = getattr(sub, "mask_type", "causal")
-                sub_info["engine"] = getattr(sub, "engine", "sdpa")
+            if eff_cls_name == "ComposableAttention":
+                sub_info["projection"] = getattr(effective_sub, "projection_type", "dense")
+                sub_info["positional"] = getattr(effective_sub, "positional_type", "none")
+                sub_info["kernel_map"] = getattr(effective_sub, "kernel_map_type", "softmax")
+                sub_info["mask"] = getattr(effective_sub, "mask_type", "causal")
+                sub_info["engine"] = getattr(effective_sub, "engine", "sdpa")
 
             manifest["submodules"][name] = sub_info
 
@@ -212,6 +220,10 @@ def load_surgical_checkpoint(
                         new_sub = cls(config=cfg)
                     except Exception:
                         new_sub = cls()
+
+            if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
+                from neuralops.utils.replace_attention import UniversalAttentionWrapper
+                new_sub = UniversalAttentionWrapper(new_sub, layer_name=module_path)
 
             replace_module(base_model, module_path, new_sub)
 

@@ -172,12 +172,17 @@ def _clean_type_str(t: str) -> str:
     t = re.sub(r"typing\.", "", t)
     t = re.sub(r"<class '([^']+)'>", r"\1", t)
     t = re.sub(r"NoneType", "None", t)
-    t = re.sub(r"Union\[([^,]+),\s*None\]", r"Optional[\1]", t)
-    t = re.sub(r"([A-Za-z0-9_]+)\s*\|\s*None", r"\1", t)
-    t = re.sub(r"Any\s*\|\s*None", "Any", t)
-    t = re.sub(r"int\s*\|\s*Any", "int", t)
+    t = re.sub(r"Union\[([^,]+),\s*None\]", r"\1", t)
+    t = re.sub(r"Optional\[([^\]]+)\]", r"\1", t)
+    for _ in range(4):
+        t = re.sub(r"([A-Za-z0-9_.]+)\s*\|\s*Any", r"\1", t)
+        t = re.sub(r"Any\s*\|\s*([A-Za-z0-9_.]+)", r"\1", t)
+        t = re.sub(r"([A-Za-z0-9_.]+)\s*\|\s*None", r"\1", t)
+        t = re.sub(r"None\s*\|\s*([A-Za-z0-9_.]+)", r"\1", t)
     t = t.strip()
-    return t or "Any"
+    if t in ("", "None"):
+        return "Any"
+    return t
 
 
 def _extract_constructor_params(obj: Any) -> List[Dict[str, str]]:
