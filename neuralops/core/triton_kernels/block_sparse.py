@@ -104,6 +104,46 @@ def fused_moba_block_router_combine_pytorch(
     return block_scores, top_idx
 
 
+from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
+
+
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _fused_moba_block_router_kernel(
+        Q_mean_ptr, K_mean_ptr, Scores_ptr,
+        stride_qb, stride_qh, stride_qn, stride_qd,
+        stride_kb, stride_kh, stride_kn, stride_kd,
+        stride_sb, stride_sh, stride_sn, stride_sk,
+        H, nb, D, scale,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        """In-SRAM Fused MoBA Block Score Router Kernel."""
+        pid_m = tl.program_id(0)  # block row in nb
+        pid_bh = tl.program_id(1)
+        i_b = pid_bh // H
+        i_h = pid_bh % H
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D
+
+        q_ptr = Q_mean_ptr + i_b * stride_qb + i_h * stride_qh + pid_m * stride_qn + offs_d * stride_qd
+        q_vec = tl.load(q_ptr, mask=mask_d, other=0.0).to(tl.float32)
+
+        for col in range(nb):
+            k_ptr = K_mean_ptr + i_b * stride_kb + i_h * stride_kh + col * stride_kn + offs_d * stride_kd
+            k_vec = tl.load(k_ptr, mask=mask_d, other=0.0).to(tl.float32)
+
+            score = tl.sum(q_vec * k_vec) * scale
+            if IS_CAUSAL and col > pid_m:
+                score = -1e4
+            elif not IS_CAUSAL and col == 0:
+                score += 1e4
+
+            s_ptr = Scores_ptr + i_b * stride_sb + i_h * stride_sh + pid_m * stride_sn + col * stride_sk
+            tl.store(s_ptr, score)
+
+
 def fused_moba_block_router_combine_triton(
     Qb: torch.Tensor,
     Kb: torch.Tensor,
@@ -113,6 +153,31 @@ def fused_moba_block_router_combine_triton(
     is_causal: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused MoBA block router calculation in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Qb.is_cuda:
+        try:
+            B, H, nb, bs, D = Qb.shape
+            Q_mean = Qb.mean(dim=3).contiguous()
+            K_mean = Kb.mean(dim=3).contiguous()
+
+            scores = torch.empty((B, H, nb, nb), dtype=torch.float32, device=Qb.device)
+            BLOCK_D = triton.next_power_of_2(D)
+            grid = (nb, B * H)
+            _fused_moba_block_router_kernel[grid](
+                Q_mean, K_mean, scores,
+                Q_mean.stride(0), Q_mean.stride(1), Q_mean.stride(2), Q_mean.stride(3),
+                K_mean.stride(0), K_mean.stride(1), K_mean.stride(2), K_mean.stride(3),
+                scores.stride(0), scores.stride(1), scores.stride(2), scores.stride(3),
+                H, nb, D, scale,
+                IS_CAUSAL=is_causal,
+                BLOCK_D=BLOCK_D,
+            )
+            act_top_k = min(top_k, nb)
+            _, top_idx = scores.topk(act_top_k, dim=-1)
+            return scores, top_idx
+        except Exception:
+            pass
     return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
 
 
