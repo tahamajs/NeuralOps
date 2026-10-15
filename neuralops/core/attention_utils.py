@@ -328,8 +328,10 @@ class LoRALinear(nn.Module):
         if x.dtype != self.weight.dtype:
             x = x.to(self.weight.dtype)
 
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
         if (
-            self.lora_rank > 0
+            not FORCE_PYTORCH_FALLBACK
+            and self.lora_rank > 0
             and self.lora_A is not None
             and self.lora_B is not None
             and x.is_cuda
