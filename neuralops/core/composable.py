@@ -24,6 +24,30 @@ from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.triton_kernels import triton_dispatch
 
 
+class BaseProjection(nn.Module):
+    """Abstract base class for input projections."""
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
+
+
+class BaseFeatureMap(nn.Module):
+    """Abstract base class for positional or non-linear feature maps."""
+    def forward(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
+
+
+class BaseMask(nn.Module):
+    """Abstract base class for attention score masks."""
+    def forward(self, scores: torch.Tensor, is_causal: bool = True) -> torch.Tensor:
+        raise NotImplementedError
+
+
+class BaseExecutionEngine(nn.Module):
+    """Abstract base class for attention execution engines."""
+    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+        raise NotImplementedError
+
+
 class ComposableAttention(nn.Module):
     """Modular, highly-composable attention layer chaining hardware-accelerated primitives."""
 
@@ -31,11 +55,11 @@ class ComposableAttention(nn.Module):
         self,
         embed_dim: int = 768,
         num_heads: int = 12,
-        projection: str = "dense",
-        positional: str = "none",
-        kernel_map: str = "softmax",
-        mask: str = "causal",
-        engine: str = "sdpa",
+        projection: str | BaseProjection = "dense",
+        positional: str | BaseFeatureMap = "none",
+        kernel_map: str | Callable[[torch.Tensor], torch.Tensor] = "softmax",
+        mask: str | BaseMask = "causal",
+        engine: str | BaseExecutionEngine = "sdpa",
         bias: bool = False,
         dropout: float = 0.0,
         **kwargs: Any,
@@ -258,6 +282,54 @@ class ComposableAttention(nn.Module):
         context = torch.matmul(attn, v)
         out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
         return out
+
+    def describe(self) -> dict[str, Any]:
+        """Return a structured breakdown of the 4 algebraic stages and complexity."""
+        is_subquadratic = any(k in self.engine for k in ("chunked_scan", "recurrent", "delta_rule", "gdn", "linear")) or ("sliding_window" in self.mask_type and self.sink_tokens == 0)
+        complexity = f"O(T * d * {self.rank if self.rank > 0 else 'd'})" if is_subquadratic else "O(T^2 * d)"
+        active_triton = []
+        if "chunked_scan" in self.engine:
+            active_triton.append("kda_hla_chunk_scan_triton (gla_scan.py)")
+        if "delta_rule" in self.engine:
+            active_triton.append("gdn_scan_triton (gdn_scan.py)")
+        if "sliding_window" in self.mask_type:
+            active_triton.append("sliding_window_triton (sliding_window.py)")
+        if "svd" in self.projection_type:
+            active_triton.append("low_rank_forward (low_rank.py)")
+
+        return {
+            "algebraic_stages": {
+                "projection_P": self.projection_type,
+                "feature_map_phi": self.kernel_map_type,
+                "positional_bias": self.positional_type,
+                "mask_M": self.mask_type,
+                "engine_E": self.engine,
+            },
+            "parameters": {
+                "embed_dim": self.embed_dim,
+                "num_heads": self.num_heads,
+                "head_dim": self.head_dim,
+                "rank": self.rank,
+                "window_size": self.window_size,
+                "sink_tokens": self.sink_tokens,
+            },
+            "computational_complexity": complexity,
+            "active_triton_kernels": active_triton or ["torch.nn.functional.scaled_dot_product_attention (PyTorch SDPA)"],
+        }
+
+    def summary(self) -> str:
+        """Return human-readable ASCII summary of the composable architecture."""
+        info = self.describe()
+        stg = info["algebraic_stages"]
+        return (
+            f"ComposableAttention [Dim={self.embed_dim}, Heads={self.num_heads}, HeadDim={self.head_dim}]\n"
+            f"  ├── Projection (P):   {stg['projection_P']}\n"
+            f"  ├── Feature Map (phi): {stg['feature_map_phi']} (Pos: {stg['positional_bias']})\n"
+            f"  ├── Mask (M):          {stg['mask_M']}\n"
+            f"  ├── Engine (E):        {stg['engine_E']}\n"
+            f"  └── Complexity:        {info['computational_complexity']}\n"
+            f"      Active Triton:     {', '.join(info['active_triton_kernels'])}"
+        )
 
 
 def compose_attention(
