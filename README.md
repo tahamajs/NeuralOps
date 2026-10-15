@@ -62,6 +62,12 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 📰 News
 
+- **[2026-10]** 🚀 **v1.3.5 Production Release**:
+  - **Hardware Roofline & Arithmetic Intensity Analyzer (`profile_roofline` & `neuralops roofline`)**: Real-time dual-path empirical profiling (Triton vs PyTorch reference), analytical FLOPs, HBM DRAM vs in-SRAM memory traffic modeling, hardware ridge point diagnosis, and terminal ASCII roofline curve rendering.
+  - **Layerwise Subspace Micro-Healing (`heal_replaced_model` & `neuralops transplant --heal`)**: Fast gradient-based micro-healing directly on cached teacher representations without full-model backpropagation, optimizing internal nonlinear gates, feature map scalers, and low-rank bottlenecks.
+  - **Surgical Checkpoint Persistence (`save_surgical_checkpoint` & `load_surgical_checkpoint`)**: Seamless saving and dynamic tree reconstruction for surgically modified attention and compressed linear layers.
+  - **Academic LaTeX & Pareto Frontier Exporter (`export_benchmark_table` & `neuralops results --format latex`)**: Automated multi-objective Pareto-optimality detection ($^\star$), NeurIPS/ICML booktabs formatting, and bold/underlined best metric highlighting.
+  - **GitHub Actions Billing Guard**: Added `concurrency` with `cancel-in-progress: true` and `paths-ignore` across all CI/CD workflows.
 - **[2026-10]** 🚀 **v1.3.4 Production Release**: Zero-latency lazy CLI architecture (`<50ms` startup for `neuralops --version` and `neuralops list`), interactive Rich TUI control center (`neuralops ui`) with live GPU telemetry & module browsing, complete composable attention grammar wiring, and fully automated PyPI OIDC release workflows.
 - **[2026-10]** ⚡ **Composable Meta-Attention (`neuralops.compose_attention`)**: Declarative Lego-block pipeline synthesizing novel attention mechanisms from first principles with verified dual-path Triton acceleration up to **450.84x**.
 - **[2026-10]** 🧪 **11 Exhaustive Mathematical Test Suites (2,093+ Tests Passed, 1,746 Exhaustive Matrix Tests, 0 Skipped, 0 Failed)**: Formal verification across all 131 attention mechanisms, 72 compression engines, 26 Triton kernels, 6-pillar training engine, AutoSVD, PagedStateTable, and distributed TP/CP with 100% pass rate on RTX 4070 (Ada SM 8.9) and GTX 1060 (Pascal SM 6.1).
@@ -82,19 +88,20 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## ✨ Key Features
 
+- 🔬 **Hardware Roofline Profiler**: Analyze compute vs bandwidth saturation, FLOPs, HBM bytes saved, and exact arithmetic intensity against GPU ridge points.
+- 🧬 **Layerwise Subspace Micro-Healing**: Fast in-memory gradient alignment of replaced attention operators directly on cached activations, healing representation shifts in seconds.
+- 💾 **Surgical Checkpoint IO**: Lossless saving and loading of non-standard model architectures with customized attention wrappers and factorized linear layers.
+- 📄 **Academic LaTeX Exporter**: Instantly export benchmark records into publication-grade NeurIPS/ICML/ICLR `booktabs` tables with Pareto frontier stars ($^\star$).
 - 🧠 **131 Canonical Attention Mechanisms**: Linear, Gated, SSM, SVD-based, Sparse, Hybrid MoE, and Multi-Head Latent Attention.
 - 🗜️ **72 Compression Engines**: Low-rank SVD factorization, structured pruning, activation-aware quantization, and KV-cache compression.
 - ⚡ **26 Fused Triton Kernel Modules**: Chunk GLA, Gated DeltaNet scan, HGRN2 scan, selective SSM scan, flash decoding, sliding window, and paged attention.
-- 🔄 **Surgical In-Place Transplantation**: Replace standard multi-head self-attention with any subquadratic mechanism in 3 lines of code, enhanced by instantaneous closed-form Procrustes alignment.
-- 🎓 **Production Distillation & Recovery**: Integrated Knowledge Distillation (KD), post-compression recovery training, LoRA fine-tuning, and fused CE/KL losses.
-- 🖥️ **Cross-Platform Readiness**: Full support for NVIDIA CUDA, AMD ROCm, Apple Silicon (MPS), and CPU environments with zero missing dependencies.
-- 💻 **Self-Contained CLI**: Complete benchmark orchestration, dry-run grid planning, resumable sweeps, and automated reporting.
+- 🔄 **Surgical In-Place Transplantation**: Replace standard multi-head self-attention with any subquadratic mechanism in 3 lines of code.
 
 ---
 
 ## 🚀 Installation
 
-### Install from PyPI (v1.3.4)
+### Install from PyPI (v1.3.5)
 
 Install the core package or select your preferred hardware acceleration extras:
 
@@ -849,7 +856,7 @@ If you use NeuralOps in your academic research or production deployment, please 
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
-  version = {1.3.4}
+  version = {1.3.5}
 }
 ```
 
