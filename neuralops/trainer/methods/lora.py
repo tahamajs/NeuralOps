@@ -89,7 +89,12 @@ class DisLoRALinear(nn.Module):
         """Forward pass — compute module output from inputs."""
         base = self.linear(x)
         if self.r > 0:
-            lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                drop_x = self.dropout(x)
+                lora = fused_down_up_gemm_bias_triton(drop_x, self.lora_A.weight.t(), self.lora_B.weight.t()) * self.scaling
+            except Exception:
+                lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
             return base + lora
         return base
 
