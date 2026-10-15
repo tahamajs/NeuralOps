@@ -340,19 +340,19 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
     # 10. sparse_attn.py
     try:
         from neuralops.core.triton_kernels.sparse_attn import fused_lsh_hash_and_bin_triton, fused_lsh_hash_and_bin_pytorch
-        N, D, num_b = 2048, 64, 8
-        vecs = torch.randn(N, D, device=device, dtype=torch.float16)
+        B, H, N, D, num_b = 2, 8, 2048, 64, 8
+        vecs = torch.randn(B, H, N, D, device=device, dtype=torch.float16)
         proj = torch.randn(D, num_b, device=device, dtype=torch.float16)
 
         t_tri = measure_ms(fused_lsh_hash_and_bin_triton, vecs, proj, num_b)
         t_pt = measure_ms(fused_lsh_hash_and_bin_pytorch, vecs, proj, num_b)
         err = float((fused_lsh_hash_and_bin_triton(vecs, proj, num_b).float() - fused_lsh_hash_and_bin_pytorch(vecs, proj, num_b).float()).abs().max().item())
-        sram_saved = round((N * D * 2) / (1024 * 1024), 2)
+        sram_saved = round((B * H * N * D * 2) / (1024 * 1024), 2)
         results.append({
             "kernel_module": "sparse_attn.py",
             "primary_primitive": "fused_lsh_hash_and_bin_triton",
             "category": "Sparse/Routing",
-            "shape": f"N={N}, D={D}, Buckets={num_b}",
+            "shape": f"B={B}, H={H}, N={N}, D={D}, Buckets={num_b}",
             "latency_pytorch_ms": round(t_pt, 3),
             "latency_triton_ms": round(t_tri, 3),
             "speedup_x": round(t_pt / max(t_tri, 1e-4), 2),
