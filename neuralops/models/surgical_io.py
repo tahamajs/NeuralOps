@@ -158,20 +158,24 @@ def save_surgical_checkpoint(
         json.dump(manifest, f, indent=2)
 
     state_dict = model.state_dict()
+    # Filter out transient source_attn proxies that were attached only for weight transplantation
+    clean_state_dict = {
+        k: v for k, v in state_dict.items() if ".source_attn." not in k
+    }
 
     # Try saving with safetensors if available
     saved_safetensors = False
     try:
         from safetensors.torch import save_file
         # Clone tensors to ensure contiguous unshared storage
-        clean_state = {k: v.contiguous().clone() for k, v in state_dict.items()}
+        clean_state = {k: v.contiguous().clone() for k, v in clean_state_dict.items()}
         save_file(clean_state, str(path / "model.safetensors"))
         saved_safetensors = True
     except Exception as e_st:
         logger.debug("Safetensors save skipped: %s", e_st)
 
     # Always write standard PyTorch checkpoint as reliable companion
-    torch.save(state_dict, str(path / "surgical_model_state.pt"))
+    torch.save(clean_state_dict, str(path / "surgical_model_state.pt"))
     logger.info("Saved surgical checkpoint with %d modified submodules to %s", len(manifest["submodules"]), path)
     return path
 
