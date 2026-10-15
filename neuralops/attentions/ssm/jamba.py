@@ -729,7 +729,17 @@ class Jamba2Block(BaseAttention):
             if self.training:
                 self._accumulate_aux_loss()
 
-        final_delta = mamba_out + attn_delta + moe_out
+        if mamba_out.is_cuda and attn_delta.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+                # Fused gate alpha=0.5
+                alpha_hybrid = torch.tensor(0.5, device=mamba_out.device, dtype=mamba_out.dtype)
+                fused_ma = fused_jamba_hybrid_ssm_attn_gate_triton(mamba_out, attn_delta, alpha_hybrid)
+                final_delta = fused_ma * 2.0 + moe_out
+            except Exception:
+                final_delta = mamba_out + attn_delta + moe_out
+        else:
+            final_delta = mamba_out + attn_delta + moe_out
 
         return self._format_output(
             final_delta, attn_weights, present_key_value, output_attentions=output_attentions

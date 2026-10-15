@@ -679,9 +679,18 @@ class NEXUSAttention(BaseAttention):
                 F2_pinv = torch.linalg.inv(F2_reg)
 
             # Cross-chunk output with bounded scaling
-            step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
-            step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
-            out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
+            if F1.is_cuda and V_prev.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_nystrom_landmark_pinv_step_triton
+                    out_cross = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V_prev)
+                except Exception:
+                    step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
+                    step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
+                    out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
+            else:
+                step1 = torch.matmul(F3, V_prev)          # (B, H, m_prev, D)
+                step2 = torch.matmul(F2_pinv, step1)      # (B, H, m_prev, D)
+                out_cross = torch.matmul(F1, step2)       # (B, H, C, D)
             out_cross = torch.nan_to_num(out_cross, nan=0.0, posinf=50.0, neginf=-50.0)
 
             # Combine

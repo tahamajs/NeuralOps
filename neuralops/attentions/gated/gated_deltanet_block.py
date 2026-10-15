@@ -393,6 +393,11 @@ class GatedDeltaNetBlock(BaseAttention):
             # NOTE: nn.MultiheadAttention has no RoPE. For decoder models with
             # use_full_attention=True, positional information is lost. Recommend
             # using the DeltaNet path for decoders.
+            if x.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.gdn_scan import fused_gdn_chunk_scan_triton
+                except Exception:
+                    pass
 
             attn_out, attn_weights = self.attn(
                 x,
