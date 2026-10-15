@@ -130,6 +130,20 @@ class A3FactorizedLinear(nn.Module):
             self.V.data.copy_(V_factor.to(device=self.V.device, dtype=self.V.dtype))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                base_bias = self.bias if (self.lora_rank == 0 or self.lora_A is None) else None
+                out = fused_down_up_gemm_bias_triton(x, self.V, self.U.t().contiguous(), bias=base_bias)
+                if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.lora_scaling
+                    return out + lora_out
+                return out
+            except Exception:
+                pass
+
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:

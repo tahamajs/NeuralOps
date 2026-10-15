@@ -721,8 +721,19 @@ class SpectralMambaAttention(BaseAttention):
             gate_logits
             + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
         )
-        g = torch.sigmoid(gate_logits)  # (B, N, 1)
-        out = g * attn_out + (1.0 - g) * mamba_out
+        if hidden_states.is_cuda and attn_out.shape == mamba_out.shape:
+            try:
+                from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+                # Note: fused_jamba_hybrid_ssm_attn_gate_triton blends: (1 - sigmoid(alpha)) * attn + sigmoid(alpha) * ssm
+                # Here g = sigmoid(gate_logits) weights attn_out and (1-g) weights mamba_out
+                # Therefore, alpha_ssm = -gate_logits so sigmoid(alpha_ssm) = 1 - g
+                out = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, -gate_logits)
+            except Exception:
+                g = torch.sigmoid(gate_logits)  # (B, N, 1)
+                out = g * attn_out + (1.0 - g) * mamba_out
+        else:
+            g = torch.sigmoid(gate_logits)  # (B, N, 1)
+            out = g * attn_out + (1.0 - g) * mamba_out
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
