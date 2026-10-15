@@ -92,6 +92,13 @@ class ZeroKVNeoCache:
         window = min(self.recent_window, cur_len - sinks)
         heavy_budget = max(0, self.max_cache_len - sinks - window)
 
+        if self.k_cache.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
+                from neuralops.core.triton_kernels.sliding_window import fused_sink_prune_triton
+            except Exception:
+                pass
+
         sink_k = self.k_cache[:, :, :sinks, :]
         sink_v = self.v_cache[:, :, :sinks, :]
         win_k = self.k_cache[:, :, -window:, :] if window > 0 else self.k_cache[:, :, :0, :]

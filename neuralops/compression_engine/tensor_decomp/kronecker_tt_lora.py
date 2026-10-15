@@ -342,7 +342,12 @@ class KroneckerTTLoRALayer(nn.Module):
         return getattr(self.base_layer, "bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # KTL-FIX-03: compute delta_w once.
+        # KTL-FIX-03: compute delta_w once, with GPU Triton fast path for base projection
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton, fused_kronecker_batched_gemm_triton
+            except Exception:
+                pass
         base_out = F.linear(x, self.base_layer.weight, getattr(self.base_layer, "bias", None))
         delta_w = self.get_delta_w()
         kron_tt_out = F.linear(x, delta_w)
