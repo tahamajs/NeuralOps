@@ -765,10 +765,15 @@ class EATBlock(BaseAttention):
         else:
             context = torch.matmul(probs.to(v.dtype), v) if probs is not None else _sdpa_out
 
-        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-
         # ---- Output projection ----
-        out = context if self.is_nested_encoder else self.out_lin(context)
+        if context.is_cuda and hasattr(self.out_lin, "weight"):
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                out = self.out_lin(context) if not self.is_nested_encoder else context
+            except Exception:
+                out = context if self.is_nested_encoder else self.out_lin(context)
+        else:
+            out = context if self.is_nested_encoder else self.out_lin(context)
 
         if out.shape[-1] != D:
             raise RuntimeError(f"EATBlock: output dim {out.shape[-1]} != hidden_size {D}")

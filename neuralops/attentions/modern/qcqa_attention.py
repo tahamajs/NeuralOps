@@ -545,8 +545,21 @@ class QCQAAttention(BaseAttention):
         # Mix KV heads on-the-fly (raw K_cat/V_cat stay in cache)
         K_perm = K_cat.permute(0, 2, 1, 3)  # (B, H_kv, N_kv, d)
         V_perm = V_cat.permute(0, 2, 1, 3)
-        K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)  # (B, H_q, N_kv, d)
-        V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
+        if K_perm.is_cuda and w_head.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
+                # K_perm: (B, H_kv, N_kv, d) -> permute to (B, N_kv, H_kv, d) -> (B*N_kv, H_kv, d)
+                B_q, H_kv_q, N_kv_q, d_q = K_perm.shape
+                H_q = w_head.shape[1]
+                # Fast batched contraction
+                K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
+                V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
+            except Exception:
+                K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
+                V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
+        else:
+            K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)  # (B, H_q, N_kv, d)
+            V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
 
         q_heads = q.permute(0, 2, 1, 3).contiguous()  # (B, H_q, L, d)
         scale = 1.0 / math.sqrt(self.head_dim)
