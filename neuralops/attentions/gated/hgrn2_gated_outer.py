@@ -504,8 +504,8 @@ class HGRN2GatedOuterBlock(BaseAttention):
         else:
             S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
 
+        # Exact, numerically stable O(L) scan matching S_t = f_t * S_{t-1} + k_t^T @ v_t
         outputs = []
-
         for c in range(num_chunks):
             start = c * chunk_size
             end = min(start + chunk_size, L)
@@ -514,57 +514,36 @@ class HGRN2GatedOuterBlock(BaseAttention):
             q_c = q_f[:, :, start:end]  # (B, H, C, d)
             k_c = k_f[:, :, start:end]
             v_c = v_f[:, :, start:end]
-            log_f_c = log_f[:, :, start:end]  # (B, H, C)
+            f_c = f[:, :, start:end].float().clamp(min=1e-6, max=1.0)  # (B, H, C)
+            log_f_c = torch.log(f_c)
 
-            # ---- Intra-chunk decay ----
-            # log_F_c[i] = Σ_{j <= i} log_f_c[j]
-            log_F_c = torch.cumsum(log_f_c, dim=-1)  # (B, H, C)
+            # Intra-chunk cumulative decay: cum_log[i] = sum_{j<=i} log_f[j]
+            cum_log = torch.cumsum(log_f_c, dim=-1)
+            # log_decay[i, j] = cum_log[i] - cum_log[j] = sum_{m=j+1}^i log_f[m]
+            log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
+            causal_mask = torch.tril(torch.ones(C, C, device=device, dtype=torch.bool))
+            decay_intra = torch.where(causal_mask.unsqueeze(0).unsqueeze(0), torch.exp(log_decay.clamp(max=0.0)), torch.zeros_like(log_decay))
 
-            # log_F_prev[i] = Σ_{j < i} log_f_c[j]  (shifted by 1)
-            log_F_prev = torch.cat(
-                [
-                    torch.zeros(B, H, 1, device=device, dtype=log_F_c.dtype),
-                    log_F_c[:, :, :-1],
-                ],
-                dim=-1,
-            )  # (B, H, C)
+            # Intra-chunk output: (q_c @ k_c^T * decay_intra) @ v_c
+            scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * decay_intra
+            y_intra = torch.matmul(scores_intra, v_c)
 
-            # log_decay[i, j] = log_F_c[i] - log_F_prev[j]   for j <= i
-            log_decay = log_F_c.unsqueeze(-1) - log_F_prev.unsqueeze(-2)  # (B, H, C, C)
-
-            # Causal mask: keep j <= i
-            i_idx = torch.arange(C, device=device).view(C, 1)
-            j_idx = torch.arange(C, device=device).view(1, C)
-            valid = i_idx >= j_idx  # (C, C)
-
-            fill_val = -1e4 if log_decay.dtype == torch.float16 else -1e9
-            log_decay = log_decay.masked_fill(~valid, fill_val)
-            decay = torch.exp(log_decay)  # (B, H, C, C)
-
-            # ---- Intra-chunk KV outer products ----
-            # K·Vᵀ outer: (B, H, C, d, d)
-            KV_c = k_c.unsqueeze(-1) * v_c.unsqueeze(-2)  # (B, H, C, d, d)
-
-            # Apply per-row decay weights
-            # S_intra[i] = Σ_{j<=i} decay[i,j] · (k_jᵀ v_j)
-            KV_c_flat = KV_c.view(B, H, C, d * d)  # (B, H, C, d²)
-            S_intra_flat = torch.matmul(decay, KV_c_flat)  # (B, H, C, d²)
-            S_intra = S_intra_flat.view(B, H, C, d, d)  # (B, H, C, d, d)
-
-            # ---- Inter-chunk contribution from initial state ----
-            inter_decay = torch.exp(log_F_c).unsqueeze(-1).unsqueeze(-1)  # (B, H, C, 1, 1)
-
-            # ---- Memory-efficient chunk output computation: q @ S_intra + q @ S_inter ----
-            # S_intra has shape (B, H, C, d, d), y_intra = einsum(q_c, S_intra)
-            y_intra = torch.einsum("bhjd,bhjde->bhje", q_c, S_intra)
-            # S_inter = S_prev * inter_decay -> y_inter = q_c @ S_prev * exp(log_F_c)
+            # Inter-chunk contribution from S_prev:
+            # S_prev is decayed by prod_{m=0}^i f[m] = exp(cum_log[i])
+            decay_inter = torch.exp(cum_log.clamp(max=0.0)).unsqueeze(-1)  # (B, H, C, 1)
             q_S_prev = torch.matmul(q_c, S_prev)  # (B, H, C, d)
-            y_inter = q_S_prev * torch.exp(log_F_c).unsqueeze(-1)
-            y_c = y_intra + y_inter
-            outputs.append(y_c)
+            y_inter = q_S_prev * decay_inter
 
-            # ---- Update state for next chunk: S_total at last token of chunk ----
-            S_prev = S_intra[:, :, -1] + S_prev * inter_decay[:, :, -1]
+            outputs.append(y_intra + y_inter)
+
+            # Update S_prev for next chunk:
+            # S_chunk = sum_{j=0}^{C-1} (prod_{m=j+1}^{C-1} f[m]) * (k_j^T @ v_j)
+            last_cum = cum_log[:, :, -1:]  # (B, H, 1)
+            decay_to_end = torch.exp((last_cum - cum_log).clamp(max=0.0)).unsqueeze(-1)  # (B, H, C, 1)
+            k_decayed = k_c * decay_to_end
+            S_chunk = torch.matmul(k_decayed.transpose(-1, -2).contiguous(), v_c)  # (B, H, d, d)
+            decay_chunk_total = torch.exp(last_cum).unsqueeze(-1)  # (B, H, 1, 1)
+            S_prev = S_prev * decay_chunk_total + S_chunk
 
         y_out = torch.cat(outputs, dim=2)  # (B, H, L, d)
         return y_out.to(q.dtype), S_prev
