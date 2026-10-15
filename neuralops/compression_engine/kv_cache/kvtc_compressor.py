@@ -301,6 +301,11 @@ class KVTCQuantizedLoRALinear(nn.Module):
         return new_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_int4_lut_dequant_matmul_triton
+            except Exception:
+                pass
         w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(
             dtype=x.dtype
         ) + self.zero_point.to(dtype=x.dtype)
