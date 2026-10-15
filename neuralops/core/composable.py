@@ -23,6 +23,44 @@ import torch.nn.functional as F
 from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.triton_kernels import triton_dispatch
 
+# Registries for the 4 algebraic stages (P, phi, M, E)
+_CUSTOM_PROJECTIONS: dict[str, Any] = {}
+_CUSTOM_KERNELS: dict[str, Any] = {}
+_CUSTOM_MASKS: dict[str, Any] = {}
+_CUSTOM_ENGINES: dict[str, Any] = {}
+
+
+def register_composable_projection(name: str, fn_or_cls: Any = None) -> Any:
+    """Register a custom projection layer or factory for Stage 1 (P)."""
+    def _decorator(obj: Any) -> Any:
+        _CUSTOM_PROJECTIONS[name.lower()] = obj
+        return obj
+    return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
+
+
+def register_composable_kernel(name: str, fn_or_cls: Any = None) -> Any:
+    """Register a custom non-linear feature map or kernel for Stage 2 (phi)."""
+    def _decorator(obj: Any) -> Any:
+        _CUSTOM_KERNELS[name.lower()] = obj
+        return obj
+    return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
+
+
+def register_composable_mask(name: str, fn_or_cls: Any = None) -> Any:
+    """Register a custom attention mask or decay for Stage 3 (M)."""
+    def _decorator(obj: Any) -> Any:
+        _CUSTOM_MASKS[name.lower()] = obj
+        return obj
+    return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
+
+
+def register_composable_engine(name: str, fn_or_cls: Any = None) -> Any:
+    """Register a custom Triton or PyTorch execution engine for Stage 4 (E)."""
+    def _decorator(obj: Any) -> Any:
+        _CUSTOM_ENGINES[name.lower()] = obj
+        return obj
+    return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
+
 
 class BaseProjection(nn.Module):
     """Abstract base class for input projections."""
@@ -173,7 +211,10 @@ class ComposableAttention(nn.Module):
         return q, k
 
     def _apply_kernel(self, t: torch.Tensor) -> torch.Tensor:
-        if "elu" in self.kernel_map_type:
+        if self.kernel_map_type in _CUSTOM_KERNELS:
+            custom_fn = _CUSTOM_KERNELS[self.kernel_map_type]
+            return custom_fn(t)
+        elif "elu" in self.kernel_map_type:
             return F.elu(t.float()) + 1.0
         elif "cosformer" in self.kernel_map_type or "cos" in self.kernel_map_type:
             # Cosformer mapping: ReLU(x) * cos(pi * i / 2M)
@@ -204,12 +245,22 @@ class ComposableAttention(nn.Module):
 
         is_causal = "causal" in self.mask_type or self.window_size > 0 or "chunked_scan" in self.engine
 
-        # Apply Kernel Mapping (e.g., ELU+1, Cosformer)
-        if self.kernel_map_type in ("elu", "elu+1", "cosformer", "cos"):
+        # Apply Kernel Mapping (e.g., custom plugin kernel, ELU+1, Cosformer)
+        if self.kernel_map_type in _CUSTOM_KERNELS or self.kernel_map_type in ("elu", "elu+1", "cosformer", "cos"):
             q_k = self._apply_kernel(q)
             k_k = self._apply_kernel(k)
         else:
             q_k, k_k = q, k
+
+        # Check for registered custom execution engine
+        if self.engine in _CUSTOM_ENGINES:
+            custom_engine = _CUSTOM_ENGINES[self.engine]
+            try:
+                context = custom_engine(q_k, k_k, v, is_causal=is_causal, **kwargs)
+                out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
+                return out
+            except Exception as e_engine:
+                logger.debug("Custom engine '%s' raised exception: %s. Falling back.", self.engine, e_engine)
 
         # Execution Engine 1: Chunked Recurrent Scan
         if "chunked_scan" in self.engine or "recurrent" in self.engine:
@@ -358,4 +409,12 @@ def compose_attention(
 __all__ = [
     "ComposableAttention",
     "compose_attention",
+    "register_composable_projection",
+    "register_composable_kernel",
+    "register_composable_mask",
+    "register_composable_engine",
+    "BaseProjection",
+    "BaseFeatureMap",
+    "BaseMask",
+    "BaseExecutionEngine",
 ]
