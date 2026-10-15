@@ -107,6 +107,7 @@ from neuralops.core.triton_kernels.fused_norm_linear import (
     fused_norm_linear_pytorch,
     fused_rmsnorm_linear,
     fused_rmsnorm_gate,
+    fused_rmsnorm_gate_triton,
 )
 
 __all__ = [
@@ -153,6 +154,7 @@ __all__ = [
     "fused_norm_linear_pytorch",
     "fused_rmsnorm_linear",
     "fused_rmsnorm_gate",
+    "fused_rmsnorm_gate_triton",
 ]
 
 # Auto-wired package members
