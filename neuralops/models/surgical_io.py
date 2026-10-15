@@ -127,10 +127,13 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "embed_dim": embed_dim,
                 "num_heads": num_heads,
                 "rank": rank,
-                "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", None),
-                "is_decoder": getattr(effective_sub, "is_decoder", None),
+                "layer_idx": getattr(effective_sub, "layer_idx", getattr(sub, "layer_idx", None)),
+                "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", getattr(sub, "is_nested_encoder", None)),
+                "is_decoder": getattr(effective_sub, "is_decoder", getattr(sub, "is_decoder", None)),
+                "is_t5": getattr(sub, "is_t5", getattr(effective_sub, "is_t5", False)),
                 "is_wrapped": is_wrapper,
                 "return_tuple": getattr(sub, "return_tuple", None) if is_wrapper else None,
+                "layer_name": getattr(sub, "layer_name", name) if is_wrapper else None,
                 "wrapper_class_name": cls_name if is_wrapper else None,
                 "wrapper_import_path": sub.__class__.__module__ if is_wrapper else None,
                 "param_shapes": {p_name: list(p.shape) for p_name, p in sub.named_parameters(recurse=False)},
@@ -277,14 +280,19 @@ def load_surgical_checkpoint(
                     new_sub.is_nested_encoder = bool(info["is_nested_encoder"])
                 if info.get("is_decoder") is not None:
                     new_sub.is_decoder = bool(info["is_decoder"])
+                if info.get("layer_idx") is not None:
+                    new_sub.layer_idx = info["layer_idx"]
 
             if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
                 from neuralops.utils.replace_attention import UniversalAttentionWrapper
-                new_sub = UniversalAttentionWrapper(
+                wrapped_sub = UniversalAttentionWrapper(
                     new_sub,
-                    layer_name=module_path,
+                    layer_name=info.get("layer_name", module_path),
                     return_tuple=info.get("return_tuple", None),
                 )
+                if info.get("is_t5") is not None:
+                    wrapped_sub.is_t5 = bool(info["is_t5"])
+                new_sub = wrapped_sub
 
             replace_module(base_model, module_path, new_sub)
 
