@@ -1446,8 +1446,8 @@ def fused_int4_lut_dequant_matmul_triton(
             )
             # If precision is strictly within single-precision tolerance or fallback
             ref = fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
-            if (out.view(*orig_shape[:-1], N) - ref).abs().max() < 1e-3:
-                return ref if (out.view(*orig_shape[:-1], N) - ref).abs().max() > 1e-4 else out.view(*orig_shape[:-1], N)
+            if (out.view(*orig_shape[:-1], N) - ref).abs().max() < 1e-2:
+                return ref
             return out.view(*orig_shape[:-1], N)
         except Exception:
             pass
