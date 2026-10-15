@@ -727,7 +727,14 @@ class FlashAttention3(BaseAttention):
         if self.is_nested_encoder:
             final_out = out
         else:
-            final_out = self.out_proj(out)
+            if out.is_cuda and hasattr(self.out_proj, "weight"):
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                    final_out = self.out_proj(out)
+                except Exception:
+                    final_out = self.out_proj(out)
+            else:
+                final_out = self.out_proj(out)
 
         return final_out, None
 

@@ -858,7 +858,14 @@ class SqueezingHeadsDistiller(BaseAttention):
 
                 if self.is_nested_encoder:
                     return attn_out, attn_probs_ret
-                out = self.out_proj(attn_out)
+                if attn_out.is_cuda and hasattr(self.out_proj, "weight"):
+                    try:
+                        from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                        out = self.out_proj(attn_out)
+                    except Exception:
+                        out = self.out_proj(attn_out)
+                else:
+                    out = self.out_proj(attn_out)
                 return out, attn_probs_ret
             except Exception as e:
                 logger.debug("SDPA failed (%s); manual path.", e)

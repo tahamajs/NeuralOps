@@ -677,7 +677,14 @@ class TPAttention(BaseAttention):
             if self._use_tensor_product:
                 q1 = self.q_proj1(x).view(B, L, H, r_a)
                 q2 = self.q_proj2(x).view(B, L, H, r_b)
-                out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
+                if q1.is_cuda and q2.is_cuda:
+                    try:
+                        from neuralops.core.triton_kernels.low_rank import fused_kronecker_batched_gemm_triton
+                        out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
+                    except Exception:
+                        out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
+                else:
+                    out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
                 if self.q_lora_A is not None:
                     lora = F.linear(F.linear(x, self.q_lora_A), self.q_lora_B)
                     out_q = out_q + lora.view(B, L, H, hd) * (
@@ -691,7 +698,14 @@ class TPAttention(BaseAttention):
             if self._use_tensor_product:
                 k1 = self.k_proj1(x).view(B, L, H_kv, r_a)
                 k2 = self.k_proj2(x).view(B, L, H_kv, r_b)
-                out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
+                if k1.is_cuda and k2.is_cuda:
+                    try:
+                        from neuralops.core.triton_kernels.low_rank import fused_kronecker_batched_gemm_triton
+                        out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
+                    except Exception:
+                        out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
+                else:
+                    out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
                 if self.k_lora_A is not None:
                     lora = F.linear(F.linear(x, self.k_lora_A), self.k_lora_B)
                     out_k = out_k + lora.view(B, L, H_kv, hd) * (

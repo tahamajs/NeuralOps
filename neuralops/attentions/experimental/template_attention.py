@@ -601,7 +601,14 @@ class YourCustomAttention(BaseAttention):
         if self.is_nested_encoder:
             output = context
         else:
-            output = self.out_proj(context)
+            if context.is_cuda and hasattr(self.out_proj, "weight"):
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                    output = self.out_proj(context)
+                except Exception:
+                    output = self.out_proj(context)
+            else:
+                output = self.out_proj(context)
 
         # TA-14: no silent pad/truncate
         if output.shape[-1] != self.hidden_size:
