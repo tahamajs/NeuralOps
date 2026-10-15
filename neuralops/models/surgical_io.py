@@ -94,14 +94,39 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
             effective_sub = sub._wrapped_attention if is_wrapper else sub
             eff_cls_name = effective_sub.__class__.__name__
 
+            # Resolve registered key if available
+            target_key = getattr(effective_sub, "target_attention", None)
+            if not target_key:
+                for reg_k, reg_cls in ATTENTION_REGISTRY.items():
+                    if reg_cls == effective_sub.__class__ or isinstance(effective_sub, reg_cls):
+                        target_key = reg_k
+                        break
+            if not target_key:
+                target_key = eff_cls_name.lower()
+
+            # Determine embed_dim, num_heads, rank accurately
+            embed_dim = getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", None))
+            if embed_dim is None:
+                for p in effective_sub.parameters():
+                    if p.ndim == 2:
+                        embed_dim = p.shape[0]
+                        break
+                    elif p.ndim == 1:
+                        embed_dim = p.shape[0]
+            if embed_dim is None:
+                embed_dim = 768
+
+            num_heads = getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12))
+            rank = getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32))
+
             sub_info: Dict[str, Any] = {
                 "category": "attention",
                 "class_name": eff_cls_name,
                 "module_import_path": effective_sub.__class__.__module__,
-                "target_attention": getattr(effective_sub, "target_attention", eff_cls_name.lower()),
-                "embed_dim": getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", 768)),
-                "num_heads": getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
-                "rank": getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32)),
+                "target_attention": target_key,
+                "embed_dim": embed_dim,
+                "num_heads": num_heads,
+                "rank": rank,
                 "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", None),
                 "is_decoder": getattr(effective_sub, "is_decoder", None),
                 "is_wrapped": is_wrapper,
