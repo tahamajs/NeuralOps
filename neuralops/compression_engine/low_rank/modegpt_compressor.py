@@ -153,6 +153,22 @@ class MoDeGPTLowRankLinear(nn.Module):
             else self.bias
         )
 
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                base_b = b if (self.lora_r == 0 or self.lora_A is None) else None
+                out = fused_down_up_gemm_bias_triton(x, V, U.t().contiguous(), bias=base_b)
+                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                    a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+                    bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+                    lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=b) * self.scaling
+                    return out + lora_out
+                return out
+            except Exception:
+                pass
+
         h = F.linear(x, V)  # (..., r)
         out = F.linear(h, U, b)  # (..., out)
 
