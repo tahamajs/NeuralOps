@@ -209,6 +209,11 @@ class CoopQLinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_int4_lut_dequant_matmul_triton, dynamic_fp8_quant_triton
+            except Exception:
+                pass
         w_q = quantize_dequantize_coopq(
             self.weight,
             bits=self.bits,
