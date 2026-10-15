@@ -674,7 +674,8 @@ def calibrate_surgically_replaced_model(
 
         out_proj = None
         for child_name, child in surg_mod.named_modules():
-            if any(p.match(child_name) for p in PROJ_REGEX_PATTERNS["o"]):
+            leaf = child_name.split(".")[-1]
+            if any(p.match(leaf) for p in PROJ_REGEX_PATTERNS["o"]):
                 if isinstance(child, nn.Linear):
                     out_proj = child
                     break
