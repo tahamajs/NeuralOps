@@ -21,8 +21,8 @@ else:
     info_version = str(info_obj)
 
 errors = []
-if actual_version != "1.3.6":
-    errors.append(f"Version mismatch: expected '1.3.6', got {actual_version}")
+if actual_version != "1.3.7":
+    errors.append(f"Version mismatch: expected '1.3.7', got {actual_version}")
 
 # 2. Count verification
 actual_attn = len(ATTENTION_REGISTRY)
