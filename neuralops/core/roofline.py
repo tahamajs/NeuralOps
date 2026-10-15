@@ -483,10 +483,12 @@ def render_roofline_terminal(report: RooflineReport) -> str:
     lines.append(f"  HBM Naive:       {report.hbm_bytes_naive / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_naive:.2f} FLOPs/B)")
     lines.append(f"  HBM Fused:       {report.hbm_bytes_fused / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_fused:.2f} FLOPs/B)")
     lines.append(f"  SRAM Traffic Saved by Triton Fusion: {report.sram_bytes_saved_mb:.2f} MB")
-    lines.append("-" * w)
-    lines.append(f"  Latency (PyTorch Native): {report.latency_pytorch_ms:>8.3f} ms")
-    lines.append(f"  Latency (NeuralOps Triton):{report.latency_triton_ms:>8.3f} ms  ==>  🚀 SPEEDUP: {report.speedup_x:>6.2f}x")
-    lines.append(f"  Achieved Performance:     {report.achieved_tflops:>8.2f} TFLOPS ({report.achieved_bandwidth_gb_s:.1f} GB/s HBM bandwidth)")
+    # Display dual operating points
+    py_tflops = (report.total_flops / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e12))
+    py_bw = (report.hbm_bytes_naive / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e9))
+    lines.append(f"  Latency (PyTorch Native): {report.latency_pytorch_ms:>8.3f} ms  -->  Achieved [P]: {py_tflops:>6.2f} TFLOPS ({py_bw:>6.1f} GB/s)")
+    lines.append(f"  Latency (NeuralOps Triton):{report.latency_triton_ms:>8.3f} ms  -->  Achieved [T]: {report.achieved_tflops:>6.2f} TFLOPS ({report.achieved_bandwidth_gb_s:>6.1f} GB/s)")
+    lines.append(f"  🚀 EMPIRICAL SPEEDUP:      {report.speedup_x:>8.2f}x (Hardware Efficiency Gain)")
     lines.append("=" * w)
 
     # -------------------------------------------------------------------------
@@ -537,7 +539,6 @@ def render_roofline_terminal(report: RooflineReport) -> str:
         grid[peak_row][ridge_col] = "┬"
 
     # Plot [P] (Naive PyTorch Point)
-    py_tflops = (report.total_flops / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e12))
     p_row = _perf_to_row(py_tflops)
     p_col = _ai_to_col(report.arithmetic_intensity_naive)
     if 0 <= p_row < plot_rows and 0 <= p_col < plot_cols:
