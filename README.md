@@ -227,6 +227,31 @@ out = custom_attn(x)
 print("Composable attention output shape:", out.shape)  # [2, 512, 768]
 ```
 
+### Workflow 3: Zero-Overhead Hardware Autotuning & Analytical Roofline Profiling
+Calibrate Triton block configurations to your exact GPU architecture (SM capability, register budget, shared memory) and run analytical Roofline diagnosis:
+
+```python
+import neuralops
+from neuralops import profile_roofline
+from neuralops.core.triton_kernels import select_optimal_triton_config
+
+# 1. Zero-overhead calibration: select optimal Triton tile configuration without warmup overhead
+opt_cfg = select_optimal_triton_config(op_type="gemm", M=2048, N=768, K=768)
+print(f"Calibrated Tile: {opt_cfg['BLOCK_M']}x{opt_cfg['BLOCK_N']}, Warps: {opt_cfg['num_warps']}")
+
+# 2. Analytical Roofline Diagnosis: FLOPs, HBM bytes, Ridge Point & Arithmetic Intensity
+report = profile_roofline(
+    module_or_name="gated_delta_net",
+    batch_size=2,
+    seq_len=2048,
+    embed_dim=768,
+    num_heads=12,
+)
+print(f"Device: {report.device_name} (SM {report.sm_version})")
+print(f"Speedup: {report.speedup_x:.2f}x | Arithmetic Intensity: {report.arithmetic_intensity_fused:.2f} FLOP/B")
+print(f"Regime: {report.bottleneck_regime} (Ridge: {report.ridge_point:.1f} FLOP/B)")
+```
+
 ### Workflow 4: O(1) Constant-Memory Autoregressive Decoding (`NeuralOpsStateCache`)
 Run token-by-token generation with **100% constant memory footprint** across arbitrary sequence lengths $T \in [1, 128\text{K}]$, completely eliminating OOM errors:
 
