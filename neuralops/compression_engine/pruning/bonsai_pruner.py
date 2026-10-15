@@ -165,6 +165,22 @@ class BonsaiPrunedLoRALinear(nn.Module):
 
                 self.current_step += 1
 
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                w_sparse = self.weight * active_mask
+                out = fused_svd_lora_sparse_attn_triton(
+                    x_flat,
+                    w_down=self.lora_A if self.lora_A is not None else torch.zeros((1, self.in_features), device=x.device, dtype=x.dtype),
+                    w_up=self.lora_B if self.lora_B is not None else torch.zeros((self.out_features, 1), device=x.device, dtype=x.dtype),
+                    lora_scale=self.scaling,
+                    sparse_w=w_sparse,
+                    bias=self.bias,
+                )
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         W_sparse = self.weight * active_mask
         out = F.linear(x_flat, W_sparse, self.bias)
 
