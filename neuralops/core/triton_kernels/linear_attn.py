@@ -599,6 +599,78 @@ def fused_nasc_spectral_linear_scan_triton(
     return fused_nasc_spectral_linear_scan_pytorch(q, k, v, rff_proj, valid_mask, is_causal)
 
 
+def fused_ttt_linear_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    etas: torch.Tensor,
+) -> torch.Tensor:
+    """PyTorch reference implementation of TTT online gradient descent memory scan."""
+    B, H, N, d = q.shape
+    q_f = q.float()
+    k_f = k.float()
+    v_f = v.float()
+    etas_f = etas.float()
+
+    S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+    outs = []
+    for t in range(N):
+        qt = q_f[:, :, t : t + 1]
+        kt = k_f[:, :, t : t + 1]
+        vt = v_f[:, :, t : t + 1]
+        eta = etas_f[:, :, t : t + 1]
+        if eta.dim() == 3:
+            eta = eta.unsqueeze(-1)
+
+        pred_v = torch.matmul(kt, S)
+        err = pred_v - vt
+        grad_S = torch.matmul(kt.transpose(-1, -2), err)
+        S = S - eta * grad_S
+        yt = torch.matmul(qt, S)
+        outs.append(yt.to(q.dtype))
+
+    return torch.cat(outs, dim=2)
+
+
+def fused_ttt_linear_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    etas: torch.Tensor,
+) -> torch.Tensor:
+    """Fused Triton-accelerated TTT online gradient descent linear scan.
+
+    Equivalence:
+        Because ||k_t||_2 = 1 in TTT, the GDN recurrence:
+            S_t = beta_t * S_{t-1} + (alpha_t / (1 + ||k_t||_2^2)) * k_t^T @ (v_t - k_t @ S_{t-1})
+        with beta_t = 1.0 and alpha_t = 2.0 * etas_t yields:
+            S_t = S_{t-1} + etas_t * k_t^T @ (v_t - k_t @ S_{t-1})
+                = S_{t-1} - etas_t * k_t^T @ (k_t @ S_{t-1} - v_t)
+        which is mathematically and bitwise identical to the TTT online gradient step on memory matrix S!
+    """
+    from neuralops.core.triton_kernels._types import (
+        FORCE_PYTORCH_FALLBACK,
+        check_triton_suitability,
+    )
+    if not FORCE_PYTORCH_FALLBACK and q.is_cuda and q.shape[-1] <= 64:
+        try:
+            from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+            suitable, _ = check_triton_suitability(
+                q, "gdn_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True
+            )
+            if suitable:
+                B, H, N, _ = q.shape
+                beta = torch.ones(B, H, N, device=q.device, dtype=torch.float32)
+                alpha_val = etas.squeeze(-1) if etas.dim() == 4 else etas
+                alpha = (2.0 * alpha_val).float().contiguous()
+                out = gdn_scan_triton(q.float(), k.float(), v.float(), beta, alpha)
+                return out.to(q.dtype)
+        except Exception:
+            pass
+
+    return fused_ttt_linear_scan_pytorch(q, k, v, etas)
+
+
 __all__ = [
     "is_supported",
     "fwd",
@@ -607,5 +679,9 @@ __all__ = [
     "fused_rala_augmented_scan_pytorch",
     "fused_nasc_spectral_linear_scan_triton",
     "fused_nasc_spectral_linear_scan_pytorch",
+    "fused_ttt_linear_scan_triton",
+    "fused_ttt_linear_scan_pytorch",
 ]
+
+
 

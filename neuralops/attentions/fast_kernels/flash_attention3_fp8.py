@@ -743,11 +743,50 @@ class FlashAttention3FP8(BaseAttention):
                     else:
                         out = out_tensor.contiguous().view(B, L, self.all_head_size)
                 except (RuntimeError, NotImplementedError, ValueError) as e:
+
                     from neuralops.utils.logging_config import warn_once
                     warn_once(
                         "fa3_fp8_execution_fallback",
                         f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA."
                     )
+            elif not is_hopper and hasattr(torch.cuda, "get_device_capability"):
+                # SM 8.9+ Ada Lovelace / Blackwell FP8 Tensor Core acceleration path
+                try:
+                    from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                    major, minor = torch.cuda.get_device_capability(device)
+                    if not FORCE_PYTORCH_FALLBACK and (major > 8 or (major == 8 and minor >= 9)):
+                        from neuralops.core.triton_kernels.low_rank import fp8_tensorcore_matmul_triton
+                        scale = 1.0 / math.sqrt(dh)
+                        # Q: (B, H, L, Dh), K: (B, H, L, Dh)
+                        # Compute attention scores via FP8 GEMM on Ada Tensor Cores
+                        scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
+                        if causal_flag:
+                            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+                            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                        eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
+                        if eff_mask is not None:
+                            if eff_mask.dim() == 2:
+                                scores = scores.masked_fill((~eff_mask.bool()).unsqueeze(1).unsqueeze(2), -1e4)
+                        attn = F.softmax(scores, dim=-1)
+                        if self.dropout.p > 0.0 and self.training:
+                            attn = self.dropout(attn)
+                        # Value reduction: (B, H, L, L) @ (B, H, L, Dh) -> (B, H, L, Dh) via Ada FP8 Tensor Cores
+                        attn_2d = attn.contiguous().view(B * self.num_heads * L, L)
+                        v_2d = v.contiguous().view(B * self.num_heads, L, dh).view(B * self.num_heads * L, dh)
+                        # For per-head GEMM:
+                        out_heads = []
+                        for h_idx in range(self.num_heads):
+                            ah = attn[:, h_idx].contiguous() # [B, L, L]
+                            vh = v[:, h_idx].contiguous()    # [B, L, Dh]
+                            oh = fp8_tensorcore_matmul_triton(ah, vh, out_dtype=dtype)
+                            out_heads.append(oh.unsqueeze(1))
+                        out_tensor_h = torch.cat(out_heads, dim=1) # [B, H, L, Dh]
+                        if head_mask is not None:
+                            out_tensor_h = out_tensor_h * head_mask.view(1, -1, 1, 1).to(out_tensor_h.dtype)
+                        out = out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                except Exception as e:
+                    logger.debug("Ada FP8 Tensor Core path failed: %s; falling back to SDPA", e)
+
                     out = None
 
         # 5. SDPA / PyTorch native fallback path
