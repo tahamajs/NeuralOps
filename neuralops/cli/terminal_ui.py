@@ -310,11 +310,12 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         import torch
         dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
         w = 78
+        target = inspect_target or "gated_delta_net"
         print("=" * w)
         print(f"  🏛️ NEURALOPS MINIMALIST ARCHITECTURE EXPLORER (v1.3.5)")
         print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · 26 Triton Kernels")
         print("=" * w)
-        spec = inspect_architecture("gated_delta_net")
+        spec = inspect_architecture(target)
         print(render_architecture_card(spec))
         print("=" * w)
         return

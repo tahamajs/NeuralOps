@@ -842,12 +842,39 @@ def main(argv: list[str] | None = None) -> int:
         calibrated = calibrate_surgical_model(model, num_samples=args.samples)
         print("[✓] Layerwise Ridge calibration completed successfully.")
         return 0
+    elif args.subcommand == "inspect":
+        from neuralops.core.inspector import inspect_architecture, render_architecture_card
+        import json
+        spec = inspect_architecture(args.name)
+        if getattr(args, "json", False):
+            print(json.dumps(spec.to_dict(), indent=2))
+        elif getattr(args, "code_only", False):
+            print("── Python Direct Quickstart ───────────────────────────────────────")
+            print(spec.quickstart_code.get("pytorch_direct", ""))
+            print("\n── Surgical Transplant Quickstart ─────────────────────────────────")
+            print(spec.quickstart_code.get("surgical_transplant", ""))
+        else:
+            print(render_architecture_card(spec))
+
+        if getattr(args, "roofline", False):
+            from neuralops.core.roofline import profile_roofline, render_roofline_terminal
+            print("\n[+] Profiling Hardware Roofline for '%s'..." % args.name)
+            report = profile_roofline(args.name)
+            print(render_roofline_terminal(report))
+        return 0
     elif args.subcommand == "doctor":
         from neuralops.cli.doctor import cmd_doctor
         return cmd_doctor()
     elif args.subcommand == "info":
         from neuralops.cli.info import cmd_info
         return cmd_info()
+    elif args.subcommand == "ui":
+        from neuralops.cli.terminal_ui import run_interactive_ui
+        run_interactive_ui(
+            inspect_target=getattr(args, "inspect", None),
+            snapshot=getattr(args, "snapshot", False),
+        )
+        return 0
 
     return 0
 
