@@ -1454,6 +1454,100 @@ def fused_int4_lut_dequant_matmul_triton(
     return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _roast_hashed_gemm_kernel(
+        X_ptr, W_table_ptr, H_idx_ptr, Signs_ptr, Bias_ptr, Out_ptr,
+        M, N, K,
+        stride_xm, stride_xk,
+        stride_om, stride_on,
+        HAS_BIAS: tl.constexpr,
+        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+        num_k_blocks = tl.cdiv(K, BLOCK_K)
+
+        for k_blk in range(num_k_blocks):
+            k_indices = k_blk * BLOCK_K + offs_k
+
+            # Load X tile [BLOCK_M, BLOCK_K]
+            x_ptrs = X_ptr + offs_m[:, None] * stride_xm + k_indices[None, :] * stride_xk
+            x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M) & (k_indices[None, :] < K), other=0.0)
+
+            # Reconstruct W [BLOCK_N, BLOCK_K] dynamically from hash table
+            flat_w_indices = offs_n[:, None] * K + k_indices[None, :]
+            h_ptrs = H_idx_ptr + flat_w_indices
+            s_ptrs = Signs_ptr + flat_w_indices
+
+            h_indices = tl.load(h_ptrs, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=0)
+            signs = tl.load(s_ptrs, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=1.0)
+
+            w_vals = tl.load(W_table_ptr + h_indices, mask=(offs_n[:, None] < N) & (k_indices[None, :] < K), other=0.0)
+            w_tile = w_vals * signs
+
+            acc += tl.dot(x_tile.to(tl.float32), tl.trans(w_tile.to(tl.float32)))
+
+        if HAS_BIAS:
+            b = tl.load(Bias_ptr + offs_n, mask=offs_n < N, other=0.0)
+            acc += b[None, :]
+
+        out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
+        tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < M) & (offs_n[None, :] < N))
+
+
+    @triton.jit
+    def _kronecker_fused_gemm_kernel(
+        X_ptr, A_ptr, B_ptr, Bias_ptr, Out_ptr,
+        Total_Batches, P, Q, R, S,
+        stride_xm, stride_xk,
+        stride_ap, stride_aq,
+        stride_br, stride_bs,
+        stride_om, stride_on,
+        HAS_BIAS: tl.constexpr,
+        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr,
+    ):
+        """Contract (A ⊗ B) X in a single tiled 2D grid where In = Q*S, Out = P*R."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+
+        N_out = P * R
+        K_in = Q * S
+
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        # Loop over output tiles (p, r)
+        p_idx = offs_n // R
+        r_idx = offs_n % R
+
+        # Iterate over all input dimensions (q, s)
+        for q in range(Q):
+            a_val = tl.load(A_ptr + p_idx * stride_ap + q * stride_aq, mask=offs_n < N_out, other=0.0)
+            for s in range(S):
+                b_val = tl.load(B_ptr + r_idx * stride_br + s * stride_bs, mask=offs_n < N_out, other=0.0)
+                w_factor = a_val * b_val
+
+                in_col = q * S + s
+                x_val = tl.load(X_ptr + offs_m * stride_xm + in_col * stride_xk, mask=offs_m < Total_Batches, other=0.0)
+                acc += x_val[:, None] * w_factor[None, :]
+
+        if HAS_BIAS:
+            b = tl.load(Bias_ptr + offs_n, mask=offs_n < N_out, other=0.0)
+            acc += b[None, :]
+
+        out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
+        tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < Total_Batches) & (offs_n[None, :] < N_out))
+
+
 def fused_roast_hashed_gather_gemm_pytorch(
     x: torch.Tensor,
     weight_comp: torch.Tensor,
@@ -1476,12 +1570,35 @@ def fused_roast_hashed_gather_gemm_triton(
     signs: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Fused ROAST hashed projection in GPU SRAM."""
+    """Fused ROAST hashed projection in GPU SRAM via @triton.jit kernel."""
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
-    if HAS_TRITON and x.is_cuda:
+    if HAS_TRITON and x.is_cuda and tl is not None:
         try:
-            return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
+            orig_shape = x.shape
+            K = x.shape[-1]
+            x_2d = x.contiguous().view(-1, K)
+            M = x_2d.shape[0]
+            N = h_idx.shape[0]
+
+            out = torch.empty((M, N), device=x.device, dtype=x.dtype)
+            BLOCK_M = 32
+            BLOCK_N = 32
+            BLOCK_K = 64
+            grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N, BLOCK_N))
+
+            has_bias = bias is not None
+            bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
+
+            _roast_hashed_gemm_kernel[grid](
+                x_2d, weight_comp.contiguous(), h_idx.contiguous(), signs.contiguous(), bias_ptr, out,
+                M, N, K,
+                x_2d.stride(0), x_2d.stride(1),
+                out.stride(0), out.stride(1),
+                HAS_BIAS=has_bias,
+                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
+            )
+            return out.view(*orig_shape[:-1], N)
         except Exception:
             pass
     return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
@@ -1511,12 +1628,39 @@ def fused_kronecker_batched_gemm_triton(
     B: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Fused Kronecker GEMM in GPU SRAM."""
+    """Fused Kronecker GEMM in GPU SRAM via @triton.jit kernel."""
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
-    if HAS_TRITON and x.is_cuda:
+    if HAS_TRITON and x.is_cuda and tl is not None:
         try:
-            return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
+            orig_shape = x.shape
+            p, q = A.shape
+            r, s = B.shape
+            K_in = q * s
+            N_out = p * r
+
+            x_2d = x.contiguous().view(-1, K_in)
+            M = x_2d.shape[0]
+
+            out = torch.empty((M, N_out), device=x.device, dtype=x.dtype)
+            BLOCK_M = 32
+            BLOCK_N = 32
+            grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N_out, BLOCK_N))
+
+            has_bias = bias is not None
+            bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
+
+            _kronecker_fused_gemm_kernel[grid](
+                x_2d, A.contiguous(), B.contiguous(), bias_ptr, out,
+                M, p, q, r, s,
+                x_2d.stride(0), x_2d.stride(1),
+                A.stride(0), A.stride(1),
+                B.stride(0), B.stride(1),
+                out.stride(0), out.stride(1),
+                HAS_BIAS=has_bias,
+                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N,
+            )
+            return out.view(*orig_shape[:-1], N_out)
         except Exception:
             pass
     return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
