@@ -102,6 +102,8 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "embed_dim": getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", 768)),
                 "num_heads": getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
                 "rank": getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32)),
+                "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", None),
+                "is_decoder": getattr(effective_sub, "is_decoder", None),
                 "is_wrapped": is_wrapper,
                 "return_tuple": getattr(sub, "return_tuple", None) if is_wrapper else None,
                 "wrapper_class_name": cls_name if is_wrapper else None,
@@ -234,6 +236,11 @@ def load_surgical_checkpoint(
                             new_sub = cls(embed_dim=embed_dim, num_heads=num_heads, rank=rank)
                         except Exception:
                             new_sub = cls()
+
+                if info.get("is_nested_encoder") is not None:
+                    new_sub.is_nested_encoder = bool(info["is_nested_encoder"])
+                if info.get("is_decoder") is not None:
+                    new_sub.is_decoder = bool(info["is_decoder"])
 
             if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
                 from neuralops.utils.replace_attention import UniversalAttentionWrapper
