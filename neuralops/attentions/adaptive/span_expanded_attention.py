@@ -526,6 +526,18 @@ class SpanExpandedAttention(BaseAttention):
         recent_idx = torch.arange(recent_start, N_k, device=k.device)
         keep_idx = torch.cat([sink_idx, recent_idx])
 
+        if k.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
+                # Keep index selection accelerated
+                return (
+                    k.index_select(-2, keep_idx),
+                    v.index_select(-2, keep_idx),
+                    positions.index_select(-1, keep_idx),
+                )
+            except Exception:
+                pass
+
         return (
             k.index_select(-2, keep_idx),
             v.index_select(-2, keep_idx),

@@ -1,0 +1,1427 @@
+{
+  "attentions": [
+    {
+      "name": "adaptive_span_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "adaptive_sparse_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "adaptive_svd_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "adasplash_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_hybrid",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_spectron_fp8",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v1",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v2",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v3",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v4",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v5",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aegis_v6",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "alibi",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "asvd_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "bam_umoe",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "block_transformer_hiba",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "chela_slay",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "chela_slay_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cluster_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "compressed_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "compressed_mha_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "cosformer",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cosformer_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cross_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "decay_linear_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "decay_linear_attn",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "dynamic_conv_attention",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "eat",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "eat_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "expert_choice_moe",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "factorised_matrix_state",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "flash_attention3",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": true,
+      "requires_cuda": true
+    },
+    {
+      "name": "flash_attention3_fp8",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "full",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "full_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "fused_svd_kernel",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "fusion_attn",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "galerkin_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gated_delta_net",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gated_deltanet_block",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gated_linear_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gated_linear_attn",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gla_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "goldfinch_ahn",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gqa_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "granite_hybrid",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "griffin_ssd",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "halo_regla",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hamming_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "hgrn2_gated_deltanet",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hgrn2_gated_layer",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hgrn2_gated_outer",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hgrn2_outer",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hla_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hybrid_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "hybrid_local_kernel",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hymba_transx",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "jamba",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "jamba_info",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "kda_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "landmark_local_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "linformer_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "lola_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "lora_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "lsh_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mamba_block",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mamba_svd_flash",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "minimal_nova",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "minimal_svd",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mixattention_moska",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mla_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "moba_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "moe_deltakv_paged",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mqa",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "naive_svd",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "nasc_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "native_hybrid_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "nexus",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "nsa_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "nystrom_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "optimized_hybrid_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "orion",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "padre_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "performer_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "phantom",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "positive_kernel_linear_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "primal_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "progressive_token_pruning",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "projection_factorized_attn",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "qcqa_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "rala_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "reap_moe",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "refined_landmark_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "regla_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "residual_svd_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "routing_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "rpc_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "salt_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "samba_m3",
+      "supports_causal": false,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "samba_moe",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "selective_ssm",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "simple_ssm",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "sink_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "soa_attn",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "spectraformer_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "spectron",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "spectron_fp8",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "split_head_hybrid",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_compressed",
+      "supports_causal": false,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear_attn",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear_decay",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear_inject",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_llm_v2_attention",
+      "supports_causal": false,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_mamba",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_projection_attention",
+      "supports_causal": false,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_seq",
+      "supports_causal": false,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "template_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "token_compressed_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "tri_branch_hybrid",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "triton_cosformer",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "triton_svd_linear_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "ttt_linear_attention",
+      "supports_causal": false,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "unified_rope",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "upi_stuffed_mamba",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "vig_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "vspec",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "wgqa_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "xattention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    },
+    {
+      "name": "zeros_attention",
+      "supports_causal": true,
+      "supports_gqa": true,
+      "supports_rope": true,
+      "requires_cuda": false
+    }
+  ],
+  "compressors": [
+    {
+      "name": "a3_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aa_svd_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "aatc_xkv_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "adaptive_ranks",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "adasvd_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "admm_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "admm_pruner",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "armor_pruner",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "ast_pruner",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "astro_quantizer",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "bonsai_pruner",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cachenotes_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "come_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "compot_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "coopq_quantizer",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cr_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cur_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "cur_moe_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "delta_kv",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "direct_svd",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "dobi_svd",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "drone_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "dynamic_rank",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "enlighten_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "entropy_budget_allocation",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "erc_svd",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "faq_quantizer",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "flap",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "flat_llm",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "frandi_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "fwsvd_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "gfws",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "grecodec_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hashed_net_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "huffman_coder",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hybrid_svd_layer",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "hybridkv_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "kmeans_quantize",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "kronecker_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "kronecker_tt_lora",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "kvtc_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "liftr",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "lsc_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mamba_shedder",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mgie_budget",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "mlorq_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "modegpt_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "nmf_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "oats_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "optimal_subspace_projection",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "proxsparse",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "residual_svd_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "roast_hashed_linear",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "rotational_slicegpt_int4",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "rpca_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "saes_svd_v2",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "salr",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "sdrm_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "slicegpt",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "slicegpt_pca",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "slim_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "soka_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "sparsegpt",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "subspace_projection",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_linear",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "svd_llm_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "swift_svd",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "swift_svd_act",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "tomoe_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "tt_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "uniql_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    },
+    {
+      "name": "zerokv_neo_compressor",
+      "supports_causal": true,
+      "supports_gqa": false,
+      "supports_rope": false,
+      "requires_cuda": false
+    }
+  ]
+}

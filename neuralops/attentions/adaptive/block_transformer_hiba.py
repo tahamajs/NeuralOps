@@ -599,7 +599,14 @@ class BlockTransformerHIBA(BaseAttention):
 
         # ---- [HIBA-FIX-02] Vectorized intra-block scores ----
         # (B, H, NB, bs, bs)
-        intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
+        if q_blk.is_cuda and k_blk.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.block_sparse import block_sparse_triton
+                intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
+            except Exception:
+                intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
+        else:
+            intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
 
         if is_causal:
             # Causal within block

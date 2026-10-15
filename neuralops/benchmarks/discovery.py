@@ -104,8 +104,41 @@ def inspect_module_capabilities(
     )
 
 
+CATALOG_PATH = Path(__file__).parent / "static_catalog.json"
+
+
 def discover_all_modules() -> list[ModuleMetadata]:
     """Discover and return capabilities for all registered modules (131 attentions + 72 compressors = 203)."""
+    # Fast path: use cached static catalog if registries are not yet fully populated
+    if CATALOG_PATH.exists() and len(ATTENTION_REGISTRY._dict) < 50:
+        try:
+            with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
+                data = json.load(fp)
+            discovered: list[ModuleMetadata] = []
+            for item in data.get("attentions", []):
+                discovered.append(ModuleMetadata(
+                    name=item["name"],
+                    type="attention",
+                    cls=None,
+                    supports_causal=item.get("supports_causal", True),
+                    supports_gqa=item.get("supports_gqa", False),
+                    supports_rope=item.get("supports_rope", False),
+                    requires_cuda=item.get("requires_cuda", False),
+                ))
+            for item in data.get("compressors", []):
+                discovered.append(ModuleMetadata(
+                    name=item["name"],
+                    type="compressor",
+                    cls=None,
+                    supports_causal=item.get("supports_causal", True),
+                    supports_gqa=item.get("supports_gqa", False),
+                    supports_rope=item.get("supports_rope", False),
+                    requires_cuda=item.get("requires_cuda", False),
+                ))
+            if len(discovered) == 203:
+                return discovered
+        except Exception:
+            pass
 
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []

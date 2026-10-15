@@ -39,8 +39,12 @@ BANNER_ART = r"""
 
 SUBCOMMAND_GROUPS = [
     {
-        "title": "Model Surgery & Compression",
+        "title": "Model Surgery, Composition & Compression",
         "commands": [
+            ("transplant", "1-line surgical attention replacement + closed-form Ridge calibration"),
+            ("compose", "Declarative algebraic builder for custom attention via ComposableAttention"),
+            ("recommend", "Hardware-aware advisor recommending optimal attention & compression recipes"),
+            ("calibrate", "Closed-form layerwise Ridge/subspace output alignment for surgical models"),
             ("compress", "Compress any model via SVD, Hadamard Incoherent SVD, W4A16, or registered engines"),
             ("search", "AutoSVD Pareto optimal rank allocation via Fisher & Gram sensitivity"),
             ("export", "Export compressed/surgerized models to safetensors, ONNX, or TorchScript"),
@@ -111,13 +115,13 @@ def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
         print("================================================================")
-        print("                   NeuralOps CLI (v1.3.0)                       ")
+        print("                   NeuralOps CLI (v1.3.3)                       ")
         print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
         print("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
-    tagline = Text("NeuralOps v1.3.0 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
+    tagline = Text("NeuralOps v1.3.3 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
     tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
 
     panel = Panel(
@@ -278,11 +282,12 @@ def run_interactive_ui() -> None:
         menu.add_row("6", "Run System Diagnostics (Doctor)", "Deep verification of CUDA, SM capability, Triton cache, and VRAM")
         menu.add_row("7", "Inspect Benchmark Results", "View empirical benchmark metrics, accuracy gains, and loss curves")
         menu.add_row("8", "Help & Architecture Guides", "In-terminal documentation on SVD, Hadamard rotations, and Triton")
+        menu.add_row("9", "Composable Attention Wizard", "Build custom attention via declarative algebraic primitives and generate Python code")
         menu.add_row("q", "Exit", "Close the NeuralOps Control Center")
 
         console.print(menu)
         try:
-            choice = input("\nSelect an action [1-8, q]: ").strip().lower()
+            choice = input("\nSelect an action [1-9, q]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             break
 
@@ -366,6 +371,42 @@ def run_interactive_ui() -> None:
             topic = Prompt.ask("\nChoose topic to read", choices=list(HELP_TOPICS.keys()) + ["back"], default="quickstart")
             if topic in HELP_TOPICS:
                 console.print(Markdown(HELP_TOPICS[topic]))
+            input("\nPress Enter to return to main menu...")
+
+        elif choice == "9":
+            console.print(Panel("[bold green]Composable Attention Architecture Wizard[/bold green]\nInteractively assemble custom attention layers and export ready-to-use Python code.", border_style="green"))
+            proj = Prompt.ask("Choose projection (P)", choices=["dense", "svd(rank=32)", "svd(rank=64)", "conv1d(kernel_size=4)"], default="svd(rank=64)")
+            pos = Prompt.ask("Choose positional embedding", choices=["none", "rope", "alibi"], default="rope")
+            kmap = Prompt.ask("Choose feature map (phi)", choices=["softmax", "elu+1", "cosformer"], default="elu+1")
+            msk = Prompt.ask("Choose masking (M)", choices=["causal", "sliding_window(128)", "sliding_window(128)+sink(4)", "bidirectional"], default="sliding_window(128)+sink(4)")
+            eng = Prompt.ask("Choose execution engine (E)", choices=["sdpa", "chunked_scan", "delta_rule"], default="chunked_scan")
+
+            from neuralops import compose_attention
+            attn = compose_attention(projection=proj, positional=pos, kernel_map=kmap, mask=msk, engine=eng, embed_dim=768, num_heads=12)
+            console.print("\n[bold cyan]Assembled Architecture Specification:[/bold cyan]")
+            console.print(attn.summary())
+
+            code = (
+                "import torch\n"
+                "from neuralops import compose_attention\n\n"
+                f"custom_attn = compose_attention(\n"
+                f"    embed_dim=768,\n"
+                f"    num_heads=12,\n"
+                f"    projection='{proj}',\n"
+                f"    positional='{pos}',\n"
+                f"    kernel_map='{kmap}',\n"
+                f"    mask='{msk}',\n"
+                f"    engine='{eng}',\n"
+                ")\n"
+                "# Forward pass\n"
+                "x = torch.randn(2, 512, 768, device='cuda', dtype=torch.float16)\n"
+                "out = custom_attn(x)\n"
+            )
+            console.print("\n[bold yellow]Generated Python Snippet:[/bold yellow]")
+            if HAS_RICH and console is not None:
+                console.print(Syntax(code, "python", theme="monokai", line_numbers=True))
+            else:
+                print(code)
             input("\nPress Enter to return to main menu...")
 
         elif choice == "q":
