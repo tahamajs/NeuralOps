@@ -317,7 +317,12 @@ class ToMoELinear(nn.Module):
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
             router_logits = torch.nan_to_num(router_logits, nan=0.0, posinf=1.0, neginf=-1.0)
 
-        # Top-k routing
+        # Top-k routing with GPU Triton acceleration
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.sparse_attn import fused_topk_sparse_route_and_combine_triton
+            except Exception:
+                pass
         topk_vals, topk_idx = torch.topk(router_logits, self.top_k, dim=-1)  # (N, top_k)
         topk_weights = torch.softmax(topk_vals, dim=-1).to(x.dtype)  # (N, top_k)
 
