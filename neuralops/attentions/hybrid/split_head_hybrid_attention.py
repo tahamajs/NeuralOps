@@ -292,6 +292,7 @@ def local_window_attention(
     to keys in [q - window//2, q + window//2].
     """
     B, H, N, D = Q.shape
+    N_k = K.shape[2]
     radius = window // 2
     if Q.is_cuda and past_len == 0 and N == N_k and token_valid is None and abs(softpick_temperature - 1.0) < 1e-3:
         try:
