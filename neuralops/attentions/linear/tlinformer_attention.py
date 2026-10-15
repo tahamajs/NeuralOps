@@ -721,8 +721,17 @@ class TLinFormerAttention(BaseAttention):
         P_v = self._projection_matrix("proj_v", N, hidden_states.dtype, hidden_states.device)
 
         # Project on H_kv heads (cheap!)
-        K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)  # (B, H_kv, r, Dh)
-        V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)  # (B, H_kv, r, Dh)
+        if k_for_proj.is_cuda and P_k.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_linformer_seq_proj_triton
+                K_proj = fused_linformer_seq_proj_triton(P_k, k_for_proj)
+                V_proj = fused_linformer_seq_proj_triton(P_v, v_for_proj)
+            except Exception:
+                K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)
+                V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)
+        else:
+            K_proj = torch.einsum("rn,bhnd->bhrd", P_k, k_for_proj)  # (B, H_kv, r, Dh)
+            V_proj = torch.einsum("rn,bhnd->bhrd", P_v, v_for_proj)  # (B, H_kv, r, Dh)
 
         # NOW apply GQA repeat on the small (r-sized) tensors
         if self.kv_repeat > 1:
