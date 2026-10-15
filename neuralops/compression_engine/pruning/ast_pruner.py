@@ -170,6 +170,24 @@ class ASTPrunedLoRALinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                w_pruned = (self.weight * self.mask) if self.mask is not None else self.weight
+                out = fused_svd_lora_sparse_attn_triton(
+                    x_flat,
+                    w_down=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
+                    w_up=self.lora_B if (self.lora_r > 0 and self.lora_B is not None) else None,
+                    lora_A=None,
+                    lora_B=None,
+                    lora_scale=self.scaling,
+                    sparse_w=w_pruned,
+                    bias=self.bias,
+                )
+                return out.reshape(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         # FIXED: Soft Straight-Through Estimator (STE) for 2:4 structured sparsity.
         # W_forward has strict 2:4 sparsity in forward pass, but d(W_forward)/d(W) = 1 in backward pass.
         if self.mask is not None:

@@ -122,6 +122,24 @@ class ADMMMaskedLinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                orig_shape = x.shape
+                x_flat = x.reshape(-1, self.in_features)
+                w_masked = self.weight * self.mask
+                out = fused_svd_lora_sparse_attn_triton(
+                    x_flat,
+                    w_down=None,
+                    w_up=None,
+                    lora_A=None,
+                    lora_B=None,
+                    sparse_w=w_masked,
+                    bias=self.bias,
+                )
+                return out.reshape(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
         w_masked = ADMMSTEPrune.apply(self.weight, self.mask)
         return F.linear(x, w_masked, self.bias)
 

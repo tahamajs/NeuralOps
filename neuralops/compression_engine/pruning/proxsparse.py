@@ -177,6 +177,26 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         return instance
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                out = fused_svd_lora_sparse_attn_triton(
+                    x_flat,
+                    w_down=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
+                    w_up=self.lora_B if (self.lora_r > 0 and self.lora_B is not None) else None,
+                    lora_A=None,
+                    lora_B=None,
+                    lora_scale=self.scaling,
+                    sparse_w=self.weight,
+                    bias=self.bias,
+                )
+                return out.reshape(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         # PS-FIX-02: no re-multiplication by mask; weight is already masked.
         w = self.weight.to(dtype=x.dtype, device=x.device)
         # PS-FIX-06: bias cast includes device.
