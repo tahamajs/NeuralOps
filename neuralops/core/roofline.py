@@ -356,30 +356,52 @@ def profile_roofline(
 
         # B. Measure PyTorch Reference Path (FORCE_PYTORCH_FALLBACK = True)
         _set_global_fallback(True)
-        py_warmup = min(3, warmup)
-        py_rep = min(5, rep)
-        with torch.no_grad():
-            for _ in range(py_warmup):
-                _ = _run_forward(module, x)
-        if is_cuda:
-            torch.cuda.synchronize(target_device)
+        # For recurrent / state-space modules, temporarily bypass external fast fused kernels (e.g. FLA chunk_gdn)
+        # to ensure the baseline actually executes the un-fused step-by-step HBM-materializing PyTorch reference
+        _saved_fla_chunk = None
+        try:
+            import sys
+            _fla_ops = sys.modules.get("fla.ops")
+            if _fla_ops is not None and hasattr(_fla_ops, "chunk_gdn"):
+                _saved_fla_chunk = _fla_ops.chunk_gdn
+                delattr(_fla_ops, "chunk_gdn")
+        except Exception:
+            pass
 
-        if is_cuda:
-            start_evt = torch.cuda.Event(enable_timing=True)
-            end_evt = torch.cuda.Event(enable_timing=True)
-            start_evt.record()
+        py_warmup = min(2, warmup)
+        py_rep = min(3, rep)
+        try:
             with torch.no_grad():
-                for _ in range(py_rep):
+                for _ in range(py_warmup):
                     _ = _run_forward(module, x)
-            end_evt.record()
-            torch.cuda.synchronize(target_device)
-            latency_pytorch_ms = float(start_evt.elapsed_time(end_evt) / py_rep)
-        else:
-            t0 = time.perf_counter()
-            with torch.no_grad():
-                for _ in range(py_rep):
-                    _ = _run_forward(module, x)
-            latency_pytorch_ms = float((time.perf_counter() - t0) * 1000.0 / py_rep)
+            if is_cuda:
+                torch.cuda.synchronize(target_device)
+
+            if is_cuda:
+                start_evt = torch.cuda.Event(enable_timing=True)
+                end_evt = torch.cuda.Event(enable_timing=True)
+                start_evt.record()
+                with torch.no_grad():
+                    for _ in range(py_rep):
+                        _ = _run_forward(module, x)
+                end_evt.record()
+                torch.cuda.synchronize(target_device)
+                latency_pytorch_ms = float(start_evt.elapsed_time(end_evt) / py_rep)
+            else:
+                t0 = time.perf_counter()
+                with torch.no_grad():
+                    for _ in range(py_rep):
+                        _ = _run_forward(module, x)
+                latency_pytorch_ms = float((time.perf_counter() - t0) * 1000.0 / py_rep)
+        finally:
+            if _saved_fla_chunk is not None:
+                try:
+                    import sys
+                    _fla_ops = sys.modules.get("fla.ops")
+                    if _fla_ops is not None:
+                        setattr(_fla_ops, "chunk_gdn", _saved_fla_chunk)
+                except Exception:
+                    pass
 
     finally:
         _set_global_fallback(False)

@@ -422,10 +422,175 @@ def list_families() -> Dict[str, List[str]]:
     for k in families:
         families[k] = sorted(families[k])
 
-    return dict(sorted(families.items()))
+def create_attention(
+    name: str,
+    config: Any = None,
+    dim: int | None = None,
+    num_heads: int | None = None,
+    embed_dim: int | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Universal attention factory instantiating any of the 131 registered attention mechanisms."""
+    import neuralops
+    return neuralops.create_attention(
+        name=name,
+        config=config,
+        dim=dim,
+        num_heads=num_heads,
+        embed_dim=embed_dim,
+        rank=rank,
+        **kwargs,
+    )
 
 
-# =====================================================================
+def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
+    """Universal compressor factory instantiating any of the 72 registered compression engines."""
+    import neuralops
+    return neuralops.create_compressor(name=name, model=model, rank=rank, **kwargs)
+
+
+def compare_attentions_ablation(
+    attention_names: Sequence[str],
+    batch_size: int = 2,
+    seq_len: int = 1024,
+    embed_dim: int = 768,
+    num_heads: int = 12,
+    dtype: str = "float16",
+    device: Optional[Union[str, torch.device]] = None,
+    export_format: Optional[str] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """Ablation benchmark workflow across multiple attention candidate architectures.
+
+    Profiles empirical hardware performance via `profile_roofline`, computes multi-objective
+    Pareto frontiers via `compute_pareto_frontier`, and generates publication tables.
+    """
+    from neuralops.core.roofline import profile_roofline
+    from neuralops.core.paper_export import compute_pareto_frontier, export_benchmark_table
+
+    target_dev = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
+    records = []
+
+    for name in attention_names:
+        try:
+            report = profile_roofline(
+                module_or_name=name,
+                batch_size=batch_size,
+                seq_len=seq_len,
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                dtype=dtype,
+                device=target_dev,
+                **kwargs,
+            )
+            rec = {
+                "module": name,
+                "latency_triton_ms": round(report.latency_triton_ms, 3),
+                "speedup_x": round(report.speedup_x, 2),
+                "achieved_tflops": round(report.achieved_tflops, 2),
+                "sram_bytes_saved_mb": round(report.sram_bytes_saved_mb, 2),
+                "peak_vram_mb": round(report.peak_vram_mb, 1),
+                "bottleneck": report.bottleneck_regime,
+            }
+            records.append(rec)
+        except Exception as e:
+            logger.warning("Failed to profile '%s' in ablation study: %s", name, e)
+
+    pareto_mask = compute_pareto_frontier(records)
+    for rec, is_p in zip(records, pareto_mask):
+        rec["pareto_optimal"] = is_p
+
+    formatted_table = None
+    if export_format in ("latex", "markdown", "csv"):
+        formatted_table = export_benchmark_table(
+            records=records,
+            format=export_format,
+            caption=f"Empirical Hardware Ablation (seq_len={seq_len}, dim={embed_dim})",
+        )
+
+    return {
+        "records": records,
+        "pareto_optimal_count": sum(pareto_mask),
+        "table": formatted_table,
+    }
+
+
+def surgical_transplant_and_heal_pipeline(
+    teacher_model: nn.Module,
+    student_base_model: Optional[nn.Module] = None,
+    target_attention: str = "gated_delta_net",
+    calibration_inputs: Any = None,
+    heal_steps: int = 25,
+    heal_lr: float = 2e-3,
+    save_dir: Optional[Union[str, Path]] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """End-to-end surgical transplant, closed-form Ridge alignment, and micro-healing pipeline.
+
+    Executes:
+      1. replace_attention on student model (raw replacement baseline)
+      2. calibrate_attention_subspace (closed-form analytical Ridge projection alignment)
+      3. heal_replaced_model (layerwise local gradient micro-healing with best-state rollback)
+      4. Optional save_surgical_checkpoint serialization
+    """
+    import copy
+    from neuralops.core._attention_surgery import calibrate_attention_subspace, heal_replaced_model
+
+    if student_base_model is None:
+        student = copy.deepcopy(teacher_model)
+    else:
+        student = student_base_model
+
+    # 1. Raw Surgical Replacement
+    student = replace_attention(student, attention=target_attention, **kwargs)
+
+    # Measure raw student error if inputs provided
+    initial_metrics: Dict[str, float] = {}
+    if calibration_inputs is not None:
+        try:
+            student.eval()
+            teacher_model.eval()
+            with torch.no_grad():
+                inp = calibration_inputs if not isinstance(calibration_inputs, (list, tuple)) else calibration_inputs[0]
+                y_t = teacher_model(inp) if not isinstance(inp, dict) else teacher_model(**inp)
+                y_s = student(inp) if not isinstance(inp, dict) else student(**inp)
+                if isinstance(y_t, tuple): y_t = y_t[0]
+                if isinstance(y_s, tuple): y_s = y_s[0]
+                mse_raw = F.mse_loss(y_s.float(), y_t.float()).item()
+                cos_raw = F.cosine_similarity(y_s.float().flatten(), y_t.float().flatten(), dim=0).item()
+                initial_metrics = {"mse_raw": mse_raw, "cos_sim_raw": cos_raw}
+        except Exception as e_metric:
+            logger.debug("Raw metric check skipped: %s", e_metric)
+
+    # 2. Closed-Form Ridge Alignment & 3. Micro-Healing
+    heal_stats: Dict[str, Any] = {}
+    if calibration_inputs is not None:
+        heal_stats = heal_replaced_model(
+            teacher_model=teacher_model,
+            student_model=student,
+            calibration_inputs=calibration_inputs,
+            steps=heal_steps,
+            lr=heal_lr,
+            also_ridge_init=True,
+        )
+
+    # 4. Optional Persistence
+    saved_path = None
+    if save_dir is not None:
+        from neuralops.models.surgical_io import save_surgical_checkpoint
+        saved_path = save_surgical_checkpoint(
+            model=student,
+            save_dir=save_dir,
+            metadata={"target_attention": target_attention, "heal_stats": heal_stats},
+        )
+
+    return {
+        "model": student,
+        "initial_metrics": initial_metrics,
+        "heal_stats": heal_stats,
+        "saved_path": str(saved_path) if saved_path is not None else None,
+    }
 # 3. Runners (Train / Distill / Evaluate / Benchmark)
 # =====================================================================
 
@@ -722,12 +887,17 @@ __all__ = [
     "set_surgery_alpha",
     "set_surgery_stage",
     "finalize_surgery",
-    # Discovery
+    # Discovery & Factories
     "list_attentions",
     "list_compressors",
     "get_attention_class",
     "get_compressor_class",
+    "create_attention",
+    "create_compressor",
     "list_families",
+    # Workflows & Pipelines
+    "compare_attentions_ablation",
+    "surgical_transplant_and_heal_pipeline",
     # Runners
     "train",
     "distill",

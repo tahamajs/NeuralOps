@@ -165,43 +165,68 @@ def _map_kernel_and_hardware(name: str, category: str, family: str) -> tuple[str
         )
 
 
+def _clean_type_str(t: str) -> str:
+    """Simplify verbose Python type strings into clean researcher types."""
+    if not t or t == "inspect._empty":
+        return "Any"
+    t = re.sub(r"typing\.", "", t)
+    t = re.sub(r"<class '([^']+)'>", r"\1", t)
+    t = re.sub(r"NoneType", "None", t)
+    t = re.sub(r"Union\[([^,]+),\s*None\]", r"Optional[\1]", t)
+    t = re.sub(r"([A-Za-z0-9_]+)\s*\|\s*None", r"\1", t)
+    t = re.sub(r"Any\s*\|\s*None", "Any", t)
+    t = re.sub(r"int\s*\|\s*Any", "int", t)
+    t = t.strip()
+    return t or "Any"
+
+
 def _extract_constructor_params(obj: Any) -> List[Dict[str, str]]:
     """Extract clean parameter types and defaults from a class or function."""
     if obj is None:
         return []
     try:
+        raw_params = []
         if inspect.isfunction(obj) or inspect.ismethod(obj):
             sig = inspect.signature(obj)
-            return [
-                {
-                    "param": p.name,
-                    "type": "Any" if p.annotation == inspect.Parameter.empty else str(p.annotation),
-                    "default": "req" if p.default == inspect.Parameter.empty else str(p.default),
-                }
-                for p in sig.parameters.values()
-                if p.name != "self"
-            ]
+            raw_params = list(sig.parameters.values())
         elif inspect.isclass(obj):
             for base in obj.mro():
                 if "__init__" in base.__dict__:
                     sig = inspect.signature(base.__dict__["__init__"])
-                    params = [
-                        {
-                            "param": p.name,
-                            "type": "Any" if p.annotation == inspect.Parameter.empty else str(p.annotation),
-                            "default": "req" if p.default == inspect.Parameter.empty else str(p.default),
-                        }
-                        for p in sig.parameters.values()
-                        if p.name != "self"
-                    ]
-                    if params and not (len(params) == 2 and params[0]["param"] == "args" and params[1]["param"] == "kwargs"):
-                        return params
+                    p_list = [p for p in sig.parameters.values() if p.name != "self"]
+                    if p_list and not (len(p_list) == 2 and p_list[0].name == "args" and p_list[1].name == "kwargs"):
+                        raw_params = p_list
+                        break
+
+        if raw_params:
+            parsed = []
+            for p in raw_params:
+                p_type = "Any" if p.annotation == inspect.Parameter.empty else _clean_type_str(str(p.annotation))
+                p_def = "req" if p.default == inspect.Parameter.empty else str(p.default)
+                if p_def == "None":
+                    p_def = "None"
+                parsed.append({"param": p.name, "type": p_type, "default": p_def})
+
+            # Sort/reorder key architectural hyperparams forward:
+            # embed_dim/d_model, num_heads, rank, chunk_size, window_size
+            priority_keys = ["embed_dim", "d_model", "dim", "hidden_size", "num_heads", "n_heads", "heads", "rank", "r", "chunk_size", "window_size"]
+            def _sort_key(item: Dict[str, str]) -> int:
+                p_name = item["param"].lower()
+                for rank_idx, pk in enumerate(priority_keys):
+                    if p_name == pk:
+                        return rank_idx
+                if p_name in ("config", "comp_config", "args", "kwargs"):
+                    return 100
+                return 50
+
+            parsed.sort(key=_sort_key)
+            return parsed
     except Exception:
         pass
     return [
         {"param": "embed_dim", "type": "int", "default": "768"},
         {"param": "num_heads", "type": "int", "default": "12"},
-        {"param": "kwargs", "type": "Any", "default": "None"},
+        {"param": "rank", "type": "int", "default": "64"},
     ]
 
 
