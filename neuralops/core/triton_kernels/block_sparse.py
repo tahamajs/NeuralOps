@@ -136,7 +136,7 @@ if HAS_TRITON and tl is not None:
 
             score = tl.sum(q_vec * k_vec) * scale
             if IS_CAUSAL and col > pid_m:
-                score = -1e4
+                score = score - 1e4
             elif not IS_CAUSAL and col == 0:
                 score += 1e4
 
