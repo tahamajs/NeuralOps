@@ -27,7 +27,16 @@ class NeuralOpsSwiGLU(nn.Module):
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        gate = self.gate_proj(x)
+        up = self.up_proj(x)
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and hasattr(self, "act_fn") and getattr(self.act_fn, "__name__", "") == "silu":
+            try:
+                from neuralops.core.triton_kernels.elementwise import swiglu_triton
+                act = swiglu_triton(gate, up)
+                return self.down_proj(act)
+            except Exception:
+                pass
+        return self.down_proj(self.act_fn(gate) * up)
 
 
 class NeuralOpsStandardMLP(nn.Module):
