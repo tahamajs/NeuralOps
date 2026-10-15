@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.5] - 2026-10-15
+
+`NeuralOps` v1.3.5 introduces deep hardware roofline and arithmetic intensity profiling, layerwise subspace micro-healing, lossless surgical checkpoint persistence, academic LaTeX booktabs Pareto frontier export, and GitHub Actions CI concurrency guards.
+
+### Added
+- **Hardware Roofline & Arithmetic Intensity Analyzer (`neuralops/core/roofline.py` & `neuralops roofline`)**: Dual-path empirical latency comparison (Triton vs PyTorch reference), analytical FLOPs, HBM DRAM vs in-SRAM memory traffic modeling, hardware ridge point diagnosis, and terminal ASCII roofline curve rendering.
+- **Layerwise Subspace Micro-Healing (`heal_replaced_model` in `neuralops/core/_attention_surgery.py` & `neuralops transplant --heal`)**: Fast gradient-based micro-healing directly on cached teacher representations without full-model backpropagation, optimizing internal nonlinear gates, feature map scalers, and low-rank bottlenecks.
+- **Surgical Checkpoint Persistence (`neuralops/models/surgical_io.py`)**: Seamless saving (`save_surgical_checkpoint`) and dynamic tree reconstruction (`load_surgical_checkpoint`) for surgically modified attention and compressed linear layers.
+- **Academic LaTeX & Pareto Frontier Exporter (`neuralops/core/paper_export.py` & `neuralops results --format latex`)**: Automated multi-objective Pareto-optimality detection ($^\star$), booktabs formatting, and bold/underlined best metric highlighting.
+- **GitHub Actions Billing Guard**: Added `concurrency` with `cancel-in-progress: true` and `paths-ignore` across all CI/CD workflows.
+
 ## [1.3.4] - 2026-10-15
 
 ### ⚡ Zero-Latency CLI Startup, Interactive Rich TUI & Automated Release Workflows
