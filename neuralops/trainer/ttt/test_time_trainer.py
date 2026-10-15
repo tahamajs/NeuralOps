@@ -62,37 +62,20 @@ class TTTLinearAttentionLayer(BaseAttention):
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
         etas = self.eta_net(hidden_states).view(B, N, H).transpose(1, 2).unsqueeze(-1) * self.inner_lr
 
         k_norm = F.normalize(k, p=2, dim=-1)
 
-        # Online inner-loop state update (streaming across sequence)
-        S = torch.zeros(B, H, d, d, device=hidden_states.device, dtype=torch.float32)
-        outs = []
+        # Accelerated fused Triton / PyTorch online inner-loop memory scan
+        from neuralops.core.triton_kernels.linear_attn import fused_ttt_linear_scan_triton
+        y_heads = fused_ttt_linear_scan_triton(q, k_norm, v, etas)
 
-        for t in range(N):
-            qt = q[:, :, t : t + 1].float()
-            kt = k_norm[:, :, t : t + 1].float()
-            vt = v[:, :, t : t + 1].float()
-            eta = etas[:, :, t : t + 1].float()
-
-            # Reconstruction error of online model: err = S_{t-1} @ k_t - v_t
-            pred_v = torch.matmul(kt, S)
-            err = pred_v - vt
-
-            # Online gradient step on memory S
-            grad_S = torch.matmul(kt.transpose(-1, -2), err)
-            S = S - eta * grad_S
-
-            # Readout
-            yt = torch.matmul(qt, S)
-            outs.append(yt.to(hidden_states.dtype))
-
-        y = torch.cat(outs, dim=2).transpose(1, 2).contiguous().view(B, N, D)
+        y = y_heads.transpose(1, 2).contiguous().view(B, N, D)
         return self.out_proj(y), None
 
 
 __all__ = ["TTTLinearAttentionLayer"]
+

@@ -460,8 +460,21 @@ class SAMBAM3Block(nn.Module):
     ) -> torch.Tensor:
         B, H, L, d = q.shape
         scale = 1.0 / math.sqrt(d)
+
+        # Fused Triton sliding window acceleration
+        if q.is_cuda and past_len == 0 and attention_mask is None and head_mask is None and d <= 64:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK:
+                    from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+                    is_dec = getattr(self, "_active_is_decoder", self.is_decoder)
+                    return sliding_window_triton(q, k, v, window_size=self.window, causal=bool(is_dec))
+            except Exception:
+                pass
+
         chunk = 64
         outputs = []
+
 
         for start in range(0, L, chunk):
             end = min(start + chunk, L)
