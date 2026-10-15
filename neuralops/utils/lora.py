@@ -112,7 +112,11 @@ class LoRALinear(nn.Module):
         base_out = self.base_layer(x)
         if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
             lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
-            lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                lora_out = fused_down_up_gemm_bias_triton(lora_in, self.lora_A.weight.t(), self.lora_B.weight.t()) * self.scaling
+            except Exception:
+                lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
             return base_out + lora_out.to(dtype=base_out.dtype)
         return base_out
 

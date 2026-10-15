@@ -107,7 +107,12 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = nn.functional.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (self.dropout(x) @ self.lora_A.t()) @ self.lora_B.t() * self.lora_scaling
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                drop_x = self.dropout(x)
+                lora_out = fused_down_up_gemm_bias_triton(drop_x, self.lora_A.t(), self.lora_B.t()) * self.lora_scaling
+            except Exception:
+                lora_out = (self.dropout(x) @ self.lora_A.t()) @ self.lora_B.t() * self.lora_scaling
             return out + lora_out
         return out
 
