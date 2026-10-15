@@ -429,11 +429,13 @@ def fused_landmark_local_block_attn_triton(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Fused two-level Landmark Local Block Attention in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, check_triton_suitability
 
     if HAS_TRITON and q.is_cuda:
         try:
-            return fused_landmark_local_block_attn_pytorch(q, k, v, window_size, block_size, is_causal)
+            suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
+            if suitable and is_causal:
+                return sliding_window_triton(q, k, v, window_size=window_size)
         except Exception:
             pass
     return fused_landmark_local_block_attn_pytorch(q, k, v, window_size, block_size, is_causal)

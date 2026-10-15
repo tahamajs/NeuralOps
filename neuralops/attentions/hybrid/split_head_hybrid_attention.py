@@ -292,8 +292,17 @@ def local_window_attention(
     to keys in [q - window//2, q + window//2].
     """
     B, H, N, D = Q.shape
-    N_k = K.shape[2]
     radius = window // 2
+    if Q.is_cuda and past_len == 0 and N == N_k and token_valid is None and abs(softpick_temperature - 1.0) < 1e-3:
+        try:
+            from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+            from neuralops.core.triton_kernels._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(Q, "sliding_window", head_dim=D, seq_len=N)
+            if suitable:
+                return sliding_window_triton(Q, K, V, window_size=radius)
+        except Exception:
+            pass
+
     scale = (D**-0.5) / max(1e-4, float(softpick_temperature))
 
     abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
