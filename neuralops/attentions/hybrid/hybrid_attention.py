@@ -388,7 +388,19 @@ class HybridAttention(BaseAttention):
                 return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
 
             if self.is_decoder:
-                # Chunked causal linear attention.
+                # Triton fast path for causal linear scan
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+                if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and phi_Q.is_cuda and D_h <= 128:
+                    try:
+                        from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                        out_triton = fused_svd_linear_chunk_scan_triton(
+                            phi_Q.to(V_f.dtype), phi_K.to(V_f.dtype), V_f, chunk_size=64, eps=1e-6
+                        )
+                        return out_triton.to(Q.dtype)
+                    except Exception:
+                        pass
+
+                # Chunked causal linear attention reference.
                 chunk_size = 128
                 num_chunks = (N_h + chunk_size - 1) // chunk_size
 

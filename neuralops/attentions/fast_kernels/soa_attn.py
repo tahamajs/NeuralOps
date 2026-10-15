@@ -773,13 +773,34 @@ class SOAAttention(BaseAttention):
         kv_len_new = kv_input.shape[1]
 
         # ---- Factorized projections ----
-        z_q = self.q_down(hidden_states)
-        z_k = self.k_down(kv_input)
-        z_v = self.v_down(kv_input)
-
-        q = self.q_up(z_q)
-        k_new = self.k_up(z_k)
-        v_new = self.v_up(z_v)
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and hidden_states.is_cuda
+            and getattr(self.q_up, "lora_rank", 0) == 0
+            and getattr(self.k_up, "lora_rank", 0) == 0
+            and getattr(self.v_up, "lora_rank", 0) == 0
+        ):
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                q = fused_down_up_gemm_bias_triton(hidden_states, self.q_down.weight, self.q_up.weight, bias=self.q_up.bias)
+                k_new = fused_down_up_gemm_bias_triton(kv_input, self.k_down.weight, self.k_up.weight, bias=self.k_up.bias)
+                v_new = fused_down_up_gemm_bias_triton(kv_input, self.v_down.weight, self.v_up.weight, bias=self.v_up.bias)
+            except Exception:
+                z_q = self.q_down(hidden_states)
+                z_k = self.k_down(kv_input)
+                z_v = self.v_down(kv_input)
+                q = self.q_up(z_q)
+                k_new = self.k_up(z_k)
+                v_new = self.v_up(z_v)
+        else:
+            z_q = self.q_down(hidden_states)
+            z_k = self.k_down(kv_input)
+            z_v = self.v_down(kv_input)
+            q = self.q_up(z_q)
+            k_new = self.k_up(z_k)
+            v_new = self.v_up(z_v)
 
         H = self.num_heads
         H_kv = self.num_kv_heads
