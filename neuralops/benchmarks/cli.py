@@ -236,8 +236,17 @@ def _build_parser() -> argparse.ArgumentParser:
     cal_p.add_argument("--dataset", type=str, default="wikitext", help="Calibration dataset")
     cal_p.add_argument("--samples", type=int, default=128, help="Number of calibration tokens/samples")
 
-    # 19. ui
-    subparsers.add_parser("ui", help="Launch interactive Terminal User Interface (TUI mode)")
+    # 19. inspect
+    inspect_p = subparsers.add_parser("inspect", help="UNIX-style architectural specification sheet for any registered module")
+    inspect_p.add_argument("name", type=str, help="Registered module name (attention or compressor)")
+    inspect_p.add_argument("--json", action="store_true", help="Output full 14-field specification in JSON format")
+    inspect_p.add_argument("--code-only", action="store_true", help="Print only ready-to-copy Python quickstart snippets")
+    inspect_p.add_argument("--roofline", action="store_true", help="Run live empirical Roofline benchmark and append results")
+
+    # 20. ui
+    ui_p = subparsers.add_parser("ui", help="Launch interactive Terminal User Interface (TUI mode)")
+    ui_p.add_argument("--inspect", type=str, default=None, help="Inspect specific module directly in flat UI preview")
+    ui_p.add_argument("--snapshot", action="store_true", help="Print non-interactive snapshot of explorer and exit (CI-friendly)")
 
     return parser
 
@@ -685,7 +694,31 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.subcommand == "ui":
         from neuralops.cli.terminal_ui import run_interactive_ui
-        run_interactive_ui()
+        run_interactive_ui(inspect_target=getattr(args, "inspect", None), snapshot=getattr(args, "snapshot", False))
+        return 0
+    elif args.subcommand == "inspect":
+        from neuralops.core.inspector import inspect_architecture, render_architecture_card
+        import json
+        spec = inspect_architecture(args.name)
+        if getattr(args, "json", False):
+            print(json.dumps(spec.to_dict(), indent=2))
+        elif getattr(args, "code_only", False):
+            print(f"# === Quickstart: {spec.name} ({spec.category}) ===")
+            print(spec.quickstart_code.get("pytorch_direct", ""))
+            print("\n# === Model Surgery & Micro-Healing ===")
+            print(spec.quickstart_code.get("surgical_transplant", ""))
+        else:
+            print(render_architecture_card(spec))
+            if getattr(args, "roofline", False):
+                from neuralops.core.roofline import profile_roofline, render_roofline_terminal
+                print("\n" + "=" * 74)
+                print(f"  🔬 LIVE HARDWARE ROOFLINE ANALYSIS: {spec.name.upper()}")
+                print("=" * 74)
+                try:
+                    rep = profile_roofline(module_or_name=spec.name, batch_size=2, seq_len=1024)
+                    print(render_roofline_terminal(rep))
+                except Exception as e_roof:
+                    print(f"[-] Roofline profiling skipped or failed: {e_roof}")
         return 0
     elif args.subcommand == "list":
         handle_list(args)
