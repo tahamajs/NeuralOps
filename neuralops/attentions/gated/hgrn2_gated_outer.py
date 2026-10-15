@@ -473,6 +473,31 @@ class HGRN2GatedOuterBlock(BaseAttention):
         # log_f clamped to avoid -inf breaking cumsum
         log_f = torch.log(f.float().clamp_min(1e-6))
 
+        # ---- Hardware-fused Triton / FLA Tensor Core scan ----
+        if q.is_cuda and initial_state is None and d <= 64:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK and torch.cuda.is_available() and torch.cuda.get_device_capability(q.device)[0] >= 8:
+                    try:
+                        from fla.ops.gla import chunk_gla
+                        target_dtype = q.dtype if q.dtype in (torch.float16, torch.bfloat16) else torch.float16
+                        log_l = torch.log(f.float().clamp(min=1e-4, max=1.0 - 1e-4))
+                        g = log_l.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, d).contiguous().to(target_dtype)
+                        q_fl = q.to(target_dtype).transpose(1, 2).contiguous()
+                        k_fl = k.to(target_dtype).transpose(1, 2).contiguous()
+                        v_fl = v.to(target_dtype).transpose(1, 2).contiguous()
+                        out, last_state = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0, output_final_state=True)
+                        y_out = out.transpose(1, 2).to(q.dtype)
+                        s_final = last_state if last_state is not None else torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+                        return y_out, s_final
+                    except Exception:
+                        pass
+                from neuralops.core.triton_kernels.gla_scan import gla_scan_triton
+                y_triton = gla_scan_triton(q.float(), k.float(), v.float(), f.float()).to(q.dtype)
+                return y_triton, torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+            except Exception as e:
+                logger.debug("HGRN2 outer Triton scan failed, falling back to chunked PyTorch: %s", e)
+
         # Initialize state
         if initial_state is not None:
             S_prev = initial_state.to(device=device, dtype=torch.float32)
