@@ -17,7 +17,7 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="neuralops",
         description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
     )
-    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.4")
+    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.5")
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
     # 1. run
@@ -132,6 +132,7 @@ def _build_parser() -> argparse.ArgumentParser:
     res_show.add_argument("--output-dir", type=str, default="results", help="Output directory")
     res_show.add_argument("--summary", action="store_true", help="Display summary table")
     res_show.add_argument("--latest", action="store_true", help="Show latest result details")
+    res_show.add_argument("--format", choices=["table", "csv", "markdown", "latex"], default="table", help="Output display format")
 
     # 7. export
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
@@ -188,13 +189,17 @@ def _build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
 
     # 15. transplant
-    trans_p = subparsers.add_parser("transplant", help="1-line surgical attention replacement + closed-form Ridge calibration")
+    trans_p = subparsers.add_parser("transplant", help="1-line surgical attention replacement + closed-form Ridge calibration + micro-healing")
     trans_p.add_argument("--model", type=str, required=True, help="HuggingFace model identifier or local path")
     trans_p.add_argument("--attention", type=str, required=True, help="Target attention mechanism (e.g. svd_linear_attention, gla_attention)")
     trans_p.add_argument("--rank", type=int, default=64, help="Low-rank bottleneck dimension")
     trans_p.add_argument("--calibrate", action="store_true", default=True, help="Run closed-form layerwise Ridge alignment")
+    trans_p.add_argument("--heal", action="store_true", default=False, help="Run fast layerwise gradient micro-healing after replacement")
+    trans_p.add_argument("--heal-steps", type=int, default=25, help="Number of micro-healing iterations per layer")
+    trans_p.add_argument("--heal-lr", type=float, default=2e-3, help="Learning rate for layerwise micro-healing")
     trans_p.add_argument("--dataset", type=str, default="wikitext", help="Calibration dataset")
     trans_p.add_argument("--output-dir", type=str, default="models/transplanted", help="Output directory to save model")
+    trans_p.add_argument("--save-dir", type=str, default=None, help="Directory to save surgical checkpoint via save_surgical_checkpoint")
 
     # 16. compose
     comp_p = subparsers.add_parser("compose", help="Declaratively build custom attention via ComposableAttention")
@@ -206,7 +211,19 @@ def _build_parser() -> argparse.ArgumentParser:
     comp_p.add_argument("--embed-dim", type=int, default=768, help="Hidden dimension")
     comp_p.add_argument("--num-heads", type=int, default=12, help="Number of heads")
 
-    # 17. recommend
+    # 17. roofline
+    roof_p = subparsers.add_parser("roofline", help="Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels")
+    roof_p.add_argument("--module", type=str, default="gated_delta_net", help="Registered attention mechanism or ComposableAttention expression")
+    roof_p.add_argument("--batch-size", type=int, default=2, help="Batch size")
+    roof_p.add_argument("--seq-len", type=int, default=2048, help="Sequence length")
+    roof_p.add_argument("--embed-dim", type=int, default=768, help="Embedding dimension")
+    roof_p.add_argument("--num-heads", type=int, default=12, help="Number of attention heads")
+    roof_p.add_argument("--dtype", type=str, default="float16", choices=["float16", "bfloat16", "float32"], help="Precision")
+    roof_p.add_argument("--device", type=str, default=None, help="Device (e.g. cuda:0, cpu)")
+    roof_p.add_argument("--json", action="store_true", help="Output raw JSON metrics")
+    roof_p.add_argument("--latex", action="store_true", help="Print publication-ready LaTeX booktabs table snippet")
+
+    # 18. recommend
     rec_p = subparsers.add_parser("recommend", help="Hardware-aware advisor recommending optimal attention & compression recipes")
     rec_p.add_argument("--vram-gb", type=float, default=8.0, help="Available GPU VRAM in GB")
     rec_p.add_argument("--context-len", type=int, default=4096, help="Target sequence context length")
@@ -304,7 +321,22 @@ def handle_results(args: argparse.Namespace) -> None:
     if df.empty:
         print(f"No results found in {args.output_dir}")
         return
-    print(df.to_string(index=False))
+
+    fmt = getattr(args, "format", "table")
+    if fmt in ("latex", "markdown", "csv"):
+        from neuralops.core.paper_export import export_benchmark_table
+        records = df.to_dict(orient="records")
+        out = export_benchmark_table(
+            records=records,
+            format=fmt,
+            caption="Benchmark summary results generated by NeuralOps v1.3.5.",
+            label="tab:neuralops_summary_results",
+            highlight_best=True,
+            mark_pareto=True,
+        )
+        print(out)
+    else:
+        print(df.to_string(index=False))
 
 
 def handle_run(args: argparse.Namespace) -> None:
@@ -687,7 +719,54 @@ def main(argv: list[str] | None = None) -> int:
         model = load_model(args.model)
         print(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
         transplanted = transplant_attention(model, args.attention, rank=args.rank)
+
+        if getattr(args, "heal", False):
+            print(f"[+] Running layerwise subspace micro-healing (steps={args.heal_steps}, lr={args.heal_lr})...")
+            from neuralops.core._attention_surgery import heal_replaced_model
+            from neuralops.data.synthetic_generator import generate_synthetic_data
+            dev = next(transplanted.parameters()).device
+            dummy_inputs = torch.randint(0, 1000, (2, 64), device=dev)
+            heal_stats = heal_replaced_model(
+                teacher_model=model,
+                student_model=transplanted,
+                calibration_inputs=dummy_inputs,
+                steps=args.heal_steps,
+                lr=args.heal_lr,
+                also_ridge_init=True,
+            )
+            print(f"[✓] Micro-healing completed: Initial MSE={heal_stats['initial_mse']:.4f} -> Final MSE={heal_stats['final_mse']:.4f}")
+
+        save_p = getattr(args, "save_dir", None)
+        if save_p:
+            from neuralops.models.surgical_io import save_surgical_checkpoint
+            print(f"[+] Saving surgical model checkpoint to '{save_p}'...")
+            save_surgical_checkpoint(transplanted, save_p)
+            print(f"[✓] Saved surgical manifest and weights to '{save_p}'.")
+
         print(f"[✓] Transplantation complete. Saving to '{args.output_dir}'...")
+        return 0
+    elif args.subcommand == "roofline":
+        from neuralops.core.roofline import profile_roofline, render_roofline_terminal
+        import json
+        print(f"[+] Profiling Hardware Roofline for '{args.module}' (seq_len={args.seq_len}, dtype={args.dtype})...")
+        report = profile_roofline(
+            module_or_name=args.module,
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+            embed_dim=args.embed_dim,
+            num_heads=args.num_heads,
+            dtype=args.dtype,
+            device=args.device,
+        )
+        if getattr(args, "json", False):
+            print(json.dumps(report.to_dict(), indent=2))
+        else:
+            print(render_roofline_terminal(report))
+
+        if getattr(args, "latex", False):
+            from neuralops.core.paper_export import export_benchmark_table
+            print("\n[+] LaTeX Booktabs Table Snippet:")
+            print(export_benchmark_table([report.to_dict()], format="latex"))
         return 0
     elif args.subcommand == "compose":
         from neuralops import compose_attention
