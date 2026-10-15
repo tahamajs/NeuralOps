@@ -179,6 +179,105 @@ def cosformer_pytorch_fwd(
     return out.to(dtype)
 
 
+@triton.jit
+def _cosformer_bwd_kernel(
+    Q_cos_ptr, Q_sin_ptr, K_cos_ptr, K_sin_ptr, V_ptr, DO_ptr,
+    DQ_cos_ptr, DQ_sin_ptr, DK_cos_ptr, DK_sin_ptr, DV_ptr,
+    stride_qb, stride_qh, stride_qn, stride_qd,
+    stride_kb, stride_kh, stride_kn, stride_kd,
+    stride_vb, stride_vh, stride_vn, stride_vd,
+    stride_dob, stride_doh, stride_don, stride_dod,
+    B, H, N, D: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    """Analytic Cosformer Backward Kernel in GPU SRAM.
+    Computes exact dQ, dK, dV gradients without materializing autograd tape.
+    """
+    pid_bh = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    b = pid_bh // H
+    h = pid_bh % H
+
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_d = tl.arange(0, BLOCK_D)
+
+    mask_n = offs_n < N
+    mask_d = offs_d < D
+
+    q_cos_ptrs = Q_cos_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    q_sin_ptrs = Q_sin_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    do_ptrs = DO_ptr + b * stride_dob + h * stride_doh + offs_n[:, None] * stride_don + offs_d[None, :] * stride_dod
+
+    q_cos = tl.load(q_cos_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
+    q_sin = tl.load(q_sin_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
+    do = tl.load(do_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
+
+    # First compute denominator
+    acc_denom = tl.zeros((BLOCK_N,), dtype=tl.float32)
+    for start_k in range(0, N, BLOCK_N):
+        offs_k = start_k + tl.arange(0, BLOCK_N)
+        mask_k = offs_k < N
+
+        k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
+        k_sin = tl.load(k_sin_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
+
+        score = tl.dot(q_cos, tl.trans(k_cos)) + tl.dot(q_sin, tl.trans(k_sin))
+        causal_mask = offs_n[:, None] >= offs_k[None, :]
+        score = tl.where(causal_mask, score, 0.0)
+        acc_denom += tl.sum(score, axis=1)
+
+    denom = tl.maximum(acc_denom[:, None], 1e-4)
+
+    dq_cos_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
+    dq_sin_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
+
+    # Accumulate gradients across keys/values
+    for start_k in range(0, N, BLOCK_N):
+        offs_k = start_k + tl.arange(0, BLOCK_N)
+        mask_k = offs_k < N
+
+        k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        v_ptrs = V_ptr + b * stride_vb + h * stride_vh + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
+
+        k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
+        k_sin = tl.load(k_sin_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
+        v = tl.load(v_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
+
+        score = tl.dot(q_cos, tl.trans(k_cos)) + tl.dot(q_sin, tl.trans(k_sin))
+        causal_mask = offs_n[:, None] >= offs_k[None, :]
+        score = tl.where(causal_mask, score, 0.0)
+        p = score / denom
+
+        # dV += P^T @ DO
+        dv_ptrs = DV_ptr + b * stride_vb + h * stride_vh + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
+        dv = tl.dot(tl.trans(p.to(do.dtype)), do)
+        tl.atomic_add(dv_ptrs, dv, mask=mask_k[:, None] & mask_d[None, :])
+
+        # dP = DO @ V^T
+        dp = tl.dot(do, tl.trans(v))
+        ds = (dp - tl.sum(p * dp, axis=1)[:, None]) / denom
+
+        dq_cos_acc += tl.dot(ds.to(k_cos.dtype), k_cos)
+        dq_sin_acc += tl.dot(ds.to(k_sin.dtype), k_sin)
+
+        dk_cos = tl.dot(tl.trans(ds.to(q_cos.dtype)), q_cos)
+        dk_sin = tl.dot(tl.trans(ds.to(q_sin.dtype)), q_sin)
+        dk_cos_ptrs = DK_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        dk_sin_ptrs = DK_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        tl.atomic_add(dk_cos_ptrs, dk_cos, mask=mask_k[:, None] & mask_d[None, :])
+        tl.atomic_add(dk_sin_ptrs, dk_sin, mask=mask_k[:, None] & mask_d[None, :])
+
+    dq_cos_ptrs = DQ_cos_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    dq_sin_ptrs = DQ_sin_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    tl.atomic_add(dq_cos_ptrs, dq_cos_acc, mask=mask_n[:, None] & mask_d[None, :])
+    tl.atomic_add(dq_sin_ptrs, dq_sin_acc, mask=mask_n[:, None] & mask_d[None, :])
+
+
 class _CosformerAutograd(torch.autograd.Function):
     @staticmethod
     def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool, eps: float):
@@ -204,11 +303,56 @@ class _CosformerAutograd(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
         q, k, v = ctx.saved_tensors
+        is_causal = ctx.is_causal
+        eps = ctx.eps
+
+        if HAS_TRITON and q.is_cuda and is_causal:
+            try:
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK:
+                    B, H, N, D = q.shape
+                    m = torch.arange(N, device=q.device, dtype=torch.float32) * (3.141592653589793 / (2.0 * N))
+                    cos_m = torch.cos(m).view(1, 1, N, 1).to(q.dtype)
+                    sin_m = torch.sin(m).view(1, 1, N, 1).to(q.dtype)
+
+                    q_cos = (q * cos_m).contiguous()
+                    q_sin = (q * sin_m).contiguous()
+                    k_cos = (k * cos_m).contiguous()
+                    k_sin = (k * sin_m).contiguous()
+
+                    dq_cos = torch.zeros_like(q_cos)
+                    dq_sin = torch.zeros_like(q_sin)
+                    dk_cos = torch.zeros_like(k_cos)
+                    dk_sin = torch.zeros_like(k_sin)
+                    dv = torch.zeros_like(v)
+
+                    BLOCK_N = 64
+                    BLOCK_D = triton.next_power_of_2(D)
+                    grid = (B * H, triton.cdiv(N, BLOCK_N))
+
+                    _cosformer_bwd_kernel[grid](
+                        q_cos, q_sin, k_cos, k_sin, v, grad_output.contiguous(),
+                        dq_cos, dq_sin, dk_cos, dk_sin, dv,
+                        q_cos.stride(0), q_cos.stride(1), q_cos.stride(2), q_cos.stride(3),
+                        k_cos.stride(0), k_cos.stride(1), k_cos.stride(2), k_cos.stride(3),
+                        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                        grad_output.stride(0), grad_output.stride(1), grad_output.stride(2), grad_output.stride(3),
+                        B, H, N, D,
+                        BLOCK_N=BLOCK_N,
+                        BLOCK_D=BLOCK_D,
+                    )
+                    g_q = (dq_cos * cos_m + dq_sin * sin_m) if ctx.needs_input_grad[0] else None
+                    g_k = (dk_cos * cos_m + dk_sin * sin_m) if ctx.needs_input_grad[1] else None
+                    g_v = dv if ctx.needs_input_grad[2] else None
+                    return g_q, g_k, g_v, None, None
+            except Exception:
+                pass
+
         q_r = q.detach().requires_grad_(True)
         k_r = k.detach().requires_grad_(True)
         v_r = v.detach().requires_grad_(True)
         with torch.enable_grad():
-            out = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=ctx.is_causal, eps=ctx.eps)
+            out = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=is_causal, eps=eps)
             g_q, g_k, g_v = torch.autograd.grad(out, [q_r, k_r, v_r], grad_output, retain_graph=False)
         return g_q, g_k, g_v, None, None
 

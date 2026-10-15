@@ -232,10 +232,78 @@ def paged_recurrent_state_step_triton(
     )
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _paged_kv_evict_compact_kernel(
+        K_IN_ptr, V_IN_ptr,
+        K_OUT_ptr, V_OUT_ptr,
+        SCORES_ptr,
+        KEEP_INDICES_ptr,
+        total_items,
+        D: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        """In-SRAM Paged KV-Cache Eviction & Compaction Kernel.
+        Gathers top-k high-importance KV tokens according to keep_indices in parallel,
+        compacting cache memory in-place without CPU-GPU synchronization.
+        """
+        pid = tl.program_id(0)
+        if pid >= total_items:
+            return
+
+        target_idx = tl.load(KEEP_INDICES_ptr + pid)
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D
+
+        k_val = tl.load(K_IN_ptr + target_idx * D + offs_d, mask=mask_d, other=0.0)
+        v_val = tl.load(V_IN_ptr + target_idx * D + offs_d, mask=mask_d, other=0.0)
+
+        tl.store(K_OUT_ptr + pid * D + offs_d, k_val, mask=mask_d)
+        tl.store(V_OUT_ptr + pid * D + offs_d, v_val, mask=mask_d)
+
+
+def paged_kv_evict_compact_triton(
+    k_cache: torch.Tensor,
+    v_cache: torch.Tensor,
+    importance_scores: torch.Tensor,
+    keep_ratio: float = 0.5,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Compacts KV-cache by selecting top-k important tokens using fused GPU kernel."""
+    total_tokens, D = k_cache.shape[0], k_cache.shape[-1]
+    num_keep = max(1, int(total_tokens * keep_ratio))
+
+    # Fast Top-K selection on GPU
+    _, keep_indices = torch.topk(importance_scores, k=num_keep, sorted=True)
+    keep_indices = keep_indices.sort().values.contiguous()
+
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if HAS_TRITON and k_cache.is_cuda and not FORCE_PYTORCH_FALLBACK and D in (16, 32, 64, 128, 256):
+        try:
+            k_out = torch.empty((num_keep, D), dtype=k_cache.dtype, device=k_cache.device)
+            v_out = torch.empty((num_keep, D), dtype=v_cache.dtype, device=v_cache.device)
+            grid = (num_keep,)
+            _paged_kv_evict_compact_kernel[grid](
+                k_cache.contiguous(), v_cache.contiguous(),
+                k_out, v_out,
+                importance_scores.contiguous(),
+                keep_indices,
+                num_keep,
+                D=D,
+                BLOCK_D=D,
+            )
+            return k_out, v_out
+        except Exception:
+            pass
+
+    return k_cache[keep_indices], v_cache[keep_indices]
+
+
 __all__ = [
     "paged_attention_kernel",
     "paged_attention_pytorch",
     "paged_recurrent_state_step_triton",
     "paged_recurrent_state_step_pytorch",
+    "paged_kv_evict_compact_triton",
 ]
 
