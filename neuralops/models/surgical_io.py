@@ -28,7 +28,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
       - Module class, registration key, constructor parameters, and parameter shapes
     """
     manifest: Dict[str, Any] = {
-        "neuralops_version": "1.3.5",
+        "neuralops_version": "1.3.6",
         "model_class": model.__class__.__name__,
         "submodules": {},
     }
@@ -60,6 +60,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         "BonsaiPrunedLoRALinear",
     }
 
+    from neuralops.core.registry import ATTENTION_REGISTRY
     registered_attn_classes = tuple(ATTENTION_REGISTRY.values())
     cataloged_attn_names: list[str] = []
 
