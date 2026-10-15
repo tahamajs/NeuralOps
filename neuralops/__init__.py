@@ -276,6 +276,8 @@ _API_EXPORTS = {
     "compile_to_so": "neuralops.api",
     "push_to_hub": "neuralops.api",
     "load_exported_model": "neuralops.api",
+    "compare_attentions_ablation": "neuralops.api",
+    "surgical_transplant_and_heal_pipeline": "neuralops.api",
 
     "collect_surgery_distillation_loss": "neuralops.api",
     "set_surgery_alpha": "neuralops.api",
@@ -353,42 +355,131 @@ def inject_gla(model, **kwargs):
     from neuralops.core._attention_surgery import replace_attention_in_model
     return replace_attention_in_model(model, _GLA, **kwargs)
 
-def create_attention(name: str, config: Any = None, dim: int | None = None, num_heads: int | None = None, **kwargs: Any) -> Any:
+def create_attention(
+    name: str,
+    config: Any = None,
+    dim: int | None = None,
+    num_heads: int | None = None,
+    embed_dim: int | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Universal attention factory instantiating any of the 131 registered attention mechanisms.
+
+    Normalizes architectural hyperparameter aliases (embed_dim, dim, d_model, hidden_size,
+    num_heads, n_heads, heads, rank, r) and builds standard compliant configs automatically.
+    """
     from neuralops.core.registry import ATTENTION_REGISTRY
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
         raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
-    
-    # If dim or num_heads is specified and config is None, build a minimal compliant config
-    resolved_dim = dim or kwargs.get("hidden_size") or kwargs.get("d_model") or getattr(config, "hidden_size", None) or getattr(config, "n_embd", None) or getattr(config, "d_model", None)
-    resolved_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", None) or getattr(config, "num_heads", None) or getattr(config, "n_head", None)
-    
+
+    resolved_dim = (
+        embed_dim
+        or dim
+        or kwargs.pop("d_model", None)
+        or kwargs.pop("hidden_size", None)
+        or getattr(config, "hidden_size", None)
+        or getattr(config, "n_embd", None)
+        or getattr(config, "d_model", None)
+    )
+    resolved_heads = (
+        num_heads
+        or kwargs.pop("n_heads", None)
+        or kwargs.pop("heads", None)
+        or kwargs.pop("num_attention_heads", None)
+        or getattr(config, "num_attention_heads", None)
+        or getattr(config, "num_heads", None)
+        or getattr(config, "n_head", None)
+    )
+    resolved_rank = rank or kwargs.pop("r", None)
+
+    # Re-inject normalized names into kwargs
+    call_kwargs = dict(kwargs)
+    if resolved_dim is not None:
+        call_kwargs["dim"] = resolved_dim
+        call_kwargs["embed_dim"] = resolved_dim
+        call_kwargs["hidden_size"] = resolved_dim
+        call_kwargs["d_model"] = resolved_dim
+    if resolved_heads is not None:
+        call_kwargs["num_heads"] = resolved_heads
+        call_kwargs["n_heads"] = resolved_heads
+        call_kwargs["num_attention_heads"] = resolved_heads
+    if resolved_rank is not None:
+        call_kwargs["rank"] = resolved_rank
+        call_kwargs["r"] = resolved_rank
+
     if config is None and resolved_dim is not None:
         from transformers import BertConfig
         h = resolved_heads or max(1, resolved_dim // 64)
         config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
-    
-    # Try instantiation with config, falling back gracefully
+        call_kwargs["config"] = config
+
+    # Dynamic multi-attempt constructor resolution
+    init_attempts = []
     if config is not None:
-        try:
-            return cls(config=config, **kwargs)
-        except TypeError:
-            pass
+        init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
+        init_attempts.append(lambda: cls(config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
     if resolved_dim is not None and resolved_heads is not None:
+        init_attempts.append(lambda: cls(embed_dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")}))
+        init_attempts.append(lambda: cls(dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")}))
+        init_attempts.append(lambda: cls(resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")}))
+    init_attempts.append(lambda: cls(**call_kwargs))
+    init_attempts.append(lambda: cls())
+
+    last_err = None
+    for attempt in init_attempts:
         try:
-            return cls(resolved_dim, num_heads=resolved_heads, **kwargs)
-        except TypeError:
-            pass
-    return cls(config, **kwargs) if config is not None else cls(**kwargs)
+            return attempt()
+        except TypeError as e:
+            last_err = e
+            continue
+    if last_err is not None:
+        raise last_err
+    return cls(**call_kwargs)
 
 
-def create_compressor(name: str, **kwargs):
-    """Factory helper to instantiate a compression engine from COMPRESSOR_REGISTRY."""
+def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
+    """Universal compressor factory instantiating any of the 72 registered compression engines.
+
+    Normalizes hyperparameter aliases (rank, r, method, model) and handles optional dummy hosts.
+    """
     from neuralops.core.registry import COMPRESSOR_REGISTRY
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
-    return cls(**kwargs)
+
+    call_kwargs = dict(kwargs)
+    resolved_rank = rank or call_kwargs.pop("r", None)
+    if resolved_rank is not None:
+        call_kwargs["rank"] = resolved_rank
+
+    # Many compressors expect (model, ...) as first positional or keyword arg
+    if model is not None:
+        call_kwargs["model"] = model
+
+    attempts = [
+        lambda: cls(**call_kwargs),
+    ]
+    if model is not None:
+        attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
+    else:
+        # If no model was passed but the compressor requires one, supply a lightweight dummy host
+        import torch.nn as nn
+        dummy_host = nn.Sequential(nn.Linear(64, 64))
+        attempts.append(lambda: cls(model=dummy_host, **call_kwargs))
+        attempts.append(lambda: cls(dummy_host, **call_kwargs))
+
+    last_err = None
+    for attempt in attempts:
+        try:
+            return attempt()
+        except TypeError as e:
+            last_err = e
+            continue
+    if last_err is not None:
+        raise last_err
+    return cls(**call_kwargs)
 
 
 

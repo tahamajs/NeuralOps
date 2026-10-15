@@ -309,14 +309,50 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
     if snapshot:
         import torch
         dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
-        w = 78
+        w = 110
         target = inspect_target or "gated_delta_net"
+        spec = inspect_architecture(target)
+        card_lines = render_architecture_card(spec).split("\n")
+
+        # Collect compact module list for the left pane
+        from neuralops.core.registry import ATTENTION_REGISTRY
+        all_modules = list(ATTENTION_REGISTRY.keys())
+        if target not in all_modules:
+            from neuralops.core.registry import COMPRESSOR_REGISTRY
+            all_modules = list(COMPRESSOR_REGISTRY.keys())
+
+        # Center target in left pane
+        target_idx = all_modules.index(target) if target in all_modules else 0
+        left_pane_width = 28
+        right_pane_width = 80
+        total_rows = max(len(card_lines), 26)
+
+        start_idx = max(0, min(target_idx - 10, len(all_modules) - total_rows))
+        visible_modules = all_modules[start_idx : start_idx + total_rows]
+
         print("=" * w)
-        print(f"  🏛️ NEURALOPS MINIMALIST ARCHITECTURE EXPLORER (v1.3.5)")
+        print(f"  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
         print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · 26 Triton Kernels")
         print("=" * w)
-        spec = inspect_architecture(target)
-        print(render_architecture_card(spec))
+        print(f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}")
+        print("─" * left_pane_width + "─┼─" + "─" * right_pane_width)
+
+        for row_idx in range(total_rows):
+            # Left pane entry
+            if row_idx < len(visible_modules):
+                m_name = visible_modules[row_idx]
+                prefix = "▶ " if m_name == target else "  "
+                left_entry = f"{prefix}{m_name}"[:left_pane_width]
+            else:
+                left_entry = ""
+            left_str = f"{left_entry:<{left_pane_width}}"
+
+            # Right pane line
+            right_entry = card_lines[row_idx] if row_idx < len(card_lines) else ""
+            right_str = right_entry[:right_pane_width]
+
+            print(f"{left_str} │ {right_str}")
+
         print("=" * w)
         return
 

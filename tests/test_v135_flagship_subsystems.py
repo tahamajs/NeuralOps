@@ -102,6 +102,9 @@ def test_profile_roofline_registered_and_composable():
     )
     assert rep_gdn.total_flops >= 15e9, f"Expected total_flops >= 15 GFLOPs, got {rep_gdn.total_flops / 1e9:.2f} GFLOPs"
     assert rep_gdn.sram_bytes_saved_mb > 0.0
+    if torch.cuda.is_available():
+        assert rep_gdn.speedup_x > 1.5, f"Expected speedup_x > 1.5, got {rep_gdn.speedup_x:.2f}x"
+        assert rep_gdn.latency_triton_ms < rep_gdn.latency_pytorch_ms
     terminal_gdn = render_roofline_terminal(rep_gdn)
     assert "[T]" in terminal_gdn or "T" in terminal_gdn
     assert "[P]" in terminal_gdn or "P" in terminal_gdn
@@ -303,7 +306,93 @@ def test_cli_inspect_and_ui_commands():
         ret = main(["ui", "--snapshot"])
         out = sys.stdout.getvalue()
         assert ret == 0
-        assert "NEURALOPS MINIMALIST ARCHITECTURE EXPLORER" in out
+        assert "TWO-PANE ARCHITECTURE EXPLORER" in out or "ARCHITECTURE EXPLORER" in out
+        assert "│" in out
     finally:
         sys.stdout = old_stdout
+
+
+# -----------------------------------------------------------------------------
+# 6. Full Cross-Module Lifecycle & Ablation Pipeline Integration Tests
+# -----------------------------------------------------------------------------
+def test_full_cross_module_lifecycle_pipeline():
+    """Test full integration chain:
+    Base Transformer -> Replace Attention -> Ridge Calibrate -> Micro-Heal -> Save/Load Parity.
+    """
+    from neuralops.api import surgical_transplant_and_heal_pipeline
+    from neuralops.models.surgical_io import load_surgical_checkpoint
+
+    class HybridBackbone(nn.Module):
+        def __init__(self, dim: int = 64):
+            super().__init__()
+            self.attn = ToyAttentionLayer(dim)
+            self.mlp = nn.Sequential(nn.Linear(dim, dim * 2), nn.ReLU(), nn.Linear(dim * 2, dim))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            x = x + self.attn(x)
+            x = x + self.mlp(x)
+            return x
+
+    teacher = HybridBackbone(dim=64)
+    x_calib = torch.randn(4, 16, 64)
+
+    temp_dir = tempfile.mkdtemp()
+    try:
+        # Run end-to-end surgical pipeline
+        res = surgical_transplant_and_heal_pipeline(
+            teacher_model=teacher,
+            target_attention="minimal_svd",
+            calibration_inputs=x_calib,
+            heal_steps=15,
+            heal_lr=5e-3,
+            save_dir=temp_dir,
+            rank=16,
+        )
+
+        assert res["model"] is not None
+        assert res["saved_path"] is not None
+        assert Path(res["saved_path"]).exists()
+
+        # Verify round-trip load parity
+        x_eval = torch.randn(2, 16, 64)
+        with torch.no_grad():
+            expected_out = res["model"](x_eval)
+
+        fresh_host = HybridBackbone(dim=64)
+        reloaded_model, manifest = load_surgical_checkpoint(fresh_host, res["saved_path"])
+
+        with torch.no_grad():
+            reloaded_out = reloaded_model(x_eval)
+
+        assert torch.allclose(expected_out, reloaded_out, atol=1e-5), "Reloaded model outputs diverged from saved model!"
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_ablation_and_pareto_export_pipeline():
+    """Test multi-module ablation sweep, Pareto frontier calculation, and publication LaTeX export."""
+    from neuralops.api import compare_attentions_ablation
+
+    dev = "cuda:0" if torch.cuda.is_available() else "cpu"
+    dtype = "float16" if torch.cuda.is_available() else "float32"
+
+    ablation_res = compare_attentions_ablation(
+        attention_names=["minimal_svd", "gated_delta_net"],
+        batch_size=2,
+        seq_len=256,
+        embed_dim=64,
+        num_heads=4,
+        dtype=dtype,
+        device=dev,
+        export_format="latex",
+        warmup=1,
+        rep=2,
+    )
+
+    assert len(ablation_res["records"]) == 2
+    assert ablation_res["pareto_optimal_count"] >= 1
+    assert ablation_res["table"] is not None
+    assert r"\begin{table}" in ablation_res["table"]
+    assert r"\toprule" in ablation_res["table"]
+
 
