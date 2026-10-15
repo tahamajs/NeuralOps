@@ -148,10 +148,8 @@ def chunked_delta_rule_scan(
         mask_h = mask[:, None, :].expand(-1, H, -1).contiguous()
 
     # --- Triton scan path (only when no initial state and no mask) ---
-    from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
     if (
-        not FORCE_PYTORCH_FALLBACK
-        and HAS_TRITON_GDN
+        HAS_TRITON_GDN
         and gdn_scan_triton is not None
         and q.is_cuda
         and d <= MAX_REGISTER_DIM
