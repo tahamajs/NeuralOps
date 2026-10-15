@@ -28,7 +28,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
       - Module class, registration key, constructor parameters, and parameter shapes
     """
     manifest: Dict[str, Any] = {
-        "neuralops_version": "1.3.6",
+        "neuralops_version": "1.3.7",
         "model_class": model.__class__.__name__,
         "submodules": {},
     }
@@ -117,6 +117,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 embed_dim = 768
 
             num_heads = getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12))
+            num_kv_heads = getattr(effective_sub, "num_kv_heads", getattr(effective_sub, "num_key_value_heads", None))
             rank = getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32))
 
             sub_info: Dict[str, Any] = {
@@ -126,6 +127,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "target_attention": target_key,
                 "embed_dim": embed_dim,
                 "num_heads": num_heads,
+                "num_kv_heads": num_kv_heads,
                 "rank": rank,
                 "layer_idx": getattr(effective_sub, "layer_idx", getattr(sub, "layer_idx", None)),
                 "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", getattr(sub, "is_nested_encoder", None)),

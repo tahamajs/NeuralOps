@@ -961,6 +961,10 @@ __all__ = [
     "has_triton",
     "validate",
     "get_version",
+    # State Cache & Decoding
+    "NeuralOpsStateCache",
+    "benchmark_autoregressive_decoding",
+    "select_optimal_triton_config",
     # DX Ergonomics
     "oneshot",
     "recommend",
@@ -972,6 +976,9 @@ __all__ = [
     "AutoNeuralOpsForSequenceClassification",
     "merge_for_inference",
 ]
+
+from neuralops.core.state_cache import NeuralOpsStateCache, benchmark_autoregressive_decoding
+from neuralops.core.triton_kernels.autotuner import select_optimal_triton_config
 
 from neuralops.recipes import oneshot, recommend
 from neuralops.analysis.inspector import summary, compare
