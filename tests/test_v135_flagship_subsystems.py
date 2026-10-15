@@ -251,7 +251,7 @@ def test_inspect_architecture_all_registries():
 
     # Comprehensive verification across all 131 attentions
     for key in list(ATTENTION_REGISTRY.keys()):
-        spec = inspect_architecture(key)
+        spec = inspect_architecture(key, category="attention")
         assert spec.name == key
         assert spec.category == "attention"
         assert len(spec.time_complexity) > 0
@@ -263,7 +263,7 @@ def test_inspect_architecture_all_registries():
 
     # Comprehensive verification across all 72 compressors
     for key in list(COMPRESSOR_REGISTRY.keys()):
-        spec = inspect_architecture(key)
+        spec = inspect_architecture(key, category="compressor")
         assert spec.name == key
         assert spec.category == "compressor"
         assert len(spec.time_complexity) > 0
