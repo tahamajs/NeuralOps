@@ -258,9 +258,40 @@ def _guided_wizard() -> None:
         cmd_doctor()
 
 
+def _get_gpu_telemetry_panel() -> Optional[Panel]:
+    """Retrieve fast live GPU telemetry via nvidia-smi if available."""
+    try:
+        import subprocess
+        res = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=1.5,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            parts = [p.strip() for p in res.stdout.strip().split(",")]
+            if len(parts) >= 5:
+                gpu_name, total_mem, used_mem, util, temp = parts[0], parts[1], parts[2], parts[3], parts[4]
+                pct = int((float(used_mem) / float(total_mem)) * 100) if float(total_mem) > 0 else 0
+                telemetry = Text()
+                telemetry.append("GPU: ", style="bold cyan")
+                telemetry.append(f"{gpu_name}   ", style="bold white")
+                telemetry.append("VRAM: ", style="bold green")
+                telemetry.append(f"{used_mem}MB / {total_mem}MB ({pct}%)   ", style="bold yellow")
+                telemetry.append("Util: ", style="bold magenta")
+                telemetry.append(f"{util}%   ", style="bold white")
+                telemetry.append("Temp: ", style="bold red")
+                telemetry.append(f"{temp}°C", style="bold white")
+                return Panel(telemetry, title="[bold green]⚡ Live Hardware Telemetry[/bold green]", border_style="green", padding=(0, 1))
+    except Exception:
+        pass
+    return None
+
+
 def run_interactive_ui() -> None:
     """Interactive terminal UI for exploring modules, compression, benchmarks, and help documentation."""
-    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from neuralops.benchmarks.discovery import CATALOG_PATH
 
     print_banner()
     if not HAS_RICH or console is None:
@@ -269,6 +300,10 @@ def run_interactive_ui() -> None:
         return
 
     while True:
+        gpu_panel = _get_gpu_telemetry_panel()
+        if gpu_panel is not None:
+            console.print(gpu_panel)
+
         menu = Table(title="[bold green]NeuralOps Interactive Terminal Control Center[/bold green]", show_header=True, header_style="bold magenta", border_style="cyan", expand=True)
         menu.add_column("Key", style="bold yellow", width=6, justify="center")
         menu.add_column("Action", style="bold white", width=36)
@@ -299,11 +334,31 @@ def run_interactive_ui() -> None:
             table.add_column("GQA", justify="center")
             table.add_column("RoPE", justify="center")
 
-            for idx, (name, cls) in enumerate(sorted(ATTENTION_REGISTRY.items()), 1):
-                causal = "[green]✓[/green]" if getattr(cls, "supports_causal", True) else "[red]✗[/red]"
-                gqa = "[green]✓[/green]" if getattr(cls, "supports_gqa", False) else "[dim]✗[/dim]"
-                rope = "[green]✓[/green]" if getattr(cls, "supports_rope", False) else "[dim]✗[/dim]"
-                table.add_row(str(idx), name, causal, gqa, rope)
+            # Load fast from static catalog if available
+            import json
+            attns = []
+            if CATALOG_PATH.exists():
+                try:
+                    with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
+                        cat = json.load(fp)
+                    attns = cat.get("attentions", [])
+                except Exception:
+                    pass
+
+            if attns:
+                for idx, item in enumerate(attns, 1):
+                    causal = "[green]✓[/green]" if item.get("supports_causal", True) else "[red]✗[/red]"
+                    gqa = "[green]✓[/green]" if item.get("supports_gqa", False) else "[dim]✗[/dim]"
+                    rope = "[green]✓[/green]" if item.get("supports_rope", False) else "[dim]✗[/dim]"
+                    table.add_row(str(idx), item["name"], causal, gqa, rope)
+            else:
+                from neuralops.core.registry import ATTENTION_REGISTRY
+                for idx, (name, cls) in enumerate(sorted(ATTENTION_REGISTRY.items()), 1):
+                    causal = "[green]✓[/green]" if getattr(cls, "supports_causal", True) else "[red]✗[/red]"
+                    gqa = "[green]✓[/green]" if getattr(cls, "supports_gqa", False) else "[dim]✗[/dim]"
+                    rope = "[green]✓[/green]" if getattr(cls, "supports_rope", False) else "[dim]✗[/dim]"
+                    table.add_row(str(idx), name, causal, gqa, rope)
+
             console.print(table)
             input("\nPress Enter to return to main menu...")
 
@@ -313,16 +368,49 @@ def run_interactive_ui() -> None:
             table.add_column("Compression Engine", style="bold green")
             table.add_column("Category", style="cyan")
 
-            for idx, (name, cls) in enumerate(sorted(COMPRESSOR_REGISTRY.items()), 1):
-                c_type = "SVD / Low-Rank Factorization" if "svd" in name or "low_rank" in name else "Quantization / Pruning"
-                table.add_row(str(idx), name, c_type)
+            import json
+            comps = []
+            if CATALOG_PATH.exists():
+                try:
+                    with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
+                        cat = json.load(fp)
+                    comps = cat.get("compressors", [])
+                except Exception:
+                    pass
+
+            if comps:
+                for idx, item in enumerate(comps, 1):
+                    name = item["name"]
+                    c_type = "SVD / Low-Rank Factorization" if "svd" in name or "low_rank" in name else "Quantization / Pruning"
+                    table.add_row(str(idx), name, c_type)
+            else:
+                from neuralops.core.registry import COMPRESSOR_REGISTRY
+                for idx, (name, cls) in enumerate(sorted(COMPRESSOR_REGISTRY.items()), 1):
+                    c_type = "SVD / Low-Rank Factorization" if "svd" in name or "low_rank" in name else "Quantization / Pruning"
+                    table.add_row(str(idx), name, c_type)
+
             console.print(table)
             input("\nPress Enter to return to main menu...")
 
         elif choice == "3":
             query = Prompt.ask("\nEnter module name or keyword to search").strip().lower()
-            matches_attn = [k for k in ATTENTION_REGISTRY.keys() if query in k.lower()]
-            matches_comp = [k for k in COMPRESSOR_REGISTRY.keys() if query in k.lower()]
+            import json
+            attns, comps = [], []
+            if CATALOG_PATH.exists():
+                try:
+                    with open(CATALOG_PATH, "r", encoding="utf-8") as fp:
+                        cat = json.load(fp)
+                    attns = [item["name"] for item in cat.get("attentions", [])]
+                    comps = [item["name"] for item in cat.get("compressors", [])]
+                except Exception:
+                    pass
+            if not attns:
+                from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+                attns = list(ATTENTION_REGISTRY.keys())
+                comps = list(COMPRESSOR_REGISTRY.keys())
+
+            matches_attn = [k for k in attns if query in k.lower()]
+            matches_comp = [k for k in comps if query in k.lower()]
 
             if not matches_attn and not matches_comp:
                 console.print(f"[bold red]No modules found matching '{query}'.[/bold red]")
@@ -338,7 +426,7 @@ def run_interactive_ui() -> None:
 
                 inspect_choice = Prompt.ask("\nEnter exact module name to inspect (or press Enter to skip)", default="").strip()
                 if inspect_choice:
-                    m_type = "attention" if inspect_choice in ATTENTION_REGISTRY else "compressor"
+                    m_type = "attention" if inspect_choice in attns else "compressor"
                     _interactive_module_inspector(inspect_choice, mod_type=m_type)
             input("\nPress Enter to return to main menu...")
 

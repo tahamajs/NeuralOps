@@ -71,6 +71,16 @@ class LowRankLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., in_features]
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                # V is [in_features, rank] -> W_down is [rank, in_features]
+                return fused_down_up_gemm_bias_triton(x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias)
+            except Exception:
+                pass
+
         bottleneck = torch.matmul(x, self.V)  # [..., rank]
         out = torch.matmul(bottleneck, self.U.T)  # [..., out_features]
         if self.bias is not None:

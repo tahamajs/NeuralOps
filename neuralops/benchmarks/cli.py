@@ -14,9 +14,10 @@ from neuralops.benchmarks.discovery import discover_all_modules
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="neuralops.benchmarks",
-        description="Unified benchmarking tool for 232 attention & compressor modules.",
+        prog="neuralops",
+        description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
     )
+    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.3")
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
     # 1. run
