@@ -114,15 +114,14 @@ def evaluate_module(key, B=2, T=512, D=256, H=4):
                     if hasattr(mod, attr):
                         setattr(mod, attr, False)
 
-            with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_mem_efficient=False, enable_math=True):
-                ref_lat, ref_mem = benchmark_single(m_ref, B, T, D, device)
+            ref_lat, ref_mem = benchmark_single(m_ref, B, T, D, device)
 
-                torch.manual_seed(101)
-                x2 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
-                out2 = m_ref(x2)
-                if isinstance(out2, tuple): out2 = out2[0]
-                out2.sum().backward()
-                g2 = x2.grad.clone() if x2.grad is not None else torch.zeros_like(x2)
+            torch.manual_seed(101)
+            x2 = torch.randn(B, T, D, device=device, dtype=torch.float16, requires_grad=True)
+            out2 = m_ref(x2)
+            if isinstance(out2, tuple): out2 = out2[0]
+            out2.sum().backward()
+            g2 = x2.grad.clone() if x2.grad is not None else torch.zeros_like(x2)
         finally:
             torch.cuda.get_device_capability = orig_cap
             import neuralops.core.triton_kernels._types as tt
@@ -166,12 +165,6 @@ def main():
     print("=== Launching Dual Triton vs PyTorch Benchmark across all 48 Modules ===")
     results = []
 
-    out_dir = "results"
-    os.makedirs(out_dir, exist_ok=True)
-    csv_path = os.path.join(out_dir, "triton_48_modules_benchmark.csv")
-    with open(csv_path, "w") as f:
-        f.write("module,seq_len,triton_lat_ms,ref_lat_ms,speedup_x,triton_mem_mb,ref_mem_mb,fwd_cos_sim,bwd_cos_sim,status\n")
-
     for T in [512, 2048]:
         print(f"\n--- Sequence Length T = {T} ---")
         for key in MODULE_KEYS:
@@ -180,10 +173,11 @@ def main():
                 results.append(res)
                 if res["status"] == "PASS":
                     print(f"[PASS] {key:<30} (T={T}): Triton={res['triton_lat_ms']:>6.2f}ms ({res['triton_mem_mb']:>5.1f}MB) | Ref={res['ref_lat_ms']:>6.2f}ms | Speedup={res['speedup_x']:>4.2f}x | CosSim={res['fwd_cos_sim']}")
-                    with open(csv_path, "a") as f:
-                        f.write(f"{res['module']},{res['seq_len']},{res['triton_lat_ms']},{res['ref_lat_ms']},{res['speedup_x']},{res['triton_mem_mb']},{res['ref_mem_mb']},{res['fwd_cos_sim']},{res['bwd_cos_sim']},{res['status']}\n")
                 else:
                     print(f"[FAIL] {key:<30} (T={T}): {res.get('error')}")
+
+    out_dir = "results"
+    os.makedirs(out_dir, exist_ok=True)
     json_path = os.path.join(out_dir, "triton_48_modules_benchmark.json")
     with open(json_path, "w") as f:
         json.dump(results, f, indent=2)

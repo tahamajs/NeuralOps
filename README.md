@@ -270,7 +270,32 @@ next_token_logits = runner.step(tokens)
 print("Decode step logits shape:", next_token_logits.shape)
 ```
 
-### Recipe 7: HuggingFace-Style CLI & Interactive TUI
+### Recipe 7: Composable Meta-Attention (`neuralops.compose_attention`)
+Synthesize custom attention mechanisms declaratively from atomic building blocks with zero-overhead execution:
+
+```python
+import torch
+import neuralops
+
+# Synthesize a custom hybrid attention layer: SVD projection + RoPE + Cosformer kernel + Sliding Window mask
+custom_attn = neuralops.compose_attention(
+    dim=768,
+    num_heads=12,
+    projection="svd",
+    rank=64,
+    positional="rope",
+    kernel_map="cosformer",
+    mask="sliding_window",
+    window_size=128,
+    engine="fused_triton",
+)
+
+x = torch.randn(2, 512, 768, device="cuda", dtype=torch.float16)
+out = custom_attn(x)
+print("Composable attention output:", out.shape)  # [2, 512, 768]
+```
+
+### Recipe 8: HuggingFace-Style CLI & Interactive TUI
 NeuralOps provides an end-to-end command-line toolkit and interactive Terminal UI (`neuralops ui` or `nops ui`) modeled after Hugging Face Hub tools:
 
 ```bash
