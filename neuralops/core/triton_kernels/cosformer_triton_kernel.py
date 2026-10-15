@@ -74,7 +74,7 @@ def _cosformer_global_fwd_kernel(
         causal_mask = offs_n[:, None] >= offs_k[None, :]
         score = tl.where(causal_mask, score, 0.0)
 
-        acc_num += tl.dot(score.to(tl.float32), v)
+        acc_num += tl.dot(score.to(v.dtype), v)
         acc_denom += tl.sum(score, axis=1)
 
     out = acc_num / tl.maximum(acc_denom[:, None], 1e-4)
