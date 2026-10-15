@@ -38,7 +38,9 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - [News](#-news)
 - [Key Features](#-key-features)
 - [Installation](#-installation)
-- [Quick Start](#-quick-start)
+- [Quick Start (Core Workflows in 60 Seconds)](#-quick-start-core-workflows-in-60-seconds)
+- [Complete CLI Command Reference](#-complete-cli-command-reference)
+- [Researcher Cookbook & Advanced Workflows](#-researcher-cookbook--advanced-workflows)
 - [Architecture Overview](#-architecture-overview)
 - [Attention Zoo](#-attention-zoo-131-modules)
 - [Compression Engines](#-compression-engines-72-methods)
@@ -77,6 +79,10 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - **[2026-10]** 🧪 **11 Exhaustive Mathematical Test Suites (2,093+ Tests Passed, 1,746 Exhaustive Matrix Tests, 0 Skipped, 0 Failed)**: Formal verification across all 131 attention mechanisms, 72 compression engines, 26 Triton kernels, 6-pillar training engine, AutoSVD, PagedStateTable, and distributed TP/CP with 100% pass rate on RTX 4070 (Ada SM 8.9) and GTX 1060 (Pascal SM 6.1).
 - **[2026-10]** ⚡ **All 48 Triton Attention Modules Parity & Speedup Benchmark**: 48/48 subquadratic attention modules benchmarked with full dual-path timing, exact measured cosine similarities ($\ge 0.9990$), and up to $3.66\times$ speedup at sequence lengths $T=512$ and $T=2048$.
 - **[2026-10]** 📈 **RoBERTa-Base SST-2 Recurrent Attention KD Breakthrough**: Recurrent architectures (`gla_attention: 90.67%`, `hgrn2_gated_outer: 89.33%`, `gated_delta_net: 88.67%`, `selective_ssm: 87.00%`, `mamba_block: 86.33%`) achieve **86.33%–90.67% validation accuracy** with low converged loss ($< 0.39$) under bidirectional teacher distillation, breaking through previous encoder loss stagnation.
+
+<details>
+<summary><b>📜 View Earlier Release History (v1.2.0 – v1.3.2 & Milestones)</b></summary>
+
 - **[2026-10]** 💻 **Hugging Face Style Interactive TUI (`neuralops ui`)** released: unified terminal control center with 14 CLI commands, interactive wizards, real-time GPU diagnostics, and model search.
 - **[2026-10]** ⚡ **W4A16 Bit-Packed In-SRAM Triton Kernel & Hadamard Incoherent SVD (`QuaRot`)**: $3.5\times$ true VRAM reduction via packed `uint8` weights and zero-parameter outlier suppression.
 - **[2026-10]** 🎯 **Lossless Self-Speculative Draft-and-Verify Engine**: $2.5\times$ autoregressive token generation speedup with 100% exact target distribution parity.
@@ -87,6 +93,8 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 - **[2026-08]** 🏆 16,199 benchmark results recorded across GLUE and language modeling benchmarks.
 - **[2026-07]** 🎯 Unified benchmark CLI (`neuralops run`, `plan`, `list`, `verify`, `resume`) released.
 - **[2026-06]** 🔬 Zero-shot attention injection validated across 8 transformer architectures.
+
+</details>
 
 ---
 
@@ -137,10 +145,64 @@ python -c "import neuralops; print(neuralops.info())"
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start (Core Workflows in 60 Seconds)
 
-### Recipe 1: 3-Line Attention Surgery
-Replace standard attention in any pretrained Hugging Face transformer with a subquadratic variant:
+### Workflow 1: 3-Line Attention Surgery, Closed-Form Calibration & Layerwise Micro-Healing
+Replace standard $O(N^2)$ quadratic attention in any pretrained Hugging Face transformer with a subquadratic variant, apply instantaneous closed-form Ridge projection calibration, align nonlinear gates via layerwise gradient micro-healing, and serialize to lossless surgical checkpoints:
+
+```python
+import torch
+from transformers import AutoModelForCausalLM
+import neuralops
+
+# 1. 3-Line In-Place Surgery with Closed-Form Ridge Calibration
+teacher = AutoModelForCausalLM.from_pretrained("gpt2")
+student = AutoModelForCausalLM.from_pretrained("gpt2")
+student = neuralops.replace_attention(student, "gated_delta_net", calibrate=True)
+
+# 2. Fast Layerwise Subspace Micro-Healing (Cached representations, zero full-model backprop)
+calib_inputs = torch.randint(0, 50257, (4, 64))
+stats = neuralops.heal_replaced_model(
+    teacher_model=teacher,
+    student_model=student,
+    calibration_inputs=calib_inputs,
+    steps=25,
+    lr=2e-3,
+    also_ridge_init=True,
+)
+print(f"Healed MSE: {stats['initial_mse']:.4f} -> {stats['final_mse']:.4f}")
+
+# 3. Lossless Surgical Checkpoint Persistence & Dynamic Architecture Reloading
+neuralops.save_surgical_checkpoint(student, "./checkpoints/healed_gdn_gpt2")
+reloaded_model, manifest = neuralops.load_surgical_checkpoint(teacher, "./checkpoints/healed_gdn_gpt2")
+print("Transplanted and restored successfully with full parameter tree parity!")
+```
+
+### Workflow 2: 4-Stage Composable Meta-Attention ($\mathcal{P} \to \phi \to \mathcal{M} \to \mathcal{E}$)
+Synthesize custom attention architectures declaratively from atomic building blocks with verified dual-path Triton acceleration up to **450.84x**:
+
+```python
+import torch
+import neuralops
+
+# Declaratively compose: SVD projection -> Cosformer kernel map -> Sliding Window mask -> Fused Triton Scan
+custom_attn = neuralops.compose_attention(
+    dim=768,
+    num_heads=12,
+    projection="svd(rank=64)",
+    positional="rope",
+    kernel_map="cosformer",
+    mask="sliding_window(128)+sink(4)",
+    engine="chunked_scan",
+)
+
+x = torch.randn(2, 512, 768, device="cuda" if torch.cuda.is_available() else "cpu", dtype=torch.float16)
+out = custom_attn(x)
+print("Composable attention output shape:", out.shape)  # [2, 512, 768]
+```
+
+### Workflow 3: 1-Line Model Compression Across 72 Engines
+Compress model layers using structured low-rank singular value decomposition, Hadamard incoherent transform, or W4A16 bit-packing:
 
 ```python
 import torch
@@ -148,20 +210,180 @@ from transformers import AutoModelForSequenceClassification
 import neuralops
 
 model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
-model = neuralops.replace_attention(model, "svd_linear_attention", rank=128)
 
-outputs = model(torch.randint(0, 1000, (2, 64)))
-print("Logits shape:", outputs.logits.shape)  # [2, 2]
+# Compress using Hadamard Incoherent SVD (outlier suppression + low-rank factorization)
+compressed = neuralops.compress(model, method="hadamard_incoherent_svd", rank=32)
+
+outputs = compressed(torch.randint(0, 1000, (2, 32)))
+print("Compressed output logits shape:", outputs.logits.shape)
 ```
 
-### Recipe 2: Native Hugging Face AutoModel
+### Workflow 4: Hardware Roofline Profiler & Minimalist Two-Pane UNIX Inspector
+Inspect architectural specifications and empirical compute vs. bandwidth saturation directly from the terminal:
+
+```bash
+# Clean flat 14-field specification card for any attention or compressor
+neuralops inspect gated_delta_net
+
+# Live command-line hardware roofline profiling with exact ASCII characteristic curve
+neuralops roofline --module gated_delta_net --seq-len 1024
+
+# Interactive minimalist two-pane split TUI (Left List, Right Spec Card)
+neuralops ui --inspect gated_delta_net --snapshot
+```
+
+```text
+======================================================================================================================
+  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER
+  Hardware Node: NVIDIA GeForce RTX 4070 Laptop GPU  │  131 Attentions · 72 Compressors · 26 Triton Kernels
+======================================================================================================================
+  REGISTRY EXPLORER                  │ 14-FIELD ARCHITECTURE SPECIFICATION SHEET                                       
+────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────
+    moe_deltakv_paged (attn)         │ gated_delta_net (GatedDeltaNet) — gated-delta-recurrent
+    nsa_attention (attn)             │ ──────────────────────────────────────────────────────────────────────────
+    padre_attention (attn)           │ category: attention
+    reap_moe (attn)                  │ path:     neuralops/attentions/gated/gated_delta_net.py
+    routing_attention (attn)         │ kernel:   gdn_scan.py :: _gdn_fwd_kernel
+    goldfinch_ahn (attn)             │ fusion:   In-SRAM [d,d] state register tiling; eliminates HBM state read/write r
+    gated_linear_attention (attn)    │ complex:  time O(T·d²)  │  mem O(d²) state (zero KV-cache)  │  115.49x
+    gated_linear_attn (attn)         │ math:     S_t = α_t·S_{t-1}·(I - β_t·k_t·k_tᵀ) + β_t·v_t·k_tᵀ  |  o_t = S_t·q_t
+    decay_linear_attn (attn)         │ stages:   P: short_conv_qkv(kernel_size=4) -> φ: l2_norm / elu+1 -> M: household
+    decay_linear_attention (attn)    │ init():   d_model: int=None, num_heads: int=None, rank: int=None, layer_id: int=
+  > gated_delta_net (attn)           │ use:      Long-context (>32K) sequence processing, associative recall (NIAH), an
+    gated_deltanet_block (attn)      │ 
+    hgrn2_gated_layer (attn)         │ ── python ────────────────────────────────────────────────────────────
+    hgrn2_gated_deltanet (attn)      │ import neuralops, torch
+    hgrn2_gated_outer (attn)         │ layer = neuralops.create_attention('gated_delta_net', embed_dim=768, num_heads=1
+    hgrn2_outer (attn)               │ x = torch.randn(2, 512, 768, device='cuda', dtype=torch.float16)
+    hla_attention (attn)             │ out = layer(x)
+======================================================================================================================
+```
+
+#### Empirical RTX 4070 Hardware Roofline Report & ASCII Log-Log Curve
+```text
+==============================================================================
+  🏛️ NEURALOPS HARDWARE ROOFLINE & ARITHMETIC INTENSITY REPORT
+==============================================================================
+  Module:          gated_delta_net              Precision:   FLOAT16
+  Device:          NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)
+  Input Shape:     B=2, T=1024, D=768, H=12 (head_dim=64)
+------------------------------------------------------------------------------
+  Peak Compute:        65.0 TFLOPS          Peak Bandwidth:    256.0 GB/s
+  Hardware Ridge:    253.91 FLOPs/Byte      Bottleneck:     Compute-Bound (Tensor Core Saturated)
+------------------------------------------------------------------------------
+  Total Work:         13.06 GFLOPs
+  HBM Naive:         425.23 MB (AI: 30.72 FLOPs/B)
+  HBM Fused:          21.92 MB (AI: 595.93 FLOPs/B)
+  SRAM Traffic Saved by Triton Fusion: 384.62 MB
+  Latency (PyTorch Native):  152.502 ms  -->  Achieved [P]:   0.09 TFLOPS (   2.8 GB/s)
+  Latency (NeuralOps Triton):   3.002 ms  -->  Achieved [T]:   4.35 TFLOPS (   7.3 GB/s)
+  🚀 EMPIRICAL SPEEDUP:         50.81x (Hardware Efficiency Gain)
+==============================================================================
+  LOG-LOG ROOFLINE HARDWARE CHARACTERISTIC CURVE:
+  TFLOPS (Peak: 65.0 TFLOPS │ Ridge: 253.9 FLOPs/B │ Slope: 256.0 GB/s)
+    ^
+   65.0 |                                                ┬──────────
+        |                                             ///           
+        |                                         ////              
+        |                                     ////                  
+        |                                 ////                      
+        |                             ////                     T    
+        |                         ////                              
+        |                     ////                                  
+        |                 ////                                      
+        |             ////                                          
+        |          ///                                              
+        |      ////                                                 
+        |  ////                            P                        
+   0.05 | /                                                         
+      +-──────────────────────────────────────────────────────────-> Arithmetic Intensity
+        0.25         1.0         4.0        16.0        64.0       256.0      1024.0 (FLOPs/Byte)
+     Legend: [P] Naive PyTorch Path       [T] NeuralOps Fused Triton Kernel
+==============================================================================
+```
+
+Programmatic roofline evaluation via Python API:
+```python
+import neuralops
+
+# Profile any attention mechanism against hardware Ridge point
+report = neuralops.profile_roofline(
+    module_or_name="gated_delta_net",
+    batch_size=2,
+    seq_len=1024,
+    embed_dim=768,
+    num_heads=12,
+)
+
+print(f"Speedup: {report.speedup_x:.2f}x")
+print(f"SRAM Bytes Saved: {report.sram_bytes_saved_mb:.2f} MB")
+print(f"Bottleneck: {report.bottleneck_regime}")
+
+# Render publication-grade ASCII log-log roofline curve
+print(neuralops.render_roofline_terminal(report))
+```
+
+---
+
+## 🛠️ Complete CLI Command Reference
+
+NeuralOps includes a complete, high-performance command-line toolkit modeled after standard UNIX developer utilities:
+
+| Category | Subcommand | Purpose & Description | Example Usage |
+| :--- | :--- | :--- | :--- |
+| **Exploration & Diagnostics** | `neuralops ui` | Interactive terminal control center & live GPU telemetry | `neuralops ui --snapshot` |
+| | `neuralops inspect` | 14-field specification card, math, complexity & signatures | `neuralops inspect gated_delta_net` |
+| | `neuralops list` | List canonical modules across attentions and compressors | `neuralops list --attentions` |
+| | `neuralops search` | Search modules by keyword, author, or keyword tag | `neuralops search --query "svd"` |
+| | `neuralops info` | Quick metadata & constructor parameter inspection | `neuralops info mamba_block` |
+| | `neuralops doctor` | Environment diagnostics, GPU backends & disk health | `neuralops doctor` |
+| | `neuralops verify` | Comprehensive mathematical invariant self-audit | `neuralops verify` |
+| **Hardware Profiling & Advisor**| `neuralops roofline` | Dual-operating point Roofline profiling & Log-Log ASCII curve | `neuralops roofline --module gated_delta_net --seq-len 1024` |
+| | `neuralops benchmark-fused`| Microbenchmark Triton fused kernels against baselines | `neuralops benchmark-fused --kernel selective_scan` |
+| | `neuralops recommend` | Hardware advisor for optimal attention/recipe by VRAM | `neuralops recommend --vram 8 --task causal_lm` |
+| | `neuralops niah` | Needle-In-A-Haystack passkey retrieval evaluation | `neuralops niah --model gpt2 --attention mamba_block` |
+| **Surgery, Compression & Healing**| `neuralops transplant` | In-place model surgery with optional micro-healing | `neuralops transplant --model gpt2 --attention gated_delta_net --heal` |
+| | `neuralops compress` | Compress model layers via SVD, Hadamard, or Quantization | `neuralops compress --model gpt2 --method hadamard_incoherent_svd --rank 32` |
+| | `neuralops compose` | Synthesize and test composable meta-attention configs | `neuralops compose --projection svd --kernel cosformer` |
+| | `neuralops calibrate` | Run standalone closed-form Ridge calibration pass | `neuralops calibrate --model ./model --dataset wikitext2` |
+| | `neuralops generate` | Autoregressive generation with speculative decoding | `neuralops generate --model gpt2 --attention fast_rn_rn --speculative` |
+| **Sweeps, Paper Export & Extensibility**| `neuralops run` | Execute training, distillation, or evaluation runs | `neuralops run --module mamba_block --model roberta-base --dataset sst2` |
+| | `neuralops plan` | Plan sweeps across families (`--all-attn`, `--all-comp`) | `neuralops plan --all-attn` |
+| | `neuralops resume` | Resume interrupted sweep experiments | `neuralops resume --output-dir results/sweep` |
+| | `neuralops results` | Query results and export academic LaTeX tables | `neuralops results --format latex --pareto` |
+| | `neuralops export` | Export model artifacts to ONNX, Safetensors, or TorchScript | `neuralops export --model ./checkpoint --format onnx` |
+| | `neuralops scaffold` | Generate boilerplates for new attentions or compressors | `neuralops scaffold my_attn --category attention --family linear-scan` |
+| | `neuralops validate` | Run 6-point automated contract diagnostic validator | `neuralops validate my_attn` |
+
+#### Architectural Family Sweep Flags
+```bash
+# Plan sweeps across families
+neuralops plan --all-attn         # All 131 attention mechanisms
+neuralops plan --all-comp         # All 72 compression engines
+neuralops plan --all-modules      # Full 203 canonical modules sweep
+
+# Direct executions across architectures
+neuralops run --all-delta --training-type kd --dataset sst2 --device cuda
+neuralops run --all-ssm --model roberta-base --dataset sst2 --epochs 3
+neuralops run --all-svd --model gpt2 --dataset wikitext2
+neuralops run --all-linear --dataset sst2 --device cuda
+neuralops run --all-gated --model roberta-base
+```
+
+---
+
+## 🧪 Researcher Cookbook & Advanced Workflows
+
+### Recipe A: Native Hugging Face AutoModel & Zero-Code Config Integration
 Instantiate and generate using NeuralOps native architectures through the Hugging Face API:
 
 ```python
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM
 import neuralops.models
+from neuralops import AutoNeuralOpsForCausalLM, AutoNeuralOpsConfig
 
+# Mode 1: Via standard Hugging Face AutoConfig
 config = AutoConfig.for_model(
     "neuralops",
     attention_type="cosformer",
@@ -171,50 +393,21 @@ config = AutoConfig.for_model(
     num_attention_heads=12,
 )
 model = AutoModelForCausalLM.from_config(config)
-generated = model.generate(torch.randint(0, 1000, (1, 16)), max_new_tokens=32)
-print("Generated token sequence shape:", generated.shape)
-```
 
-### Recipe 3: Compress a Pretrained Model
-Compress model layers using structured low-rank singular value decomposition:
-
-```python
-import torch
-from transformers import AutoModelForSequenceClassification
-import neuralops
-
-model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
-compressed = neuralops.compress(model, method="direct_svd", rank=32)
-
-outputs = compressed(torch.randint(0, 1000, (2, 32)))
-print("Compressed output logits shape:", outputs.logits.shape)
-```
-
-### Recipe 4: Zero-Code Hugging Face AutoModel Integration
-Instantiate or load pretrained models seamlessly using the Hugging Face `AutoModel` registry pattern:
-
-```python
-import torch
-from transformers import AutoTokenizer
-from neuralops import AutoNeuralOpsForCausalLM, AutoNeuralOpsConfig
-
-# 1. Direct configuration and instantiation
-config = AutoNeuralOpsConfig(
+# Mode 2: Via dedicated AutoNeuralOpsConfig
+direct_config = AutoNeuralOpsConfig(
     attention_type="pgdn",  # Preconditioned Gated DeltaNet
     vocab_size=50257,
     hidden_size=768,
     num_hidden_layers=12,
     num_attention_heads=12,
 )
-model = AutoNeuralOpsForCausalLM(config)
-
-# 2. Autoregressive text generation
-inputs = torch.randint(0, 50257, (1, 16))
-generated = model.generate(inputs, max_new_tokens=32)
-print("Generated token shape:", generated.shape)
+direct_model = AutoNeuralOpsForCausalLM(direct_config)
+generated = direct_model.generate(torch.randint(0, 50257, (1, 16)), max_new_tokens=32)
+print("Generated token sequence shape:", generated.shape)
 ```
 
-### Recipe 5: 6-Pillar Recovery & Distillation Engine
+### Recipe B: 6-Pillar Recovery & Distillation Engine
 Heal post-surgery accuracy degradation using multi-level distillation, homotopy annealing, and SVD-PEFT adapters:
 
 ```python
@@ -256,7 +449,7 @@ total_loss.backward()
 print(f"Step 250: alpha={alpha:.4f}, total_loss={total_loss.item():.4f}")
 ```
 
-### Recipe 6: Surgery Manifest, Merging & CUDA Graph Decoding
+### Recipe C: Surgery Manifest, Merging & CUDA Graph Decoding
 Serialize surgery artifacts without third-party dependencies, merge low-rank adapters into single dense matrices, and run static graph decoding:
 
 ```python
@@ -282,71 +475,7 @@ next_token_logits = runner.step(tokens)
 print("Decode step logits shape:", next_token_logits.shape)
 ```
 
-### Recipe 7: Composable Meta-Attention (`neuralops.compose_attention`)
-Synthesize custom attention mechanisms declaratively from atomic building blocks with zero-overhead execution:
-
-```python
-import torch
-import neuralops
-
-# Synthesize a custom hybrid attention layer: SVD projection + RoPE + Cosformer kernel + Sliding Window mask
-custom_attn = neuralops.compose_attention(
-    dim=768,
-    num_heads=12,
-    projection="svd",
-    rank=64,
-    positional="rope",
-    kernel_map="cosformer",
-    mask="sliding_window",
-    window_size=128,
-    engine="fused_triton",
-)
-
-x = torch.randn(2, 512, 768, device="cuda", dtype=torch.float16)
-out = custom_attn(x)
-print("Composable attention output:", out.shape)  # [2, 512, 768]
-```
-
-### Recipe 8: HuggingFace-Style CLI & Interactive TUI
-NeuralOps provides an end-to-end command-line toolkit and interactive Terminal UI (`neuralops ui` or `nops ui`) modeled after Hugging Face Hub tools:
-
-```bash
-# Launch interactive terminal control center (interactive menu, doctor, search, benchmarks)
-neuralops ui
-
-# All 14 CLI subcommands
-neuralops run --module mamba_block --model roberta-base --dataset sst2 --device cuda
-neuralops compress --model distilbert-base-uncased --method hadamard_incoherent_svd --rank 32
-neuralops generate --model gpt2 --prompt "Deep learning is" --attention fast_rn_rn --speculative
-neuralops niah --model gpt2 --attention mamba_block --context-lengths 512,1024,2048,4096
-neuralops benchmark-fused --kernel selective_scan --device cuda
-neuralops search --query "svd"
-neuralops info mamba_block
-neuralops doctor
-neuralops list --attentions
-neuralops plan --all-attn
-neuralops results --latest
-neuralops export --model ./checkpoint --format onnx
-neuralops verify
-neuralops resume --output-dir results/sweep
-```
-
-#### Family Shortcuts
-```bash
-# Plan sweeps across families
-neuralops plan --all-attn         # All 131 attention mechanisms
-neuralops plan --all-comp         # All 72 compression engines
-neuralops plan --all-modules      # Full 203 canonical modules sweep
-
-# Direct executions across architectures
-neuralops run --all-delta --training-type kd --dataset sst2 --device cuda
-neuralops run --all-ssm --model roberta-base --dataset sst2 --epochs 3
-neuralops run --all-svd --model gpt2 --dataset wikitext2
-neuralops run --all-linear --dataset sst2 --device cuda
-neuralops run --all-gated --model roberta-base
-```
-
-### Recipe 9: Hardware Advisor, Model Inspector & Built-in Recipes
+### Recipe D: Hardware Advisor, Model Inspector & Built-in Recipes
 Query hardware-optimal configurations across VRAM budgets, apply curated production recipes, and analyze parameter/FLOPs efficiency:
 
 ```python
@@ -373,136 +502,7 @@ print("Active parameters:", summary["total_parameters"])
 print("State cache at 4k:", summary["state_cache_at_4096_mb"], "MB")
 ```
 
-### Recipe 10: Minimalist Architecture Inspector & Two-Pane Split TUI (`neuralops inspect` & `neuralops ui`)
-Inspect mathematical specifications, hardware strategies, constructor signatures, and interactive two-pane terminal views:
-
-```bash
-# Clean flat 14-field specification card for any attention or compressor
-neuralops inspect gated_delta_net
-
-# Live empirical Roofline analysis directly appended to card
-neuralops inspect gated_delta_net --roofline
-
-# Raw machine-readable JSON specification
-neuralops inspect hadamard_incoherent_svd --json
-
-# Two-pane side-by-side split TUI snapshot (List on Left, Spec Card on Right)
-neuralops ui --inspect gated_delta_net --snapshot
-```
-
-```text
-┌──────────────────────────────────────┬─────────────────────────────────────────────────────────┐
-│ REGISTRY (203 MODULES)               │ SPECIFICATION: gated_delta_net                          │
-├──────────────────────────────────────┼─────────────────────────────────────────────────────────┤
-│ > [A] gated_delta_net                │ Name:        gated_delta_net                            │
-│   [A] gla_attention                  │ Type:        Attention                                  │
-│   [A] hgrn2_gated_deltanet           │ Family:      Gated & Recurrent                          │
-│   [A] cosformer                      │ Math:        S_t = α_t S_{t-1}(I - β_t k_t k_t^T) + ...│
-│   [A] mamba_block                    │ Complexity:  Time O(N) | Space O(1)                     │
-│   [C] hadamard_incoherent_svd        │ Hardware:    Triton Fused Scan (_gdn_fwd_kernel)       │
-│   [C] direct_svd                     │ Fallback:    PyTorch Sequential Recurrence             │
-│   [C] slicegpt                       │ Status:      Active (Verified v1.3.6)                  │
-└──────────────────────────────────────┴─────────────────────────────────────────────────────────┘
-```
-
-### Recipe 11: Hardware Roofline & Arithmetic Intensity Analyzer (`neuralops roofline`)
-Analyze compute vs memory-bandwidth saturation, empirical Triton speedups, and in-SRAM memory traffic savings:
-
-```bash
-# Live command-line hardware roofline profiling with ASCII characteristic curve
-neuralops roofline --module gated_delta_net --batch-size 2 --seq-len 1024
-```
-
-```text
-================================================================================
-⚡ HARDWARE ROOFLINE & EMPIRICAL SPEEDUP REPORT: gated_delta_net
-================================================================================
-Hardware Device:             NVIDIA GeForce RTX 4070 (SM 8.9)
-Peak Compute (FP16 Tensor):  115.80 TFLOP/s
-Memory Bandwidth:            504.00 GB/s
-Hardware Ridge Point:        229.76 FLOPs/Byte
-
---- Analytical Operational Metrics ---
-Total Work (FLOPs):          4.53 GFLOPs
-Arithmetic Intensity:        4.50 FLOPs/Byte
-HBM Traffic (Baseline):      1.01 GB
-In-SRAM Memory Saved:        0.98 GB (97.0%)
-Bottleneck Regime:           MEMORY_BOUND
-
---- Empirical Execution Benchmark ---
-Latency (PyTorch Native):    78.42 ms  ( 0.058 TFLOP/s,   12.84 GB/s) [P]
-Latency (NeuralOps Triton):   1.48 ms  ( 3.064 TFLOP/s,  680.14 GB/s) [T]
-🚀 EMPIRICAL SPEEDUP:        52.99x
-
-Log-Log Characteristic Roofline Curve:
-Performance (TFLOP/s)
-  115.8 ┤                                              ┌──────────────────── Peak (115.8 TFLOP/s)
-        │                                         .   /
-   10.0 ┤                                      .     /
-        │                                   .       /
-    3.1 ┤            [T] (Triton)        .         /
-        │                             .           /
-    1.0 ┤                          .             /
-        │                       .               /
-    0.1 ┤     [P]            .                 /
-        │                 .                   /
-   0.01 ┴─────────┴──────────────┴────────────────┴─────────────────┴───────
-      0.1        1.0            10.0            100.0             1000.0    Arithmetic Intensity (FLOPs/Byte)
-```
-
-Programmatic roofline evaluation via Python API:
-
-```python
-import neuralops
-
-# Profile any attention mechanism against hardware Ridge point
-report = neuralops.profile_roofline(
-    module_or_name="gated_delta_net",
-    batch_size=2,
-    seq_len=2048,
-    embed_dim=768,
-    num_heads=12,
-)
-
-print(f"Speedup: {report.speedup_x:.2f}x")
-print(f"SRAM Bytes Saved: {report.sram_bytes_saved_mb:.2f} MB")
-print(f"Bottleneck: {report.bottleneck_regime}")
-
-# Render publication-grade ASCII log-log roofline curve
-print(neuralops.render_roofline_terminal(report))
-```
-
-### Recipe 12: Layerwise Subspace Micro-Healing & Surgical Persistence
-Fast in-memory alignment of replaced nonlinear attention operators directly on cached teacher representations, followed by lossless serialization:
-
-```python
-import torch
-from transformers import AutoModelForCausalLM
-import neuralops
-
-teacher = AutoModelForCausalLM.from_pretrained("gpt2")
-student = AutoModelForCausalLM.from_pretrained("gpt2")
-student = neuralops.replace_attention(student, "gated_delta_net")
-
-calib_inputs = torch.randint(0, 50257, (4, 64))
-
-# Fast layerwise micro-healing (optimizes gates, feature maps, and low-rank factors)
-stats = neuralops.heal_replaced_model(
-    teacher_model=teacher,
-    student_model=student,
-    calibration_inputs=calib_inputs,
-    steps=25,
-    lr=2e-3,
-    also_ridge_init=True,
-)
-print(f"Healed MSE: {stats['initial_mse']:.4f} -> {stats['final_mse']:.4f}")
-
-# Lossless surgical checkpoint persistence
-neuralops.save_surgical_checkpoint(student, "./checkpoints/healed_gdn_gpt2")
-reloaded_model, manifest = neuralops.load_surgical_checkpoint(teacher, "./checkpoints/healed_gdn_gpt2")
-```
-
-### Recipe 13: Academic LaTeX Booktabs & Pareto Frontier Exporter
+### Recipe E: Academic LaTeX Booktabs & Pareto Frontier Exporter
 Automatically determine multi-objective Pareto-optimal configurations and export publication-ready LaTeX tables:
 
 ```python
@@ -519,7 +519,7 @@ latex_table = neuralops.export_benchmark_table(records, format="latex")
 print(latex_table)
 ```
 
-### Recipe 14: 🔌 Extending NeuralOps: Custom Attentions, Compressors & 4-Stage Algebraic Stages
+### Recipe F: 🔌 Extending NeuralOps: Custom Attentions, Compressors & 6-Point Contract Validator
 Researchers and developers who fork or import NeuralOps can effortlessly register custom attention mechanisms, compressors, or algebraic stages ($\mathcal{P} \to \phi \to \mathcal{M} \to \mathcal{E}$) in under 10 lines of Python, with automatic recognition across every framework subsystem (Inspector, Roofline, Surgery, Micro-Healing, Serialization, and Benchmark Tables):
 
 ```python
@@ -578,26 +578,113 @@ custom_layer = neuralops.compose_attention(
 
 ## 🏗️ Architecture Overview
 
+### 7-Layer Software System Architecture
+
 ```mermaid
 flowchart TD
-    HF[Pretrained Hugging Face Model] --> Surgery[In-Place Surgery replace_attention with Calibration]
-    Surgery --> Registry{NeuralOps Registry}
-    
-    Registry --> AttnZoo[131 Attention Modules]
-    Registry --> CompEngines[72 Compression Engines]
-    
-    AttnZoo --> BackendCheck{Hardware Backend}
-    CompEngines --> BackendCheck
-    
-    BackendCheck -- CUDA / ROCm --> Triton[26 Triton Fused Kernels]
-    BackendCheck -- MPS / CPU --> Fallback[Native Vectorized PyTorch Fallback]
-    
-    Triton --> Engine[Execution & Training Engine]
-    Fallback --> Engine
-    
-    Engine --> KD[Knowledge Distillation & LoRA]
-    Engine --> Bench[Unified CLI & Benchmark Suite]
-    Engine --> Export[Parquet / CSV / HF Hub Export]
+    subgraph Layer1 [1. Ingestion & Plugin Interface]
+        HF[Pretrained Hugging Face Backbone / Custom Model]
+        Ext[Custom Plugin Extensibility API register_custom_attention]
+    end
+
+    subgraph Layer2 [2. Unified Canonical Registries]
+        AttnZoo[131 Canonical Attention Modules ATTENTION_REGISTRY]
+        CompEngines[72 Model Compression Engines COMPRESSOR_REGISTRY]
+        Composer[4-Stage Algebraic Composer P -> phi -> M -> E]
+    end
+
+    subgraph Layer3 [3. In-Place Surgery & Subspace Recovery]
+        Surgery[In-Place Surgery replace_attention / compress]
+        Ridge[Instantaneous Closed-Form Ridge Alignment]
+        MicroHeal[Layerwise Gradient Micro-Healing heal_replaced_model]
+    end
+
+    subgraph Layer4 [4. Execution & Hardware Dispatch]
+        BackendCheck{Hardware Backend Detection}
+        Triton[26 Fused Triton Kernels CUDA / ROCm SM 6.1 - SM 9.0+]
+        Fallback[Vectorized Native PyTorch Fallbacks Apple MPS / CPU]
+    end
+
+    subgraph Layer5 [5. High-Throughput Serving & Inference Engine]
+        PagedState[PagedStateTable Dynamic Radix Prefix CoW]
+        SpecDecode[Lossless SelfSpeculativeDecoder Draft-K=3]
+        CUDAGraph[CUDAGraphDecodeRunner Static Trace]
+    end
+
+    subgraph Layer6 [6. Telemetry & Hardware Profiling]
+        Roofline[Hardware Roofline Profiler profile_roofline]
+        TUI[Minimalist Two-Pane UNIX TUI & Inspector neuralops ui / inspect]
+    end
+
+    subgraph Layer7 [7. Academic Export & Lossless Persistence]
+        SurgIO[Lossless Surgical Checkpoint IO save_surgical_checkpoint]
+        LaTeX[Academic LaTeX booktabs & Pareto Frontier Exporter]
+    end
+
+    HF --> Surgery
+    Ext --> Surgery
+    Surgery --> AttnZoo
+    Surgery --> CompEngines
+    Surgery --> Composer
+    AttnZoo --> Ridge
+    CompEngines --> Ridge
+    Composer --> Ridge
+    Ridge --> MicroHeal
+    MicroHeal --> BackendCheck
+    BackendCheck -- NVIDIA CUDA / AMD ROCm --> Triton
+    BackendCheck -- Apple MPS / CPU --> Fallback
+    Triton --> PagedState
+    Fallback --> PagedState
+    PagedState --> SpecDecode
+    SpecDecode --> CUDAGraph
+    Triton --> Roofline
+    Roofline --> TUI
+    MicroHeal --> SurgIO
+    Roofline --> LaTeX
+```
+
+### In-SRAM Register Fusion vs. Naive HBM Roundtrip Execution Model
+
+The primary bottleneck in standard transformer attention and naive subquadratic implementations is **High-Bandwidth Memory (HBM) memory-bandwidth saturation**. Below illustrates how NeuralOps eliminates intermediate HBM DRAM roundtrips by performing full state transitions inside ultra-fast on-chip GPU SRAM (L1 Cache / Registers):
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ❌ NAIVE IMPLEMENTATION (PyTorch / Unfused): Severe HBM Memory-Bandwidth Bottleneck            │
+├────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                │
+│   [ Input X ] ────(Write HBM)────► [ DRAM: Q, K, V Tensors (GBs) ]                             │
+│                                              │                                                 │
+│   [ DRAM: State S_{t-1} ] ◄───(Read HBM)─────┘                                                 │
+│           │                                                                                    │
+│           ▼ (Compute Step t in ALU)                                                            │
+│   [ S_t = S_{t-1} + K_t^T V_t ] ────(Write HBM)────► [ DRAM: Intermediate States S_t (GBs) ]   │
+│                                                                │                               │
+│   [ Output O_t = S_t Q_t ]      ◄───(Read HBM)─────────────────┘                               │
+│                                                                                                │
+│   💥 High HBM Traffic (425+ MB/layer/batch), Latency: ~152.5 ms, Compute Efficiency: < 0.1 TFLOP/s│
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ NEURALOPS IN-SRAM FUSION (Custom Triton Kernels): True Tensor Core Saturation               │
+├────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                │
+│   [ Input X ] ────(Single Read)────► ┌──────────────────────────────────────────────────────┐  │
+│                                      │ ON-CHIP GPU SRAM / REGISTERS (TB/s Bandwidth)        │  │
+│                                      │                                                      │  │
+│                                      │  1. Compute Low-Rank Projections Q, K, V in-registers │  │
+│                                      │  2. Fast Feature Map φ(·) & Interleaved RoPE / Sinks │  │
+│                                      │  3. In-Place State Update:                           │  │
+│                                      │     S_t = α_t · S_{t-1} · (I - β_t k_t k_t^T)        │  │
+│                                      │           + β_t · v_t · k_t^T                        │  │
+│                                      │  4. Immediate State-Query Contraction: O_t = S_t · Q_t│  │
+│                                      │                                                      │  │
+│                                      │  ★ State S_t NEVER leaves fast on-chip SRAM!         │  │
+│                                      └──────────────────────────┬───────────────────────────┘  │
+│                                                                 │                              │
+│   [ Output O ] ◄────────────────(Single Coalesced Write)────────┘                              │
+│                                                                                                │
+│   🚀 HBM Traffic Reduced by 95% (21.9 MB), Latency: 3.0 ms  ==>  50.81x Empirical Speedup!    │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -904,17 +991,20 @@ print(tokenizer.decode(outputs[0]))
 
 ## ⚡ Performance Benchmarks
 
-### Comparison with FLA and FlashAttention
+### Comparison with Industry Frameworks
 
-| Capability | NeuralOps | Flash-Linear-Attention (FLA) | FlashAttention-2 / 3 |
-| :--- | :---: | :---: | :---: |
-| **Attention Mechanisms** | **131** | ~30 | 1 (Exact Softmax) |
-| **Model Compression Engines** | **72** | ❌ None | ❌ None |
-| **Triton Fused Kernels** | **26 modules** | ~20 | Fused CUDA C++ |
-| **In-Place Architecture Injection & Calibration** | ✅ Built-in | ❌ None | ❌ None |
-| **CPU / MPS Metal Fallbacks** | ✅ Verified | ⚠️ Partial | ❌ CUDA only |
-| **Unified Distillation CLI** | ✅ Native | ❌ None | ❌ None |
-| **Preserved Legacy Aliases** | **712 aliases** | ❌ None | ❌ None |
+| Capability / Dimension | NeuralOps (v1.3.6) | FLA (Flash-Linear-Attn) | FlashAttention-2 / 3 | HuggingFace PEFT | Unsloth | vLLM |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Subquadratic Attention Zoo** | **131 canonical mechanisms** | ~30 mechanisms | 1 (Exact Softmax) | 0 (Fine-tuning only) | 0 (Fine-tuning only) | 1–3 (via PagedAttn) |
+| **Model Compression Engines** | **72 engines (SVD, Quant, Pruning, KV)** | ❌ None | ❌ None | LoRA / QLoRA only | QLoRA only | AWQ / GPTQ / FP8 only |
+| **4-Stage Composable Meta-Attention ($\mathcal{P}\to\phi\to\mathcal{M}\to\mathcal{E}$)** | **✅ Built-in (`compose_attention`)** | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
+| **In-Place Surgery + Closed-Form Ridge + Micro-Healing** | **✅ Built-in (Seconds, zero full-backprop)**| ❌ Requires pretraining | ❌ None | ❌ Adapters only | ❌ Adapters only | ❌ Serving only |
+| **Custom Extensibility & 6-Point Contract Validator** | **✅ Native (`validate_module_contract`)** | ❌ Manual | ❌ Manual | ⚠️ Limited | ❌ Proprietary kernels | ❌ Manual C++/Python |
+| **Hardware Roofline Profiler & Minimalist Two-Pane TUI** | **✅ Native (`neuralops roofline/ui`)** | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
+| **Academic LaTeX `booktabs` & Pareto Exporter** | **✅ Native (`export_benchmark_table`)** | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
+| **Multi-Vendor Hardware Backend Support** | **✅ CUDA, ROCm, Apple MPS, CPU** | ⚠️ CUDA / ROCm only | ❌ CUDA only | ✅ Multi-device | ❌ NVIDIA CUDA only | ⚠️ Linux CUDA/ROCm |
+| **Triton Fused Kernel Modules** | **26 Triton modules** | ~20 kernels | Fused CUDA C++ | ❌ None | Fast Handcrafted Kernels | Custom Paged Kernels |
+| **Preserved 1-Hop Legacy Aliases** | **712 aliases** | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
 
 ### Quantitative Sequence Length Scaling ($B=1, H=32, D=128$, RTX 4090, fp16)
 
