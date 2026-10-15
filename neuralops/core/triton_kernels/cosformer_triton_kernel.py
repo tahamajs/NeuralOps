@@ -231,7 +231,7 @@ def _cosformer_bwd_kernel(
         score = tl.where(causal_mask, score, 0.0)
         acc_denom += tl.sum(score, axis=1)
 
-    denom = tl.maximum(acc_denom[:, None], 1e-4)
+    denom = tl.maximum(tl.abs(acc_denom[:, None]), 0.1)
 
     dq_cos_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
     dq_sin_acc = tl.zeros((BLOCK_N, BLOCK_D), dtype=tl.float32)
