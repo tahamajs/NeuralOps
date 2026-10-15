@@ -7,6 +7,7 @@ bolded best, underlined second-best, and star-marked Pareto optima.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -156,6 +157,7 @@ def export_benchmark_table(
     # 1. Determine columns
     if columns is None:
         preferred = [
+            "module",
             "module_name",
             "name",
             "latency_pytorch_ms",
@@ -213,8 +215,11 @@ def export_benchmark_table(
         lines = []
         header_row = []
         for c in columns:
-            arrow = " ↓" if _is_lower_better(c) else " ↑"
-            header_row.append(f"{c.replace('_', ' ').title()}{arrow}")
+            if any(k in c.lower() for k in ("name", "module", "regime")):
+                header_row.append(c.replace('_', ' ').title())
+            else:
+                arrow = " ↓" if _is_lower_better(c) else " ↑"
+                header_row.append(f"{c.replace('_', ' ').title()}{arrow}")
         lines.append("| " + " | ".join(header_row) + " |")
         lines.append("| " + " | ".join(["---"] * len(columns)) + " |")
 
