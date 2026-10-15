@@ -517,19 +517,39 @@ class OptimizedHybridAttention(BaseAttention):
         # ============================================================
         # 1. Local sliding-window attention
         # ============================================================
-        if self.is_causal:
-            band_mask = (diff >= 0) & (diff <= self.window_radius)
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and Q.is_cuda
+            and self.is_causal
+            and valid_mask_2d.all()
+            and not output_attentions
+            and d in (16, 32, 64, 128)
+        ):
+            try:
+                from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+                local_ctx = sliding_window_triton(Q, K, V, window_size=self.window_radius + 1)
+                local_probs = None
+            except Exception:
+                local_ctx = None
         else:
-            band_mask = diff.abs() <= self.window_radius
-        local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+            local_ctx = None
 
-        local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        local_scores = local_scores.masked_fill(~local_mask, -1e4)
-        local_scores = torch.nan_to_num(local_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        local_probs = F.softmax(local_scores, dim=-1).to(dtype)
-        local_probs = torch.nan_to_num(local_probs, nan=0.0)
-        local_probs = self.dropout(local_probs)
-        local_ctx = torch.matmul(local_probs, V)  # (B, H, N, d)
+        if local_ctx is None:
+            if self.is_causal:
+                band_mask = (diff >= 0) & (diff <= self.window_radius)
+            else:
+                band_mask = diff.abs() <= self.window_radius
+            local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+
+            local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            local_scores = local_scores.masked_fill(~local_mask, -1e4)
+            local_scores = torch.nan_to_num(local_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            local_probs = F.softmax(local_scores, dim=-1).to(dtype)
+            local_probs = torch.nan_to_num(local_probs, nan=0.0)
+            local_probs = self.dropout(local_probs)
+            local_ctx = torch.matmul(local_probs, V)  # (B, H, N, d)
 
         # ============================================================
         # 2. Global compressed attention (OHA-FIX-03, OHA-FIX-14)

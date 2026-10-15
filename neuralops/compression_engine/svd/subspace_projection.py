@@ -142,6 +142,19 @@ class SubspaceLinear(nn.Module):
         if self.bias is not None:
             b = self.bias if self.bias.dtype == x_flat.dtype else self.bias.to(x_flat.dtype)
 
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x_flat, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                out = fused_down_up_gemm_bias_triton(x_flat, A, B.t().contiguous(), bias=b)
+                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None) * self.scaling
+                    out = out + lora_out
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         x_proj = F.linear(x_flat, A)  # (K, rank)
         out = F.linear(x_proj, B, b)  # (K, out)
 

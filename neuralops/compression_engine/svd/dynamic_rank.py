@@ -311,6 +311,15 @@ class DynamicSVDLinear(nn.Module):
         Forward pass executing factorized low-rank multiplication:
         y = (x @ V^T) @ U^T + bias
         """
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+                return fused_down_up_gemm_bias_triton(x, self.V, self.U.t().contiguous(), bias=self.bias)
+            except Exception:
+                pass
+
         intermediate = F.linear(x, self.V)
         out = F.linear(intermediate, self.U, self.bias)
         return out
