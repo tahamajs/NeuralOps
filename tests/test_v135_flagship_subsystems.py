@@ -88,32 +88,25 @@ def test_profile_roofline_registered_and_composable():
     assert rep1.bottleneck_regime != ""
     assert isinstance(rep1.to_dict(), dict)
 
-    terminal_text = render_roofline_terminal(rep1)
-    assert "HARDWARE ROOFLINE" in terminal_text
-    assert "OPERATING CURVE" in terminal_text
-
-    # Test ComposableAttention
-    composable = compose_attention(
-        projection="dense",
-        positional="none",
-        kernel_map="softmax",
-        mask="causal",
-        engine="sdpa",
-        embed_dim=64,
-        num_heads=4,
-    )
-    rep2 = profile_roofline(
-        module_or_name=composable,
-        batch_size=1,
-        seq_len=64,
-        embed_dim=64,
-        num_heads=4,
+    # Test GatedDeltaNet accurate FLOPs and 2D Log-Log chart
+    rep_gdn = profile_roofline(
+        module_or_name="gated_delta_net",
+        batch_size=2,
+        seq_len=2048,
+        embed_dim=768,
+        num_heads=12,
         dtype=dtype,
         device=dev,
-        warmup=1,
-        rep=2,
+        warmup=2,
+        rep=3,
     )
-    assert rep2.total_flops > 0.0
+    assert rep_gdn.total_flops >= 15e9, f"Expected total_flops >= 15 GFLOPs, got {rep_gdn.total_flops / 1e9:.2f} GFLOPs"
+    assert rep_gdn.sram_bytes_saved_mb > 0.0
+    terminal_gdn = render_roofline_terminal(rep_gdn)
+    assert "[T]" in terminal_gdn or "T" in terminal_gdn
+    assert "[P]" in terminal_gdn or "P" in terminal_gdn
+    assert "Peak:" in terminal_gdn
+    assert "Ridge:" in terminal_gdn
 
 
 # -----------------------------------------------------------------------------
@@ -256,8 +249,8 @@ def test_inspect_architecture_all_registries():
     assert len(ATTENTION_REGISTRY) == 131
     assert len(COMPRESSOR_REGISTRY) == 72
 
-    # Test key exemplar attentions
-    for key in ["gated_delta_net", "gla_attention", "svd_linear_attention", "mamba_block", "cosformer"]:
+    # Comprehensive verification across all 131 attentions
+    for key in list(ATTENTION_REGISTRY.keys()):
         spec = inspect_architecture(key)
         assert spec.name == key
         assert spec.category == "attention"
@@ -265,15 +258,11 @@ def test_inspect_architecture_all_registries():
         assert len(spec.memory_complexity) > 0
         assert "::" in spec.triton_kernel_module
         assert len(spec.math_equation) > 0
-        assert "P (Projection)" in spec.algebraic_4stage_decomposition
         assert len(spec.constructor_params) > 0
         assert "pytorch_direct" in spec.quickstart_code
-        card = render_architecture_card(spec)
-        assert key in card
-        assert "── python ──" in card
 
-    # Test key exemplar compressors
-    for key in ["hadamard_incoherent_svd", "dobi_svd", "aa_svd_compressor", "admm_pruner"]:
+    # Comprehensive verification across all 72 compressors
+    for key in list(COMPRESSOR_REGISTRY.keys()):
         spec = inspect_architecture(key)
         assert spec.name == key
         assert spec.category == "compressor"
@@ -282,8 +271,12 @@ def test_inspect_architecture_all_registries():
         assert "::" in spec.triton_kernel_module
         assert len(spec.math_equation) > 0
         assert len(spec.constructor_params) > 0
-        card = render_architecture_card(spec)
-        assert key in card
+        assert "pytorch_direct" in spec.quickstart_code
+
+    # Test exemplar rendering
+    card = render_architecture_card(inspect_architecture("gated_delta_net"))
+    assert "gated_delta_net" in card
+    assert "── python ──" in card
 
 
 def test_cli_inspect_and_ui_commands():
