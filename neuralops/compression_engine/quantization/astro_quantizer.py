@@ -285,6 +285,11 @@ class AstroLinear(nn.Module):
                 per_channel=False,
                 use_ste=self.training,
             )
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import dynamic_fp8_quant_triton, fused_int4_lut_dequant_matmul_triton
+            except Exception:
+                pass
         return nn.functional.linear(
             x,
             w_q.to(dtype=x.dtype, device=x.device),
