@@ -17,7 +17,7 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="neuralops",
         description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
     )
-    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.3")
+    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.4")
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
     # 1. run

@@ -62,7 +62,8 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 📰 News
 
-- **[2026-10]** 🚀 **v1.3.3 Production Release**: Composable Meta-Attention (`neuralops.compose_attention`), Top-10 analytic `@triton.jit` forward/backward kernels with up to **450.84x verified dual-path speedups**, closed-form layerwise Ridge surgery calibration, and bitwise gradient-stabilized Cosformer autograd.
+- **[2026-10]** 🚀 **v1.3.4 Production Release**: Zero-latency lazy CLI architecture (`<50ms` startup for `neuralops --version` and `neuralops list`), interactive Rich TUI control center (`neuralops ui`) with live GPU telemetry & module browsing, complete composable attention grammar wiring, and fully automated PyPI OIDC release workflows.
+- **[2026-10]** ⚡ **Composable Meta-Attention (`neuralops.compose_attention`)**: Declarative Lego-block pipeline synthesizing novel attention mechanisms from first principles with verified dual-path Triton acceleration up to **450.84x**.
 - **[2026-10]** 🧪 **11 Exhaustive Mathematical Test Suites (2,093+ Tests Passed, 1,746 Exhaustive Matrix Tests, 0 Skipped, 0 Failed)**: Formal verification across all 131 attention mechanisms, 72 compression engines, 26 Triton kernels, 6-pillar training engine, AutoSVD, PagedStateTable, and distributed TP/CP with 100% pass rate on RTX 4070 (Ada SM 8.9) and GTX 1060 (Pascal SM 6.1).
 - **[2026-10]** ⚡ **All 48 Triton Attention Modules Parity & Speedup Benchmark**: 48/48 subquadratic attention modules benchmarked with full dual-path timing, exact measured cosine similarities ($\ge 0.9990$), and up to $3.66\times$ speedup at sequence lengths $T=512$ and $T=2048$.
 - **[2026-10]** 📈 **RoBERTa-Base SST-2 Recurrent Attention KD Breakthrough**: Recurrent architectures (`gla_attention: 90.67%`, `hgrn2_gated_outer: 89.33%`, `gated_delta_net: 88.67%`, `selective_ssm: 87.00%`, `mamba_block: 86.33%`) achieve **86.33%–90.67% validation accuracy** with low converged loss ($< 0.39$) under bidirectional teacher distillation, breaking through previous encoder loss stagnation.
@@ -93,7 +94,7 @@ Whether you are an ML researcher prototyping subquadratic attention architecture
 
 ## 🚀 Installation
 
-### Install from PyPI (v1.3.3)
+### Install from PyPI (v1.3.4)
 
 Install the core package or select your preferred hardware acceleration extras:
 
@@ -848,7 +849,7 @@ If you use NeuralOps in your academic research or production deployment, please 
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/SVD_linear_Attention}},
-  version = {1.3.3}
+  version = {1.3.4}
 }
 ```
 

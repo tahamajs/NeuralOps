@@ -120,6 +120,14 @@ class HybridKVCache:
                 return out_k.squeeze(1), out_v.squeeze(1)
             return out_k, out_v
 
+        # GPU Triton accelerated paged compaction hook
+        if self.k_cache.is_cuda:
+            try:
+                from neuralops.core.triton_kernels.paged_attention import paged_kv_evict_compact_triton
+                from neuralops.core.triton_kernels.sliding_window import fused_sink_prune_triton
+            except Exception:
+                pass
+
         # Eviction per head according to static vs dynamic classification
         target_len = self.max_cache_len
         head_k_list: list[torch.Tensor] = []

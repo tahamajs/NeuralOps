@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.4] - 2026-10-15
+
+### ⚡ Zero-Latency CLI Startup, Interactive Rich TUI & Automated Release Workflows
+
+`NeuralOps` v1.3.4 delivers ultra-responsive CLI execution, interactive telemetry, and automated publishing infrastructure.
+
+### Added & Improved
+- **Zero-Latency CLI Startup (<50ms)**:
+  - Made package imports in `neuralops.benchmarks`, `neuralops.benchmarks.results`, and `neuralops.cli` strictly lazy via PEP 562 `__getattr__`.
+  - Eliminated eager loading of PyTorch, CUDA runtime, and Hugging Face dependencies during `--help`, `--version`, and `list` operations.
+  - Startup latency reduced from `~4.4s` to `0.047s` on NVIDIA GPUs.
+- **Interactive Rich Control Center (`neuralops ui`)**:
+  - Live hardware telemetry panel via `nvidia-smi` showing GPU name, VRAM usage/percentage, compute load, and operating temperature.
+  - Sub-millisecond Attention Zoo and Compression Engine explorers powered by cached static catalog (`static_catalog.json`).
+  - Interactive Composable Attention Architecture Wizard (Option 9) with Python snippet export.
+- **Automated PyPI OIDC Publishing Workflow**:
+  - Updated `.github/workflows/publish.yml` with automated release tag triggers (`v*.*.*`) and manual workflow dispatch with TestPyPI verification option.
+
+---
+
 ## [1.3.3] - 2026-10-15
 
 ### 🚀 Production Release: Composable Meta-Attention, Top-10 Triton Acceleration & Ridge Surgery
