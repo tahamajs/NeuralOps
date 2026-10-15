@@ -155,7 +155,25 @@ __all__ = [
     "fused_rmsnorm_linear",
     "fused_rmsnorm_gate",
     "fused_rmsnorm_gate_triton",
+    "gdn_recurrent_step_triton",
+    "gla_recurrent_step_triton",
+    "select_optimal_triton_config",
 ]
+
+try:
+    from neuralops.core.triton_kernels.gdn_scan import gdn_recurrent_step_triton
+except Exception:
+    gdn_recurrent_step_triton = None
+
+try:
+    from neuralops.core.triton_kernels.gla_scan import gla_recurrent_step_triton
+except Exception:
+    gla_recurrent_step_triton = None
+
+try:
+    from neuralops.core.triton_kernels.autotuner import select_optimal_triton_config
+except Exception:
+    select_optimal_triton_config = None
 
 # Auto-wired package members
 from neuralops.core.triton_kernels import _common
