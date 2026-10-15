@@ -248,6 +248,17 @@ def _build_parser() -> argparse.ArgumentParser:
     ui_p.add_argument("--inspect", type=str, default=None, help="Inspect specific module directly in flat UI preview")
     ui_p.add_argument("--snapshot", action="store_true", help="Print non-interactive snapshot of explorer and exit (CI-friendly)")
 
+    # 21. validate
+    val_p = subparsers.add_parser("validate", help="Run automated 6-point contract diagnostics on any built-in or custom module")
+    val_p.add_argument("name", type=str, help="Module identifier to validate against framework contracts")
+
+    # 22. scaffold
+    scaff_p = subparsers.add_parser("scaffold", help="Generate production-ready boilerplate for new custom attention or compressor")
+    scaff_p.add_argument("name", type=str, help="Name for the new module")
+    scaff_p.add_argument("--category", choices=["attention", "compressor"], default="attention", help="Module category")
+    scaff_p.add_argument("--family", type=str, default="linear-scan", help="Mathematical family tag")
+    scaff_p.add_argument("--output", type=str, default=None, help="Output python file destination")
+
     return parser
 
 
@@ -874,6 +885,24 @@ def main(argv: list[str] | None = None) -> int:
             inspect_target=getattr(args, "inspect", None),
             snapshot=getattr(args, "snapshot", False),
         )
+        return 0
+    elif args.subcommand == "validate":
+        from neuralops.core.extensibility import validate_module_contract
+        import json
+        print(f"[+] Running 6-Point Contract Validation on '{args.name}'...")
+        res = validate_module_contract(args.name)
+        status = "[✓] ALL CONTRACTS PASSED (6/6)" if res["all_passed"] else "[✗] CONTRACT VALIDATION FAILED"
+        print(f"{status}: {res['passed_count']}/{res['total_checks']} checks satisfied.")
+        print(json.dumps(res, indent=2))
+        return 0 if res["all_passed"] else 1
+    elif args.subcommand == "scaffold":
+        from neuralops.core.extensibility import scaffold_module
+        print(f"[+] Scaffolding {args.category} module '{args.name}' (family: {args.family})...")
+        code = scaffold_module(args.name, category=args.category, family=args.family, output_file=args.output)
+        if args.output:
+            print(f"[✓] Scaffold written to '{args.output}'.")
+        else:
+            print(code)
         return 0
 
     return 0

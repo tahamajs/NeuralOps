@@ -200,9 +200,16 @@ def load_surgical_checkpoint(
         cls_name = info.get("class_name")
         import_path = info.get("module_import_path")
 
-        # Import class dynamically
-        mod = importlib.import_module(import_path)
-        cls = getattr(mod, cls_name)
+        # Import class dynamically or resolve from ATTENTION_REGISTRY
+        try:
+            mod = importlib.import_module(import_path)
+            cls = getattr(mod, cls_name)
+        except Exception:
+            from neuralops.core.registry import ATTENTION_REGISTRY
+            target_key = info.get("target_attention", cls_name.lower())
+            cls = ATTENTION_REGISTRY.get(target_key, unwrap=True) or ATTENTION_REGISTRY.get(cls_name.lower(), unwrap=True)
+            if cls is None:
+                raise ImportError(f"Could not import or resolve class '{cls_name}' from '{import_path}'")
 
         if category == "attention":
             if cls_name == "ComposableAttention":

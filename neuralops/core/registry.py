@@ -486,3 +486,131 @@ def is_module_declared_compatible(name: str, family: str) -> tuple[bool, str]:
     if is_enc_dec and not caps.get("supports_cross_attention", True):
         return False, "declared_lacks_cross_attention_for_encoder_decoder"
     return True, ""
+
+
+def create_attention(
+    name: str,
+    config: Any = None,
+    dim: int | None = None,
+    num_heads: int | None = None,
+    embed_dim: int | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Universal attention factory instantiating any registered attention mechanism or ComposableAttention."""
+    if name == "composable" or name.startswith("compose(") or "proj=" in name:
+        from neuralops.core.composable import ComposableAttention
+        return ComposableAttention(embed_dim=embed_dim or dim or 768, num_heads=num_heads or 12, **kwargs)
+
+    cls = ATTENTION_REGISTRY.get(name)
+    if cls is None:
+        raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
+
+    resolved_dim = (
+        embed_dim
+        or dim
+        or kwargs.pop("d_model", None)
+        or kwargs.pop("hidden_size", None)
+        or getattr(config, "hidden_size", None)
+        or getattr(config, "n_embd", None)
+        or getattr(config, "d_model", None)
+    )
+    resolved_heads = (
+        num_heads
+        or kwargs.pop("n_heads", None)
+        or kwargs.pop("heads", None)
+        or kwargs.pop("num_attention_heads", None)
+        or getattr(config, "num_attention_heads", None)
+        or getattr(config, "num_heads", None)
+        or getattr(config, "n_head", None)
+    )
+    resolved_rank = rank or kwargs.pop("r", None)
+
+    # Adjust heads if dim is not divisible
+    if resolved_dim is not None and resolved_heads is not None and resolved_heads > 0:
+        if resolved_dim % resolved_heads != 0:
+            for cand in [16, 12, 8, 4, 2, 1]:
+                if resolved_dim % cand == 0:
+                    resolved_heads = cand
+                    break
+
+    call_kwargs = dict(kwargs)
+    if resolved_dim is not None:
+        call_kwargs["dim"] = resolved_dim
+        call_kwargs["embed_dim"] = resolved_dim
+        call_kwargs["hidden_size"] = resolved_dim
+        call_kwargs["d_model"] = resolved_dim
+    if resolved_heads is not None:
+        call_kwargs["num_heads"] = resolved_heads
+        call_kwargs["n_heads"] = resolved_heads
+        call_kwargs["num_attention_heads"] = resolved_heads
+    if resolved_rank is not None:
+        call_kwargs["rank"] = resolved_rank
+        call_kwargs["r"] = resolved_rank
+
+    if config is None and resolved_dim is not None:
+        from transformers import BertConfig
+        h = resolved_heads or max(1, resolved_dim // 64)
+        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+        call_kwargs["config"] = config
+
+    # Dynamic multi-attempt constructor resolution
+    init_attempts = []
+    if config is not None:
+        init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
+        init_attempts.append(lambda: cls(config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
+    if resolved_dim is not None and resolved_heads is not None:
+        init_attempts.append(lambda: cls(embed_dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")}))
+        init_attempts.append(lambda: cls(dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")}))
+        init_attempts.append(lambda: cls(resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")}))
+    init_attempts.append(lambda: cls(**call_kwargs))
+    init_attempts.append(lambda: cls())
+
+    last_err = None
+    for attempt in init_attempts:
+        try:
+            return attempt()
+        except TypeError as e:
+            last_err = e
+            continue
+    if last_err is not None:
+        raise last_err
+    return cls(**call_kwargs)
+
+
+def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
+    """Universal compressor factory instantiating any registered compression engine."""
+    cls = COMPRESSOR_REGISTRY.get(name)
+    if cls is None:
+        raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+
+    call_kwargs = dict(kwargs)
+    resolved_rank = rank or call_kwargs.pop("r", None)
+    if resolved_rank is not None:
+        call_kwargs["rank"] = resolved_rank
+
+    if model is not None:
+        call_kwargs["model"] = model
+
+    attempts = [
+        lambda: cls(**call_kwargs),
+    ]
+    if model is not None:
+        attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
+    else:
+        import torch.nn as nn
+        dummy_host = nn.Sequential(nn.Linear(64, 64))
+        attempts.append(lambda: cls(model=dummy_host, **call_kwargs))
+        attempts.append(lambda: cls(dummy_host, **call_kwargs))
+
+    last_err = None
+    for attempt in attempts:
+        try:
+            return attempt()
+        except TypeError as e:
+            last_err = e
+            continue
+    if last_err is not None:
+        raise last_err
+    return cls(**call_kwargs)
+
