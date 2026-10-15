@@ -275,10 +275,12 @@ def low_rank_forward(
       z = z * (S * gate)
       out = z @ U.T + bias
     """
-    if x.is_cuda and HAS_TRITON and is_supported(x, U, V, bias=bias) and gate is None:
-        # Fused un-gated path when gate is not provided
-        v_eff = V * S.unsqueeze(0)
-        return fwd(x, U, v_eff, bias=bias)
+    from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    if x.is_cuda and HAS_TRITON and not FORCE_PYTORCH_FALLBACK and gate is None:
+        suitable, _ = check_triton_suitability(x, "low_rank")
+        if suitable and is_supported(x, U, V, bias=bias):
+            v_eff = V * S.unsqueeze(0)
+            return fwd(x, U, v_eff, bias=bias)
 
     # Standard / gated forward (efficient batched tensor operations)
     v = V.to(x.dtype)
