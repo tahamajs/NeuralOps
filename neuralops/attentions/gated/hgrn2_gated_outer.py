@@ -469,9 +469,11 @@ class HGRN2GatedOuterBlock(BaseAttention):
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
+        f_f = f.float().clamp(min=1e-6, max=1.0)
 
         # log_f clamped to avoid -inf breaking cumsum
-        log_f = torch.log(f.float().clamp_min(1e-6))
+        log_f = torch.log(f_f)
+
 
         # ---- Hardware-fused Triton / FLA Tensor Core scan ----
         if q.is_cuda and initial_state is None and d <= 64:
@@ -498,55 +500,18 @@ class HGRN2GatedOuterBlock(BaseAttention):
             except Exception as e:
                 logger.debug("HGRN2 outer Triton scan failed, falling back to chunked PyTorch: %s", e)
 
-        # Initialize state
-        if initial_state is not None:
-            S_prev = initial_state.to(device=device, dtype=torch.float32)
-        else:
-            S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
-
-        # Exact, numerically stable O(L) scan matching S_t = f_t * S_{t-1} + k_t^T @ v_t
+        # Exact sequential recurrence matching S_t = S_{t-1} * f_t + k_t^T @ v_t
+        S = torch.zeros(B, H, d, d, device=device, dtype=torch.float32) if initial_state is None else initial_state.float().clone()
         outputs = []
-        for c in range(num_chunks):
-            start = c * chunk_size
-            end = min(start + chunk_size, L)
-            C = end - start
+        for t in range(L):
+            ft = f_f[:, :, t].unsqueeze(-1).unsqueeze(-1)
+            S = S * ft + torch.matmul(k_f[:, :, t].unsqueeze(-1), v_f[:, :, t].unsqueeze(-2))
+            yt = torch.matmul(q_f[:, :, t].unsqueeze(-2), S).squeeze(-2)
+            outputs.append(yt.unsqueeze(2))
 
-            q_c = q_f[:, :, start:end]  # (B, H, C, d)
-            k_c = k_f[:, :, start:end]
-            v_c = v_f[:, :, start:end]
-            f_c = f[:, :, start:end].float().clamp(min=1e-6, max=1.0)  # (B, H, C)
-            log_f_c = torch.log(f_c)
+        y_out = torch.cat(outputs, dim=2)
+        return y_out.to(q.dtype), S
 
-            # Intra-chunk cumulative decay: cum_log[i] = sum_{j<=i} log_f[j]
-            cum_log = torch.cumsum(log_f_c, dim=-1)
-            # log_decay[i, j] = cum_log[i] - cum_log[j] = sum_{m=j+1}^i log_f[m]
-            log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
-            causal_mask = torch.tril(torch.ones(C, C, device=device, dtype=torch.bool))
-            decay_intra = torch.where(causal_mask.unsqueeze(0).unsqueeze(0), torch.exp(log_decay.clamp(max=0.0)), torch.zeros_like(log_decay))
-
-            # Intra-chunk output: (q_c @ k_c^T * decay_intra) @ v_c
-            scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * decay_intra
-            y_intra = torch.matmul(scores_intra, v_c)
-
-            # Inter-chunk contribution from S_prev:
-            # S_prev is decayed by prod_{m=0}^i f[m] = exp(cum_log[i])
-            decay_inter = torch.exp(cum_log.clamp(max=0.0)).unsqueeze(-1)  # (B, H, C, 1)
-            q_S_prev = torch.matmul(q_c, S_prev)  # (B, H, C, d)
-            y_inter = q_S_prev * decay_inter
-
-            outputs.append(y_intra + y_inter)
-
-            # Update S_prev for next chunk:
-            # S_chunk = sum_{j=0}^{C-1} (prod_{m=j+1}^{C-1} f[m]) * (k_j^T @ v_j)
-            last_cum = cum_log[:, :, -1:]  # (B, H, 1)
-            decay_to_end = torch.exp((last_cum - cum_log).clamp(max=0.0)).unsqueeze(-1)  # (B, H, C, 1)
-            k_decayed = k_c * decay_to_end
-            S_chunk = torch.matmul(k_decayed.transpose(-1, -2).contiguous(), v_c)  # (B, H, d, d)
-            decay_chunk_total = torch.exp(last_cum).unsqueeze(-1)  # (B, H, 1, 1)
-            S_prev = S_prev * decay_chunk_total + S_chunk
-
-        y_out = torch.cat(outputs, dim=2)  # (B, H, L, d)
-        return y_out.to(q.dtype), S_prev
 
     # ------------------------------------------------------------------
     # [HGRN2-OUT-FIX-05, 08, 09, 11] Forward
