@@ -250,20 +250,32 @@ def _build_4stage_decomposition(family: str) -> Dict[str, str]:
         }
 
 
-def inspect_architecture(name: str) -> ArchitectureSpec:
+def inspect_architecture(name: str, category: Optional[str] = None) -> ArchitectureSpec:
     """Inspect and return complete 14-field ArchitectureSpec for any registered module."""
     # Ensure registries are populated
     import neuralops.attentions
     import neuralops.compression_engine
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
-    is_attn = name in ATTENTION_REGISTRY
-    is_comp = name in COMPRESSOR_REGISTRY
+    is_attn = False
+    is_comp = False
+
+    if category == "attention":
+        is_attn = name in ATTENTION_REGISTRY
+    elif category == "compressor":
+        is_comp = name in COMPRESSOR_REGISTRY
+    else:
+        if name in COMPRESSOR_REGISTRY and name not in ATTENTION_REGISTRY:
+            is_comp = True
+        elif name in ATTENTION_REGISTRY:
+            is_attn = True
+        elif name in COMPRESSOR_REGISTRY:
+            is_comp = True
 
     if not is_attn and not is_comp:
         # Check case-insensitive
         match_attn = [k for k in ATTENTION_REGISTRY if k.lower() == name.lower()]
-        if match_attn:
+        if match_attn and category != "compressor":
             name = match_attn[0]
             is_attn = True
         else:
@@ -276,7 +288,7 @@ def inspect_architecture(name: str) -> ArchitectureSpec:
                     f"Module '{name}' not found in ATTENTION_REGISTRY (131) or COMPRESSOR_REGISTRY (72)."
                 )
 
-    category = "attention" if is_attn else "compressor"
+    resolved_category = "attention" if is_attn else "compressor"
     obj = ATTENTION_REGISTRY.get(name) if is_attn else COMPRESSOR_REGISTRY.get(name)
 
     class_name = getattr(obj, "__name__", str(obj))
@@ -381,7 +393,7 @@ def inspect_architecture(name: str) -> ArchitectureSpec:
     return ArchitectureSpec(
         name=name,
         class_name=class_name,
-        category=category,
+        category=resolved_category,
         family=family,
         source_file=source_file,
         time_complexity=time_c,
