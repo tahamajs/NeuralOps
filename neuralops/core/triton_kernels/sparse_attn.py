@@ -47,8 +47,7 @@ if HAS_TRITON:
         stride_obh,
         stride_on,
         stride_od,
-        _stride_mb,
-        _stride_mh,
+        stride_mbh,
         stride_mq,
         stride_mk,
         sm_scale,
@@ -71,6 +70,7 @@ if HAS_TRITON:
         k_base = K_ptr + bh_id * stride_kbh
         v_base = V_ptr + bh_id * stride_vbh
         out_base = Out_ptr + bh_id * stride_obh
+        mask_base = Mask_ptr + bh_id * stride_mbh if HAS_MASK else Mask_ptr
 
         q_ptrs = q_base + (offs_q[:, None] * stride_qn + offs_d[None, :] * stride_qd)
         q = tl.load(q_ptrs, mask=mask_q[:, None], other=0.0)
@@ -87,7 +87,7 @@ if HAS_TRITON:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -249,6 +249,7 @@ if HAS_TRITON and tl is not None:
         stride_dqbh, stride_dqn, stride_dqd,
         stride_dkbh, stride_dkn, stride_dkd,
         stride_dvbh, stride_dvn, stride_dvd,
+        stride_mbh,
         stride_mq, stride_mk,
         sm_scale,
         N_Q: tl.constexpr,
@@ -277,6 +278,7 @@ if HAS_TRITON and tl is not None:
         dq_base = DQ_ptr + bh_id * stride_dqbh
         dk_base = DK_ptr + bh_id * stride_dkbh
         dv_base = DV_ptr + bh_id * stride_dvbh
+        mask_base = Mask_ptr + bh_id * stride_mbh if HAS_MASK else Mask_ptr
 
         q_ptrs = q_base + (offs_q[:, None] * stride_qn + offs_d[None, :] * stride_qd)
         do_ptrs = do_base + (offs_q[:, None] * stride_don + offs_d[None, :] * stride_dod)
@@ -293,7 +295,7 @@ if HAS_TRITON and tl is not None:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -326,7 +328,7 @@ if HAS_TRITON and tl is not None:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -394,8 +396,11 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         if has_mask:
             bm_flat = block_mask.to(torch.int32).contiguous()
             stride_mq, stride_mk = bm_flat.stride(-2), bm_flat.stride(-1)
+            # If block_mask has batch/head dims, stride_mbh tracks the leading dims
+            stride_mbh = bm_flat.stride(-3) if bm_flat.ndim > 2 else 0
         else:
             bm_flat = torch.empty((1, 1), dtype=torch.int32, device=q.device)
+            stride_mbh = 0
             stride_mq, stride_mk = 0, 0
 
         sm_scale = 1.0 / math.sqrt(D)
@@ -420,8 +425,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
             out.stride(0),
             out.stride(1),
             out.stride(2),
-            0,
-            0,
+            stride_mbh,
             stride_mq,
             stride_mk,
             sm_scale,
@@ -468,8 +472,10 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
                     if has_mask:
                         bm_flat = block_mask.to(torch.int32).contiguous()
                         stride_mq, stride_mk = bm_flat.stride(-2), bm_flat.stride(-1)
+                        stride_mbh = bm_flat.stride(-3) if bm_flat.ndim > 2 else 0
                     else:
                         bm_flat = torch.empty((1, 1), dtype=torch.int32, device=q.device)
+                        stride_mbh = 0
                         stride_mq, stride_mk = 0, 0
 
                     sm_scale = 1.0 / math.sqrt(D)
@@ -486,6 +492,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
                         dq.stride(0), dq.stride(1), dq.stride(2),
                         dk.stride(0), dk.stride(1), dk.stride(2),
                         dv.stride(0), dv.stride(1), dv.stride(2),
+                        stride_mbh,
                         stride_mq, stride_mk,
                         sm_scale,
                         N_Q=N_Q,
