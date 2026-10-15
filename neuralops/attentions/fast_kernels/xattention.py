@@ -810,8 +810,10 @@ class XAttention(BaseAttention):
                 block_mask[:, :, diag_idx, diag_idx] = True
 
             # ---- [XATTN-FIX-11] Triton fast path ----
+            from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
             if (
-                HAS_TRITON
+                not FORCE_PYTORCH_FALLBACK
+                and HAS_TRITON
                 and Q.is_cuda
                 and triton_block_sparse_attention is not None
             ):
@@ -833,6 +835,7 @@ class XAttention(BaseAttention):
                         "Triton block-sparse attention failed (%s); falling back to PyTorch.",
                         e,
                     )
+
                     context = None
                     attn = None
             else:
