@@ -211,6 +211,24 @@ class ARMORLinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
+        if x.is_cuda and not self.training:
+            try:
+                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                w_eff = self.sparse_weight * self.sparse_mask
+                out = fused_svd_lora_sparse_attn_triton(
+                    x_flat,
+                    w_down=self.lora_A,
+                    w_up=self.lora_B,
+                    lora_A=None,
+                    lora_B=None,
+                    lora_scale=self.scaling,
+                    sparse_w=w_eff,
+                    bias=self.bias,
+                )
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception:
+                pass
+
         # 1. Sparse core. Mask applied once.
         w_eff = self.sparse_weight * self.sparse_mask
         out_sparse = F.linear(x_flat, w_eff)
