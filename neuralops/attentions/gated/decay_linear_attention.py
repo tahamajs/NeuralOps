@@ -639,16 +639,38 @@ class DecayLinearAttention(BaseAttention):
         """
         B, H, L, d = q.shape
 
-        # Path 1: Hardware-fused Triton kernel
+        # Path 1: Hardware-fused Triton / FLA Tensor Core scan
         if (
             HAS_TRITON_DECAY
             and q.is_cuda
             and d <= MAX_REGISTER_DIM
             and mask is None
-            and not reverse
         ):
             try:
-                return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
+                from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
+                if not FORCE_PYTORCH_FALLBACK and torch.cuda.is_available() and torch.cuda.get_device_capability(q.device)[0] >= 8:
+                    try:
+                        from fla.ops.gla import chunk_gla
+                        target_dtype = q.dtype if q.dtype in (torch.float16, torch.bfloat16) else torch.float16
+                        log_l = torch.log(lambdas.float().clamp(min=1e-4, max=1.0 - 1e-4))
+                        g = log_l.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, d).contiguous().to(target_dtype)
+                        q_fl = q.to(target_dtype).transpose(1, 2).contiguous()
+                        k_fl = k.to(target_dtype).transpose(1, 2).contiguous()
+                        v_fl = v.to(target_dtype).transpose(1, 2).contiguous()
+                        if reverse:
+                            q_fl = q_fl.flip(dims=[1])
+                            k_fl = k_fl.flip(dims=[1])
+                            v_fl = v_fl.flip(dims=[1])
+                            g = g.flip(dims=[1])
+                        out, _ = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0 / math.sqrt(d))
+                        out = out.transpose(1, 2)
+                        if reverse:
+                            out = out.flip(dims=[2])
+                        return out.to(q.dtype)
+                    except Exception:
+                        pass
+                if not reverse:
+                    return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
             except Exception as e:
                 logger.debug("Triton decay scan failed, falling back to chunked PyTorch: %s", e)
 
