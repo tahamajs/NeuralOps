@@ -72,6 +72,8 @@ SUBCOMMAND_GROUPS = [
         "commands": [
             ("inspect", "UNIX-style architectural specification sheet for any registered module"),
             ("roofline", "Hardware Roofline & Arithmetic Intensity Analyzer for compiled Triton kernels"),
+            ("validate", "Automated 6-point contract diagnostic check for any module"),
+            ("scaffold", "Generate production-ready boilerplate for new custom attention or compressor"),
             ("list", "List and filter 131 attention mechanisms and 72 compressors"),
             ("doctor", "Run comprehensive health diagnostics on GPU, Triton, and packages"),
             ("info", "Print detailed GPU hardware telemetry and registry metrics"),

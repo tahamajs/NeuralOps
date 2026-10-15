@@ -346,7 +346,7 @@ neuralops run --all-linear --dataset sst2 --device cuda
 neuralops run --all-gated --model roberta-base
 ```
 
-### Recipe 8: Hardware Advisor, Model Inspector & Built-in Recipes
+### Recipe 9: Hardware Advisor, Model Inspector & Built-in Recipes
 Query hardware-optimal configurations across VRAM budgets, apply curated production recipes, and analyze parameter/FLOPs efficiency:
 
 ```python
@@ -371,26 +371,86 @@ surg_model = neuralops.replace_attention(base_model, advice["recommended_attenti
 summary = neuralops.summary(surg_model)
 print("Active parameters:", summary["total_parameters"])
 print("State cache at 4k:", summary["state_cache_at_4096_mb"], "MB")
+```
 
-### Recipe 9: Minimalist UNIX-Style Architecture Inspector (`neuralops inspect`)
-Quickly inspect mathematical specifications, hardware strategies, and constructor signatures for any of the 131 attentions or 72 compressors:
+### Recipe 10: Minimalist Architecture Inspector & Two-Pane Split TUI (`neuralops inspect` & `neuralops ui`)
+Inspect mathematical specifications, hardware strategies, constructor signatures, and interactive two-pane terminal views:
 
 ```bash
-# Clean flat specification card
+# Clean flat 14-field specification card for any attention or compressor
 neuralops inspect gated_delta_net
 
 # Live empirical Roofline analysis directly appended to card
 neuralops inspect gated_delta_net --roofline
 
-# Raw 14-field specification JSON
+# Raw machine-readable JSON specification
 neuralops inspect hadamard_incoherent_svd --json
 
-# Minimalist two-pane TUI explorer snapshot
-neuralops ui --snapshot
+# Two-pane side-by-side split TUI snapshot (List on Left, Spec Card on Right)
+neuralops ui --inspect gated_delta_net --snapshot
 ```
 
-### Recipe 10: Hardware Roofline & Arithmetic Intensity Analyzer
+```text
+┌──────────────────────────────────────┬─────────────────────────────────────────────────────────┐
+│ REGISTRY (203 MODULES)               │ SPECIFICATION: gated_delta_net                          │
+├──────────────────────────────────────┼─────────────────────────────────────────────────────────┤
+│ > [A] gated_delta_net                │ Name:        gated_delta_net                            │
+│   [A] gla_attention                  │ Type:        Attention                                  │
+│   [A] hgrn2_gated_deltanet           │ Family:      Gated & Recurrent                          │
+│   [A] cosformer                      │ Math:        S_t = α_t S_{t-1}(I - β_t k_t k_t^T) + ...│
+│   [A] mamba_block                    │ Complexity:  Time O(N) | Space O(1)                     │
+│   [C] hadamard_incoherent_svd        │ Hardware:    Triton Fused Scan (_gdn_fwd_kernel)       │
+│   [C] direct_svd                     │ Fallback:    PyTorch Sequential Recurrence             │
+│   [C] slicegpt                       │ Status:      Active (Verified v1.3.6)                  │
+└──────────────────────────────────────┴─────────────────────────────────────────────────────────┘
+```
+
+### Recipe 11: Hardware Roofline & Arithmetic Intensity Analyzer (`neuralops roofline`)
 Analyze compute vs memory-bandwidth saturation, empirical Triton speedups, and in-SRAM memory traffic savings:
+
+```bash
+# Live command-line hardware roofline profiling with ASCII characteristic curve
+neuralops roofline --module gated_delta_net --batch-size 2 --seq-len 1024
+```
+
+```text
+================================================================================
+⚡ HARDWARE ROOFLINE & EMPIRICAL SPEEDUP REPORT: gated_delta_net
+================================================================================
+Hardware Device:             NVIDIA GeForce RTX 4070 (SM 8.9)
+Peak Compute (FP16 Tensor):  115.80 TFLOP/s
+Memory Bandwidth:            504.00 GB/s
+Hardware Ridge Point:        229.76 FLOPs/Byte
+
+--- Analytical Operational Metrics ---
+Total Work (FLOPs):          4.53 GFLOPs
+Arithmetic Intensity:        4.50 FLOPs/Byte
+HBM Traffic (Baseline):      1.01 GB
+In-SRAM Memory Saved:        0.98 GB (97.0%)
+Bottleneck Regime:           MEMORY_BOUND
+
+--- Empirical Execution Benchmark ---
+Latency (PyTorch Native):    78.42 ms  ( 0.058 TFLOP/s,   12.84 GB/s) [P]
+Latency (NeuralOps Triton):   1.48 ms  ( 3.064 TFLOP/s,  680.14 GB/s) [T]
+🚀 EMPIRICAL SPEEDUP:        52.99x
+
+Log-Log Characteristic Roofline Curve:
+Performance (TFLOP/s)
+  115.8 ┤                                              ┌──────────────────── Peak (115.8 TFLOP/s)
+        │                                         .   /
+   10.0 ┤                                      .     /
+        │                                   .       /
+    3.1 ┤            [T] (Triton)        .         /
+        │                             .           /
+    1.0 ┤                          .             /
+        │                       .               /
+    0.1 ┤     [P]            .                 /
+        │                 .                   /
+   0.01 ┴─────────┴──────────────┴────────────────┴─────────────────┴───────
+      0.1        1.0            10.0            100.0             1000.0    Arithmetic Intensity (FLOPs/Byte)
+```
+
+Programmatic roofline evaluation via Python API:
 
 ```python
 import neuralops
@@ -412,7 +472,7 @@ print(f"Bottleneck: {report.bottleneck_regime}")
 print(neuralops.render_roofline_terminal(report))
 ```
 
-### Recipe 11: Layerwise Subspace Micro-Healing & Surgical Persistence
+### Recipe 12: Layerwise Subspace Micro-Healing & Surgical Persistence
 Fast in-memory alignment of replaced nonlinear attention operators directly on cached teacher representations, followed by lossless serialization:
 
 ```python
@@ -442,7 +502,7 @@ neuralops.save_surgical_checkpoint(student, "./checkpoints/healed_gdn_gpt2")
 reloaded_model, manifest = neuralops.load_surgical_checkpoint(teacher, "./checkpoints/healed_gdn_gpt2")
 ```
 
-### Recipe 12: Academic LaTeX Booktabs & Pareto Frontier Exporter
+### Recipe 13: Academic LaTeX Booktabs & Pareto Frontier Exporter
 Automatically determine multi-objective Pareto-optimal configurations and export publication-ready LaTeX tables:
 
 ```python
@@ -457,51 +517,6 @@ records = [
 # Export publication-ready NeurIPS/ICML booktabs LaTeX table with star markers ($^\star$)
 latex_table = neuralops.export_benchmark_table(records, format="latex")
 print(latex_table)
-```
-
-# 4. Compare baseline vs transplanted model output parity and latency speedup
-sample_input = torch.randint(0, 50257, (1, 32))
-diff_metrics = neuralops.compare(base_model, surg_model, sample_input=sample_input)
-print("Cosine similarity :", diff_metrics["cosine_similarity"])
-print("Latency speedup   :", diff_metrics["latency_speedup"], "x")
-```
-
-### Recipe 9: Composable Meta-Attention (`neuralops.compose_attention`)
-Synthesize novel, hybrid subquadratic attention architectures from modular declarative Lego blocks and inject them into pretrained transformers:
-
-```python
-import torch
-from transformers import AutoModelForCausalLM
-import neuralops
-
-# 1. Declaratively build a custom attention architecture from Lego blocks:
-# SVD low-rank projection + RoPE + Cosformer kernel map + Sliding Window sink mask + Chunked Scan
-custom_attn = neuralops.compose_attention(
-    dim=768,
-    num_heads=12,
-    projection="svd(rank=64)",
-    positional="rope",
-    kernel_map="cosformer",
-    mask="sliding_window(128)+sink(4)",
-    engine="chunked_scan",
-)
-
-# 2. Run standalone forward & backward pass with zero intermediate HBM bloat
-x = torch.randn(2, 512, 768, device="cuda" if torch.cuda.is_available() else "cpu", requires_grad=True)
-out = custom_attn(x)
-loss = out.sum()
-loss.backward()
-print("Custom attention output shape:", out.shape)
-print("Input grad norm               :", x.grad.norm().item())
-
-# 3. Seamlessly transplant the composable attention module into any Hugging Face model
-base_model = AutoModelForCausalLM.from_pretrained("gpt2")
-surg_model = neuralops.replace_attention(
-    base_model,
-    target_module=custom_attn,
-    calibration="ridge",  # Closed-form layerwise Ridge surgery calibration
-)
-print("Transplanted model successfully with ComposableAttention!")
 ```
 
 ---

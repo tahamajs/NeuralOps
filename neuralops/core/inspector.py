@@ -336,6 +336,28 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
         source_file = f"neuralops/{category}s/{name}.py"
 
     kernel_sym, sram_strat, math_eq, time_c, mem_c = _map_kernel_and_hardware(name, category, family)
+    
+    # Check if module defined custom plugin metadata or class-level _neuralops_metadata_
+    custom_meta = {}
+    try:
+        from neuralops.core.extensibility import get_custom_metadata
+        custom_meta = get_custom_metadata(name)
+    except Exception:
+        pass
+    if not custom_meta and hasattr(obj, "_neuralops_metadata_") and callable(getattr(obj, "_neuralops_metadata_")):
+        try:
+            custom_meta = obj._neuralops_metadata_()
+        except Exception:
+            pass
+
+    if custom_meta:
+        family = custom_meta.get("family", family)
+        time_c = custom_meta.get("time_complexity", time_c)
+        mem_c = custom_meta.get("memory_complexity", mem_c)
+        math_eq = custom_meta.get("math_equation", math_eq)
+        kernel_sym = custom_meta.get("triton_kernel", kernel_sym)
+        sram_strat = custom_meta.get("sram_fusion_strategy", sram_strat)
+
     stages = _build_4stage_decomposition(family)
     params = _extract_constructor_params(obj)
 
