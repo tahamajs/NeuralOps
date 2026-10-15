@@ -292,6 +292,15 @@ def _global_linear_attention_v2(
             den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
             return torch.nan_to_num(num / den, nan=0.0).to(Q.dtype)
 
+        # Hardware-accelerated Triton linear chunk scan
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and token_valid is None and D <= 128:
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                return fused_svd_linear_chunk_scan_triton(phi_Q.to(Q.dtype), phi_K.to(Q.dtype), V, chunk_size=64, eps=1e-6)
+            except Exception:
+                pass
+
         chunk = 64
         state_kv = torch.zeros(B, H, phi_Q.shape[-1], D, device=Q.device, dtype=phi_Q.dtype)
         state_k = torch.zeros(B, H, phi_Q.shape[-1], device=Q.device, dtype=phi_Q.dtype)

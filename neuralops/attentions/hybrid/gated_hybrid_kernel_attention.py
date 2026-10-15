@@ -759,6 +759,22 @@ class GatedHybridKernelAttention(BaseAttention):
             K_feat = K_feat * valid_k
             V_f = V_f * valid_k
 
+        # Hardware-accelerated Triton linear chunk scan
+        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and Q_feat.is_cuda
+            and past_len == 0
+            and valid is None
+            and F_dim <= 128
+        ):
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                return fused_svd_linear_chunk_scan_triton(Q_feat.to(dtype), K_feat.to(dtype), V, chunk_size=64, eps=1e-4)
+            except Exception:
+                pass
+
         # بردارسازی کامل بدون حلقه پایتون و بدون انباشت حافظه
         KV_outer = K_feat.unsqueeze(-1) * V_f.unsqueeze(-2)  # (B, H, N_kv, F_dim, d)
         KV_cumsum = KV_outer.cumsum(dim=2)

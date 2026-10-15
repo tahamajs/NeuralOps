@@ -415,13 +415,28 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     f"{tuple(hgrn_out.shape)} vs {tuple(delta_out.shape)}."
                 )
             gate_dtype = next(self.lora_gate.parameters()).dtype
-            # gamma: (B, L, 1) → broadcasts against (B, L, D)
-            gamma = torch.sigmoid(
-                self.lora_gate(hidden_states.to(gate_dtype))
-            ).to(hidden_states.dtype)
-            out = gamma * hgrn_out.to(hidden_states.dtype) + (
-                1.0 - gamma
-            ) * delta_out.to(hidden_states.dtype)
+            # lora_gate produces raw logits for gamma
+            raw_gamma = self.lora_gate(hidden_states.to(gate_dtype))
+            if hidden_states.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+                    # fused_jamba_hybrid_ssm_attn_gate_triton blends: (1 - sigmoid(alpha)) * attn + sigmoid(alpha) * ssm
+                    # Here: hgrn_out is weighted by gamma = sigmoid(raw_gamma) and delta_out by (1 - gamma)
+                    out = fused_jamba_hybrid_ssm_attn_gate_triton(
+                        delta_out.to(hidden_states.dtype),
+                        hgrn_out.to(hidden_states.dtype),
+                        raw_gamma,
+                    )
+                except Exception:
+                    gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
+                    out = gamma * hgrn_out.to(hidden_states.dtype) + (
+                        1.0 - gamma
+                    ) * delta_out.to(hidden_states.dtype)
+            else:
+                gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
+                out = gamma * hgrn_out.to(hidden_states.dtype) + (
+                    1.0 - gamma
+                ) * delta_out.to(hidden_states.dtype)
 
         # ---- [HGD-FIX-08] No output_scale here (branches handle their own) ----
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)

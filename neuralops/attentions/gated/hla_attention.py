@@ -546,6 +546,19 @@ class HLAAttention(BaseAttention):
             y = y_num / y_den
             return y.to(q.dtype), (S_curr, Z_curr)
 
+        # ---- Accelerated Triton Path ----
+        if initial_state is None and q_f.is_cuda and not reverse:
+            try:
+                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
+                # decay is (1, H, 1, 1), expand to (B, H, L)
+                dec_expanded = gamma.view(1, H, 1).expand(B, H, L).contiguous()
+                y_triton = fused_svd_linear_chunk_scan_triton(
+                    q, k, v, decay=dec_expanded, chunk_size=self.chunk_size, eps=1e-5
+                )
+                return y_triton.to(q.dtype), (None, None)
+            except Exception:
+                pass
+
         # ---- Chunked path ----
         C = self.chunk_size
         pad_len = (C - (L % C)) % C
