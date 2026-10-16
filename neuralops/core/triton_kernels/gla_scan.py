@@ -1000,6 +1000,11 @@ def gla_recurrent_step_triton(
     return (y.unsqueeze(2) if has_l_dim else y), state_s, state_z
 
 
+from neuralops.core.triton_kernels.gdn_scan import (
+    triton_chunked_delta_gate_scan,
+    triton_chunked_delta_gate_scan_pytorch_ref,
+)
+
 __all__ = [
     'gla_scan_triton',
     'gla_scan_pytorch',
@@ -1009,6 +1014,9 @@ __all__ = [
     'fused_regla_refined_gate_scan_triton',
     'fused_regla_refined_gate_scan_pytorch',
     'fused_chunk_svd_decay_linear_triton',
+    'triton_chunked_delta_gate_scan',
+    'triton_chunked_delta_gate_scan_pytorch_ref',
 ]
+
 
 
