@@ -94,7 +94,7 @@ def _fused_lowrank_gated_gemm_1d_kernel(
     if HAS_ALPHA:
         alpha_ptrs = alpha_ptr + offs_r
         alpha_tile = tl.load(alpha_ptrs, mask=mask_r, other=0.0)
-        gate = tl.sigmoid(alpha_tile)
+        gate = tl.sigmoid(alpha_tile.to(tl.float32))
         z_acc = z_acc * gate[None, :]
 
     # Convert accumulator to FP16/BF16/FP32 for second GEMM

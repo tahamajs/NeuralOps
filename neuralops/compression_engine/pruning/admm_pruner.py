@@ -234,7 +234,7 @@ class ADMMPruner(BaseCompressor):
                     _cfg_get(conf, "structured_24", structured_24),
                 ),
             )
-        ) and (rank is None)
+        ) and (self.rank is None)
         self.block_size = block_size
         self.dynamic_rho = bool(
             _cfg_get(
