@@ -424,7 +424,10 @@ def create_attention(
     if config is None and resolved_dim is not None:
         from transformers import BertConfig
         h = resolved_heads or max(1, resolved_dim // 64)
-        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+        is_dec = kwargs.get("is_decoder", kwargs.get("is_causal", True))
+        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h, is_decoder=is_dec)
+        config.is_causal = is_dec
+        config._is_synthetic = True
         call_kwargs["config"] = config
 
     # Dynamic multi-attempt constructor resolution

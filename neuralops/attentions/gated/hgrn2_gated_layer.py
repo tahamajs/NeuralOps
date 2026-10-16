@@ -157,8 +157,8 @@ class HGRN2Layer(BaseAttention):
             if old_attn_kw is not None:
                 if hasattr(old_attn_kw, "c_attn") or "gpt" in old_attn_kw.__class__.__name__.lower():
                     cfg_is_dec = True
-            if config is None and old_attn_kw is None:
-                logger.warning("HGRN2: defaulting to is_decoder=True for causal safety")
+            if (config is None or getattr(config, "_is_synthetic", False)) and old_attn_kw is None:
+                logger.info("HGRN2: defaulting to is_decoder=True for causal safety")
                 cfg_is_dec = True
             self.is_decoder = bool(cfg_is_dec)
 

@@ -151,7 +151,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if old_attn is not None:
                 if getattr(old_attn, "is_decoder", False) or hasattr(old_attn, "c_attn"):
                     is_dec = True
-            if config is None and old_attn is None:
+            if (config is None or getattr(config, "_is_synthetic", False)) and old_attn is None:
                 is_dec = True
             self.is_decoder = bool(is_dec)
 
