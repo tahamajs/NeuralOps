@@ -238,7 +238,17 @@ from neuralops.compression_engine.svd import saes_svd_v2
 from neuralops.compression_engine.svd import subspace_projection
 from neuralops.compression_engine.svd import svd_linear
 from neuralops.compression_engine.svd import swift_svd
-from neuralops.compression_engine.svd import swift_svd_act
 from neuralops.compression_engine.svd import hadamard_incoherent_svd
 from neuralops.compression_engine.svd import auto_svd
+from neuralops.compression_engine.svd import hnc_svd_continuation
+from neuralops.compression_engine.svd.hnc_svd_continuation import (
+    HessianNullSpaceSVDContinuation,
+    compute_function_matching_loss,
+    hvp_gauss_newton,
+    estimate_top_eigenvalue,
+    find_flat_subspace_lobpcg,
+    compute_spectral_tail_potential_and_gradient,
+    solve_soft_nullspace_projection_cg,
+    solve_layerwise_kronecker_nullspace_step,
+)
 

@@ -260,6 +260,43 @@ class LinearCKALoss(nn.Module):
         return 1.0 - cka
 
 
+class SmoothMaxOverLayersCKASteeringLoss(nn.Module):
+    """
+    Smooth Log-Sum-Exp Maximum over Layerwise CKA Alignments.
+    L_CKA_max = tau * log(sum_l exp( (1 - CKA(H_s^(l), H_t^(l))) / tau ))
+    Differentiably steers worst-aligned layers towards optimal representation alignment.
+    """
+
+    def __init__(self, temperature: float = 0.1, eps: float = 1e-6) -> None:
+        super().__init__()
+        self.temperature = float(temperature)
+        self.eps = float(eps)
+        self.cka_loss_fn = LinearCKALoss(eps=self.eps)
+
+    def forward(
+        self,
+        student_hidden_states: list[torch.Tensor] | tuple[torch.Tensor, ...],
+        teacher_hidden_states: list[torch.Tensor] | tuple[torch.Tensor, ...],
+    ) -> torch.Tensor:
+        if len(student_hidden_states) != len(teacher_hidden_states):
+            min_layers = min(len(student_hidden_states), len(teacher_hidden_states))
+            student_hidden_states = student_hidden_states[:min_layers]
+            teacher_hidden_states = teacher_hidden_states[:min_layers]
+
+        layer_losses = []
+        for s_h, t_h in zip(student_hidden_states, teacher_hidden_states):
+            layer_loss = self.cka_loss_fn(s_h, t_h)
+            layer_losses.append(layer_loss)
+
+        if not layer_losses:
+            return torch.tensor(0.0, device=student_hidden_states[0].device if student_hidden_states else "cpu")
+
+        stacked = torch.stack(layer_losses)
+        # SmoothMax via Log-Sum-Exp: tau * log(sum(exp(L_l / tau)))
+        smooth_max = self.temperature * torch.logsumexp(stacked / self.temperature, dim=0)
+        return smooth_max
+
+
 __all__ = [
     "LogitDistillationLoss",
     "SpikyFeatureMap",
@@ -267,4 +304,6 @@ __all__ = [
     "MiniLMValueRelationKDLoss",
     "BlockwiseOperatorCloningLoss",
     "LinearCKALoss",
+    "SmoothMaxOverLayersCKASteeringLoss",
 ]
+

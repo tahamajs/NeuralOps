@@ -1908,8 +1908,187 @@ def fused_svd_lora_sparse_attn_triton(
         lora_out = torch.matmul(torch.matmul(x, lora_A.t().to(x.dtype)), lora_B.t().to(x.dtype)) * lora_scale
         out = out + lora_out
     if sparse_w is not None:
-        out = out + F.linear(x, sparse_w.to(x.dtype))
+        out = out + torch.matmul(x, sparse_w.t().to(x.dtype))
     return out
+
+
+# =====================================================================
+# Fused HNC Null-Space Projection & Spectral Step Triton Kernel
+# =====================================================================
+
+if HAS_TRITON:
+    @triton.jit
+    def _fused_hnc_nullspace_spectral_step_fwd_kernel(
+        W_ptr,
+        GradPhi_ptr,
+        Resolvent_ptr,
+        RestoreGrad_ptr,
+        Out_ptr,
+        d_out,
+        d_in,
+        stride_w_m,
+        stride_w_k,
+        stride_gp_m,
+        stride_gp_k,
+        stride_res_k,
+        stride_res_n,
+        stride_rg_m,
+        stride_rg_k,
+        stride_out_m,
+        stride_out_k,
+        eta_scaled,
+        alpha_val,
+        HAS_RESTORE: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        """Fused SRAM kernel: D_W = GradPhi @ Resolvent, W_new = W + eta * D_W - alpha * RestoreGrad."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        # Loop over K (d_in) tiles for matrix product GradPhi @ Resolvent
+        for k_idx in range(0, d_in, BLOCK_K):
+            offs_k = k_idx + tl.arange(0, BLOCK_K)
+            gp_ptrs = GradPhi_ptr + (offs_m[:, None] * stride_gp_m + offs_k[None, :] * stride_gp_k)
+            res_ptrs = Resolvent_ptr + (offs_k[:, None] * stride_res_k + offs_n[None, :] * stride_res_n)
+
+            gp_mask = (offs_m[:, None] < d_out) & (offs_k[None, :] < d_in)
+            res_mask = (offs_k[:, None] < d_in) & (offs_n[None, :] < d_in)
+
+            gp_tile = tl.load(gp_ptrs, mask=gp_mask, other=0.0)
+            res_tile = tl.load(res_ptrs, mask=res_mask, other=0.0)
+
+            acc += tl.dot(gp_tile, res_tile)
+
+        # Load existing W tile
+        w_ptrs = W_ptr + (offs_m[:, None] * stride_w_m + offs_n[None, :] * stride_w_k)
+        w_mask = (offs_m[:, None] < d_out) & (offs_n[None, :] < d_in)
+        w_tile = tl.load(w_ptrs, mask=w_mask, other=0.0).to(tl.float32)
+
+        # Apply flat null-space update in SRAM registers
+        out_val = w_tile + eta_scaled * acc
+
+        if HAS_RESTORE:
+            rg_ptrs = RestoreGrad_ptr + (offs_m[:, None] * stride_rg_m + offs_n[None, :] * stride_rg_k)
+            rg_tile = tl.load(rg_ptrs, mask=w_mask, other=0.0).to(tl.float32)
+            out_val = out_val - alpha_val * rg_tile
+
+        # Store to HBM
+        out_ptrs = Out_ptr + (offs_m[:, None] * stride_out_m + offs_n[None, :] * stride_out_k)
+        tl.store(out_ptrs, out_val, mask=w_mask)
+
+
+def fused_hnc_nullspace_step_pytorch(
+    w: torch.Tensor,
+    grad_phi: torch.Tensor,
+    inv_null_proj: torch.Tensor,
+    eta: float,
+    restore_grad: torch.Tensor | None = None,
+    alpha: float = 0.0,
+) -> torch.Tensor:
+    """PyTorch reference fallback for fused HNC null-space step."""
+    d_proj = torch.matmul(grad_phi.float(), inv_null_proj.float())
+    out = w.float() + (eta * d_proj)
+    if restore_grad is not None and alpha > 0.0:
+        out = out - (alpha * restore_grad.float())
+    return out.to(dtype=w.dtype)
+
+
+class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        w: torch.Tensor,
+        grad_phi: torch.Tensor,
+        inv_null_proj: torch.Tensor,
+        eta: float,
+        restore_grad: torch.Tensor | None = None,
+        alpha: float = 0.0,
+    ) -> torch.Tensor:
+        ctx.save_for_backward(inv_null_proj)
+        ctx.eta = eta
+        ctx.alpha = alpha
+        ctx.has_restore = restore_grad is not None
+
+        is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank")
+        if not is_suitable or not HAS_TRITON:
+            return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
+
+        d_out, d_in = w.shape
+        w_contig = w.contiguous()
+        gp_contig = grad_phi.contiguous()
+        res_contig = inv_null_proj.contiguous()
+        rg_contig = restore_grad.contiguous() if restore_grad is not None else None
+
+        out = torch.empty_like(w_contig)
+
+        BLOCK_M = 64
+        BLOCK_N = 64
+        BLOCK_K = 32
+
+        grid = (
+            triton.cdiv(d_out, BLOCK_M),
+            triton.cdiv(d_in, BLOCK_N),
+        )
+
+        _fused_hnc_nullspace_spectral_step_fwd_kernel[grid](
+            w_contig,
+            gp_contig,
+            res_contig,
+            rg_contig if rg_contig is not None else w_contig,
+            out,
+            d_out,
+            d_in,
+            w_contig.stride(0),
+            w_contig.stride(1),
+            gp_contig.stride(0),
+            gp_contig.stride(1),
+            res_contig.stride(0),
+            res_contig.stride(1),
+            rg_contig.stride(0) if rg_contig is not None else 0,
+            rg_contig.stride(1) if rg_contig is not None else 0,
+            out.stride(0),
+            out.stride(1),
+            float(eta),
+            float(alpha),
+            HAS_RESTORE=bool(restore_grad is not None),
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+            BLOCK_K=BLOCK_K,
+        )
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        (inv_null_proj,) = ctx.saved_tensors
+        grad_w = grad_output.clone()
+        grad_grad_phi = ctx.eta * torch.matmul(grad_output.float(), inv_null_proj.t().float()).to(grad_output.dtype)
+        grad_inv = None
+        grad_restore = -ctx.alpha * grad_output.clone() if ctx.has_restore else None
+        return grad_w, grad_grad_phi, grad_inv, None, grad_restore, None
+
+
+def fused_hnc_nullspace_step_triton(
+    w: torch.Tensor,
+    grad_phi: torch.Tensor,
+    inv_null_proj: torch.Tensor,
+    eta: float,
+    restore_grad: torch.Tensor | None = None,
+    alpha: float = 0.0,
+) -> torch.Tensor:
+    """Execute fused HNC null-space step with automated Pascal SM < 7.0 fallback."""
+    if not w.is_cuda or not HAS_TRITON:
+        return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
+    is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank")
+    if not is_suitable:
+        return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
+    return _FusedHNCNullSpaceStepFn.apply(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
 
 __all__ = [
@@ -1954,6 +2133,8 @@ __all__ = [
     'fused_down_up_gemm_bias_triton',
     'fused_residual_svd_gemm_triton',
     'fused_svd_lora_sparse_attn_triton',
+    'fused_hnc_nullspace_step_triton',
+    'fused_hnc_nullspace_step_pytorch',
 ]
 
 

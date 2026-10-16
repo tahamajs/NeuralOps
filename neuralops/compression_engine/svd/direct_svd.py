@@ -133,6 +133,8 @@ class DirectSVDCompressor(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
+        self.use_hnc_continuation = bool(kwargs.get("use_hnc_continuation", False))
+        self.probe_inputs = kwargs.get("probe_inputs", None)
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -381,6 +383,23 @@ class DirectSVDCompressor(BaseCompressor):
         if not target_layers:
             logger.warning("DirectSVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
+
+        # If HNC continuation is requested and probe inputs are provided, pre-compress singular tail in null space
+        if self.use_hnc_continuation and self.probe_inputs is not None:
+            try:
+                from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
+                hnc_engine = HessianNullSpaceSVDContinuation(
+                    self.model,
+                    target_rank=self.rank or 32,
+                    mode="kronecker",
+                    walk_steps=20,
+                    step_size_eta=0.05,
+                    restore_steps_m=6,
+                )
+                hnc_res = hnc_engine.steer_and_compress(self.probe_inputs)
+                logger.info("DirectSVD: HNC Null Space Continuation pre-steering completed: %s", hnc_res.get("status"))
+            except Exception as e_hnc:
+                logger.warning("DirectSVD: HNC Null Space Continuation skipped due to: %s", e_hnc)
 
         # Handle freezing of non-target layers when target_attention_only=True
         if self.target_attention_only:

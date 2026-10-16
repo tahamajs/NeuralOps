@@ -155,11 +155,13 @@ from .distillation.multi_level_kd import (
     MiniLMValueRelationKDLoss,
     BlockwiseOperatorCloningLoss,
     LinearCKALoss,
+    SmoothMaxOverLayersCKASteeringLoss,
 )
 from .surgery_schedules.mohawk import (
     AttentionHomotopyScheduler,
     AlphaBlendingAttentionWrapper,
     MOHAWKTrainer,
+    HNCContinuationTrainer,
 )
 from .peft_recovery.svd_adapters import (
     PiSSALinear,
@@ -185,9 +187,11 @@ __all__ += [
     "MiniLMValueRelationKDLoss",
     "BlockwiseOperatorCloningLoss",
     "LinearCKALoss",
+    "SmoothMaxOverLayersCKASteeringLoss",
     "AttentionHomotopyScheduler",
     "AlphaBlendingAttentionWrapper",
     "MOHAWKTrainer",
+    "HNCContinuationTrainer",
     "PiSSALinear",
     "DoRALinear",
     "inject_pissa_adapters",
