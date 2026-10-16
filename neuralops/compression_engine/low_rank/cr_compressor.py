@@ -383,8 +383,9 @@ class CRCompressor(BaseCompressor):
 
             # Parameter reduction check: r * (in_f + out_f) must be less than in_f * out_f
             target_r = min(self.rank, max_rank)
-            if target_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
-                target_r = max(1, int(0.65 * (in_f * out_f) / (in_f + out_f)))
+            if self.cfg is None and hasattr(self, "_auto_rank") and self._auto_rank:
+                if target_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
+                    target_r = max(1, int(0.65 * (in_f * out_f) / (in_f + out_f)))
 
             cur_r = target_r
             best_cr_layer = None
@@ -392,26 +393,15 @@ class CRCompressor(BaseCompressor):
             best_r = cur_r
             norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
 
-            for _ in range(self.max_retries + 1):
-                try:
-                    candidate = CRLinear.from_linear(target_mod, rank=cur_r)
-                    recon_w = candidate.get_weight().float()
-                    err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
-                    if err < best_err:
-                        best_err = err
-                        best_cr_layer = candidate
-                        best_r = cur_r
-
-                    if err <= self.max_error:
-                        break
-
-                    next_r = min(int(cur_r * 1.5), max_rank - 1)
-                    if next_r <= cur_r or next_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
-                        break
-                    cur_r = next_r
-                except Exception as ex:
-                    logger.debug("CR decomposition error on %s with rank %d: %s", name, cur_r, ex)
-                    break
+            try:
+                candidate = CRLinear.from_linear(target_mod, rank=cur_r)
+                recon_w = candidate.get_weight().float()
+                err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
+                best_err = err
+                best_cr_layer = candidate
+                best_r = cur_r
+            except Exception as ex:
+                logger.debug("CR decomposition error on %s with rank %d: %s", name, cur_r, ex)
 
             if best_err > self.max_error:
                 logger.warning(
