@@ -64,7 +64,6 @@ __global__ void block_sparse_attn_warp_kernel(
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
     for (int kv_b = 0; kv_b < num_kv_blocks; ++kv_b) {
-        // Fast skip via __ldg
         const int is_active = __ldg(&block_mask[q_block_idx * num_kv_blocks + kv_b]);
         if (!is_active) {
             continue;
@@ -196,6 +195,14 @@ void block_sparse_attn_fwd_cuda(
             LAUNCH_SPARSE_KERNEL(64, 32);
         } else if (D == 128) {
             LAUNCH_SPARSE_KERNEL(128, 32);
+        }
+    } else if (block_size == 64) {
+        if (D == 32) {
+            LAUNCH_SPARSE_KERNEL(32, 64);
+        } else if (D == 64) {
+            LAUNCH_SPARSE_KERNEL(64, 64);
+        } else if (D == 128) {
+            LAUNCH_SPARSE_KERNEL(128, 64);
         }
     }
 
