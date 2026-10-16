@@ -254,7 +254,10 @@ def paged_recurrent_state_step_pytorch(
         out: [B, H, D]
     """
     B, H, D = q_t.shape
-    phys_pages = block_tables[:, page_slot]  # [B]
+    if block_tables.dim() == 1:
+        phys_pages = block_tables  # [B]
+    else:
+        phys_pages = block_tables[:, page_slot]  # [B]
     # S: [B, H, D, D]
     S_curr = page_pool[phys_pages]
     kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))  # [B, H, D, D]
