@@ -8,7 +8,12 @@ Provides transparent 3-level fallback: CUDA C++ -> Triton JIT -> PyTorch Referen
 from __future__ import annotations
 
 from neuralops.core.cuda_kernels._bindings import load_cuda_module, get_cuda_arch_flags
-from neuralops.core.cuda_kernels._fallback import dispatch
+from neuralops.core.cuda_kernels._fallback import (
+    dispatch,
+    force_kernel_backend,
+    get_dispatch_stats,
+    reset_dispatch_stats,
+)
 from neuralops.core.cuda_kernels._utils import (
     is_cuda_available,
     get_device_capability,
@@ -19,6 +24,9 @@ __all__ = [
     "load_cuda_module",
     "get_cuda_arch_flags",
     "dispatch",
+    "force_kernel_backend",
+    "get_dispatch_stats",
+    "reset_dispatch_stats",
     "is_cuda_available",
     "get_device_capability",
     "check_cuda_error",

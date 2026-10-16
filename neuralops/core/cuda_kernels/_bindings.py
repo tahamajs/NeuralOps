@@ -1,9 +1,10 @@
 """
-CUDA C++ JIT build loader with persistent compilation caching on /mnt/c.
+CUDA C++ JIT build loader with persistent compilation caching on /mnt/c and negative caching.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import shutil
@@ -41,7 +42,8 @@ try:
 except Exception as e:
     logger.debug(f"Could not create cache dir {_CACHE_DIR}: {e}")
 
-_LOADED_MODULES: dict[str, Any] = {}
+_LOADED_MODULES: dict[Any, Any] = {}
+_FAILED_MODULES: set[str] = set()
 
 
 def get_cuda_arch_flags() -> list[str]:
@@ -61,52 +63,67 @@ def get_cuda_arch_flags() -> list[str]:
         return ["-arch=sm_80"]
 
 
-import hashlib
-
 def load_cuda_module(
     name: str,
     cpp_sources: str,
     cuda_sources: str,
     functions: list[str],
     extra_cuda_cflags: list[str] | None = None,
+    extra_cflags: list[str] | None = None,
     force_rebuild: bool = False,
 ) -> Any | None:
     """
-    Load a CUDA C++ module via load_inline with content-hash caching and fallback.
+    Load a CUDA C++ module via load_inline with content-hash caching, negative caching, and fallback.
     """
+    if not force_rebuild and name in _FAILED_MODULES:
+        return None
+
     if not torch.cuda.is_available():
         logger.debug(f"CUDA unavailable; skipping CUDA compilation for '{name}'")
+        _FAILED_MODULES.add(name)
         return None
 
     try:
         major, _ = torch.cuda.get_device_capability()
         if major < 7:
             logger.info(f"Compute capability {major}.x < 7.0 (pre-Volta); skipping CUDA compilation for '{name}'")
+            _FAILED_MODULES.add(name)
             return None
     except Exception:
+        _FAILED_MODULES.add(name)
         return None
 
     if shutil.which("nvcc") is None:
         logger.warning(f"nvcc executable not found in PATH; skipping CUDA compilation for '{name}'")
+        _FAILED_MODULES.add(name)
         return None
 
+    root_include = str(Path(__file__).parent.resolve())
     arch_flags = get_cuda_arch_flags()
-    base_cflags = ["-O3", "--use_fast_math", "-lineinfo"]
+    base_cuda_cflags = [
+        "-O3",
+        "--use_fast_math",
+        "-lineinfo",
+        f"-I{root_include}",
+    ]
     if os.path.exists("/usr/local/cuda/include"):
-        base_cflags.append("-I/usr/local/cuda/include")
+        base_cuda_cflags.append("-I/usr/local/cuda/include")
 
-    all_cuda_cflags = base_cflags + arch_flags + (extra_cuda_cflags or [])
-    cpp_cflags = ["-O3"]
+    all_cuda_cflags = base_cuda_cflags + arch_flags + (extra_cuda_cflags or [])
+    cpp_cflags = ["-O3", f"-I{root_include}"] + (extra_cflags or [])
     if os.path.exists("/usr/local/cuda/include"):
         cpp_cflags.append("-I/usr/local/cuda/include")
 
     hash_str = hashlib.sha256(
-        (cpp_sources + "\n" + cuda_sources + "\n" + "".join(all_cuda_cflags)).encode("utf-8")
+        (cpp_sources + "\n" + cuda_sources + "\n" + "".join(all_cuda_cflags) + "\n" + "".join(cpp_cflags)).encode("utf-8")
     ).hexdigest()[:8]
     cache_key = (name, hash_str)
 
-    if not force_rebuild and cache_key in _LOADED_MODULES:
-        return _LOADED_MODULES[cache_key]
+    if not force_rebuild:
+        if cache_key in _LOADED_MODULES:
+            return _LOADED_MODULES[cache_key]
+        if name in _LOADED_MODULES:
+            return _LOADED_MODULES[name]
 
     try:
         mod_ext_name = f"{name}_{hash_str}"
@@ -129,5 +146,5 @@ def load_cuda_module(
         return module
     except Exception as e:
         logger.warning(f"❌ CUDA C++ compilation failed for '{name}': {e}")
+        _FAILED_MODULES.add(name)
         return None
-
