@@ -188,11 +188,9 @@ class ADMMPruner(BaseCompressor):
         super().__init__(model, name="admm_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config")
 
-        rank = kwargs.get("target_rank", kwargs.get("rank", None))
-        if rank is not None:
-            r = float(rank)
-            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
-            self.sparsity = 1.0 - p_keep
+        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        if self.rank is not None:
+            self.sparsity = 0.5
         else:
             self.sparsity = max(
                 0.0,
@@ -511,12 +509,13 @@ class ADMMPruner(BaseCompressor):
         return result
 
     # ------------------------------------------------------------------
-    def _project_sparse(self, candidate: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def _project_sparse(self, candidate: torch.Tensor, layer_sparsity: float | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Project candidate (typically W + U) onto the sparse constraint set.
         Returns (pruned_tensor, binary_mask).
         AD-FIX-11: saliency is computed from the *candidate*, not from W.
         """
+        eff_sp = layer_sparsity if layer_sparsity is not None else self.sparsity
         if self.structured_24:
             saliency = candidate.abs()
             pruned, raw_mask = apply_24_structured_mask(candidate, saliency=saliency, dim=1)
@@ -529,7 +528,7 @@ class ADMMPruner(BaseCompressor):
             return pruned, mask
         elif self.block_size != (1, 1):
             pruned, raw_mask = apply_block_mask(
-                candidate, block_size=self.block_size, sparsity=self.sparsity
+                candidate, block_size=self.block_size, sparsity=eff_sp
             )
             if raw_mask is None:
                 mask = (pruned.abs() > 1e-12).float()
@@ -540,7 +539,7 @@ class ADMMPruner(BaseCompressor):
             return pruned, mask
         else:
             flat = candidate.abs().reshape(-1)
-            k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
+            k = max(1, int(flat.numel() * (1.0 - eff_sp)))
             thr = torch.topk(flat, k, largest=True).values[-1]
             mask = (candidate.abs() >= thr).float()
             return candidate * mask, mask
@@ -608,8 +607,14 @@ class ADMMPruner(BaseCompressor):
                 X_calib = None
                 Y0 = None
 
+            if self.rank is not None:
+                p_keep = max(0.05, min(0.98, float(self.rank * (in_features + out_features)) / max(in_features * out_features, 1)))
+                layer_sparsity = 1.0 - p_keep
+            else:
+                layer_sparsity = self.sparsity
+
             # Baseline projection.
-            Z0, mask0 = self._project_sparse(W0)
+            Z0, mask0 = self._project_sparse(W0, layer_sparsity=layer_sparsity)
             W_sparse_0 = W0 * mask0
             best_W_sparse = W_sparse_0
             best_mask = mask0.clone()  # AD-FIX-04
@@ -642,7 +647,7 @@ class ADMMPruner(BaseCompressor):
                         Z_prev = Z.clone()
 
                         # 1. Sparse projection.
-                        Z, mask = self._project_sparse(W + U)
+                        Z, mask = self._project_sparse(W + U, layer_sparsity=layer_sparsity)
 
                         # 2. Closed-form W update.
                         W = (W0 + rho * (Z - U)) / (1.0 + rho)
