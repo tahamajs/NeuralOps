@@ -78,6 +78,11 @@ def _flash_gqa_triton_fallback(
     is_causal: bool = False,
     scale: float | None = None,
 ) -> torch.Tensor | None:
+    # Triton online-softmax kernel requires power-of-2 head dimensions (32, 64, 128)
+    # and equal sequence lengths
+    if q.shape[-1] not in (32, 64, 128) or q.shape[2] != k.shape[2]:
+        return None
+
     try:
         from neuralops.core.triton_kernels.gqa import fused_weighted_gqa_online_softmax_triton
         return fused_weighted_gqa_online_softmax_triton(
