@@ -175,7 +175,10 @@ def main():
     q_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     k_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     v_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
-    bench_pair("cosformer", f"(T={seq_len})", cosformer_triton_fwd, cosformer_pytorch_fwd, q_cos, k_cos, v_cos)
+    scale_cos = 64.0 ** -0.5
+    q_cos_act = F.elu(q_cos.float() * scale_cos) + 1.0
+    k_cos_act = F.elu(k_cos.float()) + 1.0
+    bench_pair("cosformer", f"(T={seq_len})", lambda q, k, v: cosformer_triton_fwd(q, k, v, is_causal=False), lambda q, k, v: cosformer_pytorch_fwd(q, k, v, is_causal=False), q_cos_act, k_cos_act, v_cos.float())
 
     # 12. fused_ce
     from neuralops.core.triton_kernels.fused_ce import (
@@ -207,10 +210,10 @@ def main():
     print("\n--- 14. selective_scan (Mamba State-Space Scan) ---")
     seq_len = 512
     u_ssm = torch.randn(2, 64, seq_len, device=device, dtype=dtype)
-    delta_ssm = torch.randn(2, 64, seq_len, device=device, dtype=dtype)
-    A_ssm = torch.randn(64, 16, device=device, dtype=dtype)
-    B_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype)
-    C_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype)
+    delta_ssm = F.softplus(torch.randn(2, 64, seq_len, device=device, dtype=dtype)) * 0.05
+    A_ssm = -torch.rand(64, 16, device=device, dtype=dtype) - 0.1
+    B_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype) * 0.1
+    C_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype) * 0.1
     bench_pair("selective_scan", f"(T={seq_len})", selective_scan_fn, selective_scan_ref, u_ssm, delta_ssm, A_ssm, B_ssm, C_ssm)
 
     # 15. fms_scan
@@ -235,7 +238,7 @@ def main():
     block_tables = torch.arange(num_blocks, device=device, dtype=torch.int32).view(2, 64)
     context_lens = torch.full((2,), 64 * block_size, device=device, dtype=torch.int32)
     q_pa = torch.randn(2, num_heads, head_dim, device=device, dtype=dtype)
-    bench_pair("paged_attention", "(B=2, H=4, d=64)", paged_attention_kernel, paged_attention_pytorch, q_pa, k_cache, v_cache, block_tables, context_lens, 1.0 / (head_dim ** 0.5))
+    bench_pair("paged_attention", "(B=2, H=4, d=64)", paged_attention_kernel, paged_attention_pytorch, q_pa, k_cache, v_cache, block_tables, context_lens, block_size=block_size)
 
     # 17. gqa: fused_mqa_bias_scale
     from neuralops.core.triton_kernels.gqa import (
