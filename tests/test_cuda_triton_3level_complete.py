@@ -916,3 +916,498 @@ def test_fms_scan_parity(device):
         out_cuda = fms_scan(q, k, v, decay)
 
     assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "FMS scan mismatch"
+
+
+# ==============================================================================
+# 29. RMSNorm Parity
+# ==============================================================================
+def test_rmsnorm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import rmsnorm
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, D, device=device, dtype=torch.float32)
+    weight = torch.randn(D, device=device, dtype=torch.float32)
+    residual = torch.randn(M, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = rmsnorm(x, weight, residual=residual, eps=1e-6)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = rmsnorm(x, weight, residual=residual, eps=1e-6)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "RMSNorm mismatch"
+
+
+# ==============================================================================
+# 30. LayerNorm Parity
+# ==============================================================================
+def test_layernorm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import layernorm
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, D, device=device, dtype=torch.float32)
+    weight = torch.randn(D, device=device, dtype=torch.float32)
+    bias = torch.randn(D, device=device, dtype=torch.float32)
+    residual = torch.randn(M, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = layernorm(x, weight, bias=bias, residual=residual, eps=1e-6)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = layernorm(x, weight, bias=bias, residual=residual, eps=1e-6)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "LayerNorm mismatch"
+
+
+# ==============================================================================
+# 31. SwiGLU Parity
+# ==============================================================================
+def test_swiglu_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import swiglu
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, 2 * D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = swiglu(x)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = swiglu(x)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "SwiGLU mismatch"
+
+
+# ==============================================================================
+# 32. Fast-GELU Parity
+# ==============================================================================
+def test_fast_gelu_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fast_gelu
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fast_gelu(x)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fast_gelu(x)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fast-GELU mismatch"
+
+
+# ==============================================================================
+# 33. Fused Softplus Parity
+# ==============================================================================
+def test_fused_softplus_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_softplus
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fused_softplus(x, beta=1.5, threshold=15.0)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fused_softplus(x, beta=1.5, threshold=15.0)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fused Softplus mismatch"
+
+
+# ==============================================================================
+# 34. Gated Linear Attention (GLA) Scan Parity
+# ==============================================================================
+def test_gla_scan_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import gla_scan
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 2, 16, 16
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    alpha = torch.rand(B, H, L, device=device, dtype=torch.float32) * 0.1 + 0.9
+
+    with force_kernel_backend("pytorch"):
+        out_py = gla_scan(q, k, v, alpha=alpha)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = gla_scan(q, k, v, alpha=alpha)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "GLA Scan mismatch"
+
+
+# ==============================================================================
+# 35. Causal 1D Convolution Parity
+# ==============================================================================
+def test_causal_conv1d_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import causal_conv1d
+
+    torch.manual_seed(42)
+    B, D, L = 2, 16, 32
+    Kw = 4
+    x = torch.randn(B, D, L, device=device, dtype=torch.float32)
+    weight = torch.randn(D, Kw, device=device, dtype=torch.float32)
+    bias = torch.randn(D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = causal_conv1d(x, weight, bias=bias, silu_activation=True)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = causal_conv1d(x, weight, bias=bias, silu_activation=True)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Causal Conv1d mismatch"
+
+
+# ==============================================================================
+# 36. Recurrent GLA Step Parity
+# ==============================================================================
+def test_recurrent_gla_step_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import recurrent_gla_step
+
+    torch.manual_seed(42)
+    B, H, Dk, Dv = 2, 2, 16, 16
+    q_t = torch.randn(B, H, Dk, device=device, dtype=torch.float32)
+    k_t = torch.randn(B, H, Dk, device=device, dtype=torch.float32)
+    v_t = torch.randn(B, H, Dv, device=device, dtype=torch.float32)
+    s_state = torch.zeros(B, H, Dk, Dv, device=device, dtype=torch.float32)
+    alpha_t = torch.tensor([[0.95, 0.9], [0.85, 0.92]], device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py, s_py = recurrent_gla_step(q_t, k_t, v_t, s_state.clone(), alpha_t)
+
+    with force_kernel_backend("cuda"):
+        out_cuda, s_cuda = recurrent_gla_step(q_t, k_t, v_t, s_state.clone(), alpha_t)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Recurrent GLA step out mismatch"
+    assert torch.allclose(s_cuda, s_py, atol=1e-3, rtol=1e-3), "Recurrent GLA step state mismatch"
+
+
+# ==============================================================================
+# 37. Recurrent HGRN2 Step Parity
+# ==============================================================================
+def test_recurrent_hgrn2_step_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import recurrent_hgrn2_step
+
+    torch.manual_seed(42)
+    B, D = 4, 32
+    x_t = torch.randn(B, D, device=device, dtype=torch.float32)
+    g_t = torch.randn(B, D, device=device, dtype=torch.float32)
+    alpha_t = torch.rand(B, D, device=device, dtype=torch.float32) * 0.2 + 0.8
+    h_prev = torch.zeros(B, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py, h_py = recurrent_hgrn2_step(x_t, g_t, alpha_t, h_prev.clone())
+
+    with force_kernel_backend("cuda"):
+        out_cuda, h_cuda = recurrent_hgrn2_step(x_t, g_t, alpha_t, h_prev.clone())
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Recurrent HGRN2 step out mismatch"
+    assert torch.allclose(h_cuda, h_py, atol=1e-4, rtol=1e-4), "Recurrent HGRN2 step state mismatch"
+
+
+# ==============================================================================
+# 38. Fused Dropout + Add Parity
+# ==============================================================================
+def test_fused_dropout_add_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_dropout_add
+
+    torch.manual_seed(42)
+    M, D = 16, 64
+    x = torch.randn(M, D, device=device, dtype=torch.float32)
+    residual = torch.randn(M, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fused_dropout_add(x, residual, p=0.0, training=False)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fused_dropout_add(x, residual, p=0.0, training=False)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fused Dropout + Add mismatch"
+
+
+# ==============================================================================
+# 39. Variable-Length Attention Parity
+# ==============================================================================
+def test_varlen_attention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import varlen_attention
+
+    torch.manual_seed(42)
+    seqlens = [8, 12]
+    cu_q = torch.tensor([0, 8, 20], device=device, dtype=torch.int32)
+    cu_k = torch.tensor([0, 8, 20], device=device, dtype=torch.int32)
+    total_tokens = 20
+    H, D = 2, 16
+
+    q = torch.randn(total_tokens, H, D, device=device, dtype=torch.float32)
+    k = torch.randn(total_tokens, H, D, device=device, dtype=torch.float32)
+    v = torch.randn(total_tokens, H, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = varlen_attention(q, k, v, cu_q, cu_k, 12, 12, is_causal=True)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = varlen_attention(q, k, v, cu_q, cu_k, 12, 12, is_causal=True)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Varlen Attention mismatch"
+
+
+# ==============================================================================
+# 40. Fused Cross-Attention Parity
+# ==============================================================================
+def test_cross_attention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import cross_attention
+
+    torch.manual_seed(42)
+    B, H, L_q, L_kv, D = 2, 2, 8, 16, 16
+    q = torch.randn(B, H, L_q, D, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L_kv, D, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L_kv, D, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = cross_attention(q, k, v)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = cross_attention(q, k, v)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Cross-Attention mismatch"
+
+
+# ==============================================================================
+# 41. Rotational Low-Rank SVD Parity
+# ==============================================================================
+def test_rotational_svd_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import rotational_svd
+
+    torch.manual_seed(42)
+    M, K, R, N = 16, 32, 8, 32
+    x = torch.randn(M, K, device=device, dtype=torch.float32)
+    r_in = torch.randn(K, K, device=device, dtype=torch.float32)
+    v_r = torch.randn(R, K, device=device, dtype=torch.float32)
+    u_r = torch.randn(N, R, device=device, dtype=torch.float32)
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = rotational_svd(x, r_in, v_r, u_r, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = rotational_svd(x, r_in, v_r, u_r, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Rotational SVD mismatch"
+
+
+# ==============================================================================
+# 42. Block-Diagonal GEMM Parity
+# ==============================================================================
+def test_block_diag_matmul_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import block_diag_matmul
+
+    torch.manual_seed(42)
+    M, G, Kg, Ng = 16, 4, 16, 16
+    x = torch.randn(M, G * Kg, device=device, dtype=torch.float32)
+    weights = torch.randn(G, Ng, Kg, device=device, dtype=torch.float32)
+    bias = torch.randn(G, Ng, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = block_diag_matmul(x, weights, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = block_diag_matmul(x, weights, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Block-Diagonal GEMM mismatch"
+
+
+# ==============================================================================
+# 43. 1.58-Bit Ternary GEMM Parity
+# ==============================================================================
+def test_ternary_gemm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import ternary_gemm
+
+    torch.manual_seed(42)
+    M, K, N = 16, 32, 16
+    x = torch.randn(M, K, device=device, dtype=torch.float32)
+    w_packed = torch.randint(0, 255, (N, K // 4), device=device, dtype=torch.uint8)
+    scales = torch.rand(N, device=device, dtype=torch.float32) + 0.1
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = ternary_gemm(x, w_packed, scales, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = ternary_gemm(x, w_packed, scales, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Ternary GEMM mismatch"
+
+
+# ==============================================================================
+# 44. FP4 Quantized GEMM Parity
+# ==============================================================================
+def test_fp4_gemm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fp4_gemm
+
+    torch.manual_seed(42)
+    M, K, N = 16, 32, 16
+    x = torch.randn(M, K, device=device, dtype=torch.float32)
+    w_packed = torch.randint(0, 255, (N, K // 2), device=device, dtype=torch.uint8)
+    scales = torch.rand(N, device=device, dtype=torch.float32) + 0.1
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fp4_gemm(x, w_packed, scales, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fp4_gemm(x, w_packed, scales, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "FP4 GEMM mismatch"
+
+
+# ==============================================================================
+# 45. Channel Shuffle Parity
+# ==============================================================================
+def test_channel_shuffle_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import channel_shuffle
+
+    torch.manual_seed(42)
+    B, C, L = 2, 16, 32
+    x = torch.randn(B, C, L, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = channel_shuffle(x, groups=4)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = channel_shuffle(x, groups=4)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Channel Shuffle mismatch"
+
+
+# ==============================================================================
+# 46. Speculative Verification Parity
+# ==============================================================================
+def test_speculative_verify_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import speculative_verify
+
+    torch.manual_seed(42)
+    B, K = 4, 8
+    target = torch.randint(0, 100, (B, K), device=device, dtype=torch.int64)
+    draft = target.clone()
+    # Inject mismatches
+    draft[0, 3] = 999
+    draft[1, 1] = 999
+    draft[2, :] = target[2, :]  # all match
+    draft[3, 0] = 999  # first mismatch
+
+    with force_kernel_backend("pytorch"):
+        mask_py, count_py = speculative_verify(draft, target)
+
+    with force_kernel_backend("cuda"):
+        mask_cuda, count_cuda = speculative_verify(draft, target)
+
+    assert torch.equal(mask_cuda, mask_py), "Speculative verify mask mismatch"
+    assert torch.equal(count_cuda, count_py), "Speculative verify count mismatch"
+
+
+# ==============================================================================
+# 47. ALiBi Attention Parity
+# ==============================================================================
+def test_alibi_attention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import alibi_attention
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 4, 16, 16
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    slopes = torch.tensor([0.25, 0.125, 0.0625, 0.03125], device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = alibi_attention(q, k, v, slopes, is_causal=True)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = alibi_attention(q, k, v, slopes, is_causal=True)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "ALiBi Attention mismatch"
+
+
+# ==============================================================================
+# 48. Multi-Scale Retention (RetNet) Parity
+# ==============================================================================
+def test_multi_scale_retention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import multi_scale_retention
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 2, 16, 16
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    gammas = torch.tensor([0.9, 0.95], device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = multi_scale_retention(q, k, v, gammas)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = multi_scale_retention(q, k, v, gammas)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Multi-Scale Retention mismatch"
