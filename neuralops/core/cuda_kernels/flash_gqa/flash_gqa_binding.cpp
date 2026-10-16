@@ -30,20 +30,16 @@ torch::Tensor flash_gqa_fwd(
                 "flash_gqa: num_heads (q) must be divisible by num_kv_heads (k)");
 
     const int D = static_cast<int>(q.size(3));
-    TORCH_CHECK(D == 32 || D == 64 || D == 128,
-                "flash_gqa: only head dimensions 32, 64, and 128 are supported by CUDA kernel");
+    TORCH_CHECK(D == 32 || D == 64 || D == 128 || D == 256,
+                "flash_gqa: only head dimensions 32, 64, 128, and 256 are supported by CUDA kernel");
 
-    auto orig_dtype = q.scalar_type();
-    auto q_c = (orig_dtype == torch::kFloat32 ? q : q.to(torch::kFloat32)).contiguous();
-    auto k_c = (k.scalar_type() == torch::kFloat32 ? k : k.to(torch::kFloat32)).contiguous();
-    auto v_c = (v.scalar_type() == torch::kFloat32 ? v : v.to(torch::kFloat32)).contiguous();
+    auto q_c = q.contiguous();
+    auto k_c = k.to(q.scalar_type()).contiguous();
+    auto v_c = v.to(q.scalar_type()).contiguous();
 
     auto out = torch::empty_like(q_c);
 
     flash_gqa_fwd_cuda(out, q_c, k_c, v_c, is_causal, static_cast<float>(scale));
 
-    if (orig_dtype != torch::kFloat32) {
-        return out.to(orig_dtype);
-    }
     return out;
 }
