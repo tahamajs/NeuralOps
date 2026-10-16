@@ -110,7 +110,7 @@ class DobiSVDLinearLayer(nn.Module):
 
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
             try:
-                from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
+                from neuralops.core.triton_kernels.low_rank import triton_fused_lowrank_gated_gemm
                 out = triton_fused_lowrank_gated_gemm(x_flat, self.V, self.U, alpha=self.gate, b_drift=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception as e:
