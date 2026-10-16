@@ -77,8 +77,9 @@ def test_kernel_2_fused_lowrank_sparse_gemm(device):
     V = torch.randn(r, K, device=device, dtype=torch.float16)
     U = torch.randn(N, r, device=device, dtype=torch.float16)
     # 5% sparse outlier matrix
-    s = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).float()
+    s = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(torch.float16)
     bias = torch.randn(N, device=device, dtype=torch.float16)
+
 
     out_ref = triton_fused_lowrank_sparse_gemm_pytorch_ref(x, V, U, s=s, bias=bias)
     out_tri = triton_fused_lowrank_sparse_gemm(x, V, U, s=s, bias=bias)
