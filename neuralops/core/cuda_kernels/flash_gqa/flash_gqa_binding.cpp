@@ -38,7 +38,7 @@ torch::Tensor flash_gqa_fwd(
     auto k_c = (k.scalar_type() == torch::kFloat32 ? k : k.to(torch::kFloat32)).contiguous();
     auto v_c = (v.scalar_type() == torch::kFloat32 ? v : v.to(torch::kFloat32)).contiguous();
 
-    auto out = torch::zeros_like(q_c);
+    auto out = torch::empty_like(q_c);
 
     flash_gqa_fwd_cuda(out, q_c, k_c, v_c, is_causal, static_cast<float>(scale));
 
