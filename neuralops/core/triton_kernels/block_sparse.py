@@ -194,9 +194,9 @@ import torch.nn.functional as F
 if HAS_TRITON and tl is not None:
     @triton.autotune(
         configs=[
-            triton.Config({"BLOCK_M": 32, "BLOCK_N": 32}, num_stages=2, num_warps=2),
-            triton.Config({"BLOCK_M": 64, "BLOCK_N": 32}, num_stages=3, num_warps=4),
-            triton.Config({"BLOCK_M": 32, "BLOCK_N": 64}, num_stages=3, num_warps=4),
+            triton.Config({}, num_stages=2, num_warps=2),
+            triton.Config({}, num_stages=3, num_warps=4),
+            triton.Config({}, num_stages=4, num_warps=4),
         ],
         key=["L", "D"],
     )
@@ -361,10 +361,10 @@ def triton_block_sparse_streaming_attn(
 
     out = torch.empty_like(v)
 
-    grid = lambda META: (
+    grid = (
         B,
         H,
-        triton.cdiv(L, META["BLOCK_M"]),
+        triton.cdiv(L, block_size),
     )
 
     q_c = q.contiguous()
@@ -384,6 +384,8 @@ def triton_block_sparse_streaming_attn(
         D=D,
         K_ACTIVE=K_ACTIVE,
         BLOCK_SIZE=block_size,
+        BLOCK_M=block_size,
+        BLOCK_N=block_size,
         sm_scale=sm_scale,
         stride_qb=q_c.stride(0),
         stride_qh=q_c.stride(1),
