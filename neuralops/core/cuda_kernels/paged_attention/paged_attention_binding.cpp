@@ -22,7 +22,7 @@ torch::Tensor paged_attention_v1(
     int64_t max_context_len,
     double scale
 ) {
-    auto out = torch::empty_like(q);
+    auto out = torch::zeros_like(q);
     paged_attention_v1_cuda(
         out,
         q,
