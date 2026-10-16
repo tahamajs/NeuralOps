@@ -62,9 +62,12 @@ def replace_attention(
     Returns:
         The model with attention layers replaced in-place.
     """
-    # Allow passing target_module or attention as an instantiated nn.Module
+    # Allow passing target_module or attention as an instantiated nn.Module or string alias
     target_mod = kwargs.pop("target_module", None)
-    if isinstance(attention, nn.Module):
+    if isinstance(target_mod, str) and not attention:
+        attention = target_mod
+        target_mod = None
+    elif isinstance(attention, nn.Module):
         target_mod = attention
         attention = None
 
