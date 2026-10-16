@@ -84,6 +84,8 @@ def load_cuda_module(
     all_cuda_cflags = base_cflags + arch_flags + (extra_cuda_cflags or [])
 
     try:
+        mod_cache_dir = Path(_CACHE_DIR) / name
+        mod_cache_dir.mkdir(parents=True, exist_ok=True)
         module = load_inline(
             name=name,
             cpp_sources=cpp_sources,
@@ -93,7 +95,7 @@ def load_cuda_module(
             extra_cflags=["-O3"],
             verbose=False,
             with_cuda=True,
-            build_directory=_CACHE_DIR,
+            build_directory=str(mod_cache_dir),
         )
         _LOADED_MODULES[name] = module
         logger.info(f"✅ CUDA C++ module '{name}' loaded successfully")
