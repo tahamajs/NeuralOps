@@ -121,8 +121,8 @@ def main():
     from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
     print("\n--- 6. gla_scan (Gated Linear Attention Scan) ---")
     seq_len = 1024
-    q_gla = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
-    k_gla = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
+    q_gla = F.elu(torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)) + 1.0
+    k_gla = F.elu(torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)) + 1.0
     v_gla = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     g_gla = torch.sigmoid(torch.randn(2, 4, seq_len, device=device, dtype=dtype)).clamp(1e-4, 1.0 - 1e-4)
     bench_pair("gla_scan", f"(T={seq_len})", gla_scan, gla_scan_pytorch, q_gla, k_gla, v_gla, g_gla)
