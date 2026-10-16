@@ -334,6 +334,8 @@ class KroneckerLinear(nn.Module):
             if base_r * 4 <= max_allowed_rank:
                 candidate_ranks.append(base_r * 4)
 
+        try:
+            U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
             best_r = base_r
             best_U_r = None
             best_V_r = None
