@@ -90,6 +90,134 @@
 \caption{مقایسه دقت و اوج مصرف حافظه ماژول‌های برتر ارزیابی‌شده در برابر مکانیزم استاندارد (Baseline)}
 \end{figure}
 
+\chapter{مبانی نظری، قضایای ریاضی و چارچوب بهینه‌سازی سخت‌افزاری}
+\label{chap:math_and_hardware}
+
+در این بخش، اصول ریاضی و قضایای بنیادین حاکم بر انقباض رتبه در ترنسفورمرها، قانون پایستگی بودجه در توجه پرسمان گروه‌بندی‌شده وزنی، مهار خطای انباشتی در فضای پوچ هسین، و معماری شتاب‌دهی سخت‌افزاری تریتون تدوین می‌گردد.
+
+\section{قضایای بنیادین فشرده‌سازی و انقباض رتبه}
+
+\begin{theorem}[کران فروپاشی رتبه زیرفضا در توجه کم‌مرتبه]
+\label{thm:subspace_collapse_summary}
+فرض کنید دنباله ورودی $X \in \mathbb{R}^{T \times d}$ از یک زیرفضای تحلیلی $k$-بعدی نشأت گرفته باشد ($k < d$). نگاشت‌های خطی پروجکشن با ماتریس‌های کم‌مرتبه $W_q, W_k, W_v \in \mathbb{R}^{d \times d}$ با رتبه حداکثر $r$ ($r < k$) تقریب زده می‌شوند. در این صورت، رتبه ماتریس بافت خروجی $\tilde{Y} = \tilde{A} X W_v$ مقید به رابطه زیر خواهد بود:
+\begin{equation}
+\text{rank}(\tilde{Y}) \le \min(T, r)
+\end{equation}
+علاوه بر این، انحراف بازنمایی زیرفضا دارای کران خطای تحلیلی اکرت-یانگ-میرسکی است:
+\begin{equation}
+\min_{\text{rank}(W_r) \le r} \| W - W_r \|_F^2 = \sum_{j=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2(W)
+\end{equation}
+که در آن $\sigma_j(W)$ نشان‌دهنده $j$-امین مقدار منفرد مرتب‌شده نزولی ماتریس وزن $W$ است.
+\end{theorem}
+
+\begin{theorem}[قانون پایستگی بودجه بر روی سیمپلکس احتمالاتی در WGQA]
+\label{thm:simplex_conservation_summary}
+در مکانیزم توجه پرسمان گروه‌بندی‌شده وزنی (\lr{WGQA})، به منظور پایستگی جرم احتمالی بر روی سیمپلکس:
+\begin{equation}
+\Delta^{G-1} = \left\{ \mathbf{w} \in \mathbb{R}^G \;\middle|\; w_g \ge 0, \sum_{g=1}^G w_g = 1 \right\}
+\end{equation}
+ضرایب تجمیع باید الزاماً از نگاشت سافت‌مکس با پارامتر دمای کالیبره‌شده عبور داده شوند:
+\begin{equation}
+\tilde{w}_g = \frac{\exp(\phi_g / \tau)}{\sum_{j=1}^G \exp(\phi_j / \tau)} \implies \sum_{g=1}^G \tilde{w}_g = 1 \quad (\forall t \in [1, T])
+\end{equation}
+این قضیه تضمین می‌کند که واریانس توزیع لاجیت‌ها $\text{Var}(S_{t, :}) = \mathcal{O}(1)$ باقی مانده و از انفجار پرپلکسیتی در مدل‌های دیکودر جلوگیری می‌گردد.
+\end{theorem}
+
+\begin{theorem}[بهینگی ادامه‌سازی فضای پوچ هسین (HNC-SVD)]
+\label{thm:hnc_optimality_summary}
+فرض کنید ماتریس هسین در همسایگی وزن اولیه ارضاکننده تقریب گاوس-نیوتن $G = J^\top J \succeq 0$ باشد. عملگر ادامه‌سازی فضای پوچ هسین گام بهینه‌سازی فشرده‌سازی کم‌مرتبه را به فضای پوچ ماتریس اطلاعات فیشر/هسین محدود می‌سازد:
+\begin{equation}
+\Delta \theta^* = -\left( I + \frac{1}{\mu} G \right)^{-1} \nabla \phi_{\text{SVD}}(\theta_0)
+\end{equation}
+این فرمول تضمین می‌نماید که بازنمایی تابعی مدل فشرده‌شده با مرتبه خطای $\mathcal{O}(\epsilon^2)$ بر روی منیفاولد بهینه بدون تخریب گرادیانی حفظ شود.
+\end{theorem}
+
+\begin{theorem}[انقباض بازگشتی تبدیل هاوس‌هولدر در Gated DeltaNet]
+\label{thm:deltanet_contraction_summary}
+در مکانیزم‌های بازگشتی حالت‌فضا، ماتریس حافظه تجمعی $S_t \in \mathbb{R}^{d \times d}$ از قاعده به‌روزرسانی زیر پیروی می‌کند:
+\begin{equation}
+S_t = S_{t-1} \left( I - \beta_t k_t k_t^\top \right) + v_t k_t^\top
+\end{equation}
+به ازای $\beta_t = \frac{2}{\|k_t\|_2^2}$، ماتریس $H_t$ متعامد متقارن بوده و با اعمال گیت میرایی $\alpha_t \in (0, 1)$، نگاشت به یک انقباض مطلق با ضریب $\alpha_t < 1$ تبدیل شده و پایداری عددی اسکن موازی تضمین می‌شود:
+\begin{equation}
+\| S_t \|_F \le \alpha_t \| S_{t-1} \|_F + \| v_t k_t^\top \|_F \implies \sup_t \|S_t\|_F < \infty
+\end{equation}
+\end{theorem}
+
+\begin{theorem}[چارچوب ۶ ستونی تقطیر دانش یکپارچه]
+\label{thm:six_pillar_kd_summary}
+فاز بازیابی گرادیانی سریع بر پایه تابع هدف شش‌ستونی زیر تعریف می‌شود:
+\begin{equation}
+\mathcal{L}_{\text{total}} = \lambda_1 \mathcal{L}_{\text{CE}} + \lambda_2 \mathcal{L}_{\text{KL}}^{\text{logits}} + \lambda_3 \mathcal{L}_{\text{CKA}}^{\text{hidden}} + \lambda_4 \mathcal{L}_{\text{MSE}}^{\text{attn}} + \lambda_5 \mathcal{L}_{\text{homotopy}}^{\text{MOHAWK}} + \lambda_6 \mathcal{L}_{\text{HNC}}
+\end{equation}
+این تابع بیش از ۹۸.۵٪ از دقت مدل متراکم اولیه را تنها در طول ۱۰۰ الی ۲۵۰ گام بهینه‌سازی احیا می‌نماید.
+\end{theorem}
+
+\section{ارزیابی ابلیشن خط لوله فشرده‌سازی و مهار خطای انباشتی}
+جدول زیر اثر افزایشی هر مرحله از خط لوله فشرده‌سازی را بر روی مدل \lr{DistilBERT} و وظیفه \lr{MNLI} ($r=64$) نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\caption{تحلیل ابلیشن مراحل خط لوله فشرده‌سازی بر روی وظیفه MNLI ($r=64$)}
+\label{tab:ablation_summary}
+\begin{tabular}{lccc}
+\toprule
+\textbf{پیکربندی / مرحله خط لوله} & \textbf{دقت (\%)} & \textbf{پیک حافظه (MB)} & \textbf{توان عملیاتی (tok/s)} \\
+\midrule
+۱. فاکتورسازی ساده SVD (پایه کالیبره‌نشده) & 34.10\% & \textbf{163.0} & 51,244 \\
+۲. + سفیدسازی چولسکی فعال‌سازی‌ها & 68.60\% & 178.5 & 57,900 \\
+۳. + تخصیص پویا بر مبنای آنتروپی طیفی & 70.80\% & 172.4 & 58,400 \\
+۴. + کِرنل فیوزشده خطی تریتون & 71.50\% & 168.2 & \textbf{61,200} \\
+۵. + بازیافت خطای مانده ResSVD (کامل) & \textbf{72.20\%} & 170.2 & 59,200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همچنین مقایسه مهار خطای انباشتی در مدل‌های عمیق‌تر نظیر \lr{RoBERTa-base} (۱۲ لایه) نشان می‌دهد که در فشرده‌سازی ۴ لایه با رتبه $r=128$، روش ساده DirectSVD دچار فروپاشی به دقت 47.82\% می‌شود، در حالی که روش پیشنهادی HNC-SVD دقت \textbf{71.67\%} (+23.85\% بهبود قطعی) و تشابه کسینوسی 0.5529 را حفظ می‌کند.
+
+\section{معماری شتاب‌دهی سخت‌افزاری و دیسپچ سه‌سطحی با ۲۶ کِرنل تریتون}
+فریم‌ورک NeuralOps مجهز به ۲۶ کِرنل اختصاصی JIT بر بستر پلتفرم Triton است که در جدول زیر به صورت کامل خلاصه شده‌اند:
+
+\begin{table}[H]
+\centering
+\caption{مشخصات و شتاب محاسباتی کِرنل‌های تریتون بر روی پردازنده NVIDIA RTX 4070}
+\label{tab:triton_kernels_summary}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{rlllc}
+\toprule
+\textbf{\#} & \textbf{ماژول کِرنل} & \textbf{مسیر فایل در سورس‌کد} & \textbf{کارکرد معماری} & \textbf{شتاب نسبت به PyTorch} \\
+\midrule
+1 & \lr{linear\_attn.py} & \lr{triton\_kernels/linear\_attn.py} & اسکن پیشوندی فیوزشده توجه خطی & $1.78\times$ \\
+2 & \lr{gla\_scan.py} & \lr{triton\_kernels/gla\_scan.py} & اسکن تکه‌ای در توجه خطی گیت‌شده & $1.64\times$ \\
+3 & \lr{gdn\_scan.py} & \lr{triton\_kernels/gdn\_scan.py} & بازگشت فضای حالت در Gated DeltaNet & $1.55\times$ \\
+4 & \lr{hgrn2\_scan.py} & \lr{triton\_kernels/hgrn2\_scan.py} & اسکن سلسله‌مراتبی HGRN v2 & $1.62\times$ \\
+5 & \lr{selective\_scan.py} & \lr{triton\_kernels/selective\_scan.py} & اسکن موازی فضای حالت Mamba & $1.85\times$ \\
+6 & \lr{cosformer\_triton\_kernel.py} & \lr{triton\_kernels/cosformer\_kernel.py} & وزن‌دهی کسینوسی فیوزشده Cosformer & $1.72\times$ \\
+7 & \lr{block\_sparse.py} & \lr{triton\_kernels/block\_sparse.py} & توجه اسپارس بلوکی $16\times 16$ و $32\times 32$ & $\mathbf{2.14\times}$ \\
+8 & \lr{gqa.py} & \lr{triton\_kernels/gqa.py} & توجه پرسمان گروه‌بندی‌شده فیوزشده & $1.68\times$ \\
+9 & \lr{fms\_scan.py} & \lr{triton\_kernels/fms\_scan.py} & اسکن انجمنی ماتریس حالت فاکتورشده & $1.49\times$ \\
+10 & \lr{fused\_rope.py} & \lr{triton\_kernels/fused\_rope.py} & چرخش موضعی درجای امبدینگ مکانی RoPE & $2.05\times$ \\
+11 & \lr{fused\_norm\_linear.py} & \lr{triton\_kernels/fused\_norm\_linear.py} & نرمال‌سازی فیوزشده RMSNorm با ضرب ماتریسی & $1.42\times$ \\
+12 & \lr{fused\_ce.py} & \lr{triton\_kernels/fused\_ce.py} & تابع زیان کراس‌انتروپی با صرفه‌جویی حافظه & $1.88\times$ \\
+13 & \lr{fused\_kd.py} & \lr{triton\_kernels/fused\_kd.py} & تابع زیان تقطیر KL فیوزشده & $1.75\times$ \\
+14 & \lr{softplus.py} & \lr{triton\_kernels/softplus.py} & تابع فعال‌سازی برداری سافت‌پلاس پایدار & $1.35\times$ \\
+15 & \lr{elementwise.py} & \lr{triton\_kernels/elementwise.py} & فعال‌سازی‌های عنصری گیت‌شده (SiLU, SwiGLU) & $1.60\times$ \\
+16 & \lr{low\_rank.py} & \lr{triton\_kernels/low\_rank.py} & پروجکشن دومرحله‌ای فاکتورسازی SVD & $1.52\times$ \\
+17 & \lr{sparse\_attn.py} & \lr{triton\_kernels/sparse\_attn.py} & عملگر توجه با ماسک اختیاری دوبعدی & $1.81\times$ \\
+18 & \lr{paged\_attention.py} & \lr{triton\_kernels/paged\_attention.py} & مدیریت بافر صفحه‌بندی‌شده غیرپیوسته KV & $1.92\times$ \\
+19 & \lr{flash\_decoding.py} & \lr{triton\_kernels/flash\_decoding.py} & دیکودینگ موازی توکن با افراز Split-K & $2.10\times$ \\
+20 & \lr{sliding\_window.py} & \lr{triton\_kernels/sliding\_window.py} & توجه پنجره لغزان قطری متناهی & $1.94\times$ \\
+21 & \lr{varlen\_attention.py} & \lr{triton\_kernels/varlen\_attention.py} & توجه دسته‌ای با طول توالی متغیر & $1.65\times$ \\
+22 & \lr{state\_update.py} & \lr{triton\_kernels/state\_update.py} & به‌روزرسانی درجای بافر حالت بازگشتی & $1.48\times$ \\
+23 & \lr{autotuner.py} & \lr{triton\_kernels/autotuner.py} & تنظیم خودکار اندازه بلوک، وارپ و مراحل زمان اجرا & سیستمی \\
+24 & \lr{hardware\_profile.py} & \lr{triton\_kernels/hardware\_profile.py} & تشخیص معماری ریزپردازنده و هیوریستیک تنظیم & سیستمی \\
+25 & \lr{op\_registry.py} & \lr{triton\_kernels/op\_registry.py} & مدیر دیسپچ سه‌سطحی اجرای پشتیبان & سیستمی \\
+26 & \lr{\_common.py} & \lr{triton\_kernels/\_common.py} & توصیف‌گرهای مشترک و پیکربندی پرتاب کِرنل & سیستمی \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \chapter{ارزیابی تجربی و ساختار مکانیزم‌های توجه}
 \section{جدول نتایج ۱۰۰ ماژول برتر}
 \begin{latin}
