@@ -156,6 +156,9 @@ class ResultsLedger:
         self.sqlite_path = self.registry_dir / "master_ledger.sqlite"
         self.manifest_path = self.registry_dir / "ledger_manifest.json"
 
+        if not self.jsonl_path.exists():
+            self.jsonl_path.touch()
+
         self._init_sqlite()
 
     def _init_sqlite(self) -> None:
@@ -386,7 +389,15 @@ class ResultsLedger:
         if hard_delete:
             cur.execute(f"DELETE FROM results WHERE {where_stmt}", params)
         else:
-            cur.execute(f"UPDATE results SET status = 'deleted' WHERE {where_stmt}", params)
+            cur.execute(f"SELECT record_id, raw_json FROM results WHERE {where_stmt}", params)
+            to_update = cur.fetchall()
+            for r_id, r_json in to_update:
+                try:
+                    d = json.loads(r_json)
+                    d["status"] = "deleted"
+                    cur.execute("UPDATE results SET status = 'deleted', raw_json = ? WHERE record_id = ?", (json.dumps(d, ensure_ascii=False), r_id))
+                except Exception:
+                    cur.execute("UPDATE results SET status = 'deleted' WHERE record_id = ?", (r_id,))
         count = cur.rowcount
         conn.commit()
         conn.close()

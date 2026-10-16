@@ -316,7 +316,7 @@ class TestVisualizationAndExport:
         assert "\\begin{tabular}" in latex_table
         assert "\\toprule" in latex_table
         assert "\\bottomrule" in latex_table
-        assert "mod_a" in latex_table
+        assert "mod\\_a" in latex_table
 
 
 class TestSubsystemTelemetryHooks:
