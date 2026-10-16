@@ -4,44 +4,84 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Jamba Info Concept Bottleneck Projection Kernel:
+// Projects input sequence vectors of dimension D into concept space K via matrix W,
+// and applies a fused GeLU non-linear activation:
+// c_{b, t, k} = GeLU(\sum_{d=0}^{D-1} x_{b, t, d} * W_{k, d})
+// Thread mapping: 2D Grid over (ceil(N / 128), B) with 128 threads per block.
 template <typename scalar_t>
-__global__ void jamba_info_fwd_kernel(
+__global__ void __launch_bounds__(128) jamba_info_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ w,
-    int B, int N, int D, int K, float eps
+    const int B,
+    const int N,
+    const int D,
+    const int K,
+    const float eps
 ) {
-    int b = blockIdx.y;
-    int t = blockIdx.x * blockDim.x + threadIdx.x;
+    const int b = blockIdx.y;
+    if (b >= B) return;
+
+    const int t = blockIdx.x * blockDim.x + threadIdx.x;
     if (t >= N) return;
+
+    const int x_offset = b * N * D + t * D;
+    const int out_offset = b * N * K + t * K;
 
     for (int k = 0; k < K; ++k) {
         float acc = 0.0f;
+        const int w_offset = k * D;
         for (int d = 0; d < D; ++d) {
-            float x_val = to_float(x[b * N * D + t * D + d]);
-            float w_val = to_float(w[k * D + d]);
+            const float x_val = to_float(x[x_offset + d]);
+            const float w_val = to_float(w[w_offset + d]);
             acc += x_val * w_val;
         }
-        // GELU activation inside concept bottleneck
-        float c = 0.5f * acc * (1.0f + tanhf(0.7978845608f * (acc + 0.044715f * acc * acc * acc)));
-        out[b * N * K + t * K + k] = from_float<scalar_t>(c);
+
+        // Fused GELU activation: 0.5 * acc * (1 + tanh(sqrt(2/pi) * (acc + 0.044715 * acc^3)))
+        const float c = 0.5f * acc * (1.0f + tanhf(0.7978845608f * (acc + 0.044715f * acc * acc * acc)));
+        out[out_offset + k] = from_float<scalar_t>(c);
     }
 }
-}}
 
-torch::Tensor jamba_info_fwd(const torch::Tensor& x, const torch::Tensor& bottleneck_weights, double eps) {
-    CHECK_INPUT(x); CHECK_INPUT(bottleneck_weights);
-    int B = x.size(0); int N = x.size(1); int D = x.size(2); int K = bottleneck_weights.size(0);
+}} // namespace neuralops::cuda
+
+torch::Tensor jamba_info_fwd(
+    const torch::Tensor& x,
+    const torch::Tensor& bottleneck_weights,
+    double eps
+) {
+    CHECK_INPUT(x);
+    CHECK_INPUT(bottleneck_weights);
+
+    const int B = x.size(0);
+    const int N = x.size(1);
+    const int D = x.size(2);
+    const int K = bottleneck_weights.size(0);
+
     auto out = torch::empty({B, N, K}, x.options());
-    int threads = 128; int blocks_x = (N + threads - 1) / threads;
+    if (B == 0 || N == 0 || K == 0) return out;
+
+    constexpr int THREADS = 128;
+    const int blocks_x = (N + THREADS - 1) / THREADS;
     dim3 grid(blocks_x, B);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto x_c = x.contiguous(); auto w_c = bottleneck_weights.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, x.scalar_type(), "jamba_info_fwd", ([&] {
-        neuralops::cuda::jamba_info_fwd_kernel<scalar_t><<<grid, threads, 0, stream>>>(
-            out.data_ptr<scalar_t>(), x_c.data_ptr<scalar_t>(), w_c.data_ptr<scalar_t>(),
-            B, N, D, K, (float)eps
-        );
-    }));
+    auto x_c = x.contiguous();
+    auto w_c = bottleneck_weights.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        x.scalar_type(), "jamba_info_fwd", ([&] {
+            neuralops::cuda::jamba_info_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                x_c.data_ptr<scalar_t>(),
+                w_c.data_ptr<scalar_t>(),
+                B, N, D, K, static_cast<float>(eps)
+            );
+        })
+    );
+
     return out;
 }

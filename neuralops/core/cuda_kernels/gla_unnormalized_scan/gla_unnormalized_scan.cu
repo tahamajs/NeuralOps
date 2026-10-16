@@ -4,43 +4,84 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Unnormalized Gated Linear Attention state accumulation without denominator division
 template <typename scalar_t>
-__global__ void gla_unnorm_kernel(scalar_t* out, const scalar_t* q, const scalar_t* k, const scalar_t* v, const scalar_t* decay, int B, int H, int L, int D) {
-    int pid_bh = blockIdx.x;
-    if (pid_bh >= B * H) return;
-    int tid = threadIdx.x;
-    extern __shared__ float s_matrix[];
-    for (int i = tid; i < D * D; i += blockDim.x) s_matrix[i] = 0.0f;
-    __syncthreads();
-    for (int t = 0; t < L; ++t) {
-        float f = to_float(decay[pid_bh * L + t]);
-        for (int i = tid; i < D * D; i += blockDim.x) {
-            int d1 = i / D; int d2 = i % D;
-            float kv = to_float(k[pid_bh * (L * D) + t * D + d1]) * to_float(v[pid_bh * (L * D) + t * D + d2]);
-            s_matrix[i] = s_matrix[i] * f + kv;
-        }
-        __syncthreads();
-        for (int d2 = tid; d2 < D; d2 += blockDim.x) {
-            float acc = 0.0f;
-            for (int d1 = 0; d1 < D; ++d1) acc += to_float(q[pid_bh * (L * D) + t * D + d1]) * s_matrix[d1 * D + d2];
-            out[pid_bh * (L * D) + t * D + d2] = from_float<scalar_t>(acc);
-        }
-        __syncthreads();
+__global__ void __launch_bounds__(256) gla_unnorm_scan_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ q,
+    const scalar_t* __restrict__ k,
+    const scalar_t* __restrict__ v,
+    const scalar_t* __restrict__ g,
+    const int B,
+    const int H,
+    const int N,
+    const int D
+) {
+    const int bh = blockIdx.y;
+    const int b = bh / H;
+    const int h = bh % H;
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (b >= B || h >= H || d >= D) return;
+
+    float s = 0.0f;
+    for (int t = 0; t < N; ++t) {
+        const int idx = (b * H + h) * N * D + t * D + d;
+        const float gate = expf(to_float(g[idx]));
+        const float k_val = to_float(k[idx]);
+        const float v_val = to_float(v[idx]);
+
+        s = gate * s + k_val * v_val;
+        const float q_val = to_float(q[idx]);
+        out[idx] = from_float<scalar_t>(q_val * s);
     }
 }
-}}
 
-torch::Tensor gla_unnormalized_scan_fwd(const torch::Tensor& q, const torch::Tensor& k, const torch::Tensor& v, const torch::Tensor& decay) {
-    CHECK_INPUT(q); CHECK_INPUT(k); CHECK_INPUT(v); CHECK_INPUT(decay);
-    int B = q.size(0); int H = q.size(1); int L = q.size(2); int D = q.size(3);
+}} // namespace neuralops::cuda
+
+torch::Tensor gla_unnormalized_scan_fwd(
+    const torch::Tensor& q,
+    const torch::Tensor& k,
+    const torch::Tensor& v,
+    const torch::Tensor& g
+) {
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
+    CHECK_INPUT(g);
+
+    const int B = q.size(0);
+    const int H = q.size(1);
+    const int N = q.size(2);
+    const int D = q.size(3);
     auto out = torch::empty_like(q);
-    int threads = std::min(512, ((D * D + 31) / 32) * 32);
-    size_t shared_mem = D * D * sizeof(float);
+
+    if (B == 0 || H == 0 || D == 0) return out;
+
+    constexpr int THREADS = 256;
+    const int blocks_x = (D + THREADS - 1) / THREADS;
+    dim3 grid(blocks_x, B * H);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto q_c = q.contiguous(); auto k_c = k.contiguous(); auto v_c = v.contiguous(); auto d_c = decay.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, q.scalar_type(), "gla_unnormalized_scan_fwd", ([&] {
-        neuralops::cuda::gla_unnorm_kernel<scalar_t><<<B * H, threads, shared_mem, stream>>>(
-            out.data_ptr<scalar_t>(), q_c.data_ptr<scalar_t>(), k_c.data_ptr<scalar_t>(), v_c.data_ptr<scalar_t>(), d_c.data_ptr<scalar_t>(), B, H, L, D);
-    }));
+    auto q_c = q.contiguous();
+    auto k_c = k.contiguous();
+    auto v_c = v.contiguous();
+    auto g_c = g.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        q.scalar_type(), gla_unnormalized_scan_fwd, ([&] {
+            neuralops::cuda::gla_unnorm_scan_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                q_c.data_ptr<scalar_t>(),
+                k_c.data_ptr<scalar_t>(),
+                v_c.data_ptr<scalar_t>(),
+                g_c.data_ptr<scalar_t>(),
+                B, H, N, D
+            );
+        })
+    );
+
     return out;
 }
