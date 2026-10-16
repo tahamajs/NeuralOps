@@ -26,6 +26,9 @@ template <>
 __device__ __forceinline__ float to_float<float>(float val) { return val; }
 
 template <>
+__device__ __forceinline__ float to_float<double>(double val) { return static_cast<float>(val); }
+
+template <>
 __device__ __forceinline__ float to_float<at::Half>(at::Half val) {
     return __half2float(*reinterpret_cast<const __half*>(&val));
 }
@@ -50,6 +53,9 @@ __device__ __forceinline__ T from_float(float val);
 
 template <>
 __device__ __forceinline__ float from_float<float>(float val) { return val; }
+
+template <>
+__device__ __forceinline__ double from_float<double>(float val) { return static_cast<double>(val); }
 
 template <>
 __device__ __forceinline__ at::Half from_float<at::Half>(float val) {
