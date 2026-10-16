@@ -243,7 +243,7 @@ def estimate_module_flops_and_bytes(
 
 
 def profile_roofline(
-    module_or_name: Union[str, nn.Module],
+    module_or_name: Optional[Union[str, nn.Module]] = None,
     batch_size: int = 2,
     seq_len: int = 2048,
     embed_dim: int = 768,
@@ -252,9 +252,15 @@ def profile_roofline(
     warmup: int = 10,
     rep: int = 20,
     device: Optional[Union[str, torch.device]] = None,
+    module_name: Optional[str] = None,
     **module_kwargs: Any,
 ) -> RooflineReport:
     """Run dual-path timing (Triton vs PyTorch) and compute Roofline arithmetic intensity."""
+    if module_or_name is None:
+        if module_name is not None:
+            module_or_name = module_name
+        else:
+            module_or_name = "gated_delta_net"
     # 1. Resolve Device
     if device is None:
         target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
