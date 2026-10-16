@@ -593,7 +593,11 @@ class SVDLinearAttention(BaseAttention):
                     logger.warning("HNC continuation failed in _factorize_and_set (%s); falling back to direct SVD.", e)
 
             # Compute SVD (Cholesky-whitened if probe_inputs provided and use_hnc is True)
-            if use_hnc and probe_inputs is not None:
+            if r >= min(d_out, d_in) and not use_hnc:
+                U_r = target_w.to(device=dev, dtype=weight.dtype)
+                V_r = torch.eye(d_in, device=dev, dtype=weight.dtype)
+                target_linear.set_low_rank_factors(U_r, V_r)
+            elif use_hnc and probe_inputs is not None:
                 try:
                     px = probe_inputs.to(dev).float().view(-1, d_in)
                     Hx = torch.matmul(px.t(), px) / max(px.shape[0], 1)
@@ -722,6 +726,7 @@ class SVDLinearAttention(BaseAttention):
                     b_q, b_k, b_v = in_proj_b.chunk(3, dim=0)
                 if hasattr(src, "out_proj"):
                     w_o, b_o = _unpack_weight_bias(src.out_proj)
+                self.is_decoder = False
 
             # GPT-2 fused
             elif hasattr(src, "c_attn") and hasattr(src, "c_proj"):
