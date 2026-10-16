@@ -102,7 +102,10 @@ def load_gpt2(device: str) -> nn.Module:
     m.dim = 768
     m.hidden_size = 768
     try:
-        m.tokenizer = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
+        tok = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        m.tokenizer = tok
     except Exception:
         pass
     return m
@@ -150,6 +153,8 @@ def get_probe_data(model_name: str, device: str):
         from transformers import AutoTokenizer
         from datasets import load_dataset
         tok = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
         parquet_path = Path.home() / ".cache/huggingface/hub/datasets--Salesforce--wikitext/snapshots/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1/test-00000-of-00001.parquet"
         if parquet_path.exists():
             ds = load_dataset("parquet", data_files={"test": str(parquet_path)}, split="test")
