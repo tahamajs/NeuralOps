@@ -63,9 +63,10 @@ def hgrn2_fused_bwd_scan(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=hgrn2_fused_bwd_scan_pytorch_ref,
-        args=(x, g),
-        op_name="hgrn2_fused_bwd_scan",
+        cuda_fn,
+        triton_fn,
+        hgrn2_fused_bwd_scan_pytorch_ref,
+        x,
+        g,
+        kernel_name="hgrn2_fused_bwd_scan",
     )

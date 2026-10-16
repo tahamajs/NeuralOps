@@ -120,10 +120,12 @@ def fused_cross_entropy(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=fused_cross_entropy_pytorch_ref,
-        args=(logits, targets),
-        kwargs={"ignore_index": ignore_index, "reduction": reduction},
-        op_name="fused_cross_entropy",
+        cuda_fn,
+        triton_fn,
+        fused_cross_entropy_pytorch_ref,
+        logits,
+        targets,
+        ignore_index=ignore_index,
+        reduction=reduction,
+        kernel_name="fused_cross_entropy",
     )
