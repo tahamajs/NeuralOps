@@ -36,6 +36,9 @@ def _gla_fwd_kernel(
     y_ptr,
     s_workspace_ptr,
     z_workspace_ptr,
+    init_state_ptr,
+    final_state_ptr,
+    mask_ptr,
     stride_qb,
     stride_qh,
     stride_ql,
@@ -64,11 +67,26 @@ def _gla_fwd_kernel(
     stride_zwh,
     stride_zwl,
     stride_zwd,
+    stride_isb,
+    stride_ish,
+    stride_isd,
+    stride_isn,
+    stride_fsb,
+    stride_fsh,
+    stride_fsd,
+    stride_fsn,
+    stride_mb,
+    stride_mh,
+    stride_ml,
     B_size,
     L_size,
     H_size,
     D_size,
     STORE_WORKSPACE: tl.constexpr,
+    HAS_INIT_STATE: tl.constexpr,
+    HAS_FINAL_STATE: tl.constexpr,
+    HAS_MASK: tl.constexpr,
+    USE_NORMALIZER: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
     pid_b = tl.program_id(0)
@@ -78,8 +96,20 @@ def _gla_fwd_kernel(
 
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
+    mask_2d = mask_d[:, None] & mask_d[None, :]
 
-    S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
+    if HAS_INIT_STATE:
+        s_init_ptrs = (
+            init_state_ptr
+            + pid_b * stride_isb
+            + pid_h * stride_ish
+            + offs_d[:, None] * stride_isd
+            + offs_d[None, :] * stride_isn
+        )
+        S = tl.load(s_init_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
+    else:
+        S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
+
     Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
     for t in range(L_size):
@@ -103,18 +133,28 @@ def _gla_fwd_kernel(
         )
         lam_t = tl.maximum(tl.minimum(lam_val, 1.0 - 1e-4), 1e-4)
 
+        valid = 1.0
+        if HAS_MASK:
+            valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
+
         # S_t = lam_t * S_{t-1} + k_t^T @ v_t
         kv_outer = k_t[:, None] * v_t[None, :]
-        S = lam_t * S + kv_outer
-
-        # Z_t = lam_t * Z_{t-1} + k_t
-        Z = lam_t * Z + k_t
+        S_next = lam_t * S + kv_outer
+        S = tl.where(valid > 0.0, S_next, S)
 
         num_t = tl.sum(q_t[:, None] * S, axis=0)
-        denom_raw = tl.sum(q_t * Z) + 1e-4
-        denom_t = tl.maximum(denom_raw, 1e-4)
 
-        y_t = num_t / denom_t
+        if USE_NORMALIZER:
+            # Z_t = lam_t * Z_{t-1} + k_t
+            Z_next = lam_t * Z + k_t
+            Z = tl.where(valid > 0.0, Z_next, Z)
+            denom_raw = tl.sum(q_t * Z) + 1e-4
+            denom_t = tl.maximum(denom_raw, 1e-4)
+            y_val = num_t / denom_t
+        else:
+            y_val = num_t
+
+        y_t = tl.where(valid > 0.0, y_val, 0.0)
 
         tl.store(
             y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
@@ -133,14 +173,25 @@ def _gla_fwd_kernel(
             )
             tl.store(s_ptrs, S)
 
-            z_ptrs = (
-                z_workspace_ptr
-                + pid_b * stride_zwb
-                + pid_h * stride_zwh
-                + t * stride_zwl
-                + offs_d * stride_zwd
-            )
-            tl.store(z_ptrs, Z, mask=mask_d)
+            if USE_NORMALIZER:
+                z_ptrs = (
+                    z_workspace_ptr
+                    + pid_b * stride_zwb
+                    + pid_h * stride_zwh
+                    + t * stride_zwl
+                    + offs_d * stride_zwd
+                )
+                tl.store(z_ptrs, Z, mask=mask_d)
+
+    if HAS_FINAL_STATE:
+        s_fin_ptrs = (
+            final_state_ptr
+            + pid_b * stride_fsb
+            + pid_h * stride_fsh
+            + offs_d[:, None] * stride_fsd
+            + offs_d[None, :] * stride_fsn
+        )
+        tl.store(s_fin_ptrs, S.to(final_state_ptr.dtype.element_ty), mask=mask_2d)
 
 
 @triton.jit
@@ -152,10 +203,13 @@ def _gla_bwd_kernel(
     dy_ptr,
     s_workspace_ptr,
     z_workspace_ptr,
+    init_state_ptr,
+    mask_ptr,
     dq_ptr,
     dk_ptr,
     dv_ptr,
     dlam_ptr,
+    dinit_state_ptr,
     stride_qb,
     stride_qh,
     stride_ql,
@@ -184,6 +238,13 @@ def _gla_bwd_kernel(
     stride_zwh,
     stride_zwl,
     stride_zwd,
+    stride_isb,
+    stride_ish,
+    stride_isd,
+    stride_isn,
+    stride_mb,
+    stride_mh,
+    stride_ml,
     stride_dqb,
     stride_dqh,
     stride_dql,
@@ -203,6 +264,9 @@ def _gla_bwd_kernel(
     L_size,
     H_size,
     D_size,
+    HAS_INIT_STATE: tl.constexpr,
+    HAS_MASK: tl.constexpr,
+    USE_NORMALIZER: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
     pid_b = tl.program_id(0)
@@ -212,6 +276,7 @@ def _gla_bwd_kernel(
 
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
+    mask_2d = mask_d[:, None] & mask_d[None, :]
 
     dS = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
     dZ = tl.zeros((BLOCK_D,), dtype=tl.float32)
@@ -245,6 +310,10 @@ def _gla_bwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
+        valid = 1.0
+        if HAS_MASK:
+            valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
+
         # Load S_t and Z_t
         s_t_ptrs = (
             s_workspace_ptr
@@ -256,29 +325,33 @@ def _gla_bwd_kernel(
         )
         S_t = tl.load(s_t_ptrs)
 
-        z_t_ptrs = (
-            z_workspace_ptr
-            + pid_b * stride_zwb
-            + pid_h * stride_zwh
-            + t * stride_zwl
-            + offs_d * stride_zwd
-        )
-        Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
+        if USE_NORMALIZER:
+            z_t_ptrs = (
+                z_workspace_ptr
+                + pid_b * stride_zwb
+                + pid_h * stride_zwh
+                + t * stride_zwl
+                + offs_d * stride_zwd
+            )
+            Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
 
-        num_t = tl.sum(q_t[:, None] * S_t, axis=0)
-        denom_raw = tl.sum(q_t * Z_t) + 1e-4
-        denom_t = tl.maximum(denom_raw, 1e-4)
+            num_t = tl.sum(q_t[:, None] * S_t, axis=0)
+            denom_raw = tl.sum(q_t * Z_t) + 1e-4
+            denom_t = tl.maximum(denom_raw, 1e-4)
 
-        dnum_t = dy_t / denom_t
-        # If denom_raw <= 1e-4, clamp_min is flat => gradient through denom_raw is 0
-        ddenom_t = tl.where(denom_raw > 1e-4, -tl.sum(dy_t * num_t) / (denom_t * denom_t), 0.0)
+            dnum_t = dy_t / denom_t
+            ddenom_t = tl.where(denom_raw > 1e-4, -tl.sum(dy_t * num_t) / (denom_t * denom_t), 0.0)
 
-        dS += q_t[:, None] * dnum_t[None, :]
-        dZ += q_t * ddenom_t
+            dZ += q_t * (ddenom_t * valid)
+            dq_t = tl.where(valid > 0.0, tl.sum(S_t * dnum_t[None, :], axis=1) + Z_t * ddenom_t, 0.0)
+            dk_t = tl.where(valid > 0.0, tl.sum(dS * v_t[None, :], axis=1) + dZ, 0.0)
+        else:
+            dnum_t = dy_t
+            dq_t = tl.where(valid > 0.0, tl.sum(S_t * dnum_t[None, :], axis=1), 0.0)
+            dk_t = tl.where(valid > 0.0, tl.sum(dS * v_t[None, :], axis=1), 0.0)
 
-        dq_t = tl.sum(S_t * dnum_t[None, :], axis=1) + Z_t * ddenom_t
-        dv_t = tl.sum(k_t[:, None] * dS, axis=0)
-        dk_t = tl.sum(dS * v_t[None, :], axis=1) + dZ
+        dS += q_t[:, None] * (dnum_t * valid)[None, :]
+        dv_t = tl.where(valid > 0.0, tl.sum(k_t[:, None] * dS, axis=0), 0.0)
 
         # Load S_{t-1} and Z_{t-1} for dlam_t
         dlam_t = 0.0
@@ -293,18 +366,31 @@ def _gla_bwd_kernel(
             )
             S_prev = tl.load(s_prev_ptrs)
 
-            z_prev_ptrs = (
-                z_workspace_ptr
-                + pid_b * stride_zwb
-                + pid_h * stride_zwh
-                + (t - 1) * stride_zwl
-                + offs_d * stride_zwd
+            if USE_NORMALIZER:
+                z_prev_ptrs = (
+                    z_workspace_ptr
+                    + pid_b * stride_zwb
+                    + pid_h * stride_zwh
+                    + (t - 1) * stride_zwl
+                    + offs_d * stride_zwd
+                )
+                Z_prev = tl.load(z_prev_ptrs, mask=mask_d, other=0.0)
+                dlam_t = tl.sum(dS * S_prev) + tl.sum(dZ * Z_prev)
+            else:
+                dlam_t = tl.sum(dS * S_prev)
+        elif HAS_INIT_STATE:
+            s_init_ptrs = (
+                init_state_ptr
+                + pid_b * stride_isb
+                + pid_h * stride_ish
+                + offs_d[:, None] * stride_isd
+                + offs_d[None, :] * stride_isn
             )
-            Z_prev = tl.load(z_prev_ptrs, mask=mask_d, other=0.0)
+            S_prev = tl.load(s_init_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
+            dlam_t = tl.sum(dS * S_prev)
 
-            dlam_t = tl.sum(dS * S_prev) + tl.sum(dZ * Z_prev)
+        dlam_t = tl.where(valid > 0.0, dlam_t, 0.0)
 
-        # Store grads
         tl.store(
             dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
@@ -325,8 +411,19 @@ def _gla_bwd_kernel(
             dlam_t,
         )
 
-        dS = lam_t * dS
-        dZ = lam_t * dZ
+        dS = tl.where(valid > 0.0, lam_t * dS, dS)
+        if USE_NORMALIZER:
+            dZ = tl.where(valid > 0.0, lam_t * dZ, dZ)
+
+    if HAS_INIT_STATE:
+        dis_ptrs = (
+            dinit_state_ptr
+            + pid_b * stride_isb
+            + pid_h * stride_ish
+            + offs_d[:, None] * stride_isd
+            + offs_d[None, :] * stride_isn
+        )
+        tl.store(dis_ptrs, dS.to(dinit_state_ptr.dtype.element_ty), mask=mask_2d)
 
 
 class _GLAScanFn(torch.autograd.Function):
