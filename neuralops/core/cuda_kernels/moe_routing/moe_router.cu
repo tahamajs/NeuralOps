@@ -9,7 +9,7 @@ __global__ void moe_dispatch_kernel(
     scalar_t* __restrict__ dispatched_tokens,     // [total_assignments, hidden_dim]
     const scalar_t* __restrict__ tokens,          // [num_tokens, hidden_dim]
     const int32_t* __restrict__ topk_indices,     // [num_tokens, top_k]
-    const int32_t* __restrict__ expert_offsets,   // [num_tokens, top_k] slot assignments
+    const int32_t* __restrict__ expert_offsets,   // [num_tokens, top_k] slot assignments (optional)
     const int num_tokens,
     const int hidden_dim,
     const int top_k,
@@ -21,11 +21,22 @@ __global__ void moe_dispatch_kernel(
 
     if (tok_idx >= num_tokens || k_idx >= top_k) return;
 
-    const int target_slot = expert_offsets[tok_idx * top_k + k_idx];
+    const int target_slot = (expert_offsets != nullptr) ? expert_offsets[tok_idx * top_k + k_idx] : (tok_idx * top_k + k_idx);
     if (target_slot < 0 || target_slot >= total_assignments) return;
 
-    for (int i = d; i < hidden_dim; i += blockDim.x) {
-        dispatched_tokens[target_slot * hidden_dim + i] = tokens[tok_idx * hidden_dim + i];
+    if ((hidden_dim * sizeof(scalar_t)) % 16 == 0) {
+        constexpr int VEC_SIZE = 16 / sizeof(scalar_t);
+        const int num_vecs = hidden_dim / VEC_SIZE;
+        using vec_t = int4;
+        const vec_t* __restrict__ src_vec = reinterpret_cast<const vec_t*>(tokens + tok_idx * hidden_dim);
+        vec_t* __restrict__ dst_vec = reinterpret_cast<vec_t*>(dispatched_tokens + target_slot * hidden_dim);
+        for (int i = d; i < num_vecs; i += blockDim.x) {
+            dst_vec[i] = src_vec[i];
+        }
+    } else {
+        for (int i = d; i < hidden_dim; i += blockDim.x) {
+            dispatched_tokens[target_slot * hidden_dim + i] = tokens[tok_idx * hidden_dim + i];
+        }
     }
 }
 
@@ -44,8 +55,11 @@ void moe_dispatch_cuda(
     }
 
     dim3 grid(num_tokens, top_k);
-    dim3 block(min(1024, hidden_dim));
+    dim3 block(std::min(256, ((hidden_dim * static_cast<int>(tokens.element_size())) % 16 == 0) ? (hidden_dim / (16 / static_cast<int>(tokens.element_size()))) : hidden_dim));
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    const int32_t* expert_offsets_ptr = (expert_offsets.defined() && expert_offsets.numel() > 0) ? expert_offsets.data_ptr<int32_t>() : nullptr;
+    const int32_t* topk_indices_ptr = (topk_indices.defined() && topk_indices.numel() > 0) ? topk_indices.data_ptr<int32_t>() : nullptr;
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half,
@@ -56,8 +70,8 @@ void moe_dispatch_cuda(
             moe_dispatch_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 dispatched_tokens.data_ptr<scalar_t>(),
                 tokens.data_ptr<scalar_t>(),
-                topk_indices.data_ptr<int32_t>(),
-                expert_offsets.data_ptr<int32_t>(),
+                topk_indices_ptr,
+                expert_offsets_ptr,
                 num_tokens,
                 hidden_dim,
                 top_k,
