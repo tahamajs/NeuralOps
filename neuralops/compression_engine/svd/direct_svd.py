@@ -138,8 +138,12 @@ class DirectSVDCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
-        self.target_attention_only = bool(target_attention_only)
-        self.max_retries = int(max_retries)
+        if "max_retries" in kwargs:
+            self.max_retries = int(kwargs["max_retries"])
+        elif rank is not None:
+            self.max_retries = 0
+        else:
+            self.max_retries = int(max_retries)
         self.target_modules = target_modules
         self.use_hnc_continuation = bool(kwargs.get("use_hnc_continuation", False))
         self.probe_inputs = kwargs.get("probe_inputs", None)
