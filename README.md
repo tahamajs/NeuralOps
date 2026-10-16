@@ -82,31 +82,39 @@ NeuralOps enforces explicit dependency boundaries across core execution, hardwar
 
 ## 2. Framework Integration Status Audit
 
-To maintain engineering transparency, NeuralOps categorizes all third-party framework integrations by their true operational status:
+To maintain engineering transparency and forensic integrity, NeuralOps categorizes all third-party framework integrations by their true operational status against the actual codebase:
 
-| Target Framework | Integration Type | Upstream PR Status | CI/CD Tested | Production Readiness | Notes & Limitations |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Hugging Face Transformers**| **Native Plugin** | N/A (Standard API) | ✅ Yes | ✅ **Production Ready** | 1-line surgery `replace_attention()`, dynamic `AutoConfig` registration, bit-exact roundtrip checkpoints. |
-| **ONNX Runtime** | **Compatibility Layer**| N/A (Standard Export)| ✅ Yes | ✅ **Production Ready** | Fused scan operations trace via PyTorch fallback graph to guarantee static shape compatibility. |
-| **vLLM** | **Wrapper Adapter** | ⚠️ No upstream PR | ✅ In-Tree | 🟡 **Experimental** | In-tree `PagedStateTable` adapter mimicking BlockTable API. Native C++ vLLM kernel integration is planned for v2.0. |
-| **Text Generation Inference**| **Wrapper Adapter** | ⚠️ No upstream PR | ✅ In-Tree | 🟡 **Experimental** | In-tree continuous batching wrapper (`tgi_serving_adapter.py`). Standalone server hook available. |
-| **SGLang** | **Compatibility Layer**| ⚠️ No upstream PR | ✅ In-Tree | ⚠️ **Work in Progress**| Radix state caching aligns with SGLang prefix tree; end-to-end multi-node serving is undergoing testing. |
-| **TensorRT-LLM** | **Aspirational** | ❌ None | ❌ No | ❌ **Not Implemented** | Currently on the technical roadmap for v2.0.0; requires custom C++ TensorRT plugin compilation. |
+| Target Framework | Integration Type | Upstream PR Status | CI/CD Tested | Production Readiness | Verified Path | Notes & Limitations |
+| :--- | :---: | :---: | :---: | :---: | :--- | :--- |
+| **Hugging Face Transformers**| **Native Plugin** | N/A (Standard API) | ✅ Yes | ✅ **Production Ready** | `neuralops/core/_attention_injectors.py`, `neuralops/integrations/hf_automodel.py` | 1-line surgery `replace_attention()`, dynamic `AutoConfig` registration, bit-exact roundtrip checkpoints. |
+| **ONNX Runtime** | **Compatibility Layer**| N/A (Standard Export)| ✅ Yes | ✅ **Production Ready** | `neuralops/export/exporter.py` | Deterministic PyTorch fallback graph tracing with `dynamo=False` fallback to guarantee static shape compatibility. |
+| **vLLM** | **Wrapper Adapter** | ⚠️ No upstream PR | ✅ In-Tree | 🟡 **Experimental** | `neuralops/models/paged_state.py`, `neuralops/integrations/vllm.py` | In-tree `PagedStateTable` adapter managing recurrent states with Copy-on-Write (CoW). Native C++ vLLM kernel integration is planned for v2.0. |
+| **Text Generation Inference**| **Roadmap** | ❌ None | ❌ No | ❌ **Not Implemented** | `NONE` (Planned for v2.0.0) | `tgi_serving_adapter.py` does not exist. Only static config export metadata stub is present in `neuralops/export/serving.py`. |
+| **SGLang** | **Roadmap** | ❌ None | ❌ No | ❌ **Not Implemented** | `NONE` (Planned for v2.0.0) | Standalone mock cache dictionary exists in `neuralops/integrations/serving.py`; full SGLang RadixAttention serving integration is planned for v2.0. |
+| **TensorRT-LLM** | **Aspirational** | ❌ None | ❌ No | ❌ **Not Implemented** | `NONE` (Planned for v2.0.0) | Currently on the technical roadmap for v2.0.0; requires custom C++ TensorRT plugin compilation. |
 
-### How to Use Supported Serving Adapters
+### How to Use Supported In-Tree Serving Adapters
 
 ```python
 import torch
 import neuralops
-from neuralops.inference.vllm_adapter import PagedStateTable
+from neuralops.models.paged_state import PagedStateTable
 
-# Initialize in-tree vLLM-compatible Paged KV/Recurrent State Table
-paged_cache = PagedStateTable(num_blocks=1024, block_size=16, state_dim=64)
-token_ids = torch.tensor([[101, 2054, 2003, 102]], device="cuda")
+# Initialize in-tree vLLM-compatible Paged Recurrent State Table
+device = "cuda" if torch.cuda.is_available() else "cpu"
+paged_cache = PagedStateTable(num_pages=1024, num_heads=12, head_dim=64, device=device)
 
-# Allocate virtual pages with Copy-on-Write prefix sharing
-block_indices = paged_cache.allocate_sequence(seq_id=0, prompt_tokens=token_ids)
-print(f"Allocated {len(block_indices)} virtual blocks in SRAM Paged State Table.")
+# Register sequence and allocate initial physical pages
+seq_pages = paged_cache.register_sequence(seq_id=0, initial_pages=1)
+print(f"Allocated {len(seq_pages)} physical page(s) in PagedStateTable: {seq_pages}")
+
+# Zero-copy sequence fork via reference counting (Copy-on-Write)
+child_pages = paged_cache.fork_sequence(parent_seq_id=0, child_seq_id=1)
+print(f"Forked sequence 1 sharing physical pages: {child_pages}")
+
+# Copy-on-Write mutation allocates a private page for child upon write
+new_page = paged_cache.prepare_write(seq_id=1, page_slot=0)
+print(f"CoW executed for sequence 1; now isolated on page: {new_page}")
 ```
 
 ---

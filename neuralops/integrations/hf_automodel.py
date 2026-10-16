@@ -55,7 +55,15 @@ class AutoNeuralOpsModel:
 def register_hf_automodel() -> bool:
     """Hooks NeuralOps configurations into HuggingFace AutoConfig / AutoModel registries if present."""
     try:
-        import transformers  # noqa: F401
+        from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
+        from neuralops.models.configuration import NeuralOpsConfig
+        from neuralops.models.modeling import NeuralOpsModel, NeuralOpsForCausalLM
+        try:
+            AutoConfig.register("neuralops", NeuralOpsConfig)
+            AutoModel.register(NeuralOpsConfig, NeuralOpsModel)
+            AutoModelForCausalLM.register(NeuralOpsConfig, NeuralOpsForCausalLM)
+        except Exception:
+            pass
         return True
-    except ImportError:
+    except (ImportError, Exception):
         return False

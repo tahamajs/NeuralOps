@@ -160,20 +160,39 @@ def export_model(
         if sample_input.device != torch.device("cpu"):
             sample_input = sample_input.to("cpu")
 
+        # Guarantee single Tensor output for clean ONNX graph
+        wrapped_model = _TensorOnlyExportWrapper(cpu_model)
+        input_names = ["input_ids"] if sample_input.dtype in (torch.int32, torch.int64) else ["inputs"]
+        output_names = ["logits"]
+        dynamic_axes = {
+            input_names[0]: {0: "batch_size", 1: "sequence_length"},
+            "logits": {0: "batch_size"},
+        }
+
         try:
-            # Automatically trace using deterministic fallback path
-            torch.onnx.export(
-                cpu_model,
-                sample_input,
-                str(onnx_file),
-                opset_version=opset_version,
-                input_names=["input_ids"],
-                output_names=["logits"],
-                dynamic_axes={
-                    "input_ids": {0: "batch_size", 1: "sequence_length"},
-                    "logits": {0: "batch_size"},
-                },
-            )
+            try:
+                # Automatically trace using deterministic fallback path
+                torch.onnx.export(
+                    wrapped_model,
+                    sample_input,
+                    str(onnx_file),
+                    opset_version=opset_version,
+                    input_names=input_names,
+                    output_names=output_names,
+                    dynamic_axes=dynamic_axes,
+                )
+            except Exception:
+                # Deterministic fallback to TorchScript-based graph tracing (dynamo=False)
+                torch.onnx.export(
+                    wrapped_model,
+                    sample_input,
+                    str(onnx_file),
+                    opset_version=opset_version,
+                    input_names=input_names,
+                    output_names=output_names,
+                    dynamic_axes=dynamic_axes,
+                    dynamo=False,
+                )
         except (Exception, BaseException) as e:
             logger.warning("ONNX conversion not supported for custom ops: %s. Writing metadata and marker stub.", e)
             with open(onnx_file, "w") as f:
@@ -299,6 +318,9 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
         model._neuralops_metadata = saved_metadata
     elif not hasattr(model, "_neuralops_metadata"):
         model._neuralops_metadata = []
+
+    if hasattr(model, "eval"):
+        model.eval()
 
     return model, meta
 

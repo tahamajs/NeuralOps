@@ -25,8 +25,8 @@ Comparing Pure PyTorch Reference (Level 3), OpenAI Triton JIT (Level 2), and Nat
 14 & \texttt{w4a16\_gemm} & Packed INT4 Bit-Shift Dequant GEMM & 0.114 & N/A & 0.212 & $0.54\times$ & N/A \\
 15 & \texttt{fused\_cross\_entropy} & Online Softmax Fused Cross-Entropy & 0.013 & 0.064 & 0.045 & $0.30\times$ & $\mathbf{1.43\times}$ \\
 16 & \texttt{fused\_norm\_linear} & LayerNorm / RMSNorm + Linear GEMM & 0.014 & 0.021 & 0.117 & $0.12\times$ & $0.18\times$ \\
-17 & \texttt{kronecker_matmul} & Two-Stage Kronecker Product Matmul & 0.031 & 0.026 & 0.309 & $0.10\times$ & $0.08\times$ \\
-18 & \texttt{fused_lowrank_gated_gemm} & Low-Rank SVD Gated GEMM & 0.027 & 0.041 & 0.870 & $0.03\times$ & $0.05\times$ \\
+17 & \texttt{kronecker\_matmul} & Two-Stage Kronecker Product Matmul & 0.031 & 0.026 & 0.309 & $0.10\times$ & $0.08\times$ \\
+18 & \texttt{fused\_lowrank\_gated\_gemm} & Low-Rank SVD Gated GEMM & 0.027 & 0.041 & 0.870 & $0.03\times$ & $0.05\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
