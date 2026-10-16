@@ -152,19 +152,31 @@ class ASTPrunedLoRALinear(nn.Module):
 
     def merge(self) -> None:
         """Merge LoRA into base weight in place."""
+        if getattr(self, "_merged", False):
+            return
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             with torch.no_grad():
                 delta = (self.lora_B.float() @ self.lora_A.float()) * self.scaling
                 self.weight.data = (self.weight.data.float() + delta).to(self.weight.dtype)
-                self.lora_A = None
-                self.lora_B = None
-                self.lora_r = 0
+                self._merged = True
 
     def merge_and_unload(self) -> None:
         self.merge()
+        self.lora_A = None
+        self.lora_B = None
+        self.lora_r = 0
+        self._merged = False
 
     def unmerge(self) -> None:
-        pass
+        """Unmerge LoRA from base weight in place."""
+        if not getattr(self, "_merged", False):
+            return
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            with torch.no_grad():
+                delta = (self.lora_B.float() @ self.lora_A.float()) * self.scaling
+                self.weight.data = (self.weight.data.float() - delta).to(self.weight.dtype)
+                self._merged = False
+
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
