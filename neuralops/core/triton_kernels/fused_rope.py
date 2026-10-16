@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 
 from neuralops.core.triton_kernels._common import HAS_TRITON, triton, tl
-from neuralops.core.rope import fused_rope_embedding
+from neuralops.core.utils.rope import fused_rope_embedding
 
 __all__ = ["fused_rope_triton", "fused_rope_embedding_kernel"]
 

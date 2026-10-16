@@ -29,9 +29,9 @@ from neuralops.core._attention_surgery import (
     split_and_set_qkv_weights,
 )
 from neuralops.core.common import softpick
-from neuralops.core.gqa_utils import repeat_kv
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half, apply_rope_after_up_projection
+from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projection
 
 logger = logging.getLogger(__name__)
 

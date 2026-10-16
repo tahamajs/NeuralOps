@@ -20,7 +20,7 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half
+from neuralops.core.utils.rope import _rotate_half
 from neuralops.utils.compat import repeat_kv
 
 logger = logging.getLogger(__name__)
