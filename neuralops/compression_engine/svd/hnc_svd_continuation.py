@@ -453,6 +453,11 @@ class HessianNullSpaceSVDContinuation:
         self.eta = step_size_eta
         self.restore_steps_m = restore_steps_m
         self.restore_lr = restore_lr
+        stage_d = kwargs.pop("stage_d_steps", None)
+        if stage_d is not None:
+            self.stage_d_steps = int(stage_d)
+        else:
+            self.stage_d_steps = 60 if self.restore_steps_m > 0 else 0
         self.loss_ceiling_tau = loss_ceiling_tau
         self.mu_rel = mu_rel
         self.gamma_nuc = gamma_nuc
@@ -798,14 +803,14 @@ class HessianNullSpaceSVDContinuation:
             B_r.requires_grad_(True)
             optimizer_factors.extend([A_r, B_r])
 
-        if optimizer_factors:
+        if optimizer_factors and self.stage_d_steps > 0:
             # Temporarily replace mod.weight parameter with dynamic low-rank matrix product
             orig_params = {}
             for name, (A_r, B_r, mod) in low_rank_factors.items():
                 orig_params[name] = mod._parameters.pop("weight")
 
             try:
-                m_post = 60  # More restoration steps for reliable function preservation
+                m_post = self.stage_d_steps  # Restoration steps for reliable function preservation
                 base_lr = 3e-3
                 post_opt = torch.optim.Adam(optimizer_factors, lr=base_lr, betas=(0.9, 0.99))
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
