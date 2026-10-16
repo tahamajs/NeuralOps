@@ -307,11 +307,18 @@ class AASVDCompressor(BaseCompressor):
         cov_dtype = str(kwargs.get("cov_dtype", cov_dtype))
 
         # force_rank resolution
+        has_explicit_rank = (
+            "rank" in kwargs
+            or "target_rank" in kwargs
+            or rank != 288
+            or (cfg is not None and (_cfg_get(cfg, "rank", None) is not None or _cfg_get(cfg, "target_rank", None) is not None))
+        )
         force_rank = bool(
             force_rank
             or kwargs.get("force_rank", False)
             or (cfg is not None and _cfg_get(cfg, "force_rank", False))
             or getattr(getattr(model, "config", None), "force_rank", False)
+            or has_explicit_rank
         )
         self.force_rank = force_rank
         self.use_strs = bool(kwargs.get("use_strs", not force_rank)) and not force_rank

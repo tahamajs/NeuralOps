@@ -86,14 +86,21 @@ class FLAPCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
-        raw_sp = _cfg_get(cfg, "flap_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-        self.sparsity = max(0.0, min(float(raw_sp), 0.95))
+        rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        if rank is not None:
+            r = float(rank)
+            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
+            self.sparsity = 1.0 - p_keep
+            self.structured_24 = False
+        else:
+            raw_sp = _cfg_get(cfg, "flap_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            self.sparsity = max(0.0, min(float(raw_sp), 0.95))
+            self.structured_24 = bool(
+                _cfg_get(cfg, "flap_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            )
         self.metric_type = str(
             _cfg_get(cfg, "flap_metric_type", _cfg_get(cfg, "metric_type", metric_type))
         ).upper()
-        self.structured_24 = bool(
-            _cfg_get(cfg, "flap_structured_24", _cfg_get(cfg, "structured_24", structured_24))
-        )
         c_max_error = _cfg_get(cfg, "flap_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
             c_max_error = adaptive_max_error(
