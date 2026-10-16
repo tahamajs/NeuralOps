@@ -351,11 +351,8 @@ class TTLinearLayer(nn.Module):
         elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
             in_f = int(base_layer.in_features)
             out_f = int(base_layer.out_features)
-            W = (
-                raw_w.t().contiguous().float()
-                if (raw_w.shape == (in_f, out_f))
-                else raw_w.float().contiguous()
-            )
+            # PyTorch Linear weights are [out_features, in_features]
+            W = raw_w.float().contiguous()
         elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.t().contiguous().float()
