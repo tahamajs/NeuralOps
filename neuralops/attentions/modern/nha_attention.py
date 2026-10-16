@@ -25,9 +25,9 @@ import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.gqa_utils import repeat_kv
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half
+from neuralops.core.utils.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 

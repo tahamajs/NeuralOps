@@ -364,7 +364,7 @@ def fused_weighted_gqa_online_softmax_pytorch(
     rep = H_Q // H_KV
 
     if rep > 1:
-        from neuralops.core.gqa_utils import repeat_kv
+        from neuralops.core.utils.gqa import repeat_kv
         k_full = repeat_kv(k, rep)
         v_full = repeat_kv(v, rep)
     else:
