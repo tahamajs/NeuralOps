@@ -233,7 +233,11 @@ class DirectSVDCompressor(BaseCompressor):
         if self.rank_ratio is not None:
             r = int(round(min(in_f, out_f) * max(0.01, min(0.99, self.rank_ratio))))
         elif target_r is not None:
-            r = int(round(target_r * (min(in_f, out_f) / ref_dim)))
+            # Use explicit rank directly without architecture scaling.
+            # ref_dim scaling only applies to the default rank=32 fallback so that
+            # large models get proportionally larger ranks. An explicitly requested
+            # rank (e.g. rank=4 for a 64×128 test layer) must be honoured as-is.
+            r = int(target_r)
         else:
             r = int(round(32 * (min(in_f, out_f) / ref_dim)))
 
@@ -245,8 +249,12 @@ class DirectSVDCompressor(BaseCompressor):
             default_rank=r,
             comp_config=getattr(self, "cfg", None),
         )
-        r = max(self.min_rank, r)
+        # Only enforce min_rank floor when using default/ratio-based rank selection.
+        # When the caller passes an explicit target_r, honour it as requested.
+        if target_r is None and self.rank_ratio is None:
+            r = max(self.min_rank, r)
         return max(1, min(r, max_r))
+
 
     def compress_linear(
         self,
