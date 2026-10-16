@@ -261,7 +261,8 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
             else:
                 # HNC Aligned SVD with Cholesky whitening and factor restoration
                 attn.copy_weights(anchor_attn, probe_inputs=probe_x, use_hnc=True, hnc_steps=15)
-                anchor_probe_out = anchor_attn(probe_x)[0]
+                with torch.no_grad():
+                    anchor_probe_out = anchor_attn(probe_x)[0].detach()
                 attn.hnc_spectral_compress_and_align(
                     probe_inputs=probe_x,
                     num_steps=15,
