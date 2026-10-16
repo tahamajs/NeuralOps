@@ -675,6 +675,7 @@ class SVDLinearAttention(BaseAttention):
         # Fast post-truncation factor restoration on attention projections if probe inputs and anchor outputs are provided
         if probe_inputs is not None and anchor_outputs is not None:
             self.eval()
+            anchor_targets = anchor_outputs.detach().float()
             trainable_factors = []
             for _, proj in projs:
                 trainable_factors.extend([proj.U, proj.V])
@@ -683,7 +684,7 @@ class SVDLinearAttention(BaseAttention):
                 opt.zero_grad()
                 out = self(probe_inputs)
                 out_t = out[0] if isinstance(out, tuple) else out
-                loss = 0.5 * torch.mean((out_t.float() - anchor_outputs.float()) ** 2)
+                loss = 0.5 * torch.mean((out_t.float() - anchor_targets) ** 2)
                 loss.backward()
                 opt.step()
 
