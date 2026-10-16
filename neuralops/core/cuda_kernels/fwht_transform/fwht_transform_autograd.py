@@ -1,0 +1,41 @@
+from __future__ import annotations
+from pathlib import Path
+from typing import Optional
+import torch
+import torch.nn.functional as F
+
+from neuralops.core.cuda_kernels._bindings import load_cuda_module
+from neuralops.core.cuda_kernels._fallback import dispatch
+
+_MODULE = None
+
+def _get_module():
+    global _MODULE
+    if _MODULE is None:
+        curr_dir = Path(__file__).parent
+        with open(curr_dir / "fwht_transform_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "fwht_transform.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
+        _MODULE = load_cuda_module(
+            name="cuda_fwht_transform",
+            cpp_sources=cpp_src,
+            cuda_sources=cuda_src,
+            functions=["fwht_fwd"],
+        )
+    return _MODULE
+
+from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
+
+def fwht_transform(x: torch.Tensor, B_dim: int = 128) -> torch.Tensor:
+    def cuda_fn(*args, **kwargs):
+        mod = _get_module()
+        fn = getattr(mod, "fwht_fwd")
+        return fn(*args, **kwargs)
+    return dispatch(
+        cuda_fn,
+        fast_hadamard_transform,
+        fast_hadamard_transform,
+        x, B_dim=B_dim,
+        kernel_name="fwht_transform",
+    )
