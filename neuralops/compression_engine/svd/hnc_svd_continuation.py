@@ -878,7 +878,7 @@ class HessianNullSpaceSVDContinuation:
             "step_history": step_history,
             "low_rank_factors": {
                 name: (A_r.data.clone(), B_r.data.clone())
-                for name, (A_r, B_r, _) in low_rank_factors.items()
+                for name, (A_r, B_r, *_) in low_rank_factors.items()
             },
         }
 
