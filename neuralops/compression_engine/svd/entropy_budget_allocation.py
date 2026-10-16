@@ -337,11 +337,23 @@ class EntropyBudgetCompressor(BaseCompressor):
                 target_mod,
             )
 
-            total_s = S.sum() + self.eps
-            p = torch.clamp(S / total_s, min=self.eps, max=1.0)
-            # B18: Shannon entropy in bits using log2
-            entropy = -torch.sum(p * torch.log2(p)).item()
-            entropy = max(entropy, 1e-4)
+            if S.is_cuda:
+                try:
+                    from neuralops.core.triton_kernels.low_rank import triton_spectral_entropy_svd_gate
+                    entropy_t, _ = triton_spectral_entropy_svd_gate(S, threshold=self.eps)
+                    entropy = max(float(entropy_t.item()), 1e-4)
+                except Exception:
+                    total_s = S.sum() + self.eps
+                    p = torch.clamp(S / total_s, min=self.eps, max=1.0)
+                    entropy = -torch.sum(p * torch.log2(p)).item()
+                    entropy = max(entropy, 1e-4)
+            else:
+                total_s = S.sum() + self.eps
+                p = torch.clamp(S / total_s, min=self.eps, max=1.0)
+                # B18: Shannon entropy in bits using log2
+                entropy = -torch.sum(p * torch.log2(p)).item()
+                entropy = max(entropy, 1e-4)
+
 
             for i in range(r_floor, max_r):
                 s_val = S[i].item()
