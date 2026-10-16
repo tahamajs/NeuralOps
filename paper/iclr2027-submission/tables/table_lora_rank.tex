@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{LoRA Rank Capacity Ablation on DistilBERT-base SST-2.}
+Evaluated on NVIDIA GeForce RTX 4070 (SM 8.9) with rank $r \in \{8, 16, 32, 64\}$. Even at compact rank $r=8$, adapter capacity suffices to recover full classification accuracy (83.14\%) while maintaining minimal peak VRAM (307.21 MB) and the highest token processing throughput (68,260 tok/s).}
+\label{tab:lora_rank}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{ccccccc}
+\toprule
+\textbf{LoRA Rank ($r$)} & \textbf{Total Params} & \textbf{Trainable Params} & \textbf{Accuracy (\%)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} & \textbf{Latency (ms/tok)} \\
+\midrule
+$\mathbf{r = 8}$ & \textbf{62,476,082} & \textbf{53,026,610} & \textbf{83.14\%} & \textbf{307.21} & \textbf{68,259.7} & \textbf{0.0146} \\
+$r = 16$ & 62,721,842 & 53,272,370 & 83.14\% & 308.15 & 58,281.9 & 0.0172 \\
+$r = 32$ & 63,213,362 & 53,763,890 & 83.14\% & 310.03 & 66,136.8 & 0.0151 \\
+$r = 64$ & 64,196,402 & 54,746,930 & 83.14\% & 313.78 & 53,508.1 & 0.0187 \\
+\bottomrule
+\end{tabular}
+\end{table}

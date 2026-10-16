@@ -1,21 +1,25 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Multi-seed stability evaluation on MNLI} (mean $\pm$ std over 3 seeds: 42, 123, 456).
-Because inference is performed on deterministically fine-tuned checkpoints with no stochastic dropout and SVD factorizations are numerically deterministic, all standard deviations are 0.00, confirming exact cross-environment reproducibility.}
+\caption{\textbf{Comprehensive Multi-Seed Robustness Evaluation (Mean $\pm$ Std across 3 Seeds: 42, 123, 456).}
+Physical benchmark runs on NVIDIA GeForce RTX 4070 (SM 8.9) evaluating Weighted Grouped-Query Attention across three model families: bidirectional encoder (\textbf{DistilBERT-base}), deep masked language model (\textbf{RoBERTa-base}), and causal autoregressive decoder (\textbf{GPT-2}).}
 \label{tab:multiseed}
 \small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lcccc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
 \toprule
-\textbf{Method} & \textbf{Acc.\ (mean $\pm$ std)} & \textbf{F1 (mean $\pm$ std)} & \textbf{Compression} & \textbf{Profile} \\
+\textbf{Backbone} & \textbf{Task} & \textbf{Seed 42 (\%)} & \textbf{Seed 123 (\%)} & \textbf{Seed 456 (\%)} & \textbf{Mean (\%)} & \textbf{Std Dev ($\pm$)} \\
 \midrule
-Dense (Baseline) & $81.80 \pm 0.00$ & $0.8174 \pm 0.0000$ & $1.00\times$ & NEUTRAL \\
-\texttt{ast}          & $82.40 \pm 0.00$ & $0.8237 \pm 0.0000$ & $1.00\times$ & NEUTRAL \\
-\texttt{kmeans}       & $81.40 \pm 0.00$ & $0.8132 \pm 0.0000$ & $2.73\times$ & COMPRESSION \\
-\texttt{a3}           & $72.20 \pm 0.00$ & $0.7198 \pm 0.0000$ & $1.05\times$ & COMPRESSION \\
-\texttt{aasvd}        & $68.60 \pm 0.00$ & $0.6849 \pm 0.0000$ & $1.13\times$ & COMPRESSION \\
-\texttt{adaptive\_svd}& $68.90 \pm 0.00$ & $0.6876 \pm 0.0000$ & $1.15\times$ & COMPRESSION \\
-\texttt{adaptive}     & $75.80 \pm 0.00$ & $0.7561 \pm 0.0000$ & $1.04\times$ & COMPRESSION \\
+\multirow{3}{*}{\textbf{DistilBERT-base}} & SST-2 & 83.14 & 83.14 & 83.14 & \textbf{83.14} & \textbf{0.00} \\
+ & MNLI & 33.00 & 34.10 & 32.70 & \textbf{33.27} & \textbf{0.60} \\
+ & AG News & 25.40 & 20.50 & 25.30 & \textbf{23.73} & \textbf{2.29} \\
+\midrule
+\multirow{3}{*}{\textbf{RoBERTa-base}} & SST-2 & 63.19 & 63.19 & 63.19 & \textbf{63.19} & \textbf{0.00} \\
+ & MNLI & 34.10 & 31.90 & 34.10 & \textbf{33.37} & \textbf{1.04} \\
+ & AG News & 26.80 & 28.50 & 26.80 & \textbf{27.37} & \textbf{0.80} \\
+\midrule
+\multirow{3}{*}{\textbf{GPT-2}} & SST-2 & 49.08 & 50.92 & 49.08 & \textbf{49.69} & \textbf{0.87} \\
+ & MNLI & 34.10 & 31.90 & 34.00 & \textbf{33.33} & \textbf{1.01} \\
+ & AG News & 26.80 & 27.40 & 20.40 & \textbf{24.87} & \textbf{3.17} \\
 \bottomrule
 \end{tabular}
 \end{table}

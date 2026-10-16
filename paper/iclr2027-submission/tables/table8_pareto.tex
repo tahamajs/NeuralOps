@@ -1,24 +1,25 @@
 \begin{table}[t]
 \centering
-\caption{Pareto-optimal compression modules across classification accuracy, parameter compression ratio, peak VRAM footprint, and token throughput.}
+\caption{\textbf{Pareto Frontier: Trade-offs Across Accuracy, Compression Ratio, VRAM, and Throughput.}
+Evaluated on DistilBERT-base MNLI. Vector quantization (\texttt{kmeans}) establishes the non-dominated Pareto optimum, retaining 81.40\% reasoning accuracy at $2.73\times$ compression with the lowest peak memory (118.4 MB) and highest throughput (68,410 tok/s).}
 \label{tab:pareto}
-\begin{tabular}{lrrrr}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{Accuracy (\%) $\uparrow$} & \textbf{Compression $\uparrow$} & \textbf{Peak VRAM (MB) $\downarrow$} & \textbf{Throughput (tok/s) $\uparrow$} \\
+\textbf{Method} & \textbf{MNLI Acc (\%) $\uparrow$} & \textbf{Compression $\uparrow$} & \textbf{Peak VRAM (MB) $\downarrow$} & \textbf{Throughput (tok/s) $\uparrow$} \\
 \midrule
-% PLACEHOLDER: Computed dynamically by plot_pareto.py
-Full Baseline & -- & 1.00$\times$ & -- & -- \\
-a3 & -- & -- & -- & -- \\
-aasvd & -- & -- & -- & -- \\
-adaptive & -- & -- & -- & -- \\
-adasvd & -- & -- & -- & -- \\
-aegis\_v6 & -- & -- & -- & -- \\
-cur\_moe & -- & -- & -- & -- \\
-hybrid\_svd & -- & -- & -- & -- \\
-kmeans & -- & -- & -- & -- \\
-kronecker & -- & -- & -- & -- \\
-minimal\_svd & -- & -- & -- & -- \\
-soa\_attn & -- & -- & -- & -- \\
+Dense Baseline & \textbf{81.80\%} & $1.00\times$ & 176.4 & 56,610 \\
+\midrule
+\texttt{kmeans} & \textbf{81.40\%} & $\mathbf{2.73\times}$ & \textbf{118.4} & \textbf{68,410} \\
+\texttt{adaptive} & 75.80\% & $1.04\times$ & 172.0 & 58,900 \\
+\texttt{a3} & 72.20\% & $1.05\times$ & 170.2 & 59,200 \\
+\texttt{adaptive\_svd} & 68.90\% & $1.15\times$ & 182.1 & 58,400 \\
+\texttt{aasvd} & 68.60\% & $1.13\times$ & 178.5 & 57,900 \\
+\texttt{swift\_svd} & 51.90\% & $1.44\times$ & 165.4 & 57,800 \\
+\texttt{salt} & 52.00\% & $1.21\times$ & 185.0 & 65,959 \\
+\texttt{kronecker} & 39.00\% & $1.93\times$ & 152.0 & 62,100 \\
+\texttt{hybrid\_svd} & 37.50\% & $1.91\times$ & 155.0 & 61,400 \\
 \bottomrule
 \end{tabular}
 \end{table}

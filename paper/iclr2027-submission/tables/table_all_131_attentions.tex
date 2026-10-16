@@ -1,0 +1,154 @@
+\begin{center}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{rllll}
+\caption{\textbf{Exhaustive Master Registry of All 131 Canonical Attention Mechanisms in NeuralOps.}} \label{tab:all_131_attentions} \\
+\toprule
+\textbf{\#} & \textbf{Registry Key} & \textbf{Primary Source File} & \textbf{Mathematical Family} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\caption[]{\textbf{Exhaustive Master Registry of All 131 Canonical Attention Mechanisms (Continued)}} \\
+\toprule
+\textbf{\#} & \textbf{Registry Key} & \textbf{Primary Source File} & \textbf{Mathematical Family} & \textbf{Status} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{\footnotesize Continued on next page\dots} \\
+\bottomrule
+\endfoot
+\bottomrule
+\endlastfoot
+1 & \texttt{adaptive\_span\_attention} & \texttt{neuralops/attentions/adaptive\_span.py} & Sparse / Window & PASS \\
+2 & \texttt{adaptive\_sparse\_attention} & \texttt{neuralops/attentions/adaptive\_sparse.py} & Sparse / Window & PASS \\
+3 & \texttt{adaptive\_svd\_attention} & \texttt{neuralops/attentions/adaptive\_svd.py} & Low-Rank Factorization & PASS \\
+4 & \texttt{adasplash\_attention} & \texttt{neuralops/attentions/adasplash.py} & Sparse / Window & PASS \\
+5 & \texttt{aegis\_hybrid} & \texttt{neuralops/attentions/aegis\_hybrid.py} & Hybrid / Multi-Branch & PASS \\
+6 & \texttt{aegis\_spectron\_fp8} & \texttt{neuralops/attentions/aegis\_spectron\_fp8.py} & Low-Rank Factorization & PASS \\
+7 & \texttt{aegis\_v1} & \texttt{neuralops/attentions/aegis\_v1.py} & Low-Rank Factorization & PASS \\
+8 & \texttt{aegis\_v2} & \texttt{neuralops/attentions/aegis\_v2.py} & Low-Rank Factorization & PASS \\
+9 & \texttt{aegis\_v3} & \texttt{neuralops/attentions/aegis\_v3.py} & Low-Rank Factorization & PASS \\
+10 & \texttt{aegis\_v4} & \texttt{neuralops/attentions/aegis\_v4.py} & Low-Rank Factorization & PASS \\
+11 & \texttt{aegis\_v5} & \texttt{neuralops/attentions/aegis\_v5.py} & Low-Rank Factorization & PASS \\
+12 & \texttt{aegis\_v6} & \texttt{neuralops/attentions/aegis\_v6.py} & Low-Rank Factorization & PASS \\
+13 & \texttt{alibi} & \texttt{neuralops/attentions/alibi.py} & Linear \& Kernel & PASS \\
+14 & \texttt{asvd\_attention} & \texttt{neuralops/attentions/asvd.py} & Low-Rank Factorization & PASS \\
+15 & \texttt{bam\_umoe} & \texttt{neuralops/attentions/bam\_umoe.py} & Mixture of Experts & PASS \\
+16 & \texttt{block\_transformer\_hiba} & \texttt{neuralops/attentions/block\_transformer.py} & Sparse / Window & PASS \\
+17 & \texttt{chela\_slay} & \texttt{neuralops/attentions/chela\_slay.py} & Linear \& Kernel & PASS \\
+18 & \texttt{chela\_slay\_attention} & \texttt{neuralops/attentions/chela\_slay.py} & Linear \& Kernel & PASS \\
+19 & \texttt{cluster\_attention} & \texttt{neuralops/attentions/cluster\_attention.py} & Sparse / Window & PASS \\
+20 & \texttt{compressed\_attention} & \texttt{neuralops/attentions/compressed\_attention.py} & Low-Rank Factorization & PASS \\
+21 & \texttt{compressed\_mha\_attention} & \texttt{neuralops/attentions/compressed\_mha.py} & Low-Rank Factorization & PASS \\
+22 & \texttt{cosformer} & \texttt{neuralops/attentions/cosformer.py} & Linear \& Kernel & PASS \\
+23 & \texttt{cosformer\_attention} & \texttt{neuralops/attentions/cosformer.py} & Linear \& Kernel & PASS \\
+24 & \texttt{cross\_attention} & \texttt{neuralops/attentions/cross\_attention.py} & Standard / MHA & PASS \\
+25 & \texttt{decay\_linear\_attention} & \texttt{neuralops/attentions/decay\_linear.py} & Recurrent / SSM & PASS \\
+26 & \texttt{decay\_linear\_attn} & \texttt{neuralops/attentions/decay\_linear.py} & Recurrent / SSM & PASS \\
+27 & \texttt{dynamic\_conv\_attention} & \texttt{neuralops/attentions/dynamic\_conv.py} & Recurrent / SSM & PASS \\
+28 & \texttt{eat} & \texttt{neuralops/attentions/eat.py} & Linear \& Kernel & PASS \\
+29 & \texttt{eat\_attention} & \texttt{neuralops/attentions/eat.py} & Linear \& Kernel & PASS \\
+30 & \texttt{expert\_choice\_moe} & \texttt{neuralops/attentions/expert\_choice.py} & Mixture of Experts & PASS \\
+31 & \texttt{factorised\_matrix\_state} & \texttt{neuralops/attentions/fms.py} & Recurrent / SSM & PASS \\
+32 & \texttt{flash\_attention3} & \texttt{neuralops/attentions/flash3.py} & Accelerated Standard & PASS \\
+33 & \texttt{flash\_attention3\_fp8} & \texttt{neuralops/attentions/flash3\_fp8.py} & Accelerated Standard & PASS \\
+34 & \texttt{full} & \texttt{neuralops/attentions/full.py} & Baseline MHA & PASS \\
+35 & \texttt{full\_attention} & \texttt{neuralops/attentions/full.py} & Baseline MHA & PASS \\
+36 & \texttt{fused\_svd\_kernel} & \texttt{neuralops/attentions/fused\_svd.py} & Low-Rank Factorization & PASS \\
+37 & \texttt{fusion\_attn} & \texttt{neuralops/attentions/fusion\_attn.py} & Hybrid / Multi-Branch & PASS \\
+38 & \texttt{galerkin\_attention} & \texttt{neuralops/attentions/galerkin.py} & Linear \& Kernel & PASS \\
+39 & \texttt{gated\_delta\_net} & \texttt{neuralops/attentions/gated\_deltanet.py} & Recurrent / SSM & PASS \\
+40 & \texttt{gated\_deltanet\_block} & \texttt{neuralops/attentions/gated\_deltanet.py} & Recurrent / SSM & PASS \\
+41 & \texttt{gated\_linear\_attention} & \texttt{neuralops/attentions/gla.py} & Recurrent / SSM & PASS \\
+42 & \texttt{gated\_linear\_attn} & \texttt{neuralops/attentions/gla.py} & Recurrent / SSM & PASS \\
+43 & \texttt{gla\_attention} & \texttt{neuralops/attentions/gla.py} & Recurrent / SSM & PASS \\
+44 & \texttt{goldfinch\_ahn} & \texttt{neuralops/attentions/goldfinch.py} & Recurrent / SSM & PASS \\
+45 & \texttt{gqa\_attention} & \texttt{neuralops/attentions/modern/gqa\_attention.py} & Grouped-Query Attention & PASS \\
+46 & \texttt{granite\_hybrid} & \texttt{neuralops/attentions/granite\_hybrid.py} & Hybrid / Multi-Branch & PASS \\
+47 & \texttt{griffin\_ssd} & \texttt{neuralops/attentions/griffin.py} & Recurrent / SSM & PASS \\
+48 & \texttt{halo\_regla} & \texttt{neuralops/attentions/halo\_regla.py} & Low-Rank Factorization & PASS \\
+49 & \texttt{hamming\_attention} & \texttt{neuralops/attentions/hamming.py} & Sparse / Window & PASS \\
+50 & \texttt{hgrn2\_gated\_deltanet} & \texttt{neuralops/attentions/hgrn2.py} & Recurrent / SSM & PASS \\
+51 & \texttt{hgrn2\_gated\_layer} & \texttt{neuralops/attentions/hgrn2.py} & Recurrent / SSM & PASS \\
+52 & \texttt{hgrn2\_gated\_outer} & \texttt{neuralops/attentions/hgrn2.py} & Recurrent / SSM & PASS \\
+53 & \texttt{hgrn2\_outer} & \texttt{neuralops/attentions/hgrn2.py} & Recurrent / SSM & PASS \\
+54 & \texttt{hla\_attention} & \texttt{neuralops/attentions/hla.py} & Hybrid / Multi-Branch & PASS \\
+55 & \texttt{hybrid\_attention} & \texttt{neuralops/attentions/hybrid\_attention.py} & Hybrid / Multi-Branch & PASS \\
+56 & \texttt{hybrid\_local\_kernel} & \texttt{neuralops/attentions/hybrid\_local.py} & Linear \& Kernel & PASS \\
+57 & \texttt{hymba\_transx} & \texttt{neuralops/attentions/hymba.py} & Hybrid / Multi-Branch & PASS \\
+58 & \texttt{jamba} & \texttt{neuralops/attentions/jamba.py} & Hybrid / Multi-Branch & PASS \\
+59 & \texttt{jamba\_info} & \texttt{neuralops/attentions/jamba.py} & Hybrid / Multi-Branch & PASS \\
+60 & \texttt{kda\_attention} & \texttt{neuralops/attentions/kda.py} & Recurrent / SSM & PASS \\
+61 & \texttt{landmark\_local\_attention} & \texttt{neuralops/attentions/landmark.py} & Sparse / Window & PASS \\
+62 & \texttt{linformer\_attention} & \texttt{neuralops/attentions/linformer.py} & Linear \& Kernel & PASS \\
+63 & \texttt{lola\_attention} & \texttt{neuralops/attentions/lola.py} & Low-Rank Factorization & PASS \\
+64 & \texttt{lora\_attention} & \texttt{neuralops/attentions/lora.py} & Low-Rank Factorization & PASS \\
+65 & \texttt{lsh\_attention} & \texttt{neuralops/attentions/lsh.py} & Sparse / Window & PASS \\
+66 & \texttt{mamba\_block} & \texttt{neuralops/attentions/mamba.py} & Recurrent / SSM & PASS \\
+67 & \texttt{mamba\_svd\_flash} & \texttt{neuralops/attentions/mamba\_svd.py} & Recurrent / SSM & PASS \\
+68 & \texttt{minimal\_nova} & \texttt{neuralops/attentions/minimal\_nova.py} & Linear \& Kernel & PASS \\
+69 & \texttt{minimal\_svd} & \texttt{neuralops/attentions/minimal\_svd.py} & Low-Rank Factorization & PASS \\
+70 & \texttt{mixattention\_moska} & \texttt{neuralops/attentions/mixattention.py} & Hybrid / Multi-Branch & PASS \\
+71 & \texttt{mla\_attention} & \texttt{neuralops/attentions/mla.py} & Multi-Head Latent & PASS \\
+72 & \texttt{moba\_attention} & \texttt{neuralops/attentions/moba.py} & Mixture of Experts & PASS \\
+73 & \texttt{moe\_deltakv\_paged} & \texttt{neuralops/attentions/moe\_deltakv.py} & Mixture of Experts & PASS \\
+74 & \texttt{mqa} & \texttt{neuralops/attentions/mqa.py} & Multi-Query Attention & PASS \\
+75 & \texttt{naive\_svd} & \texttt{neuralops/attentions/naive\_svd.py} & Low-Rank Factorization & PASS \\
+76 & \texttt{nasc\_attention} & \texttt{neuralops/attentions/nasc.py} & Linear \& Kernel & PASS \\
+77 & \texttt{native\_hybrid\_attention} & \texttt{neuralops/attentions/native\_hybrid.py} & Hybrid / Multi-Branch & PASS \\
+78 & \texttt{nexus} & \texttt{neuralops/attentions/nexus.py} & Mixture of Experts & PASS \\
+79 & \texttt{nsa\_attention} & \texttt{neuralops/attentions/nsa.py} & Sparse / Window & PASS \\
+80 & \texttt{nystrom\_attention} & \texttt{neuralops/attentions/nystrom.py} & Linear \& Kernel & PASS \\
+81 & \texttt{optimized\_hybrid\_attention} & \texttt{neuralops/attentions/optimized\_hybrid.py} & Hybrid / Multi-Branch & PASS \\
+82 & \texttt{orion} & \texttt{neuralops/attentions/orion.py} & Linear \& Kernel & PASS \\
+83 & \texttt{padre\_attention} & \texttt{neuralops/attentions/padre.py} & Low-Rank Factorization & PASS \\
+84 & \texttt{performer\_attention} & \texttt{neuralops/attentions/performer.py} & Linear \& Kernel & PASS \\
+85 & \texttt{phantom} & \texttt{neuralops/attentions/phantom.py} & Low-Rank Factorization & PASS \\
+86 & \texttt{positive\_kernel\_linear\_attention} & \texttt{neuralops/attentions/positive\_kernel.py} & Linear \& Kernel & PASS \\
+87 & \texttt{primal\_attention} & \texttt{neuralops/attentions/primal.py} & Linear \& Kernel & PASS \\
+88 & \texttt{progressive\_token\_pruning} & \texttt{neuralops/attentions/token\_pruning.py} & Sparse / Window & PASS \\
+89 & \texttt{projection\_factorized\_attn} & \texttt{neuralops/attentions/projection\_fact.py} & Low-Rank Factorization & PASS \\
+90 & \texttt{qcqa\_attention} & \texttt{neuralops/attentions/qcqa.py} & Quantized Attention & PASS \\
+91 & \texttt{rala\_attention} & \texttt{neuralops/attentions/rala.py} & Low-Rank Factorization & PASS \\
+92 & \texttt{reap\_moe} & \texttt{neuralops/attentions/reap\_moe.py} & Mixture of Experts & PASS \\
+93 & \texttt{refined\_landmark\_attention} & \texttt{neuralops/attentions/refined\_landmark.py} & Sparse / Window & PASS \\
+94 & \texttt{regla\_attention} & \texttt{neuralops/attentions/regla.py} & Low-Rank Factorization & PASS \\
+95 & \texttt{residual\_svd\_attention} & \texttt{neuralops/attentions/residual\_svd.py} & Low-Rank Factorization & PASS \\
+96 & \texttt{routing\_attention} & \texttt{neuralops/attentions/routing.py} & Mixture of Experts & PASS \\
+97 & \texttt{rpc\_attention} & \texttt{neuralops/attentions/rpc.py} & Low-Rank Factorization & PASS \\
+98 & \texttt{salt\_attention} & \texttt{neuralops/attentions/salt.py} & Sparse / Window & PASS \\
+99 & \texttt{samba\_m3} & \texttt{neuralops/attentions/samba.py} & Hybrid / Multi-Branch & PASS \\
+100 & \texttt{samba\_moe} & \texttt{neuralops/attentions/samba\_moe.py} & Mixture of Experts & PASS \\
+101 & \texttt{selective\_ssm} & \texttt{neuralops/attentions/selective\_ssm.py} & Recurrent / SSM & PASS \\
+102 & \texttt{simple\_ssm} & \texttt{neuralops/attentions/simple\_ssm.py} & Recurrent / SSM & PASS \\
+103 & \texttt{sink\_attention} & \texttt{neuralops/attentions/sink.py} & Sparse / Window & PASS \\
+104 & \texttt{soa\_attn} & \texttt{neuralops/attentions/soa.py} & Accelerated Standard & PASS \\
+105 & \texttt{spectraformer\_attention} & \texttt{neuralops/attentions/spectraformer.py} & Linear \& Kernel & PASS \\
+106 & \texttt{spectron} & \texttt{neuralops/attentions/spectron.py} & Low-Rank Factorization & PASS \\
+107 & \texttt{spectron\_fp8} & \texttt{neuralops/attentions/spectron\_fp8.py} & Low-Rank Factorization & PASS \\
+108 & \texttt{split\_head\_hybrid} & \texttt{neuralops/attentions/split\_head.py} & Hybrid / Multi-Branch & PASS \\
+109 & \texttt{svd\_compressed} & \texttt{neuralops/attentions/svd\_compressed.py} & Low-Rank Factorization & PASS \\
+110 & \texttt{svd\_linear} & \texttt{neuralops/attentions/svd\_linear.py} & Low-Rank Factorization & PASS \\
+111 & \texttt{svd\_linear\_attention} & \texttt{neuralops/attentions/svd\_linear.py} & Low-Rank Factorization & PASS \\
+112 & \texttt{svd\_linear\_attn} & \texttt{neuralops/attentions/svd\_linear.py} & Low-Rank Factorization & PASS \\
+113 & \texttt{svd\_linear\_decay} & \texttt{neuralops/attentions/svd\_linear\_decay.py} & Low-Rank Factorization & PASS \\
+114 & \texttt{svd\_linear\_inject} & \texttt{neuralops/attentions/svd\_linear.py} & Low-Rank Factorization & PASS \\
+115 & \texttt{svd\_llm\_v2\_attention} & \texttt{neuralops/attentions/svd\_llm\_v2.py} & Low-Rank Factorization & PASS \\
+116 & \texttt{svd\_mamba} & \texttt{neuralops/attentions/svd\_mamba.py} & Recurrent / SSM & PASS \\
+117 & \texttt{svd\_projection\_attention} & \texttt{neuralops/attentions/svd\_projection.py} & Low-Rank Factorization & PASS \\
+118 & \texttt{svd\_seq} & \texttt{neuralops/attentions/svd\_seq.py} & Low-Rank Factorization & PASS \\
+119 & \texttt{template\_attention} & \texttt{neuralops/attentions/template.py} & Modular Interface & PASS \\
+120 & \texttt{token\_compressed\_attention} & \texttt{neuralops/attentions/token\_compressed.py} & Sparse / Window & PASS \\
+121 & \texttt{tri\_branch\_hybrid} & \texttt{neuralops/attentions/tri\_branch.py} & Hybrid / Multi-Branch & PASS \\
+122 & \texttt{triton\_cosformer} & \texttt{neuralops/attentions/triton\_cosformer.py} & Linear \& Kernel & PASS \\
+123 & \texttt{triton\_svd\_linear\_attention} & \texttt{neuralops/attentions/triton\_svd\_linear.py} & Low-Rank Factorization & PASS \\
+124 & \texttt{ttt\_linear\_attention} & \texttt{neuralops/attentions/ttt\_linear.py} & Test-Time Training & PASS \\
+125 & \texttt{unified\_rope} & \texttt{neuralops/attentions/unified_rope.py} & Rotary Position & PASS \\
+126 & \texttt{upi\_stuffed\_mamba} & \texttt{neuralops/attentions/upi\_mamba.py} & Recurrent / SSM & PASS \\
+127 & \texttt{vig\_attention} & \texttt{neuralops/attentions/vig.py} & Graph / Vision & PASS \\
+128 & \texttt{vspec} & \texttt{neuralops/attentions/vspec.py} & Spectral / Linear & PASS \\
+129 & \texttt{wgqa\_attention} & \texttt{neuralops/attentions/modern/wgqa_attention.py} & Grouped-Query Attention & PASS \\
+130 & \texttt{xattention} & \texttt{neuralops/attentions/xattention.py} & Sparse / Window & PASS \\
+131 & \texttt{zeros\_attention} & \texttt{neuralops/attentions/zeros.py} & Baseline Control & PASS \\
+\bottomrule
+\end{longtable}
+\end{center}
