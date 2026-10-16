@@ -113,6 +113,50 @@ def flash_decoding_pytorch(
     return final_out
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def flash_decoding_stage2_kernel(
+        MidOut_ptr, MidLse_ptr, FinalOut_ptr,
+        stride_mb, stride_mh, stride_mc, stride_md,
+        stride_lb, stride_lh, stride_lc,
+        stride_ob, stride_oh, stride_oq, stride_od,
+        H, num_chunks,
+        BLOCK_C: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        """Split-KV Flash Decoding Stage 2: Reduction over intermediate chunks in SRAM."""
+        pid_bh = tl.program_id(0)
+        i_b = pid_bh // H
+        i_h = pid_bh % H
+
+        offs_d = tl.arange(0, BLOCK_D)
+        offs_c = tl.arange(0, BLOCK_C)
+        mask_c = offs_c < num_chunks
+
+        # Load chunk logsumexps
+        lse_ptrs = MidLse_ptr + i_b * stride_lb + i_h * stride_lh + offs_c * stride_lc
+        lse_vals = tl.load(lse_ptrs, mask=mask_c, other=-1e4)
+
+        # Global max of lse
+        max_lse = tl.max(lse_vals, axis=0)
+        p = tl.where(mask_c, tl.exp(lse_vals - max_lse), 0.0)
+        global_sum = tl.sum(p, axis=0)
+        alpha = p / tl.maximum(global_sum, 1e-6)  # (BLOCK_C,)
+
+        # Accumulate weighted chunk outputs
+        acc = tl.zeros([BLOCK_D], dtype=tl.float32)
+        for c in range(num_chunks):
+            w_c = tl.load(MidLse_ptr + i_b * stride_lb + i_h * stride_lh + c * stride_lc)
+            weight = tl.exp(w_c - max_lse) / tl.maximum(global_sum, 1e-6)
+
+            mid_ptrs = MidOut_ptr + i_b * stride_mb + i_h * stride_mh + c * stride_mc + offs_d * stride_md
+            out_c = tl.load(mid_ptrs).to(tl.float32)
+            acc += weight * out_c
+
+        out_ptrs = FinalOut_ptr + i_b * stride_ob + i_h * stride_oh + 0 * stride_oq + offs_d * stride_od
+        tl.store(out_ptrs, acc.to(FinalOut_ptr.dtype.element_ty))
+
+
 def flash_decoding_attention(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -131,8 +175,8 @@ def flash_decoding_attention(
             mid_out = torch.empty((B, H, num_chunks, D), dtype=q.dtype, device=q.device)
             mid_lse = torch.empty((B, H, num_chunks), dtype=torch.float32, device=q.device)
 
-            grid = (num_chunks, B * H)
-            flash_decoding_stage1_kernel[grid](
+            grid1 = (num_chunks, B * H)
+            flash_decoding_stage1_kernel[grid1](
                 q.squeeze(2), k, v, mid_out, mid_lse,
                 q.squeeze(2).stride(0), q.squeeze(2).stride(1), q.squeeze(2).stride(2),
                 k.stride(0), k.stride(1), k.stride(2), k.stride(3),
@@ -144,10 +188,19 @@ def flash_decoding_attention(
                 BLOCK_D=D,
             )
 
-            # Stage 2: Reduction across chunks in registers
-            global_lse = torch.logsumexp(mid_lse, dim=-1, keepdim=True)
-            alpha = torch.exp(mid_lse - global_lse).unsqueeze(-1)
-            final_out = torch.sum(alpha * mid_out.float(), dim=2, keepdim=True).to(q.dtype)
+            # Stage 2: Reduction across chunks in GPU SRAM via stage 2 kernel
+            final_out = torch.empty((B, H, 1, D), dtype=q.dtype, device=q.device)
+            block_c = triton.next_power_of_2(max(16, num_chunks))
+            grid2 = (B * H,)
+            flash_decoding_stage2_kernel[grid2](
+                mid_out, mid_lse, final_out,
+                mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
+                mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
+                final_out.stride(0), final_out.stride(1), final_out.stride(2), final_out.stride(3),
+                H, num_chunks,
+                BLOCK_C=block_c,
+                BLOCK_D=D,
+            )
             return final_out
         except Exception:
             pass

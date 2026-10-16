@@ -9,3 +9,4 @@
 1. **One-Line In-Place Surgery**: Drop-in attention and linear layer replacement without re-architecting your model.
 2. **Bit-Exact Hugging Face Roundtrip**: Zero weight drift between exported and reloaded model checkpoints.
 3. **Serving Adapters**: Production integrations for vLLM, Text Generation Inference (TGI), SGLang, and TensorRT-LLM.
+4. **Experiment Results Ledger & Provenance Engine**: Immutable dual-storage (`.jsonl` + indexed `.sqlite`) tracking exact Git SHAs, timestamps, versions, revisions, and automated vector plotting. See [Results Ledger API](api/results_ledger.md).

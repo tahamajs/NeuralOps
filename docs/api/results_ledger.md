@@ -79,7 +79,7 @@ The master manager handling reads, writes, version bumps, queries, diffing, and 
 ```python
 from neuralops.core.results_ledger import ResultsLedger
 
-ledger = ResultsLedger(results_dir="results")
+ledger = ResultsLedger(root_dir="results")
 
 # Adding or updating records
 ledger.add_or_replace(record, mode="upsert")      # 'upsert', 'replace', or 'new_version'
@@ -88,18 +88,18 @@ ledger.add_or_replace(record, mode="upsert")      # 'upsert', 'replace', or 'new
 records = ledger.query(
     module_name="gated_deltanet",
     category="attention",
-    min_metric=("eval_accuracy", 90.0),
-    status="verified"
+    min_accuracy=90.0,
+    only_active=True,
 )
 
 # Version diffing
-diff = ledger.compare_versions("roberta_12layer_kd", v1=1, v2=2)
+diff = ledger.compare_versions("roberta_12layer_kd", rev_a=1, rev_b=2)
 
 # Plotting
-svg_chart = ledger.plot_results(category="attention", metric="eval_accuracy", format="svg")
+plot_res = ledger.plot_results(records, chart_type="bar", y_metric="accuracy", output_path="results/plots/attention_acc.svg")
 
 # Table export
-latex_code = ledger.export_table(category="compressor", format="latex")
+latex_code = ledger.export_table(records, format="latex")
 ```
 
 ### Convenience Functions

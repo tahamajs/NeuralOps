@@ -71,48 +71,48 @@ The ledger is natively built into the `neuralops` CLI.
 ### 1. Querying Experiments
 ```bash
 # Query all verified results for a module
-neuralops results query --module hnc_svd
+neuralops results --module hnc_svd
 
-# Query top results in a category filtered by minimum accuracy
-neuralops results query --category attention --min-metric eval_accuracy 90.0
+# Query top results in a category
+neuralops results --category attention --limit 20
 
 # Filter by Git Commit SHA or method
-neuralops results query --git-sha a1b2c3d4e5
-neuralops results query --method "HNC Nullspace Projection"
+neuralops results --git-sha a1b2c3d4e5
+neuralops results --method "HNC Nullspace Projection"
 ```
 
 ### 2. Inspecting Module History & Version Diff
 ```bash
 # Display full historical dossier of an attention or compressor
-neuralops results dossier --module gated_deltanet
+neuralops results --dossier gated_deltanet
 
 # Compare two versions of a module to inspect performance delta
-neuralops results diff --module roberta_12layer_kd --v1 1 --v2 2
+neuralops results --diff roberta_12layer_kd --rev-a 1 --rev-b 2
 ```
 
 ### 3. Rendering Charts & Exporting Tables
 ```bash
 # Render ASCII terminal chart of top attention mechanisms
-neuralops results plot --category attention --metric eval_accuracy --chart-type bar --format ascii
+neuralops results --category attention --plot bar --y-metric accuracy
 
 # Generate high-resolution standalone vector SVG chart
-neuralops results plot --category compressor --metric compression_ratio --format svg --out results/plots/compressor_ratios.svg
+neuralops results --category compressor --plot bar --y-metric relative_error --out results/plots/compressor_errors.svg
 
 # Export verified results as LaTeX booktabs table for paper submissions
-neuralops results export --category attention --format latex --out paper/iclr2027-submission/tables/attention_benchmarks.tex
+neuralops results --category attention --format latex --out paper/iclr2027-submission/tables/attention_benchmarks.tex
 
 # Export as clean Markdown table
-neuralops results export --category compressor --format markdown
+neuralops results --category compressor --format markdown
 ```
 
 ### 4. Adding or Updating Records via CLI
 ```bash
-neuralops results add \
+neuralops results --add \
   --module simplex_wgqa \
   --category attention \
   --family simplex-wgqa \
   --method "Simplex-Constrained WGQA + Closed-Form Ridge Calibration" \
-  --metrics '{"eval_accuracy": 91.8, "speedup": 2.4}' \
+  --metrics '{"accuracy": 91.8, "speedup_x": 2.4}' \
   --dataset sst2 \
   --backbone roberta-base \
   --mode new_version
