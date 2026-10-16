@@ -1,6 +1,6 @@
 """Tests for repeat_kv_optimized."""
 import torch
-from neuralops.core.gqa_utils import repeat_kv, repeat_kv_optimized
+from neuralops.core.utils.gqa import repeat_kv, repeat_kv_optimized
 
 
 def test_repeat_kv_optimized():
