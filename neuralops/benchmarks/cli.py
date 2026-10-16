@@ -127,13 +127,6 @@ def _build_parser() -> argparse.ArgumentParser:
     # 5. verify
     subparsers.add_parser("verify", help="Check system hardware and package requirements")
 
-    # 6. results
-    res_show = subparsers.add_parser("results", help="Inspect and summarize benchmark results")
-    res_show.add_argument("--output-dir", type=str, default="results", help="Output directory")
-    res_show.add_argument("--summary", action="store_true", help="Display summary table")
-    res_show.add_argument("--latest", action="store_true", help="Show latest result details")
-    res_show.add_argument("--format", choices=["table", "csv", "markdown", "latex"], default="table", help="Output display format")
-
     # 7. export
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
     exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
@@ -767,8 +760,7 @@ def main(argv: list[str] | None = None) -> int:
         handle_plan(args)
     elif args.subcommand == "verify":
         handle_verify(args)
-    elif args.subcommand == "results":
-        handle_results(args)
+
     elif args.subcommand == "run":
         handle_run(args)
     elif args.subcommand == "export":
