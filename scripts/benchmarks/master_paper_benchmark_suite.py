@@ -350,9 +350,11 @@ def main():
         # Apply calibrated rank capacity: top-r residual singular values
         with torch.no_grad():
             for m in model.modules():
-                if hasattr(m, "lora_B") and m.lora_B is not None:
-                    # Initialize B with scaled orthogonal singular directions proportional to rank
-                    m.lora_B.weight.data.normal_(0.0, 0.01 * (r / 64.0))
+                b_param = getattr(m, "lora_B", None)
+                if b_param is not None:
+                    b_data = getattr(b_param, "weight", b_param)
+                    if hasattr(b_data, "data"):
+                        b_data.data.normal_(0.0, 0.005 * (r / 64.0))
 
         batches = prepare_classification_batches("sst2", tokenizer, max_samples=max_samples)
         res = evaluate_classification(model, batches)
