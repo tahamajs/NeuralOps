@@ -4,7 +4,33 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-__all__ = ["smoothquant_layer", "smoothquant_model"]
+__all__ = ["smoothquant_layer", "smoothquant_model", "SmoothQuantLinear"]
+
+
+class SmoothQuantLinear(nn.Module):
+    """Linear layer applying in-SRAM SmoothQuant activation scaling and GEMM."""
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        s: torch.Tensor,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = nn.Parameter(torch.empty(out_features, in_features, device=device, dtype=dtype))
+        self.register_buffer("s_inv", (1.0 / s).to(device=device, dtype=dtype))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, device=device, dtype=dtype))
+        else:
+            self.register_parameter("bias", None)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels.fused_norm_linear import triton_fused_act_scale_quant_gemm
+        return triton_fused_act_scale_quant_gemm(x, self.s_inv, self.weight, bias=self.bias)
 
 
 def smoothquant_layer(
@@ -46,6 +72,16 @@ def smoothquant_layer(
 
     # Apply to weights in-place
     module.weight.data = (module.weight.data * s.unsqueeze(0)).to(module.weight.dtype)
+    module.register_buffer("s_inv", (1.0 / s).to(module.weight.dtype))
+
+    orig_forward = module.forward
+    def _smoothed_forward(x: torch.Tensor) -> torch.Tensor:
+        from neuralops.core.triton_kernels.fused_norm_linear import triton_fused_act_scale_quant_gemm
+        if hasattr(module, "s_inv"):
+            return triton_fused_act_scale_quant_gemm(x, module.s_inv, module.weight, bias=module.bias)
+        return orig_forward(x)
+
+    module.forward = _smoothed_forward
     return module, s
 
 
@@ -61,3 +97,4 @@ def smoothquant_model(
             _, s = smoothquant_layer(module, alpha=alpha, calib_data=calib_data)
             scales[name] = s
     return scales
+
