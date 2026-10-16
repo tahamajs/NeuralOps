@@ -2,8 +2,8 @@
   "metadata": {
     "device": "cuda",
     "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
-    "timestamp": "2026-10-16 07:33:42 UTC",
-    "total_benchmark_time_seconds": 29.265597581863403
+    "timestamp": "2026-10-16 07:50:45 UTC",
+    "total_benchmark_time_seconds": 29.415099143981934
   },
   "table_1_transformer_block": [
     {
@@ -16,21 +16,21 @@
       "top1_match_pct": 64.16015625,
       "cos_sim": 0.9690029621124268,
       "l_func": 0.030996711924672127,
-      "comp_wall_ms": 66.72339700162411,
-      "fwd_latency_ms": 0.3271616995334625
+      "comp_wall_ms": 67.22133501898497,
+      "fwd_latency_ms": 0.32807726005557925
     },
     {
       "method": "HNC-SVD (Ours)",
       "rank": 8,
       "compression_pct": 95.3,
       "initial_tail_energy_ratio": 0.9165210386283805,
-      "post_walk_tail_energy_ratio": 4.182420926236461e-15,
-      "rel_error": 0.18139632046222687,
-      "top1_match_pct": 72.4609375,
-      "cos_sim": 0.9835476875305176,
-      "l_func": 0.016452152281999588,
-      "comp_wall_ms": 1863.6233559809625,
-      "fwd_latency_ms": 0.25916334008798003
+      "post_walk_tail_energy_ratio": 3.901165037123018e-15,
+      "rel_error": 0.18152444064617157,
+      "top1_match_pct": 72.265625,
+      "cos_sim": 0.9835244417190552,
+      "l_func": 0.01647540181875229,
+      "comp_wall_ms": 1906.2875990057364,
+      "fwd_latency_ms": 0.2582503599114716
     },
     {
       "method": "Naive DirectSVD",
@@ -42,21 +42,21 @@
       "top1_match_pct": 67.48046875,
       "cos_sim": 0.9738257527351379,
       "l_func": 0.026174023747444153,
-      "comp_wall_ms": 22.550813999259844,
-      "fwd_latency_ms": 0.24372453975956887
+      "comp_wall_ms": 22.50282801105641,
+      "fwd_latency_ms": 0.2402164798695594
     },
     {
       "method": "HNC-SVD (Ours)",
       "rank": 16,
       "compression_pct": 90.6,
       "initial_tail_energy_ratio": 0.8412241537923896,
-      "post_walk_tail_energy_ratio": 5.225293149684929e-15,
-      "rel_error": 0.17326682806015015,
-      "top1_match_pct": 73.2421875,
-      "cos_sim": 0.9849893450737,
-      "l_func": 0.015010552480816841,
-      "comp_wall_ms": 1770.1609520008788,
-      "fwd_latency_ms": 0.2629356598481536
+      "post_walk_tail_energy_ratio": 5.459835432551574e-15,
+      "rel_error": 0.17326754331588745,
+      "top1_match_pct": 72.8515625,
+      "cos_sim": 0.9849891662597656,
+      "l_func": 0.015010676346719265,
+      "comp_wall_ms": 1932.0923409832176,
+      "fwd_latency_ms": 0.2592112001730129
     },
     {
       "method": "Naive DirectSVD",
@@ -68,21 +68,21 @@
       "top1_match_pct": 74.12109375,
       "cos_sim": 0.9828120470046997,
       "l_func": 0.01718778721988201,
-      "comp_wall_ms": 26.254044991219416,
-      "fwd_latency_ms": 0.2409909199923277
+      "comp_wall_ms": 23.43876101076603,
+      "fwd_latency_ms": 0.23551505990326405
     },
     {
       "method": "HNC-SVD (Ours)",
       "rank": 32,
       "compression_pct": 81.2,
       "initial_tail_energy_ratio": 0.70828100520361,
-      "post_walk_tail_energy_ratio": 8.523286981545062e-15,
-      "rel_error": 0.1584884524345398,
-      "top1_match_pct": 75.0,
-      "cos_sim": 0.9874407052993774,
-      "l_func": 0.012559173628687859,
-      "comp_wall_ms": 1745.8982479874976,
-      "fwd_latency_ms": 0.24072923988569528
+      "post_walk_tail_energy_ratio": 8.521232568361847e-15,
+      "rel_error": 0.15850764513015747,
+      "top1_match_pct": 75.1953125,
+      "cos_sim": 0.9874377250671387,
+      "l_func": 0.012562215328216553,
+      "comp_wall_ms": 1868.3961820206605,
+      "fwd_latency_ms": 0.2375308598857373
     },
     {
       "method": "Naive DirectSVD",
@@ -94,21 +94,21 @@
       "top1_match_pct": 81.0546875,
       "cos_sim": 0.9937045574188232,
       "l_func": 0.006295344792306423,
-      "comp_wall_ms": 25.389604998053983,
-      "fwd_latency_ms": 0.24550237983930853
+      "comp_wall_ms": 25.46498301671818,
+      "fwd_latency_ms": 0.24395109969191253
     },
     {
       "method": "HNC-SVD (Ours)",
       "rank": 64,
       "compression_pct": 62.5,
       "initial_tail_energy_ratio": 0.4930272951787721,
-      "post_walk_tail_energy_ratio": 2.3445014618133052e-14,
-      "rel_error": 0.1515624076128006,
-      "top1_match_pct": 76.07421875,
-      "cos_sim": 0.9885144233703613,
-      "l_func": 0.011485470458865166,
-      "comp_wall_ms": 1790.2930539858062,
-      "fwd_latency_ms": 0.24976815970148888
+      "post_walk_tail_energy_ratio": 2.351892437357847e-14,
+      "rel_error": 0.1439637541770935,
+      "top1_match_pct": 76.66015625,
+      "cos_sim": 0.9896372556686401,
+      "l_func": 0.01036268100142479,
+      "comp_wall_ms": 1795.156207983382,
+      "fwd_latency_ms": 0.23551388003397733
     }
   ],
   "table_2_svd_linear_attention": [
@@ -116,73 +116,73 @@
       "method": "Raw Truncated SVD",
       "rank": 8,
       "comp_pct": 93.8,
-      "cosine_sim": 0.037030238658189774,
-      "mse_drift": 0.002035881392657757,
-      "rel_error": 1.0256249904632568,
-      "tokens_per_sec": 697247.83876839
+      "cosine_sim": 0.05832855403423309,
+      "mse_drift": 0.0019320757128298283,
+      "rel_error": 0.9991354942321777,
+      "tokens_per_sec": 679502.059513774
     },
     {
       "method": "HNC Aligned SVD (Ours)",
       "rank": 8,
       "comp_pct": 93.8,
-      "cosine_sim": 0.0016623830888420343,
-      "mse_drift": 0.002443492878228426,
-      "rel_error": 1.1236159801483154,
-      "tokens_per_sec": 696361.6871167399
+      "cosine_sim": -0.005428646225482225,
+      "mse_drift": 0.002336859703063965,
+      "rel_error": 1.0988253355026245,
+      "tokens_per_sec": 694588.5064523005
     },
     {
       "method": "Raw Truncated SVD",
       "rank": 16,
       "comp_pct": 87.5,
-      "cosine_sim": 0.08706841617822647,
-      "mse_drift": 0.0021000192500650883,
-      "rel_error": 1.04165518283844,
-      "tokens_per_sec": 678630.5042974083
+      "cosine_sim": 0.19749706983566284,
+      "mse_drift": 0.0018633324652910233,
+      "rel_error": 0.9811999797821045,
+      "tokens_per_sec": 685502.6215440584
     },
     {
       "method": "HNC Aligned SVD (Ours)",
       "rank": 16,
       "comp_pct": 87.5,
-      "cosine_sim": 0.0497865155339241,
-      "mse_drift": 0.0024692071601748466,
-      "rel_error": 1.1295126676559448,
-      "tokens_per_sec": 693696.0957502475
+      "cosine_sim": 0.057531967759132385,
+      "mse_drift": 0.0022226907312870026,
+      "rel_error": 1.0716472864151,
+      "tokens_per_sec": 700226.8627355801
     },
     {
       "method": "Raw Truncated SVD",
       "rank": 32,
       "comp_pct": 75.0,
-      "cosine_sim": 0.13177864253520966,
-      "mse_drift": 0.0025671161711215973,
-      "rel_error": 1.1516886949539185,
-      "tokens_per_sec": 703044.8751651195
+      "cosine_sim": 0.3546338379383087,
+      "mse_drift": 0.0016986059490591288,
+      "rel_error": 0.9368253946304321,
+      "tokens_per_sec": 688071.5299640861
     },
     {
       "method": "HNC Aligned SVD (Ours)",
       "rank": 32,
       "comp_pct": 75.0,
-      "cosine_sim": 0.11296015232801437,
-      "mse_drift": 0.002840805798768997,
-      "rel_error": 1.2115271091461182,
-      "tokens_per_sec": 717414.8457966836
+      "cosine_sim": 0.2164815366268158,
+      "mse_drift": 0.001961702248081565,
+      "rel_error": 1.0067667961120605,
+      "tokens_per_sec": 700386.3955586693
     },
     {
       "method": "Raw Truncated SVD",
       "rank": 64,
       "comp_pct": 50.0,
-      "cosine_sim": 0.25119656324386597,
-      "mse_drift": 0.0035461881197988987,
-      "rel_error": 1.3536090850830078,
-      "tokens_per_sec": 696231.0265628482
+      "cosine_sim": 0.5842661261558533,
+      "mse_drift": 0.0012774849310517311,
+      "rel_error": 0.8124380111694336,
+      "tokens_per_sec": 696513.1781981674
     },
     {
       "method": "HNC Aligned SVD (Ours)",
       "rank": 64,
       "comp_pct": 50.0,
-      "cosine_sim": 0.22376739978790283,
-      "mse_drift": 0.0037978491745889187,
-      "rel_error": 1.4008163213729858,
-      "tokens_per_sec": 682984.9526052816
+      "cosine_sim": 0.4855697751045227,
+      "mse_drift": 0.0015116884605959058,
+      "rel_error": 0.8837786316871643,
+      "tokens_per_sec": 695676.7339249683
     }
   ],
   "table_3_scientific_ablations": [
@@ -335,65 +335,65 @@
     {
       "shape": "512x512",
       "dtype": "FP16",
-      "pytorch_us": 132.50240325927734,
-      "triton_us": 28.69312047958374,
-      "speedup_x": 4.617915411241447,
+      "pytorch_us": 62.68799781799317,
+      "triton_us": 30.211200714111328,
+      "speedup_x": 2.074991934653967,
       "max_abs_diff": 0.0009765625
     },
     {
       "shape": "1024x1024",
       "dtype": "FP16",
-      "pytorch_us": 251.14879608154294,
-      "triton_us": 85.27680397033691,
-      "speedup_x": 2.9451009464297435,
+      "pytorch_us": 251.02144241333008,
+      "triton_us": 84.56576347351074,
+      "speedup_x": 2.9683577857363006,
       "max_abs_diff": 0.001953125
     },
     {
       "shape": "2048x2048",
       "dtype": "FP16",
-      "pytorch_us": 2247.1507263183594,
-      "triton_us": 521.8713760375977,
-      "speedup_x": 4.305947460426467,
+      "pytorch_us": 2240.4710388183594,
+      "triton_us": 522.0147323608398,
+      "speedup_x": 4.291968980809618,
       "max_abs_diff": 0.001953125
     },
     {
       "shape": "4096x4096",
       "dtype": "FP16",
-      "pytorch_us": 15002.890625,
-      "triton_us": 4475.41259765625,
-      "speedup_x": 3.352292173654991,
+      "pytorch_us": 14970.142822265625,
+      "triton_us": 4780.60546875,
+      "speedup_x": 3.131432392847075,
       "max_abs_diff": 0.001953125
     },
     {
       "shape": "512x512",
       "dtype": "FP32",
-      "pytorch_us": 46.243839263916016,
-      "triton_us": 46.30527973175049,
-      "speedup_x": 0.9986731433609645,
+      "pytorch_us": 45.649919509887695,
+      "triton_us": 45.690879821777344,
+      "speedup_x": 0.9991035341834209,
       "max_abs_diff": 0.0
     },
     {
       "shape": "1024x1024",
       "dtype": "FP32",
-      "pytorch_us": 245.67808151245117,
-      "triton_us": 246.24576568603516,
-      "speedup_x": 0.9976946439180286,
+      "pytorch_us": 248.06976318359375,
+      "triton_us": 242.07359313964844,
+      "speedup_x": 1.0247700295029132,
       "max_abs_diff": 0.0
     },
     {
       "shape": "2048x2048",
       "dtype": "FP32",
-      "pytorch_us": 1944.82177734375,
-      "triton_us": 1930.3424072265625,
-      "speedup_x": 1.0075009335457696,
+      "pytorch_us": 1917.6448059082031,
+      "triton_us": 1920.4914855957031,
+      "speedup_x": 0.9985177337630231,
       "max_abs_diff": 0.0
     },
     {
       "shape": "4096x4096",
       "dtype": "FP32",
-      "pytorch_us": 13576.417236328125,
-      "triton_us": 13565.009765625,
-      "speedup_x": 1.0008409482116285,
+      "pytorch_us": 13506.8017578125,
+      "triton_us": 13574.86083984375,
+      "speedup_x": 0.9949863882337939,
       "max_abs_diff": 0.0
     }
   ],
@@ -415,7 +415,7 @@
         "rel_error": 0.9613735675811768,
         "top1_match_pct": 1.3671875,
         "ppl": 987.43,
-        "cos_sim": 0.275935560464859
+        "cos_sim": 0.27593570947647095
       }
     },
     {
@@ -455,7 +455,7 @@
         "rel_error": 0.8581878542900085,
         "top1_match_pct": 4.8828125,
         "ppl": 957.22,
-        "cos_sim": 0.5136461853981018
+        "cos_sim": 0.513646125793457
       }
     },
     {
