@@ -116,7 +116,7 @@ def main():
     # Kernel 1: Fused Low-Rank Gated GEMM
     # -----------------------------------------------------------------------
     print("\n[Kernel 1/13] triton_fused_lowrank_gated_gemm")
-    M, K, r, N = 512, 768, 64, 768
+    M, K, r, N = 1024, 2048, 32, 2048
     x1 = torch.randn(M, K, device=device, dtype=torch.float16)
     V1 = torch.randn(r, K, device=device, dtype=torch.float16)
     U1 = torch.randn(N, r, device=device, dtype=torch.float16)
@@ -149,7 +149,7 @@ def main():
     # Kernel 2: Fused Low-Rank + Sparse GEMM (RPCA)
     # -----------------------------------------------------------------------
     print("\n[Kernel 2/13] triton_fused_lowrank_sparse_gemm")
-    M, K, r, N = 512, 768, 64, 768
+    M, K, r, N = 1024, 2048, 32, 2048
     x2 = torch.randn(M, K, device=device, dtype=torch.float16)
     V2 = torch.randn(r, K, device=device, dtype=torch.float16)
     U2 = torch.randn(N, r, device=device, dtype=torch.float16)
@@ -183,10 +183,10 @@ def main():
     # Kernel 3: Strided TT Linear Projection
     # -----------------------------------------------------------------------
     print("\n[Kernel 3/13] triton_strided_tt_linear")
-    p_dims = [16, 16]
-    q_dims = [16, 16]
+    p_dims = [32, 64]
+    q_dims = [32, 64]
     r = 16
-    M = 256
+    M = 1024
     c1 = torch.randn(1, p_dims[0], q_dims[0], r, device=device, dtype=torch.float16)
     c2 = torch.randn(r, p_dims[1], q_dims[1], 1, device=device, dtype=torch.float16)
     x3 = torch.randn(M, p_dims[0] * p_dims[1], device=device, dtype=torch.float16)
@@ -285,9 +285,9 @@ def main():
     # Kernel 6: Fused Kronecker Matmul
     # -----------------------------------------------------------------------
     print("\n[Kernel 6/13] triton_fused_kronecker_matmul")
-    M1, N1 = 16, 16
-    M2, N2 = 32, 32
-    M = 128
+    M1, N1 = 32, 32
+    M2, N2 = 64, 64
+    M = 1024
     x6 = torch.randn(M, N1 * N2, device=device, dtype=torch.float16)
     A6 = torch.randn(M1, N1, device=device, dtype=torch.float16)
     B6 = torch.randn(M2, N2, device=device, dtype=torch.float16)
