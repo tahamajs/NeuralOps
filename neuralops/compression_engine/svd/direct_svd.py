@@ -122,6 +122,12 @@ class DirectSVDCompressor(BaseCompressor):
 
         self.rank = rank
         self.min_rank = max(1, int(min_rank))
+        if self.rank is not None and self.rank < self.min_rank:
+            logger.warning(
+                "DirectSVDCompressor: target rank %d is below min_rank %d. "
+                "If explicit low-rank decomposition is required, pass min_rank=%d.",
+                self.rank, self.min_rank, self.rank
+            )
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         if max_error is None:
             max_error = 0.05
