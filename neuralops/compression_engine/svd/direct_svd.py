@@ -145,6 +145,7 @@ class DirectSVDCompressor(BaseCompressor):
         else:
             self.max_retries = int(max_retries)
         self.target_modules = target_modules
+        self.target_attention_only = bool(target_attention_only)
         self.use_hnc_continuation = bool(
             kwargs.get("use_hnc_continuation", kwargs.get("name") in ("hnc_svd", "hnc_svd_compressor"))
         )
