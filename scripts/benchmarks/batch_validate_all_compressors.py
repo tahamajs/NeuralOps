@@ -41,6 +41,7 @@ logger = logging.getLogger("BatchValidation")
 # ============================================================
 # CONFIGURATION: ALL 26 MAJOR COMPRESSORS
 # ============================================================
+# All 26 registered candidates
 COMPRESSOR_REGISTRY_KEYS = [
     # SVD family
     "direct_svd",
@@ -72,6 +73,19 @@ COMPRESSOR_REGISTRY_KEYS = [
     # Adaptive
     "adaptive_ranks",
     "adasvd_compressor",
+    "entropy_budget_allocation",
+]
+
+# Verified genuinely rank-sensitive low-rank matrix decomposition compressors
+VALID_RANK_SENSITIVE_COMPRESSORS = [
+    "direct_svd",
+    "hnc_svd",
+    "whitened_svd",
+    "fisher_svd",
+    "fwsvd",
+    "dobi_svd",
+    "tt_compressor",
+    "rpca_compressor",
     "entropy_budget_allocation",
 ]
 
@@ -380,15 +394,15 @@ def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, dev
 # ============================================================
 # BATCH EXECUTION ENGINE
 # ============================================================
-def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: str):
+def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: str, valid_only: bool = True):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    logger.info("Starting Batch Validation on model: %s | device: %s | seeds: %s | ranks: %s",
-                model_name, device, seeds, ranks)
+    supported = VALID_RANK_SENSITIVE_COMPRESSORS if valid_only else COMPRESSOR_REGISTRY_KEYS
+    logger.info("Starting Batch Validation on model: %s | device: %s | seeds: %s | ranks: %s | mode: %s (%d compressors)",
+                model_name, device, seeds, ranks, "VALID_ONLY" if valid_only else "ALL_26", len(supported))
 
     results: Dict[Tuple[str, int], List[Dict[str, Any]]] = {}
-    supported = COMPRESSOR_REGISTRY_KEYS
 
     for seed in seeds:
         logger.info("=" * 70)
@@ -597,25 +611,21 @@ def compare_methods_statistical(aggregate: Dict[str, Any], methods: List[str], r
 # CLI ENTRY POINT
 # ============================================================
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Multi-seed multi-rank batch validation of 26 compressors.")
+    parser = argparse.ArgumentParser(description="Multi-seed multi-rank batch validation of compressors.")
     parser.add_argument("--model", choices=list(MODELS.keys()), required=True, help="Target model architecture")
     parser.add_argument("--seeds", type=int, default=10, help="Number of random seeds")
     parser.add_argument("--ranks", type=str, default="8,16,32,64", help="Comma-separated ranks")
     parser.add_argument("--output", type=str, default="results/batch_validation", help="Output directory")
+    parser.add_argument("--all-26", action="store_true", help="Include all 26 candidate compressors instead of only verified valid ones")
     args = parser.parse_args()
 
     seed_list = list(range(args.seeds))
     rank_list = [int(r.strip()) for r in args.ranks.split(",")]
+    valid_only = not args.all_26
 
-    agg = run_batch(args.model, seed_list, rank_list, args.output)
+    agg = run_batch(args.model, seed_list, rank_list, args.output, valid_only=valid_only)
 
-    # Statistical significance comparisons across key compressors
-    methods_to_compare = [
-        "direct_svd", "hnc_svd", "erc_svd", "aa_svd", "whitened_svd", "fisher_svd",
-        "dobi_svd", "fwsvd", "asvd_compressor", "wanda_real", "sparsegpt", "flap",
-        "slicegpt", "admm_pruner", "gptq_real", "smoothquant_real", "quarot", "w4a16",
-        "int4_lut_quantizer", "kronecker_compressor", "tt_compressor", "rpca_compressor",
-        "tucker_compressor", "adaptive_ranks", "adasvd_compressor", "entropy_budget_allocation"
-    ]
+    # Statistical significance comparisons across evaluated compressors
+    methods_to_compare = VALID_RANK_SENSITIVE_COMPRESSORS if valid_only else COMPRESSOR_REGISTRY_KEYS
     for r in rank_list:
         compare_methods_statistical(agg, methods_to_compare, r)
