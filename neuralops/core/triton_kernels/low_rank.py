@@ -2135,8 +2135,949 @@ __all__ = [
     'fused_svd_lora_sparse_attn_triton',
     'fused_hnc_nullspace_step_triton',
     'fused_hnc_nullspace_step_pytorch',
+    'triton_fused_lowrank_gated_gemm',
+    'triton_fused_lowrank_gated_gemm_pytorch_ref',
+    'triton_fused_lowrank_sparse_gemm',
+    'triton_fused_lowrank_sparse_gemm_pytorch_ref',
+    'triton_strided_tt_contraction',
+    'triton_strided_tt_linear',
+    'triton_strided_tt_contraction_pytorch_ref',
+    'triton_fused_kronecker_matmul',
+    'triton_fused_kronecker_matmul_pytorch_ref',
+    'triton_spectral_entropy_svd_gate',
+    'triton_spectral_entropy_svd_gate_pytorch_ref',
 ]
 
 
+# ==============================================================================
+# FLAGSHIP TRITON KERNELS: LOW-RANK, RPCA SPARSE, STRIDED TT, KRONECKER & ENTROPY
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Kernel 1: triton_fused_lowrank_gated_gemm
+# ------------------------------------------------------------------------------
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32}, num_stages=4, num_warps=8),
+        triton.Config({"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=4, num_warps=8),
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=2, num_warps=4),
+    ],
+    key=["M", "N", "K", "R"],
+)
+@triton.jit
+def _fused_lowrank_gated_gemm_1d_kernel(
+    x_ptr,
+    v_ptr,
+    u_ptr,
+    alpha_ptr,
+    b_ptr,
+    y_ptr,
+    M,
+    N,
+    K,
+    R,
+    stride_xm,
+    stride_xk,
+    stride_vk,
+    stride_vr,
+    stride_ur,
+    stride_un,
+    stride_ym,
+    stride_yn,
+    HAS_ALPHA: tl.constexpr,
+    HAS_BIAS: tl.constexpr,
+    BLOCK_M: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    BLOCK_K: tl.constexpr,
+    BLOCK_R: tl.constexpr,
+):
+    pid_m = tl.program_id(0)
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    mask_m = offs_m < M
+
+    offs_r = tl.arange(0, BLOCK_R)
+    mask_r = offs_r < R
+
+    z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+
+    num_k_blocks = tl.cdiv(K, BLOCK_K)
+    for k_idx in range(0, num_k_blocks):
+        offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
+        mask_k = offs_k < K
+
+        x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
+        v_ptrs = v_ptr + offs_k[:, None] * stride_vk + offs_r[None, :] * stride_vr
+
+        x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
+        v_tile = tl.load(v_ptrs, mask=mask_k[:, None] & mask_r[None, :], other=0.0)
+
+        z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
+
+    if HAS_ALPHA:
+        alpha_ptrs = alpha_ptr + offs_r
+        alpha_tile = tl.load(alpha_ptrs, mask=mask_r, other=0.0)
+        gate = tl.sigmoid(alpha_tile.to(tl.float32))
+        z_acc = z_acc * gate[None, :]
+
+    z_tile = z_acc.to(x_tile.dtype)
+
+    num_n_blocks = tl.cdiv(N, BLOCK_N)
+    for n_idx in range(0, num_n_blocks):
+        offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
+        mask_n = offs_n < N
+
+        u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
+        u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
+
+        y_tile = tl.dot(z_tile, u_tile, allow_tf32=True)
+
+        if HAS_BIAS:
+            b_ptrs = b_ptr + offs_n
+            b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
+            y_tile += b_tile[None, :]
+
+        y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
+        tl.store(y_ptrs, y_tile, mask=mask_m[:, None] & mask_n[None, :])
 
 
+def triton_fused_lowrank_gated_gemm_pytorch_ref(
+    x: torch.Tensor,
+    v_r: torch.Tensor,
+    u_r: torch.Tensor,
+    alpha: Optional[torch.Tensor] = None,
+    b_drift: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+    if v_r.shape[0] == K:
+        V_mat = v_r
+    else:
+        V_mat = v_r.t().contiguous()
+    R = V_mat.shape[1]
+    if u_r.shape[0] == R:
+        U_mat = u_r
+    else:
+        U_mat = u_r.t().contiguous()
+    N = U_mat.shape[1]
+
+    z = torch.matmul(x_2d, V_mat)
+    if alpha is not None:
+        gate = torch.sigmoid(alpha.view(1, -1).to(dtype=z.dtype, device=z.device))
+        z = z * gate
+    y = torch.matmul(z, U_mat)
+    if b_drift is not None:
+        y = y + b_drift.to(dtype=y.dtype, device=y.device)
+    return y.view(*orig_shape[:-1], N)
+
+
+def triton_fused_lowrank_gated_gemm(
+    x: torch.Tensor,
+    v_r: torch.Tensor,
+    u_r: torch.Tensor,
+    alpha: Optional[torch.Tensor] = None,
+    b_drift: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+
+    if v_r.shape[0] == K:
+        V_mat = v_r
+    elif v_r.shape[1] == K:
+        V_mat = v_r.t().contiguous()
+    else:
+        raise ValueError(f"Shape mismatch for V_r: expected {K}, got {v_r.shape}")
+
+    R = V_mat.shape[1]
+    if u_r.shape[0] == R:
+        U_mat = u_r
+    elif u_r.shape[1] == R:
+        U_mat = u_r.t().contiguous()
+    else:
+        raise ValueError(f"Shape mismatch for U_r: expected rank {R}, got {u_r.shape}")
+
+    N = U_mat.shape[1]
+
+    if not x.is_cuda or R > 256:
+        return triton_fused_lowrank_gated_gemm_pytorch_ref(x, v_r, u_r, alpha, b_drift)
+
+    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
+    BLOCK_R = max(16, triton.next_power_of_2(R))
+
+    has_alpha = alpha is not None
+    has_bias = b_drift is not None
+
+    alpha_t = alpha.contiguous() if has_alpha else torch.empty(0, device=x.device, dtype=x.dtype)
+    b_t = b_drift.contiguous() if has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
+    x_c = x_2d.contiguous()
+    V_c = V_mat.contiguous()
+    U_c = U_mat.contiguous()
+
+    grid = lambda META: (triton.cdiv(M, META["BLOCK_M"]),)
+    _fused_lowrank_gated_gemm_1d_kernel[grid](
+        x_c,
+        V_c,
+        U_c,
+        alpha_t,
+        b_t,
+        y,
+        M,
+        N,
+        K,
+        R,
+        x_c.stride(0),
+        x_c.stride(1),
+        V_c.stride(0),
+        V_c.stride(1),
+        U_c.stride(0),
+        U_c.stride(1),
+        y.stride(0),
+        y.stride(1),
+        HAS_ALPHA=has_alpha,
+        HAS_BIAS=has_bias,
+        BLOCK_R=BLOCK_R,
+    )
+
+    return y.view(*orig_shape[:-1], N)
+
+
+# ------------------------------------------------------------------------------
+# Kernel 2: triton_fused_lowrank_sparse_gemm (RPCA)
+# ------------------------------------------------------------------------------
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32}, num_stages=4, num_warps=8),
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=2, num_warps=4),
+    ],
+    key=["M", "N", "K", "R"],
+)
+@triton.jit
+def _fused_rpca_gemm_kernel(
+    x_ptr,
+    v_ptr,
+    u_ptr,
+    crow_ptr,
+    col_ptr,
+    val_ptr,
+    b_ptr,
+    y_ptr,
+    M,
+    N,
+    K,
+    R,
+    stride_xm,
+    stride_xk,
+    stride_vk,
+    stride_vr,
+    stride_ur,
+    stride_un,
+    stride_ym,
+    stride_yn,
+    HAS_SPARSE: tl.constexpr,
+    HAS_BIAS: tl.constexpr,
+    BLOCK_M: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    BLOCK_K: tl.constexpr,
+    BLOCK_R: tl.constexpr,
+):
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_r = tl.arange(0, BLOCK_R)
+
+    mask_m = offs_m < M
+    mask_n = offs_n < N
+    mask_r = offs_r < R
+
+    z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+    num_k_blocks = tl.cdiv(K, BLOCK_K)
+    for k_idx in range(0, num_k_blocks):
+        offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
+        mask_k = offs_k < K
+
+        x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
+        v_ptrs = v_ptr + offs_k[:, None] * stride_vk + offs_r[None, :] * stride_vr
+
+        x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
+        v_tile = tl.load(v_ptrs, mask=mask_k[:, None] & mask_r[None, :], other=0.0)
+
+        z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
+
+    z_tile = z_acc.to(x_tile.dtype)
+
+    u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
+    u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
+
+    y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
+
+    if HAS_SPARSE:
+        for i in range(0, BLOCK_N):
+            curr_n = pid_n * BLOCK_N + i
+            if curr_n < N:
+                row_start = tl.load(crow_ptr + curr_n)
+                row_end = tl.load(crow_ptr + curr_n + 1)
+                for idx in range(row_start, row_end):
+                    col = tl.load(col_ptr + idx)
+                    val = tl.load(val_ptr + idx)
+                    x_vals = tl.load(x_ptr + offs_m * stride_xm + col * stride_xk, mask=mask_m, other=0.0)
+                    y_acc = y_acc + tl.where(
+                        (tl.arange(0, BLOCK_N) == i)[None, :],
+                        (x_vals * val).to(tl.float32)[:, None],
+                        0.0,
+                    )
+
+    if HAS_BIAS:
+        b_ptrs = b_ptr + offs_n
+        b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
+        y_acc += b_tile[None, :].to(tl.float32)
+
+    y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
+    tl.store(y_ptrs, y_acc.to(x_tile.dtype), mask=mask_m[:, None] & mask_n[None, :])
+
+
+def triton_fused_lowrank_sparse_gemm_pytorch_ref(
+    x: torch.Tensor,
+    v_r: torch.Tensor,
+    u_r: torch.Tensor,
+    s: Optional[Any] = None,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+    if v_r.shape[0] == K:
+        V_mat = v_r
+    else:
+        V_mat = v_r.t().contiguous()
+    R = V_mat.shape[1]
+    if u_r.shape[0] == R:
+        U_mat = u_r
+    else:
+        U_mat = u_r.t().contiguous()
+    N = U_mat.shape[1]
+
+    y_lr = torch.matmul(torch.matmul(x_2d, V_mat), U_mat)
+    if s is not None:
+        if isinstance(s, torch.Tensor) and not s.is_sparse:
+            y_sp = torch.matmul(x_2d, s.t())
+        elif hasattr(s, "is_sparse_csr") and s.is_sparse_csr:
+            y_sp = torch.matmul(x_2d, s.to_dense().t())
+        else:
+            y_sp = 0.0
+        y = y_lr + y_sp
+    else:
+        y = y_lr
+    if bias is not None:
+        y = y + bias.to(dtype=y.dtype, device=y.device)
+    return y.view(*orig_shape[:-1], N)
+
+
+def triton_fused_lowrank_sparse_gemm(
+    x: torch.Tensor,
+    v_r: torch.Tensor,
+    u_r: torch.Tensor,
+    s: Optional[Any] = None,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+
+    if v_r.shape[0] == K:
+        V_mat = v_r
+    elif v_r.shape[1] == K:
+        V_mat = v_r.t().contiguous()
+    else:
+        raise ValueError(f"Shape mismatch for V_r: expected {K}, got {v_r.shape}")
+
+    R = V_mat.shape[1]
+    if u_r.shape[0] == R:
+        U_mat = u_r
+    elif u_r.shape[1] == R:
+        U_mat = u_r.t().contiguous()
+    else:
+        raise ValueError(f"Shape mismatch for U_r: expected rank {R}, got {u_r.shape}")
+
+    N = U_mat.shape[1]
+
+    has_sparse = s is not None
+    crow_indices, col_indices, values = None, None, None
+
+    if has_sparse:
+        if isinstance(s, tuple) and len(s) == 3:
+            crow_indices, col_indices, values = s
+        elif hasattr(s, "is_sparse_csr") and s.is_sparse_csr:
+            crow_indices = s.crow_indices()
+            col_indices = s.col_indices()
+            values = s.values()
+        elif isinstance(s, torch.Tensor) and not s.is_sparse:
+            s_csr = s.to_sparse_csr()
+            crow_indices = s_csr.crow_indices()
+            col_indices = s_csr.col_indices()
+            values = s_csr.values()
+        else:
+            has_sparse = False
+
+    if not x.is_cuda or R > 256:
+        return triton_fused_lowrank_sparse_gemm_pytorch_ref(x, v_r, u_r, s, bias)
+
+    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
+    BLOCK_R = max(16, triton.next_power_of_2(R))
+
+    has_bias = bias is not None
+    b_t = bias.contiguous() if has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
+    x_c = x_2d.contiguous()
+    V_c = V_mat.contiguous()
+    U_c = U_mat.contiguous()
+
+    if has_sparse:
+        crow_c = crow_indices.contiguous().to(torch.int32)
+        col_c = col_indices.contiguous().to(torch.int32)
+        val_c = values.contiguous().to(x.dtype)
+    else:
+        crow_c = torch.empty(0, device=x.device, dtype=torch.int32)
+        col_c = torch.empty(0, device=x.device, dtype=torch.int32)
+        val_c = torch.empty(0, device=x.device, dtype=x.dtype)
+
+    grid = lambda META: (
+        triton.cdiv(M, META["BLOCK_M"]),
+        triton.cdiv(N, META["BLOCK_N"]),
+    )
+
+    _fused_rpca_gemm_kernel[grid](
+        x_c,
+        V_c,
+        U_c,
+        crow_c,
+        col_c,
+        val_c,
+        b_t,
+        y,
+        M,
+        N,
+        K,
+        R,
+        x_c.stride(0),
+        x_c.stride(1),
+        V_c.stride(0),
+        V_c.stride(1),
+        U_c.stride(0),
+        U_c.stride(1),
+        y.stride(0),
+        y.stride(1),
+        HAS_SPARSE=has_sparse,
+        HAS_BIAS=has_bias,
+        BLOCK_R=BLOCK_R,
+    )
+
+    return y.view(*orig_shape[:-1], N)
+
+
+# ------------------------------------------------------------------------------
+# Kernel 3: triton_strided_tt_contraction (Tensor-Train)
+# ------------------------------------------------------------------------------
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_N": 32, "BLOCK_K": 32, "BLOCK_R": 16}, num_stages=2, num_warps=2),
+        triton.Config({"BLOCK_N": 64, "BLOCK_K": 32, "BLOCK_R": 16}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_N": 32, "BLOCK_K": 64, "BLOCK_R": 16}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_N": 64, "BLOCK_K": 64, "BLOCK_R": 32}, num_stages=4, num_warps=4),
+    ],
+    key=["N", "K", "R"],
+)
+@triton.jit
+def _strided_tt_reconstruct_kernel(
+    core0_ptr,
+    core1_ptr,
+    w_ptr,
+    N,
+    K,
+    R,
+    p0_dim,
+    p1_dim,
+    q0_dim,
+    q1_dim,
+    stride_c0_p,
+    stride_c0_q,
+    stride_c0_r,
+    stride_c1_r,
+    stride_c1_p,
+    stride_c1_q,
+    stride_wn,
+    stride_wk,
+    BLOCK_N: tl.constexpr,
+    BLOCK_K: tl.constexpr,
+    BLOCK_R: tl.constexpr,
+):
+    pid_n = tl.program_id(0)
+    pid_k = tl.program_id(1)
+
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = pid_k * BLOCK_K + tl.arange(0, BLOCK_K)
+
+    mask_n = offs_n < N
+    mask_k = offs_k < K
+
+    q0 = offs_n // q1_dim
+    q1 = offs_n % q1_dim
+    p0 = offs_k // p1_dim
+    p1 = offs_k % p1_dim
+
+    acc = tl.zeros((BLOCK_N, BLOCK_K), dtype=tl.float32)
+
+    num_r_blocks = tl.cdiv(R, BLOCK_R)
+    for r_idx in range(0, num_r_blocks):
+        offs_r = r_idx * BLOCK_R + tl.arange(0, BLOCK_R)
+        mask_r = offs_r < R
+
+        c0_ptrs = (
+            core0_ptr
+            + p0[None, :, None] * stride_c0_p
+            + q0[:, None, None] * stride_c0_q
+            + offs_r[None, None, :] * stride_c0_r
+        )
+        c1_ptrs = (
+            core1_ptr
+            + offs_r[None, None, :] * stride_c1_r
+            + p1[None, :, None] * stride_c1_p
+            + q1[:, None, None] * stride_c1_q
+        )
+
+        mask_3d = mask_n[:, None, None] & mask_k[None, :, None] & mask_r[None, None, :]
+
+        c0_vals = tl.load(c0_ptrs, mask=mask_3d, other=0.0)
+        c1_vals = tl.load(c1_ptrs, mask=mask_3d, other=0.0)
+
+        acc += tl.sum(c0_vals * c1_vals, axis=2)
+
+    w_ptrs = w_ptr + offs_n[:, None] * stride_wn + offs_k[None, :] * stride_wk
+    tl.store(w_ptrs, acc.to(c0_vals.dtype), mask=mask_n[:, None] & mask_k[None, :])
+
+
+def triton_strided_tt_contraction_pytorch_ref(
+    core0: torch.Tensor,
+    core1: torch.Tensor,
+    p_dims: Tuple[int, int],
+    q_dims: Tuple[int, int],
+) -> torch.Tensor:
+    c0 = core0.squeeze(0) if core0.dim() == 4 and core0.shape[0] == 1 else core0
+    c1 = core1.squeeze(-1) if core1.dim() == 4 and core1.shape[-1] == 1 else core1
+    p0, p1 = p_dims
+    q0, q1 = q_dims
+    N = q0 * q1
+    K = p0 * p1
+    res = torch.tensordot(c0, c1, dims=([-1], [0]))
+    res = res.permute(1, 3, 0, 2).contiguous()
+    return res.view(N, K)
+
+
+def triton_strided_tt_contraction(
+    core0: torch.Tensor,
+    core1: torch.Tensor,
+    p_dims: Tuple[int, int],
+    q_dims: Tuple[int, int],
+) -> torch.Tensor:
+    c0 = core0.squeeze(0) if core0.dim() == 4 and core0.shape[0] == 1 else core0
+    c1 = core1.squeeze(-1) if core1.dim() == 4 and core1.shape[-1] == 1 else core1
+
+    p0, p1 = p_dims
+    q0, q1 = q_dims
+    R = c0.shape[-1]
+    K = p0 * p1
+    N = q0 * q1
+
+    if not c0.is_cuda:
+        return triton_strided_tt_contraction_pytorch_ref(core0, core1, p_dims, q_dims)
+
+    W = torch.empty((N, K), device=c0.device, dtype=c0.dtype)
+    grid = lambda META: (
+        triton.cdiv(N, META["BLOCK_N"]),
+        triton.cdiv(K, META["BLOCK_K"]),
+    )
+
+    c0_c = c0.contiguous()
+    c1_c = c1.contiguous()
+
+    _strided_tt_reconstruct_kernel[grid](
+        c0_c,
+        c1_c,
+        W,
+        N,
+        K,
+        R,
+        p0,
+        p1,
+        q0,
+        q1,
+        c0_c.stride(0),
+        c0_c.stride(1),
+        c0_c.stride(2),
+        c1_c.stride(0),
+        c1_c.stride(1),
+        c1_c.stride(2),
+        W.stride(0),
+        W.stride(1),
+    )
+
+    return W
+
+
+def triton_strided_tt_linear(
+    x: torch.Tensor,
+    core0: torch.Tensor,
+    core1: torch.Tensor,
+    p_dims: Tuple[int, int],
+    q_dims: Tuple[int, int],
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    in_features = orig_shape[-1]
+    x_2d = x.view(-1, in_features)
+
+    W = triton_strided_tt_contraction(core0, core1, p_dims, q_dims)
+    out = torch.matmul(x_2d, W.t())
+    if bias is not None:
+        out = out + bias.to(dtype=out.dtype, device=out.device)
+
+    out_features = q_dims[0] * q_dims[1]
+    return out.view(*orig_shape[:-1], out_features)
+
+
+# ------------------------------------------------------------------------------
+# Kernel 6: triton_fused_kronecker_matmul
+# ------------------------------------------------------------------------------
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_M": 16}, num_stages=2, num_warps=2),
+        triton.Config({"BLOCK_M": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64}, num_stages=3, num_warps=4),
+    ],
+    key=["M", "M1", "M2", "N1", "N2"],
+)
+@triton.jit
+def _fused_kronecker_gemm_kernel(
+    x_ptr,
+    a_ptr,
+    b_ptr,
+    bias_ptr,
+    y_ptr,
+    M,
+    M1: tl.constexpr,
+    M2: tl.constexpr,
+    N1: tl.constexpr,
+    N2: tl.constexpr,
+    stride_xm,
+    stride_xk,
+    stride_a_m,
+    stride_a_n,
+    stride_b_m,
+    stride_b_n,
+    stride_ym,
+    stride_yn,
+    HAS_BIAS: tl.constexpr,
+    BLOCK_M: tl.constexpr,
+):
+    pid_m = tl.program_id(0)
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    mask_m = offs_m < M
+
+    offs_m1 = tl.arange(0, M1)
+    offs_n1 = tl.arange(0, N1)
+    offs_m2 = tl.arange(0, M2)
+    offs_n2 = tl.arange(0, N2)
+
+    a_tile = tl.load(a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n)
+    b_tile = tl.load(b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n)
+
+    for m_idx in range(0, BLOCK_M):
+        curr_m = pid_m * BLOCK_M + m_idx
+        if curr_m < M:
+            flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]
+            x_ptrs = x_ptr + curr_m * stride_xm + flat_offs_k * stride_xk
+            x_slice = tl.load(x_ptrs)
+
+            t = tl.dot(x_slice.to(tl.float32), tl.trans(b_tile).to(tl.float32), allow_tf32=True)
+            y_slice = tl.dot(a_tile.to(tl.float32), t.to(tl.float32), allow_tf32=True)
+
+            flat_offs_out = offs_m1[:, None] * M2 + offs_m2[None, :]
+            y_ptrs = y_ptr + curr_m * stride_ym + flat_offs_out * stride_yn
+
+            out_val = y_slice
+            if HAS_BIAS:
+                b_val = tl.load(bias_ptr + flat_offs_out)
+                out_val += b_val.to(tl.float32)
+
+            tl.store(y_ptrs, out_val.to(x_ptr.dtype.element_ty))
+
+
+def triton_fused_kronecker_matmul_pytorch_ref(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+    M1, N1 = A.shape
+    M2, N2 = B.shape
+    out_features = M1 * M2
+    X_reshaped = x_2d.view(M, N1, N2)
+    T = torch.matmul(X_reshaped, B.t())
+    Y = torch.matmul(A, T.transpose(1, 2)).transpose(1, 2)
+    Y_flat = Y.reshape(M, out_features)
+    if bias is not None:
+        Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
+    return Y_flat.view(*orig_shape[:-1], out_features)
+
+
+def triton_fused_kronecker_matmul(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+    M1, N1 = A.shape
+    M2, N2 = B.shape
+    out_features = M1 * M2
+
+    assert K == N1 * N2, f"Input feature mismatch: {K} != {N1} * {N2}"
+
+    if not x.is_cuda or M1 > 64 or M2 > 64 or N1 > 64 or N2 > 64:
+        return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias)
+
+    Y = torch.empty((M, out_features), device=x.device, dtype=x.dtype)
+    grid = lambda META: (triton.cdiv(M, META["BLOCK_M"]),)
+
+    has_bias = bias is not None
+    bias_t = bias.contiguous() if has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
+    x_c = x_2d.contiguous()
+    A_c = A.contiguous()
+    B_c = B.contiguous()
+
+    _fused_kronecker_gemm_kernel[grid](
+        x_c,
+        A_c,
+        B_c,
+        bias_t,
+        Y,
+        M,
+        M1=M1,
+        M2=M2,
+        N1=N1,
+        N2=N2,
+        stride_xm=x_c.stride(0),
+        stride_xk=x_c.stride(1),
+        stride_a_m=A_c.stride(0),
+        stride_a_n=A_c.stride(1),
+        stride_b_m=B_c.stride(0),
+        stride_b_n=B_c.stride(1),
+        stride_ym=Y.stride(0),
+        stride_yn=Y.stride(1),
+        HAS_BIAS=has_bias,
+    )
+
+    return Y.view(*orig_shape[:-1], out_features)
+
+
+# ------------------------------------------------------------------------------
+# Kernel 11: triton_spectral_entropy_svd_gate
+# ------------------------------------------------------------------------------
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=2, num_warps=4),
+    ],
+    key=["M", "N", "K", "R_MAX"],
+)
+@triton.jit
+def _spectral_entropy_svd_kernel(
+    x_ptr,
+    v_ptr,
+    u_ptr,
+    s_weights_ptr,
+    b_ptr,
+    y_ptr,
+    M,
+    N,
+    K,
+    R_MAX,
+    effective_rank,
+    stride_xm,
+    stride_xk,
+    stride_vk,
+    stride_vr,
+    stride_ur,
+    stride_un,
+    stride_ym,
+    stride_yn,
+    HAS_WEIGHTS: tl.constexpr,
+    HAS_BIAS: tl.constexpr,
+    BLOCK_M: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    BLOCK_K: tl.constexpr,
+    BLOCK_R: tl.constexpr,
+):
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_r = tl.arange(0, BLOCK_R)
+
+    mask_m = offs_m < M
+    mask_n = offs_n < N
+    mask_r = (offs_r < effective_rank) & (offs_r < R_MAX)
+
+    z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+    num_k_blocks = tl.cdiv(K, BLOCK_K)
+    for k_idx in range(0, num_k_blocks):
+        offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
+        mask_k = offs_k < K
+
+        x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
+        v_ptrs = v_ptr + offs_k[:, None] * stride_vk + offs_r[None, :] * stride_vr
+
+        x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
+        v_tile = tl.load(v_ptrs, mask=mask_k[:, None] & mask_r[None, :], other=0.0)
+
+        z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
+
+    if HAS_WEIGHTS:
+        w_tile = tl.load(s_weights_ptr + offs_r, mask=mask_r, other=0.0).to(tl.float32)
+        z_acc = z_acc * w_tile[None, :]
+
+    z_tile = z_acc.to(x_tile.dtype)
+
+    u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
+    u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
+
+    y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
+
+    if HAS_BIAS:
+        b_ptrs = b_ptr + offs_n
+        b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
+        y_acc += b_tile[None, :].to(tl.float32)
+
+    y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
+    tl.store(y_ptrs, y_acc.to(x_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
+
+
+def triton_spectral_entropy_svd_gate_pytorch_ref(
+    x: torch.Tensor,
+    V_r: torch.Tensor,
+    U_r: torch.Tensor,
+    effective_rank: int,
+    s_weights: Optional[torch.Tensor] = None,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+    if V_r.shape[0] == K:
+        V_mat = V_r
+    else:
+        V_mat = V_r.t().contiguous()
+    R_MAX = V_mat.shape[1]
+    eff_r = min(int(effective_rank), R_MAX)
+    if U_r.shape[0] == R_MAX:
+        U_mat = U_r
+    else:
+        U_mat = U_r.t().contiguous()
+    N = U_mat.shape[1]
+
+    V_sub = V_mat[:, :eff_r]
+    U_sub = U_mat[:eff_r, :]
+    z = torch.matmul(x_2d, V_sub)
+    if s_weights is not None:
+        z = z * s_weights[:eff_r].view(1, -1).to(dtype=z.dtype, device=z.device)
+    y = torch.matmul(z, U_sub)
+    if bias is not None:
+        y = y + bias.to(dtype=y.dtype, device=y.device)
+    return y.view(*orig_shape[:-1], N)
+
+
+def triton_spectral_entropy_svd_gate(
+    x: torch.Tensor,
+    V_r: torch.Tensor,
+    U_r: torch.Tensor,
+    effective_rank: int,
+    s_weights: Optional[torch.Tensor] = None,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, K = x_2d.shape
+
+    if V_r.shape[0] == K:
+        V_mat = V_r
+    else:
+        V_mat = V_r.t().contiguous()
+
+    R_MAX = V_mat.shape[1]
+    eff_r = min(int(effective_rank), R_MAX)
+
+    if U_r.shape[0] == R_MAX:
+        U_mat = U_r
+    else:
+        U_mat = U_r.t().contiguous()
+
+    N = U_mat.shape[1]
+
+    if not x.is_cuda or R_MAX > 256:
+        return triton_spectral_entropy_svd_gate_pytorch_ref(x, V_r, U_r, effective_rank, s_weights, bias)
+
+    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
+    BLOCK_R = max(16, triton.next_power_of_2(R_MAX))
+
+    grid = lambda META: (
+        triton.cdiv(M, META["BLOCK_M"]),
+        triton.cdiv(N, META["BLOCK_N"]),
+    )
+
+    has_weights = s_weights is not None
+    w_t = s_weights.contiguous() if has_weights else torch.empty(0, device=x.device, dtype=x.dtype)
+    has_bias = bias is not None
+    b_t = bias.contiguous() if has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
+
+    x_c = x_2d.contiguous()
+    V_c = V_mat.contiguous()
+    U_c = U_mat.contiguous()
+
+    _spectral_entropy_svd_kernel[grid](
+        x_c,
+        V_c,
+        U_c,
+        w_t,
+        b_t,
+        y,
+        M,
+        N,
+        K,
+        R_MAX,
+        eff_r,
+        x_c.stride(0),
+        x_c.stride(1),
+        V_c.stride(0),
+        V_c.stride(1),
+        U_c.stride(0),
+        U_c.stride(1),
+        y.stride(0),
+        y.stride(1),
+        HAS_WEIGHTS=has_weights,
+        HAS_BIAS=has_bias,
+        BLOCK_R=BLOCK_R,
+    )
+
+    return y.view(*orig_shape[:-1], N)
