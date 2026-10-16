@@ -428,7 +428,7 @@ class HessianNullSpaceSVDContinuation:
 
     def __init__(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         target_rank: int = 32,
         mode: str = "kronecker",  # "kronecker" or "global_cg"
         walk_steps: int = 25,
@@ -440,7 +440,10 @@ class HessianNullSpaceSVDContinuation:
         gamma_nuc: float = 1e-3,
         gamma_bump: float = 0.05,
         device: Optional[Union[str, torch.device]] = None,
+        **kwargs: Any,
     ) -> None:
+        if "num_steps" in kwargs:
+            walk_steps = kwargs.pop("num_steps")
         self.model = model
         self.target_rank = target_rank
         self.mode = mode
@@ -453,6 +456,34 @@ class HessianNullSpaceSVDContinuation:
         self.gamma_nuc = gamma_nuc
         self.gamma_bump = gamma_bump
         self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
+
+    def run_continuation(
+        self,
+        target_w: torch.Tensor,
+        probe_inputs: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Run single-layer null-space continuation directly on a weight tensor."""
+        w = target_w.clone().detach()
+        d_out, d_in = w.shape
+        dev = w.device
+        if probe_inputs is not None:
+            px = probe_inputs.to(dev)
+            if px.dim() > 2:
+                px = px.view(-1, px.shape[-1])
+            if px.shape[-1] != d_in:
+                px = torch.randn(16, d_in, device=dev)
+        else:
+            px = torch.randn(16, d_in, device=dev)
+        Hx = torch.matmul(px.t(), px) / max(float(px.shape[0]), 1.0)
+        for _ in range(self.walk_steps):
+            _, grad_phi, _ = compute_spectral_tail_potential_and_gradient(
+                w, rank=self.target_rank, gamma_nuc=self.gamma_nuc, gamma_bump=self.gamma_bump
+            )
+            delta_w, _ = solve_layerwise_kronecker_nullspace_step(
+                w, grad_phi, input_covariance_Hx=Hx, mu_rel=self.mu_rel
+            )
+            w = (w - self.eta * delta_w).detach()
+        return w
 
     def steer_and_compress(
         self,
