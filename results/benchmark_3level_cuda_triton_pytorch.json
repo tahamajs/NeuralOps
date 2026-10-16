@@ -1,0 +1,82 @@
+[
+  {
+    "kernel": "selective_scan",
+    "pytorch_ms": 27.42488037109375,
+    "triton_ms": 13.68272705078125,
+    "cuda_ms": 0.27412479400634765,
+    "speedup_cuda_vs_py": 100.04523841232215,
+    "speedup_cuda_vs_tri": 49.91422647622459,
+    "pytorch_vram_mb": 10.42626953125,
+    "cuda_vram_mb": 10.91064453125
+  },
+  {
+    "kernel": "sliding_window_attn",
+    "pytorch_ms": 1.8232511901855468,
+    "triton_ms": 0.2514342308044434,
+    "cuda_ms": 0.2512076759338379,
+    "speedup_cuda_vs_py": 7.257943784590991,
+    "speedup_cuda_vs_tri": 1.0009018628501827,
+    "pytorch_vram_mb": 119.6533203125,
+    "cuda_vram_mb": 26.89501953125
+  },
+  {
+    "kernel": "block_sparse_attn",
+    "pytorch_ms": 1.8162879943847656,
+    "triton_ms": 1.527786865234375,
+    "cuda_ms": 0.3642572784423828,
+    "speedup_cuda_vs_py": 4.986277836784697,
+    "speedup_cuda_vs_tri": 4.194252127966843,
+    "pytorch_vram_mb": 119.1455078125,
+    "cuda_vram_mb": 26.896484375
+  },
+  {
+    "kernel": "w4a16_gemm",
+    "pytorch_ms": 0.10445823669433593,
+    "triton_ms": null,
+    "cuda_ms": 0.19545087814331055,
+    "speedup_cuda_vs_py": 0.5344475178962561,
+    "speedup_cuda_vs_tri": 1.0,
+    "pytorch_vram_mb": 48.0205078125,
+    "cuda_vram_mb": 24.5205078125
+  },
+  {
+    "kernel": "fp8_gemm",
+    "pytorch_ms": 0.07830495834350586,
+    "triton_ms": 0.06797311782836914,
+    "cuda_ms": 0.3418726348876953,
+    "speedup_cuda_vs_py": 0.22904716655437757,
+    "speedup_cuda_vs_tri": 0.19882585176990902,
+    "pytorch_vram_mb": 31.021484375,
+    "cuda_vram_mb": 30.021484375
+  },
+  {
+    "kernel": "flash_gqa",
+    "pytorch_ms": 0.19148799896240234,
+    "triton_ms": 0.05508927822113037,
+    "cuda_ms": 0.09713664054870605,
+    "speedup_cuda_vs_py": 1.9713261430570768,
+    "speedup_cuda_vs_tri": 0.5671318043319361,
+    "pytorch_vram_mb": 60.087890625,
+    "cuda_vram_mb": 34.021484375
+  },
+  {
+    "kernel": "paged_attention",
+    "pytorch_ms": 1.0914201354980468,
+    "triton_ms": null,
+    "cuda_ms": 0.040088958740234375,
+    "speedup_cuda_vs_py": 27.22495594286084,
+    "speedup_cuda_vs_tri": 1.0,
+    "pytorch_vram_mb": 36.8134765625,
+    "cuda_vram_mb": 36.0537109375
+  },
+  {
+    "kernel": "moe_routing",
+    "pytorch_ms": 28.60593994140625,
+    "triton_ms": null,
+    "cuda_ms": 0.015011839866638184,
+    "speedup_cuda_vs_py": 1905.5585588132433,
+    "speedup_cuda_vs_tri": 1.0,
+    "pytorch_vram_mb": 44.0537109375,
+    "cuda_vram_mb": 44.0498046875
+  }
+]
