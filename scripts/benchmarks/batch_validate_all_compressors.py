@@ -190,10 +190,13 @@ def get_probe_data(model_name: str, device: str):
             ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
 
         text = " ".join([t for t in ds["text"][:100] if len(t.strip()) > 0])[:50000]
-        enc = tok(text, return_tensors="pt", max_length=256, truncation=True, padding="max_length")
-        ids = enc["input_ids"].to(device)
-        probe_ids = ids[:, :128]
-        heldout_ids = ids[:, 128:256]
+        enc = tok(text, return_tensors="pt")["input_ids"].to(device)
+        total_tokens = enc.shape[1]
+        seq_len = 128
+        n_chunks = min(32, total_tokens // seq_len)
+        chunks = enc[:, :n_chunks * seq_len].reshape(n_chunks, seq_len)
+        probe_ids = chunks[:16]
+        heldout_ids = chunks[16:32] if n_chunks >= 32 else chunks[16:]
         return probe_ids, heldout_ids, None, None
 
     raise ValueError(f"Unknown model_name: {model_name}")
@@ -490,15 +493,151 @@ def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, dev
 
 
 # ============================================================
+# CLOSED-FORM BIAS DRIFT CORRECTION & 50-STEP KD RECOVERY
+# ============================================================
+def apply_mean_bias_correction(student: nn.Module, probe: Any, model_name: str, device: str):
+    """
+    Closed-form activation mean bias correction:
+    Measures the mean logit drift on the calibration probe and subtracts
+    it from the output/classifier bias to zero out 1st-order feature drift.
+    """
+    with torch.no_grad():
+        if model_name == "roberta":
+            ids, mask = probe
+            sub_ids, sub_mask = ids[:32], mask[:32]
+            logits = student(sub_ids, attention_mask=sub_mask).logits
+            mean_drift = logits.mean(dim=0)
+            if hasattr(student, "classifier") and hasattr(student.classifier, "out_proj"):
+                if getattr(student.classifier.out_proj, "bias", None) is not None:
+                    student.classifier.out_proj.bias.data.sub_(mean_drift)
+        elif model_name == "gpt2":
+            ids = probe[:8] if isinstance(probe, torch.Tensor) else probe[0][:8]
+            logits = student(ids).logits
+            mean_drift = logits.mean(dim=(0, 1))
+            if hasattr(student, "lm_head") and getattr(student.lm_head, "bias", None) is not None:
+                student.lm_head.bias.data.sub_(mean_drift)
+
+
+def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
+    """Freeze backbone and select only compressed low-rank factors, LayerNorms, and biases."""
+    for p in student.parameters():
+        p.requires_grad = False
+
+    trainable_params = []
+    # 1. Structural low-rank modules and normalization layers
+    for name, module in student.named_modules():
+        mod_type = module.__class__.__name__
+        if mod_type in ("SVDLinear", "DobiSVDLinearLayer", "KroneckerLinear", "LoRALinear"):
+            for p_name, p in module.named_parameters(recurse=False):
+                p.requires_grad = True
+                trainable_params.append(p)
+        elif isinstance(module, (nn.LayerNorm, nn.RMSNorm)) or "norm" in mod_type.lower():
+            for p_name, p in module.named_parameters(recurse=False):
+                p.requires_grad = True
+                trainable_params.append(p)
+
+    # 2. Match any remaining biases and low-rank factor parameters by name
+    for name, p in student.named_parameters():
+        name_l = name.lower()
+        if "bias" in name_l:
+            p.requires_grad = True
+            if not any(p is t for t in trainable_params):
+                trainable_params.append(p)
+        elif any(k in name_l for k in ["linear_u", "linear_v", "factor", "_a", "_b", "lora"]):
+            p.requires_grad = True
+            if not any(p is t for t in trainable_params):
+                trainable_params.append(p)
+
+    # Fallback: if no parameters matched, unfreeze 2D parameters with rank <= 256
+    if not trainable_params:
+        for name, p in student.named_parameters():
+            if p.dim() == 2 and min(p.shape) <= 256:
+                p.requires_grad = True
+                trainable_params.append(p)
+
+    return trainable_params
+
+
+def run_kd_recovery(
+    student: nn.Module,
+    teacher_batches: List[Tuple[torch.Tensor, Optional[torch.Tensor], torch.Tensor]],
+    model_name: str,
+    steps: int = 50,
+    lr: float = 1e-3,
+) -> float:
+    """
+    Fast 50-step post-compression Knowledge Distillation recovery loop.
+    Optimizes low-rank factors, LayerNorms, and biases against pre-cached teacher logits.
+    Returns recovery time in seconds.
+    """
+    if steps <= 0 or not teacher_batches:
+        return 0.0
+
+    t_start = time.time()
+    trainable_params = setup_trainable_parameters_for_kd(student)
+    if not trainable_params:
+        return 0.0
+
+    student.train()
+    optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=steps, eta_min=1e-5)
+
+    n_batches = len(teacher_batches)
+    temp = 2.0
+
+    for step in range(steps):
+        batch = teacher_batches[step % n_batches]
+        optimizer.zero_grad()
+
+        if model_name == "roberta":
+            b_ids, b_mask, z_teacher = batch
+            out_student = student(b_ids, attention_mask=b_mask).logits
+            p_teacher = F.softmax(z_teacher / temp, dim=-1)
+            log_p_student = F.log_softmax(out_student / temp, dim=-1)
+            loss_kl = F.kl_div(log_p_student, p_teacher, reduction="batchmean") * (temp ** 2)
+            loss_mse = F.mse_loss(out_student, z_teacher)
+            loss = loss_kl + 0.5 * loss_mse
+        elif model_name == "gpt2":
+            b_ids, _, z_teacher = batch
+            out_student = student(b_ids).logits
+            p_teacher = F.softmax(z_teacher / temp, dim=-1)
+            log_p_student = F.log_softmax(out_student / temp, dim=-1)
+            loss_kl = F.kl_div(log_p_student, p_teacher, reduction="batchmean") * (temp ** 2)
+            loss_mse = F.mse_loss(out_student, z_teacher)
+            loss = loss_kl + 0.5 * loss_mse
+        else:
+            b_x, _, z_teacher = batch
+            out_student = student(b_x)
+            loss = F.mse_loss(out_student, z_teacher)
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+        optimizer.step()
+        scheduler.step()
+
+    student.eval()
+    return time.time() - t_start
+
+
+# ============================================================
 # BATCH EXECUTION ENGINE
 # ============================================================
-def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: str, valid_only: bool = True):
+def run_batch(
+    model_name: str,
+    seeds: List[int],
+    ranks: List[int],
+    output_dir: str,
+    valid_only: bool = True,
+    kd_steps: int = 50,
+    use_kd_recovery: bool = True,
+):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     supported = VALID_RANK_SENSITIVE_COMPRESSORS if valid_only else COMPRESSOR_REGISTRY_KEYS
-    logger.info("Starting Batch Validation on model: %s | device: %s | seeds: %s | ranks: %s | mode: %s (%d compressors)",
-                model_name, device, seeds, ranks, "VALID_ONLY" if valid_only else "ALL_26", len(supported))
+    logger.info("Starting Batch Validation on model: %s | device: %s | seeds: %s | ranks: %s | mode: %s (%d compressors) | KD: %s (%d steps)",
+                model_name, device, seeds, ranks, "VALID_ONLY" if valid_only else "ALL_26", len(supported),
+                "ENABLED" if use_kd_recovery and kd_steps > 0 else "DISABLED", kd_steps)
 
     results: Dict[Tuple[str, int], List[Dict[str, Any]]] = {}
 
@@ -526,6 +665,29 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
                 logger.info("Anchor GPT-2 heldout PPL: %.2f", torch.exp(loss).item())
             else:
                 y_anchor = anchor(heldout)
+
+        # Pre-cache uncompressed teacher calibration batches and logits for fast KD recovery
+        teacher_batches = []
+        with torch.no_grad():
+            if model_name == "roberta":
+                p_ids, p_mask = probe
+                b_size = 32
+                for i in range(0, min(len(p_ids), 128), b_size):
+                    b_ids = p_ids[i : i + b_size]
+                    b_mask = p_mask[i : i + b_size]
+                    z_t = anchor(b_ids, attention_mask=b_mask).logits
+                    teacher_batches.append((b_ids, b_mask, z_t.detach()))
+            elif model_name == "gpt2":
+                p_ids = probe
+                b_size = 4
+                for i in range(0, len(p_ids), b_size):
+                    b_chunk = p_ids[i : i + b_size]
+                    z_t = anchor(b_chunk).logits
+                    teacher_batches.append((b_chunk, None, z_t.detach()))
+            elif model_name == "synth_block":
+                p_x = probe
+                z_t = anchor(p_x)
+                teacher_batches.append((p_x, None, z_t.detach()))
 
         for rank in ranks:
             logger.info("--- Testing Rank = %d ---", rank)
@@ -565,11 +727,21 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
                     comp_params = sum(p.numel() for p in m.parameters())
                     comp_ratio = round(comp_params / max(1, orig_params), 4)
 
+                    # 1. Closed-form activation mean bias correction
+                    apply_mean_bias_correction(m, probe, model_name, device)
+
+                    # 2. Fast 50-step post-compression Knowledge Distillation recovery
+                    kd_s = 0.0
+                    if use_kd_recovery and kd_steps > 0:
+                        kd_s = run_kd_recovery(m, teacher_batches, model_name, steps=kd_steps, lr=1e-3)
+                    total_time = elapsed + kd_s
+
                     out = evaluate(m, heldout, y_anchor, model_name, device, heldout_labels=heldout_labels)
                     vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024) if device == "cuda" else 0.0
 
                     out["status"] = "SUCCESS"
-                    out["time_s"] = round(elapsed, 4)
+                    out["time_s"] = round(total_time, 4)
+                    out["kd_recovery_time_s"] = round(kd_s, 4)
                     out["peak_vram_mb"] = round(vram_mb, 1)
                     out["compression_ratio"] = comp_ratio
                     out["method"] = method_name
@@ -577,8 +749,8 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
                     out["seed"] = seed
                     results[key].append(out)
                     extra_metric = f", acc={out['accuracy']:.4f}" if "accuracy" in out else (f", ppl={out['perplexity']:.2f}" if "perplexity" in out else "")
-                    logger.info("  %-25s (r=%2d, s=%d): rel_err=%.4f, top1=%.4f, ratio=%.2fx%s, time=%.2fs",
-                                method_name, rank, seed, out["rel_err"], out["top1_match"], comp_ratio, extra_metric, elapsed)
+                    logger.info("  %-25s (r=%3d, s=%d): rel_err=%.4f, top1=%.4f, ratio=%.2fx%s (comp=%.2fs, kd=%.2fs)",
+                                method_name, rank, seed, out["rel_err"], out["top1_match"], comp_ratio, extra_metric, elapsed, kd_s)
 
                     del m, comp
                 except Exception as e:
@@ -734,13 +906,23 @@ if __name__ == "__main__":
     parser.add_argument("--ranks", type=str, default="8,16,32,64", help="Comma-separated ranks")
     parser.add_argument("--output", type=str, default="results/batch_validation", help="Output directory")
     parser.add_argument("--all-26", action="store_true", help="Include all 26 candidate compressors instead of only verified valid ones")
+    parser.add_argument("--kd-steps", type=int, default=50, help="Number of post-compression KD recovery steps (default: 50)")
+    parser.add_argument("--no-kd", action="store_true", help="Disable post-compression KD recovery")
     args = parser.parse_args()
 
     seed_list = list(range(args.seeds))
     rank_list = [int(r.strip()) for r in args.ranks.split(",")]
     valid_only = not args.all_26
 
-    agg = run_batch(args.model, seed_list, rank_list, args.output, valid_only=valid_only)
+    agg = run_batch(
+        args.model,
+        seed_list,
+        rank_list,
+        args.output,
+        valid_only=valid_only,
+        kd_steps=args.kd_steps,
+        use_kd_recovery=not args.no_kd,
+    )
 
     # Statistical significance comparisons across evaluated compressors
     methods_to_compare = VALID_RANK_SENSITIVE_COMPRESSORS if valid_only else COMPRESSOR_REGISTRY_KEYS
