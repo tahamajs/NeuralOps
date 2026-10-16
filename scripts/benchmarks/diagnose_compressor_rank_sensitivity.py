@@ -54,16 +54,27 @@ def extract_reconstructed_weights(model: nn.Module) -> torch.Tensor:
         return torch.cat(tensors)
     return torch.tensor([0.0])
 
-def run_diagnostic():
+def run_diagnostic(model_name: str = "synth_block"):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info("Running Rank Sensitivity Diagnostic on %s", device)
+    logger.info("Running Rank Sensitivity Diagnostic on model '%s' via %s", model_name, device)
 
+    loaders = {
+        "synth_block": load_synthetic_block,
+        "roberta": load_roberta,
+        "gpt2": load_gpt2,
+    }
     torch.manual_seed(42)
-    anchor = load_synthetic_block(device)
-    probe, heldout, _, _ = get_probe_data("synth_block", device)
-    W_orig = extract_reconstructed_weights(anchor)
+    anchor = loaders[model_name](device)
+    probe, heldout, _, _ = get_probe_data(model_name, device)
+
     with torch.no_grad():
-        y_anchor = anchor(heldout)
+        if model_name == "roberta":
+            ids, mask = heldout
+            y_anchor = anchor(ids, attention_mask=mask).logits
+        elif model_name == "gpt2":
+            y_anchor = anchor(heldout).logits
+        else:
+            y_anchor = anchor(heldout)
 
     results = {
         "VALID": [],
@@ -73,8 +84,10 @@ def run_diagnostic():
     }
 
     print("\n" + "=" * 115)
-    print(f"{'Method':<28s} {'Status':<22s} {'LogitDiff(8,64)':<16s} {'RelErr(r8)':<12s} {'RelErr(r64)':<12s} {'Details'}")
+    print(f"RANK SENSITIVITY DIAGNOSTIC: {model_name.upper()}")
     print("=" * 115)
+    print(f"{'Method':<28s} {'Status':<22s} {'LogitDiff(8,64)':<16s} {'RelErr(r8)':<12s} {'RelErr(r64)':<12s} {'Details'}")
+    print("-" * 115)
 
     for method in COMPRESSOR_REGISTRY_KEYS:
         # Test rank 8
@@ -98,7 +111,13 @@ def run_diagnostic():
                 m8 = comp8.model
             
             with torch.no_grad():
-                out8_logits = m8(heldout)
+                if model_name == "roberta":
+                    ids, mask = heldout
+                    out8_logits = m8(ids, attention_mask=mask).logits
+                elif model_name == "gpt2":
+                    out8_logits = m8(heldout).logits
+                else:
+                    out8_logits = m8(heldout)
             err8 = (torch.norm(out8_logits.float() - y_anchor.float()) / torch.norm(y_anchor.float())).item()
         except Exception as e:
             results["FAILED"].append((method, str(e)[:40]))
@@ -126,7 +145,13 @@ def run_diagnostic():
                 m64 = comp64.model
 
             with torch.no_grad():
-                out64_logits = m64(heldout)
+                if model_name == "roberta":
+                    ids, mask = heldout
+                    out64_logits = m64(ids, attention_mask=mask).logits
+                elif model_name == "gpt2":
+                    out64_logits = m64(heldout).logits
+                else:
+                    out64_logits = m64(heldout)
             err64 = (torch.norm(out64_logits.float() - y_anchor.float()) / torch.norm(y_anchor.float())).item()
         except Exception as e:
             results["FAILED"].append((method, str(e)[:40]))
@@ -141,7 +166,7 @@ def run_diagnostic():
             status = "NO_OP_FALLBACK"
             results["NO_OP_FALLBACK"].append((method, err_str))
             detail = "Identity/Fallback to uncompressed (0 error)"
-        elif logit_diff < 1e-6 or err_diff < 1e-5:
+        elif logit_diff < 1e-5 or err_diff < 1e-4:
             status = "NO_OP_IGNORES_RANK"
             results["NO_OP_IGNORES_RANK"].append((method, err_str))
             detail = "Constant output across ranks (rank ignored)"
@@ -153,7 +178,7 @@ def run_diagnostic():
         print(f"{method:<28s} {status:<22s} {logit_diff:<16.6f} {err8:<12.4f} {err64:<12.4f} {detail}")
 
     print("\n" + "=" * 60)
-    print("CATEGORICAL BREAKDOWN:")
+    print(f"CATEGORICAL BREAKDOWN ({model_name.upper()}):")
     print("=" * 60)
     print(f"VALID RANK-SENSITIVE COMPRESSORS ({len(results['VALID'])}):")
     for m, e in results["VALID"]:
@@ -168,5 +193,18 @@ def run_diagnostic():
     for m, err in results["FAILED"]:
         print(f"  - {m:<28s} ({err})")
 
+    # Save to JSON
+    out_dir = Path("results/batch_validation") / "diagnostics"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    import json
+    with open(out_dir / f"{model_name}_diagnostic.json", "w") as f:
+        json.dump(results, f, indent=2)
+
+    return results
+
 if __name__ == "__main__":
-    run_diagnostic()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="synth_block", choices=["synth_block", "roberta", "gpt2"])
+    args = parser.parse_args()
+    run_diagnostic(args.model)
