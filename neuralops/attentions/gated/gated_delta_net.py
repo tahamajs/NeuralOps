@@ -147,21 +147,28 @@ def chunked_delta_rule_scan(
     if mask is not None:
         mask_h = mask[:, None, :].expand(-1, H, -1).contiguous()
 
-    # --- Triton scan path (only when no initial state and no mask) ---
+    # --- Triton scan path (with full initial_state & mask support) ---
     if (
         HAS_TRITON_GDN
         and gdn_scan_triton is not None
         and q.is_cuda
         and d <= MAX_REGISTER_DIM
-        and initial_state is None
-        and mask_h is None
         and q.dtype in (torch.float16, torch.bfloat16, torch.float32)
     ):
         try:
-            out = gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f)
+            out, S_final = gdn_scan_triton(
+                q_f,
+                k_f,
+                v_f,
+                beta_f,
+                alpha_f,
+                initial_state=initial_state,
+                mask=mask_h,
+                return_final_state=True,
+                normalize_qk=False,
+            )
             out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
-            S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
-            return out, S_final
+            return out, S_final.to(device=device, dtype=torch.float32)
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
 

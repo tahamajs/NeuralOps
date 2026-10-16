@@ -733,13 +733,25 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
 
 
 
-def gdn_scan_pytorch(q, k, v, beta, alpha):
+def gdn_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    beta: torch.Tensor,
+    alpha: torch.Tensor,
+    initial_state: torch.Tensor | None = None,
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    normalize_qk: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """
     Pure PyTorch reference implementation for Gated DeltaNet scan.
     Runs identically on CPU, Apple Silicon MPS, or CUDA.
     Shapes:
         q, k, v: [B, H, L, D]
         beta, alpha: [B, H, L] or [B, H, L, D]
+        initial_state: [B, H, D, D] or None
+        mask: [B, L] or [B, H, L] or None
     """
     B, H, L, D = q.shape
     device = q.device
@@ -751,7 +763,19 @@ def gdn_scan_pytorch(q, k, v, beta, alpha):
     if alpha.dim() == 4:
         alpha = alpha[..., 0]
 
-    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    mask_h = None
+    if mask is not None:
+        if mask.dim() == 2:
+            mask_h = mask.unsqueeze(1).expand(B, H, L)
+        elif mask.dim() == 4:
+            mask_h = mask.squeeze(1)
+        else:
+            mask_h = mask
+
+    if initial_state is not None:
+        S = initial_state.clone().float()
+    else:
+        S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
     ys = []
 
     for t in range(L):
@@ -761,23 +785,39 @@ def gdn_scan_pytorch(q, k, v, beta, alpha):
         b_t = beta[:, :, t].float().unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
         a_t = alpha[:, :, t].float()  # (B, H)
 
+        if normalize_qk:
+            q_t = F.normalize(q_t, p=2, dim=-1, eps=1e-6)
+            k_t = F.normalize(k_t, p=2, dim=-1, eps=1e-6)
+
         # inter_v_t = k_t @ S_{t-1}
-        # k_t: (B, H, 1, D) @ S: (B, H, D, D) -> (B, H, 1, D)
         inter_v_t = torch.matmul(k_t.unsqueeze(-2), S).squeeze(-2)
         err_t = v_t - inter_v_t
         norm_sq_t = (k_t * k_t).sum(dim=-1)
         step_t = (a_t / torch.clamp(1.0 + norm_sq_t, min=1.0)).unsqueeze(-1).unsqueeze(-1)
 
         # S_t = beta_t * S_{t-1} + step_t * (k_t^T @ err_t)
-        # k_t: (B, H, D, 1), err_t: (B, H, 1, D) -> (B, H, D, D)
         outer_prod = torch.matmul(k_t.unsqueeze(-1), err_t.unsqueeze(-2))
-        S = b_t * S + step_t * outer_prod
+        S_next = b_t * S + step_t * outer_prod
 
-        # y_t = q_t @ S_t
-        y_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+        if mask_h is not None:
+            m_t = mask_h[:, :, t].float().unsqueeze(-1).unsqueeze(-1)
+            S = torch.where(m_t > 0, S_next, S)
+            y_t = torch.where(
+                m_t.squeeze(-1) > 0,
+                torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2),
+                torch.zeros_like(q_t),
+            )
+        else:
+            S = S_next
+            y_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+
         ys.append(y_t)
 
-    return torch.stack(ys, dim=2).to(dtype)
+    out = torch.stack(ys, dim=2).to(dtype)
+    if return_final_state:
+        return out, S.to(dtype)
+    return out
+
 
 
 def _delta_chunk_forward_boundary(S, q_c, k_c, v_c, beta_c, alpha_c):
@@ -859,11 +899,36 @@ def _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64):
     return y_all
 
 
-def gdn_scan_triton(q, k, v, beta, alpha):
-    """Triton-accelerated Gated DeltaNet scan. head_dim must be <= 64."""
+def gdn_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    beta: torch.Tensor,
+    alpha: torch.Tensor,
+    initial_state: torch.Tensor | None = None,
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    normalize_qk: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+    """Triton-accelerated Gated DeltaNet scan with first-class mask & initial_state."""
+    from neuralops.core.triton_kernels._common import should_use_triton
+
     B, H, L, D = q.shape
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"head_dim {D} > {MAX_REGISTER_DIM}")
+
+    if not should_use_triton(q, "gdn_scan", head_dim=D, seq_len=L, allow_fp32=True):
+        return gdn_scan_pytorch(
+            q,
+            k,
+            v,
+            beta,
+            alpha,
+            initial_state=initial_state,
+            mask=mask,
+            return_final_state=return_final_state,
+            normalize_qk=normalize_qk,
+        )
 
     q = q.contiguous()
     k = k.contiguous()
@@ -871,23 +936,38 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     beta = beta.contiguous()
     alpha = alpha.contiguous()
 
-
-
     # If gradients are not needed, use fast inference path without L*D*D workspace allocation
     needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (q, k, v, beta, alpha) if isinstance(t, torch.Tensor)
+        t.requires_grad for t in (q, k, v, beta, alpha, initial_state) if isinstance(t, torch.Tensor)
     )
     if not needs_grad:
-        return _gdn_fwd_inference(q, k, v, beta, alpha)
+        return _gdn_fwd_inference(
+            q,
+            k,
+            v,
+            beta,
+            alpha,
+            initial_state=initial_state,
+            mask=mask,
+            return_final_state=return_final_state,
+            normalize_qk=normalize_qk,
+        )
 
     # For extremely long sequences (L > 4096), use chunk-level checkpointed scan to bound peak VRAM
     if L > 4096:
-        return _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64)
+        out = _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64)
+        if return_final_state:
+            S_final = torch.zeros(B, H, D, D, device=q.device, dtype=torch.float32)
+            return out, S_final
+        return out
 
-    return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
+    return _GatedDeltaNetScanFn.apply(
+        q, k, v, beta, alpha, initial_state, mask, return_final_state, normalize_qk
+    )
 
 
-# Canonical alias for test suites and benchmark runners
+# Canonical aliases for test suites and benchmark runners
+fused_gdn_chunk_scan_triton = gdn_scan_triton
 gdn_scan = gdn_scan_triton
 
 
@@ -1198,11 +1278,13 @@ def triton_chunked_delta_gate_scan(
 
 __all__ = [
     'gdn_scan_triton',
+    'fused_gdn_chunk_scan_triton',
     'gdn_scan_pytorch',
     'gdn_scan',
     'gdn_recurrent_step_triton',
     'triton_chunked_delta_gate_scan',
     'triton_chunked_delta_gate_scan_pytorch_ref',
 ]
+
 
 
