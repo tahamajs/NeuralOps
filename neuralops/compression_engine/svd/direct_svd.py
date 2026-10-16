@@ -154,6 +154,7 @@ class DirectSVDCompressor(BaseCompressor):
         self.probe_inputs = kwargs.get("probe_inputs", kwargs.get("calibration_data", kwargs.get("calibration_loader", None)))
         self.hnc_walk_steps = int(kwargs.get("hnc_walk_steps", _cfg_get(cfg_obj, "hnc_walk_steps", 0)))
         self.hnc_stage_d_steps = int(kwargs.get("hnc_stage_d_steps", _cfg_get(cfg_obj, "hnc_stage_d_steps", 30)))
+        self.hnc_use_whitening = bool(kwargs.get("hnc_use_whitening", _cfg_get(cfg_obj, "hnc_use_whitening", True)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -425,6 +426,7 @@ class DirectSVDCompressor(BaseCompressor):
                     step_size_eta=0.05,
                     restore_steps_m=6,
                     stage_d_steps=self.hnc_stage_d_steps,
+                    use_whitening=self.hnc_use_whitening,
                 )
                 hnc_res = hnc_engine.steer_and_compress(self.probe_inputs, target_linear_modules=self.target_modules)
                 self.hnc_res = hnc_res
