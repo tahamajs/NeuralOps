@@ -352,6 +352,25 @@ class RPCACompressor(BaseCompressor):
         if has_existing_lora and getattr(layer, "r", 0) > 0:
             effective_lora_r = getattr(layer, "r", self.lora_r)
 
+        # Frobenius reconstruction error check
+        W_rec = torch.matmul(U_final.float(), V_final.float())
+        W_dev = W.to(device=W_rec.device)
+        norm_orig = torch.norm(W_dev, p="fro").clamp_min(1e-8)
+        rel_err = (torch.norm(W_dev - W_rec, p="fro") / norm_orig).item()
+
+        is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+        if is_invalid:
+            logger.warning("RPCA: reconstruction contains NaN/Inf, falling back.")
+            return None
+        if rel_err > self.max_error:
+            logger.warning(
+                "RPCA: reconstruction error %.4f exceeded threshold %.4f. Compressing anyway.",
+                rel_err,
+                self.max_error,
+            )
+            if self.fallback_to_original:
+                return None
+
         if getattr(self, "use_triton", True) and not (self.use_lora or has_existing_lora):
             rpca_layer = RPCALinear(
                 in_features=in_f,
@@ -392,25 +411,6 @@ class RPCACompressor(BaseCompressor):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters: %s", e_lora)
-
-        # Frobenius reconstruction error check
-        W_rec = torch.matmul(U_final.float(), V_final.float())
-        W_dev = W.to(device=W_rec.device)
-        norm_orig = torch.norm(W_dev, p="fro").clamp_min(1e-8)
-        rel_err = (torch.norm(W_dev - W_rec, p="fro") / norm_orig).item()
-
-        is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
-        if is_invalid:
-            logger.warning("RPCA: reconstruction contains NaN/Inf, falling back.")
-            return None
-        if rel_err > self.max_error:
-            logger.warning(
-                "RPCA: reconstruction error %.4f exceeded threshold %.4f. Compressing anyway.",
-                rel_err,
-                self.max_error,
-            )
-            if self.fallback_to_original:
-                return None
 
         svd_layer.reconstruction_error = rel_err
         return svd_layer
