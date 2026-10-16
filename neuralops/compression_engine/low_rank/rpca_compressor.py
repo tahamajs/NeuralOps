@@ -467,11 +467,19 @@ class RPCACompressor(BaseCompressor):
         # Post-compression forward sanity check
         forward_check_success = True
         try:
+            device = next(self.model.parameters()).device
             with torch.no_grad():
-                dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
-                self.model(dummy_input)
+                cfg = getattr(self.model, "config", None)
+                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+                    dummy_input = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device)
+                    self.model(dummy_input)
+                else:
+                    first_p = next(self.model.parameters())
+                    dim = first_p.shape[-1] if first_p.dim() >= 2 else 64
+                    dummy_input = torch.randn(1, dim, device=device, dtype=first_p.dtype)
+                    self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning("RPCA post-compression forward sanity check warning: %s", ex_sanity)
+            logger.debug("RPCA post-compression forward sanity check: %s", ex_sanity)
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
