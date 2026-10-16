@@ -284,7 +284,7 @@ class TTLinearLayer(nn.Module):
 
         if getattr(self, "use_triton", True) and self.cores[0].is_cuda and self.d == 2:
             try:
-                from neuralops.kernels.triton.strided_tt import triton_strided_tt_contraction
+                from neuralops.core.triton_kernels.low_rank import triton_strided_tt_contraction
                 W = triton_strided_tt_contraction(self.cores[0], self.cores[1], self.p_dims, self.q_dims)
                 if not self.training:
                     self._cached_weight = W
@@ -319,7 +319,7 @@ class TTLinearLayer(nn.Module):
 
         if getattr(self, "use_triton", True) and x.is_cuda and self.d == 2:
             try:
-                from neuralops.kernels.triton.strided_tt import triton_strided_tt_linear
+                from neuralops.core.triton_kernels.low_rank import triton_strided_tt_linear
                 return triton_strided_tt_linear(
                     x, self.cores[0], self.cores[1], self.p_dims, self.q_dims, bias=self.bias
                 )

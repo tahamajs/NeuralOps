@@ -73,7 +73,7 @@ class RPCALinear(nn.Module):
 
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
             try:
-                from neuralops.kernels.triton.rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
+                from neuralops.core.triton_kernels.low_rank import triton_fused_lowrank_sparse_gemm
                 out = triton_fused_lowrank_sparse_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception as e:
