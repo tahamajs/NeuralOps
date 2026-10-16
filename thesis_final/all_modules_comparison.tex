@@ -6,51 +6,45 @@
 \section{نمودارهای مقایسه‌ای نتایج}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/accuracy_top20.png}
-\caption{رتبه‌بندی ۲۰ ماژول برتر از نظر Accuracy؛ فقط PASS در SST-2 اجرای اصلی.}
-\label{fig:comparison_accuracy_top20_png}
+\includegraphics[width=0.92\textwidth]{img/chart_top15_accuracy.png}
+\caption{رتبه‌بندی ۱۵ ماژول برتر از نظر Accuracy بر روی مدل DistilBERT در مجموعه داده SST-2.}
+\label{fig:comparison_accuracy_top15}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/f1_top20.png}
-\caption{رتبه‌بندی ۲۰ ماژول برتر از نظر F1؛ F1 معیار مکمل Accuracy برای توازن عملکرد کلاس‌هاست.}
-\label{fig:comparison_f1_top20_png}
+\includegraphics[width=0.92\textwidth]{img/chart_champion_comparison.png}
+\caption{مقایسه همه‌جانبه ماژول‌های قهرمان در شاخص‌های دقت، کارایی حافظه و توان پردازشی.}
+\label{fig:comparison_champion}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/vram_low20.png}
-\caption{۲۰ ماژول با کمترین Peak VRAM؛ مقدار کمتر الزاماً به معنی Accuracy بهتر نیست.}
-\label{fig:comparison_vram_low20_png}
+\includegraphics[width=0.92\textwidth]{img/chart_memory_reduction.png}
+\caption{میزان تقلیل ردپای حافظه گرافیکی (Peak VRAM) در ماژول‌های فشرده‌سازی شده نسبت به مدل کامل.}
+\label{fig:comparison_memory_reduction}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/throughput_top20.png}
-\caption{۲۰ ماژول با بالاترین Throughput؛ سرعت باید همراه با Accuracy تفسیر شود.}
-\label{fig:comparison_throughput_top20_png}
+\includegraphics[width=0.92\textwidth]{img/chart_pareto_vram.png}
+\caption{جبهه بهینگی پارتو: توازن دقت دسته‌بندی در برابر مصرف حافظه گرافیکی.}
+\label{fig:comparison_pareto_vram}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/pareto_accuracy_vram.png}
-\caption{موازنهٔ Accuracy و حافظه؛ نقاط نزدیک گوشهٔ بالا-چپ گزینه‌های نامغلوب احتمالی هستند.}
-\label{fig:comparison_pareto_accuracy_vram_png}
+\includegraphics[width=0.92\textwidth]{img/chart_radar_families.png}
+\caption{نمودار رادار مقایسه چندمعیاره ۶ خانواده اصلی مکانیزم‌های توجه.}
+\label{fig:comparison_radar_families}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/pareto_accuracy_throughput.png}
-\caption{موازنهٔ Accuracy و سرعت؛ برتری واقعی باید هر دو محور را بهبود دهد.}
-\label{fig:comparison_pareto_accuracy_throughput_png}
+\includegraphics[width=0.92\textwidth]{img/chart_heatmap_accuracy.png}
+\caption{نقشه حرارتی مقایسه عملکرد ماژول‌ها در سناریوهای مختلف ارزیابی.}
+\label{fig:comparison_heatmap}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/comparison/multicriteria_heatmap.png}
-\caption{Heatmap چندمعیاره؛ رنگ‌ها درون همان ۲۰ ماژول نرمال شده‌اند و metric جدید نیستند.}
-\label{fig:comparison_multicriteria_heatmap_png}
-\end{figure}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/status_counts.png}
-\caption{توزیع PASS، FAIL و TIMEOUT در رکوردهای ماژول‌های درج‌شده در snapshot اصلی.}
-\label{fig:comparison_status_counts_png}
+\includegraphics[width=0.92\textwidth]{img/chart_pass_fail_by_family.png}
+\caption{توزیع وضعیت ارزیابی (PASS/FAIL) به تفکیک خانواده‌های ۶‌گانه مکانیزم‌ها.}
+\label{fig:comparison_pass_fail}
 \end{figure}
 \clearpage
 \begin{center}
