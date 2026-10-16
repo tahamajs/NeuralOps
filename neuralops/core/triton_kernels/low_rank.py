@@ -2464,14 +2464,15 @@ def triton_fused_lowrank_sparse_gemm_pytorch_ref(
     else:
         U_mat = u_r.t().contiguous()
     N = U_mat.shape[1]
-
     y_lr = torch.matmul(torch.matmul(x_2d, V_mat), U_mat)
     if s is not None:
-        if isinstance(s, torch.Tensor) and not s.is_sparse:
+        if isinstance(s, tuple) and len(s) == 3:
+            s_dense = torch.sparse_csr_tensor(s[0], s[1], s[2], size=(N, K), device=x_2d.device).to_dense().to(dtype=x_2d.dtype)
+            y_sp = torch.matmul(x_2d, s_dense.t())
+        elif isinstance(s, torch.Tensor) and not s.is_sparse:
             y_sp = torch.matmul(x_2d, s.to(dtype=x_2d.dtype).t())
         elif hasattr(s, "is_sparse_csr") and s.is_sparse_csr:
             y_sp = torch.matmul(x_2d, s.to_dense().to(dtype=x_2d.dtype).t())
-
         else:
             y_sp = 0.0
         y = y_lr + y_sp
@@ -2521,7 +2522,14 @@ def triton_fused_lowrank_sparse_gemm(
             col_indices = s.col_indices()
             values = s.values()
         elif isinstance(s, torch.Tensor) and not s.is_sparse:
-            s_csr = s.to_sparse_csr()
+            if hasattr(s, "_cached_csr") and getattr(s, "_cached_csr", None) is not None:
+                s_csr = s._cached_csr
+            else:
+                s_csr = s.to_sparse_csr()
+                try:
+                    s._cached_csr = s_csr
+                except Exception:
+                    pass
             crow_indices = s_csr.crow_indices()
             col_indices = s_csr.col_indices()
             values = s_csr.values()
