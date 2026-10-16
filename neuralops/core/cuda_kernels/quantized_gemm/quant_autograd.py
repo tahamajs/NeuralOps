@@ -161,8 +161,8 @@ def fp8_gemm_pytorch_ref(
     scale_b: torch.Tensor,
 ) -> torch.Tensor:
     """Pure PyTorch FP8 scaled matmul."""
-    sa = scale_a.item() if scale_a.defined() and scale_a.numel() > 0 else 1.0
-    sb = scale_b.item() if scale_b.defined() and scale_b.numel() > 0 else 1.0
+    sa = scale_a.item() if scale_a is not None and scale_a.numel() > 0 else 1.0
+    sb = scale_b.item() if scale_b is not None and scale_b.numel() > 0 else 1.0
     return (torch.matmul(A.float(), B.float()) * (sa * sb)).to(A.dtype)
 
 
@@ -218,8 +218,8 @@ class _FP8GemmFunction(torch.autograd.Function):
             except Exception:
                 pass
 
-        sa = scale_a.item() if scale_a.defined() and scale_a.numel() > 0 else 1.0
-        sb = scale_b.item() if scale_b.defined() and scale_b.numel() > 0 else 1.0
+        sa = scale_a.item() if scale_a is not None and scale_a.numel() > 0 else 1.0
+        sb = scale_b.item() if scale_b is not None and scale_b.numel() > 0 else 1.0
         scale = sa * sb
 
         dA = (torch.matmul(dout.float(), B.float().t()) * scale).to(A.dtype)
