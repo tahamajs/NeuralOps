@@ -2858,7 +2858,21 @@ def triton_fused_kronecker_matmul(
 
     assert K == N1 * N2, f"Input feature mismatch: {K} != {N1} * {N2}"
 
-    if not x.is_cuda or M1 > 64 or M2 > 64 or N1 > 64 or N2 > 64:
+    if (
+        not x.is_cuda
+        or N1 < 16
+        or N2 < 16
+        or M1 < 16
+        or M2 < 16
+        or (N1 & (N1 - 1)) != 0
+        or (N2 & (N2 - 1)) != 0
+        or (M1 & (M1 - 1)) != 0
+        or (M2 & (M2 - 1)) != 0
+        or M1 > 64
+        or M2 > 64
+        or N1 > 64
+        or N2 > 64
+    ):
         return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias)
 
     Y = torch.empty((M, out_features), device=x.device, dtype=x.dtype)
