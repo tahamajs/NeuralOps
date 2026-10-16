@@ -253,10 +253,15 @@ class KroneckerLinear(nn.Module):
         """(A ⊗ B) x computed without materializing the full weight."""
         if x.is_cuda and not self.training:
             try:
-                from neuralops.core.triton_kernels.low_rank import fused_kronecker_batched_gemm_triton
-                return fused_kronecker_batched_gemm_triton(x, self.A, self.B, bias=self.bias)
+                from neuralops.core.triton_kernels.low_rank import triton_fused_kronecker_matmul
+                return triton_fused_kronecker_matmul(x, self.A, self.B, bias=self.bias)
             except Exception:
-                pass
+                try:
+                    from neuralops.core.triton_kernels.low_rank import fused_kronecker_batched_gemm_triton
+                    return fused_kronecker_batched_gemm_triton(x, self.A, self.B, bias=self.bias)
+                except Exception:
+                    pass
+
 
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)  # (K, n1 * n2)
