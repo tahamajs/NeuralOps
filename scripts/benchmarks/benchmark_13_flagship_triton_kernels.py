@@ -116,7 +116,7 @@ def main():
     # Kernel 1: Fused Low-Rank Gated GEMM
     # -----------------------------------------------------------------------
     print("\n[Kernel 1/13] triton_fused_lowrank_gated_gemm")
-    M, K, r, N = 128, 768, 64, 768
+    M, K, r, N = 512, 768, 64, 768
     x1 = torch.randn(M, K, device=device, dtype=torch.float16)
     V1 = torch.randn(r, K, device=device, dtype=torch.float16)
     U1 = torch.randn(N, r, device=device, dtype=torch.float16)
@@ -149,16 +149,16 @@ def main():
     # Kernel 2: Fused Low-Rank + Sparse GEMM (RPCA)
     # -----------------------------------------------------------------------
     print("\n[Kernel 2/13] triton_fused_lowrank_sparse_gemm")
-    M, K, r, N = 128, 768, 64, 768
+    M, K, r, N = 512, 768, 64, 768
     x2 = torch.randn(M, K, device=device, dtype=torch.float16)
     V2 = torch.randn(r, K, device=device, dtype=torch.float16)
     U2 = torch.randn(N, r, device=device, dtype=torch.float16)
     s2 = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(torch.float16)
+    s2_csr = s2.to_sparse_csr()
     b2 = torch.randn(N, device=device, dtype=torch.float16)
 
-
-    fn_ref2 = lambda: triton_fused_lowrank_sparse_gemm_pytorch_ref(x2, V2, U2, s=s2, bias=b2)
-    fn_tri2 = lambda: triton_fused_lowrank_sparse_gemm(x2, V2, U2, s=s2, bias=b2)
+    fn_ref2 = lambda: triton_fused_lowrank_sparse_gemm_pytorch_ref(x2, V2, U2, s=s2_csr, bias=b2)
+    fn_tri2 = lambda: triton_fused_lowrank_sparse_gemm(x2, V2, U2, s=s2_csr, bias=b2)
 
     lat_ref, vram_ref = benchmark_fn(fn_ref2)
     lat_tri, vram_tri = benchmark_fn(fn_tri2)
@@ -186,14 +186,13 @@ def main():
     p_dims = [16, 16]
     q_dims = [16, 16]
     r = 16
-    M = 128
+    M = 256
     c1 = torch.randn(1, p_dims[0], q_dims[0], r, device=device, dtype=torch.float16)
     c2 = torch.randn(r, p_dims[1], q_dims[1], 1, device=device, dtype=torch.float16)
     x3 = torch.randn(M, p_dims[0] * p_dims[1], device=device, dtype=torch.float16)
     b3 = torch.randn(q_dims[0] * q_dims[1], device=device, dtype=torch.float16)
 
-    W_tt = triton_strided_tt_contraction_pytorch_ref(c1, c2, p_dims, q_dims)
-    fn_ref3 = lambda: F.linear(x3, W_tt, b3)
+    fn_ref3 = lambda: F.linear(x3, triton_strided_tt_contraction_pytorch_ref(c1, c2, p_dims, q_dims), b3)
     fn_tri3 = lambda: triton_strided_tt_linear(x3, c1, c2, p_dims, q_dims, bias=b3)
 
     lat_ref, vram_ref = benchmark_fn(fn_ref3)
@@ -449,7 +448,7 @@ def main():
     # Kernel 11: Spectral Entropy SVD Gate
     # -----------------------------------------------------------------------
     print("\n[Kernel 11/13] triton_spectral_entropy_svd_gate")
-    M, K, R_MAX, N = 128, 768, 64, 768
+    M, K, R_MAX, N = 512, 768, 64, 768
     eff_r = 32
     x11 = torch.randn(M, K, device=device, dtype=torch.float16)
     V11 = torch.randn(K, R_MAX, device=device, dtype=torch.float16)
