@@ -630,20 +630,9 @@ class SVDLinearAttention(BaseAttention):
                 target_linear.set_low_rank_factors(U_r, V_r)
 
             if bias is not None and target_linear.bias is not None:
-                if use_hnc and probe_inputs is not None:
-                    try:
-                        mu_x = probe_inputs.to(dev).float().view(-1, d_in).mean(dim=0)
-                        W_hat = torch.matmul(target_linear.U.data.float(), target_linear.V.data.float())
-                        drift_bias = torch.matmul(weight.float() - W_hat, mu_x)
-                        target_linear.bias.data.copy_(
-                            (bias.float() + drift_bias).to(target_linear.bias.device, target_linear.bias.dtype)
-                        )
-                    except Exception:
-                        target_linear.bias.data.copy_(bias.to(target_linear.bias.device, target_linear.bias.dtype))
-                else:
-                    target_linear.bias.data.copy_(
-                        bias.to(target_linear.bias.device, target_linear.bias.dtype)
-                    )
+                target_linear.bias.data.copy_(
+                    bias.to(target_linear.bias.device, target_linear.bias.dtype)
+                )
 
     def hnc_spectral_compress_and_align(
         self,
@@ -941,6 +930,36 @@ class SVDLinearAttention(BaseAttention):
                     )
                 except Exception as e:
                     logger.warning("SVDLinearAttention: out_proj factorization failed (%s).", e)
+
+            # If HNC alignment requested and probe inputs provided, perform fast end-to-end alignment against old_attn
+            if use_hnc and probe_inputs is not None and self.rank < self.hidden_size:
+                try:
+                    with torch.no_grad():
+                        if hasattr(old_attn, "in_proj_weight"):
+                            out_anchor = old_attn(probe_inputs, probe_inputs, probe_inputs)
+                        else:
+                            out_anchor = old_attn(probe_inputs)
+                        if isinstance(out_anchor, tuple):
+                            out_anchor = out_anchor[0]
+                    self.eval()
+                    anchor_targets = out_anchor.detach().float()
+                    trainable_factors = [
+                        self.q_proj.U, self.q_proj.V,
+                        self.k_proj.U, self.k_proj.V,
+                        self.v_proj.U, self.v_proj.V,
+                    ]
+                    if self.out_proj is not None and isinstance(self.out_proj, SVDLinear):
+                        trainable_factors.extend([self.out_proj.U, self.out_proj.V])
+                    opt = torch.optim.Adam(trainable_factors, lr=1e-3)
+                    for _ in range(25):
+                        opt.zero_grad()
+                        pred = self(probe_inputs)
+                        out_t = pred[0] if isinstance(pred, tuple) else pred
+                        loss = 0.5 * torch.mean((out_t.float() - anchor_targets) ** 2)
+                        loss.backward()
+                        opt.step()
+                except Exception as e:
+                    logger.debug("Automatic HNC post-alignment failed: %s", e)
 
     # ------------------------------------------------------------------
     # Forward paths
