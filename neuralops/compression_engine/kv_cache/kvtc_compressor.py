@@ -684,13 +684,14 @@ class KVTCCompressor(BaseCompressor):
                     pass
 
                 if not test_passed:
-                    # Dynamically inspect first linear layer for hidden dimension
+                    # Dynamically inspect first linear/factorized layer for hidden dimension
                     in_dim = 64
                     for m in self.model.modules():
-                        if isinstance(m, nn.Linear):
-                            in_dim = getattr(m, "in_features", 64)
+                        if hasattr(m, "in_features") and isinstance(getattr(m, "in_features"), int):
+                            in_dim = getattr(m, "in_features")
                             break
-                    dummy_x = torch.randn(1, 8, in_dim, device=dev)
+                    target_dtype = p0.dtype if p0 is not None and p0.is_floating_point() else torch.float32
+                    dummy_x = torch.randn(1, 8, in_dim, device=dev, dtype=target_dtype)
                     _ = self.model(dummy_x)
                     test_passed = True
 
