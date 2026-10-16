@@ -707,10 +707,16 @@ class HessianNullSpaceSVDContinuation:
                     loss_restore = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
                     target_params = [mod.weight for mod in target_layers.values()]
                     restore_grads = torch.autograd.grad(loss_restore, target_params, allow_unused=True)
+                    valid_grads = [g for g in restore_grads if g is not None]
+                    if valid_grads:
+                        grad_norm = torch.sqrt(sum(g.norm() ** 2 for g in valid_grads))
+                        clip_scale = min(1.0, 1.0 / (grad_norm.item() + 1e-8))
+                    else:
+                        clip_scale = 1.0
                     with torch.no_grad():
                         for p, g in zip(target_params, restore_grads):
                             if g is not None:
-                                p.sub_(self.restore_lr * g)
+                                p.sub_(self.restore_lr * clip_scale * g)
 
             post_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
             delta = pre_loss - post_loss
