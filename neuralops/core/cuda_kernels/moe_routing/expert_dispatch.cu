@@ -5,6 +5,51 @@
 #include <c10/cuda/CUDAException.h>
 
 template<typename scalar_t>
+__global__ void moe_gather_fast_kernel(
+    scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
+    const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
+    const scalar_t* __restrict__ routing_weights,    // [num_tokens, top_k]
+    const int num_tokens,
+    const int hidden_dim,
+    const int top_k
+) {
+    const int tok_idx = blockIdx.x * blockDim.y + threadIdx.y;
+    const int lane = threadIdx.x;
+
+    if (tok_idx >= num_tokens) return;
+
+    float w[8];
+    for (int j = 0; j < top_k && j < 8; ++j) {
+        w[j] = static_cast<float>(routing_weights[tok_idx * top_k + j]);
+    }
+
+    scalar_t* __restrict__ dst = out_tokens + tok_idx * hidden_dim;
+
+    if ((hidden_dim * sizeof(scalar_t)) % 16 == 0 && std::is_same<scalar_t, float>::value) {
+        const int num_vecs = hidden_dim / 4;
+        for (int i = lane; i < num_vecs; i += 32) {
+            float4 acc = {0.0f, 0.0f, 0.0f, 0.0f};
+            for (int j = 0; j < top_k && j < 8; ++j) {
+                const float4 in_vec = reinterpret_cast<const float4*>(expert_outputs + (tok_idx * top_k + j) * hidden_dim)[i];
+                acc.x += w[j] * in_vec.x;
+                acc.y += w[j] * in_vec.y;
+                acc.z += w[j] * in_vec.z;
+                acc.w += w[j] * in_vec.w;
+            }
+            reinterpret_cast<float4*>(dst)[i] = acc;
+        }
+    } else {
+        for (int i = lane; i < hidden_dim; i += 32) {
+            float acc = 0.0f;
+            for (int j = 0; j < top_k && j < 8; ++j) {
+                acc += w[j] * static_cast<float>(expert_outputs[(tok_idx * top_k + j) * hidden_dim + i]);
+            }
+            dst[i] = static_cast<scalar_t>(acc);
+        }
+    }
+}
+
+template<typename scalar_t>
 __global__ void moe_gather_kernel(
     scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
     const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
@@ -48,30 +93,51 @@ void moe_gather_cuda(
         return;
     }
 
-    dim3 grid(num_tokens);
-    dim3 block(std::min(256, hidden_dim));
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
-
     const int32_t* expert_offsets_ptr = (expert_offsets.defined() && expert_offsets.numel() > 0) ? expert_offsets.data_ptr<int32_t>() : nullptr;
 
-    AT_DISPATCH_FLOATING_TYPES_AND2(
-        at::ScalarType::Half,
-        at::ScalarType::BFloat16,
-        expert_outputs.scalar_type(),
-        "moe_gather_cuda",
-        ([&] {
-            moe_gather_kernel<scalar_t><<<grid, block, 0, stream>>>(
-                out_tokens.data_ptr<scalar_t>(),
-                expert_outputs.data_ptr<scalar_t>(),
-                routing_weights.data_ptr<scalar_t>(),
-                expert_offsets_ptr,
-                num_tokens,
-                hidden_dim,
-                top_k,
-                total_assignments
-            );
-        })
-    );
+    if (expert_offsets_ptr == nullptr && top_k <= 8) {
+        dim3 block(32, 4);
+        dim3 grid((num_tokens + 3) / 4);
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half,
+            at::ScalarType::BFloat16,
+            expert_outputs.scalar_type(),
+            "moe_gather_fast_cuda",
+            ([&] {
+                moe_gather_fast_kernel<scalar_t><<<grid, block, 0, stream>>>(
+                    out_tokens.data_ptr<scalar_t>(),
+                    expert_outputs.data_ptr<scalar_t>(),
+                    routing_weights.data_ptr<scalar_t>(),
+                    num_tokens,
+                    hidden_dim,
+                    top_k
+                );
+            })
+        );
+    } else {
+        dim3 grid(num_tokens);
+        dim3 block(std::min(256, hidden_dim));
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half,
+            at::ScalarType::BFloat16,
+            expert_outputs.scalar_type(),
+            "moe_gather_cuda",
+            ([&] {
+                moe_gather_kernel<scalar_t><<<grid, block, 0, stream>>>(
+                    out_tokens.data_ptr<scalar_t>(),
+                    expert_outputs.data_ptr<scalar_t>(),
+                    routing_weights.data_ptr<scalar_t>(),
+                    expert_offsets_ptr,
+                    num_tokens,
+                    hidden_dim,
+                    top_k,
+                    total_assignments
+                );
+            })
+        );
+    }
 
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
+
