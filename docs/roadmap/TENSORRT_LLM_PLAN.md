@@ -1,11 +1,11 @@
 # 🗺️ TensorRT-LLM Integration Technical Roadmap (v2.0.0)
 
 ## 1. Executive Summary & Architectural Vision
-NeuralOps (`SVD_linear_Attention`) v1.3.7 provides first-class serving support for HuggingFace Transformers, ONNX Runtime graph export, and in-tree continuous batching adapters for vLLM, TGI, and SGLang. 
+NeuralOps (`SVD_linear_Attention` v1.3.7) provides production-grade serving support for Hugging Face Transformers, ONNX Runtime graph export, and in-tree continuous batching adapters for vLLM, TGI, and SGLang. 
 
-For maximum deployment density in enterprise and high-throughput production clusters, **TensorRT-LLM** represents the final performance frontier. TensorRT-LLM relies on specialized C++/CUDA plugins conforming to NVIDIA's `nvinfer1::IPluginV2DynamicExt` and `tensorrt_llm::plugins::api`. 
+For maximum deployment density, minimal time-to-first-token (TTFT), and ultra-low latency in enterprise GPU clusters, **TensorRT-LLM** represents the flagship production runtime. TensorRT-LLM relies on specialized C++/CUDA plugins conforming to NVIDIA's `nvinfer1::IPluginV2DynamicExt` and `tensorrt_llm::plugins::api`.
 
-This roadmap outlines the systematic engineering execution to bring native TensorRT-LLM compilation and execution into **NeuralOps v2.0.0**.
+This roadmap outlines the systematic engineering execution to bring native TensorRT-LLM compilation, custom kernel compilation, and optimized engine execution into **NeuralOps v2.0.0**.
 
 ---
 
@@ -13,19 +13,22 @@ This roadmap outlines the systematic engineering execution to bring native Tenso
 
 The core mathematical primitives of NeuralOps must be compiled into native TensorRT plugin libraries (`.so`):
 
-1. **`SVDLinearAttentionPlugin`**:
-   - Fused linear attention kernel supporting online state accumulation ($S_t = S_{t-1} + K_t^T V_t$) in FP16 and BF16.
-   - Eliminates standard transformer $O(T^2)$ KV-cache footprint in favour of constant $O(1)$ memory.
+1. **`FusedAttentionPlugin`**:
+   - Compiles subquadratic and low-rank linear attention mechanisms (such as SVD Linear Attention, Cosformer, and Gated Linear Attention).
+   - Performs online recurrent state accumulation ($S_t = S_{t-1} + K_t^T V_t$) in FP16 and BF16 precision.
+   - Eliminates standard transformer $O(T^2)$ KV-cache footprint in favour of constant $O(1)$ recurrent memory per sequence.
 
-2. **`DeltaNetRecurrentPlugin`**:
-   - Fast Delta Rule associative update with Householder/orthonormal decay parameters.
-   - Native TensorRT dynamic shape support for variable sequence lengths.
+2. **`QuantizedGEMMPlugin`**:
+   - Supports compressed low-rank and quantized projections, specifically W4A16 (INT4 packed weights with FP16 activations) and FP8 matrix multiplications.
+   - Implements fast bit-shift unpack kernels and fused dequantization-GEMM on NVIDIA Tensor Cores.
 
-3. **`LowRankFactorizedLinearPlugin`**:
-   - Fused low-rank GEMM calculating $Y = (X A) B + \text{bias}$ in a single CUDA kernel pass without staging intermediate activations in high-bandwidth memory (HBM).
+3. **`SelectiveScanPlugin`**:
+   - Native TensorRT dynamic shape implementation for state-space models (Mamba/SSM) and associative scans.
+   - Supports variable sequence lengths and continuous batching chunk prefill.
 
-4. **`HNC_SVD_GEMM_Plugin`**:
-   - Hessian-Nullspace Continuation structured low-rank projection with FP8/INT4 weight decompression on-the-fly.
+4. **`PagedAttentionPlugin`**:
+   - Paged recurrent state serving allocating fixed-size GPU virtual blocks for recurrent states ($H \times D \times D$) or sparse KV slots.
+   - Mimics BlockTable memory layouts to enable zero-copy sequence forking and dynamic request admission.
 
 ---
 
@@ -33,49 +36,73 @@ The core mathematical primitives of NeuralOps must be compiled into native Tenso
 
 To compile these plugins, NeuralOps v2.0.0 will introduce dedicated CMake and PyTorch C++ extension build hooks:
 
-- **Directory Structure**:
+- **Build System Changes**:
+  - `setup.py` custom build extension flag `--cuda-ext` passing `nvcc` flags and linking against TensorRT libraries.
+  - Automatic discovery of TensorRT headers via `$TENSORRT_DIR/include` and library paths via `$TENSORRT_DIR/lib`.
+- **Directory Layout**:
   ```
   csrc/
   ├── CMakeLists.txt
   ├── plugins/
-  │   ├── svd_linear_attention/
-  │   │   ├── svd_linear_attention_plugin.h
-  │   │   ├── svd_linear_attention_plugin.cu
-  │   │   └── svd_linear_attention_kernel.cuh
-  │   └── low_rank_gemm/
-  │       ├── low_rank_gemm_plugin.h
-  │       └── low_rank_gemm_plugin.cu
+  │   ├── fused_attention/
+  │   │   ├── fused_attention_plugin.h
+  │   │   ├── fused_attention_plugin.cu
+  │   │   └── fused_attention_kernel.cuh
+  │   ├── quantized_gemm/
+  │   │   ├── quantized_gemm_plugin.h
+  │   │   └── quantized_gemm_plugin.cu
+  │   ├── selective_scan/
+  │   │   ├── selective_scan_plugin.h
+  │   │   └── selective_scan_plugin.cu
+  │   └── paged_attention/
+  │       ├── paged_attention_plugin.h
+  │       └── paged_attention_plugin.cu
   └── tensorrt_llm_bindings.cpp
   ```
-- **Build Flags**:
+- **Build Configurations**:
   - `CUDA_ARCHITECTURES`: `80;86;89;90` (Ampere, Ada Lovelace, Hopper).
   - Target NVIDIA TensorRT SDK: `10.0+`.
   - Linkage against `libnvinfer.so`, `libnvinfer_plugin.so`, and `libtensorrt_llm.so`.
 
 ---
 
-## 4. Verification & Testing Strategy
+## 4. Dependencies and Environment Constraints
+
+- **Hardware**: NVIDIA GPU with Compute Capability $\ge 8.0$ (Ampere RTX 30xx/A100, Ada Lovelace RTX 40xx/L40, Hopper H100).
+- **CUDA Toolkit**: Version $\ge 12.2$.
+- **TensorRT SDK**: Version $10.0$ or higher with C++ headers (`NvInfer.h`, `NvInferPlugin.h`).
+- **cuDNN**: Version $9.0$ or higher.
+- **Operating System Constraints & Blocking Items**:
+  - TensorRT-LLM and custom CUDA plugins are strictly supported on **Linux x86_64 and Windows WSL2**.
+  - **No macOS Support**: Apple Silicon workstations cannot build or execute TensorRT-LLM plugins due to the lack of NVIDIA GPU drivers and NVCC toolchains. On macOS, NeuralOps defaults to native PyTorch and MPS accelerated backends.
+
+---
+
+## 5. Verification & Testing Strategy
 
 1. **Unit Plugin Verification**:
-   - Compare outputs of TensorRT custom plugins against Triton JIT reference kernels and PyTorch eager implementations across random synthetic inputs (tolerance $\epsilon \le 10^{-4}$ in FP16).
-2. **End-to-End Engine Latency Benchmark**:
+   - Compare outputs of compiled TensorRT custom plugins against existing Triton JIT reference kernels and PyTorch eager implementations across random synthetic inputs (strict tolerance $\epsilon \le 10^{-4}$ in FP16).
+2. **Runtime Smoke Testing**:
+   - Compile plugin into shared library, load into TensorRT runtime engine, and execute a smoke test verifying end-to-end token generation on GPT-2 and RoBERTa checkpoints.
+3. **End-to-End Engine Latency Benchmark**:
    - Benchmark throughput (tokens/sec) and time-to-first-token (TTFT) on NVIDIA RTX 4070 (SM 8.9) and A100 (SM 8.0) across sequence lengths $L \in \{2048, 8192, 32768, 131072\}$.
-3. **Speculative Decoding Alignment**:
-   - Pair TensorRT draft engines with target models using NeuralOps `SelfSpeculativeDecoder`.
+4. **Speculative Decoding Alignment**:
+   - Pair compiled TensorRT draft engines with target models using NeuralOps `SelfSpeculativeDecoder`.
 
 ---
 
-## 5. Implementation Milestones & Timeline
+## 6. Implementation Milestones & Timeline
 
-| Milestone | Target Date | Deliverables |
-| :--- | :--- | :--- |
-| **M1: C++ Plugin Scaffold** | Q1 2027 | Plugin classes implementing `IPluginV2DynamicExt`, serialized state methods, and parameter parsing. |
-| **M2: CUDA Kernel Ports** | Q2 2027 | Port existing 26 Triton JIT kernels into optimized standalone CUDA/C++ templates. |
-| **M3: Model Engine Builder** | Q3 2027 | Python `TensorRTLLMPluginBuilder.export_engine()` assembling complete model networks via TRT NetworkDefinition. |
-| **M4: Production v2.0.0 Release** | Q4 2027 | Automated wheel packaging with pre-compiled `.so` plugins for Linux x86_64 and CUDA 12.x. |
+| Milestone | Deliverables |
+| :--- | :--- |
+| **M1: C++ Plugin Scaffold** | Plugin classes implementing `IPluginV2DynamicExt`, serialized state methods, and parameter parsing. |
+| **M2: CUDA Kernel Ports** | Port existing 26 Triton JIT kernels into optimized standalone CUDA/C++ templates. |
+| **M3: Model Engine Builder** | Python `TensorRTLLMPluginBuilder.export_engine()` assembling complete model networks via TRT NetworkDefinition. |
+| **M4: Production v2.0.0 Release** | Automated wheel packaging with pre-compiled `.so` plugins for Linux x86_64 and CUDA 12.x. |
 
 ---
 
-## 6. Official References & Standards
-- [NVIDIA TensorRT-LLM Architecture Guide](https://github.com/NVIDIA/TensorRT-LLM)
+## 7. Official References & Standards
+- [NVIDIA TensorRT-LLM Architecture Guide & Repository](https://github.com/NVIDIA/TensorRT-LLM)
 - [TensorRT Custom Plugin Developer Guide (`IPluginV2DynamicExt`)](https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html)
+- [TensorRT-LLM C++ Plugin Architecture and Custom Layers Documentation](https://nvidia.github.io/TensorRT-LLM/advanced/custom-plugins.html)
