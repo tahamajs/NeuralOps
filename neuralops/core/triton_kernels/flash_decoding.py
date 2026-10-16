@@ -155,6 +155,9 @@ if HAS_TRITON and tl is not None:
 
         out_ptrs = FinalOut_ptr + i_b * stride_ob + i_h * stride_oh + 0 * stride_oq + offs_d * stride_od
         tl.store(out_ptrs, acc.to(FinalOut_ptr.dtype.element_ty))
+else:
+    flash_decoding_stage1_kernel = None
+    flash_decoding_stage2_kernel = None
 
 
 def flash_decoding_attention(

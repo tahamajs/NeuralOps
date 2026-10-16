@@ -21,14 +21,13 @@ import torch.nn.functional as F
 
 from neuralops.core.triton_kernels._types import (
     HAS_TRITON,
+    triton,
+    tl,
     check_triton_suitability,
     low_rank_pytorch_fallback,
 )
 
-if HAS_TRITON:
-    import triton
-    import triton.language as tl
-
+if HAS_TRITON and tl is not None:
     @triton.jit
     def _triton_gemm_bias_kernel(
         A_ptr,
