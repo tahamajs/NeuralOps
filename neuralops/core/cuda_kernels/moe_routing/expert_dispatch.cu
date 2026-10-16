@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 
 __global__ void moe_gather_kernel(
     float* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
@@ -40,8 +41,9 @@ void moe_gather_cuda(
 ) {
     dim3 grid(num_tokens);
     dim3 block(min(1024, hidden_dim));
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    moe_gather_kernel<<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+    moe_gather_kernel<<<grid, block, 0, stream>>>(
         out_tokens.data_ptr<float>(),
         expert_outputs.data_ptr<float>(),
         routing_weights.data_ptr<float>(),

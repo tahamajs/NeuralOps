@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 
 __global__ void kv_cache_copy_cow_kernel(
     float* __restrict__ dst_k,
@@ -38,8 +39,9 @@ void kv_cache_copy_cow_cuda(
     const int elements_per_block = block_size * num_heads * head_dim;
     dim3 grid(num_blocks);
     dim3 block(min(1024, elements_per_block));
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    kv_cache_copy_cow_kernel<<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+    kv_cache_copy_cow_kernel<<<grid, block, 0, stream>>>(
         dst_k.data_ptr<float>(),
         dst_v.data_ptr<float>(),
         src_k.data_ptr<float>(),
