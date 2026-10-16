@@ -257,15 +257,19 @@ def test_kernel_10_hgrn2_fused_bwd_scan(device):
 # ---------------------------------------------------------------------------
 def test_kernel_11_spectral_entropy_svd_gate(device):
     torch.manual_seed(42)
-    r = 64
-    S = torch.abs(torch.randn(r, device=device, dtype=torch.float32)) + 0.1
-    threshold = 0.5
+    M, K, R_MAX, N = 32, 128, 64, 128
+    eff_r = 32
+    x = torch.randn(M, K, device=device, dtype=torch.float16)
+    V_r = torch.randn(K, R_MAX, device=device, dtype=torch.float16)
+    U_r = torch.randn(R_MAX, N, device=device, dtype=torch.float16)
+    s_weights = torch.rand(R_MAX, device=device, dtype=torch.float16)
+    bias = torch.randn(N, device=device, dtype=torch.float16)
 
-    entropy_ref, S_gated_ref = triton_spectral_entropy_svd_gate_pytorch_ref(S, threshold=threshold)
-    entropy_tri, S_gated_tri = triton_spectral_entropy_svd_gate(S, threshold=threshold)
+    out_ref = triton_spectral_entropy_svd_gate_pytorch_ref(x, V_r, U_r, effective_rank=eff_r, s_weights=s_weights, bias=bias)
+    out_tri = triton_spectral_entropy_svd_gate(x, V_r, U_r, effective_rank=eff_r, s_weights=s_weights, bias=bias)
 
-    assert torch.allclose(entropy_ref, entropy_tri, atol=1e-3, rtol=1e-3)
-    assert torch.allclose(S_gated_ref, S_gated_tri, atol=1e-3, rtol=1e-3)
+    assert torch.allclose(out_ref, out_tri, atol=3e-2, rtol=2e-2)
+
 
 
 # ---------------------------------------------------------------------------
