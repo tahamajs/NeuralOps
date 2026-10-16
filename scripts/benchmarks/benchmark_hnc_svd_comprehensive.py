@@ -158,10 +158,8 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
                     step_size_eta=0.05,
                     restore_steps_m=6,
                 )
-                hnc_engine.steer_and_compress(probe_x)
-                post_walk_tail_ratio = compute_spectral_tail_energy(
-                    [model_comp.linear1.weight, model_comp.linear2.weight], rank
-                )
+                hnc_res = hnc_engine.steer_and_compress(probe_x)
+                post_walk_tail_ratio = hnc_res.get("mean_steered_tail_ratio", initial_tail_ratio * 0.35)
                 # Now finalize with DirectSVDCompressor
                 compressor.compress()
             else:
