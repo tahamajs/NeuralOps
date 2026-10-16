@@ -30,13 +30,17 @@ def dispatch(
     """
     if cuda_fn is not None:
         try:
-            return cuda_fn(*args, **kwargs)
+            res = cuda_fn(*args, **kwargs)
+            if res is not None:
+                return res
         except Exception as e:
             logger.warning(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
 
     if triton_fn is not None:
         try:
-            return triton_fn(*args, **kwargs)
+            res = triton_fn(*args, **kwargs)
+            if res is not None:
+                return res
         except Exception as e:
             logger.warning(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
 
