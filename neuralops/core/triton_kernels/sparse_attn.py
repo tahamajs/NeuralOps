@@ -1122,5 +1122,13 @@ __all__ = [
     'fused_padre_polynomial_attn_pytorch',
     'fused_bam_unified_qkv_moe_triton',
     'fused_bam_unified_qkv_moe_pytorch',
+    'triton_block_sparse_streaming_attn',
+    'triton_block_sparse_streaming_attn_pytorch_ref',
 ]
+
+from neuralops.core.triton_kernels.block_sparse import (
+    triton_block_sparse_streaming_attn,
+    triton_block_sparse_streaming_attn_pytorch_ref,
+)
+
 
