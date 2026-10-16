@@ -30,9 +30,11 @@ __global__ void block_sparse_attn_warp_kernel(
 
     if (b >= B || h >= H) return;
 
-    // Shared memory with +1 padding to eliminate bank conflicts
-    __shared__ float K_smem[BLOCK_SIZE][HEAD_DIM + 1];
-    __shared__ float V_smem[BLOCK_SIZE][HEAD_DIM + 1];
+    // Dynamic shared memory with +1 padding to eliminate bank conflicts
+    extern __shared__ float smem[];
+    constexpr int STRIDE = HEAD_DIM + 1;
+    float* K_smem = smem;
+    float* V_smem = smem + BLOCK_SIZE * STRIDE;
 
     // Local registers for queries assigned to this warp
     float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
@@ -80,11 +82,11 @@ __global__ void block_sparse_attn_warp_kernel(
 
             if (global_tok < N) {
                 const int g_off = kv_head_base + global_tok * HEAD_DIM + dim_in_tok;
-                K_smem[tok_in_block][dim_in_tok] = k[g_off];
-                V_smem[tok_in_block][dim_in_tok] = v[g_off];
+                K_smem[tok_in_block * STRIDE + dim_in_tok] = k[g_off];
+                V_smem[tok_in_block * STRIDE + dim_in_tok] = v[g_off];
             } else {
-                K_smem[tok_in_block][dim_in_tok] = 0.0f;
-                V_smem[tok_in_block][dim_in_tok] = 0.0f;
+                K_smem[tok_in_block * STRIDE + dim_in_tok] = 0.0f;
+                V_smem[tok_in_block * STRIDE + dim_in_tok] = 0.0f;
             }
         }
         __syncthreads();
@@ -101,7 +103,7 @@ __global__ void block_sparse_attn_warp_kernel(
                 float dot = 0.0f;
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    dot += q_local[qi][e] * K_smem[kt][lane + e * 32];
+                    dot += q_local[qi][e] * K_smem[kt * STRIDE + lane + e * 32];
                 }
 
                 #pragma unroll
@@ -117,7 +119,7 @@ __global__ void block_sparse_attn_warp_kernel(
                 l_prev[qi] = l_prev[qi] * alpha + p;
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt][lane + e * 32];
+                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt * STRIDE + lane + e * 32];
                 }
                 m_prev[qi] = m_curr;
             }
@@ -171,14 +173,21 @@ void block_sparse_attn_fwd_cuda(
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     #define LAUNCH_SPARSE_KERNEL(HEAD_DIM_VAL, BLOCK_SIZE_VAL) \
-        block_sparse_attn_warp_kernel<HEAD_DIM_VAL, BLOCK_SIZE_VAL><<<grid, block, 0, stream>>>( \
-            out.data_ptr<float>(), \
-            q.data_ptr<float>(), \
-            k.data_ptr<float>(), \
-            v.data_ptr<float>(), \
-            block_mask.data_ptr<int32_t>(), \
-            B, H, N, num_kv_blocks, scale \
-        )
+        do { \
+            const size_t smem_bytes = 2 * (BLOCK_SIZE_VAL) * ((HEAD_DIM_VAL) + 1) * sizeof(float); \
+            auto kernel_func = block_sparse_attn_warp_kernel<HEAD_DIM_VAL, BLOCK_SIZE_VAL>; \
+            if (smem_bytes > 48 * 1024) { \
+                cudaFuncSetAttribute(reinterpret_cast<const void*>(kernel_func), cudaFuncAttributeMaxDynamicSharedMemorySize, static_cast<int>(smem_bytes)); \
+            } \
+            kernel_func<<<grid, block, smem_bytes, stream>>>( \
+                out.data_ptr<float>(), \
+                q.data_ptr<float>(), \
+                k.data_ptr<float>(), \
+                v.data_ptr<float>(), \
+                block_mask.data_ptr<int32_t>(), \
+                B, H, N, num_kv_blocks, scale \
+            ); \
+        } while (0)
 
     if (block_size == 16) {
         if (D == 32) {
