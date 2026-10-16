@@ -103,12 +103,14 @@ class SVDLinear(nn.Module):
         lora_alpha: float = 1.0,
         lora_r: int | None = None,
         freeze_base: bool = False,
+        use_triton: bool = True,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
         self.rank = max(1, min(rank, self.in_features, self.out_features))
         self.use_fused_kernel = bool(use_fused_kernel)
+        self.use_triton = bool(use_triton)
 
         # Accept both lora_rank and legacy lora_r
         eff_lora = int(lora_r) if (lora_r is not None and lora_r > 0) else max(0, int(lora_rank))
@@ -202,6 +204,13 @@ class SVDLinear(nn.Module):
                 return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
             except Exception as e:
                 logger.debug("SVDLinear fused kernel failed (%s); using F.linear.", e)
+
+        if getattr(self, "use_triton", True) and x.is_cuda and not self.training and (self.lora_rank == 0 or self.lora_A is None):
+            try:
+                from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
+                return triton_fused_lowrank_gated_gemm(x, self.V, self.U, alpha=None, b_drift=self.bias)
+            except Exception as e:
+                logger.debug("Triton fused lowrank gemm failed (%s); fallback", e)
 
         if x.is_cuda and not self.training:
             try:
