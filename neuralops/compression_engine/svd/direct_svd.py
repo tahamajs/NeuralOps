@@ -145,9 +145,12 @@ class DirectSVDCompressor(BaseCompressor):
         else:
             self.max_retries = int(max_retries)
         self.target_modules = target_modules
-        self.target_attention_only = bool(target_attention_only)
-        self.use_hnc_continuation = bool(kwargs.get("use_hnc_continuation", False))
-        self.probe_inputs = kwargs.get("probe_inputs", None)
+        self.use_hnc_continuation = bool(
+            kwargs.get("use_hnc_continuation", kwargs.get("name") in ("hnc_svd", "hnc_svd_compressor"))
+        )
+        self.probe_inputs = kwargs.get("probe_inputs", kwargs.get("calibration_data", kwargs.get("calibration_loader", None)))
+        self.hnc_walk_steps = int(kwargs.get("hnc_walk_steps", _cfg_get(cfg_obj, "hnc_walk_steps", 0)))
+        self.hnc_stage_d_steps = int(kwargs.get("hnc_stage_d_steps", _cfg_get(cfg_obj, "hnc_stage_d_steps", 30)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -414,11 +417,12 @@ class DirectSVDCompressor(BaseCompressor):
                     self.model,
                     target_rank=self.rank or 32,
                     mode="kronecker",
-                    walk_steps=20,
+                    walk_steps=self.hnc_walk_steps,
                     step_size_eta=0.05,
                     restore_steps_m=6,
+                    stage_d_steps=self.hnc_stage_d_steps,
                 )
-                hnc_res = hnc_engine.steer_and_compress(self.probe_inputs)
+                hnc_res = hnc_engine.steer_and_compress(self.probe_inputs, target_linear_modules=self.target_modules)
                 self.hnc_res = hnc_res
                 hnc_factors_dict = hnc_res.get("low_rank_factors", {})
                 logger.info("DirectSVD: HNC Null Space Continuation pre-steering completed: %s", hnc_res.get("status"))
