@@ -553,8 +553,12 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 ):
                     p = outp[1].detach().float()
                 elif isinstance(outp, torch.Tensor) and outp.ndim >= 3:
-                    # In some modules attention probabilities or softmax is exposed
-                    pass
+                    # In some modules attention probabilities or softmax is exposed as square sequence matrices
+                    if outp.shape[-1] == outp.shape[-2]:
+                        p = outp.detach().float()
+                    else:
+                        p = torch.softmax(outp.detach().float(), dim=-1)
+
                 if p is not None:
                     if layer_name not in attn_probs:
                         attn_probs[layer_name] = [p[:4].cpu()]
