@@ -177,6 +177,19 @@ class TensorRTLLMPluginBuilder:
         """Returns True if tensorrt_llm package is installed and discoverable."""
         return HAS_TRT_LLM
 
+    def build_plugin(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Compile custom NeuralOps attention C++ plugin for TensorRT-LLM.
+        Raises informative NotImplementedError detailing v2.0.0 roadmap status when TensorRT toolchain is unavailable.
+        """
+        if not HAS_TRT:
+            raise NotImplementedError(
+                "TensorRT-LLM plugin compilation is planned for NeuralOps v2.0.0.\n"
+                "See docs/roadmap/TENSORRT_LLM_PLAN.md for the implementation roadmap.\n"
+                "Current workarounds: use vLLM or HF serving adapters instead."
+            )
+        return self.generate_cpp_plugin_source(*args, **kwargs)
+
     def generate_cpp_plugin_source(self, target_dir: Optional[Union[str, Path]] = None) -> Dict[str, str]:
         """
         Generates full, self-contained native C++/CUDA TensorRT plugin source files:
