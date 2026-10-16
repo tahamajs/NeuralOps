@@ -96,7 +96,7 @@ __global__ void flash_gqa_warp_kernel(
 
         const int tokens_in_tile = min(BLOCK_N, N_KV - k_start);
 
-        // Process all queries assigned to this warp
+        // Process all queries assigned to this warp using tile-level online softmax
         #pragma unroll
         for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
             const int cur_q_idx = q_indices[qi];
@@ -105,10 +105,14 @@ __global__ void flash_gqa_warp_kernel(
             const int max_k_for_query = cur_q_idx + (N_KV - N_Q);
             if (is_causal && max_k_for_query < 0) continue;
 
+            float qk_tile[BLOCK_N];
+            float m_tile = -FLT_MAX;
+
             for (int kt = 0; kt < tokens_in_tile; ++kt) {
                 const int global_k = k_start + kt;
                 if (is_causal && global_k > max_k_for_query) {
-                    break;
+                    qk_tile[kt] = -FLT_MAX;
+                    continue;
                 }
 
                 float dot = 0.0f;
@@ -123,16 +127,31 @@ __global__ void flash_gqa_warp_kernel(
                 }
 
                 float qk = dot * scale;
-                float m_curr = fmaxf(m_prev[qi], qk);
-                float alpha = expf(m_prev[qi] - m_curr);
-                float p = expf(qk - m_curr);
+                qk_tile[kt] = qk;
+                m_tile = fmaxf(m_tile, qk);
+            }
 
-                l_prev[qi] = l_prev[qi] * alpha + p;
+            // Tile-level online softmax update (rescale accumulator ONCE per tile)
+            float m_new = fmaxf(m_prev[qi], m_tile);
+            float alpha = (m_prev[qi] == -FLT_MAX) ? 0.0f : expf(m_prev[qi] - m_new);
+            m_prev[qi] = m_new;
+            l_prev[qi] *= alpha;
+
+            #pragma unroll
+            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                acc[qi][e] *= alpha;
+            }
+
+            // Accumulate V values for the active tile
+            for (int kt = 0; kt < tokens_in_tile; ++kt) {
+                if (qk_tile[kt] == -FLT_MAX) continue;
+                float p = expf(qk_tile[kt] - m_new);
+                l_prev[qi] += p;
+
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt][lane + e * 32];
+                    acc[qi][e] += p * V_smem[kt][lane + e * 32];
                 }
-                m_prev[qi] = m_curr;
             }
         }
     }
