@@ -10,7 +10,8 @@ void moe_dispatch_cuda(
     const torch::Tensor& expert_offsets,
     int num_tokens,
     int hidden_dim,
-    int top_k
+    int top_k,
+    int total_assignments
 );
 
 void moe_gather_cuda(
@@ -21,5 +22,6 @@ void moe_gather_cuda(
     const torch::Tensor& expert_offsets,
     int num_tokens,
     int hidden_dim,
-    int top_k
+    int top_k,
+    int total_assignments
 );
