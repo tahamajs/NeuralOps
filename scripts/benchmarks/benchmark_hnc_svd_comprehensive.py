@@ -33,11 +33,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 from neuralops.compression_engine.svd.hnc_svd_continuation import (
-    HNCContinuationConfig,
-    HNCSVDContinuationEngine,
-    svd_spectral_tail_potential,
-    layerwise_kronecker_nullspace_step,
-    function_matching_loss,
+    HessianNullSpaceSVDContinuation,
+    compute_function_matching_loss,
+    compute_spectral_tail_potential_and_gradient,
+    solve_layerwise_kronecker_nullspace_step,
     hvp_gauss_newton,
 )
 from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
@@ -48,7 +47,7 @@ from neuralops.core.triton_kernels.low_rank import (
 
 
 class BenchmarkTransformerBlock(nn.Module):
-    """Clean reference 2-layer transformer encoder block for compression benchmarking."""
+    """Clean reference transformer encoder block for compression benchmarking."""
     def __init__(self, d_model=256, nhead=8, dim_feedforward=512):
         super().__init__()
         self.attn = nn.MultiheadAttention(d_model, nhead, batch_first=True)
@@ -110,19 +109,20 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
             # Measure compression time
             t0 = time.perf_counter()
             if use_hnc:
-                hnc_cfg = HNCContinuationConfig(
-                    target_rank=rank,
-                    num_continuation_steps=10,
-                    num_restoring_steps=4,
-                    damping_factor_rel=1e-5,
-                    learning_rate_hnc=0.08,
-                    loss_ceiling_factor=1.5,
+                compressor = DirectSVDCompressor(
+                    model_comp,
+                    rank=rank,
+                    use_hnc_continuation=True,
+                    probe_inputs=probe_x,
                 )
-                compressor = DirectSVDCompressor(model_comp, rank=rank, use_hnc_continuation=True, hnc_config=hnc_cfg)
             else:
-                compressor = DirectSVDCompressor(model_comp, rank=rank, use_hnc_continuation=False)
+                compressor = DirectSVDCompressor(
+                    model_comp,
+                    rank=rank,
+                    use_hnc_continuation=False,
+                )
 
-            compressor.compress(calibration_data=probe_x)
+            compressor.compress()
             comp_wall_ms = (time.perf_counter() - t0) * 1000.0
 
             # Measure compressed output
@@ -146,12 +146,14 @@ def run_benchmark_table_1(device: str) -> List[Dict[str, Any]]:
             tail_ratio = compute_spectral_tail_energy([model_orig.linear1.weight, model_orig.linear2.weight], rank)
 
             # Forward latency
-            torch.cuda.synchronize() if device == "cuda" else None
+            if device == "cuda":
+                torch.cuda.synchronize()
             t_fwd_start = time.perf_counter()
             for _ in range(50):
                 with torch.no_grad():
                     _ = model_comp(probe_x)
-            torch.cuda.synchronize() if device == "cuda" else None
+            if device == "cuda":
+                torch.cuda.synchronize()
             fwd_latency_ms = ((time.perf_counter() - t_fwd_start) / 50.0) * 1000.0
 
             res = {
@@ -201,8 +203,6 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
                     probe_inputs=probe_x,
                     num_steps=8,
                     target_rank=rank,
-                    learning_rate=0.05,
-                    damping=1e-5,
                 )
 
             with torch.no_grad():
@@ -226,7 +226,8 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
                 loss.backward()
                 optimizer.step()
 
-            torch.cuda.synchronize() if device == "cuda" else None
+            if device == "cuda":
+                torch.cuda.synchronize()
             t_thr_start = time.perf_counter()
             iters = 30
             for _ in range(iters):
@@ -235,7 +236,8 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
                 loss = (out[0] if isinstance(out, tuple) else out).sum()
                 loss.backward()
                 optimizer.step()
-            torch.cuda.synchronize() if device == "cuda" else None
+            if device == "cuda":
+                torch.cuda.synchronize()
             tot_time = time.perf_counter() - t_thr_start
             tokens_per_sec = (iters * B * T) / max(tot_time, 1e-12)
 
@@ -261,7 +263,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
     print(" Running Benchmark Table 3: Damping Factor mu_rel & Function Restoring Steps m Ablation")
     print("=" * 80)
 
-    damping_factors = [1e-7, 1e-5, 1e-3, float("inf")]
+    damping_factors = [1e-7, 1e-5, 1e-3, 1e10]
     restore_steps_list = [0, 3, 6, 12]
     results = []
 
@@ -280,33 +282,28 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                 orig_tail_energy = (s_orig[target_rank:] ** 2).sum().item() / (s_orig ** 2).sum().item()
 
             rejections = 0
-            # Run continuation walk
-            cfg = HNCContinuationConfig(
-                target_rank=target_rank,
-                num_continuation_steps=12,
-                num_restoring_steps=m_restore,
-                damping_factor_rel=mu_rel,
-                learning_rate_hnc=0.06,
-                loss_ceiling_factor=2.0,
-            )
-
-            # Manual loop to track rejections and jacobian drift
             w = linear_layer.weight.clone().detach().requires_grad_(True)
             w_0 = w.clone().detach()
 
-            for step in range(cfg.num_continuation_steps):
+            # Input covariance H_x = 1/N X^T X
+            Hx = torch.matmul(probe_x.t(), probe_x) / float(B)
+
+            lr = 0.06
+            num_steps = 12
+
+            for step in range(num_steps):
                 # Gradient of SVD tail potential
-                phi_w, grad_phi = svd_spectral_tail_potential(w, target_rank=target_rank)
+                _, grad_phi, _ = compute_spectral_tail_potential_and_gradient(w, rank=target_rank)
 
                 # Null space step
-                delta_w = layerwise_kronecker_nullspace_step(
+                delta_w, _ = solve_layerwise_kronecker_nullspace_step(
+                    W=w,
                     grad_phi=grad_phi,
-                    probe_inputs=probe_x,
-                    damping_rel=mu_rel,
-                    learning_rate=cfg.learning_rate_hnc,
+                    input_covariance_Hx=Hx,
+                    mu_rel=mu_rel,
                 )
 
-                candidate_w = (w - delta_w).detach()
+                candidate_w = (w - lr * delta_w).detach()
 
                 # Restoring steps
                 if m_restore > 0:
@@ -325,7 +322,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                     y_cand = F.linear(probe_x, candidate_w)
                     l_cand = 0.5 * ((y_cand - y_0) ** 2).mean().item()
 
-                if l_cand > 0.1:  # loss ceiling rejection threshold
+                if l_cand > 0.05:  # loss ceiling rejection threshold
                     rejections += 1
                 else:
                     w = candidate_w.requires_grad_(True)
@@ -339,7 +336,7 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                 # Relative weight / Jacobian drift ||W - W0||_F / ||W0||_F
                 jacobian_drift = (torch.linalg.norm(w - w_0) / torch.linalg.norm(w_0)).item()
 
-            mu_str = f"{mu_rel:.1e}" if mu_rel != float("inf") else "inf"
+            mu_str = f"{mu_rel:.1e}" if mu_rel < 1e9 else "inf"
             res = {
                 "damping_mu_rel": mu_str,
                 "restore_steps": m_restore,
@@ -381,9 +378,10 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
                 _ = fused_hnc_nullspace_step_triton(grad_phi, inv_h_x, mu, lr)
 
             # PyTorch Timing
-            torch.cuda.synchronize() if device == "cuda" else None
-            start_event_pt = torch.cuda.Event(enable_timing=True) if device == "cuda" else None
-            end_event_pt = torch.cuda.Event(enable_timing=True) if device == "cuda" else None
+            if device == "cuda":
+                torch.cuda.synchronize()
+                start_event_pt = torch.cuda.Event(enable_timing=True)
+                end_event_pt = torch.cuda.Event(enable_timing=True)
 
             trials = 60
             if device == "cuda":
@@ -400,8 +398,9 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
                 pt_us = ((time.perf_counter() - t0) / trials) * 1e6
 
             # Triton Timing
-            start_event_tr = torch.cuda.Event(enable_timing=True) if device == "cuda" else None
-            end_event_tr = torch.cuda.Event(enable_timing=True) if device == "cuda" else None
+            if device == "cuda":
+                start_event_tr = torch.cuda.Event(enable_timing=True)
+                end_event_tr = torch.cuda.Event(enable_timing=True)
 
             if device == "cuda":
                 start_event_tr.record()
