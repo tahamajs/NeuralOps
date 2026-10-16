@@ -12,7 +12,7 @@ void kv_cache_copy_cow_cuda(
     int head_dim
 );
 
-void copy_blocks_cow(
+std::tuple<torch::Tensor, torch::Tensor> copy_blocks_cow(
     torch::Tensor dst_k,
     torch::Tensor dst_v,
     torch::Tensor src_k,
@@ -33,7 +33,7 @@ void copy_blocks_cow(
 
     const int num_blocks = static_cast<int>(block_mapping.size(0));
     if (num_blocks == 0) {
-        return;
+        return std::make_tuple(dst_k, dst_v);
     }
 
     auto dst_k_c = dst_k.contiguous();
@@ -56,4 +56,7 @@ void copy_blocks_cow(
     if (!dst_v.is_contiguous()) {
         dst_v.copy_(dst_v_c);
     }
+
+    return std::make_tuple(dst_k, dst_v);
 }
+
