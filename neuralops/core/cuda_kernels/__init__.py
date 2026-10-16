@@ -183,6 +183,40 @@ from neuralops.core.cuda_kernels.multi_scale_retention import (
     multi_scale_retention,
     multi_scale_retention_pytorch_ref,
 )
+from neuralops.core.cuda_kernels.flash_gqa import (
+    flash_gqa,
+    flash_gqa_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.moe_routing import (
+    moe_dispatch_gather,
+    moe_route_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.paged_attention import (
+    paged_attention,
+    paged_attention_pytorch_reference,
+)
+from neuralops.core.cuda_kernels.paged_kv_cache import (
+    copy_blocks_cow,
+    copy_blocks_cow_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.quantized_gemm import (
+    w4a16_gemm,
+    w4a16_gemm_pytorch_ref,
+    fp8_gemm,
+    fp8_gemm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.selective_scan import (
+    selective_scan,
+    selective_scan_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.sliding_window import (
+    sliding_window_attn,
+    sliding_window_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.sparse_attention import (
+    block_sparse_attn,
+    block_sparse_attn_pytorch_ref,
+)
 
 __all__ = [
     "load_cuda_module",
@@ -277,4 +311,23 @@ __all__ = [
     "alibi_attention_pytorch_ref",
     "multi_scale_retention",
     "multi_scale_retention_pytorch_ref",
+    # Additional Native CUDA Operators
+    "flash_gqa",
+    "flash_gqa_pytorch_ref",
+    "moe_dispatch_gather",
+    "moe_route_pytorch_ref",
+    "paged_attention",
+    "paged_attention_pytorch_reference",
+    "copy_blocks_cow",
+    "copy_blocks_cow_pytorch_ref",
+    "w4a16_gemm",
+    "w4a16_gemm_pytorch_ref",
+    "fp8_gemm",
+    "fp8_gemm_pytorch_ref",
+    "selective_scan",
+    "selective_scan_pytorch_ref",
+    "sliding_window_attn",
+    "sliding_window_pytorch_ref",
+    "block_sparse_attn",
+    "block_sparse_attn_pytorch_ref",
 ]
