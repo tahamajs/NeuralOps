@@ -49,11 +49,11 @@ __global__ void spectral_entropy_svd_gate_fwd_kernel(
         }
     }
 
-    // Stage 2: out[m, n] = sum_{r < eff_r} z[r] * U[n, r] + bias[n]
+    // Stage 2: out[m, n] = sum_{r < eff_r} z[r] * U[r, n] + bias[n]
     for (int n = 0; n < N; ++n) {
         float y = 0.0f;
         for (int r = 0; r < eff_r && r < MAX_R; ++r) {
-            y += z[r] * to_float(U[n * R_MAX + r]);
+            y += z[r] * to_float(U[r * N + n]);
         }
         if (has_bias && bias != nullptr) {
             y += to_float(bias[n]);
@@ -91,10 +91,10 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     const int R_MAX = V.size(0);
     const int eff_r = std::min(effective_rank, R_MAX);
 
-    if (U.size(1) != R_MAX && U.size(0) == R_MAX) {
+    if (U.size(0) != R_MAX && U.size(1) == R_MAX) {
         U = U.t().contiguous();
     }
-    const int N = U.size(0);
+    const int N = U.size(1);
 
     auto out = torch::empty({M, N}, x.options());
 
