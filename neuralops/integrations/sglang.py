@@ -67,6 +67,7 @@ class SGLangRadixAdapter:
         self,
         model: Optional[nn.Module] = None,
         tokenizer: Any = None,
+        max_cached_tokens: int = 8192,
         max_cached_prefixes: int = 256,
         max_depth: int = 128,
         device: Union[str, torch.device] = "cuda",
@@ -74,6 +75,7 @@ class SGLangRadixAdapter:
         self.device = torch.device(device if (device != "cuda" or torch.cuda.is_available()) else "cpu")
         self.model = model.to(self.device).eval() if model is not None else None
         self.tokenizer = tokenizer
+        self.max_cached_tokens = max_cached_tokens
         self.max_cached_prefixes = max_cached_prefixes
         self.max_depth = max_depth
 
@@ -332,10 +334,12 @@ class SGLangRadixAdapter:
 
             return {
                 "total_nodes": self._total_nodes,
+                "cached_tokens": total_tokens,
                 "total_cached_tokens": total_tokens,
                 "hit_count": self._hit_count,
                 "miss_count": self._miss_count,
                 "eviction_count": self._eviction_count,
+                "hit_rate": round(hit_rate, 2),
                 "cache_hit_rate": round(hit_rate, 2),
             }
 
