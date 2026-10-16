@@ -186,6 +186,21 @@ __all__ = [
     "triton_fused_act_scale_quant_gemm_pytorch_ref",
     "triton_fused_latent_kv_cache_attention",
     "triton_fused_latent_kv_cache_attention_pytorch_ref",
+    # 10 High-Performance Production Kernels
+    "flash_decoding_attention",
+    "flash_decoding_stage1_kernel",
+    "flash_decoding_stage2_kernel",
+    "paged_attention_kernel",
+    "paged_recurrent_state_step_triton",
+    "paged_kv_evict_compact_triton",
+    "fused_rope_embedding_kernel",
+    "fused_unified_rope_offset_triton",
+    "fast_hadamard_transform",
+    "fused_rms_variance_match_triton",
+    "fused_favor_plus_feature_map_triton",
+    "fused_entropy_token_pruning_mask_triton",
+    "fused_aegis_multibranch_gate_norm_triton",
+    "fused_split_head_hybrid_concat_norm_triton",
 ]
 
 # Import 13 Flagship Triton Kernels
@@ -229,6 +244,28 @@ from neuralops.core.triton_kernels.hgrn2_scan import (
 from neuralops.core.triton_kernels.linear_attn import (
     triton_fused_latent_kv_cache_attention,
     triton_fused_latent_kv_cache_attention_pytorch_ref,
+)
+from neuralops.core.triton_kernels.flash_decoding import (
+    flash_decoding_attention,
+    flash_decoding_stage1_kernel,
+    flash_decoding_stage2_kernel,
+)
+from neuralops.core.triton_kernels.paged_attention import (
+    paged_attention_kernel,
+    paged_recurrent_state_step_triton,
+    paged_kv_evict_compact_triton,
+)
+from neuralops.core.triton_kernels.fused_rope import (
+    fused_rope_embedding_kernel,
+    fused_unified_rope_offset_triton,
+)
+from neuralops.core.triton_kernels.elementwise import (
+    fast_hadamard_transform,
+    fused_rms_variance_match_triton,
+    fused_favor_plus_feature_map_triton,
+    fused_entropy_token_pruning_mask_triton,
+    fused_aegis_multibranch_gate_norm_triton,
+    fused_split_head_hybrid_concat_norm_triton,
 )
 
 
