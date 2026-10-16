@@ -379,10 +379,12 @@ def run_benchmark_table_3(device: str) -> List[Dict[str, Any]]:
                     y_cand = F.linear(probe_x, candidate_w)
                     l_cand = 0.5 * ((y_cand - y_0) ** 2).mean().item()
 
-                if l_cand > 0.05:
+                if l_cand > 0.01:
                     rejections += 1
+                    lr = max(0.5 * lr, 1e-4)
                 else:
                     w = candidate_w.requires_grad_(True)
+                    lr = min(1.1 * lr, 0.5)
 
             with torch.no_grad():
                 y_final = F.linear(probe_x, w)
@@ -505,11 +507,11 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
 
 
 # ============================================================================
-# Benchmark 5: End-to-End Multi-Layer Transformer Language Model Compression
+# Benchmark 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression
 # ============================================================================
 def run_benchmark_table_5(device: str) -> List[Dict[str, Any]]:
     print("\n" + "=" * 80)
-    print(" Running Benchmark Table 5: Multi-Layer Transformer LM Compression & Perplexity Breakdown")
+    print(" Running Benchmark Table 5: Synthetic Tiny Transformer LM (Vocab=1000) Compression & Perplexity")
     print("=" * 80)
 
     ranks = [8, 16, 32, 64]
@@ -697,7 +699,7 @@ def main() -> None:
         f.write("\n---\n\n")
 
         # Table 5
-        f.write("## Table 5: Multi-Layer Transformer LM End-to-End Compression & Perplexity\n\n")
+        f.write("## Table 5: Synthetic Tiny Transformer LM (Vocab=1000) End-to-End Compression & Perplexity\n\n")
         f.write("| Rank | Param Reduction (%) | Factor | Naive RelErr | HNC RelErr | Naive Top-1 (%) | HNC Top-1 (%) | Orig PPL | Naive PPL | HNC PPL |\n")
         f.write("|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         for row in table_5_data:
