@@ -332,6 +332,8 @@ class AdaSVDCompressor(BaseCompressor):
             elif arg.startswith(("--adasvd_use_weighted_als=", "--use_weighted_als=")):
                 cli_use_weighted_als = arg.split("=")[1].lower() in ("true", "1", "yes")
 
+        if rank is None:
+            rank = kwargs.get("target_rank", kwargs.get("rank", None))
         self.rank = (
             cli_rank
             if cli_rank is not None

@@ -236,6 +236,9 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if "target_attention_only" in kwargs and kwargs["target_attention_only"] is not None:
             target_attention_only = kwargs["target_attention_only"]
 
+        self.target_rank = kwargs.get("rank", kwargs.get("target_rank", None))
+        if self.target_rank is not None:
+            self.target_rank = int(self.target_rank)
         self.energy_threshold = max(0.01, min(float(energy_threshold), 1.0))
         self.min_rank = max(1, int(min_rank))
         self.max_error = float(max_error)
@@ -375,6 +378,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if total_energy <= 1e-12:
             return r_floor
 
+        if getattr(self, "target_rank", None) is not None:
+            return max(1, min(self.target_rank, max_rank))
         cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
         idx = torch.where(cum_energy >= thresh)[0]
         r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
