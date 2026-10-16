@@ -193,8 +193,16 @@ class SALTLinear(nn.Module):
         return out.to(orig_dtype)
 
     def freeze_base_weights(self) -> None:
-        """Buffers U, S, Vt are non-trainable by construction. Gamma and A, B remain trainable."""
-        pass
+        """Buffers U, S, Vt and bias are explicitly non-trainable. Gamma and A, B remain trainable."""
+        if isinstance(self.U, nn.Parameter):
+            self.U.requires_grad = False
+        if isinstance(self.S, nn.Parameter):
+            self.S.requires_grad = False
+        if isinstance(self.Vt, nn.Parameter):
+            self.Vt.requires_grad = False
+        if self.bias is not None and isinstance(self.bias, nn.Parameter):
+            self.bias.requires_grad = False
+
 
 
 def _compute_energy_rank(
