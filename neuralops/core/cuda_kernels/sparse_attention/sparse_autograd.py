@@ -57,7 +57,7 @@ def block_sparse_attn_pytorch_ref(
     return torch.matmul(probs, v)
 
 
-def block_sparse_attn(
+def _block_sparse_forward_dispatch(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
@@ -71,13 +71,6 @@ def block_sparse_attn(
     mod = _get_module()
     cuda_fn = mod.block_sparse_attn_fwd if mod is not None else None
 
-    triton_fn = None
-    try:
-        from neuralops.core.triton_kernels.block_sparse import block_sparse_attention_triton
-        # Map if signature matches
-    except Exception:
-        pass
-
     return dispatch(
         cuda_fn,
         None,
@@ -90,3 +83,57 @@ def block_sparse_attn(
         scale,
         kernel_name="block_sparse_attn",
     )
+
+
+class _BlockSparseAttnAutograd(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, k, v, block_mask, block_size, scale):
+        out = _block_sparse_forward_dispatch(q, k, v, block_mask, block_size, scale)
+        ctx.save_for_backward(q, k, v, block_mask)
+        ctx.block_size = block_size
+        ctx.scale = scale
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        q, k, v, block_mask = ctx.saved_tensors
+        block_size = ctx.block_size
+        scale = ctx.scale
+
+        B, H, N, D = q.shape
+        scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+        dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
+        scores = scores.masked_fill(~dense_mask.bool().unsqueeze(0).unsqueeze(0), float("-inf"))
+
+        p = F.softmax(scores, dim=-1)
+        p = torch.nan_to_num(p, nan=0.0)
+
+        grad_out_f = grad_output.float()
+        grad_v = torch.matmul(p.transpose(-1, -2), grad_out_f).to(v.dtype)
+
+        grad_p = torch.matmul(grad_out_f, v.float().transpose(-1, -2))
+        sum_p_grad_p = (p * grad_p).sum(dim=-1, keepdim=True)
+        grad_scores = p * (grad_p - sum_p_grad_p) * scale
+
+        grad_q = torch.matmul(grad_scores, k.float()).to(q.dtype)
+        grad_k = torch.matmul(grad_scores.transpose(-1, -2), q.float()).to(k.dtype)
+
+        return grad_q, grad_k, grad_v, None, None, None
+
+
+def block_sparse_attn(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    block_mask: torch.Tensor,
+    block_size: int = 16,
+    scale: float | None = None,
+) -> torch.Tensor:
+    if scale is None:
+        scale = 1.0 / (q.shape[-1] ** 0.5)
+
+    if any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
+        return _BlockSparseAttnAutograd.apply(q, k, v, block_mask, block_size, scale)
+
+    return _block_sparse_forward_dispatch(q, k, v, block_mask, block_size, scale)
+
