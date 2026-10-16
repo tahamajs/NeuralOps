@@ -78,7 +78,7 @@ def set_seed(seed: int):
     np.random.seed(seed)
 
 
-def prepare_classification_batches(task: str, tokenizer, max_samples: int = 200, batch_size: int = 32):
+def prepare_classification_batches(task: str, tokenizer, backbone: str = "", max_samples: int = 200, batch_size: int = 32):
     if task == "sst2":
         ds = load_dataset("nyu-mll/glue", "sst2", split="validation")
         if max_samples and max_samples < len(ds):
@@ -92,6 +92,9 @@ def prepare_classification_batches(task: str, tokenizer, max_samples: int = 200,
         sep = tokenizer.sep_token if tokenizer.sep_token else " "
         texts = [f"{x['premise']} {sep} {x['hypothesis']}" for x in ds]
         labels = [x["label"] for x in ds]
+        if backbone == "roberta":
+            # textattack/roberta-base-MNLI uses {0: contradiction, 1: neutral, 2: entailment}
+            labels = [2 - l if l in (0, 2) else 1 for l in labels]
     elif task == "ag_news":
         ds = load_dataset("fancyzhx/ag_news", split="test")
         if max_samples and max_samples < len(ds):
@@ -295,7 +298,7 @@ def main():
                 for seed in seeds:
                     logger.info(f"Run: {bb} | {task} | {var} | seed={seed}")
                     model, tokenizer, pb, pa, pt = build_classification_model(bb, task, var, seed, lora_rank=16)
-                    batches = prepare_classification_batches(task, tokenizer, max_samples=max_samples)
+                    batches = prepare_classification_batches(task, tokenizer, backbone=bb, max_samples=max_samples)
                     res = evaluate_classification(model, batches)
                     del model
                     torch.cuda.empty_cache()
