@@ -4,40 +4,80 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Heterogeneous split-head group RMSNorm with online variance accumulation
 template <typename scalar_t>
-__global__ void split_head_norm_kernel(scalar_t* out, const scalar_t* x, int total_rows, int D, float eps) {
-    int r = blockIdx.x;
+__global__ void __launch_bounds__(256) split_head_norm_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ x,
+    const scalar_t* __restrict__ weight,
+    const int total_rows,
+    const int D,
+    const float eps
+) {
+    const int r = blockIdx.y;
     if (r >= total_rows) return;
-    int tid = threadIdx.x;
+
+    const int tid = threadIdx.x;
     float sum_sq = 0.0f;
+
     for (int i = tid; i < D; i += blockDim.x) {
-        float v = to_float(x[r * D + i]);
-        sum_sq += v * v;
+        const float val = to_float(x[r * D + i]);
+        sum_sq += val * val;
     }
-    __shared__ float s_sq;
-    if (tid == 0) s_sq = 0.0f;
+
+    __shared__ float s_sum;
+    if (tid == 0) s_sum = 0.0f;
     __syncthreads();
-    atomicAdd(&s_sq, sum_sq);
+
+    atomicAdd(&s_sum, sum_sq);
     __syncthreads();
-    float inv_rms = rsqrtf(s_sq / (float)D + eps);
+
+    const float rrms = rsqrtf((s_sum / static_cast<float>(D)) + eps);
+
     for (int i = tid; i < D; i += blockDim.x) {
-        float v = to_float(x[r * D + i]) * inv_rms;
-        out[r * D + i] = from_float<scalar_t>(v);
+        const float val = to_float(x[r * D + i]);
+        const float w = to_float(weight[i]);
+        out[r * D + i] = from_float<scalar_t>(val * rrms * w);
     }
 }
-}}
 
-torch::Tensor split_head_norm_fwd(const torch::Tensor& x, float eps) {
+}} // namespace neuralops::cuda
+
+torch::Tensor split_head_norm_fwd(
+    const torch::Tensor& x,
+    const torch::Tensor& weight,
+    float eps
+) {
     CHECK_INPUT(x);
-    auto orig_shape = x.sizes();
-    int D = orig_shape.back();
-    int total_rows = x.numel() / D;
+    CHECK_INPUT(weight);
+
+    const int D = x.size(-1);
+    const int total_rows = x.numel() / D;
     auto out = torch::empty_like(x);
-    int threads = std::min(512, ((D + 31) / 32) * 32);
+
+    if (total_rows == 0 || D == 0) return out;
+
+    const int threads = std::min(256, ((D + 31) / 32) * 32);
+    dim3 grid(1, total_rows);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, x.scalar_type(), "split_head_norm_fwd", ([&] {
-        neuralops::cuda::split_head_norm_kernel<scalar_t><<<total_rows, threads, 0, stream>>>(out.data_ptr<scalar_t>(), x_c.data_ptr<scalar_t>(), total_rows, D, eps);
-    }));
+    auto w_c = weight.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        x.scalar_type(), split_head_norm_fwd, ([&] {
+            neuralops::cuda::split_head_norm_kernel<scalar_t><<<grid, threads, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                x_c.data_ptr<scalar_t>(),
+                w_c.data_ptr<scalar_t>(),
+                total_rows,
+                D,
+                eps
+            );
+        })
+    );
+
     return out;
 }

@@ -4,46 +4,89 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Orion Gaussian Attention Kernel:
+// Projects features with Gaussian radial basis kernel and causal recurrence:
+// \phi(k_t) = \exp(-0.5 \cdot \text{temp} \cdot k_t^2)
+// s_t = s_{t-1} + \phi(k_t) \cdot v_t
+// y_t = \exp(-0.5 \cdot \text{temp} \cdot q_t^2) \cdot s_t
+// Thread mapping: 2D Grid over (ceil(D / 128), B * H) with 128 threads per block.
+// Eliminates the hardcoded threads = D, blocks = B * H anti-pattern.
 template <typename scalar_t>
-__global__ void orion_fwd_kernel(
+__global__ void __launch_bounds__(128) orion_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
     const scalar_t* __restrict__ v,
-    int B, int H, int N, int D, float temp
+    const int B,
+    const int H,
+    const int N,
+    const int D,
+    const float temp
 ) {
-    int bh = blockIdx.x;
-    int b = bh / H;
-    int h = bh % H;
-    int d = threadIdx.x;
+    const int bh = blockIdx.y;
+    if (bh >= B * H) return;
+
+    const int d = blockIdx.x * blockDim.x + threadIdx.x;
     if (d >= D) return;
 
+    const int head_offset = bh * (N * D);
     float s = 0.0f;
+
     for (int t = 0; t < N; ++t) {
-        int idx = (b * H + h) * N * D + t * D + d;
-        float k_val = to_float(k[idx]);
-        float v_val = to_float(v[idx]);
-        float phi_k = expf(-0.5f * (k_val * k_val) * temp);
+        const int idx = head_offset + t * D + d;
+        const float k_val = to_float(k[idx]);
+        const float v_val = to_float(v[idx]);
+        const float phi_k = expf(-0.5f * (k_val * k_val) * temp);
         s += phi_k * v_val;
-        float q_val = to_float(q[idx]);
-        float phi_q = expf(-0.5f * (q_val * q_val) * temp);
+
+        const float q_val = to_float(q[idx]);
+        const float phi_q = expf(-0.5f * (q_val * q_val) * temp);
         out[idx] = from_float<scalar_t>(phi_q * s);
     }
 }
-}}
 
-torch::Tensor orion_fwd(const torch::Tensor& q, const torch::Tensor& k, const torch::Tensor& v, double temperature) {
-    CHECK_INPUT(q); CHECK_INPUT(k); CHECK_INPUT(v);
-    int B = q.size(0); int H = q.size(1); int N = q.size(2); int D = q.size(3);
+}} // namespace neuralops::cuda
+
+torch::Tensor orion_fwd(
+    const torch::Tensor& q,
+    const torch::Tensor& k,
+    const torch::Tensor& v,
+    double temperature
+) {
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
+
+    const int B = q.size(0);
+    const int H = q.size(1);
+    const int N = q.size(2);
+    const int D = q.size(3);
+
     auto out = torch::empty_like(q);
-    int threads = D; int blocks = B * H;
+    if (B == 0 || H == 0 || N == 0 || D == 0) return out;
+
+    constexpr int THREADS = 128;
+    const int blocks_x = (D + THREADS - 1) / THREADS;
+    dim3 grid(blocks_x, B * H);
+
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto q_c = q.contiguous(); auto k_c = k.contiguous(); auto v_c = v.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, q.scalar_type(), "orion_fwd", ([&] {
-        neuralops::cuda::orion_fwd_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
-            out.data_ptr<scalar_t>(), q_c.data_ptr<scalar_t>(), k_c.data_ptr<scalar_t>(), v_c.data_ptr<scalar_t>(),
-            B, H, N, D, (float)temperature
-        );
-    }));
+    auto q_c = q.contiguous();
+    auto k_c = k.contiguous();
+    auto v_c = v.contiguous();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        q.scalar_type(), "orion_fwd", ([&] {
+            neuralops::cuda::orion_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                q_c.data_ptr<scalar_t>(),
+                k_c.data_ptr<scalar_t>(),
+                v_c.data_ptr<scalar_t>(),
+                B, H, N, D, static_cast<float>(temperature)
+            );
+        })
+    );
+
     return out;
 }
