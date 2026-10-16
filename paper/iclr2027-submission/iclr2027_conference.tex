@@ -416,11 +416,9 @@ The benchmark suite can be executed via the following standardized commands:
 python scripts/utils/verify_readme_counts.py
 pytest tests/ -v --ignore=tests/benchmarks
 
-# 2. Cross-Architecture WGQA and Baseline Benchmarks
-python scripts/benchmarks/benchmark_wgqa_paper_suite.py \
-  --backbones distilbert roberta gpt2 \
-  --tasks sst2 mnli ag_news wikitext2 \
-  --seeds 42 123 456
+# 2. Cross-Architecture Master Benchmark Suite
+python scripts/benchmarks/master_paper_benchmark_suite.py \
+  --mode smoke-test
 
 # 3. Model Surgery and Compression Sweeps
 python scripts/benchmarks/benchmark_layer_recon_error.py

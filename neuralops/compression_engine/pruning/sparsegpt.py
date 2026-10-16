@@ -87,11 +87,8 @@ class SparseGPTCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_attention_only = bool(target_attention_only)
-        rank = kwargs.get("target_rank", kwargs.get("rank", None))
-        if rank is not None:
-            r = float(rank)
-            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
-            self.sparsity = 1.0 - p_keep
+        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        if self.rank is not None:
             self.structured_24 = False
             self.prunen = 0
             self.prunem = 0
@@ -280,7 +277,12 @@ class SparseGPTCompressor(BaseCompressor):
                             h_slice = H_inv_block[j, j + 1 : count] / diag_inv
                             W_block[:, j + 1 : count] -= torch.outer(err_col, h_slice)
                 else:
-                    k_prune = int(d_out * self.sparsity)
+                    if self.rank is not None:
+                        p_keep = max(0.05, min(0.98, float(self.rank * (d_in + d_out)) / max(d_in * d_out, 1)))
+                        eff_sparsity = 1.0 - p_keep
+                    else:
+                        eff_sparsity = self.sparsity
+                    k_prune = int(d_out * eff_sparsity)
                     if k_prune > 0:
                         _, prune_idx = torch.topk(saliency_col, k=k_prune, largest=False)
                         mask_col = torch.ones(d_out, device=device)
