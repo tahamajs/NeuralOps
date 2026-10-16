@@ -6,6 +6,7 @@ model compression (SVD, quantization, pruning, distillation), distributed traini
 hyperparameter optimization, federated learning, data loading, benchmarking,
 and interactive visualization.
 """
+from __future__ import annotations
 
 import importlib
 from typing import Any
