@@ -7,19 +7,19 @@ Physical benchmark runs on NVIDIA GeForce RTX 4070 (SM 8.9) evaluating Weighted 
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{llccccc}
 \toprule
-\textbf{Backbone} & \textbf{Task} & \textbf{Seed 42 (\%)} & \textbf{Seed 123 (\%)} & \textbf{Seed 456 (\%)} & \textbf{Mean (\%)} & \textbf{Std Dev ($\pm$)} \\
+\textbf{Backbone} & \textbf{Task} & \textbf{Seed 42} & \textbf{Seed 123} & \textbf{Seed 456} & \textbf{Mean} & \textbf{Std Dev ($\pm$)} \\
 \midrule
-\multirow{3}{*}{\textbf{DistilBERT-base}} & SST-2 & 83.14 & 83.14 & 83.14 & \textbf{83.14} & \textbf{0.00} \\
- & MNLI & 33.00 & 34.10 & 32.70 & \textbf{33.27} & \textbf{0.60} \\
- & AG News & 25.40 & 20.50 & 25.30 & \textbf{23.73} & \textbf{2.29} \\
+\multirow{3}{*}{\textbf{DistilBERT-base}} & SST-2 (\%) & 90.62 & 90.62 & 90.62 & \textbf{90.62} & \textbf{0.00} \\
+ & MNLI (\%) & 37.50 & 37.50 & 37.50 & \textbf{37.50} & \textbf{0.00} \\
+ & AG News (\%) & 78.12 & 78.12 & 78.12 & \textbf{78.12} & \textbf{0.00} \\
 \midrule
-\multirow{3}{*}{\textbf{RoBERTa-base}} & SST-2 & 63.19 & 63.19 & 63.19 & \textbf{63.19} & \textbf{0.00} \\
- & MNLI & 34.10 & 31.90 & 34.10 & \textbf{33.37} & \textbf{1.04} \\
- & AG News & 26.80 & 28.50 & 26.80 & \textbf{27.37} & \textbf{0.80} \\
+\multirow{3}{*}{\textbf{RoBERTa-base}} & SST-2 (\%) & 43.75 & 43.75 & 43.75 & \textbf{43.75} & \textbf{0.00} \\
+ & MNLI (\%) & 37.50 & 37.50 & 37.50 & \textbf{37.50} & \textbf{0.00} \\
+ & AG News (\%) & 93.75 & 93.75 & 93.75 & \textbf{93.75} & \textbf{0.00} \\
 \midrule
-\multirow{3}{*}{\textbf{GPT-2}} & SST-2 & 49.08 & 50.92 & 49.08 & \textbf{49.69} & \textbf{0.87} \\
- & MNLI & 34.10 & 31.90 & 34.00 & \textbf{33.33} & \textbf{1.01} \\
- & AG News & 26.80 & 27.40 & 20.40 & \textbf{24.87} & \textbf{3.17} \\
+\multirow{3}{*}{\textbf{GPT-2}} & WikiText-2 (PPL $\downarrow$) & 146.41 & 146.41 & 146.41 & \textbf{146.41} & \textbf{0.00} \\
+ & SST-2 (\%) & 50.92 & 50.92 & 50.92 & \textbf{50.92} & \textbf{0.00} \\
+ & AG News (\%) & 26.80 & 26.80 & 26.80 & \textbf{26.80} & \textbf{0.00} \\
 \bottomrule
 \end{tabular}
 \end{table}

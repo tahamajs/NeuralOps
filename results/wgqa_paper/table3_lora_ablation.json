@@ -1,0 +1,18 @@
+[
+  {
+    "rank": 8,
+    "params": 61879334,
+    "trainable_params": 53020454,
+    "accuracy": 90.62,
+    "peak_vram_mb": 293.36,
+    "throughput": 111698.4
+  },
+  {
+    "rank": 16,
+    "params": 62118950,
+    "trainable_params": 53260070,
+    "accuracy": 90.62,
+    "peak_vram_mb": 294.27,
+    "throughput": 111368.1
+  }
+]

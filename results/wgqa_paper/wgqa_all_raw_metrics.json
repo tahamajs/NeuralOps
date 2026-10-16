@@ -1,0 +1,276 @@
+{
+  "classification": [
+    {
+      "backbone": "distilbert",
+      "task": "sst2",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955010,
+      "params_after": 66955010,
+      "accuracy": 96.88,
+      "peak_vram_mb": 311.21,
+      "throughput": 13063.3
+    },
+    {
+      "backbone": "distilbert",
+      "task": "sst2",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955010,
+      "params_after": 62118914,
+      "accuracy": 90.62,
+      "peak_vram_mb": 295.69,
+      "throughput": 23893.5
+    },
+    {
+      "backbone": "distilbert",
+      "task": "sst2",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955010,
+      "params_after": 62118950,
+      "accuracy": 90.62,
+      "peak_vram_mb": 294.27,
+      "throughput": 93871.6
+    },
+    {
+      "backbone": "distilbert",
+      "task": "mnli",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955779,
+      "params_after": 66955779,
+      "accuracy": 87.5,
+      "peak_vram_mb": 387.33,
+      "throughput": 101218.8
+    },
+    {
+      "backbone": "distilbert",
+      "task": "mnli",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955779,
+      "params_after": 62119683,
+      "accuracy": 37.5,
+      "peak_vram_mb": 391.41,
+      "throughput": 88265.3
+    },
+    {
+      "backbone": "distilbert",
+      "task": "mnli",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66955779,
+      "params_after": 62119719,
+      "accuracy": 37.5,
+      "peak_vram_mb": 369.11,
+      "throughput": 116293.4
+    },
+    {
+      "backbone": "distilbert",
+      "task": "ag_news",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66956548,
+      "params_after": 66956548,
+      "accuracy": 93.75,
+      "peak_vram_mb": 399.1,
+      "throughput": 124001.5
+    },
+    {
+      "backbone": "distilbert",
+      "task": "ag_news",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66956548,
+      "params_after": 62120452,
+      "accuracy": 78.12,
+      "peak_vram_mb": 411.41,
+      "throughput": 99075.3
+    },
+    {
+      "backbone": "distilbert",
+      "task": "ag_news",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 66956548,
+      "params_after": 62120488,
+      "accuracy": 78.12,
+      "peak_vram_mb": 380.66,
+      "throughput": 117093.0
+    },
+    {
+      "backbone": "roberta",
+      "task": "sst2",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647170,
+      "params_after": 124647170,
+      "accuracy": 93.75,
+      "peak_vram_mb": 536.33,
+      "throughput": 50030.6
+    },
+    {
+      "backbone": "roberta",
+      "task": "sst2",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647170,
+      "params_after": 122062082,
+      "accuracy": 43.75,
+      "peak_vram_mb": 526.47,
+      "throughput": 57120.0
+    },
+    {
+      "backbone": "roberta",
+      "task": "sst2",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647170,
+      "params_after": 122062154,
+      "accuracy": 43.75,
+      "peak_vram_mb": 526.48,
+      "throughput": 60786.2
+    },
+    {
+      "backbone": "roberta",
+      "task": "mnli",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647939,
+      "params_after": 124647939,
+      "accuracy": 87.5,
+      "peak_vram_mb": 599.56,
+      "throughput": 61216.7
+    },
+    {
+      "backbone": "roberta",
+      "task": "mnli",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647939,
+      "params_after": 122062851,
+      "accuracy": 37.5,
+      "peak_vram_mb": 589.94,
+      "throughput": 55802.2
+    },
+    {
+      "backbone": "roberta",
+      "task": "mnli",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124647939,
+      "params_after": 122062923,
+      "accuracy": 37.5,
+      "peak_vram_mb": 589.72,
+      "throughput": 58470.4
+    },
+    {
+      "backbone": "roberta",
+      "task": "ag_news",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124648708,
+      "params_after": 124648708,
+      "accuracy": 96.88,
+      "peak_vram_mb": 619.3,
+      "throughput": 59819.8
+    },
+    {
+      "backbone": "roberta",
+      "task": "ag_news",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124648708,
+      "params_after": 122063620,
+      "accuracy": 93.75,
+      "peak_vram_mb": 616.2,
+      "throughput": 51974.4
+    },
+    {
+      "backbone": "roberta",
+      "task": "ag_news",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124648708,
+      "params_after": 122063692,
+      "accuracy": 93.75,
+      "peak_vram_mb": 609.46,
+      "throughput": 60993.7
+    }
+  ],
+  "language_modeling": [
+    {
+      "backbone": "gpt2",
+      "task": "wikitext2",
+      "variant": "softmax",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124439808,
+      "params_after": 124439808,
+      "perplexity": 1.6,
+      "peak_vram_mb": 576.72,
+      "throughput": 18285.8
+    },
+    {
+      "backbone": "gpt2",
+      "task": "wikitext2",
+      "variant": "gqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124439808,
+      "params_after": 114767616,
+      "perplexity": 118.14,
+      "peak_vram_mb": 521.83,
+      "throughput": 3468.1
+    },
+    {
+      "backbone": "gpt2",
+      "task": "wikitext2",
+      "variant": "wgqa",
+      "seed": 42,
+      "lora_rank": 16,
+      "params_before": 124439808,
+      "params_after": 114767688,
+      "perplexity": 146.41,
+      "peak_vram_mb": 521.84,
+      "throughput": 18343.5
+    }
+  ],
+  "lora_ablation": [
+    {
+      "rank": 8,
+      "params": 61879334,
+      "trainable_params": 53020454,
+      "accuracy": 90.62,
+      "peak_vram_mb": 293.36,
+      "throughput": 111698.4
+    },
+    {
+      "rank": 16,
+      "params": 62118950,
+      "trainable_params": 53260070,
+      "accuracy": 90.62,
+      "peak_vram_mb": 294.27,
+      "throughput": 111368.1
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+module_name,type,family,tier,sst2_acc,mnli_acc,agnews_acc,compression_ratio,peak_vram_mb,throughput_tok_s,status
+adaptive_span_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),90.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+adaptive_sparse_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),89.0,0.0,0.0,1.0,0.0,0.0,VALID
+adaptive_svd_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),63.0,0.0,0.0,1.0,0.0,0.0,VALID
+adasplash_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),87.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_hybrid,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_spectron_fp8,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),72.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v1,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v2,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v3,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v4,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v5,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+aegis_v6,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),74.0,0.0,0.0,1.0,0.0,0.0,VALID
+alibi,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),80.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+asvd_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 2 (VALID_PASS),84.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+bam_umoe,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),64.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+block_transformer_hiba,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),79.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+chela_slay,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),85.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+chela_slay_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),85.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+cluster_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),87.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+compressed_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+compressed_mha_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+cosformer,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),87.0,0.0,0.0,1.0,0.0,0.0,VALID
+cosformer_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),87.0,0.0,0.0,1.0,0.0,0.0,VALID
+cross_attention,attention,Dense Reference Baselines,Tier 2 (VALID_PASS),87.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+decay_linear_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+decay_linear_attn,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+dynamic_conv_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+eat,attention,Kernelized & Feature-Map Linear Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+eat_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),86.0,0.0,0.0,1.0,0.0,0.0,VALID
+expert_choice_moe,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+factorised_matrix_state,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),68.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+flash_attention3,attention,Modern Positional & Grouped-Query Attentions,Tier 2 (VALID_PASS),90.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+flash_attention3_fp8,attention,Modern Positional & Grouped-Query Attentions,Tier 2 (VALID_PASS),90.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+full,attention,Dense Reference Baselines,Tier 2 (VALID_PASS),94.5,0.0,0.0,1.0,703.34,22234.52,PASS
+full_attention,attention,Dense Reference Baselines,Tier 2 (VALID_PASS),86.0,0.0,0.0,1.0,0.0,0.0,VALID
+fused_svd_kernel,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+fusion_attn,attention,Specialized & Domain Specific,Tier 2 (VALID_PASS),90.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+galerkin_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.0,0.0,0.0,1.0,0.0,0.0,VALID
+gated_delta_net,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),76.0,0.0,0.0,1.0,0.0,0.0,VALID
+gated_deltanet_block,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+gated_linear_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+gated_linear_attn,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+gla_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+goldfinch_ahn,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 2 (VALID_PASS),87.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+gqa_attention,attention,Modern Positional & Grouped-Query Attentions,Tier 2 (VALID_PASS),89.0,0.0,0.0,1.0,0.0,0.0,VALID
+granite_hybrid,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+griffin_ssd,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+halo_regla,attention,SVD & Spectral Low-Rank Attentions,Tier 2 (VALID_PASS),87.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+hamming_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),72.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+hgrn2_gated_deltanet,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+hgrn2_gated_layer,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+hgrn2_gated_outer,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),75.0,0.0,0.0,1.0,0.0,0.0,VALID
+hgrn2_outer,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+hla_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+hybrid_attention,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+hybrid_local_kernel,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+hymba_transx,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),82.0,0.0,0.0,1.0,0.0,0.0,VALID
+jamba,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),88.0,0.0,0.0,1.0,0.0,0.0,VALID
+jamba_info,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+kda_attention,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.0,0.0,0.0,1.0,0.0,0.0,VALID
+landmark_local_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+linformer_attention,attention,Specialized & Domain Specific,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+lola_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),65.0,0.0,0.0,1.0,0.0,0.0,VALID
+lora_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 2 (VALID_PASS),89.0,0.0,0.0,1.0,0.0,0.0,VALID
+lsh_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+mamba_block,attention,Selective State Space Models (SSMs),Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+mamba_svd_flash,attention,Selective State Space Models (SSMs),Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+minimal_nova,attention,Kernelized & Feature-Map Linear Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+minimal_svd,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+mixattention_moska,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),89.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+mla_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+moba_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),88.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+moe_deltakv_paged,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),82.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+mqa,attention,Modern Positional & Grouped-Query Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),62.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+naive_svd,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+nasc_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),90.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+native_hybrid_attention,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),80.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+nexus,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),81.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+nsa_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),86.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+nystrom_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),71.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+optimized_hybrid_attention,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 2 (VALID_PASS),87.0,0.0,0.0,1.0,0.0,0.0,VALID
+orion,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+padre_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 2 (VALID_PASS),86.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+performer_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+phantom,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+positive_kernel_linear_attention,attention,Specialized & Domain Specific,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+primal_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 2 (VALID_PASS),83.0,0.0,0.0,1.0,0.0,0.0,VALID
+progressive_token_pruning,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),89.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+projection_factorized_attn,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+qcqa_attention,attention,Modern Positional & Grouped-Query Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),66.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+rala_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),66.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+reap_moe,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+refined_landmark_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+regla_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),72.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+residual_svd_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+routing_attention,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+rpc_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+salt_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+samba_m3,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),68.33333333333333,0.0,0.0,1.0,0.0,0.0,VALID
+samba_moe,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+selective_ssm,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.5,0.0,0.0,1.0,0.0,0.0,VALID
+simple_ssm,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+sink_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+soa_attn,attention,Modern Positional & Grouped-Query Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+spectraformer_attention,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.0,0.0,0.0,1.0,0.0,0.0,VALID
+spectron,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+spectron_fp8,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),72.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+split_head_hybrid,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+svd_compressed,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.33333333333334,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear_attn,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear_decay,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear_inject,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+svd_llm_v2_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+svd_mamba,attention,Selective State Space Models (SSMs),Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+svd_projection_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+svd_seq,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+template_attention,attention,Dense Reference Baselines,Tier 2 (VALID_PASS),87.0,0.0,0.0,1.0,0.0,0.0,VALID
+token_compressed_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 2 (VALID_PASS),86.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+tri_branch_hybrid,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+triton_cosformer,attention,Kernelized & Feature-Map Linear Attentions,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+triton_svd_linear_attention,attention,SVD & Spectral Low-Rank Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+ttt_linear_attention,attention,"Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+unified_rope,attention,Modern Positional & Grouped-Query Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),67.66666666666666,0.0,0.0,1.0,0.0,0.0,VALID
+upi_stuffed_mamba,attention,Gated Linear & Householder Delta-Rule Recurrences,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+vig_attention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),75.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+vspec,attention,Kernelized & Feature-Map Linear Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),69.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+wgqa_attention,attention,Modern Positional & Grouped-Query Attentions,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),73.0,0.0,0.0,1.0,0.0,0.0,VALID
+xattention,attention,"Block-Sparse, Clustering & Sliding-Window Attentions",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+zeros_attention,attention,Dense Reference Baselines,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+a3_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+aa_svd_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+aatc_xkv_compressor,compressor,KV-Cache & Latent Memory Compressors,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+adaptive_ranks,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 2 (VALID_PASS),82.11,0.0,0.0,1.1739,215.81,38106.43,PASS
+adasvd_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+admm_compressor,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+admm_pruner,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 2 (VALID_PASS),90.25,0.0,0.0,1.0,410.67,14232.11,PASS
+armor_pruner,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 4 (PARAMETER_INFLATION_OR_NO_COMPRESSION),92.66,0.0,0.0,0.9694,425.41,14327.36,PASS
+ast_pruner,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+astro_quantizer,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),40.0,0.0,0.0,1.0,0.0,0.0,VALID
+bonsai_pruner,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+cachenotes_compressor,compressor,KV-Cache & Latent Memory Compressors,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+come_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+compot_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+coopq_quantizer,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+cr_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+cur_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+cur_moe_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+delta_kv,compressor,KV-Cache & Latent Memory Compressors,Tier 2 (VALID_PASS),94.38,0.0,0.0,1.0,292.72,17157.1,PASS_NO_COMPRESSION
+direct_svd,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 2 (VALID_PASS),92.43,0.0,0.0,1.028,558.5,14122.9,PASS
+dobi_svd,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 2 (VALID_PASS),94.38,0.0,0.0,1.0,511.43,18071.54,PASS_NO_COMPRESSION
+drone_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),45.0,0.0,0.0,1.0,0.0,0.0,VALID
+dynamic_rank,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+enlighten_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),35.0,0.0,0.0,1.0,0.0,0.0,VALID
+entropy_budget_allocation,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),35.0,0.0,0.0,1.0,0.0,0.0,VALID
+erc_svd,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+faq_quantizer,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+flap,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 2 (VALID_PASS),94.38,0.0,0.0,1.0,292.72,15228.81,PASS_NO_COMPRESSION
+flat_llm,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 2 (VALID_PASS),93.69,0.0,0.0,1.0,292.72,22475.76,PASS
+frandi_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),35.0,0.0,0.0,1.0,0.0,0.0,VALID
+fwsvd_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),45.0,0.0,0.0,1.0,0.0,0.0,VALID
+gfws,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+grecodec_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+hashed_net_compressor,compressor,Tensor Decompositions & Hashed Representations,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+huffman_coder,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),20.0,0.0,0.0,1.0,0.0,0.0,VALID
+hybrid_svd_layer,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+hybridkv_compressor,compressor,KV-Cache & Latent Memory Compressors,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+kmeans_quantize,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+kronecker_compressor,compressor,Tensor Decompositions & Hashed Representations,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+kronecker_tt_lora,compressor,Tensor Decompositions & Hashed Representations,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+kvtc_compressor,compressor,KV-Cache & Latent Memory Compressors,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+liftr,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+lsc_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+mamba_shedder,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+mgie_budget,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),35.0,0.0,0.0,1.0,0.0,0.0,VALID
+mlorq_compressor,compressor,Tensor Decompositions & Hashed Representations,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+modegpt_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+nmf_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+oats_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+optimal_subspace_projection,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+proxsparse,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+residual_svd_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+roast_hashed_linear,compressor,Tensor Decompositions & Hashed Representations,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+rotational_slicegpt_int4,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+rpca_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),30.0,0.0,0.0,1.0,0.0,0.0,VALID
+saes_svd_v2,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+salr,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+sdrm_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+slicegpt,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+slicegpt_pca,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+slim_compressor,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+soka_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+sparsegpt,compressor,"Structured, Semi-Structured & ADMM Pruners",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),60.0,0.0,0.0,1.0,0.0,0.0,VALID
+subspace_projection,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+svd_linear,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),51.66666666666667,0.0,0.0,1.0,0.0,0.0,VALID
+svd_llm_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),55.00000000000001,0.0,0.0,1.0,0.0,0.0,VALID
+swift_svd,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
+swift_svd_act,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+tomoe_compressor,compressor,"Activation-Aware, Whitened & HNC-Steered SVD Factorizations",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+tt_compressor,compressor,Tensor Decompositions & Hashed Representations,Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+uniql_compressor,compressor,"Vector Quantization, Codebooks & Sub-Byte Integer Quantizers",Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX),50.0,0.0,0.0,1.0,0.0,0.0,VALID
+zerokv_neo_compressor,compressor,KV-Cache & Latent Memory Compressors,Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY),70.0,0.0,0.0,1.0,0.0,0.0,VALID
