@@ -31,7 +31,7 @@ def _get_module():
             name="cuda_moe_routing",
             cpp_sources=cpp_src,
             cuda_sources=r_src + "\n" + d_src,
-            functions=["moe_dispatch", "moe_gather"],
+            functions=["moe_dispatch", "moe_gather", "moe_fused_dispatch"],
         )
     return _MODULE
 
@@ -110,18 +110,12 @@ class _MoEDispatchAutograd(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_dispatched: torch.Tensor):
         expert_offsets, = ctx.saved_tensors
-        num_tokens = ctx.num_tokens
-        hidden_dim = ctx.hidden_dim
-        top_k = expert_offsets.size(1)
         total_slots = grad_dispatched.size(0)
 
-        grad_tokens = torch.zeros((num_tokens, hidden_dim), dtype=ctx.tokens_dtype, device=ctx.tokens_device)
-
-        for tok_idx in range(num_tokens):
-            for k_idx in range(top_k):
-                slot = int(expert_offsets[tok_idx, k_idx].item())
-                if 0 <= slot < total_slots:
-                    grad_tokens[tok_idx] += grad_dispatched[slot]
+        valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
+        safe_offsets = torch.clamp(expert_offsets, 0, max(0, total_slots - 1))
+        gathered = grad_dispatched[safe_offsets] * valid_mask.unsqueeze(-1)
+        grad_tokens = gathered.sum(dim=1).to(ctx.tokens_dtype)
 
         return grad_tokens, None, None, None
 
@@ -155,21 +149,21 @@ class _MoEGatherAutograd(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_out: torch.Tensor):
         expert_outputs, routing_weights, expert_offsets = ctx.saved_tensors
-        num_tokens, top_k = routing_weights.shape
         hidden_dim = expert_outputs.shape[1]
         total_slots = expert_outputs.shape[0]
 
-        grad_expert_outputs = torch.zeros_like(expert_outputs)
-        grad_routing_weights = torch.zeros_like(routing_weights)
+        valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
+        safe_offsets = torch.clamp(expert_offsets, 0, max(0, total_slots - 1))
 
-        for tok_idx in range(num_tokens):
-            for k_idx in range(top_k):
-                slot = int(expert_offsets[tok_idx, k_idx].item())
-                if 0 <= slot < total_slots:
-                    w = routing_weights[tok_idx, k_idx]
-                    grad_expert_outputs[slot] += w * grad_out[tok_idx]
-                    # Dot product over hidden dimension
-                    grad_routing_weights[tok_idx, k_idx] = (grad_out[tok_idx].float() * expert_outputs[slot].float()).sum().to(routing_weights.dtype)
+        # Vectorized routing weights gradient
+        gathered_exp = expert_outputs[safe_offsets]  # [N, top_k, D]
+        grad_routing_weights = (grad_out.unsqueeze(1).float() * gathered_exp.float()).sum(dim=-1).to(routing_weights.dtype) * valid_mask
+
+        # Vectorized expert outputs gradient via scatter_add_
+        weighted_grad = (grad_out.unsqueeze(1) * routing_weights.unsqueeze(-1) * valid_mask.unsqueeze(-1)).view(-1, hidden_dim)
+        flat_offsets = safe_offsets.view(-1, 1).expand(-1, hidden_dim)
+        grad_expert_outputs = torch.zeros_like(expert_outputs)
+        grad_expert_outputs.scatter_add_(0, flat_offsets, weighted_grad)
 
         return grad_expert_outputs, grad_routing_weights, None, None
 
@@ -207,27 +201,33 @@ def moe_dispatch_gather(
         gate_logits = gate_logits.view(-1, gate_logits.shape[-1])
 
     num_tokens, hidden_dim = tokens.shape
-    topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
-    routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
-    expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
-    total_slots = num_tokens * top_k
 
     if torch.is_grad_enabled() and (tokens.requires_grad or gate_logits.requires_grad):
+        topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
+        routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
+        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
+        total_slots = num_tokens * top_k
         dispatched = _MoEDispatchAutograd.apply(tokens, topk_indices, expert_offsets, total_slots)
         expert_outputs = expert_fn(dispatched)
         out = _MoEGatherAutograd.apply(expert_outputs, routing_weights, topk_indices, expert_offsets)
     else:
         mod = _get_module()
-        if mod is not None and tokens.is_cuda:
+        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and gate_logits.size(1) <= 64:
             try:
-                dispatched = mod.moe_dispatch(tokens, topk_indices, expert_offsets, total_slots)
+                dispatched, routing_weights, topk_indices = mod.moe_fused_dispatch(tokens, gate_logits, top_k)
                 expert_outputs = expert_fn(dispatched)
-                out = mod.moe_gather(expert_outputs, routing_weights, topk_indices, expert_offsets)
+                empty_offsets = torch.empty(0, device=tokens.device, dtype=torch.int32)
+                out = mod.moe_gather(expert_outputs, routing_weights, topk_indices, empty_offsets)
                 if is_3d:
                     out = out.view(B, T, hidden_dim)
                 return out
             except Exception:
                 pass
+
+        topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
+        routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
+        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
+        total_slots = num_tokens * top_k
 
         cuda_dispatch = mod.moe_dispatch if mod is not None else None
         cuda_gather = mod.moe_gather if mod is not None else None
@@ -246,3 +246,4 @@ def moe_dispatch_gather(
         out = out.view(B, T, hidden_dim)
 
     return out
+
