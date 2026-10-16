@@ -425,6 +425,9 @@ def list_families() -> Dict[str, List[str]]:
     for k in families:
         families[k] = sorted(families[k])
 
+    return families
+
+
 def create_attention(
     name: str,
     config: Any = None,
