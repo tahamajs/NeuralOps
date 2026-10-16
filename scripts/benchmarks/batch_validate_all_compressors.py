@@ -486,18 +486,24 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
                         m = comp.model
                     elapsed = time.time() - t0
 
-                    out = evaluate(m, heldout, y_anchor, model_name, device)
+                    orig_params = sum(p.numel() for p in anchor.parameters())
+                    comp_params = sum(p.numel() for p in m.parameters())
+                    comp_ratio = round(comp_params / max(1, orig_params), 4)
+
+                    out = evaluate(m, heldout, y_anchor, model_name, device, heldout_labels=heldout_labels)
                     vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024) if device == "cuda" else 0.0
 
                     out["status"] = "SUCCESS"
                     out["time_s"] = round(elapsed, 4)
                     out["peak_vram_mb"] = round(vram_mb, 1)
+                    out["compression_ratio"] = comp_ratio
                     out["method"] = method_name
                     out["rank"] = rank
                     out["seed"] = seed
                     results[key].append(out)
-                    logger.info("  %-25s (r=%2d, s=%d): rel_err=%.4f, top1=%.4f, time=%.2fs",
-                                method_name, rank, seed, out["rel_err"], out["top1_match"], elapsed)
+                    extra_metric = f", acc={out['accuracy']:.4f}" if "accuracy" in out else (f", ppl={out['perplexity']:.2f}" if "perplexity" in out else "")
+                    logger.info("  %-25s (r=%2d, s=%d): rel_err=%.4f, top1=%.4f, ratio=%.2fx%s, time=%.2fs",
+                                method_name, rank, seed, out["rel_err"], out["top1_match"], comp_ratio, extra_metric, elapsed)
 
                     del m, comp
                 except Exception as e:
