@@ -435,7 +435,7 @@ class HessianNullSpaceSVDContinuation:
         step_size_eta: float = 0.05,
         restore_steps_m: int = 6,
         restore_lr: float = 1e-3,
-        loss_ceiling_tau: float = 1e-3,
+        loss_ceiling_tau: float = 5e-3,
         mu_rel: float = 1e-5,
         gamma_nuc: float = 1e-3,
         gamma_bump: float = 0.05,
@@ -726,16 +726,26 @@ class HessianNullSpaceSVDContinuation:
                 orig_params[name] = mod._parameters.pop("weight")
 
             try:
-                post_opt = torch.optim.Adam(optimizer_factors, lr=1e-3, betas=(0.9, 0.99))
-                m_post = 20
-                for _ in range(m_post):
+                m_post = 60  # More restoration steps for reliable function preservation
+                base_lr = 3e-3
+                post_opt = torch.optim.Adam(optimizer_factors, lr=base_lr, betas=(0.9, 0.99))
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    post_opt, T_max=m_post, eta_min=1e-5
+                )
+                for step_d in range(m_post):
                     post_opt.zero_grad()
                     for name, (A_r, B_r, mod) in low_rank_factors.items():
                         mod.weight = torch.matmul(A_r, B_r)
 
                     loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
                     loss_post.backward()
+                    # Gradient clipping prevents factor explosion
+                    torch.nn.utils.clip_grad_norm_(optimizer_factors, max_norm=1.0)
                     post_opt.step()
+                    scheduler.step()
+                    # Early stop when function loss is tight enough
+                    if loss_post.item() < 1e-5:
+                        break
             finally:
                 # Ensure mod.weight is always properly restored as nn.Parameter
                 with torch.no_grad():
