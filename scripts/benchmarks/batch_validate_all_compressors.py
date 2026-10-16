@@ -35,6 +35,7 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from scipy import stats
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
