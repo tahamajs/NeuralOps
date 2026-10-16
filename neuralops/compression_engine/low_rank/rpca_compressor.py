@@ -298,16 +298,19 @@ class RPCACompressor(BaseCompressor):
             in_f = getattr(base_layer, "in_features", W.shape[1])
 
         max_r = min(out_f, in_f)
-        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        r = min(rank, max_r - 1, param_cap)
-        r = max(min(self.min_rank, max_r - 1), r)
-        if r <= 0 or r >= max_r:
-            logger.debug(
-                "RPCA: rank %d >= max_r %d; skipping layer for no parameter reduction",
-                r,
-                max_r,
-            )
-            return None
+        if self.rank is not None:
+            r = min(int(self.rank), max_r)
+        else:
+            param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+            r = min(rank, max_r - 1, param_cap)
+            r = max(min(self.min_rank, max_r - 1), r)
+            if r <= 0 or r >= max_r:
+                logger.debug(
+                    "RPCA: rank %d >= max_r %d; skipping layer for no parameter reduction",
+                    r,
+                    max_r,
+                )
+                return None
 
         L = W.clone()
         S_sparse = torch.zeros_like(W)
@@ -370,23 +373,6 @@ class RPCACompressor(BaseCompressor):
             )
             if self.fallback_to_original:
                 return None
-
-        if getattr(self, "use_triton", True) and not (self.use_lora or has_existing_lora):
-            rpca_layer = RPCALinear(
-                in_features=in_f,
-                out_features=out_f,
-                rank=r,
-                bias=base_layer.bias is not None,
-                dtype=dtype,
-                device=device,
-                use_triton=self.use_triton,
-            )
-            s_tensor = S_sparse.to(dtype=dtype, device=device) if 'S_sparse' in locals() else None
-            rpca_layer.set_factors(U_final, V_final, s_tensor)
-            if base_layer.bias is not None and rpca_layer.bias is not None:
-                rpca_layer.bias.data.copy_(base_layer.bias.data)
-            rpca_layer.reconstruction_error = rel_err
-            return rpca_layer
 
         svd_layer = SVDLinear(
             in_features=in_f,
