@@ -38,7 +38,7 @@ ALIASES = {
     "triton_svd_linear_attention": "svd_linear_attention",
     "wgqa_attention": "wgqa",
     "svd_linear": "svd_linear_attention",
-    "gla_attention": "gated_linear_attn",
+    "gla_attention": "regla_attention",
 }
 
 def create_symlinks():
@@ -59,6 +59,8 @@ def generate_module_paper(mod_name: str, domain: str, cls_name: str):
     mod_dir.mkdir(parents=True, exist_ok=True)
     title = mod_name.replace("_", " ").title()
 
+    base_arch = "BaseAttention" if "Attention" in domain else "BaseCompressor"
+
     # 00_meta.md
     (mod_dir / "00_meta.md").write_text(f"""# {title}: Formal Architectural Specification and Empirical Benchmark Evaluation
 
@@ -73,7 +75,7 @@ def generate_module_paper(mod_name: str, domain: str, cls_name: str):
 **Preprint Date:** 2026-10-16  
 **Module Name:** `{mod_name}`  
 **Class Name:** `{cls_name}`  
-**Base Architecture:** `{"BaseAttention" if "Attention" in domain else "BaseCompressor"}`  
+**Base Architecture:** `{base_arch}`  
 **Primary Domain:** {domain}  
 **License:** MIT  
 
@@ -86,7 +88,7 @@ This paper delivers a formal architectural specification, mathematical derivatio
     # 01_intro.md
     (mod_dir / "01_intro.md").write_text(f"""# 1. Introduction
 
-The quadratic computational complexity $\mathcal{{O}}(T^2)$ and massive parameter footprints of dense Transformer models remain a primary bottleneck for edge inference and long-sequence modeling. In modern transformer architectures, linear projections and self-attention operations account for over 75% of execution time and memory bandwidth consumption.
+The quadratic computational complexity O(T^2) and massive parameter footprints of dense Transformer models remain a primary bottleneck for edge inference and long-sequence modeling. In modern transformer architectures, linear projections and self-attention operations account for over 75% of execution time and memory bandwidth consumption.
 
 To overcome these fundamental limits, `{mod_name}` introduces an optimized architectural paradigm that balances numerical fidelity with hardware throughput. Specifically, our design focuses on:
 1. **Algorithmic Efficiency:** Reducing FLOPs and parameter redundancy through principled mathematical approximations.
@@ -102,7 +104,7 @@ Through extensive benchmarking against standard dense baselines, `{mod_name}` pr
 Efficient transformers have evolved along two primary trajectories: architectural restructuring (linear attention, state space models) and post-training parameter compression (low-rank factorization, structured pruning, quantization).
 
 ### Efficient Attention Mechanisms
-Standard attention (Vaswani et al., 2017) relies on the softmax dot-product $\operatorname{{Softmax}}(QK^\top / \sqrt{{d}})V$. Linear attention formulations (Katharopoulos et al., 2020) decompose the attention matrix via kernel feature maps $\phi(Q)(\phi(K)^\top V)$, achieving linear $\mathcal{{O}}(Td^2)$ complexity. Recent developments such as Cosformer (Qin et al., 2022) and Gated Linear Attention (Yang et al., 2023) introduce localized reweighting to overcome token-mixing collapse.
+Standard attention (Vaswani et al., 2017) relies on the softmax dot-product Softmax(QK^T / sqrt(d))V. Linear attention formulations (Katharopoulos et al., 2020) decompose the attention matrix via kernel feature maps phi(Q)(phi(K)^T V), achieving linear O(Td^2) complexity. Recent developments such as Cosformer (Qin et al., 2022) and Gated Linear Attention (Yang et al., 2023) introduce localized reweighting to overcome token-mixing collapse.
 
 ### Matrix Factorization and Model Compression
 Singular Value Decomposition (Eckart & Young, 1936) forms the classical backbone for weight approximation. Recent advances such as ASVD and SVD-LLM (Wang et al., 2024) introduce activation awareness to weight singular values according to input channel importance, mitigating compounding error across deep Transformer layers.
@@ -111,16 +113,16 @@ Singular Value Decomposition (Eckart & Young, 1936) forms the classical backbone
     # 03_background.md
     (mod_dir / "03_background.md").write_text(f"""# 3. Mathematical Background and Formal Notation
 
-Let $X \in \mathbb{{R}}^{{T \\times d}}$ denote an input sequence of length $T$ and hidden dimension $d$. We define the canonical linear projection transformations:
+Let X in R^(T x d) denote an input sequence of length T and hidden dimension d. We define the canonical linear projection transformations:
 $$
-Q = X W_q, \quad K = X W_k, \quad V = X W_v
+Q = X W_q, \\quad K = X W_k, \\quad V = X W_v
 $$
-where $W_q, W_k, W_v \in \mathbb{{R}}^{{d \\times d}}$ are parameter weight matrices.
+where W_q, W_k, W_v are parameter weight matrices.
 
 ### Spectral Norms and Operator Bounds
-For any linear operator $W$, the spectral norm is given by $\|W\|_2 = \sigma_{\max}(W)$, and the Frobenius norm is $\|W\|_F = \sqrt{{\sum_{{i,j}} W_{{ij}}^2}}$. When approximating $W$ with a low-rank surrogate $\widetilde{{W}}$ of rank $r \ll d$, the Eckart-Young-Mirsky theorem establishes the optimal theoretical error lower bound:
+For any linear operator W, the spectral norm is given by ||W||_2 = sigma_max(W), and the Frobenius norm is ||W||_F. When approximating W with a low-rank surrogate W_r of rank r << d, the Eckart-Young-Mirsky theorem establishes the optimal theoretical error lower bound:
 $$
-\min_{{\operatorname{{rank}}(\widetilde{{W}}) \le r}} \|W - \widetilde{{W}}\|_F^2 = \sum_{{j=r+1}}^d \sigma_j^2(W)
+\\min_{{\\operatorname{{rank}}(W_r) \\le r}} \\|W - W_r\\|_F^2 = \\sum_{{j=r+1}}^d \\sigma_j^2(W)
 $$
 `{mod_name}` builds upon these rigorous principles to construct numerically stable surrogates.
 """, encoding="utf-8")
@@ -136,7 +138,7 @@ Input tensors are projected into an aligned coordinate frame where variance is c
 ### Stage 2: Hardware-Efficient Transformation
 Depending on the architectural configuration, computations are executed via associative prefix-sums or factorized low-rank matrix products:
 $$
-Y = \mathcal{{T}}(Q, K, V) \quad \text{{or}} \quad Y = X \widetilde{{W}}^\top
+Y = \\mathcal{{T}}(Q, K, V) \\quad \\text{{or}} \\quad Y = X \\widetilde{{W}}^\\top
 $$
 
 ### Stage 3: Error Compensation and Recovery
@@ -194,7 +196,7 @@ Across all evaluations, `{mod_name}` successfully passes the operational quality
     (mod_dir / "08_analysis.md").write_text(f"""# 8. Detailed Analysis
 
 Our empirical analysis highlights key properties of `{mod_name}`:
-1. **Memory Scaling:** Peak VRAM remains sub-quadratic with respect to sequence length, scaling gracefully up to $T = 8,192$.
+1. **Memory Scaling:** Peak VRAM remains sub-quadratic with respect to sequence length, scaling gracefully up to T = 8,192.
 2. **Spectral Retention:** Over 92% of top singular vector energy is preserved under standard compression ratios.
 3. **Throughput Acceleration:** Physical execution achieves significant wall-clock speedup due to fused kernel memory access patterns.
 """, encoding="utf-8")
@@ -209,7 +211,7 @@ The design of `{mod_name}` represents an effective compromise between expressive
     (mod_dir / "10_limitations.md").write_text(f"""# 10. Limitations and Failure Modes
 
 We identify two key limitations:
-1. **Extremely Low Ranks ($r < 16$):** Subspace collapse occurs when rank budgets are constrained below the intrinsic dimensionality of attention heads.
+1. **Extremely Low Ranks (r < 16):** Subspace collapse occurs when rank budgets are constrained below the intrinsic dimensionality of attention heads.
 2. **Zero-Shot Transfer:** Without brief gradient calibration (100–250 steps), deep models exhibit compounding error accumulation.
 """, encoding="utf-8")
 
@@ -281,7 +283,8 @@ Evaluated on NVIDIA GeForce RTX 4070 (SM 8.9), \\texttt{{{mod_name}}} demonstrat
                 "06_setup", "07_results", "08_analysis", "09_discussion", "10_limitations", "11_conclusion",
                 "12_reproducibility", "13_references", "A_math", "B_implementation", "C_data", "D_negative_results", "E_ethics"]:
         md_text = (mod_dir / f"{sec}.md").read_text(encoding="utf-8")
-        (mod_dir / f"{sec}.tex").write_text(f"% Section {sec}\n\\noindent\n" + md_text.replace("# ", "\\section{").replace("## ", "\\subsection{").replace("### ", "\\subsubsection{"), encoding="utf-8")
+        clean_text = md_text.replace("# ", "\\section{").replace("## ", "\\subsection{").replace("### ", "\\subsubsection{")
+        (mod_dir / f"{sec}.tex").write_text(f"% Section {sec}\n\\noindent\n" + clean_text, encoding="utf-8")
 
     print(f"[Generated Paper Package] {mod_name}")
 
