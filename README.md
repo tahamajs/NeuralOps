@@ -279,6 +279,9 @@ NeuralOps integrates directly with Hugging Face Hub:
 
 | Repository / Model ID | Base Backbone | Replaced Attention | Compression Method | Parameters | Download Link |
 | :--- | :--- | :--- | :--- | :---: | :--- |
+| `neuralops/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](docs/model_cards/gpt2-medium-fwsvd-rank64.md) |
+| `neuralops/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](docs/model_cards/roberta-base-fwsvd-rank32.md) |
+| `neuralops/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48M | [🤗 Model Card](docs/model_cards/distilbert-base-fwsvd-rank64.md) |
 | `tahamajs/distilbert-svd-attention` | `distilbert-base-uncased` | `svd_linear_attention` | Direct SVD (`rank=64`) | 54.2M | [🤗 Model Card](https://huggingface.co/tahamajs/distilbert-svd-attention) |
 
 > **Transparency Note**: Storing checkpoints for all 131 attention mechanisms across 8 backbones requires over 450 GB of storage. Rather than hosting redundant static weights, NeuralOps provides **zero-shot in-place surgery** (`neuralops.replace_attention(model, "mamba_block")`) which transplants any of the 131 architectures into standard Hugging Face weights in milliseconds locally.
