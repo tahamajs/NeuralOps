@@ -1013,58 +1013,59 @@ def triton_fused_latent_kv_cache_attention(
     return out
 
 
-@triton.jit
-def _zeros_causal_fwd_kernel(
-    Q_ptr, K_ptr, V_ptr, Mask_ptr, Out_ptr,
-    stride_qb, stride_qh, stride_ql, stride_qd,
-    stride_kb, stride_kh, stride_kl, stride_kd,
-    stride_vb, stride_vh, stride_vl, stride_vd,
-    stride_mb, stride_ml,
-    stride_ob, stride_oh, stride_ol, stride_od,
-    B_size, H_size, L_size, D_size, eps,
-    HAS_MASK: tl.constexpr,
-    BLOCK_D: tl.constexpr,
-):
-    pid_b = tl.program_id(0)
-    pid_h = tl.program_id(1)
-    if pid_b >= B_size or pid_h >= H_size:
-        return
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _zeros_causal_fwd_kernel(
+        Q_ptr, K_ptr, V_ptr, Mask_ptr, Out_ptr,
+        stride_qb, stride_qh, stride_ql, stride_qd,
+        stride_kb, stride_kh, stride_kl, stride_kd,
+        stride_vb, stride_vh, stride_vl, stride_vd,
+        stride_mb, stride_ml,
+        stride_ob, stride_oh, stride_ol, stride_od,
+        B_size, H_size, L_size, D_size, eps,
+        HAS_MASK: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_b = tl.program_id(0)
+        pid_h = tl.program_id(1)
+        if pid_b >= B_size or pid_h >= H_size:
+            return
 
-    offs_d = tl.arange(0, BLOCK_D)
-    mask_d = offs_d < D_size
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D_size
 
-    k_sum = tl.zeros((BLOCK_D,), dtype=tl.float32)
-    count = 0.0
-    S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
-    Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
+        k_sum = tl.zeros((BLOCK_D,), dtype=tl.float32)
+        count = 0.0
+        S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
+        Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
-    for t in range(L_size):
-        q_t = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
-        k_t = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
-        v_t = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+        for t in range(L_size):
+            q_t = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+            k_t = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+            v_t = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
 
-        valid = 1.0
-        if HAS_MASK:
-            valid = tl.load(Mask_ptr + pid_b * stride_mb + t * stride_ml).to(tl.float32)
+            valid = 1.0
+            if HAS_MASK:
+                valid = tl.load(Mask_ptr + pid_b * stride_mb + t * stride_ml).to(tl.float32)
 
-        k_t = k_t * valid
-        v_t = v_t * valid
-        k_sum += k_t
-        count = tl.maximum(count + valid, 1.0)
-        k_mean = k_sum / count
+            k_t = k_t * valid
+            v_t = v_t * valid
+            k_sum += k_t
+            count = tl.maximum(count + valid, 1.0)
+            k_mean = k_sum / count
 
-        k_centered = k_t - k_mean
-        q_hat = tl.maximum(q_t, 0.0) + eps
-        k_hat = (tl.maximum(k_centered, 0.0) + eps) * valid
+            k_centered = k_t - k_mean
+            q_hat = tl.maximum(q_t, 0.0) + eps
+            k_hat = (tl.maximum(k_centered, 0.0) + eps) * valid
 
-        S += k_hat[:, None] * v_t[None, :]
-        Z += k_hat
+            S += k_hat[:, None] * v_t[None, :]
+            Z += k_hat
 
-        num_t = tl.sum(q_hat[:, None] * S, axis=0)
-        den_t = tl.maximum(tl.sum(q_hat * Z), eps)
-        y_t = num_t / den_t
+            num_t = tl.sum(q_hat[:, None] * S, axis=0)
+            den_t = tl.maximum(tl.sum(q_hat * Z), eps)
+            y_t = num_t / den_t
 
-        tl.store(Out_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od, y_t.to(Out_ptr.dtype.element_ty), mask=mask_d)
+            tl.store(Out_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od, y_t.to(Out_ptr.dtype.element_ty), mask=mask_d)
 
 
 class _ZerosLinearScanFunction(torch.autograd.Function):

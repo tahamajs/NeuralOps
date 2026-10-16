@@ -28,6 +28,7 @@ except ImportError:
             "jit": lambda f: f,
             "heuristics": lambda *a, **kw: lambda f: f,
             "autotune": lambda *a, **kw: lambda f: f,
+            "Config": lambda *a, **kw: None,
             "cdiv": lambda a, b: (a + b - 1) // b,
             "next_power_of_2": lambda n: 1 << (n - 1).bit_length() if n > 0 else 1,
         },
