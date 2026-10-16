@@ -84,4 +84,5 @@ def copy_blocks_cow(
         num_heads,
         head_dim,
         kernel_name="copy_blocks_cow",
+        allow_none=True,
     )

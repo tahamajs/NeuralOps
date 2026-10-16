@@ -43,14 +43,14 @@ torch::Tensor moe_dispatch(
     const int top_k = static_cast<int>(topk_indices.size(1));
     const int total_assignments = static_cast<int>(total_slots);
 
-    auto dispatched = torch::zeros({total_slots, hidden_dim}, tokens.options());
+    auto dispatched = torch::empty({total_slots, hidden_dim}, tokens.options());
     if (num_tokens == 0 || hidden_dim == 0 || total_assignments == 0) {
         return dispatched;
     }
 
     auto tokens_c = tokens.contiguous();
-    auto topk_indices_c = topk_indices.to(torch::kInt32).contiguous();
-    auto expert_offsets_c = expert_offsets.to(torch::kInt32).contiguous();
+    auto topk_indices_c = (topk_indices.scalar_type() == torch::kInt32) ? topk_indices.contiguous() : topk_indices.to(torch::kInt32).contiguous();
+    auto expert_offsets_c = (expert_offsets.defined() && expert_offsets.numel() > 0) ? ((expert_offsets.scalar_type() == torch::kInt32) ? expert_offsets.contiguous() : expert_offsets.to(torch::kInt32).contiguous()) : expert_offsets;
 
     moe_dispatch_cuda(
         dispatched,
@@ -85,15 +85,15 @@ torch::Tensor moe_gather(
     const int hidden_dim = static_cast<int>(expert_outputs.size(1));
     const int total_assignments = static_cast<int>(expert_outputs.size(0));
 
-    auto out = torch::zeros({num_tokens, hidden_dim}, expert_outputs.options());
+    auto out = torch::empty({num_tokens, hidden_dim}, expert_outputs.options());
     if (num_tokens == 0 || hidden_dim == 0) {
         return out;
     }
 
     auto expert_outputs_c = expert_outputs.contiguous();
     auto routing_weights_c = routing_weights.to(expert_outputs.scalar_type()).contiguous();
-    auto topk_indices_c = topk_indices.to(torch::kInt32).contiguous();
-    auto expert_offsets_c = expert_offsets.to(torch::kInt32).contiguous();
+    auto topk_indices_c = (topk_indices.scalar_type() == torch::kInt32) ? topk_indices.contiguous() : topk_indices.to(torch::kInt32).contiguous();
+    auto expert_offsets_c = (expert_offsets.defined() && expert_offsets.numel() > 0) ? ((expert_offsets.scalar_type() == torch::kInt32) ? expert_offsets.contiguous() : expert_offsets.to(torch::kInt32).contiguous()) : expert_offsets;
 
     moe_gather_cuda(
         out,

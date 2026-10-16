@@ -20,6 +20,7 @@ def dispatch(
     pytorch_fn: Callable[..., Any],
     *args: Any,
     kernel_name: str = "unknown",
+    allow_none: bool = False,
     **kwargs: Any,
 ) -> Any:
     """
@@ -31,7 +32,7 @@ def dispatch(
     if cuda_fn is not None:
         try:
             res = cuda_fn(*args, **kwargs)
-            if res is not None:
+            if res is not None or allow_none:
                 return res
         except Exception as e:
             logger.warning(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
@@ -39,7 +40,7 @@ def dispatch(
     if triton_fn is not None:
         try:
             res = triton_fn(*args, **kwargs)
-            if res is not None:
+            if res is not None or allow_none:
                 return res
         except Exception as e:
             logger.warning(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
