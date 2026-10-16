@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
+#include <c10/cuda/CUDAException.h>
 #include <float.h>
 
 template<int HEAD_DIM, int BLOCK_SIZE>
@@ -17,8 +18,8 @@ __global__ void block_sparse_attn_warp_kernel(
     const float scale
 ) {
     constexpr int NUM_WARPS = 4;
-    constexpr int QUERIES_PER_WARP = BLOCK_SIZE / NUM_WARPS; // e.g. 16 / 4 = 4
-    constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;       // 64 / 32 = 2
+    constexpr int QUERIES_PER_WARP = BLOCK_SIZE / NUM_WARPS;
+    constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;
 
     const int q_block_idx = blockIdx.x;
     const int h = blockIdx.y;
@@ -29,9 +30,9 @@ __global__ void block_sparse_attn_warp_kernel(
 
     if (b >= B || h >= H) return;
 
-    // Shared memory for staging active K and V blocks
-    __shared__ float K_smem[BLOCK_SIZE][HEAD_DIM];
-    __shared__ float V_smem[BLOCK_SIZE][HEAD_DIM];
+    // Shared memory with +1 padding to eliminate bank conflicts
+    __shared__ float K_smem[BLOCK_SIZE][HEAD_DIM + 1];
+    __shared__ float V_smem[BLOCK_SIZE][HEAD_DIM + 1];
 
     // Local registers for queries assigned to this warp
     float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
@@ -63,7 +64,7 @@ __global__ void block_sparse_attn_warp_kernel(
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
     for (int kv_b = 0; kv_b < num_kv_blocks; ++kv_b) {
-        // Fast skip via __ldg: if block is inactive, zero memory traffic & zero compute
+        // Fast skip via __ldg
         const int is_active = __ldg(&block_mask[q_block_idx * num_kv_blocks + kv_b]);
         if (!is_active) {
             continue;
@@ -128,12 +129,19 @@ __global__ void block_sparse_attn_warp_kernel(
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
         const int cur_q_idx = q_indices[qi];
-        if (cur_q_idx < N && l_prev[qi] > 0.0f) {
-            const float inv_l = 1.0f / l_prev[qi];
+        if (cur_q_idx < N) {
             const int out_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + cur_q_idx * HEAD_DIM;
-            #pragma unroll
-            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                out[out_base + lane + e * 32] = acc[qi][e] * inv_l;
+            if (l_prev[qi] > 0.0f) {
+                const float inv_l = 1.0f / l_prev[qi];
+                #pragma unroll
+                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                    out[out_base + lane + e * 32] = acc[qi][e] * inv_l;
+                }
+            } else {
+                #pragma unroll
+                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                    out[out_base + lane + e * 32] = 0.0f;
+                }
             }
         }
     }
@@ -148,25 +156,50 @@ void block_sparse_attn_fwd_cuda(
     int block_size,
     float scale
 ) {
-    const int B = q.size(0);
-    const int H = q.size(1);
-    const int N = q.size(2);
-    const int D = q.size(3);
+    const int B = static_cast<int>(q.size(0));
+    const int H = static_cast<int>(q.size(1));
+    const int N = static_cast<int>(q.size(2));
+    const int D = static_cast<int>(q.size(3));
     const int num_q_blocks = (N + block_size - 1) / block_size;
-    const int num_kv_blocks = block_mask.size(1);
+    const int num_kv_blocks = static_cast<int>(block_mask.size(1));
+
+    if (B <= 0 || H <= 0 || N <= 0 || D <= 0 || num_q_blocks <= 0 || num_kv_blocks <= 0) {
+        return;
+    }
 
     dim3 grid(num_q_blocks, H, B);
     dim3 block(32, 4); // 4 warps = 128 threads
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    if (D == 64 && block_size == 16) {
-        block_sparse_attn_warp_kernel<64, 16><<<grid, block, 0, stream>>>(
-            out.data_ptr<float>(),
-            q.data_ptr<float>(),
-            k.data_ptr<float>(),
-            v.data_ptr<float>(),
-            block_mask.data_ptr<int32_t>(),
-            B, H, N, num_kv_blocks, scale
-        );
+    #define LAUNCH_SPARSE_KERNEL(HEAD_DIM_VAL, BLOCK_SIZE_VAL) \
+        block_sparse_attn_warp_kernel<HEAD_DIM_VAL, BLOCK_SIZE_VAL><<<grid, block, 0, stream>>>( \
+            out.data_ptr<float>(), \
+            q.data_ptr<float>(), \
+            k.data_ptr<float>(), \
+            v.data_ptr<float>(), \
+            block_mask.data_ptr<int32_t>(), \
+            B, H, N, num_kv_blocks, scale \
+        )
+
+    if (block_size == 16) {
+        if (D == 32) {
+            LAUNCH_SPARSE_KERNEL(32, 16);
+        } else if (D == 64) {
+            LAUNCH_SPARSE_KERNEL(64, 16);
+        } else if (D == 128) {
+            LAUNCH_SPARSE_KERNEL(128, 16);
+        }
+    } else if (block_size == 32) {
+        if (D == 32) {
+            LAUNCH_SPARSE_KERNEL(32, 32);
+        } else if (D == 64) {
+            LAUNCH_SPARSE_KERNEL(64, 32);
+        } else if (D == 128) {
+            LAUNCH_SPARSE_KERNEL(128, 32);
+        }
     }
+
+    #undef LAUNCH_SPARSE_KERNEL
+
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
