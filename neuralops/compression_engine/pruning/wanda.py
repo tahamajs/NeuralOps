@@ -61,10 +61,14 @@ def wanda_prune_model(
     calib_data: list[torch.Tensor],
     sparsity: float = 0.5,
 ) -> dict[str, torch.Tensor]:
-    """Applies Wanda pruning to all linear layers of model."""
+    """Applies Wanda pruning to all eligible linear layers of model, protecting task heads."""
+    from neuralops.utils.compat.architectures import should_compress_linear
     masks = {}
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
+            if not should_compress_linear(model, name):
+                continue
             _, mask = wanda_prune_layer(module, sparsity=sparsity, calib_data=calib_data)
             masks[name] = mask
     return masks
+
