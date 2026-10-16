@@ -299,6 +299,89 @@ from neuralops.core.cuda_kernels.logcumsumexp import (
     logcumsumexp_pytorch_ref,
 )
 
+# 20 Specialized Attention Modules CUDA Kernels
+from neuralops.core.cuda_kernels.adasplash_attention import (
+    adasplash_attention,
+    adasplash_attention_ref,
+)
+from neuralops.core.cuda_kernels.soa_attn import (
+    soa_attn,
+    soa_attn_ref,
+)
+from neuralops.core.cuda_kernels.nasc_attention import (
+    nasc_attention,
+    nasc_attention_ref,
+)
+from neuralops.core.cuda_kernels.tpa_attention import (
+    tpa_attention,
+    tpa_attention_ref,
+)
+from neuralops.core.cuda_kernels.spectra_v2 import (
+    spectra_v2,
+    spectra_v2_ref,
+)
+from neuralops.core.cuda_kernels.spectraformer_attention import (
+    spectraformer,
+    spectraformer_ref,
+)
+from neuralops.core.cuda_kernels.galerkin_attention import (
+    galerkin_attention,
+    galerkin_attention_ref,
+)
+from neuralops.core.cuda_kernels.hydra_attention import (
+    hydra_attention,
+    hydra_attention_ref,
+)
+from neuralops.core.cuda_kernels.rfa_attention import (
+    rfa_attention,
+    rfa_attention_ref,
+)
+from neuralops.core.cuda_kernels.fast_attention import (
+    fast_attention,
+    fast_attention_ref,
+)
+from neuralops.core.cuda_kernels.linear_rnn_attention import (
+    linear_rnn_attention,
+    linear_rnn_attention_ref,
+)
+from neuralops.core.cuda_kernels.differential_attention import (
+    differential_attention,
+    differential_attention_ref,
+)
+from neuralops.core.cuda_kernels.decay_linear_attention import (
+    decay_linear_attention,
+    decay_linear_attention_ref,
+)
+from neuralops.core.cuda_kernels.hstu_attention import (
+    hstu_attention,
+    hstu_attention_ref,
+)
+from neuralops.core.cuda_kernels.longformer import (
+    longformer,
+    longformer_ref,
+)
+from neuralops.core.cuda_kernels.bigbird import (
+    bigbird,
+    bigbird_ref,
+)
+from neuralops.core.cuda_kernels.reformer import (
+    reformer,
+    reformer_ref,
+)
+from neuralops.core.cuda_kernels.local_attention import (
+    local_attention,
+    local_attention_ref,
+)
+from neuralops.core.cuda_kernels.cluster_attention import (
+    cluster_attention,
+    cluster_attention_ref,
+)
+from neuralops.core.cuda_kernels.routing_attention import (
+    routing_attention,
+    routing_attention_ref,
+)
+
+
 __all__ = [
     "load_cuda_module",
     "get_cuda_arch_flags",
@@ -452,4 +535,46 @@ __all__ = [
     "bitonic_topk_pytorch_ref",
     "logcumsumexp",
     "logcumsumexp_pytorch_ref",
+    # 20 Specialized Attention Modules CUDA Kernels
+    "adasplash_attention",
+    "adasplash_attention_ref",
+    "soa_attn",
+    "soa_attn_ref",
+    "nasc_attention",
+    "nasc_attention_ref",
+    "tpa_attention",
+    "tpa_attention_ref",
+    "spectra_v2",
+    "spectra_v2_ref",
+    "spectraformer",
+    "spectraformer_ref",
+    "galerkin_attention",
+    "galerkin_attention_ref",
+    "hydra_attention",
+    "hydra_attention_ref",
+    "rfa_attention",
+    "rfa_attention_ref",
+    "fast_attention",
+    "fast_attention_ref",
+    "linear_rnn_attention",
+    "linear_rnn_attention_ref",
+    "differential_attention",
+    "differential_attention_ref",
+    "decay_linear_attention",
+    "decay_linear_attention_ref",
+    "hstu_attention",
+    "hstu_attention_ref",
+    "longformer",
+    "longformer_ref",
+    "bigbird",
+    "bigbird_ref",
+    "reformer",
+    "reformer_ref",
+    "local_attention",
+    "local_attention_ref",
+    "cluster_attention",
+    "cluster_attention_ref",
+    "routing_attention",
+    "routing_attention_ref",
 ]
+
