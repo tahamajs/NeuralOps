@@ -554,11 +554,16 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             device = next(self.model.parameters()).device
             with torch.no_grad():
                 cfg = getattr(self.model, "config", None)
-                vocab = getattr(cfg, "vocab_size", None) or 100
-                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=device)
-                self.model(dummy)
+                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+                    dummy = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device)
+                    self.model(dummy)
+                else:
+                    first_p = next(self.model.parameters())
+                    dim = first_p.shape[-1] if first_p.dim() >= 2 else 64
+                    dummy = torch.randn(1, dim, device=device, dtype=first_p.dtype)
+                    self.model(dummy)
         except Exception as ex:
-            logger.warning("RotationalSliceGPT forward sanity check: %s", ex)
+            logger.debug("RotationalSliceGPT forward sanity check: %s", ex)
             forward_check_success = False
 
         try:
