@@ -1,0 +1,120 @@
+"""
+Fused LayerNorm + Linear Interface, Autograd Functions, and 3-Level Fallback.
+Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import torch
+import torch.nn.functional as F
+
+from neuralops.core.cuda_kernels._bindings import load_cuda_module
+from neuralops.core.cuda_kernels._fallback import dispatch
+
+_MODULE = None
+
+
+def _get_module():
+    global _MODULE
+    if _MODULE is None:
+        curr_dir = Path(__file__).parent
+        with open(curr_dir / "norm_linear_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "fused_norm_linear.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
+
+        _MODULE = load_cuda_module(
+            name="cuda_fused_norm_linear",
+            cpp_sources=cpp_src,
+            cuda_sources=cuda_src,
+            functions=["fused_norm_linear_fwd", "fused_norm_linear_bwd_dx"],
+        )
+    return _MODULE
+
+
+def fused_norm_linear_pytorch_ref(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation."""
+    from neuralops.core.triton_kernels.fused_norm_linear import fused_norm_linear_pytorch
+    return fused_norm_linear_pytorch(x, weight, bias=bias, eps=eps)
+
+
+def _get_triton_impl():
+    try:
+        from neuralops.core.triton_kernels.fused_norm_linear import fused_norm_linear
+        return fused_norm_linear
+    except ImportError:
+        return None
+
+
+class _FusedNormLinearFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        weight: torch.Tensor,
+        bias: torch.Tensor | None,
+        eps: float,
+    ) -> torch.Tensor:
+        orig_shape = x.shape
+        D = orig_shape[-1]
+        x_2d = x.reshape(-1, D).contiguous()
+        weight_c = weight.contiguous()
+
+        mod = _get_module()
+        dummy_bias = torch.empty(0, device=x.device, dtype=x.dtype)
+        b_arg = bias.contiguous() if bias is not None else dummy_bias
+
+        out_2d, x_hat = mod.fused_norm_linear_fwd(x_2d, weight_c, b_arg, eps)
+        ctx.save_for_backward(x_2d, weight_c, x_hat)
+        ctx.eps = eps
+        ctx.has_bias = bias is not None
+        ctx.orig_shape = orig_shape
+        return out_2d.reshape(*orig_shape[:-1], weight.shape[0])
+
+    @staticmethod
+    def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+        x_2d, weight, x_hat = ctx.saved_tensors
+        dout_2d = dout.reshape(-1, weight.shape[0]).contiguous()
+        mod = _get_module()
+
+        dx_2d = mod.fused_norm_linear_bwd_dx(dout_2d, weight, x_2d, ctx.eps)
+        dx = dx_2d.reshape(ctx.orig_shape)
+
+        dweight = None
+        dbias = None
+        if weight.requires_grad:
+            dweight = torch.matmul(dout_2d.t(), x_hat)
+        if ctx.has_bias:
+            dbias = dout_2d.sum(dim=0)
+
+        return dx, dweight, dbias, None
+
+
+def fused_norm_linear(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """3-Level Dispatched Fused Norm Linear."""
+    def cuda_fn(x, weight, bias=None, eps=1e-6):
+        return _FusedNormLinearFunction.apply(x, weight, bias, eps)
+
+    triton_fn = _get_triton_impl()
+
+    return dispatch(
+        cuda_fn=cuda_fn,
+        triton_fn=triton_fn,
+        pytorch_fn=fused_norm_linear_pytorch_ref,
+        args=(x, weight),
+        kwargs={"bias": bias, "eps": eps},
+        op_name="fused_norm_linear",
+    )
