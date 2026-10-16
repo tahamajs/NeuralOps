@@ -428,7 +428,17 @@ def _gla_bwd_kernel(
 
 class _GLAScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q, k, v, lambdas):
+    def forward(
+        ctx,
+        q,
+        k,
+        v,
+        lambdas,
+        initial_state=None,
+        mask=None,
+        return_final_state=False,
+        use_normalizer=True,
+    ):
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"GLA head_dim {D} > {MAX_REGISTER_DIM}"
 
@@ -439,10 +449,32 @@ class _GLAScanFn(torch.autograd.Function):
 
         y = torch.empty_like(q_c)
         s_workspace = torch.empty((B, H, L, D, D), device=q.device, dtype=torch.float32)
-        z_workspace = torch.empty((B, H, L, D), device=q.device, dtype=torch.float32)
+        z_workspace = (
+            torch.empty((B, H, L, D), device=q.device, dtype=torch.float32)
+            if use_normalizer
+            else torch.empty((1,), device=q.device, dtype=torch.float32)
+        )
 
         BLOCK_D = triton.next_power_of_2(D)
         grid = (B, H)
+
+        dummy_t = torch.empty((1,), device=q.device, dtype=torch.float32)
+        has_init = initial_state is not None
+        init_state = initial_state.contiguous() if has_init else dummy_t
+
+        has_mask = mask is not None
+        if has_mask:
+            if mask.dim() == 2:
+                mask_t = mask.unsqueeze(1).expand(-1, H, -1).contiguous().float()
+            elif mask.dim() == 4:
+                mask_t = mask.squeeze(1).contiguous().float()
+            else:
+                mask_t = mask.contiguous().float()
+        else:
+            mask_t = dummy_t
+
+        has_final = bool(return_final_state)
+        final_state = torch.empty((B, H, D, D), device=q.device, dtype=q.dtype) if has_final else dummy_t
 
         _gla_fwd_kernel[grid](
             q_c,
@@ -452,6 +484,9 @@ class _GLAScanFn(torch.autograd.Function):
             y,
             s_workspace,
             z_workspace,
+            init_state,
+            final_state,
+            mask_t,
             q_c.stride(0),
             q_c.stride(1),
             q_c.stride(2),
@@ -476,31 +511,54 @@ class _GLAScanFn(torch.autograd.Function):
             s_workspace.stride(2),
             s_workspace.stride(3),
             s_workspace.stride(4),
-            z_workspace.stride(0),
-            z_workspace.stride(1),
-            z_workspace.stride(2),
-            z_workspace.stride(3),
+            z_workspace.stride(0) if use_normalizer else 0,
+            z_workspace.stride(1) if use_normalizer else 0,
+            z_workspace.stride(2) if use_normalizer else 0,
+            z_workspace.stride(3) if use_normalizer else 0,
+            init_state.stride(0) if has_init else 0,
+            init_state.stride(1) if has_init else 0,
+            init_state.stride(2) if has_init else 0,
+            init_state.stride(3) if has_init else 0,
+            final_state.stride(0) if has_final else 0,
+            final_state.stride(1) if has_final else 0,
+            final_state.stride(2) if has_final else 0,
+            final_state.stride(3) if has_final else 0,
+            mask_t.stride(0) if has_mask else 0,
+            mask_t.stride(1) if has_mask else 0,
+            mask_t.stride(2) if has_mask else 0,
             B,
             L,
             H,
             D,
             STORE_WORKSPACE=True,
+            HAS_INIT_STATE=has_init,
+            HAS_FINAL_STATE=has_final,
+            HAS_MASK=has_mask,
+            USE_NORMALIZER=use_normalizer,
             BLOCK_D=BLOCK_D,
         )
 
-        ctx.save_for_backward(q_c, k_c, v_c, lam_c, s_workspace, z_workspace)
+        ctx.save_for_backward(q_c, k_c, v_c, lam_c, s_workspace, z_workspace, init_state, mask_t)
+        ctx.has_init = has_init
+        ctx.has_mask = has_mask
+        ctx.use_normalizer = use_normalizer
+        ctx.return_final_state = return_final_state
+
+        if return_final_state:
+            return y, final_state
         return y
 
     @staticmethod
-    def backward(ctx, dy):
-        q, k, v, lambdas, s_workspace, z_workspace = ctx.saved_tensors
+    def backward(ctx, *grad_outputs):
+        dy = grad_outputs[0].contiguous()
+        q, k, v, lambdas, s_workspace, z_workspace, init_state, mask_t = ctx.saved_tensors
         B, H, L, D = q.shape
 
-        dy_c = dy.contiguous()
         dq = torch.empty_like(q)
         dk = torch.empty_like(k)
         dv = torch.empty_like(v)
         dlambdas = torch.empty_like(lambdas)
+        dinit_state = torch.empty_like(init_state) if ctx.has_init else torch.empty((1,), device=q.device)
 
         BLOCK_D = triton.next_power_of_2(D)
         grid = (B, H)
@@ -510,13 +568,16 @@ class _GLAScanFn(torch.autograd.Function):
             k,
             v,
             lambdas,
-            dy_c,
+            dy,
             s_workspace,
             z_workspace,
+            init_state,
+            mask_t,
             dq,
             dk,
             dv,
             dlambdas,
+            dinit_state,
             q.stride(0),
             q.stride(1),
             q.stride(2),
@@ -532,19 +593,26 @@ class _GLAScanFn(torch.autograd.Function):
             lambdas.stride(0),
             lambdas.stride(1),
             lambdas.stride(2),
-            dy_c.stride(0),
-            dy_c.stride(1),
-            dy_c.stride(2),
-            dy_c.stride(3),
+            dy.stride(0),
+            dy.stride(1),
+            dy.stride(2),
+            dy.stride(3),
             s_workspace.stride(0),
             s_workspace.stride(1),
             s_workspace.stride(2),
             s_workspace.stride(3),
             s_workspace.stride(4),
-            z_workspace.stride(0),
-            z_workspace.stride(1),
-            z_workspace.stride(2),
-            z_workspace.stride(3),
+            z_workspace.stride(0) if ctx.use_normalizer else 0,
+            z_workspace.stride(1) if ctx.use_normalizer else 0,
+            z_workspace.stride(2) if ctx.use_normalizer else 0,
+            z_workspace.stride(3) if ctx.use_normalizer else 0,
+            init_state.stride(0) if ctx.has_init else 0,
+            init_state.stride(1) if ctx.has_init else 0,
+            init_state.stride(2) if ctx.has_init else 0,
+            init_state.stride(3) if ctx.has_init else 0,
+            mask_t.stride(0) if ctx.has_mask else 0,
+            mask_t.stride(1) if ctx.has_mask else 0,
+            mask_t.stride(2) if ctx.has_mask else 0,
             dq.stride(0),
             dq.stride(1),
             dq.stride(2),
@@ -564,10 +632,14 @@ class _GLAScanFn(torch.autograd.Function):
             L,
             H,
             D,
+            HAS_INIT_STATE=ctx.has_init,
+            HAS_MASK=ctx.has_mask,
+            USE_NORMALIZER=ctx.use_normalizer,
             BLOCK_D=BLOCK_D,
         )
 
-        return dq, dk, dv, dlambdas
+        d_init = dinit_state if ctx.has_init else None
+        return dq, dk, dv, dlambdas, d_init, None, None, None
 
 
 def _gla_fwd_inference(
@@ -576,16 +648,34 @@ def _gla_fwd_inference(
     v: torch.Tensor,
     lambdas: torch.Tensor,
     initial_state: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor | None]:
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    use_normalizer: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
     """Fast forward recurrent inference path without full workspace memory allocation."""
     B, H, L, D = q.shape
     y = torch.empty_like(q)
     BLOCK_D = triton.next_power_of_2(D)
     grid = (B, H)
 
-    # When STORE_WORKSPACE is False, dummy tensors suffice
-    dummy_s = torch.empty((1,), device=q.device, dtype=torch.float32)
-    dummy_z = torch.empty((1,), device=q.device, dtype=torch.float32)
+    dummy_ws = torch.empty((1,), device=q.device, dtype=torch.float32)
+
+    has_init = initial_state is not None
+    init_state = initial_state.contiguous() if has_init else dummy_ws
+
+    has_mask = mask is not None
+    if has_mask:
+        if mask.dim() == 2:
+            mask_t = mask.unsqueeze(1).expand(-1, H, -1).contiguous().float()
+        elif mask.dim() == 4:
+            mask_t = mask.squeeze(1).contiguous().float()
+        else:
+            mask_t = mask.contiguous().float()
+    else:
+        mask_t = dummy_ws
+
+    has_final = bool(return_final_state)
+    final_state = torch.empty((B, H, D, D), device=q.device, dtype=q.dtype) if has_final else dummy_ws
 
     _gla_fwd_kernel[grid](
         q,
@@ -593,8 +683,11 @@ def _gla_fwd_inference(
         v,
         lambdas,
         y,
-        dummy_s,
-        dummy_z,
+        dummy_ws,
+        dummy_ws,
+        init_state,
+        final_state,
+        mask_t,
         q.stride(0),
         q.stride(1),
         q.stride(2),
@@ -616,13 +709,30 @@ def _gla_fwd_inference(
         y.stride(3),
         0, 0, 0, 0, 0,
         0, 0, 0, 0,
+        init_state.stride(0) if has_init else 0,
+        init_state.stride(1) if has_init else 0,
+        init_state.stride(2) if has_init else 0,
+        init_state.stride(3) if has_init else 0,
+        final_state.stride(0) if has_final else 0,
+        final_state.stride(1) if has_final else 0,
+        final_state.stride(2) if has_final else 0,
+        final_state.stride(3) if has_final else 0,
+        mask_t.stride(0) if has_mask else 0,
+        mask_t.stride(1) if has_mask else 0,
+        mask_t.stride(2) if has_mask else 0,
         B,
         L,
         H,
         D,
         STORE_WORKSPACE=False,
+        HAS_INIT_STATE=has_init,
+        HAS_FINAL_STATE=has_final,
+        HAS_MASK=has_mask,
+        USE_NORMALIZER=use_normalizer,
         BLOCK_D=BLOCK_D,
     )
+    if return_final_state:
+        return y, final_state
     return y
 
 
@@ -631,7 +741,11 @@ def gla_scan_pytorch(
     k: torch.Tensor | None = None,
     v: torch.Tensor | None = None,
     lambdas: torch.Tensor | None = None,
-) -> torch.Tensor:
+    initial_state: torch.Tensor | None = None,
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    use_normalizer: bool = True,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Pure PyTorch fallback reference implementation for GLA recurrent scan."""
     if k is None:
         k = q
@@ -644,7 +758,20 @@ def gla_scan_pytorch(
     device = q.device
     dtype = q.dtype
 
-    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    mask_h = None
+    if mask is not None:
+        if mask.dim() == 2:
+            mask_h = mask.unsqueeze(1).expand(B, H, L)
+        elif mask.dim() == 4:
+            mask_h = mask.squeeze(1)
+        else:
+            mask_h = mask
+
+    if initial_state is not None:
+        S = initial_state.clone().float()
+    else:
+        S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+
     Z = torch.zeros((B, H, D), device=device, dtype=torch.float32)
     ys = []
 
@@ -657,18 +784,37 @@ def gla_scan_pytorch(
 
         # S_t = lam_t * S_{t-1} + k_t^T @ v_t
         kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
-        S = lam_t.unsqueeze(-1).unsqueeze(-1) * S + kv
+        S_next = lam_t.unsqueeze(-1).unsqueeze(-1) * S + kv
 
-        # Z_t = lam_t * Z_{t-1} + k_t
-        Z = lam_t.unsqueeze(-1) * Z + k_t
+        if mask_h is not None:
+            m_t = mask_h[:, :, t].float().unsqueeze(-1).unsqueeze(-1)
+            S = torch.where(m_t > 0, S_next, S)
+        else:
+            S = S_next
 
         num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
-        den_raw = (q_t * Z).sum(dim=-1, keepdim=True) + 1e-4
-        den_t = torch.clamp(den_raw, min=1e-4)
-        y_t = num_t / den_t
+
+        if use_normalizer:
+            Z_next = lam_t.unsqueeze(-1) * Z + k_t
+            if mask_h is not None:
+                Z = torch.where(mask_h[:, :, t].float().unsqueeze(-1) > 0, Z_next, Z)
+            else:
+                Z = Z_next
+            den_raw = (q_t * Z).sum(dim=-1, keepdim=True) + 1e-4
+            den_t = torch.clamp(den_raw, min=1e-4)
+            y_t = num_t / den_t
+        else:
+            y_t = num_t
+
+        if mask_h is not None:
+            y_t = torch.where(mask_h[:, :, t].unsqueeze(-1) > 0, y_t, torch.zeros_like(y_t))
+
         ys.append(y_t)
 
-    return torch.stack(ys, dim=2).to(dtype)
+    out = torch.stack(ys, dim=2).to(dtype)
+    if return_final_state:
+        return out, S.to(dtype)
+    return out
 
 
 def gla_scan_triton(
@@ -676,7 +822,11 @@ def gla_scan_triton(
     k: torch.Tensor | None = None,
     v: torch.Tensor | None = None,
     lambdas: torch.Tensor | None = None,
-) -> torch.Tensor:
+    initial_state: torch.Tensor | None = None,
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    use_normalizer: bool = True,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """
     Triton-accelerated GLA scan function with tri-kernel autograd dispatch:
       - Uses fast fused recurrent kernel for inference (no workspace allocation).
@@ -693,18 +843,40 @@ def gla_scan_triton(
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
 
+    from neuralops.core.triton_kernels._common import should_use_triton
+    if not should_use_triton(q, "gla_scan", head_dim=D, seq_len=L, allow_fp32=True):
+        return gla_scan_pytorch(
+            q, k, v, lambdas,
+            initial_state=initial_state,
+            mask=mask,
+            return_final_state=return_final_state,
+            use_normalizer=use_normalizer,
+        )
+
     q_c = q.contiguous()
     k_c = k.contiguous()
     v_c = v.contiguous()
     lam_c = lambdas.contiguous()
 
     needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (q, k, v, lambdas) if isinstance(t, torch.Tensor)
+        t.requires_grad for t in (q, k, v, lambdas, initial_state) if isinstance(t, torch.Tensor)
     )
     if not needs_grad:
-        return _gla_fwd_inference(q_c, k_c, v_c, lam_c)
+        return _gla_fwd_inference(
+            q_c, k_c, v_c, lam_c,
+            initial_state=initial_state,
+            mask=mask,
+            return_final_state=return_final_state,
+            use_normalizer=use_normalizer,
+        )
 
-    return _GLAScanFn.apply(q_c, k_c, v_c, lam_c)
+    return _GLAScanFn.apply(
+        q_c, k_c, v_c, lam_c,
+        initial_state,
+        mask,
+        return_final_state,
+        use_normalizer,
+    )
 
 
 def gla_scan(
@@ -712,7 +884,11 @@ def gla_scan(
     k: torch.Tensor | None = None,
     v: torch.Tensor | None = None,
     lambdas: torch.Tensor | None = None,
-) -> torch.Tensor:
+    initial_state: torch.Tensor | None = None,
+    mask: torch.Tensor | None = None,
+    return_final_state: bool = False,
+    use_normalizer: bool = True,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Dispatches GLA scan to Triton GPU kernel when suitable, else PyTorch fallback."""
     if k is None:
         k = q
@@ -721,14 +897,26 @@ def gla_scan(
     if lambdas is None:
         lambdas = torch.sigmoid(q.mean(dim=-1)).clamp(1e-4, 1.0 - 1e-4)
 
-    from neuralops.core.triton_kernels._types import check_triton_suitability
-    suitable, _ = check_triton_suitability(q, "gla_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
+    from neuralops.core.triton_kernels._common import should_use_triton
+    suitable = should_use_triton(q, "gla_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], allow_fp32=True)
     if suitable:
         try:
-            return gla_scan_triton(q, k, v, lambdas)
+            return gla_scan_triton(
+                q, k, v, lambdas,
+                initial_state=initial_state,
+                mask=mask,
+                return_final_state=return_final_state,
+                use_normalizer=use_normalizer,
+            )
         except Exception:
             pass
-    return gla_scan_pytorch(q, k, v, lambdas)
+    return gla_scan_pytorch(
+        q, k, v, lambdas,
+        initial_state=initial_state,
+        mask=mask,
+        return_final_state=return_final_state,
+        use_normalizer=use_normalizer,
+    )
 
 
 def kda_hla_chunk_scan_triton(
