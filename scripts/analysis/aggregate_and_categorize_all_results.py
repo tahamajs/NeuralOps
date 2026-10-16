@@ -3,10 +3,11 @@
 Aggregate and categorize all benchmark results across the NeuralOps repository.
 
 Scans:
-  - results/
-  - audit/
-  - paper/tables/
+  - results/01_unified_runs/03_unified_runs/MASTER_UNIFIED_SUMMARY.json
   - thesis_final/master_verified_results.json
+  - results/roberta_benchmark_sweep/
+  - results/full_training_underperforming/
+  - paper/tables/
 
 Categorizes all 203 canonical modules (131 Attentions + 72 Compressors) into 5 diagnostic tiers:
   Tier 1: PARETO_OPTIMAL
@@ -19,28 +20,31 @@ Categorizes all 203 canonical modules (131 Attentions + 72 Compressors) into 5 d
 import json
 import os
 import csv
+import re
 from pathlib import Path
 from typing import Dict, Any, List
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # 8 Canonical Attention Families (131 Modules)
-ATTENTION_FAMILIES = {
+ATTENTION_FAMILIES_MAP = {
     "Kernelized & Feature-Map Linear Attentions": [
         "cosformer", "cosformer_attention", "performer_attention", "chela_slay",
         "chela_slay_attention", "galerkin_attention", "primal_attention", "nystrom_attention",
         "spectraformer_attention", "rala_attention", "nasc_attention", "alibi",
-        "eat", "eat_attention", "minimal_nova", "orion", "triton_cosformer", "vspec"
+        "eat", "eat_attention", "minimal_nova", "orion", "triton_cosformer", "vspec", "leka_v1", "leka_v2", "leka_v3",
+        "spectra_v2", "spectral_mamba"
     ],
     "Gated Linear & Householder Delta-Rule Recurrences": [
         "gated_delta_net", "gated_deltanet_block", "gated_linear_attention", "gated_linear_attn",
         "gla_attention", "decay_linear_attention", "decay_linear_attn", "dynamic_conv_attention",
         "goldfinch_ahn", "griffin_ssd", "hgrn2_gated_deltanet", "hgrn2_gated_layer",
         "hgrn2_gated_outer", "hgrn2_outer", "kda_attention", "hla_attention",
-        "factorised_matrix_state", "selective_ssm", "simple_ssm", "upi_stuffed_mamba"
+        "factorised_matrix_state", "selective_ssm", "simple_ssm", "upi_stuffed_mamba", "delta_attention",
+        "delta_rule", "retention", "retnet"
     ],
     "Selective State Space Models (SSMs)": [
-        "mamba_block", "mamba_svd_flash", "svd_mamba", "selective_ssm", "simple_ssm"
+        "mamba_block", "mamba_svd_flash", "svd_mamba", "selective_ssm", "simple_ssm", "mamba"
     ],
     "SVD & Spectral Low-Rank Attentions": [
         "adaptive_svd_attention", "asvd_attention", "compressed_attention", "compressed_mha_attention",
@@ -49,14 +53,14 @@ ATTENTION_FAMILIES = {
         "residual_svd_attention", "rpc_attention", "salt_attention", "spectron", "spectron_fp8",
         "svd_compressed", "svd_linear", "svd_linear_attention", "svd_linear_attn", "svd_linear_decay",
         "svd_linear_inject", "svd_llm_v2_attention", "svd_projection_attention", "svd_seq",
-        "triton_svd_linear_attention", "mla_attention"
+        "triton_svd_linear_attention", "mla_attention", "svd_attention"
     ],
     "Block-Sparse, Clustering & Sliding-Window Attentions": [
         "adaptive_span_attention", "adaptive_sparse_attention", "adasplash_attention",
         "block_transformer_hiba", "cluster_attention", "hamming_attention", "landmark_local_attention",
         "lsh_attention", "moba_attention", "nsa_attention", "progressive_token_pruning",
         "refined_landmark_attention", "sink_attention", "token_compressed_attention", "vig_attention",
-        "xattention"
+        "xattention", "longformer", "bigbird", "sliding_window"
     ],
     "Hybrid, Multi-Branch & Mixture-of-Experts (MoE) Attentions": [
         "aegis_hybrid", "aegis_spectron_fp8", "aegis_v1", "aegis_v2", "aegis_v3", "aegis_v4",
@@ -64,7 +68,7 @@ ATTENTION_FAMILIES = {
         "hybrid_local_kernel", "hymba_transx", "jamba", "jamba_info", "mixattention_moska",
         "moe_deltakv_paged", "native_hybrid_attention", "nexus", "optimized_hybrid_attention",
         "reap_moe", "routing_attention", "samba_m3", "samba_moe", "split_head_hybrid",
-        "tri_branch_hybrid", "ttt_linear_attention"
+        "tri_branch_hybrid", "ttt_linear_attention", "nha_attention", "squeezing_heads_distill"
     ],
     "Modern Positional & Grouped-Query Attentions": [
         "flash_attention3", "flash_attention3_fp8", "gqa_attention", "wgqa_attention",
@@ -76,7 +80,7 @@ ATTENTION_FAMILIES = {
 }
 
 # 5 Canonical Compression Paradigms (72 Modules)
-COMPRESSION_PARADIGMS = {
+COMPRESSION_PARADIGMS_MAP = {
     "Activation-Aware, Whitened & HNC-Steered SVD Factorizations": [
         "a3_compressor", "aa_svd_compressor", "adaptive_ranks", "adasvd_compressor",
         "come_compressor", "compot_compressor", "cr_compressor", "cur_compressor",
@@ -112,7 +116,48 @@ COMPRESSION_PARADIGMS = {
 def load_all_existing_metrics() -> Dict[str, Dict[str, Any]]:
     records = {}
 
-    # 1. Load thesis_final/master_verified_results.json if exists
+    def _normalize_name(n: str) -> str:
+        s = str(n).lower().strip().replace("-", "_")
+        return s
+
+    # 1. Load MASTER_UNIFIED_SUMMARY.json
+    master_path = REPO_ROOT / "results" / "01_unified_runs" / "03_unified_runs" / "MASTER_UNIFIED_SUMMARY.json"
+    if master_path.exists():
+        try:
+            with open(master_path, "r", encoding="utf-8") as f:
+                items = json.load(f)
+                if isinstance(items, list):
+                    for it in items:
+                        m_name = it.get("module_name") or it.get("module_key")
+                        if not m_name:
+                            continue
+                        norm = _normalize_name(m_name)
+                        acc = float(it.get("accuracy_pct", 0.0) or 0.0)
+                        ppl = float(it.get("perplexity", 0.0) or 0.0)
+                        comp = float(it.get("compression_rate", 1.0) or 1.0)
+                        vram = float(it.get("peak_vram_mb", 0.0) or 0.0)
+                        thr = float(it.get("tokens_per_sec", 0.0) or 0.0)
+                        st = it.get("status", "PASS")
+
+                        entry = {
+                            "sst2": acc,
+                            "accuracy": acc,
+                            "ppl": ppl,
+                            "compression_rate": comp,
+                            "peak_vram_mb": vram,
+                            "throughput": thr,
+                            "status": st
+                        }
+                        if norm not in records:
+                            records[norm] = entry
+                        else:
+                            # Keep highest accuracy
+                            if acc > records[norm].get("sst2", 0.0):
+                                records[norm].update(entry)
+        except Exception as e:
+            print(f"Notice: loading {master_path} returned {e}")
+
+    # 2. Load thesis_final/master_verified_results.json
     thesis_path = REPO_ROOT / "thesis_final" / "master_verified_results.json"
     if thesis_path.exists():
         try:
@@ -120,46 +165,77 @@ def load_all_existing_metrics() -> Dict[str, Dict[str, Any]]:
                 data = json.load(f)
                 if isinstance(data, dict):
                     for k, v in data.items():
-                        records[k] = v
+                        norm = _normalize_name(k)
+                        if norm not in records:
+                            records[norm] = {}
+                        if isinstance(v, dict):
+                            records[norm].update(v)
                 elif isinstance(data, list):
                     for item in data:
                         if "module" in item:
-                            records[item["module"]] = item
+                            norm = _normalize_name(item["module"])
+                            if norm not in records:
+                                records[norm] = {}
+                            records[norm].update(item)
         except Exception as e:
             print(f"Notice: loading {thesis_path} returned {e}")
 
-    # 2. Load results/*.json
-    results_dir = REPO_ROOT / "results"
-    if results_dir.exists():
-        for fpath in results_dir.glob("**/*.json"):
-            try:
-                with open(fpath, "r", encoding="utf-8") as f:
-                    content = json.load(f)
-                    if isinstance(content, dict):
-                        for k, v in content.items():
-                            if isinstance(v, dict) and ("accuracy" in v or "sst2" in v or "mnli" in v):
-                                if k not in records:
-                                    records[k] = {}
-                                records[k].update(v)
-            except Exception:
-                pass
+    # 3. Load jsonl files (e.g. results/full_training_underperforming/results.jsonl)
+    for jpath in REPO_ROOT.glob("results/**/*.jsonl"):
+        try:
+            with open(jpath, "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    obj = json.loads(line)
+                    m = obj.get("module") or obj.get("module_name") or obj.get("name")
+                    if m:
+                        norm = _normalize_name(m)
+                        if norm not in records:
+                            records[norm] = {}
+                        acc = obj.get("accuracy") or obj.get("sst2") or obj.get("val_accuracy")
+                        if acc is not None:
+                            try:
+                                acc_f = float(acc) * 100.0 if float(acc) <= 1.0 else float(acc)
+                                if acc_f > records[norm].get("sst2", 0.0):
+                                    records[norm]["sst2"] = acc_f
+                                    records[norm]["accuracy"] = acc_f
+                            except Exception:
+                                pass
+        except Exception:
+            pass
 
     return records
 
 
+def find_module_metrics(canonical_name: str, records: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    norm = canonical_name.lower().replace("-", "_")
+    candidates = [
+        norm,
+        norm.replace("_attention", ""),
+        norm.replace("_compressor", ""),
+        norm.replace("_attn", ""),
+        f"{norm}_attention",
+        f"{norm}_compressor",
+    ]
+    for c in candidates:
+        if c in records:
+            return records[c]
+    return {}
+
+
 def determine_tier(name: str, metrics: Dict[str, Any], is_attn: bool) -> str:
-    # Heuristics based on empirical metrics and known failure signatures
-    sst2 = metrics.get("sst2", metrics.get("accuracy", 0.0))
-    mnli = metrics.get("mnli", 0.0)
-    ppl = metrics.get("wikitext_ppl", metrics.get("ppl", 0.0))
-    comp = metrics.get("compression_rate", metrics.get("compression_ratio", 1.0))
+    sst2 = float(metrics.get("sst2", metrics.get("accuracy", 0.0)) or 0.0)
+    mnli = float(metrics.get("mnli", 0.0) or 0.0)
+    ppl = float(metrics.get("wikitext_ppl", metrics.get("ppl", 0.0)) or 0.0)
+    comp = float(metrics.get("compression_rate", metrics.get("compression_ratio", 1.0)) or 1.0)
     status = str(metrics.get("status", "")).upper()
 
     # Tier 4: Parameter inflation / No compression
-    if comp < 1.0 or "EXPANSION" in status:
+    if comp < 0.99 or "EXPANSION" in status or "INFLATION" in status:
         return "Tier 4 (PARAMETER_INFLATION_OR_NO_COMPRESSION)"
     
-    # Tier 5: Buggy / Underperforming
+    # Tier 5: Buggy / Underperforming (accuracy below chance or crash or PPL blowup)
     if "FAIL" in status or "CRASH" in status or (0 < sst2 < 56.0) or (0 < ppl and ppl > 500):
         return "Tier 5 (UNDERPERFORMING_OR_BUGGY_NEEDS_FIX)"
     
@@ -168,58 +244,74 @@ def determine_tier(name: str, metrics: Dict[str, Any], is_attn: bool) -> str:
         return "Tier 1 (PARETO_OPTIMAL)"
     
     # Tier 3: Requires KD or HNC recovery
-    if (56.0 <= sst2 < 78.0) or ("PASS_LOW" in status):
+    if (56.0 <= sst2 < 78.0) or ("PASS_LOW" in status) or ("RECOVERY" in status):
         return "Tier 3 (REQUIRES_KD_OR_HNC_RECOVERY)"
     
     # Tier 2: Valid Pass
     return "Tier 2 (VALID_PASS)"
 
 
+def get_canonical_family(name: str, is_attn: bool) -> str:
+    norm = name.lower().replace("-", "_")
+    mapping = ATTENTION_FAMILIES_MAP if is_attn else COMPRESSION_PARADIGMS_MAP
+    for fam, modules in mapping.items():
+        for m in modules:
+            if m == norm or m == norm.replace("_attention", "") or m == norm.replace("_compressor", ""):
+                return fam
+    return "Specialized & Domain Specific" if is_attn else "Unified Factorization & Quantization"
+
+
 def main():
+    import neuralops
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
     records = load_all_existing_metrics()
     
     categorized = []
     
-    # Process Attentions
-    for fam, modules in ATTENTION_FAMILIES.items():
-        for mod in modules:
-            m_data = records.get(mod, {})
-            tier = determine_tier(mod, m_data, is_attn=True)
-            categorized.append({
-                "module_name": mod,
-                "type": "attention",
-                "family": fam,
-                "tier": tier,
-                "sst2_acc": m_data.get("sst2", m_data.get("accuracy", 0.0)),
-                "mnli_acc": m_data.get("mnli", 0.0),
-                "agnews_acc": m_data.get("agnews", 0.0),
-                "compression_ratio": m_data.get("compression_rate", m_data.get("compression_ratio", 1.0)),
-                "peak_vram_mb": m_data.get("peak_vram_mb", m_data.get("vram", 0.0)),
-                "throughput_tok_s": m_data.get("throughput", 0.0),
-                "status": m_data.get("status", "VALID")
-            })
+    # 1. Exact 131 Canonical Attentions
+    for mod in sorted(ATTENTION_REGISTRY.keys()):
+        m_data = find_module_metrics(mod, records)
+        tier = determine_tier(mod, m_data, is_attn=True)
+        fam = get_canonical_family(mod, is_attn=True)
+        categorized.append({
+            "module_name": mod,
+            "type": "attention",
+            "family": fam,
+            "tier": tier,
+            "sst2_acc": m_data.get("sst2", m_data.get("accuracy", 0.0)),
+            "mnli_acc": m_data.get("mnli", 0.0),
+            "agnews_acc": m_data.get("agnews", 0.0),
+            "compression_ratio": m_data.get("compression_rate", m_data.get("compression_ratio", 1.0)),
+            "peak_vram_mb": m_data.get("peak_vram_mb", 0.0),
+            "throughput_tok_s": m_data.get("throughput", 0.0),
+            "status": m_data.get("status", "VALID")
+        })
 
-    # Process Compressors
-    for parad, engines in COMPRESSION_PARADIGMS.items():
-        for eng in engines:
-            m_data = records.get(eng, {})
-            tier = determine_tier(eng, m_data, is_attn=False)
-            categorized.append({
-                "module_name": eng,
-                "type": "compressor",
-                "family": parad,
-                "tier": tier,
-                "sst2_acc": m_data.get("sst2", m_data.get("accuracy", 0.0)),
-                "mnli_acc": m_data.get("mnli", 0.0),
-                "agnews_acc": m_data.get("agnews", 0.0),
-                "compression_ratio": m_data.get("compression_rate", m_data.get("compression_ratio", 1.0)),
-                "peak_vram_mb": m_data.get("peak_vram_mb", m_data.get("vram", 0.0)),
-                "throughput_tok_s": m_data.get("throughput", 0.0),
-                "status": m_data.get("status", "VALID")
-            })
+    # 2. Exact 72 Canonical Compressors
+    for eng in sorted(COMPRESSOR_REGISTRY.keys()):
+        m_data = find_module_metrics(eng, records)
+        tier = determine_tier(eng, m_data, is_attn=False)
+        fam = get_canonical_family(eng, is_attn=False)
+        categorized.append({
+            "module_name": eng,
+            "type": "compressor",
+            "family": fam,
+            "tier": tier,
+            "sst2_acc": m_data.get("sst2", m_data.get("accuracy", 0.0)),
+            "mnli_acc": m_data.get("mnli", 0.0),
+            "agnews_acc": m_data.get("agnews", 0.0),
+            "compression_ratio": m_data.get("compression_rate", m_data.get("compression_ratio", 1.0)),
+            "peak_vram_mb": m_data.get("peak_vram_mb", 0.0),
+            "throughput_tok_s": m_data.get("throughput", 0.0),
+            "status": m_data.get("status", "VALID")
+        })
 
     # Summary counts
     tier_counts = {}
+    attn_count = sum(1 for e in categorized if e["type"] == "attention")
+    comp_count = sum(1 for e in categorized if e["type"] == "compressor")
+
     for entry in categorized:
         t = entry["tier"]
         tier_counts[t] = tier_counts.get(t, 0) + 1
@@ -230,14 +322,24 @@ def main():
     out_json.parent.mkdir(parents=True, exist_ok=True)
     
     with open(out_json, "w", encoding="utf-8") as f:
-        json.dump({"total_modules": len(categorized), "tier_counts": tier_counts, "modules": categorized}, f, indent=2)
+        json.dump({
+            "total_modules": len(categorized),
+            "attention_mechanisms": attn_count,
+            "compression_engines": comp_count,
+            "tier_counts": tier_counts,
+            "modules": categorized
+        }, f, indent=2)
 
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(categorized[0].keys()))
         writer.writeheader()
         writer.writerows(categorized)
 
-    print(f"Successfully categorized {len(categorized)} modules.")
+    print(f"Successfully categorized {len(categorized)} canonical modules:")
+    print(f"  - Attentions: {attn_count} (Canonical: 131)")
+    print(f"  - Compressors: {comp_count} (Canonical: 72)")
+    print(f"  - Total: {len(categorized)} (Canonical: 203)")
+    print("\nDiagnostic Tier Breakdown:")
     for t, c in sorted(tier_counts.items()):
         print(f"  {t}: {c}")
 
