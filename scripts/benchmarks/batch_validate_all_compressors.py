@@ -614,8 +614,12 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
         errs = np.array([r["rel_err"] for r in valid])
         top1s = np.array([r["top1_match"] for r in valid])
         times = np.array([r["time_s"] for r in valid])
+        ratios = np.array([r["compression_ratio"] for r in valid if "compression_ratio" in r])
+        vrams = np.array([r["peak_vram_mb"] for r in valid if "peak_vram_mb" in r])
+        accs = np.array([r["accuracy"] for r in valid if "accuracy" in r])
+        ppls = np.array([r["perplexity"] for r in valid if "perplexity" in r])
 
-        aggregate[key_str] = {
+        entry = {
             "method": method,
             "rank": rank,
             "status": "SUCCESS",
@@ -628,6 +632,15 @@ def run_batch(model_name: str, seeds: List[int], ranks: List[int], output_dir: s
             "top1_std": float(top1s.std()),
             "time_mean_s": float(times.mean()),
         }
+        if len(ratios) > 0:
+            entry["compression_ratio_mean"] = float(ratios.mean())
+        if len(vrams) > 0:
+            entry["peak_vram_mb_mean"] = float(vrams.mean())
+        if len(accs) > 0:
+            entry["accuracy_mean"] = float(accs.mean())
+        if len(ppls) > 0:
+            entry["perplexity_mean"] = float(ppls.mean())
+        aggregate[key_str] = entry
 
     # Save JSON data
     json_path = out_path / f"{model_name}_batch_results.json"
