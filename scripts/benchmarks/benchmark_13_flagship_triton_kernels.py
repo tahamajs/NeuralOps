@@ -153,8 +153,9 @@ def main():
     x2 = torch.randn(M, K, device=device, dtype=torch.float16)
     V2 = torch.randn(r, K, device=device, dtype=torch.float16)
     U2 = torch.randn(N, r, device=device, dtype=torch.float16)
-    s2 = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).float()
+    s2 = torch.randn(N, K, device=device, dtype=torch.float16) * (torch.rand(N, K, device=device) < 0.05).to(torch.float16)
     b2 = torch.randn(N, device=device, dtype=torch.float16)
+
 
     fn_ref2 = lambda: triton_fused_lowrank_sparse_gemm_pytorch_ref(x2, V2, U2, s=s2, bias=b2)
     fn_tri2 = lambda: triton_fused_lowrank_sparse_gemm(x2, V2, U2, s=s2, bias=b2)
@@ -448,17 +449,20 @@ def main():
     # Kernel 11: Spectral Entropy SVD Gate
     # -----------------------------------------------------------------------
     print("\n[Kernel 11/13] triton_spectral_entropy_svd_gate")
-    r = 256
-    S11 = torch.abs(torch.randn(r, device=device, dtype=torch.float32)) + 0.1
+    M, K, R_MAX, N = 128, 768, 64, 768
+    eff_r = 32
+    x11 = torch.randn(M, K, device=device, dtype=torch.float16)
+    V11 = torch.randn(K, R_MAX, device=device, dtype=torch.float16)
+    U11 = torch.randn(R_MAX, N, device=device, dtype=torch.float16)
+    w11 = torch.rand(R_MAX, device=device, dtype=torch.float16)
+    b11 = torch.randn(N, device=device, dtype=torch.float16)
 
-    fn_ref11 = lambda: triton_spectral_entropy_svd_gate_pytorch_ref(S11, threshold=0.5)
-    fn_tri11 = lambda: triton_spectral_entropy_svd_gate(S11, threshold=0.5)
+    fn_ref11 = lambda: triton_spectral_entropy_svd_gate_pytorch_ref(x11, V11, U11, effective_rank=eff_r, s_weights=w11, bias=b11)
+    fn_tri11 = lambda: triton_spectral_entropy_svd_gate(x11, V11, U11, effective_rank=eff_r, s_weights=w11, bias=b11)
 
     lat_ref, vram_ref = benchmark_fn(fn_ref11)
     lat_tri, vram_tri = benchmark_fn(fn_tri11)
-    e_ref, s_ref = fn_ref11()
-    e_tri, s_tri = fn_tri11()
-    cos_sim, rel_err = compute_metrics(s_ref, s_tri)
+    cos_sim, rel_err = compute_metrics(fn_ref11(), fn_tri11())
     speedup = lat_ref / max(lat_tri, 1e-6)
     print(f"  PyTorch: {lat_ref:.3f} ms, {vram_ref:.2f} MB | Triton: {lat_tri:.3f} ms, {vram_tri:.2f} MB | Speedup: {speedup:.2f}x")
 
@@ -474,6 +478,7 @@ def main():
         "cosine_sim": cos_sim,
         "rel_error": rel_err,
     })
+
 
     # -----------------------------------------------------------------------
     # Kernel 12: Fused Activation-Scaling Quantized GEMM
