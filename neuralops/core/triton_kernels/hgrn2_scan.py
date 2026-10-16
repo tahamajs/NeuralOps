@@ -25,6 +25,8 @@ def _hgrn2_fwd_kernel(
     iv_ptr,
     h_out_ptr,
     h_workspace_ptr,
+    init_state_ptr,
+    final_state_ptr,
     stride_fb,
     stride_fl,
     stride_fd,
@@ -37,12 +39,19 @@ def _hgrn2_fwd_kernel(
     stride_hwb,
     stride_hwl,
     stride_hwd,
+    stride_isb,
+    stride_isd,
+    stride_fsb,
+    stride_fsd,
     B_size,
     L_size,
     D_dim,
     BLOCK_D: tl.constexpr,
     DO_CLIP: tl.constexpr,
     CLIP_VAL: tl.constexpr,
+    HAS_INIT_STATE: tl.constexpr,
+    HAS_FINAL_STATE: tl.constexpr,
+    STORE_WS: tl.constexpr,
 ):
     pid_d = tl.program_id(0)
     pid_b = tl.program_id(1)
@@ -52,7 +61,11 @@ def _hgrn2_fwd_kernel(
     offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_dim
 
-    h = tl.zeros((BLOCK_D,), dtype=tl.float32)
+    if HAS_INIT_STATE:
+        init_ptrs = init_state_ptr + pid_b * stride_isb + offs_d * stride_isd
+        h = tl.load(init_ptrs, mask=mask_d, other=0.0).to(tl.float32)
+    else:
+        h = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
     for l in range(L_size):
         f_ptrs = f_ptr + pid_b * stride_fb + l * stride_fl + offs_d * stride_fd
@@ -66,26 +79,35 @@ def _hgrn2_fwd_kernel(
         if DO_CLIP:
             h = tl.minimum(tl.maximum(h, -CLIP_VAL), CLIP_VAL)
 
-        hw_ptrs = h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
-        tl.store(hw_ptrs, h, mask=mask_d)
+        if STORE_WS:
+            hw_ptrs = h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
+            tl.store(hw_ptrs, h, mask=mask_d)
 
         ho_ptrs = h_out_ptr + pid_b * stride_hob + l * stride_hol + offs_d * stride_hod
         tl.store(ho_ptrs, h.to(h_out_ptr.dtype.element_ty), mask=mask_d)
+
+    if HAS_FINAL_STATE:
+        fin_ptrs = final_state_ptr + pid_b * stride_fsb + offs_d * stride_fsd
+        tl.store(fin_ptrs, h.to(final_state_ptr.dtype.element_ty), mask=mask_d)
 
 
 @triton.jit
 def _hgrn2_bwd_kernel(
     f_ptr,
     h_workspace_ptr,
+    init_state_ptr,
     dh_fwd_ptr,
     df_ptr,
     div_ptr,
+    dinit_state_ptr,
     stride_fb,
     stride_fl,
     stride_fd,
     stride_hwb,
     stride_hwl,
     stride_hwd,
+    stride_isb,
+    stride_isd,
     stride_dhb,
     stride_dhl,
     stride_dhd,
@@ -101,6 +123,7 @@ def _hgrn2_bwd_kernel(
     BLOCK_D: tl.constexpr,
     DO_CLIP: tl.constexpr,
     CLIP_VAL: tl.constexpr,
+    HAS_INIT_STATE: tl.constexpr,
 ):
     pid_d = tl.program_id(0)
     pid_b = tl.program_id(1)
@@ -139,6 +162,9 @@ def _hgrn2_bwd_kernel(
                 h_workspace_ptr + pid_b * stride_hwb + (l - 1) * stride_hwl + offs_d * stride_hwd
             )
             h_prev = tl.load(h_prev_ptrs, mask=mask_d, other=0.0).to(tl.float32)
+        elif HAS_INIT_STATE:
+            init_ptrs = init_state_ptr + pid_b * stride_isb + offs_d * stride_isd
+            h_prev = tl.load(init_ptrs, mask=mask_d, other=0.0).to(tl.float32)
         else:
             h_prev = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
@@ -154,13 +180,78 @@ def _hgrn2_bwd_kernel(
         # Propagate adjoint to t-1
         dh_clipped = dh_raw * f_l
 
+    if HAS_INIT_STATE:
+        dis_ptrs = dinit_state_ptr + pid_b * stride_isb + offs_d * stride_isd
+        tl.store(dis_ptrs, dh_clipped.to(dinit_state_ptr.dtype.element_ty), mask=mask_d)
+
+
+def _hgrn2_fwd_inference(f, iv, res_clip=None, initial_state=None, return_final_state=False):
+    B, L, D = f.shape
+    out = torch.empty_like(iv)
+    dummy_ws = torch.empty((1,), device=f.device, dtype=torch.float32)
+
+    has_init = initial_state is not None
+    init_state = initial_state.contiguous() if has_init else dummy_ws
+
+    has_final = bool(return_final_state)
+    final_state = torch.empty((B, D), device=f.device, dtype=f.dtype) if has_final else dummy_ws
+
+    BLOCK_D = 64
+    num_d_blocks = triton.cdiv(D, BLOCK_D)
+    grid = (num_d_blocks, B)
+
+    do_clip = res_clip is not None and res_clip > 0
+    clip_val = float(res_clip) if do_clip else 1.0
+
+    _hgrn2_fwd_kernel[grid](
+        f,
+        iv,
+        out,
+        dummy_ws,
+        init_state,
+        final_state,
+        f.stride(0),
+        f.stride(1),
+        f.stride(2),
+        iv.stride(0),
+        iv.stride(1),
+        iv.stride(2),
+        out.stride(0),
+        out.stride(1),
+        out.stride(2),
+        0, 0, 0,
+        init_state.stride(0) if has_init else 0,
+        init_state.stride(1) if has_init else 0,
+        final_state.stride(0) if has_final else 0,
+        final_state.stride(1) if has_final else 0,
+        B,
+        L,
+        D,
+        BLOCK_D=BLOCK_D,
+        DO_CLIP=do_clip,
+        CLIP_VAL=clip_val,
+        HAS_INIT_STATE=has_init,
+        HAS_FINAL_STATE=has_final,
+        STORE_WS=False,
+    )
+    if return_final_state:
+        return out, final_state
+    return out
+
 
 class _HGRN2ScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, f, iv, res_clip):
+    def forward(ctx, f, iv, res_clip, initial_state=None, return_final_state=False):
         B, L, D = f.shape
         out = torch.empty_like(iv)
         h_workspace = torch.empty((B, L, D), device=f.device, dtype=torch.float32)
+
+        dummy_t = torch.empty((1,), device=f.device, dtype=torch.float32)
+        has_init = initial_state is not None
+        init_state = initial_state.contiguous() if has_init else dummy_t
+
+        has_final = bool(return_final_state)
+        final_state = torch.empty((B, D), device=f.device, dtype=f.dtype) if has_final else dummy_t
 
         BLOCK_D = 64
         num_d_blocks = triton.cdiv(D, BLOCK_D)
@@ -174,6 +265,8 @@ class _HGRN2ScanFn(torch.autograd.Function):
             iv,
             out,
             h_workspace,
+            init_state,
+            final_state,
             f.stride(0),
             f.stride(1),
             f.stride(2),
@@ -186,26 +279,39 @@ class _HGRN2ScanFn(torch.autograd.Function):
             h_workspace.stride(0),
             h_workspace.stride(1),
             h_workspace.stride(2),
+            init_state.stride(0) if has_init else 0,
+            init_state.stride(1) if has_init else 0,
+            final_state.stride(0) if has_final else 0,
+            final_state.stride(1) if has_final else 0,
             B,
             L,
             D,
             BLOCK_D=BLOCK_D,
             DO_CLIP=do_clip,
             CLIP_VAL=clip_val,
+            HAS_INIT_STATE=has_init,
+            HAS_FINAL_STATE=has_final,
+            STORE_WS=True,
         )
 
-        ctx.save_for_backward(f, h_workspace)
+        ctx.save_for_backward(f, h_workspace, init_state)
         ctx.res_clip = res_clip
+        ctx.has_init = has_init
+        ctx.return_final_state = return_final_state
+
+        if return_final_state:
+            return out, final_state
         return out
 
     @staticmethod
-    def backward(ctx, d_out):
-        f, h_workspace = ctx.saved_tensors
+    def backward(ctx, *grad_outputs):
+        d_out = grad_outputs[0].contiguous()
+        f, h_workspace, init_state = ctx.saved_tensors
         B, L, D = f.shape
-        d_out = d_out.contiguous()
 
         df = torch.empty_like(f)
         div = torch.empty_like(f)
+        dinit_state = torch.empty_like(init_state) if ctx.has_init else torch.empty((1,), device=f.device)
 
         BLOCK_D = 64
         num_d_blocks = triton.cdiv(D, BLOCK_D)
@@ -217,15 +323,19 @@ class _HGRN2ScanFn(torch.autograd.Function):
         _hgrn2_bwd_kernel[grid](
             f,
             h_workspace,
+            init_state,
             d_out,
             df,
             div,
+            dinit_state,
             f.stride(0),
             f.stride(1),
             f.stride(2),
             h_workspace.stride(0),
             h_workspace.stride(1),
             h_workspace.stride(2),
+            init_state.stride(0) if ctx.has_init else 0,
+            init_state.stride(1) if ctx.has_init else 0,
             d_out.stride(0),
             d_out.stride(1),
             d_out.stride(2),
@@ -241,12 +351,20 @@ class _HGRN2ScanFn(torch.autograd.Function):
             BLOCK_D=BLOCK_D,
             DO_CLIP=do_clip,
             CLIP_VAL=clip_val,
+            HAS_INIT_STATE=ctx.has_init,
         )
 
-        return df, div, None
+        d_init = dinit_state if ctx.has_init else None
+        return df, div, None, d_init, None
 
 
-def hgrn2_scan_pytorch(f: torch.Tensor, iv: torch.Tensor, res_clip: float | None = None) -> torch.Tensor:
+def hgrn2_scan_pytorch(
+    f: torch.Tensor,
+    iv: torch.Tensor,
+    res_clip: float | None = None,
+    initial_state: torch.Tensor | None = None,
+    return_final_state: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """
     Pure PyTorch reference implementation for HGRN2 selective scan.
     Recurrence: h_t = f_t * h_{t-1} + iv_t
@@ -255,8 +373,10 @@ def hgrn2_scan_pytorch(f: torch.Tensor, iv: torch.Tensor, res_clip: float | None
     device = f.device
     dtype = f.dtype
 
-    # Transpose to (B, D, L) for sequential time step iteration
-    h = torch.zeros((B, D), device=device, dtype=torch.float32)
+    if initial_state is not None:
+        h = initial_state.clone().float()
+    else:
+        h = torch.zeros((B, D), device=device, dtype=torch.float32)
     ys = []
 
     for t in range(L):
@@ -267,24 +387,63 @@ def hgrn2_scan_pytorch(f: torch.Tensor, iv: torch.Tensor, res_clip: float | None
             h = torch.clamp(h, -float(res_clip), float(res_clip))
         ys.append(h)
 
-    return torch.stack(ys, dim=1).to(dtype)
+    out = torch.stack(ys, dim=1).to(dtype)
+    if return_final_state:
+        return out, h.to(dtype)
+    return out
 
 
-def hgrn2_scan_triton(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
-    """Triton HGRN2 selective scan. f, iv: (B, L, D). Returns h: (B, L, D)."""
-    return _HGRN2ScanFn.apply(f, iv, res_clip)
+def hgrn2_scan_triton(
+    f: torch.Tensor,
+    iv: torch.Tensor,
+    res_clip: float | None = None,
+    initial_state: torch.Tensor | None = None,
+    return_final_state: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+    """Triton HGRN2 selective scan with initial_state and zero-allocation inference."""
+    from neuralops.core.triton_kernels._common import should_use_triton
+
+    B, L, D = f.shape
+    if not should_use_triton(f, "hgrn2_scan", head_dim=D, seq_len=L, allow_fp32=True):
+        return hgrn2_scan_pytorch(
+            f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state
+        )
+
+    f = f.contiguous()
+    iv = iv.contiguous()
+
+    needs_grad = torch.is_grad_enabled() and any(
+        t.requires_grad for t in (f, iv, initial_state) if isinstance(t, torch.Tensor)
+    )
+    if not needs_grad:
+        return _hgrn2_fwd_inference(
+            f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state
+        )
+
+    return _HGRN2ScanFn.apply(f, iv, res_clip, initial_state, return_final_state)
 
 
-def hgrn2_scan(f: torch.Tensor, iv: torch.Tensor, res_clip=None) -> torch.Tensor:
+def hgrn2_scan(
+    f: torch.Tensor,
+    iv: torch.Tensor,
+    res_clip: float | None = None,
+    initial_state: torch.Tensor | None = None,
+    return_final_state: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Dispatches HGRN2 scan to Triton GPU kernel when suitable, else PyTorch fallback."""
-    from neuralops.core.triton_kernels._types import check_triton_suitability
-    suitable, _ = check_triton_suitability(f, "hgrn2_scan", head_dim=f.shape[-1], seq_len=f.shape[1], supports_backward=True)
+    from neuralops.core.triton_kernels._common import should_use_triton
+    suitable = should_use_triton(f, "hgrn2_scan", head_dim=f.shape[-1], seq_len=f.shape[1], allow_fp32=True)
     if suitable and hasattr(triton, "jit"):
         try:
-            return hgrn2_scan_triton(f, iv, res_clip=res_clip)
+            return hgrn2_scan_triton(
+                f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state
+            )
         except Exception:
             pass
-    return hgrn2_scan_pytorch(f, iv, res_clip=res_clip)
+    return hgrn2_scan_pytorch(
+        f, iv, res_clip=res_clip, initial_state=initial_state, return_final_state=return_final_state
+    )
+
 
 
 # ==============================================================================
