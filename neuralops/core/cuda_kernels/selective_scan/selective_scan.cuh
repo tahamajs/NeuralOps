@@ -6,6 +6,7 @@
 void selective_scan_fwd_cuda(
     torch::Tensor& out,
     torch::Tensor& last_state,
+    torch::Tensor& states,
     const torch::Tensor& u,
     const torch::Tensor& delta,
     const torch::Tensor& A,
@@ -27,5 +28,6 @@ void selective_scan_bwd_cuda(
     const torch::Tensor& B,
     const torch::Tensor& C,
     const torch::Tensor& D,
+    const torch::Tensor& states,
     const torch::Tensor& dout
 );
