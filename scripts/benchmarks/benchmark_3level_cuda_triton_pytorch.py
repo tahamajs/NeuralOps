@@ -20,7 +20,19 @@ from typing import Any, Callable, Dict, List, Tuple
 import torch
 import torch.nn.functional as F
 
-from neuralops.core.cuda_kernels import force_kernel_backend
+from neuralops.core.cuda_kernels import (
+    force_kernel_backend,
+    fused_lowrank_gated_gemm,
+    chunked_delta_gate_scan,
+    hgrn2_fused_bwd_scan,
+    cosformer_linear_attention,
+    fused_norm_linear,
+    fused_rotary_emb,
+    kronecker_matmul,
+    lut_codebook_dequant_gemm,
+    linear_attention,
+    fused_cross_entropy,
+)
 from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import selective_scan
 from neuralops.core.cuda_kernels.sliding_window.sliding_autograd import sliding_window_attn
 from neuralops.core.cuda_kernels.sparse_attention.sparse_autograd import block_sparse_attn
@@ -403,6 +415,383 @@ def main():
         "cuda_ms": lat_cuda,
         "speedup_cuda_vs_py": sp_cuda,
         "speedup_cuda_vs_tri": 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 9. Fused Low-Rank Gated GEMM
+    # -------------------------------------------------------------------------
+    print("\n[9/18] fused_lowrank_gated_gemm")
+    M, K, r, N = 64, 512, 32, 256
+    x_lr = torch.randn(M, K, device=device, dtype=torch.float32)
+    V_lr = torch.randn(r, K, device=device, dtype=torch.float32)
+    U_lr = torch.randn(N, r, device=device, dtype=torch.float32)
+    alpha_lr = torch.randn(r, device=device, dtype=torch.float32)
+    bias_lr = torch.randn(N, device=device, dtype=torch.float32)
+    fn_lr = lambda: fused_lowrank_gated_gemm(x_lr, V_lr, U_lr, alpha=alpha_lr, bias=bias_lr)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_lr)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_lr)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_lr)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "fused_lowrank_gated_gemm",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 10. Chunked Delta-Gate Recurrent Scan
+    # -------------------------------------------------------------------------
+    print("\n[10/18] chunked_delta_gate_scan")
+    B_g, H_g, L_g, D_K_g, D_V_g = 2, 4, 128, 32, 32
+    q_g = torch.randn(B_g, H_g, L_g, D_K_g, device=device, dtype=torch.float32)
+    k_g = F.normalize(torch.randn(B_g, H_g, L_g, D_K_g, device=device, dtype=torch.float32), p=2, dim=-1)
+    v_g = torch.randn(B_g, H_g, L_g, D_V_g, device=device, dtype=torch.float32)
+    alpha_g = torch.sigmoid(torch.randn(B_g, H_g, L_g, device=device, dtype=torch.float32))
+    beta_g = torch.sigmoid(torch.randn(B_g, H_g, L_g, device=device, dtype=torch.float32))
+    fn_gdn = lambda: chunked_delta_gate_scan(q_g, k_g, v_g, alpha_g, beta_g)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_gdn)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_gdn)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_gdn)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "chunked_delta_gate_scan",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 11. HGRN2 Bidirectional Recurrent Scan
+    # -------------------------------------------------------------------------
+    print("\n[11/18] hgrn2_fused_bwd_scan")
+    B_h, H_h, L_h, D_h = 2, 4, 128, 64
+    x_h = torch.randn(B_h, H_h, L_h, D_h, device=device, dtype=torch.float32)
+    g_h = torch.sigmoid(torch.randn(B_h, H_h, L_h, D_h, device=device, dtype=torch.float32))
+    fn_hgrn = lambda: hgrn2_fused_bwd_scan(x_h, g_h)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_hgrn)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_hgrn)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_hgrn)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "hgrn2_fused_bwd_scan",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 12. Cosformer Linear Attention
+    # -------------------------------------------------------------------------
+    print("\n[12/18] cosformer_linear_attention")
+    B_c, H_c, L_c, D_c = 2, 4, 128, 32
+    q_c = torch.randn(B_c, H_c, L_c, D_c, device=device, dtype=torch.float32)
+    k_c = torch.randn(B_c, H_c, L_c, D_c, device=device, dtype=torch.float32)
+    v_c = torch.randn(B_c, H_c, L_c, D_c, device=device, dtype=torch.float32)
+    fn_cos = lambda: cosformer_linear_attention(q_c, k_c, v_c, is_causal=True)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_cos)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_cos)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_cos)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "cosformer_linear_attention",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 13. Fused Norm Linear
+    # -------------------------------------------------------------------------
+    print("\n[13/18] fused_norm_linear")
+    M_fn, K_fn, N_fn = 64, 512, 256
+    x_fn = torch.randn(M_fn, K_fn, device=device, dtype=torch.float32)
+    w_fn = torch.randn(N_fn, K_fn, device=device, dtype=torch.float32)
+    b_fn = torch.randn(N_fn, device=device, dtype=torch.float32)
+    fn_norm_lin = lambda: fused_norm_linear(x_fn, w_fn, bias=b_fn)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_norm_lin)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_norm_lin)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_norm_lin)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "fused_norm_linear",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 14. Fused RoPE
+    # -------------------------------------------------------------------------
+    print("\n[14/18] fused_rotary_emb")
+    B_rp, H_rp, N_rp, D_rp = 4, 8, 256, 64
+    half_rp = D_rp // 2
+    x_rp = torch.randn(B_rp, H_rp, N_rp, D_rp, device=device, dtype=torch.float32)
+    cos_rp = torch.randn(1, 1, N_rp, half_rp, device=device, dtype=torch.float32)
+    sin_rp = torch.randn(1, 1, N_rp, half_rp, device=device, dtype=torch.float32)
+    fn_rope = lambda: fused_rotary_emb(x_rp, cos_rp, sin_rp)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_rope)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_rope)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_rope)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "fused_rotary_emb",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 15. Kronecker Matmul
+    # -------------------------------------------------------------------------
+    print("\n[15/18] kronecker_matmul")
+    M_kr, M1_kr, N1_kr, M2_kr, N2_kr = 64, 16, 16, 16, 16
+    x_kr = torch.randn(M_kr, N1_kr * N2_kr, device=device, dtype=torch.float32)
+    A_kr = torch.randn(M1_kr, N1_kr, device=device, dtype=torch.float32)
+    B_kr = torch.randn(M2_kr, N2_kr, device=device, dtype=torch.float32)
+    b_kr = torch.randn(M1_kr * M2_kr, device=device, dtype=torch.float32)
+    fn_kron = lambda: kronecker_matmul(x_kr, A_kr, B_kr, bias=b_kr)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_kron)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_kron)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_kron)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "kronecker_matmul",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 16. In-Register LUT Codebook Dequantization GEMM
+    # -------------------------------------------------------------------------
+    print("\n[16/18] lut_codebook_dequant_gemm")
+    M_lt, K_lt, N_lt = 64, 256, 128
+    grp_lt = 64
+    num_grp_lt = K_lt // grp_lt
+    x_lt = torch.randn(M_lt, K_lt, device=device, dtype=torch.float32)
+    indices_lt = torch.randint(0, 255, (N_lt, K_lt // 2), device=device, dtype=torch.uint8)
+    codebook_lt = torch.randn(num_grp_lt, 16, device=device, dtype=torch.float32) * 0.1
+    b_lt = torch.randn(N_lt, device=device, dtype=torch.float32)
+    fn_lut = lambda: lut_codebook_dequant_gemm(x_lt, indices_lt, codebook_lt, group_size=grp_lt, bias=b_lt)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_lut)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_lut)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_lut)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "lut_codebook_dequant_gemm",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 17. Causal Linear Attention
+    # -------------------------------------------------------------------------
+    print("\n[17/18] linear_attention")
+    B_la, H_la, L_la, D_K_la, D_V_la = 2, 4, 128, 32, 32
+    q_la = torch.randn(B_la, H_la, L_la, D_K_la, device=device, dtype=torch.float32)
+    k_la = torch.randn(B_la, H_la, L_la, D_K_la, device=device, dtype=torch.float32)
+    v_la = torch.randn(B_la, H_la, L_la, D_V_la, device=device, dtype=torch.float32)
+    fn_la = lambda: linear_attention(q_la, k_la, v_la)
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_la)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_la)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_la)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "linear_attention",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
+        "pytorch_vram_mb": vram_py,
+        "cuda_vram_mb": vram_cuda,
+    })
+
+    # -------------------------------------------------------------------------
+    # 18. Fused Cross-Entropy Loss
+    # -------------------------------------------------------------------------
+    print("\n[18/18] fused_cross_entropy")
+    N_ce, V_ce = 512, 1024
+    logits_ce = torch.randn(N_ce, V_ce, device=device, dtype=torch.float32)
+    targets_ce = torch.randint(0, V_ce, (N_ce,), device=device, dtype=torch.int64)
+    fn_ce = lambda: fused_cross_entropy(logits_ce, targets_ce, ignore_index=-100, reduction="mean")
+
+    with force_kernel_backend("pytorch"):
+        lat_py, vram_py = benchmark_fn(fn_ce)
+    with force_kernel_backend("triton"):
+        try:
+            lat_tri, vram_tri = benchmark_fn(fn_ce)
+        except Exception:
+            lat_tri, vram_tri = None, None
+    with force_kernel_backend("cuda"):
+        try:
+            lat_cuda, vram_cuda = benchmark_fn(fn_ce)
+        except Exception:
+            lat_cuda, vram_cuda = None, None
+
+    sp_cuda = (lat_py / lat_cuda) if lat_cuda else 1.0
+    sp_tri = (lat_py / lat_tri) if lat_tri else 1.0
+    print(f"  PyTorch: {lat_py:.3f} ms | Triton: {lat_tri or 0:.3f} ms ({sp_tri:.2f}x) | CUDA: {lat_cuda or 0:.3f} ms ({sp_cuda:.2f}x)")
+    results.append({
+        "kernel": "fused_cross_entropy",
+        "pytorch_ms": lat_py,
+        "triton_ms": lat_tri,
+        "cuda_ms": lat_cuda,
+        "speedup_cuda_vs_py": sp_cuda,
+        "speedup_cuda_vs_tri": (lat_tri / lat_cuda) if (lat_cuda and lat_tri) else 1.0,
         "pytorch_vram_mb": vram_py,
         "cuda_vram_mb": vram_cuda,
     })
