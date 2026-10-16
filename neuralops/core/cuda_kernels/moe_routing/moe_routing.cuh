@@ -38,4 +38,28 @@ void moe_gather_cuda(
     int total_assignments
 );
 
+void moe_dispatch_bwd_cuda(
+    torch::Tensor& grad_tokens,
+    const torch::Tensor& grad_dispatched,
+    const torch::Tensor& expert_offsets,
+    int num_tokens,
+    int hidden_dim,
+    int top_k,
+    int total_assignments
+);
+
+void moe_gather_bwd_cuda(
+    torch::Tensor& grad_expert_outputs,
+    torch::Tensor& grad_routing_weights,
+    const torch::Tensor& grad_out,
+    const torch::Tensor& expert_outputs,
+    const torch::Tensor& routing_weights,
+    const torch::Tensor& expert_offsets,
+    int num_tokens,
+    int hidden_dim,
+    int top_k,
+    int total_assignments
+);
+
+
 
