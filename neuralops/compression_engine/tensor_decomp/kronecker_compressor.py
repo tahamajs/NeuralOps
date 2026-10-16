@@ -462,7 +462,7 @@ class KroneckerLinear(nn.Module):
         W_norm = torch.norm(weight, p="fro").item()
         err = 1.0
 
-        if kron_layer.can_decompose:
+        if kron_layer.can_decompose and rank is None:
             m1_, m2_ = kron_layer.m1, kron_layer.m2
             n1_, n2_ = kron_layer.n1, kron_layer.n2
             try:
