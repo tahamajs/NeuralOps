@@ -2030,7 +2030,7 @@ class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
 
         BLOCK_M = 64
         BLOCK_N = 64
-        BLOCK_K = 32
+        BLOCK_K = 64 if d_in >= 64 else 32
 
         grid = (
             triton.cdiv(d_out, BLOCK_M),
