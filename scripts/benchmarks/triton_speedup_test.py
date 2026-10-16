@@ -22,12 +22,13 @@ from typing import Any, Callable, Dict, Tuple
 import torch
 import torch.nn.functional as F
 
-from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
-from neuralops.kernels.triton.rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
-from neuralops.kernels.triton.strided_tt import (
+from neuralops.core.triton_kernels.low_rank import (
+    triton_fused_lowrank_gated_gemm,
+    triton_fused_lowrank_sparse_gemm,
     triton_strided_tt_contraction,
     triton_strided_tt_linear,
 )
+
 
 
 def measure_latency_and_memory(
