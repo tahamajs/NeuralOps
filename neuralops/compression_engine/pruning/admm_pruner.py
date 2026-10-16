@@ -190,7 +190,9 @@ class ADMMPruner(BaseCompressor):
 
         self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
         if self.rank is not None:
-            self.sparsity = 0.5
+            self.structured_24 = False
+            p_keep = max(0.05, min(0.95, (2.0 * float(self.rank)) / 256.0))
+            self.sparsity = 1.0 - p_keep
         else:
             self.sparsity = max(
                 0.0,

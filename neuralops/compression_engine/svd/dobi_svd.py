@@ -45,11 +45,13 @@ class DobiSVDLinearLayer(nn.Module):
         init_gate_val: float = 2.5,
         dtype: torch.dtype = torch.float32,
         device: torch.device | None = None,
+        use_triton: bool = True,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
+        self.use_triton = bool(use_triton)
 
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
@@ -105,6 +107,14 @@ class DobiSVDLinearLayer(nn.Module):
                 x = x[..., : self.in_features]
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
+
+        if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
+            try:
+                from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
+                out = triton_fused_lowrank_gated_gemm(x_flat, self.V, self.U, alpha=self.gate, b_drift=self.bias)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception as e:
+                logger.debug("Triton fused low-rank gated gemm failed (%s); falling back to PyTorch", e)
 
         g = torch.sigmoid(self.gate).unsqueeze(1)  # [rank, 1]
         V_gated = self.V * g  # [rank, in_features]
