@@ -1,0 +1,33 @@
+{
+  "ledger_version": "v1.3.7",
+  "last_synced_utc": "2026-10-17T00:09:00Z",
+  "active_records_count": 4,
+  "canonical_counts": {
+    "attentions": 131,
+    "compressors": 72,
+    "triton_kernels": 26
+  },
+  "categories": {
+    "attention": {
+      "verified_count": 2,
+      "flagship_modules": ["simplex_wgqa", "gated_deltanet", "retention", "flash_linear_attention"]
+    },
+    "compressor": {
+      "verified_count": 1,
+      "flagship_modules": ["hnc_svd", "fw_svd", "asvd", "admm_pruner"]
+    },
+    "triton_kernel": {
+      "verified_count": 1,
+      "core_kernel_count": 26,
+      "flagship_kernel_count": 13
+    },
+    "cuda_kernel": {
+      "verified_count": 0,
+      "levels": ["Level 1 (PyTorch)", "Level 2 (Triton)", "Level 3 (CUDA C++)"]
+    },
+    "ablations_and_kd": {
+      "verified_count": 0,
+      "focus": ["HNC Nullspace", "6-Pillar KD", "12-Layer RoBERTa Surgery"]
+    }
+  }
+}

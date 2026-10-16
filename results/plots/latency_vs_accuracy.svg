@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="100%" height="100%" fill="#1a1b26"/>
+  <text x="400" y="40" fill="#c0caf5" font-size="20" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" text-anchor="middle">NeuralOps v1.3.7 — Verified Latency vs Accuracy Frontier</text>
+  <line x1="100" y1="420" x2="740" y2="420" stroke="#414868" stroke-width="2"/>
+  <line x1="100" y1="80" x2="100" y2="420" stroke="#414868" stroke-width="2"/>
+  <text x="420" y="465" fill="#a9b1d6" font-size="14" font-family="sans-serif" text-anchor="middle">Inference Latency (ms) [Lower is Better]</text>
+  <text x="40" y="250" fill="#a9b1d6" font-size="14" font-family="sans-serif" text-anchor="middle" transform="rotate(-90 40 250)">Evaluation Accuracy (%) [Higher is Better]</text>
+  
+  <!-- Grid Lines -->
+  <line x1="100" y1="340" x2="740" y2="340" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="260" x2="740" y2="260" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="180" x2="740" y2="180" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="100" x2="740" y2="100" stroke="#24283b" stroke-dasharray="4"/>
+
+  <!-- Ticks -->
+  <text x="90" y="425" fill="#565f89" font-size="12" text-anchor="end">85%</text>
+  <text x="90" y="345" fill="#565f89" font-size="12" text-anchor="end">88%</text>
+  <text x="90" y="265" fill="#565f89" font-size="12" text-anchor="end">90%</text>
+  <text x="90" y="185" fill="#565f89" font-size="12" text-anchor="end">92%</text>
+  <text x="90" y="105" fill="#565f89" font-size="12" text-anchor="end">94%</text>
+
+  <text x="180" y="440" fill="#565f89" font-size="12" text-anchor="middle">1.0ms</text>
+  <text x="320" y="440" fill="#565f89" font-size="12" text-anchor="middle">2.0ms</text>
+  <text x="460" y="440" fill="#565f89" font-size="12" text-anchor="middle">3.0ms</text>
+  <text x="600" y="440" fill="#565f89" font-size="12" text-anchor="middle">4.0ms</text>
+  <text x="700" y="440" fill="#565f89" font-size="12" text-anchor="middle">5.0ms</text>
+
+  <!-- Pareto Curve -->
+  <path d="M 220 160 Q 280 150 340 140 T 650 95" fill="none" stroke="#7aa2f7" stroke-width="2" stroke-dasharray="6"/>
+
+  <!-- Data Points -->
+  <!-- Softmax Baseline: lat 4.62ms, acc 94.3% -->
+  <circle cx="650" cy="95" r="7" fill="#f7768e"/>
+  <text x="650" y="80" fill="#f7768e" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">Softmax (4.62ms, 94.3%)</text>
+
+  <!-- HNC-SVD: lat 0.74ms, acc 93.4% -->
+  <circle cx="150" cy="120" r="8" fill="#73daca"/>
+  <text x="150" y="105" fill="#73daca" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">HNC-SVD (0.74ms, 93.4%)</text>
+
+  <!-- Simplex-WGQA: lat 1.72ms, acc 92.4% -->
+  <circle cx="280" cy="165" r="7" fill="#bb9af7"/>
+  <text x="280" y="195" fill="#bb9af7" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">Simplex-WGQA (1.72ms, 92.4%)</text>
+
+  <!-- Gated DeltaNet: lat 1.85ms, acc 92.8% -->
+  <circle cx="300" cy="145" r="7" fill="#e0af68"/>
+  <text x="300" y="130" fill="#e0af68" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">Gated DeltaNet (1.85ms, 92.8%)</text>
+
+  <!-- Fused Chunk Linear: lat 1.28ms, acc 91.5% -->
+  <circle cx="220" cy="200" r="7" fill="#2ac3de"/>
+  <text x="220" y="225" fill="#2ac3de" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">Chunk Linear (1.28ms, 91.5%)</text>
+</svg>
