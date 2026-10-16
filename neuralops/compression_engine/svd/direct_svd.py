@@ -419,6 +419,7 @@ class DirectSVDCompressor(BaseCompressor):
                     restore_steps_m=6,
                 )
                 hnc_res = hnc_engine.steer_and_compress(self.probe_inputs)
+                self.hnc_res = hnc_res
                 hnc_factors_dict = hnc_res.get("low_rank_factors", {})
                 logger.info("DirectSVD: HNC Null Space Continuation pre-steering completed: %s", hnc_res.get("status"))
             except Exception as e_hnc:

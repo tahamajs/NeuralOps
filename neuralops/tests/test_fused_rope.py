@@ -1,6 +1,6 @@
 """Tests for fused RoPE embedding."""
 import torch
-from neuralops.core.rope import fused_rope_embedding, apply_rotary_pos_emb
+from neuralops.core.utils.rope import fused_rope_embedding, apply_rotary_pos_emb
 
 
 def test_fused_rope_embedding():

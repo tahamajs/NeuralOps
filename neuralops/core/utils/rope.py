@@ -3,7 +3,14 @@ from __future__ import annotations
 
 import torch
 
-__all__ = ["rotate_half", "_rotate_half", "apply_rotary_pos_emb", "broadcast_cos_sin"]
+__all__ = [
+    "rotate_half",
+    "_rotate_half",
+    "apply_rotary_pos_emb",
+    "broadcast_cos_sin",
+    "apply_rope_after_up_projection",
+    "fused_rope_embedding",
+]
 
 
 def rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -58,3 +65,27 @@ def apply_rotary_pos_emb(
     q_embed = (q * cos_q) + (rotate_half(q) * sin_q)
     k_embed = (k * cos_k) + (rotate_half(k) * sin_k)
     return q_embed, k_embed
+
+
+def apply_rope_after_up_projection(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
+    head dimensions, preserving spatial coordinate geometry and relative frequency angles.
+    """
+    return apply_rotary_pos_emb(q, k, cos, sin, position_ids)
+
+
+def fused_rope_embedding(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Applies Rotary Position Embedding (RoPE) fast path."""
+    return apply_rotary_pos_emb(q, k, cos, sin)
+

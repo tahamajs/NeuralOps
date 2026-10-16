@@ -3,7 +3,7 @@ import pytest
 import torch
 from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
 from neuralops.core.triton_kernels.flash_decoding import flash_decoding_attention
-from neuralops.core.rope import fused_rope_embedding
+from neuralops.core.utils.rope import fused_rope_embedding
 from neuralops.core.triton_kernels.elementwise import fused_swiglu
 
 
