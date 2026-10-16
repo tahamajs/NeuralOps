@@ -229,9 +229,9 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
 
     # 2.6 AdaSVD
     if name == "adasvd_compressor":
-        from neuralops.compression_engine.svd.adasvd_compressor import ADASVDCompressor
+        from neuralops.compression_engine.svd.adasvd_compressor import AdaSVDCompressor
         tok = getattr(model, "tokenizer", None)
-        return ADASVDCompressor(model=model, target_rank=rank, tokenizer=tok)
+        return AdaSVDCompressor(model=model, target_rank=rank, tokenizer=tok)
 
     # 3. Fisher SVD & FWSVD
     if name in ("fisher_svd", "fwsvd"):
