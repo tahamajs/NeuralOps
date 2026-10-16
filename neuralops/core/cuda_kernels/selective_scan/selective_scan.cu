@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 #include <float.h>
 
 template<int D_STATE>
@@ -140,9 +141,10 @@ void selective_scan_fwd_cuda(
 
     dim3 grid(B_sz, D_sz);
     dim3 block(1);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D_STATE == 16) {
-        selective_scan_fwd_kernel<16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        selective_scan_fwd_kernel<16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             last_state.data_ptr<float>(),
             u.data_ptr<float>(),
@@ -178,9 +180,10 @@ void selective_scan_bwd_cuda(
 
     dim3 grid(B_sz, D_sz);
     dim3 block(1);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D_STATE == 16) {
-        selective_scan_bwd_kernel<16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        selective_scan_bwd_kernel<16><<<grid, block, 0, stream>>>(
             du.data_ptr<float>(),
             ddelta.data_ptr<float>(),
             dA.data_ptr<float>(),

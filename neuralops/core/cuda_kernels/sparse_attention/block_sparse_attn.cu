@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 #include <float.h>
 
 template<int HEAD_DIM, int BLOCK_SIZE>
@@ -93,9 +94,10 @@ void block_sparse_attn_fwd_cuda(
 
     dim3 grid(B, H, num_q_blocks);
     dim3 block(1);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D == 64 && block_size == 16) {
-        block_sparse_attn_kernel<64, 16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        block_sparse_attn_kernel<64, 16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k.data_ptr<float>(),

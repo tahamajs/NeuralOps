@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 
 __global__ void moe_dispatch_kernel(
     float* __restrict__ dispatched_tokens,     // [total_assignments, hidden_dim]
@@ -35,8 +36,9 @@ void moe_dispatch_cuda(
 ) {
     dim3 grid(num_tokens, top_k);
     dim3 block(min(1024, hidden_dim));
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    moe_dispatch_kernel<<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+    moe_dispatch_kernel<<<grid, block, 0, stream>>>(
         dispatched_tokens.data_ptr<float>(),
         tokens.data_ptr<float>(),
         topk_indices.data_ptr<int64_t>(),
