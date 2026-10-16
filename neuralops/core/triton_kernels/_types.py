@@ -84,7 +84,8 @@ def check_triton_suitability(
     allow_fp32: bool = False,
 ) -> tuple[bool, str | None]:
     """Validate whether the input tensor satisfies all requirements for Triton execution."""
-    if FORCE_PYTORCH_FALLBACK:
+    import os
+    if FORCE_PYTORCH_FALLBACK or os.environ.get("FORCE_PYTORCH_FALLBACK", "0") in ("1", "true", "True"):
         return False, "FORCE_PYTORCH_FALLBACK is enabled"
 
     if not HAS_TRITON:
