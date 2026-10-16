@@ -90,9 +90,11 @@ def fused_rotary_emb(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=fused_rotary_emb_pytorch_ref,
-        args=(x, cos, sin),
-        op_name="fused_rotary_emb",
+        cuda_fn,
+        triton_fn,
+        fused_rotary_emb_pytorch_ref,
+        x,
+        cos,
+        sin,
+        kernel_name="fused_rotary_emb",
     )

@@ -84,9 +84,11 @@ def linear_attention(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=linear_attention_pytorch_ref,
-        args=(q, k, v),
-        op_name="linear_attention",
+        cuda_fn,
+        triton_fn,
+        linear_attention_pytorch_ref,
+        q,
+        k,
+        v,
+        kernel_name="linear_attention",
     )

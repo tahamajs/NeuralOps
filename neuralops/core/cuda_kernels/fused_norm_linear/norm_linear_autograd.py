@@ -111,10 +111,12 @@ def fused_norm_linear(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=fused_norm_linear_pytorch_ref,
-        args=(x, weight),
-        kwargs={"bias": bias, "eps": eps},
-        op_name="fused_norm_linear",
+        cuda_fn,
+        triton_fn,
+        fused_norm_linear_pytorch_ref,
+        x,
+        weight,
+        bias=bias,
+        eps=eps,
+        kernel_name="fused_norm_linear",
     )

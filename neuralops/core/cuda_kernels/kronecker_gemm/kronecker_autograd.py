@@ -69,10 +69,12 @@ def kronecker_matmul(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=kronecker_matmul_pytorch_ref,
-        args=(x, A, B),
-        kwargs={"bias": bias},
-        op_name="kronecker_matmul",
+        cuda_fn,
+        triton_fn,
+        kronecker_matmul_pytorch_ref,
+        x,
+        A,
+        B,
+        bias=bias,
+        kernel_name="kronecker_matmul",
     )

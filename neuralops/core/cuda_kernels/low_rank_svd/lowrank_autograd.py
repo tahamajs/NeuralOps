@@ -42,14 +42,16 @@ def fused_lowrank_gated_gemm_pytorch_ref(
     U_r: torch.Tensor,
     alpha: torch.Tensor | None = None,
     b_drift: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     z = torch.matmul(x, V_r.t())
     if alpha is not None:
         z = z * torch.sigmoid(alpha)
     y = torch.matmul(z, U_r.t())
-    if b_drift is not None:
-        y = y + b_drift
+    b = bias if bias is not None else b_drift
+    if b is not None:
+        y = y + b
     return y
 
 
@@ -135,10 +137,13 @@ def fused_lowrank_gated_gemm(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=fused_lowrank_gated_gemm_pytorch_ref,
-        args=(x, V, U),
-        kwargs={"alpha": alpha, "bias": bias if bias is not None else None},
-        op_name="fused_lowrank_gated_gemm",
+        cuda_fn,
+        triton_fn,
+        fused_lowrank_gated_gemm_pytorch_ref,
+        x,
+        V,
+        U,
+        alpha=alpha,
+        b_drift=bias,
+        kernel_name="fused_lowrank_gated_gemm",
     )
