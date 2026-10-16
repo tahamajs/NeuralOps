@@ -16,9 +16,9 @@ from neuralops.cli.doctor import cmd_doctor
 def test_installation_smoke_and_version():
     """Verify neuralops top-level imports and semantic version."""
     assert hasattr(neuralops, "__version__")
-    assert neuralops.__version__ == "1.3.2"
+    assert neuralops.__version__ == "1.3.7"
     if callable(getattr(neuralops, "get_version", None)):
-        assert neuralops.get_version() == "1.3.2"
+        assert neuralops.get_version() == "1.3.7"
 
 
 def test_doctor_diagnostics_runs_cleanly(capsys):
