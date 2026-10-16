@@ -1,0 +1,95 @@
+{
+  "module_name": "gqa",
+  "category": "triton_kernel",
+  "family": "Attention Softmax",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "215fe8754a196f6d",
+    "module_name": "gqa",
+    "category": "triton_kernel",
+    "family": "Attention Softmax",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "fused_weighted_gqa_online_softmax_triton",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=2, Hq=12, Hkv=2, T=1024"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.215,
+      "latency_pytorch_ms": 5.033,
+      "speedup_x": 23.38,
+      "sram_bytes_saved_mb": 48.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "215fe8754a196f6d",
+      "module_name": "gqa",
+      "category": "triton_kernel",
+      "family": "Attention Softmax",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_weighted_gqa_online_softmax_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, Hq=12, Hkv=2, T=1024"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.215,
+        "latency_pytorch_ms": 5.033,
+        "speedup_x": 23.38,
+        "sram_bytes_saved_mb": 48.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "215fe8754a196f6d",
+      "module_name": "gqa",
+      "category": "triton_kernel",
+      "family": "Attention Softmax",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_weighted_gqa_online_softmax_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, Hq=12, Hkv=2, T=1024"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.215,
+        "latency_pytorch_ms": 5.033,
+        "speedup_x": 23.38,
+        "sram_bytes_saved_mb": 48.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

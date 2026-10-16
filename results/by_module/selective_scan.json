@@ -2,7 +2,7 @@
   "module_name": "selective_scan",
   "category": "cuda_kernel",
   "family": "3-level-native-cuda",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "9ed147b99c",
@@ -34,6 +34,33 @@
   },
   "active_records": [
     {
+      "record_id": "178a30b9cb24d433",
+      "module_name": "selective_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "selective_scan_fn",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.02,
+        "latency_pytorch_ms": 54.677,
+        "speedup_x": 10.89,
+        "sram_bytes_saved_mb": 288.0
+      },
+      "notes": "Parity: PASS (FP16)"
+    },
+    {
       "record_id": "387656453596a23d",
       "module_name": "selective_scan",
       "category": "cuda_kernel",
@@ -60,6 +87,33 @@
     }
   ],
   "history": [
+    {
+      "record_id": "178a30b9cb24d433",
+      "module_name": "selective_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "selective_scan_fn",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.02,
+        "latency_pytorch_ms": 54.677,
+        "speedup_x": 10.89,
+        "sram_bytes_saved_mb": 288.0
+      },
+      "notes": "Parity: PASS (FP16)"
+    },
     {
       "record_id": "387656453596a23d",
       "module_name": "selective_scan",

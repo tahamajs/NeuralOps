@@ -1,0 +1,95 @@
+{
+  "module_name": "sliding_window",
+  "category": "triton_kernel",
+  "family": "Sparse/Window Attn",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "44ac05e7102731a3",
+    "module_name": "sliding_window",
+    "category": "triton_kernel",
+    "family": "Sparse/Window Attn",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "sliding_window_triton",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=2, H=8, T=2048, W=256"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.081,
+      "latency_pytorch_ms": 7.374,
+      "speedup_x": 90.51,
+      "sram_bytes_saved_mb": 112.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "44ac05e7102731a3",
+      "module_name": "sliding_window",
+      "category": "triton_kernel",
+      "family": "Sparse/Window Attn",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "sliding_window_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=2048, W=256"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.081,
+        "latency_pytorch_ms": 7.374,
+        "speedup_x": 90.51,
+        "sram_bytes_saved_mb": 112.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "44ac05e7102731a3",
+      "module_name": "sliding_window",
+      "category": "triton_kernel",
+      "family": "Sparse/Window Attn",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "sliding_window_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=2048, W=256"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.081,
+        "latency_pytorch_ms": 7.374,
+        "speedup_x": 90.51,
+        "sram_bytes_saved_mb": 112.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

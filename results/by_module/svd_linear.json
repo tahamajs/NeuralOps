@@ -1,34 +1,58 @@
 {
   "module_name": "svd_linear",
   "category": "attention",
-  "family": "general",
+  "family": "attention",
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "5d553a2079",
+  "latest_timestamp": "2026-10-15T04:02:13+03:30",
   "latest_record": {
-    "record_id": "38e283394733d3b9",
+    "record_id": "a2f3af44f1269199",
     "module_name": "svd_linear",
     "category": "attention",
-    "family": "general",
+    "family": "attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-15T04:02:13+03:30",
+    "git_commit_sha": "5d553a2079",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "End-to-End Evaluation & Perplexity Probe",
+      "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "dataset": "SST-2 / WikiText-2",
+      "backbone": "DistilBERT / GPT-2"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "accuracy": 0.0,
+      "ppl": 0.0
+    },
+    "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
   },
   "active_records": [
+    {
+      "record_id": "38e283394733d3b9",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    },
     {
       "record_id": "347a8774710142dd",
       "module_name": "svd_linear",
@@ -101,31 +125,31 @@
         "ppl": 0.0
       },
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "38e283394733d3b9",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "38e283394733d3b9",
+      "module_name": "svd_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    },
+    {
       "record_id": "347a8774710142dd",
       "module_name": "svd_linear",
       "category": "attention",
@@ -197,27 +221,6 @@
         "ppl": 0.0
       },
       "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "38e283394733d3b9",
-      "module_name": "svd_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }
