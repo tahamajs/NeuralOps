@@ -367,15 +367,15 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
         dtype_str = "FP16" if dtype == torch.float16 else "FP32"
         for (M, N) in shapes:
             torch.manual_seed(400)
+            w = torch.randn(M, N, device=device, dtype=dtype)
             grad_phi = torch.randn(M, N, device=device, dtype=dtype)
-            inv_h_x = torch.eye(N, device=device, dtype=dtype)
-            mu = 1e-4
-            lr = 0.05
+            inv_null_proj = torch.eye(N, device=device, dtype=dtype)
+            eta = 0.05
 
             # Warmup
             for _ in range(15):
-                _ = fused_hnc_nullspace_step_pytorch(grad_phi, inv_h_x, mu, lr)
-                _ = fused_hnc_nullspace_step_triton(grad_phi, inv_h_x, mu, lr)
+                _ = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta)
+                _ = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta)
 
             # PyTorch Timing
             if device == "cuda":
@@ -387,14 +387,14 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             if device == "cuda":
                 start_event_pt.record()
                 for _ in range(trials):
-                    out_pt = fused_hnc_nullspace_step_pytorch(grad_phi, inv_h_x, mu, lr)
+                    out_pt = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta)
                 end_event_pt.record()
                 torch.cuda.synchronize()
                 pt_us = (start_event_pt.elapsed_time(end_event_pt) / trials) * 1000.0
             else:
                 t0 = time.perf_counter()
                 for _ in range(trials):
-                    out_pt = fused_hnc_nullspace_step_pytorch(grad_phi, inv_h_x, mu, lr)
+                    out_pt = fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta)
                 pt_us = ((time.perf_counter() - t0) / trials) * 1e6
 
             # Triton Timing
@@ -405,14 +405,14 @@ def run_benchmark_table_4(device: str) -> List[Dict[str, Any]]:
             if device == "cuda":
                 start_event_tr.record()
                 for _ in range(trials):
-                    out_tr = fused_hnc_nullspace_step_triton(grad_phi, inv_h_x, mu, lr)
+                    out_tr = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta)
                 end_event_tr.record()
                 torch.cuda.synchronize()
                 tr_us = (start_event_tr.elapsed_time(end_event_tr) / trials) * 1000.0
             else:
                 t0 = time.perf_counter()
                 for _ in range(trials):
-                    out_tr = fused_hnc_nullspace_step_triton(grad_phi, inv_h_x, mu, lr)
+                    out_tr = fused_hnc_nullspace_step_triton(w, grad_phi, inv_null_proj, eta)
                 tr_us = ((time.perf_counter() - t0) / trials) * 1e6
 
             speedup = pt_us / max(tr_us, 1e-12)
