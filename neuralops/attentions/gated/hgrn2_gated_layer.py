@@ -459,18 +459,19 @@ class HGRN2Layer(BaseAttention):
             h: (B, L, D) all hidden states
             h_last: (B, D) final state
         """
-        # [HGRN2-FIX-04] Triton only when initial_state is None
         if (
             HAS_TRITON_HGRN2
             and hgrn2_scan_triton is not None
             and f.is_cuda
-            and initial_state is None
         ):
             try:
                 out = hgrn2_scan_triton(
-                    f.contiguous(), iv.contiguous(), res_clip=self.res_clip
+                    f.contiguous(),
+                    iv.contiguous(),
+                    res_clip=self.res_clip,
+                    initial_state=initial_state,
+                    return_final_state=True,
                 )
-                # Triton doesn't return state; derive it from last position
                 if isinstance(out, tuple):
                     h, h_last = out
                     return h, h_last
@@ -608,10 +609,12 @@ class HGRN2Layer(BaseAttention):
                     out = out.transpose(1, 2).contiguous().view(B, L, D)
                 except Exception:
                     out = None
-            elif self.is_decoder and q.is_cuda:
+            elif q.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
-                    out_win = sliding_window_attention_kernel(q, k, v, window_size=self.window_size)
+                    out_win = sliding_window_attention_kernel(
+                        q, k, v, window_size=self.window_size, is_causal=self.is_decoder
+                    )
                     out = out_win.transpose(1, 2).contiguous().view(B, L, D)
                 except Exception:
                     out = None

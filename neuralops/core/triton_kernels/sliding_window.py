@@ -192,8 +192,9 @@ if HAS_TRITON and tl is not None:
 
 class _SlidingWindowAutograd(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int):
+    def forward(ctx, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_size: int, is_causal: bool = True):
         ctx.window_size = window_size
+        ctx.is_causal = is_causal
         ctx.save_for_backward(q, k, v)
         suitable = False
         if HAS_TRITON and q.is_cuda:
@@ -214,17 +215,19 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                 out.stride(0), out.stride(1), out.stride(2), out.stride(3),
                 H, N, WINDOW=window_size,
                 BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                IS_CAUSAL=is_causal,
             )
             return out
-        return sliding_window_pytorch(q, k, v, window_size=window_size)
+        return sliding_window_pytorch(q, k, v, window_size=window_size, is_causal=is_causal)
 
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
         q, k, v = ctx.saved_tensors
         window_size = ctx.window_size
+        is_causal = getattr(ctx, "is_causal", True)
 
-        if HAS_TRITON and q.is_cuda:
+        if HAS_TRITON and q.is_cuda and is_causal:
             try:
                 from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
                 if not FORCE_PYTORCH_FALLBACK:
@@ -245,7 +248,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                         H, N, WINDOW=window_size,
                         BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
                     )
-                    return dq, dk, dv, None
+                    return dq, dk, dv, None, None
             except Exception:
                 pass
 
@@ -253,9 +256,9 @@ class _SlidingWindowAutograd(torch.autograd.Function):
         k_r = k.detach().requires_grad_(True)
         v_r = v.detach().requires_grad_(True)
         with torch.enable_grad():
-            out = sliding_window_pytorch(q_r, k_r, v_r, window_size=window_size)
+            out = sliding_window_pytorch(q_r, k_r, v_r, window_size=window_size, is_causal=is_causal)
             g_q, g_k, g_v = torch.autograd.grad(out, [q_r, k_r, v_r], grad_output, retain_graph=False)
-        return g_q, g_k, g_v, None
+        return g_q, g_k, g_v, None, None
 
 
 def sliding_window_attention_kernel(
@@ -263,10 +266,11 @@ def sliding_window_attention_kernel(
     k: torch.Tensor,
     v: torch.Tensor,
     window_size: int = 256,
+    is_causal: bool = True,
 ) -> torch.Tensor:
     """Dispatches sliding window attention with full autograd backward support."""
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
-        return _SlidingWindowAutograd.apply(q, k, v, window_size)
+        return _SlidingWindowAutograd.apply(q, k, v, window_size, is_causal)
     suitable = False
     if HAS_TRITON and q.device.type == "cuda":
         try:
@@ -276,8 +280,7 @@ def sliding_window_attention_kernel(
             suitable = False
 
     if not suitable:
-        return sliding_window_pytorch(q, k, v, window_size=window_size)
-
+        return sliding_window_pytorch(q, k, v, window_size=window_size, is_causal=is_causal)
 
     B, H, N, D = q.shape
     out = torch.empty_like(q)
@@ -290,8 +293,10 @@ def sliding_window_attention_kernel(
         out.stride(0), out.stride(1), out.stride(2), out.stride(3),
         H, N, WINDOW=window_size,
         BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+        IS_CAUSAL=is_causal,
     )
     return out
+
 
 
 sliding_window_triton = sliding_window_attention_kernel
