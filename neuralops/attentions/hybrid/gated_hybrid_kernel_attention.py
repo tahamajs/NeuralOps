@@ -766,12 +766,12 @@ class GatedHybridKernelAttention(BaseAttention):
             and not FORCE_PYTORCH_FALLBACK
             and Q_feat.is_cuda
             and past_len == 0
-            and valid is None
             and F_dim <= 128
+            and V_f.shape[-1] <= 128
         ):
             try:
                 from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(Q_feat.to(dtype), K_feat.to(dtype), V, chunk_size=64, eps=1e-4)
+                return fused_svd_linear_chunk_scan_triton(Q_feat.to(dtype), K_feat.to(dtype), V_f.to(dtype), chunk_size=64, eps=1e-4)
             except Exception:
                 pass
 
