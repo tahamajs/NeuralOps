@@ -137,7 +137,26 @@ def coerce_tensor_for_hardware(t: torch.Tensor) -> tuple[torch.Tensor, torch.dty
     return t, orig_dtype
 
 
-
+def should_use_triton(
+    tensor: torch.Tensor,
+    kernel_name: str,
+    head_dim: int | None = None,
+    seq_len: int | None = None,
+    supports_backward: bool = True,
+    allow_fp32: bool = True,
+) -> bool:
+    """Check if Triton kernel execution should be used, or fall back to PyTorch."""
+    suitable, reason = check_triton_suitability(
+        tensor,
+        kernel_name=kernel_name,
+        head_dim=head_dim,
+        seq_len=seq_len,
+        supports_backward=supports_backward,
+        allow_fp32=allow_fp32,
+    )
+    if not suitable and reason:
+        log_fallback_reason(kernel_name, reason)
+    return suitable
 
 
 # ===========================================================================
