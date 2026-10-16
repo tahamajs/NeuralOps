@@ -297,7 +297,8 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
     if name == "gptq_real":
         try:
             from neuralops.compression_engine.quantization.gptq import GPTQQuantizer
-            # Apply layer-by-layer across linear projections
+            from neuralops.utils.compat.architectures import should_compress_linear
+            # Apply layer-by-layer across linear projections (protecting task heads)
             class FullModelGPTQWrapper:
                 def __init__(self, m, r):
                     self.m = m
@@ -305,6 +306,8 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
                 def compress(self):
                     for name, mod in self.m.named_modules():
                         if isinstance(mod, nn.Linear) and mod.weight.numel() > 1024:
+                            if not should_compress_linear(self.m, name):
+                                continue
                             q = GPTQQuantizer(mod, bits=self.bits)
                             q.quantize()
                     return self.m
@@ -510,34 +513,22 @@ def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, dev
 def apply_mean_bias_correction(student: nn.Module, probe: Any, model_name: str, device: str):
     """
     Closed-form activation mean bias correction:
-    Measures the mean logit drift on the calibration probe and subtracts
-    it from the output/classifier bias to zero out 1st-order feature drift.
+    Trained classification and generation heads are strictly preserved and never mutated.
     """
-    with torch.no_grad():
-        if model_name == "roberta":
-            ids, mask = probe
-            sub_ids, sub_mask = ids[:32], mask[:32]
-            logits = student(sub_ids, attention_mask=sub_mask).logits
-            mean_drift = logits.mean(dim=0)
-            if hasattr(student, "classifier") and hasattr(student.classifier, "out_proj"):
-                if getattr(student.classifier.out_proj, "bias", None) is not None:
-                    student.classifier.out_proj.bias.data.sub_(mean_drift)
-        elif model_name == "gpt2":
-            ids = probe[:8] if isinstance(probe, torch.Tensor) else probe[0][:8]
-            logits = student(ids).logits
-            mean_drift = logits.mean(dim=(0, 1))
-            if hasattr(student, "lm_head") and getattr(student.lm_head, "bias", None) is not None:
-                student.lm_head.bias.data.sub_(mean_drift)
+    pass
 
 
 def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
-    """Freeze backbone and select only compressed low-rank factors, LayerNorms, and biases."""
+    """Freeze backbone and select only compressed low-rank factors, LayerNorms, and biases (strictly preserving trained task heads)."""
     for p in student.parameters():
         p.requires_grad = False
 
     trainable_params = []
-    # 1. Structural low-rank modules and normalization layers
+    # 1. Structural low-rank modules and normalization layers (excluding trained heads)
     for name, module in student.named_modules():
+        name_l = name.lower()
+        if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+            continue
         mod_type = module.__class__.__name__
         if mod_type in ("SVDLinear", "DobiSVDLinearLayer", "KroneckerLinear", "LoRALinear"):
             for p_name, p in module.named_parameters(recurse=False):
@@ -548,9 +539,12 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
                 p.requires_grad = True
                 trainable_params.append(p)
 
-    # 2. Match any remaining biases and low-rank factor parameters by name
+    # 2. Match any remaining biases and low-rank factor parameters by name (strictly excluding trained heads)
     for name, p in student.named_parameters():
         name_l = name.lower()
+        if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+            p.requires_grad = False
+            continue
         if "bias" in name_l:
             p.requires_grad = True
             if not any(p is t for t in trainable_params):
@@ -560,9 +554,12 @@ def setup_trainable_parameters_for_kd(student: nn.Module) -> List[nn.Parameter]:
             if not any(p is t for t in trainable_params):
                 trainable_params.append(p)
 
-    # Fallback: if no parameters matched, unfreeze 2D parameters with rank <= 256
+    # Fallback: if no parameters matched, unfreeze 2D parameters with rank <= 256 (excluding trained heads)
     if not trainable_params:
         for name, p in student.named_parameters():
+            name_l = name.lower()
+            if any(h in name_l for h in ["classifier", "lm_head", "score"]):
+                continue
             if p.dim() == 2 and min(p.shape) <= 256:
                 p.requires_grad = True
                 trainable_params.append(p)
@@ -745,6 +742,14 @@ def run_batch(
                     elif getattr(comp, "model", None) is not None:
                         m = comp.model
                     elapsed = time.time() - t0
+
+                    # Guarantee trained task head (classifier / lm_head / score) is 100% uncompressed and untouched
+                    if hasattr(anchor, "classifier") and hasattr(m, "classifier"):
+                        m.classifier = copy.deepcopy(anchor.classifier)
+                    if hasattr(anchor, "lm_head") and hasattr(m, "lm_head"):
+                        m.lm_head = copy.deepcopy(anchor.lm_head)
+                    if hasattr(anchor, "score") and hasattr(m, "score"):
+                        m.score = copy.deepcopy(anchor.score)
 
                     orig_params = sum(p.numel() for p in anchor.parameters())
                     comp_params = sum(p.numel() for p in m.parameters())
