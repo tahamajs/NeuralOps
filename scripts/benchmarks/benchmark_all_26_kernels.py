@@ -77,7 +77,7 @@ def main():
     )
     print("\n--- 2. low_rank (Linformer Projection) ---")
     seq_len = 4096
-    x_lin = torch.randn(4, 8, seq_len, 64, device=device, dtype=dtype)
+    x_lin = torch.randn(8, 16, seq_len, 64, device=device, dtype=dtype)
     proj_lin = torch.randn(64, seq_len, device=device, dtype=dtype)
     bench_pair("fused_linformer_seq_proj", f"(T={seq_len})", fused_linformer_seq_proj_triton, fused_linformer_seq_proj_pytorch, proj_lin, x_lin)
 
@@ -186,9 +186,9 @@ def main():
         fused_cross_entropy_pytorch,
     )
     print("\n--- 12. fused_ce (Fused Cross-Entropy) ---")
-    vocab = 32768
-    logits_ce = torch.randn(4, 256, vocab, device=device, dtype=dtype)
-    targets_ce = torch.randint(0, vocab, (4, 256), device=device)
+    vocab = 50257
+    logits_ce = torch.randn(8, 256, vocab, device=device, dtype=dtype)
+    targets_ce = torch.randint(0, vocab, (8, 256), device=device)
     bench_pair("fused_ce", f"(V={vocab})", fused_cross_entropy, fused_cross_entropy_pytorch, logits_ce, targets_ce)
 
     # 13. fused_kd
@@ -272,16 +272,34 @@ def main():
     omega_fav = torch.randn(128, 64, device=device, dtype=torch.float32)
     bench_pair("fused_favor_plus", "(256x64, M=128)", fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch, x_fav, omega_fav, num_features=128, kernel_type="favor_plus")
 
-    # 20. fused_rope: fused_unified_rope_offset
-    from neuralops.core.triton_kernels.fused_rope import (
-        fused_unified_rope_offset_triton,
-        fused_unified_rope_offset_pytorch,
-    )
-    print("\n--- 20. fused_rope (Unified RoPE Offset) ---")
-    x_rope = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float32)
-    cos_rope = torch.cos(torch.randn(512, 16, device=device, dtype=torch.float32))
-    sin_rope = torch.sin(torch.randn(512, 16, device=device, dtype=torch.float32))
-    bench_pair("fused_unified_rope_offset", "(512x64, rot=32)", fused_unified_rope_offset_triton, fused_unified_rope_offset_pytorch, x_rope, cos_rope, sin_rope, 32)
+    # 20. fused_rope: native Triton JIT kernel
+    from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, _apply_rope_rotation
+    import triton
+    print("\n--- 20. fused_rope (Direct Triton JIT RoPE) ---")
+    B_r, H_r, N_r, D_r = 4, 8, 1024, 64
+    q_r = torch.randn(B_r, H_r, N_r, D_r, device=device, dtype=dtype)
+    k_r = torch.randn(B_r, H_r, N_r, D_r, device=device, dtype=dtype)
+    cos_r = torch.cos(torch.randn(N_r, D_r // 2, device=device, dtype=dtype))
+    sin_r = torch.sin(torch.randn(N_r, D_r // 2, device=device, dtype=dtype))
+
+    def tri_rope_bench(q, k, cos, sin):
+        out_q = torch.empty_like(q)
+        BLOCK_M = 32
+        grid = (triton.cdiv(N_r, BLOCK_M), B_r * H_r)
+        fused_rope_fwd_kernel[grid](
+            q, k, cos, sin, out_q, out_q,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            0, cos.stride(0), cos.stride(1),
+            0, sin.stride(0), sin.stride(1),
+            out_q.stride(0), out_q.stride(1), out_q.stride(2), out_q.stride(3),
+            0, 0, 0, 0,
+            H_r, N_r, D_r, D_r // 2,
+            BLOCK_M=BLOCK_M,
+        )
+        return out_q
+
+    bench_pair("fused_rope", f"(T={N_r}, d={D_r})", tri_rope_bench, lambda q, k, c, s: _apply_rope_rotation(q, c, s), q_r, k_r, cos_r, sin_r)
 
     # 21. block_sparse: fused_moba_block_router_combine
     from neuralops.core.triton_kernels.block_sparse import (
@@ -331,10 +349,10 @@ def main():
         fused_jamba_hybrid_ssm_attn_gate_pytorch,
     )
     print("\n--- 24. selective_scan (Jamba Hybrid Gate) ---")
-    attn_out_j = torch.randn(4, 256, 512, device=device, dtype=torch.float32)
-    ssm_out_j = torch.randn(4, 256, 512, device=device, dtype=torch.float32)
-    alpha_j = torch.randn(8, device=device, dtype=torch.float32)
-    bench_pair("fused_jamba_hybrid_gate", "(256x512, H=8)", fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch, attn_out_j, ssm_out_j, alpha_j)
+    attn_out_j = torch.randn(8, 512, 1024, device=device, dtype=torch.float32)
+    ssm_out_j = torch.randn(8, 512, 1024, device=device, dtype=torch.float32)
+    alpha_j = torch.randn(16, device=device, dtype=torch.float32)
+    bench_pair("fused_jamba_hybrid_gate", "(512x1024, H=16)", fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch, attn_out_j, ssm_out_j, alpha_j)
 
     # 25. fms_scan: fused_goldfinch_hopfield_lookup
     from neuralops.core.triton_kernels.fms_scan import (
