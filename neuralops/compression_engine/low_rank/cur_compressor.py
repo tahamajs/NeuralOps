@@ -395,12 +395,12 @@ class CURCompressor(BaseCompressor):
                 continue
 
             target_r = min(self.rank, max_rank)
-            while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (in_f * out_f):
-                target_r = int(target_r * 0.8)
+            if self.cfg is None and hasattr(self, "_auto_rank") and self._auto_rank:
+                while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (in_f * out_f):
+                    target_r = int(target_r * 0.8)
 
             if target_r < self.min_rank:
-                for p in module.parameters(): p.requires_grad = False
-                continue
+                target_r = self.min_rank
 
             cur_r = target_r
             best_cur_layer = None
@@ -416,31 +416,19 @@ class CURCompressor(BaseCompressor):
             elif self.method == "energy":
                 col_scores, row_scores = compute_energy_scores(orig_w)
 
-            for _ in range(self.max_retries + 1):
-                try:
-                    candidate = CURLinear.from_linear(
-                        target_mod, rank=cur_r, method=self.method, deterministic=self.deterministic,
-                        lora_r=effective_lora_r, lora_alpha=self.lora_alpha, freeze_skeletons=self.freeze_skeletons,
-                        col_scores=col_scores, row_scores=row_scores,
-                    )
-                    recon_w = candidate.get_weight().float()
-                    err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
-
-                    if err < best_err:
-                        best_err = err
-                        best_cur_layer = candidate
-                        best_r = cur_r
-
-                    if err <= self.max_error:
-                        break
-
-                    next_r = min(int(cur_r * 1.5), max_rank - 1)
-                    if next_r <= cur_r or (next_r * (in_f + out_f + next_r)) >= 0.85 * (in_f * out_f):
-                        break
-                    cur_r = next_r
-                except Exception as ex:
-                    logger.warning("CURCompressor: Failed CUR decomposition on %s at rank %d: %s", name, cur_r, ex)
-                    break
+            try:
+                candidate = CURLinear.from_linear(
+                    target_mod, rank=cur_r, method=self.method, deterministic=self.deterministic,
+                    lora_r=effective_lora_r, lora_alpha=self.lora_alpha, freeze_skeletons=self.freeze_skeletons,
+                    col_scores=col_scores, row_scores=row_scores,
+                )
+                recon_w = candidate.get_weight().float()
+                err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
+                best_err = err
+                best_cur_layer = candidate
+                best_r = cur_r
+            except Exception as ex:
+                logger.warning("CURCompressor: Failed CUR decomposition on %s at rank %d: %s", name, cur_r, ex)
 
             if best_err > self.max_error:
                 logger.warning("CURCompressor: Layer %s error %.4f exceeded max_error %.4f", name, best_err, self.max_error)
