@@ -39,13 +39,21 @@ def copy_blocks_cow_pytorch_ref(
     src_k: torch.Tensor,
     src_v: torch.Tensor,
     block_mapping: torch.Tensor,
-    block_size: int,
-    num_heads: int,
-    head_dim: int,
+    block_size: int = 16,
+    num_heads: int = 8,
+    head_dim: int = 64,
 ) -> None:
+    if block_mapping.numel() == 0 or block_mapping.size(0) == 0:
+        return
+
+    max_src = src_k.shape[0]
+    max_dst = dst_k.shape[0]
+
     for i in range(block_mapping.shape[0]):
         src_idx = int(block_mapping[i, 0].item())
         dst_idx = int(block_mapping[i, 1].item())
+        if src_idx < 0 or dst_idx < 0 or src_idx >= max_src or dst_idx >= max_dst:
+            continue
         dst_k[dst_idx].copy_(src_k[src_idx])
         dst_v[dst_idx].copy_(src_v[src_idx])
 
@@ -61,14 +69,19 @@ def copy_blocks_cow(
     head_dim: int = 64,
 ) -> None:
     mod = _get_module()
-    if mod is not None and dst_k.is_cuda:
-        mod.copy_blocks_cow(
-            dst_k, dst_v, src_k, src_v, block_mapping,
-            block_size, num_heads, head_dim
-        )
-        return
+    cuda_fn = mod.copy_blocks_cow if mod is not None else None
 
-    copy_blocks_cow_pytorch_ref(
-        dst_k, dst_v, src_k, src_v, block_mapping,
-        block_size, num_heads, head_dim
+    dispatch(
+        cuda_fn,
+        None,
+        copy_blocks_cow_pytorch_ref,
+        dst_k,
+        dst_v,
+        src_k,
+        src_v,
+        block_mapping,
+        block_size,
+        num_heads,
+        head_dim,
+        kernel_name="copy_blocks_cow",
     )
