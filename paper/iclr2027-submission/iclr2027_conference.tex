@@ -291,21 +291,21 @@ This consensus formulation couples the 72 linear projections during optimization
 \subsection{Taxonomy of 131 Canonical Attention Mechanisms}
 We organize all 131 canonical attention mechanisms into six foundational mathematical families:
 \begin{enumerate}
-    \item \textbf{Linear and Kernel Attention (19 Modules):} Formulates attention via kernel feature maps $\phi(Q) \phi(K)^\top V$. By matrix associativity, computation scales as $\mathcal{O}(L d^2)$ rather than $\mathcal{O}(L^2 d)$. Representative modules: \texttt{linformer\_attention}, \texttt{cosformer}, \texttt{performer\_attention}, \texttt{nystrom\_attention}, \texttt{galerkin\_attention}.
-    \item \textbf{Recurrent and State-Space Attention (22 Modules):} Replaces dense attention with linear time-invariant dynamical systems or associative fast-weight memories: $h_t = A_t h_{t-1} + B_t x_t, y_t = C_t h_t$. Representative modules: \texttt{mamba\_block}, \texttt{hgrn2\_outer}, \texttt{gated\_delta\_net}, \texttt{gla\_attention}, \texttt{factorised\_matrix\_state}.
-    \item \textbf{Low-Rank Factorization Attention (34 Modules):} Decomposes projection weights $W \in \mathbb{R}^{d \times d}$ into low-rank factor pairs $U \Sigma V^\top$ or $W_0 + \frac{\alpha}{r} B A$. Representative modules: \texttt{a3}, \texttt{asvd\_attention}, \texttt{rala\_attention}, \texttt{svd\_linear\_attention}, \texttt{swift\_svd}.
-    \item \textbf{Sparse, Windowed, and Landmark Attention (21 Modules):} Restricts token interaction to band-diagonal sliding windows, landmark centroids, or structured sparsity patterns. Representative modules: \texttt{block\_sparse}, \texttt{nsa\_attention}, \texttt{hamming\_attention}, \texttt{salt\_attention}.
-    \item \textbf{Mixture-of-Experts and Routing Attention (18 Modules):} Routes tokens dynamically across specialized sub-projection experts. Representative modules: \texttt{bam\_umoe}, \texttt{expert\_choice\_moe}, \texttt{reap\_moe}, \texttt{routing\_attention}.
-    \item \textbf{Hybrid and Multi-Branch Attention (17 Modules):} Fuses disparate attention primitives (e.g., interleaving Transformer and Mamba blocks, or splitting attention heads within layers). Representative modules: \texttt{jamba}, \texttt{samba\_m3}, \texttt{hymba\_transx}, \texttt{split\_head\_hybrid}.
+    \item \textbf{Linear and Kernel Attention (19 Modules):} Formulates attention via kernel feature maps $\phi(Q) \phi(K)^\top V$ \citep{katharopoulos2020transformers}. By matrix associativity, computation scales as $\mathcal{O}(L d^2)$ rather than $\mathcal{O}(L^2 d)$. Representative modules: \texttt{linformer\_attention} \citep{wang2020linformer}, \texttt{cosformer} \citep{qin2022cosformer}, \texttt{performer\_attention} \citep{choromanski2021rethinking}, \texttt{nystrom\_attention} \citep{xiong2021nystromformer}, \texttt{galerkin\_attention}.
+    \item \textbf{Recurrent and State-Space Attention (22 Modules):} Replaces dense attention with linear time-invariant dynamical systems or associative fast-weight memories: $h_t = A_t h_{t-1} + B_t x_t, y_t = C_t h_t$ \citep{gu2022mamba}. Representative modules: \texttt{mamba\_block} \citep{gu2022mamba}, \texttt{hgrn2\_outer} \citep{dong2024hgrn2}, \texttt{gated\_delta\_net} \citep{schlag2021deltanet}, \texttt{gla\_attention} \citep{yang2023gated}, \texttt{factorised\_matrix\_state}.
+    \item \textbf{Low-Rank Factorization Attention (34 Modules):} Decomposes projection weights $W \in \mathbb{R}^{d \times d}$ into low-rank factor pairs $U \Sigma V^\top$ or $W_0 + \frac{\alpha}{r} B A$ \citep{hu2022lora, eckart1936approximation}. Representative modules: \texttt{a3} \citep{a3_ours}, \texttt{asvd\_attention} \citep{yuan2023asvd}, \texttt{rala\_attention}, \texttt{svd\_linear\_attention}, \texttt{swift\_svd} \citep{swift_svd_2024}.
+    \item \textbf{Sparse, Windowed, and Landmark Attention (21 Modules):} Restricts token interaction to band-diagonal sliding windows, landmark centroids, or structured sparsity patterns \citep{beltagy2020longformer, zaheer2020bigbird}. Representative modules: \texttt{block\_sparse}, \texttt{nsa\_attention} \citep{nsa_2024}, \texttt{hamming\_attention} \citep{hamming_attention_2024}, \texttt{salt\_attention} \citep{salt_2024}.
+    \item \textbf{Mixture-of-Experts and Routing Attention (18 Modules):} Routes tokens dynamically across specialized sub-projection experts \citep{fedus2022switch}. Representative modules: \texttt{bam\_umoe} \citep{bam_umoe_2025}, \texttt{expert\_choice\_moe} \citep{expert_choice_moe_2022}, \texttt{reap\_moe}, \texttt{routing\_attention}.
+    \item \textbf{Hybrid and Multi-Branch Attention (17 Modules):} Fuses disparate attention primitives (e.g., interleaving Transformer and Mamba blocks, or splitting attention heads within layers). Representative modules: \texttt{jamba} \citep{lieber2024jamba}, \texttt{samba\_m3} \citep{ren2024samba}, \texttt{hymba\_transx} \citep{dong2024hymba}, \texttt{split\_head\_hybrid}.
 \end{enumerate}
 
 \subsection{Taxonomy of 72 Compression Engines}
 Model compression algorithms in NeuralOps operate along four distinct mathematical axes:
 \begin{itemize}
-    \item \textbf{Activation-Aware SVD (32 Engines):} Solves $\min_{\text{rank}(W_r) \le r} \| (W - W_r) X \|_F$ via Cholesky activation whitening $S = X X^\top = L L^\top$, factoring $\tilde{W} = W L = U \Sigma V^\top$. Engines: \texttt{a3\_compressor}, \texttt{asvd}, \texttt{svd\_llm\_compressor}, \texttt{direct\_svd}, \texttt{dobi\_svd}.
-    \item \textbf{Vector Quantization \& Codebooks (8 Engines):} Maps weight matrices to discrete centroid codebooks $W_{i, j} \approx \mathcal{C}[\arg\min_k \| W_{i, j} - c_k \|_2]$. Engines: \texttt{kmeans\_quantize}, \texttt{coopq\_quantizer}, \texttt{astro\_quantizer}, \texttt{uniql\_compressor}.
-    \item \textbf{Pruning \& Sparsification (18 Engines):} Generates sparse binary masks $M \in \{0, 1\}^{d \times d}$ via second-order Taylor expansion or fluctuating activation norms. Engines: \texttt{sparsegpt}, \texttt{slicegpt}, \texttt{flap}, \texttt{admm\_pruner}, \texttt{bonsai\_pruner}.
-    \item \textbf{Tensor Decompositions \& Hashing (14 Engines):} Decomposes weights into low-rank tensor trains, Kronecker products, or hashed random offsets. Engines: \texttt{kronecker\_compressor}, \texttt{tt\_compressor}, \texttt{mlorq\_compressor}, \texttt{roast\_hashed\_linear}.
+    \item \textbf{Activation-Aware SVD (32 Engines):} Solves $\min_{\text{rank}(W_r) \le r} \| (W - W_r) X \|_F$ via Cholesky activation whitening $S = X X^\top = L L^\top$, factoring $\tilde{W} = W L = U \Sigma V^\top$ \citep{aa_svd_2026}. Engines: \texttt{a3\_compressor} \citep{a3_ours}, \texttt{asvd} \citep{yuan2023asvd}, \texttt{svd\_llm\_compressor} \citep{wang2024svdllm}, \texttt{direct\_svd}, \texttt{dobi\_svd}.
+    \item \textbf{Vector Quantization \& Codebooks (8 Engines):} Maps weight matrices to discrete centroid codebooks $W_{i, j} \approx \mathcal{C}[\arg\min_k \| W_{i, j} - c_k \|_2]$ \citep{stock2020and, kmeans_quantization_2024}. Engines: \texttt{kmeans\_quantize}, \texttt{coopq\_quantizer}, \texttt{astro\_quantizer}, \texttt{uniql\_compressor}.
+    \item \textbf{Pruning \& Sparsification (18 Engines):} Generates sparse binary masks $M \in \{0, 1\}^{d \times d}$ via second-order Taylor expansion or fluctuating activation norms \citep{frantar2022sparsegpt}. Engines: \texttt{sparsegpt} \citep{frantar2022sparsegpt}, \texttt{slicegpt} \citep{ashkboos2024slicegpt}, \texttt{flap}, \texttt{admm\_pruner}, \texttt{bonsai\_pruner}.
+    \item \textbf{Tensor Decompositions \& Hashing (14 Engines):} Decomposes weights into low-rank tensor trains, Kronecker products, or hashed random offsets \citep{badri2023halfquadratic, kopiczko2024vera}. Engines: \texttt{kronecker\_compressor}, \texttt{tt\_compressor}, \texttt{mlorq\_compressor}, \texttt{roast\_hashed\_linear}.
 \end{itemize}
 
 \section{Mathematical Formulations and Theoretical Proofs}
@@ -462,7 +462,26 @@ Table~\ref{tab:roberta_hnc} demonstrates how Cholesky activation whitening in HN
 \input{tables/table_roberta_hnc.tex}
 
 \subsection{Pareto Frontier Analysis}
-Table~\ref{tab:pareto} summarizes the multi-objective Pareto trade-off between accuracy, compression ratio, memory, and throughput.
+Table~\ref{tab:pareto} and Figure~\ref{fig:pareto_frontier_suite} summarize the multi-objective Pareto trade-off between accuracy, compression ratio, memory, and throughput.
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/pareto_accuracy_vs_compression.png}
+    \caption{Downstream Accuracy vs.\ Parameter Compression.}
+    \label{fig:pareto_acc_comp}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/pareto_accuracy_vs_vram.png}
+    \caption{Downstream Accuracy vs.\ Peak VRAM Footprint.}
+    \label{fig:pareto_acc_vram}
+\end{subfigure}
+\caption{\textbf{Multi-Objective Pareto Frontiers on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9).} 
+Empirical trade-off envelopes comparing low-rank SVD factorization, vector quantization (k-means VQ), structured pruning, and hybrid attention on SST-2 and MNLI.}
+\label{fig:pareto_frontier_suite}
+\end{figure}
 \input{tables/table8_pareto.tex}
 
 \subsection{Pipeline Stage-Wise Ablation}
@@ -513,6 +532,10 @@ Table~\ref{tab:triton_kernels} details the complete specifications, source paths
 \vspace{0.5em}
 In Table~\ref{tab:flagship_triton_kernels}, we provide empirical micro-benchmark measurements for our 13 high-ROI flagship Triton kernels evaluated on the NVIDIA GeForce RTX 4070 Laptop GPU across 100 timed iterations. We observe massive speedups up to $743.23\times$ for chunked delta-gate recurrent state scans and up to $275.87\times$ for block-sparse streaming attention, alongside memory footprint reductions reaching $29.7\%$.
 \input{tables/table_13_flagship_triton_kernels.tex}
+
+\vspace{0.5em}
+In Table~\ref{tab:18_native_cuda_kernels_3level}, we report physical execution benchmarks for our suite of 18 high-performance native CUDA C++ kernels featuring 3-level fallback dispatch (\texttt{cuda} $\to$ \texttt{triton} $\to$ \texttt{pytorch}). Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9), our custom fused CUDA kernels achieve massive speedups up to $422.60\times$ for HGRN2 fused backward scans and up to $167.81\times$ for linear attention relative to un-fused PyTorch baselines, with 100\% numerical parity ($\cos \ge 0.99999$).
+\input{tables/table_18_native_cuda_kernels_3level.tex}
 
 \clearpage
 \section{Top-50 PASS Modules Ranked by MNLI Accuracy}
@@ -590,6 +613,38 @@ CUDA Out of Memory & 4 & Peak intermediate activation memory exceeded 12GB durin
 \bottomrule
 \end{tabular}
 \end{table}
+
+\clearpage
+\section{Pareto Optimization and Hardware Throughput Scaling}
+\label{app:pareto_visualizations}
+In Figure~\ref{fig:pareto_full_suite}, we provide comprehensive visual Pareto trade-off frontiers across throughput, multi-objective trade-offs, and causal autoregressive language modeling.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/pareto_frontier.png}
+    \caption{Overall Multi-Metric Pareto Frontier.}
+    \label{fig:pareto_overall}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/pareto_accuracy_vs_throughput.png}
+    \caption{Validation Accuracy vs.\ Inference Throughput.}
+    \label{fig:pareto_throughput}
+\end{subfigure}
+\vspace{0.8em}
+\begin{subfigure}[b]{0.52\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/pareto_ppl_vs_compression.png}
+    \caption{GPT-2 WikiText-2 Perplexity vs.\ Compression Factor.}
+    \label{fig:pareto_ppl}
+\end{subfigure}
+\caption{\textbf{Comprehensive Pareto Trade-Off Envelopes across Accuracy, Throughput, and Causal Perplexity.} 
+Benchmarked on physical NVIDIA RTX 4070 (Ada Lovelace, SM 8.9) under identical batch and sequence conditions.}
+\label{fig:pareto_full_suite}
+\end{figure}
 
 \section{Reproducibility Protocol and Environment Setup}
 \label{app:reproducibility}
