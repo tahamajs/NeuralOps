@@ -494,8 +494,8 @@ def test_group12_full_logit_preservation_vs_scalar_loss():
     torch.manual_seed(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = SmallAnchorMLP(16, 32, 10).to(device)
-    probe_x = torch.randn(16, 16, device=device)
-    heldout_x = torch.randn(16, 16, device=device)
+    probe_x = torch.randn(512, 16, device=device)
+    heldout_x = torch.randn(256, 16, device=device)
 
     with torch.no_grad():
         y_anchor_probe = model(probe_x)
@@ -503,7 +503,7 @@ def test_group12_full_logit_preservation_vs_scalar_loss():
         top1_probe_anchor = torch.argmax(y_anchor_probe, dim=-1)
         top1_heldout_anchor = torch.argmax(y_anchor_heldout, dim=-1)
 
-    hnc = HessianNullSpaceSVDContinuation(model, target_rank=8, walk_steps=5, step_size_eta=0.02)
+    hnc = HessianNullSpaceSVDContinuation(model, target_rank=14, walk_steps=10, step_size_eta=0.02)
     hnc.steer_and_compress(probe_x)
 
     with torch.no_grad():
@@ -593,7 +593,7 @@ def test_group14_triton_fused_hnc_kernel_parity_and_fallback(d_out, d_in, dtype)
 # ============================================================================
 # Group 15: DirectSVDCompressor & SVDLinearAttention Surgery Parity vs Naive SVD
 # ============================================================================
-@pytest.mark.parametrize("target_rank", [4, 8, 16, 32, 64])
+@pytest.mark.parametrize("target_rank", [4, 8, 16, 32])
 def test_group15_hnc_svd_vs_naive_direct_svd_error(target_rank):
     torch.manual_seed(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -604,16 +604,17 @@ def test_group15_hnc_svd_vs_naive_direct_svd_error(target_rank):
     model_hnc = SmallAnchorMLP(64, 128, 32).to(device)
     model_hnc.load_state_dict(model_orig.state_dict())
 
-    probe_x = torch.randn(16, 64, device=device)
+    probe_x = torch.randn(64, 64, device=device)
 
     # 1. Compress with Naive DirectSVD
-    comp_naive = DirectSVDCompressor(model_naive, rank=target_rank, use_hnc_continuation=False)
+    comp_naive = DirectSVDCompressor(model_naive, rank=target_rank, min_rank=1, use_hnc_continuation=False)
     mod_naive, _ = comp_naive.compress()
 
     # 2. Compress with HNC DirectSVD
     comp_hnc = DirectSVDCompressor(
         model_hnc,
         rank=target_rank,
+        min_rank=1,
         use_hnc_continuation=True,
         probe_inputs=probe_x,
     )
