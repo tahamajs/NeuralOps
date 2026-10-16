@@ -86,12 +86,18 @@ torch::Tensor moe_gather(
     torch::Tensor expert_offsets
 ) {
     TORCH_CHECK(expert_outputs.is_cuda() && routing_weights.is_cuda() &&
-                topk_indices.is_cuda() && expert_offsets.is_cuda(),
-                "moe_gather: all input tensors must be on CUDA");
+                topk_indices.is_cuda(),
+                "moe_gather: expert_outputs, routing_weights, and topk_indices must be on CUDA");
     TORCH_CHECK(expert_outputs.dim() == 2 && routing_weights.dim() == 2,
                 "moe_gather: expert_outputs and routing_weights must be 2D");
-    TORCH_CHECK(routing_weights.sizes() == topk_indices.sizes() && topk_indices.sizes() == expert_offsets.sizes(),
-                "moe_gather: routing_weights, topk_indices, and expert_offsets shape mismatch");
+    TORCH_CHECK(routing_weights.sizes() == topk_indices.sizes(),
+                "moe_gather: routing_weights and topk_indices shape mismatch");
+
+    const bool has_offsets = expert_offsets.defined() && expert_offsets.numel() > 0;
+    if (has_offsets) {
+        TORCH_CHECK(expert_offsets.is_cuda() && expert_offsets.sizes() == routing_weights.sizes(),
+                    "moe_gather: expert_offsets shape mismatch");
+    }
 
     const int num_tokens = static_cast<int>(routing_weights.size(0));
     const int top_k = static_cast<int>(routing_weights.size(1));
@@ -106,7 +112,7 @@ torch::Tensor moe_gather(
     auto expert_outputs_c = expert_outputs.contiguous();
     auto routing_weights_c = routing_weights.to(expert_outputs.scalar_type()).contiguous();
     auto topk_indices_c = (topk_indices.scalar_type() == torch::kInt32) ? topk_indices.contiguous() : topk_indices.to(torch::kInt32).contiguous();
-    auto expert_offsets_c = (expert_offsets.defined() && expert_offsets.numel() > 0) ? ((expert_offsets.scalar_type() == torch::kInt32) ? expert_offsets.contiguous() : expert_offsets.to(torch::kInt32).contiguous()) : expert_offsets;
+    auto expert_offsets_c = has_offsets ? ((expert_offsets.scalar_type() == torch::kInt32) ? expert_offsets.contiguous() : expert_offsets.to(torch::kInt32).contiguous()) : torch::Tensor();
 
     moe_gather_cuda(
         out,
@@ -122,6 +128,7 @@ torch::Tensor moe_gather(
 
     return out;
 }
+
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> moe_fused_dispatch(
     torch::Tensor tokens,
