@@ -2221,7 +2221,8 @@ def _fused_lowrank_gated_gemm_1d_kernel(
         gate = tl.sigmoid(alpha_tile.to(tl.float32))
         z_acc = z_acc * gate[None, :]
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
+
 
     num_n_blocks = tl.cdiv(N, BLOCK_N)
     for n_idx in range(0, num_n_blocks):
@@ -2410,7 +2411,7 @@ def _fused_rpca_gemm_kernel(
 
         z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
 
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
@@ -2439,7 +2440,8 @@ def _fused_rpca_gemm_kernel(
         y_acc += b_tile[None, :].to(tl.float32)
 
     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
-    tl.store(y_ptrs, y_acc.to(x_tile.dtype), mask=mask_m[:, None] & mask_n[None, :])
+    tl.store(y_ptrs, y_acc.to(x_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
+
 
 
 def triton_fused_lowrank_sparse_gemm_pytorch_ref(
@@ -2466,9 +2468,10 @@ def triton_fused_lowrank_sparse_gemm_pytorch_ref(
     y_lr = torch.matmul(torch.matmul(x_2d, V_mat), U_mat)
     if s is not None:
         if isinstance(s, torch.Tensor) and not s.is_sparse:
-            y_sp = torch.matmul(x_2d, s.t())
+            y_sp = torch.matmul(x_2d, s.to(dtype=x_2d.dtype).t())
         elif hasattr(s, "is_sparse_csr") and s.is_sparse_csr:
-            y_sp = torch.matmul(x_2d, s.to_dense().t())
+            y_sp = torch.matmul(x_2d, s.to_dense().to(dtype=x_2d.dtype).t())
+
         else:
             y_sp = 0.0
         y = y_lr + y_sp
@@ -2658,7 +2661,8 @@ def _strided_tt_reconstruct_kernel(
         acc += tl.sum(c0_vals * c1_vals, axis=2)
 
     w_ptrs = w_ptr + offs_n[:, None] * stride_wn + offs_k[None, :] * stride_wk
-    tl.store(w_ptrs, acc.to(c0_vals.dtype), mask=mask_n[:, None] & mask_k[None, :])
+    tl.store(w_ptrs, acc.to(w_ptr.dtype.element_ty), mask=mask_n[:, None] & mask_k[None, :])
+
 
 
 def triton_strided_tt_contraction_pytorch_ref(
@@ -2830,12 +2834,13 @@ def triton_fused_kronecker_matmul_pytorch_ref(
     M2, N2 = B.shape
     out_features = M1 * M2
     X_reshaped = x_2d.view(M, N1, N2)
-    T = torch.matmul(X_reshaped, B.t())
-    Y = torch.matmul(A, T.transpose(1, 2)).transpose(1, 2)
+    T = torch.matmul(X_reshaped, B.t())  # (M, N1, M2)
+    Y = torch.matmul(T.transpose(1, 2), A.t()).transpose(1, 2)  # (M, M1, M2)
     Y_flat = Y.reshape(M, out_features)
     if bias is not None:
         Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
     return Y_flat.view(*orig_shape[:-1], out_features)
+
 
 
 def triton_fused_kronecker_matmul(
@@ -2958,7 +2963,8 @@ def _spectral_entropy_svd_kernel(
         w_tile = tl.load(s_weights_ptr + offs_r, mask=mask_r, other=0.0).to(tl.float32)
         z_acc = z_acc * w_tile[None, :]
 
-    z_tile = z_acc.to(x_tile.dtype)
+    z_tile = z_acc.to(x_ptr.dtype.element_ty)
+
 
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
