@@ -105,5 +105,37 @@ __device__ __forceinline__ float block_reduce_sum(float val, float* smem) {
     return val;
 }
 
+__device__ __forceinline__ float block_reduce_sum(float val) {
+    __shared__ float s_warp_sum[32];
+    int lane = threadIdx.x % 32;
+    int wid = threadIdx.x / 32;
+    val = warp_reduce_sum(val);
+    if (lane == 0) {
+        s_warp_sum[wid] = val;
+    }
+    __syncthreads();
+    val = (threadIdx.x < (blockDim.x + 31) / 32) ? s_warp_sum[threadIdx.x] : 0.0f;
+    if (wid == 0) {
+        val = warp_reduce_sum(val);
+    }
+    return val;
+}
+
+__device__ __forceinline__ float block_reduce_max(float val) {
+    __shared__ float s_warp_max[32];
+    int lane = threadIdx.x % 32;
+    int wid = threadIdx.x / 32;
+    val = warp_reduce_max(val);
+    if (lane == 0) {
+        s_warp_max[wid] = val;
+    }
+    __syncthreads();
+    val = (threadIdx.x < (blockDim.x + 31) / 32) ? s_warp_max[threadIdx.x] : -1e30f;
+    if (wid == 0) {
+        val = warp_reduce_max(val);
+    }
+    return val;
+}
+
 } // namespace cuda
 } // namespace neuralops
