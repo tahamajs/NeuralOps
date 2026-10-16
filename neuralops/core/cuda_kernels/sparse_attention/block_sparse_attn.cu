@@ -4,11 +4,11 @@
 #include <float.h>
 
 template<int HEAD_DIM, int BLOCK_SIZE>
-__global__ void block_sparse_attn_kernel(
-    float* __restrict__ out,               // [B, H, N, D]
-    const float* __restrict__ q,           // [B, H, N, D]
-    const float* __restrict__ k,           // [B, H, N, D]
-    const float* __restrict__ v,           // [B, H, N, D]
+__global__ void block_sparse_attn_warp_kernel(
+    float* __restrict__ out,               // [B, H, N, HEAD_DIM]
+    const float* __restrict__ q,           // [B, H, N, HEAD_DIM]
+    const float* __restrict__ k,           // [B, H, N, HEAD_DIM]
+    const float* __restrict__ v,           // [B, H, N, HEAD_DIM]
     const int32_t* __restrict__ block_mask,// [num_q_blocks, num_kv_blocks]
     const int B,
     const int H,
@@ -16,61 +16,124 @@ __global__ void block_sparse_attn_kernel(
     const int num_kv_blocks,
     const float scale
 ) {
-    const int b = blockIdx.x;
+    constexpr int NUM_WARPS = 4;
+    constexpr int QUERIES_PER_WARP = BLOCK_SIZE / NUM_WARPS; // e.g. 16 / 4 = 4
+    constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;       // 64 / 32 = 2
+
+    const int q_block_idx = blockIdx.x;
     const int h = blockIdx.y;
-    const int q_block_idx = blockIdx.z;
-    const int tid = threadIdx.x;
+    const int b = blockIdx.z;
+
+    const int lane = threadIdx.x;
+    const int warp_id = threadIdx.y;
 
     if (b >= B || h >= H) return;
 
-    const int q_start = q_block_idx * BLOCK_SIZE;
-    const int q_end = min(q_start + BLOCK_SIZE, N);
+    // Shared memory for staging active K and V blocks
+    __shared__ float K_smem[BLOCK_SIZE][HEAD_DIM];
+    __shared__ float V_smem[BLOCK_SIZE][HEAD_DIM];
 
-    for (int q_pos = q_start; q_pos < q_end; ++q_pos) {
-        float q_val[HEAD_DIM];
-        for (int d = 0; d < HEAD_DIM; ++d) {
-            q_val[d] = q[b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + q_pos * HEAD_DIM + d];
-        }
+    // Local registers for queries assigned to this warp
+    float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
+    float acc[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
+    float m_prev[QUERIES_PER_WARP];
+    float l_prev[QUERIES_PER_WARP];
+    int q_indices[QUERIES_PER_WARP];
 
-        float m_prev = -FLT_MAX;
-        float l_prev = 0.0f;
-        float acc[HEAD_DIM];
+    #pragma unroll
+    for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
+        q_indices[qi] = q_block_idx * BLOCK_SIZE + warp_id * QUERIES_PER_WARP + qi;
+        m_prev[qi] = -FLT_MAX;
+        l_prev[qi] = 0.0f;
         #pragma unroll
-        for (int d = 0; d < HEAD_DIM; ++d) acc[d] = 0.0f;
-
-        for (int kv_b = 0; kv_b < num_kv_blocks; ++kv_b) {
-            // Dynamic skip control flow (not expressible in Triton without full compute)
-            if (block_mask[q_block_idx * num_kv_blocks + kv_b] == 0) {
-                continue;
-            }
-
-            const int k_start = kv_b * BLOCK_SIZE;
-            const int k_end = min(k_start + BLOCK_SIZE, N);
-
-            for (int k_pos = k_start; k_pos < k_end; ++k_pos) {
-                float qk = 0.0f;
-                for (int d = 0; d < HEAD_DIM; ++d) {
-                    qk += q_val[d] * k[b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + k_pos * HEAD_DIM + d];
-                }
-                qk *= scale;
-
-                float m_curr = fmaxf(m_prev, qk);
-                float p = expf(qk - m_curr);
-                float alpha = expf(m_prev - m_curr);
-
-                l_prev = l_prev * alpha + p;
-
-                for (int d = 0; d < HEAD_DIM; ++d) {
-                    float v_val = v[b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + k_pos * HEAD_DIM + d];
-                    acc[d] = acc[d] * alpha + p * v_val;
-                }
-                m_prev = m_curr;
+        for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+            acc[qi][e] = 0.0f;
+            if (q_indices[qi] < N) {
+                const int q_off = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + q_indices[qi] * HEAD_DIM + lane + e * 32;
+                q_local[qi][e] = q[q_off];
+            } else {
+                q_local[qi][e] = 0.0f;
             }
         }
+    }
 
-        if (l_prev > 0.0f) {
-            for (int d = 0; d < HEAD_DIM; ++d) {
-                out[b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + q_pos * HEAD_DIM + d] = acc[d] / l_prev;
+    const int tid_in_block = warp_id * 32 + lane;
+    const int total_threads = NUM_WARPS * 32;
+    const int elements_per_kv_block = BLOCK_SIZE * HEAD_DIM;
+    const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
+
+    for (int kv_b = 0; kv_b < num_kv_blocks; ++kv_b) {
+        // Fast skip via __ldg: if block is inactive, zero memory traffic & zero compute
+        const int is_active = __ldg(&block_mask[q_block_idx * num_kv_blocks + kv_b]);
+        if (!is_active) {
+            continue;
+        }
+
+        const int k_start = kv_b * BLOCK_SIZE;
+
+        // Cooperatively load active K and V block into SMEM
+        __syncthreads();
+        for (int idx = tid_in_block; idx < elements_per_kv_block; idx += total_threads) {
+            const int tok_in_block = idx / HEAD_DIM;
+            const int dim_in_tok = idx % HEAD_DIM;
+            const int global_tok = k_start + tok_in_block;
+
+            if (global_tok < N) {
+                const int g_off = kv_head_base + global_tok * HEAD_DIM + dim_in_tok;
+                K_smem[tok_in_block][dim_in_tok] = k[g_off];
+                V_smem[tok_in_block][dim_in_tok] = v[g_off];
+            } else {
+                K_smem[tok_in_block][dim_in_tok] = 0.0f;
+                V_smem[tok_in_block][dim_in_tok] = 0.0f;
+            }
+        }
+        __syncthreads();
+
+        const int tokens_in_block = min(BLOCK_SIZE, N - k_start);
+
+        // Process all queries in this warp against the loaded active KV block
+        #pragma unroll
+        for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
+            const int cur_q_idx = q_indices[qi];
+            if (cur_q_idx >= N) continue;
+
+            for (int kt = 0; kt < tokens_in_block; ++kt) {
+                float dot = 0.0f;
+                #pragma unroll
+                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                    dot += q_local[qi][e] * K_smem[kt][lane + e * 32];
+                }
+
+                #pragma unroll
+                for (int mask = 16; mask > 0; mask /= 2) {
+                    dot += __shfl_xor_sync(0xffffffff, dot, mask);
+                }
+
+                float qk = dot * scale;
+                float m_curr = fmaxf(m_prev[qi], qk);
+                float alpha = expf(m_prev[qi] - m_curr);
+                float p = expf(qk - m_curr);
+
+                l_prev[qi] = l_prev[qi] * alpha + p;
+                #pragma unroll
+                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt][lane + e * 32];
+                }
+                m_prev[qi] = m_curr;
+            }
+        }
+    }
+
+    // Write final normalized outputs to global memory
+    #pragma unroll
+    for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
+        const int cur_q_idx = q_indices[qi];
+        if (cur_q_idx < N && l_prev[qi] > 0.0f) {
+            const float inv_l = 1.0f / l_prev[qi];
+            const int out_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM) + cur_q_idx * HEAD_DIM;
+            #pragma unroll
+            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                out[out_base + lane + e * 32] = acc[qi][e] * inv_l;
             }
         }
     }
@@ -92,12 +155,12 @@ void block_sparse_attn_fwd_cuda(
     const int num_q_blocks = (N + block_size - 1) / block_size;
     const int num_kv_blocks = block_mask.size(1);
 
-    dim3 grid(B, H, num_q_blocks);
-    dim3 block(1);
+    dim3 grid(num_q_blocks, H, B);
+    dim3 block(32, 4); // 4 warps = 128 threads
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D == 64 && block_size == 16) {
-        block_sparse_attn_kernel<64, 16><<<grid, block, 0, stream>>>(
+        block_sparse_attn_warp_kernel<64, 16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k.data_ptr<float>(),
