@@ -1,0 +1,788 @@
+[
+  {
+    "name": "mamba_svd_flash",
+    "latency_ms": 541.897,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "lsh_attention",
+    "latency_ms": 13.078,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_mamba",
+    "latency_ms": 11.874,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "nasc_attention",
+    "latency_ms": 11.08,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "routing_attention",
+    "latency_ms": 10.109,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "primal_attention",
+    "latency_ms": 9.515,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "factorised_matrix_state",
+    "latency_ms": 8.559,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gla_attention",
+    "latency_ms": 7.722,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hgrn2_gated_deltanet",
+    "latency_ms": 7.653,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "granite_hybrid",
+    "latency_ms": 7.497,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "simple_ssm",
+    "latency_ms": 7.4,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "selective_ssm",
+    "latency_ms": 7.377,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mamba_block",
+    "latency_ms": 7.089,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "spectron_fp8",
+    "latency_ms": 6.523,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_spectron_fp8",
+    "latency_ms": 6.443,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hla_attention",
+    "latency_ms": 6.253,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gated_deltanet_block",
+    "latency_ms": 6.114,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gated_delta_net",
+    "latency_ms": 6.094,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "samba_moe",
+    "latency_ms": 5.293,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "moe_deltakv_paged",
+    "latency_ms": 5.245,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "goldfinch_ahn",
+    "latency_ms": 4.722,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "decay_linear_attention",
+    "latency_ms": 4.709,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "decay_linear_attn",
+    "latency_ms": 4.66,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gated_linear_attn",
+    "latency_ms": 4.396,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gated_linear_attention",
+    "latency_ms": 4.386,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "samba_m3",
+    "latency_ms": 4.312,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "upi_stuffed_mamba",
+    "latency_ms": 4.309,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hymba_transx",
+    "latency_ms": 4.275,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "moba_attention",
+    "latency_ms": 4.244,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "jamba",
+    "latency_ms": 3.765,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "kda_attention",
+    "latency_ms": 3.583,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "jamba_info",
+    "latency_ms": 3.549,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hgrn2_gated_outer",
+    "latency_ms": 3.255,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hgrn2_outer",
+    "latency_ms": 3.219,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v6",
+    "latency_ms": 3.156,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cosformer_attention",
+    "latency_ms": 3.108,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cluster_attention",
+    "latency_ms": 3.104,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cosformer",
+    "latency_ms": 3.092,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "landmark_local_attention",
+    "latency_ms": 2.992,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "ttt_linear_attention",
+    "latency_ms": 2.871,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "refined_landmark_attention",
+    "latency_ms": 2.837,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v5",
+    "latency_ms": 2.828,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "split_head_hybrid",
+    "latency_ms": 2.817,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "vspec",
+    "latency_ms": 2.751,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v2",
+    "latency_ms": 2.713,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "orion",
+    "latency_ms": 2.713,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "token_compressed_attention",
+    "latency_ms": 2.705,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hybrid_local_kernel",
+    "latency_ms": 2.652,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "optimized_hybrid_attention",
+    "latency_ms": 2.592,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v1",
+    "latency_ms": 2.582,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "chela_slay_attention",
+    "latency_ms": 2.574,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v3",
+    "latency_ms": 2.502,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "performer_attention",
+    "latency_ms": 2.454,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "rala_attention",
+    "latency_ms": 2.437,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "nystrom_attention",
+    "latency_ms": 2.432,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_v4",
+    "latency_ms": 2.418,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "nexus",
+    "latency_ms": 2.265,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "expert_choice_moe",
+    "latency_ms": 2.239,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "tri_branch_hybrid",
+    "latency_ms": 2.174,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "minimal_nova",
+    "latency_ms": 2.172,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "vig_attention",
+    "latency_ms": 2.11,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "chela_slay",
+    "latency_ms": 2.104,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "spectraformer_attention",
+    "latency_ms": 2.068,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aegis_hybrid",
+    "latency_ms": 2.018,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mixattention_moska",
+    "latency_ms": 2.003,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "regla_attention",
+    "latency_ms": 1.979,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "residual_svd_attention",
+    "latency_ms": 1.979,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hybrid_attention",
+    "latency_ms": 1.971,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "positive_kernel_linear_attention",
+    "latency_ms": 1.964,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "griffin_ssd",
+    "latency_ms": 1.953,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "native_hybrid_attention",
+    "latency_ms": 1.917,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "zeros_attention",
+    "latency_ms": 1.917,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "asvd_attention",
+    "latency_ms": 1.914,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adaptive_svd_attention",
+    "latency_ms": 1.894,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_compressed",
+    "latency_ms": 1.88,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "bam_umoe",
+    "latency_ms": 1.808,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hgrn2_gated_layer",
+    "latency_ms": 1.808,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "lola_attention",
+    "latency_ms": 1.795,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "triton_svd_linear_attention",
+    "latency_ms": 1.768,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "halo_regla",
+    "latency_ms": 1.766,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "progressive_token_pruning",
+    "latency_ms": 1.75,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "compressed_mha_attention",
+    "latency_ms": 1.724,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_projection_attention",
+    "latency_ms": 1.674,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "linformer_attention",
+    "latency_ms": 1.663,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "nsa_attention",
+    "latency_ms": 1.645,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "minimal_svd",
+    "latency_ms": 1.643,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_seq",
+    "latency_ms": 1.643,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "fusion_attn",
+    "latency_ms": 1.627,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "qcqa_attention",
+    "latency_ms": 1.621,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "padre_attention",
+    "latency_ms": 1.599,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "rpc_attention",
+    "latency_ms": 1.579,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "xattention",
+    "latency_ms": 1.556,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adasplash_attention",
+    "latency_ms": 1.543,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "soa_attn",
+    "latency_ms": 1.515,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "salt_attention",
+    "latency_ms": 1.51,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_llm_v2_attention",
+    "latency_ms": 1.494,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "galerkin_attention",
+    "latency_ms": 1.49,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "unified_rope",
+    "latency_ms": 1.472,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "triton_cosformer",
+    "latency_ms": 1.439,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "projection_factorized_attn",
+    "latency_ms": 1.419,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear_decay",
+    "latency_ms": 1.375,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear_attn",
+    "latency_ms": 1.373,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mqa",
+    "latency_ms": 1.369,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear",
+    "latency_ms": 1.366,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mla_attention",
+    "latency_ms": 1.363,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear_attention",
+    "latency_ms": 1.362,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "naive_svd",
+    "latency_ms": 1.359,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear_inject",
+    "latency_ms": 1.358,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "lora_attention",
+    "latency_ms": 1.347,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "full_attention",
+    "latency_ms": 1.341,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adaptive_sparse_attention",
+    "latency_ms": 1.326,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "alibi",
+    "latency_ms": 1.326,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "flash_attention3",
+    "latency_ms": 1.314,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "reap_moe",
+    "latency_ms": 1.314,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "phantom",
+    "latency_ms": 1.311,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cross_attention",
+    "latency_ms": 1.303,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "wgqa_attention",
+    "latency_ms": 1.262,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "sink_attention",
+    "latency_ms": 1.252,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "full",
+    "latency_ms": 1.246,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hamming_attention",
+    "latency_ms": 1.243,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adaptive_span_attention",
+    "latency_ms": 1.236,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "eat",
+    "latency_ms": 1.229,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "spectron",
+    "latency_ms": 1.229,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "fused_svd_kernel",
+    "latency_ms": 1.209,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "flash_attention3_fp8",
+    "latency_ms": 1.201,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "template_attention",
+    "latency_ms": 1.153,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "block_transformer_hiba",
+    "latency_ms": 1.146,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "dynamic_conv_attention",
+    "latency_ms": 1.114,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "eat_attention",
+    "latency_ms": 1.084,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "compressed_attention",
+    "latency_ms": 0.941,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gqa_attention",
+    "latency_ms": 0.906,
+    "status": "OK",
+    "error": null
+  }
+]
