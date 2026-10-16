@@ -612,7 +612,46 @@ latex_table = neuralops.export_benchmark_table(records, format="latex")
 print(latex_table)
 ```
 
-### Recipe F: 🔌 Extending NeuralOps: Custom Attentions, Compressors & 6-Point Contract Validator
+### Recipe F: 🎯 Hessian Null Space Continuation (HNC) for SVD Compression & Alignment
+Steer parameter updates along the high-dimensional null space of the Gauss-Newton operator $\nabla_\theta^2 \mathcal{L}_{\text{func}} = J^\top J \succeq 0$, driving tail singular values $\sigma_{r+1}, \dots, \sigma_m$ to zero while preserving full function fidelity:
+
+```python
+import torch
+from transformers import AutoModelForCausalLM
+import neuralops
+from neuralops.compression_engine.svd import HessianNullSpaceSVDContinuation
+from neuralops.trainer import HNCContinuationTrainer
+
+# 1. Compress base model using HNC-SVD continuation
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+probe_x = torch.randint(0, 50257, (4, 128))
+
+# Run SVD surgery with Hessian Null Space Continuation
+compressed_model = neuralops.compress(
+    model,
+    method="direct_svd",
+    target_rank=64,
+    use_hnc_continuation=True,
+    probe_inputs=probe_x,
+    hnc_steps=15,
+)
+
+# 2. End-to-end multi-stage distillation with SmoothMax Layerwise CKA steering
+teacher = AutoModelForCausalLM.from_pretrained("gpt2")
+hnc_trainer = HNCContinuationTrainer(
+    student=compressed_model,
+    teacher=teacher,
+    temperature=2.0,
+    cka_weight=0.5,
+)
+distill_stats = hnc_trainer.step_distillation(
+    batch={"input_ids": probe_x},
+    optimizer=torch.optim.AdamW(compressed_model.parameters(), lr=1e-5),
+)
+print("HNC Distillation loss:", distill_stats["total_loss"])
+```
+
+### Recipe G: 🔌 Extending NeuralOps: Custom Attentions, Compressors & 6-Point Contract Validator
 Researchers and developers who fork or import NeuralOps can effortlessly register custom attention mechanisms, compressors, or algebraic stages ($\mathcal{P} \to \phi \to \mathcal{M} \to \mathcal{E}$) in under 10 lines of Python, with automatic recognition across every framework subsystem (Inspector, Roofline, Surgery, Micro-Healing, Serialization, and Benchmark Tables):
 
 ```python
