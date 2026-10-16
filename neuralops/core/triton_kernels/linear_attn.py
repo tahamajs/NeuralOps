@@ -1013,6 +1013,152 @@ def triton_fused_latent_kv_cache_attention(
     return out
 
 
+@triton.jit
+def _zeros_causal_fwd_kernel(
+    Q_ptr, K_ptr, V_ptr, Mask_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    stride_kb, stride_kh, stride_kl, stride_kd,
+    stride_vb, stride_vh, stride_vl, stride_vd,
+    stride_mb, stride_ml,
+    stride_ob, stride_oh, stride_ol, stride_od,
+    B_size, H_size, L_size, D_size, eps,
+    HAS_MASK: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_h = tl.program_id(1)
+    if pid_b >= B_size or pid_h >= H_size:
+        return
+
+    offs_d = tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D_size
+
+    k_sum = tl.zeros((BLOCK_D,), dtype=tl.float32)
+    count = 0.0
+    S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
+    Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
+
+    for t in range(L_size):
+        q_t = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+        k_t = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+        v_t = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+
+        valid = 1.0
+        if HAS_MASK:
+            valid = tl.load(Mask_ptr + pid_b * stride_mb + t * stride_ml).to(tl.float32)
+
+        k_t = k_t * valid
+        v_t = v_t * valid
+        k_sum += k_t
+        count = tl.maximum(count + valid, 1.0)
+        k_mean = k_sum / count
+
+        k_centered = k_t - k_mean
+        q_hat = tl.maximum(q_t, 0.0) + eps
+        k_hat = (tl.maximum(k_centered, 0.0) + eps) * valid
+
+        S += k_hat[:, None] * v_t[None, :]
+        Z += k_hat
+
+        num_t = tl.sum(q_hat[:, None] * S, axis=0)
+        den_t = tl.maximum(tl.sum(q_hat * Z), eps)
+        y_t = num_t / den_t
+
+        tl.store(Out_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od, y_t.to(Out_ptr.dtype.element_ty), mask=mask_d)
+
+
+class _ZerosLinearScanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, k, v, valid_mask=None, eps=1e-6):
+        B, H, L, D = q.shape
+        out = torch.empty_like(q)
+        has_mask = valid_mask is not None
+        mask_t = valid_mask.contiguous().to(torch.float32) if has_mask else torch.empty(0, device=q.device)
+
+        BLOCK_D = triton.next_power_of_2(D)
+        BLOCK_D = max(16, min(128, BLOCK_D))
+
+        grid = (B, H)
+        _zeros_causal_fwd_kernel[grid](
+            q, k, v, mask_t, out,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            mask_t.stride(0) if has_mask else 0, mask_t.stride(1) if has_mask else 0,
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            B, H, L, D, eps,
+            HAS_MASK=has_mask,
+            BLOCK_D=BLOCK_D,
+        )
+
+        ctx.save_for_backward(q, k, v, mask_t)
+        ctx.has_mask = has_mask
+        ctx.eps = eps
+        return out
+
+    @staticmethod
+    def backward(ctx, dout):
+        q, k, v, mask_t = ctx.saved_tensors
+        has_mask = ctx.has_mask
+        eps = ctx.eps
+        # Differentiable analytical backward reference for exact gradient backprop
+        with torch.enable_grad():
+            q_ = q.detach().requires_grad_(True)
+            k_ = k.detach().requires_grad_(True)
+            v_ = v.detach().requires_grad_(True)
+            B, H, L, D = q_.shape
+            
+            mask_val = mask_t.unsqueeze(1).unsqueeze(-1) if has_mask else 1.0
+            k_v = k_ * mask_val
+            v_v = v_ * mask_val
+            
+            counts = torch.cumsum(mask_t, dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1) if has_mask else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+            k_cumsum = torch.cumsum(k_v, dim=2)
+            k_mean = k_cumsum / counts
+            k_centered = k_v - k_mean
+            
+            q_hat = F.relu(q_) + eps
+            k_hat = (F.relu(k_centered) + eps) * (mask_val if has_mask else 1.0)
+            
+            S = torch.cumsum(k_hat.unsqueeze(-1) * v_v.unsqueeze(-2), dim=2)
+            Z = torch.cumsum(k_hat, dim=2)
+            
+            num = torch.einsum("bhld,bhlde->bhle", q_hat, S)
+            den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=eps)
+            out_ = num / den
+            out_.backward(dout)
+            
+            dq = q_.grad
+            dk = k_.grad
+            dv = v_.grad
+        return dq, dk, dv, None, None
+
+
+def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, valid_mask=None, eps: float = 1e-6) -> torch.Tensor:
+    """Fused Zero-Mean Causal Linear Attention Scan in Triton with zero intermediate 5D HBM allocation."""
+    if not HAS_TRITON or not q.is_cuda or q.shape[-1] > 128:
+        # PyTorch reference
+        B, H, L, D = q.shape
+        orig_dtype = q.dtype
+        has_mask = valid_mask is not None
+        mask_val = valid_mask.unsqueeze(1).unsqueeze(-1).to(q.device) if has_mask else 1.0
+        k_v = k.float() * mask_val
+        v_v = v.float() * mask_val
+        counts = torch.cumsum(valid_mask.float(), dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1) if has_mask else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+        k_cumsum = torch.cumsum(k_v, dim=2)
+        k_mean = k_cumsum / counts
+        k_centered = k_v - k_mean
+        q_hat = F.relu(q.float()) + eps
+        k_hat = (F.relu(k_centered) + eps) * (mask_val if has_mask else 1.0)
+        S = torch.cumsum(k_hat.unsqueeze(-1) * v_v.unsqueeze(-2), dim=2)
+        Z = torch.cumsum(k_hat, dim=2)
+        num = torch.einsum("bhld,bhlde->bhle", q_hat, S)
+        den = (q_hat * Z).sum(dim=-1, keepdim=True).clamp(min=eps)
+        return (num / den).to(orig_dtype)
+
+    return _ZerosLinearScanFunction.apply(q.contiguous(), k.contiguous(), v.contiguous(), valid_mask, eps)
+
+
 __all__ = [
     "is_supported",
     "fwd",
@@ -1026,6 +1172,7 @@ __all__ = [
     "fused_svd_linear_chunk_scan_triton",
     "triton_fused_latent_kv_cache_attention",
     "triton_fused_latent_kv_cache_attention_pytorch_ref",
+    "fused_zeros_linear_scan_triton",
 ]
 
 
