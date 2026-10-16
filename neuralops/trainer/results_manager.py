@@ -155,6 +155,8 @@ class ResultsManager:
             f.write(f"- **Total Logging Steps**: {summary['total_steps']}\n")
             f.write(f"- **Run Directory**: `{self.run_dir}`\n\n")
             f.write("## Final Metrics\n```json\n")
+            f.write(json.dumps(summary["final_metrics"], indent=2))
+            f.write("\n```\n")
         self.logger.info(f"Generated structured run summary report at {card_path}")
 
         try:
