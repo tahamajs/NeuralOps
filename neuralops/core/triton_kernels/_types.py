@@ -81,6 +81,7 @@ def check_triton_suitability(
     head_dim: int | None = None,
     seq_len: int | None = None,
     supports_backward: bool = True,
+    allow_fp32: bool = False,
 ) -> tuple[bool, str | None]:
     """Validate whether the input tensor satisfies all requirements for Triton execution."""
     if FORCE_PYTORCH_FALLBACK:
@@ -114,10 +115,13 @@ def check_triton_suitability(
         pass
 
     if tensor.dtype not in (torch.float16, torch.bfloat16):
-        return (
-            False,
-            f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
-        )
+        if allow_fp32 and tensor.dtype == torch.float32:
+            pass
+        else:
+            return (
+                False,
+                f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
+            )
 
     # If tensor is bfloat16 but device does not support native bf16 (requires Ampere SM 8.0+)
     if tensor.dtype == torch.bfloat16:
