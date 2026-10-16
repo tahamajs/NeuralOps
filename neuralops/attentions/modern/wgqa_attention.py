@@ -811,6 +811,15 @@ def inject_wgqa(
         logger.error("WGQA construction failed: %s", e)
         return None
 
+    # Safe device/dtype placement
+    ref_param = None
+    if old_attn is not None and old_attn is not target:
+        ref_param = next(old_attn.parameters(), None)
+    if ref_param is None:
+        ref_param = next(target.parameters(), None)
+    if ref_param is not None:
+        new_attn.to(device=ref_param.device, dtype=ref_param.dtype)
+
     # Splice into layer
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
