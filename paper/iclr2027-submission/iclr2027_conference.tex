@@ -306,6 +306,12 @@ Table~\ref{tab:all_72_compressors} lists all 72 canonical compression engines im
 \input{tables/table_all_72_compressors.tex}
 
 \clearpage
+\section{Complete Architecture \& Specifications of All 26 Custom Triton JIT GPU Kernels}
+\label{app:triton_kernels}
+Table~\ref{tab:triton_kernels} details the complete specifications, source paths in \texttt{neuralops/core/triton\_kernels/}, architectural functionalities, and physical wall-clock speedup ratios for all 26 custom Triton JIT GPU kernels running on NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9) and GTX 1060 (Pascal, SM 6.1). All kernels guarantee double-precision numerical parity ($\cos(y_{\text{triton}}, y_{\text{ref}}) \ge 0.99999$).
+\input{tables/table_triton_kernels.tex}
+
+\clearpage
 \section{Top-50 PASS Modules Ranked by MNLI Accuracy}
 \label{app:top50}
 Table~\ref{tab:all_modules} reports the top-50 PASS modules on DistilBERT across SST-2, MNLI, and AG News.
