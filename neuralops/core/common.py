@@ -723,6 +723,8 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         return None, None
     base = getattr(module, "base_layer", module)
     w = getattr(base, "weight", None)
+    if w is None and hasattr(base, "U") and hasattr(base, "V") and base.U is not None and base.V is not None:
+        w = torch.matmul(base.U, base.V)
     b = getattr(base, "bias", None)
     return w, b
 
