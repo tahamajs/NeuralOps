@@ -158,7 +158,79 @@ __all__ = [
     "gdn_recurrent_step_triton",
     "gla_recurrent_step_triton",
     "select_optimal_triton_config",
+    # 13 Flagship Triton Kernels
+    "triton_fused_lowrank_gated_gemm",
+    "triton_fused_lowrank_gated_gemm_pytorch_ref",
+    "triton_fused_lowrank_sparse_gemm",
+    "triton_fused_lowrank_sparse_gemm_pytorch_ref",
+    "triton_strided_tt_contraction",
+    "triton_strided_tt_linear",
+    "triton_strided_tt_contraction_pytorch_ref",
+    "triton_fused_hadamard_w4a16_gemm",
+    "triton_fused_hadamard_w4a16_gemm_pytorch_ref",
+    "triton_lut_codebook_dequant_gemm",
+    "triton_lut_codebook_dequant_gemm_pytorch_ref",
+    "triton_fused_kronecker_matmul",
+    "triton_fused_kronecker_matmul_pytorch_ref",
+    "triton_chunked_delta_gate_scan",
+    "triton_chunked_delta_gate_scan_pytorch_ref",
+    "triton_cosformer_linear_attention",
+    "triton_cosformer_linear_attention_pytorch_ref",
+    "triton_block_sparse_streaming_attn",
+    "triton_block_sparse_streaming_attn_pytorch_ref",
+    "triton_hgrn2_fused_bwd_scan",
+    "triton_hgrn2_fused_bwd_scan_pytorch_ref",
+    "triton_spectral_entropy_svd_gate",
+    "triton_spectral_entropy_svd_gate_pytorch_ref",
+    "triton_fused_act_scale_quant_gemm",
+    "triton_fused_act_scale_quant_gemm_pytorch_ref",
+    "triton_fused_latent_kv_cache_attention",
+    "triton_fused_latent_kv_cache_attention_pytorch_ref",
 ]
+
+# Import 13 Flagship Triton Kernels
+from neuralops.core.triton_kernels.low_rank import (
+    triton_fused_lowrank_gated_gemm,
+    triton_fused_lowrank_gated_gemm_pytorch_ref,
+    triton_fused_lowrank_sparse_gemm,
+    triton_fused_lowrank_sparse_gemm_pytorch_ref,
+    triton_strided_tt_contraction,
+    triton_strided_tt_linear,
+    triton_strided_tt_contraction_pytorch_ref,
+    triton_fused_kronecker_matmul,
+    triton_fused_kronecker_matmul_pytorch_ref,
+    triton_spectral_entropy_svd_gate,
+    triton_spectral_entropy_svd_gate_pytorch_ref,
+)
+from neuralops.core.triton_kernels.fused_norm_linear import (
+    triton_fused_hadamard_w4a16_gemm,
+    triton_fused_hadamard_w4a16_gemm_pytorch_ref,
+    triton_lut_codebook_dequant_gemm,
+    triton_lut_codebook_dequant_gemm_pytorch_ref,
+    triton_fused_act_scale_quant_gemm,
+    triton_fused_act_scale_quant_gemm_pytorch_ref,
+)
+from neuralops.core.triton_kernels.gdn_scan import (
+    triton_chunked_delta_gate_scan,
+    triton_chunked_delta_gate_scan_pytorch_ref,
+)
+from neuralops.core.triton_kernels.cosformer_triton_kernel import (
+    triton_cosformer_linear_attention,
+    triton_cosformer_linear_attention_pytorch_ref,
+)
+from neuralops.core.triton_kernels.block_sparse import (
+    triton_block_sparse_streaming_attn,
+    triton_block_sparse_streaming_attn_pytorch_ref,
+)
+from neuralops.core.triton_kernels.hgrn2_scan import (
+    triton_hgrn2_fused_bwd_scan,
+    triton_hgrn2_fused_bwd_scan_pytorch_ref,
+)
+from neuralops.core.triton_kernels.linear_attn import (
+    triton_fused_latent_kv_cache_attention,
+    triton_fused_latent_kv_cache_attention_pytorch_ref,
+)
+
 
 try:
     from neuralops.core.triton_kernels.gdn_scan import gdn_recurrent_step_triton

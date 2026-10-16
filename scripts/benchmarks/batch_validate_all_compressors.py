@@ -86,11 +86,19 @@ VALID_RANK_SENSITIVE_COMPRESSORS = [
     "dobi_svd",
     "aa_svd",
     "adasvd_compressor",
+    "erc_svd",
     "compot_compressor",
     "kronecker_compressor",
     "tt_compressor",
     "rpca_compressor",
     "entropy_budget_allocation",
+    "cur_compressor",
+    "cr_compressor",
+    "sparsegpt",
+    "flap",
+    "admm_pruner",
+    "slicegpt",
+    "rotational_slicegpt_int4",
 ]
 
 # Models: name -> loader function
@@ -314,11 +322,76 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
         except Exception:
             return None
 
-    # 7. QuaRot
-    if name == "quarot":
+    # 7. QuaRot / Rotational SliceGPT INT4
+    if name in ("quarot", "rotational_slicegpt_int4"):
         try:
             from neuralops.compression_engine.quantization.rotational_slicegpt_int4 import RotationalSliceGPTInt4Compressor
-            return RotationalSliceGPTInt4Compressor(model, bits=4)
+            return RotationalSliceGPTInt4Compressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    # 7.1 Pruners: SparseGPT, FLAP, ADMM, SliceGPT
+    if name == "sparsegpt":
+        try:
+            from neuralops.compression_engine.pruning.sparsegpt import SparseGPTCompressor
+            return SparseGPTCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "flap":
+        try:
+            from neuralops.compression_engine.pruning.flap import FLAPCompressor
+            return FLAPCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "admm_pruner":
+        try:
+            from neuralops.compression_engine.pruning.admm_pruner import ADMMPruner
+            return ADMMPruner(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "slicegpt":
+        try:
+            from neuralops.compression_engine.quantization.slicegpt import SliceGPTCompressor
+            return SliceGPTCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    # 7.2 Low-Rank & SVD: ERC, CUR, CR, RPCA, TT
+    if name == "erc_svd":
+        try:
+            from neuralops.compression_engine.svd.erc_svd import ERCSVDCompressor
+            return ERCSVDCompressor(model, rank=rank)
+        except Exception:
+            return None
+
+    if name == "cur_compressor":
+        try:
+            from neuralops.compression_engine.low_rank.cur_compressor import CURCompressor
+            return CURCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "cr_compressor":
+        try:
+            from neuralops.compression_engine.low_rank.cr_compressor import CRCompressor
+            return CRCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "rpca_compressor":
+        try:
+            from neuralops.compression_engine.low_rank.rpca_compressor import RPCACompressor
+            return RPCACompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    if name == "tt_compressor":
+        try:
+            from neuralops.compression_engine.tensor_decomp.tt_compressor import TTCompressor
+            return TTCompressor(model, rank=rank, fallback_to_original=False)
         except Exception:
             return None
 
