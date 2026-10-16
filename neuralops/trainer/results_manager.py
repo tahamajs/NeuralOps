@@ -155,9 +155,39 @@ class ResultsManager:
             f.write(f"- **Total Logging Steps**: {summary['total_steps']}\n")
             f.write(f"- **Run Directory**: `{self.run_dir}`\n\n")
             f.write("## Final Metrics\n```json\n")
-            f.write(json.dumps(summary["final_metrics"], indent=2))
-            f.write("\n```\n")
         self.logger.info(f"Generated structured run summary report at {card_path}")
+
+        try:
+            from neuralops.core.results_ledger import log_experiment_result
+            m_dict = {}
+            for k, v in (summary.get("final_metrics") or {}).items():
+                if isinstance(v, (int, float)) and math.isfinite(v):
+                    m_dict[k] = float(v)
+
+            mod_name = self.config.get("module_name") or self.config.get("attention") or self.config.get("compressor") or self.experiment_name
+            cat = "attention" if any(k in str(mod_name).lower() for k in ("attn", "attention")) else "end_to_end"
+
+            log_experiment_result(
+                module_name=str(mod_name),
+                category=cat,
+                family=self.config.get("family", "training-run"),
+                generation_method={
+                    "algorithm": self.config.get("training_type", "Standard Trainer Run"),
+                    "epochs": self.config.get("epochs", self.config.get("num_train_epochs", 3)),
+                    "lr": self.config.get("learning_rate", self.config.get("lr", 2e-5)),
+                    "source_component": "neuralops.trainer.results_manager",
+                    "source_artifact": str(summary_path),
+                },
+                experimental_setup={
+                    "backbone": self.config.get("model_name", self.config.get("model", "custom")),
+                    "dataset": self.config.get("dataset_name", self.config.get("dataset", "custom")),
+                    "batch_size": self.config.get("batch_size", 32),
+                },
+                metrics=m_dict,
+                notes=f"Auto-logged from ResultsManager: {self.experiment_name}",
+            )
+        except Exception:
+            pass
 
     def wrap_trainer(self, trainer) -> Any:
         """Add standard callbacks and metrics logging to a Hugging Face Trainer."""
