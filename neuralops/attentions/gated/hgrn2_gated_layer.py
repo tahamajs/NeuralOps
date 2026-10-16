@@ -597,13 +597,6 @@ class HGRN2Layer(BaseAttention):
 
         N_kv = k.shape[2]
 
-        # Absolute positions
-        q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)
-        k_pos = torch.arange(N_kv, device=hidden_states.device).unsqueeze(0)
-
-        scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(q, k.transpose(-1, -2)) * scale  # (B, H, L, N_kv)
-
         # Window + causal mask (at token level)
         out = None
         if past_len == 0:
@@ -615,7 +608,7 @@ class HGRN2Layer(BaseAttention):
                     out = out.transpose(1, 2).contiguous().view(B, L, D)
                 except Exception:
                     out = None
-            elif self.is_decoder:
+            elif self.is_decoder and q.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
                     out_win = sliding_window_attention_kernel(q, k, v, window_size=self.window_size)
@@ -624,6 +617,12 @@ class HGRN2Layer(BaseAttention):
                     out = None
 
         if out is None:
+            # Absolute positions
+            q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)
+            k_pos = torch.arange(N_kv, device=hidden_states.device).unsqueeze(0)
+
+            scale = 1.0 / math.sqrt(d)
+            scores = torch.matmul(q, k.transpose(-1, -2)) * scale  # (B, H, L, N_kv)
             dist = (q_pos - k_pos).abs()
             window_mask = dist <= self.window_size  # (L, N_kv)
             if self.is_decoder:

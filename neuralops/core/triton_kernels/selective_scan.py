@@ -801,6 +801,17 @@ def fused_rglru_ssd_scan_triton(
     return fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size)
 
 
+try:
+    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
+except Exception:
+    hgrn2_scan_triton = None
+
+try:
+    from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+except Exception:
+    gdn_scan_triton = None
+
+
 __all__ = [
     'TritonSelectiveScanFunction',
     'selective_scan_fn',
@@ -809,6 +820,8 @@ __all__ = [
     'fused_jamba_hybrid_ssm_attn_gate_pytorch',
     'fused_rglru_ssd_scan_triton',
     'fused_rglru_ssd_scan_pytorch',
+    'hgrn2_scan_triton',
+    'gdn_scan_triton',
 ]
 
 
