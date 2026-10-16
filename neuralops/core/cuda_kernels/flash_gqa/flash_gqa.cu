@@ -197,13 +197,14 @@ void flash_gqa_fwd_cuda(
         return;
     }
 
+    constexpr int BLOCK_M = 16;
+    constexpr int BLOCK_N = 16;
+
+    dim3 grid((N_Q + BLOCK_M - 1) / BLOCK_M, H, B);
+    dim3 block(32, 4); // 4 warps = 128 threads
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D == 32) {
-        constexpr int BLOCK_M = 64;
-        constexpr int BLOCK_N = 64;
-        dim3 grid((N_Q + BLOCK_M - 1) / BLOCK_M, H, B);
-        dim3 block(32, 4); // 4 warps = 128 threads
         flash_gqa_warp_kernel<32, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
@@ -212,10 +213,6 @@ void flash_gqa_fwd_cuda(
             B, H, H_KV, N_Q, N_KV, is_causal, scale
         );
     } else if (D == 64) {
-        constexpr int BLOCK_M = 64;
-        constexpr int BLOCK_N = 64;
-        dim3 grid((N_Q + BLOCK_M - 1) / BLOCK_M, H, B);
-        dim3 block(32, 4); // 4 warps = 128 threads
         flash_gqa_warp_kernel<64, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
@@ -224,10 +221,6 @@ void flash_gqa_fwd_cuda(
             B, H, H_KV, N_Q, N_KV, is_causal, scale
         );
     } else if (D == 128) {
-        constexpr int BLOCK_M = 32;
-        constexpr int BLOCK_N = 32;
-        dim3 grid((N_Q + BLOCK_M - 1) / BLOCK_M, H, B);
-        dim3 block(32, 4); // 4 warps = 128 threads
         flash_gqa_warp_kernel<128, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
