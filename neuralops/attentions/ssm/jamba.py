@@ -23,7 +23,7 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.cache_utils import _read_cache, _write_cache, read_cache, write_cache
 from neuralops.core.common import LoRALinear
-from neuralops.core.gqa_utils import repeat_kv
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.model_utils import (
     _detect_decoder,
     _detect_return_format,
