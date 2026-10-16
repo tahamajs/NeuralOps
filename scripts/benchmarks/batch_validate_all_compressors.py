@@ -84,6 +84,10 @@ VALID_RANK_SENSITIVE_COMPRESSORS = [
     "fisher_svd",
     "fwsvd",
     "dobi_svd",
+    "aa_svd",
+    "adasvd_compressor",
+    "compot_compressor",
+    "kronecker_compressor",
     "tt_compressor",
     "rpca_compressor",
     "entropy_budget_allocation",
@@ -244,13 +248,13 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
     if name in ("aa_svd", "asvd_compressor"):
         from neuralops.compression_engine.svd.aa_svd_compressor import AASVDCompressor
         tok = getattr(model, "tokenizer", None)
-        return AASVDCompressor(model=model, rank=rank, tokenizer=tok, fallback_to_original=False)
+        return AASVDCompressor(model=model, rank=rank, tokenizer=tok, force_rank=True, fallback_to_original=False)
 
     # 2.6 AdaSVD
     if name == "adasvd_compressor":
         from neuralops.compression_engine.svd.adasvd_compressor import AdaSVDCompressor
         tok = getattr(model, "tokenizer", None)
-        return AdaSVDCompressor(model=model, target_rank=rank, tokenizer=tok)
+        return AdaSVDCompressor(model=model, rank=rank, min_rank=1, tokenizer=tok, fallback_to_original=False)
 
     # 3. Fisher SVD & FWSVD
     if name in ("fisher_svd", "fwsvd"):
@@ -327,18 +331,26 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
             return None
 
     # 9. INT4 LUT Quantizer
-    if name == "int4_lut_quantizer":
+    if name in ("int4_lut_quantizer", "coopq_quantizer"):
         try:
-            from neuralops.compression_engine.quantization.coopq_quantizer import CoOPQQuantizer
-            return CoOPQQuantizer(model, bits=4)
+            from neuralops.compression_engine.quantization.coopq_quantizer import CoopQQuantizer
+            return CoopQQuantizer(model, bits=4)
         except Exception:
             return None
 
-    # 10. Tucker Compressor
-    if name == "tucker_compressor":
+    # 10. Tucker / COMPOT Compressor
+    if name in ("tucker_compressor", "compot_compressor"):
         try:
-            from neuralops.compression_engine.tensor_decomp.compot_compressor import CompOTCompressor
-            return CompOTCompressor(model, rank=rank)
+            from neuralops.compression_engine.low_rank.compot_compressor import COMPOTCompressor
+            return COMPOTCompressor(model, rank=rank, fallback_to_original=False)
+        except Exception:
+            return None
+
+    # 10.5 Kronecker Compressor
+    if name == "kronecker_compressor":
+        try:
+            from neuralops.compression_engine.tensor_decomp.kronecker_compressor import KroneckerCompressor
+            return KroneckerCompressor(model, rank=rank, max_error=1.0, fallback_to_original=False)
         except Exception:
             return None
 
