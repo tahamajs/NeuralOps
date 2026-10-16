@@ -23,6 +23,19 @@ void moe_gather_cuda(
     int total_assignments
 );
 
+void moe_fused_dispatch_cuda(
+    torch::Tensor& dispatched_tokens,
+    torch::Tensor& routing_weights,
+    torch::Tensor& topk_indices,
+    const torch::Tensor& tokens,
+    const torch::Tensor& gate_logits,
+    int num_tokens,
+    int hidden_dim,
+    int num_experts,
+    int top_k
+);
+
+
 torch::Tensor moe_dispatch(
     torch::Tensor tokens,
     torch::Tensor topk_indices,
