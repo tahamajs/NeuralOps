@@ -19,6 +19,7 @@ if HAS_TRITON and tl is not None:
         stride_ob, stride_oh, stride_on, stride_od,
         H, N, WINDOW: tl.constexpr,
         BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        IS_CAUSAL: tl.constexpr = True,
     ):
         pid_m = tl.program_id(0)
         pid_bh = tl.program_id(1)
@@ -38,7 +39,10 @@ if HAS_TRITON and tl is not None:
 
         # Iterate over key blocks within window
         start_col = tl.maximum(0, (pid_m * BLOCK_M) - WINDOW)
-        end_col = tl.minimum(N, (pid_m + 1) * BLOCK_M)
+        if IS_CAUSAL:
+            end_col = tl.minimum(N, (pid_m + 1) * BLOCK_M)
+        else:
+            end_col = tl.minimum(N, ((pid_m + 1) * BLOCK_M) + WINDOW)
         num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
 
         for j in range(num_k_blocks):
@@ -48,7 +52,10 @@ if HAS_TRITON and tl is not None:
 
             scores = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
             dist = offs_m[:, None] - offs_n[None, :]
-            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+            if IS_CAUSAL:
+                mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+            else:
+                mask_window = (tl.abs(dist) < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
             scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
@@ -73,6 +80,7 @@ def sliding_window_pytorch(
     k: torch.Tensor,
     v: torch.Tensor,
     window_size: int = 256,
+    is_causal: bool = True,
 ) -> torch.Tensor:
     """Reference sliding window attention using PyTorch masked operations."""
     B, H, N, D = q.shape
@@ -82,7 +90,10 @@ def sliding_window_pytorch(
     q_idx = torch.arange(N, device=q.device).unsqueeze(1)
     k_idx = torch.arange(N, device=q.device).unsqueeze(0)
     dist = q_idx - k_idx
-    mask = (dist >= 0) & (dist < window_size)
+    if is_causal:
+        mask = (dist >= 0) & (dist < window_size)
+    else:
+        mask = dist.abs() < window_size
     scores = scores.masked_fill(~mask.unsqueeze(0).unsqueeze(0), float("-inf"))
 
     weights = F.softmax(scores, dim=-1)
