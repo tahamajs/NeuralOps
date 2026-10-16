@@ -245,6 +245,9 @@ def paged_attention(
     if scale is None:
         scale = 1.0 / (q.shape[-1] ** 0.5)
 
+    if max_context_len is None:
+        max_context_len = int(context_lens.max().item()) if context_lens.numel() > 0 else 0
+
     if torch.is_grad_enabled() and (q.requires_grad or k_cache.requires_grad or v_cache.requires_grad):
         return _PagedAttentionAutograd.apply(
             q, k_cache, v_cache, block_tables, context_lens, block_size, max_context_len, scale
