@@ -401,6 +401,7 @@ class DirectSVDCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         # If HNC continuation is requested and probe inputs are provided, pre-compress singular tail in null space
+        hnc_factors_dict = {}
         if self.use_hnc_continuation and self.probe_inputs is not None:
             try:
                 from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
@@ -413,6 +414,7 @@ class DirectSVDCompressor(BaseCompressor):
                     restore_steps_m=6,
                 )
                 hnc_res = hnc_engine.steer_and_compress(self.probe_inputs)
+                hnc_factors_dict = hnc_res.get("low_rank_factors", {})
                 logger.info("DirectSVD: HNC Null Space Continuation pre-steering completed: %s", hnc_res.get("status"))
             except Exception as e_hnc:
                 logger.warning("DirectSVD: HNC Null Space Continuation skipped due to: %s", e_hnc)
@@ -451,7 +453,29 @@ class DirectSVDCompressor(BaseCompressor):
             orig_params = out_f * in_f
             total_orig_decomp_params += orig_params
 
-            svd_layer, err, r = self.compress_linear(module, rank=self.rank)
+            if name in hnc_factors_dict:
+                # Use the exact restored low-rank factors from HNC
+                A_hnc, B_hnc = hnc_factors_dict[name]
+                r_hnc = A_hnc.shape[1]
+                svd_layer = SVDLinear(
+                    in_features=in_f,
+                    out_features=out_f,
+                    rank=r_hnc,
+                    bias=target_mod.bias is not None,
+                    dtype=raw_w.dtype,
+                    device=raw_w.device,
+                )
+                svd_layer.set_low_rank_factors(
+                    A_hnc.to(dtype=raw_w.dtype, device=raw_w.device),
+                    B_hnc.to(dtype=raw_w.dtype, device=raw_w.device),
+                )
+                if target_mod.bias is not None and svd_layer.bias is not None:
+                    svd_layer.bias.data.copy_(target_mod.bias.data)
+                err = 0.0
+                r = r_hnc
+            else:
+                svd_layer, err, r = self.compress_linear(module, rank=self.rank)
+
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
 
@@ -476,6 +500,7 @@ class DirectSVDCompressor(BaseCompressor):
             replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
             total_comp_decomp_params += r * (in_f + out_f)
+
 
         if not self.compressed_layers:
             raise RuntimeError(
