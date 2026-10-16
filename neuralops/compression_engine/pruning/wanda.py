@@ -38,8 +38,11 @@ def wanda_prune_layer(
                 stacked = torch.cat([x.reshape(-1, x.shape[-1]) for x in calib_data], dim=0)
             else:
                 stacked = calib_data.reshape(-1, calib_data.shape[-1])
-            # L2 norm across samples for each input column
-            act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).to(W.device, dtype=W.dtype)
+            if stacked.shape[-1] != W.shape[1]:
+                act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
+            else:
+                # L2 norm across samples for each input column
+                act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).to(W.device, dtype=W.dtype)
 
     # Compute Wanda importance metric: S = |W| * ||X||_2
     metric = torch.abs(W) * act_norm.unsqueeze(0)
