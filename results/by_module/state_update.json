@@ -1,0 +1,95 @@
+{
+  "module_name": "state_update",
+  "category": "triton_kernel",
+  "family": "State Update",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "6e7cf2414f4d0edf",
+    "module_name": "state_update",
+    "category": "triton_kernel",
+    "family": "State Update",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "fused_recurrent_ssm_step",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4, D=768, N=16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.064,
+      "latency_pytorch_ms": 0.039,
+      "speedup_x": 0.6,
+      "sram_bytes_saved_mb": 0.19
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "6e7cf2414f4d0edf",
+      "module_name": "state_update",
+      "category": "triton_kernel",
+      "family": "State Update",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_recurrent_ssm_step",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.064,
+        "latency_pytorch_ms": 0.039,
+        "speedup_x": 0.6,
+        "sram_bytes_saved_mb": 0.19
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "6e7cf2414f4d0edf",
+      "module_name": "state_update",
+      "category": "triton_kernel",
+      "family": "State Update",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_recurrent_ssm_step",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4, D=768, N=16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.064,
+        "latency_pytorch_ms": 0.039,
+        "speedup_x": 0.6,
+        "sram_bytes_saved_mb": 0.19
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

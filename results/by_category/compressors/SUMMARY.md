@@ -1,40 +1,87 @@
-# 🗜️ Model Compression & Decomposition Engines Summary (`72 Compressors`)
+# 📊 Comprehensive Master Registry of Evaluated Compression Engines
 
-This directory contains categorized benchmarks, parameter reduction curves, and reconstruction error metrics for all **72 canonical Compressors** in NeuralOps (`SVD_linear_Attention` v1.3.7).
+**Category Filter:** `compressor` | **Total Verified Records:** 81
 
----
-
-## 🏛️ Taxonomic Breakdown
-
-The 72 compression algorithms span 6 core mathematical families:
-
-1. **Truncated & Randomized SVD**: Direct Truncated SVD, Randomized SVD, Power-Iteration SVD, Thin SVD.
-2. **Activation-Aware & Fisher-Weighted SVD**: Fisher-Weighted SVD (FWSVD), ASVD (Activation-Aware SVD), Hessian-Trace Calibration.
-3. **Nullspace & Whitened Manifold Decomposition**: **HNC-SVD** (High-Order Nullspace Projection + Cholesky Whitening), Gram-Schmidt Orthogonal Projection.
-4. **Structured Kronecker & Tensor Product Factorization**: Kronecker Product Decomposition, Tensor-Train (TT), Tucker Matrix Factorization.
-5. **Structured Pruning & Sparsity**: ADMM Pruning, Magnitude Pruning, Block-Sparse Pruning, Taylor First-Order Pruning.
-6. **Quantization & Integer Bit-Width Engines**: Uniform 4-bit/8-bit integer quantization, AWQ-style activation-aware scaling, Astro quantizer.
-
----
-
-## 📊 Benchmark & Accuracy Recovery on GLUE (RoBERTa-Base)
-
-| Module | Family | Parameter Reduction | Compression Ratio | Pre-Healing Acc | Post-Healing Acc (KD) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `hnc_svd` | Nullspace + Whitening | 50.0% | 2.0× | 92.1% | 93.4% (Zero-drop) |
-| `fw_svd` | Fisher Weighted | 50.0% | 2.0× | 91.2% | 92.8% |
-| `asvd` | Activation Aware | 45.0% | 1.8× | 90.5% | 92.2% |
-| `kronecker` | Tensor Product | 62.5% | 2.7× | 87.8% | 90.6% |
-| `admm_pruner` | Structured Sparsity | 40.0% | 1.7× | 90.8% | 92.5% |
-| `direct_svd` | Standard Truncated | 50.0% | 2.0× | 84.2% | 88.9% (Drop: -4.5%) |
-
----
-
-## 🔬 Ingestion & Provenance
-
-All compressor evaluations are registered with full experimental metadata (rank, target module, calibration set, loss metrics) in `results/registry/master_ledger.jsonl`.
-
-```bash
-neuralops results query --category compressor --min-metric eval_accuracy 92.0
-neuralops results diff --module hnc_svd --v1 1 --v2 2
-```
+| Module                      | Category   | Family             | Setup / Dataset  | Accuracy | Speedup X | Latency Triton Ms | Method                   | Ver (Rev)   | Git SHA  | Timestamp  |
+|:---------------------------|-:----------|-:------------------|-:----------------|-:--------|-:---------|-:-----------------|-:------------------------|-:-----------|-:--------|-:---------:|
+| cachenotes_compressor       | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| huffman_coder               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| rpca_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| oats_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| rotational_slicegpt_int4    | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| a3_compressor               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| adaptive_ranks              | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| adasvd_compressor           | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| sparsegpt                   | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| hashed_net_compressor       | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| admm_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| grecodec_compressor         | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| nmf_compressor              | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| cr_compressor               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| saes_svd_v2                 | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| cur_compressor              | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| mlorq_compressor            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| kronecker_tt_lora           | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| kvtc_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| entropy_budget_allocation   | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| salr                        | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| armor_pruner                | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| hybrid_svd_layer            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| delta_kv                    | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| compot_compressor           | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| residual_svd_compressor     | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| erc_svd                     | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| tt_compressor               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| direct_svd                  | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| slim_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| frandi_compressor           | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| swift_svd_act               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| kronecker_compressor        | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| come_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| uniql_compressor            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| subspace_projection         | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| swift_svd                   | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| enlighten_compressor        | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| gfws                        | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| soka_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| sdrm_compressor             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| modegpt_compressor          | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| svd_linear                  | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| mgie_budget                 | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| tomoe_compressor            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| dobi_svd                    | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| admm_pruner                 | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| aa_svd_compressor           | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| optimal_subspace_projection | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| svd_llm_compressor          | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| drone_compressor            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| fwsvd_compressor            | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| cur_moe_compressor          | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| slicegpt_pca                | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| hybridkv_compressor         | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| slicegpt                    | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| roast_hashed_linear         | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| kmeans_quantize             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| lsc_compressor              | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| faq_quantizer               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| proxsparse                  | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| ast_pruner                  | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| coopq_quantizer             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| flat_llm                    | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| mamba_shedder               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| flap                        | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| astro_quantizer             | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| zerokv_neo_compressor       | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| bonsai_pruner               | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| dynamic_rank                | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| liftr                       | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| aatc_xkv_compressor         | compressor | matrix-compression | Standard         | -        | -         | -                 | Low-Rank SVD / Structure | v1.3.7 (r1) | 25d9fe36 | 2026-10-16 |
+| kernel                      | compressor | triton             | Standard         | -        | 0.01      | 10.09             | Triton vs PyTorch Benchm | v1.3.6 (r1) | 0911d2c0 | 2026-10-15 |
+| adaptive_span               | compressor | unified-4models    | gpt2 SST-2       | 77.75    | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_span               | compressor | unified-4models    | roberta SST-2    | 61.12    | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_span               | compressor | unified-4models    | distilbert SST-2 | 82.91    | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_span               | compressor | unified-4models    | gpt_neo SST-2    | 0.00     | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_svd                | compressor | unified-4models    | gpt2 SST-2       | 64.22    | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_svd                | compressor | unified-4models    | roberta SST-2    | 0.00     | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_svd                | compressor | unified-4models    | distilbert SST-2 | 73.74    | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |
+| adaptive_svd                | compressor | unified-4models    | gpt_neo SST-2    | 0.00     | -         | -                 | 4-Model Unified Evaluati | v1.3.7 (r1) | b3e2b3ad | 2026-10-15 |

@@ -1,1 +1,86 @@
-{"module_name": "gated_deltanet", "category": "attention", "family": "gated-delta-recurrent", "history": [{"record_id": "rec_gated_deltanet_001", "module_name": "gated_deltanet", "category": "attention", "family": "gated-delta-recurrent", "version_tag": "v1.3.7", "revision": 1, "status": "verified", "timestamp_utc": "2026-10-15T12:00:00Z", "git_commit_sha": "f8a92b3c1d", "generation_method": "Fused Chunk Gated Delta Attention (Triton JIT)", "experimental_setup": {"dataset": "sst2", "backbone": "roberta-base", "seq_len": 2048, "hardware": "NVIDIA RTX 4070 Laptop GPU (SM 8.9)"}, "metrics": {"eval_accuracy": 92.8, "latency_ms": 1.85, "speedup": 2.50, "peak_vram_mb": 260.0}, "notes": "Verified linear memory state expansion."}]}
+{
+  "module_name": "gated_deltanet",
+  "category": "attention",
+  "family": "gated-delta-recurrent",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "9d1442091c",
+  "latest_timestamp": "2026-10-16T21:08:22.398263+00:00",
+  "latest_record": {
+    "record_id": "f03df3e86007a088",
+    "module_name": "gated_deltanet",
+    "category": "attention",
+    "family": "gated-delta-recurrent",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T21:08:22.398263+00:00",
+    "git_commit_sha": "9d1442091c",
+    "generation_method": {
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "seq_len": 2048
+    },
+    "metrics": {
+      "accuracy": 92.8,
+      "latency_triton_ms": 1.85,
+      "speedup_x": 2.5
+    },
+    "notes": "Canonical gated_deltanet benchmark run"
+  },
+  "active_records": [
+    {
+      "record_id": "f03df3e86007a088",
+      "module_name": "gated_deltanet",
+      "category": "attention",
+      "family": "gated-delta-recurrent",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:08:22.398263+00:00",
+      "git_commit_sha": "9d1442091c",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048
+      },
+      "metrics": {
+        "accuracy": 92.8,
+        "latency_triton_ms": 1.85,
+        "speedup_x": 2.5
+      },
+      "notes": "Canonical gated_deltanet benchmark run"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "f03df3e86007a088",
+      "module_name": "gated_deltanet",
+      "category": "attention",
+      "family": "gated-delta-recurrent",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:08:22.398263+00:00",
+      "git_commit_sha": "9d1442091c",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048
+      },
+      "metrics": {
+        "accuracy": 92.8,
+        "latency_triton_ms": 1.85,
+        "speedup_x": 2.5
+      },
+      "notes": "Canonical gated_deltanet benchmark run"
+    }
+  ]
+}

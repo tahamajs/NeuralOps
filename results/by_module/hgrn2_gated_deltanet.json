@@ -1,86 +1,34 @@
 {
   "module_name": "hgrn2_gated_deltanet",
   "category": "attention",
-  "family": "NeuralOps (Triton Fused)",
+  "family": "general",
   "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "328e7ec002",
-  "latest_timestamp": "2026-10-16T08:05:46Z",
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "fb28877386dbc495",
+    "record_id": "b772f35e99ea5b51",
     "module_name": "hgrn2_gated_deltanet",
     "category": "attention",
-    "family": "NeuralOps (Triton Fused)",
+    "family": "general",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T08:05:46Z",
-    "git_commit_sha": "328e7ec002",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "NeuralOps (Triton Fused)",
-      "source_artifact": "results/competitive_comparison_v137.json"
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
     },
     "experimental_setup": {
-      "seq_len": null,
-      "batch_size": 2,
-      "embed_dim": 768,
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
     },
-    "metrics": {
-      "latency_triton_ms": 13.605,
-      "throughput_tok_s": 602111.9,
-      "peak_vram_mb": 283.15,
-      "speedup_x": 1.0
-    },
-    "notes": "Cross-Framework Competitive Benchmark"
+    "metrics": {},
+    "notes": "Master Aggregated Results"
   },
   "active_records": [
-    {
-      "record_id": "b772f35e99ea5b51",
-      "module_name": "hgrn2_gated_deltanet",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "d5530bdd9b1d0d59",
-      "module_name": "hgrn2_gated_deltanet",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
     {
       "record_id": "8b181ede785cc976",
       "module_name": "hgrn2_gated_deltanet",
@@ -133,55 +81,55 @@
         "speedup_x": 1.0
       },
       "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "d5530bdd9b1d0d59",
+      "module_name": "hgrn2_gated_deltanet",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "ppl": 0.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "b772f35e99ea5b51",
+      "module_name": "hgrn2_gated_deltanet",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
-      "record_id": "b772f35e99ea5b51",
-      "module_name": "hgrn2_gated_deltanet",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
-    },
-    {
-      "record_id": "d5530bdd9b1d0d59",
-      "module_name": "hgrn2_gated_deltanet",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
       "record_id": "8b181ede785cc976",
       "module_name": "hgrn2_gated_deltanet",
       "category": "attention",
@@ -233,6 +181,51 @@
         "speedup_x": 1.0
       },
       "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "d5530bdd9b1d0d59",
+      "module_name": "hgrn2_gated_deltanet",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "ppl": 0.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
+      "record_id": "b772f35e99ea5b51",
+      "module_name": "hgrn2_gated_deltanet",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
     }
   ]
 }

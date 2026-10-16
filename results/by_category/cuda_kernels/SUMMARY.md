@@ -1,27 +1,24 @@
-# 🚀 3-Level CUDA C++ Kernels Benchmark Summary
+# 📊 Hardware Benchmarks of 3-Level Native CUDA C++ Operators
 
-This directory documents the 3-level kernel performance hierarchy implemented in NeuralOps:
-1. **Level 1**: Reference PyTorch native tensor operations (eager dispatch).
-2. **Level 2**: JIT compiled OpenAI Triton kernels (optimal memory bandwidth & fused epilogues).
-3. **Level 3**: Custom CUDA C++ / Cutlass extension kernels (maximum tensor core throughput).
+**Category Filter:** `cuda_kernel` | **Total Verified Records:** 18
 
----
-
-## 📊 Comparative Performance (3-Level Ladder)
-
-Measured across standard LLM attention projections and recurrent states ($B=2, S=2048, H=12, D=64$):
-
-| Operation | PyTorch Eager (ms) | Triton JIT (ms) | CUDA C++ (ms) | Level 3 vs Level 1 Speedup |
-| :--- | :--- | :--- | :--- | :--- |
-| Attention Softmax / Score | 4.62 ms | 1.85 ms | 1.45 ms | **3.19×** |
-| Chunk Linear Projection | 3.84 ms | 1.28 ms | 1.05 ms | **3.66×** |
-| Recurrent Delta State Update | 5.12 ms | 1.65 ms | 1.22 ms | **4.20×** |
-| HNC-SVD Whitened Projection | 2.45 ms | 0.74 ms | 0.58 ms | **4.22×** |
-| RMSNorm + SwiGLU Epilogue | 1.95 ms | 0.62 ms | 0.49 ms | **3.98×** |
-
----
-
-## 🔬 Compilation & Build Invariant
-
-Level 3 CUDA kernels are built via `ninja` using `-O3 --use_fast_math -gencode arch=compute_89,code=sm_89`.
-All benchmark records contain the exact compiler flags and NVCC versions logged in the ledger.
+| Module                     | Category    | Family              | Setup / Dataset | Speedup X | Latency Triton Ms | Method                   | Ver (Rev)   | Git SHA  | Timestamp  |
+|:--------------------------|-:-----------|-:-------------------|-:---------------|-:---------|-:-----------------|-:------------------------|-:-----------|-:--------|-:---------:|
+| selective_scan             | cuda_kernel | 3-level-native-cuda | Standard        | 92.08     | 13.81             | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| sliding_window_attn        | cuda_kernel | 3-level-native-cuda | Standard        | 7.22      | 0.28              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| block_sparse_attn          | cuda_kernel | 3-level-native-cuda | Standard        | 5.02      | 1.66              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| w4a16_gemm                 | cuda_kernel | 3-level-native-cuda | Standard        | 0.54      | 0.00              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| fp8_gemm                   | cuda_kernel | 3-level-native-cuda | Standard        | 0.58      | 0.07              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| flash_gqa                  | cuda_kernel | 3-level-native-cuda | Standard        | 2.49      | 0.03              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| paged_attention            | cuda_kernel | 3-level-native-cuda | Standard        | 10.18     | 0.00              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| moe_routing                | cuda_kernel | 3-level-native-cuda | Standard        | 28466.32  | 0.00              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| fused_lowrank_gated_gemm   | cuda_kernel | 3-level-native-cuda | Standard        | 0.03      | 0.04              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| chunked_delta_gate_scan    | cuda_kernel | 3-level-native-cuda | Standard        | 72.98     | 0.12              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| hgrn2_fused_bwd_scan       | cuda_kernel | 3-level-native-cuda | Standard        | 422.60    | 0.03              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| cosformer_linear_attention | cuda_kernel | 3-level-native-cuda | Standard        | 1.88      | 0.02              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| fused_norm_linear          | cuda_kernel | 3-level-native-cuda | Standard        | 0.12      | 0.02              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| fused_rotary_emb           | cuda_kernel | 3-level-native-cuda | Standard        | 1.47      | 0.00              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| kronecker_matmul           | cuda_kernel | 3-level-native-cuda | Standard        | 0.10      | 0.03              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| lut_codebook_dequant_gemm  | cuda_kernel | 3-level-native-cuda | Standard        | 4.50      | 0.03              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| linear_attention           | cuda_kernel | 3-level-native-cuda | Standard        | 167.81    | 0.26              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |
+| fused_cross_entropy        | cuda_kernel | 3-level-native-cuda | Standard        | 0.30      | 0.06              | Native CUDA C++ Kernel w | v1.3.7 (r1) | 9ed147b9 | 2026-10-16 |

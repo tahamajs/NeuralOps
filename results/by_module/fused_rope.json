@@ -1,0 +1,95 @@
+{
+  "module_name": "fused_rope",
+  "category": "triton_kernel",
+  "family": "Positional Embedding",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "3fc23c2864d3bcc9",
+    "module_name": "fused_rope",
+    "category": "triton_kernel",
+    "family": "Positional Embedding",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "fused_unified_rope_offset_triton",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=2, H=12, T=2048, d=64"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.08,
+      "latency_pytorch_ms": 0.079,
+      "speedup_x": 1.0,
+      "sram_bytes_saved_mb": 6.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "3fc23c2864d3bcc9",
+      "module_name": "fused_rope",
+      "category": "triton_kernel",
+      "family": "Positional Embedding",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_unified_rope_offset_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=12, T=2048, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.08,
+        "latency_pytorch_ms": 0.079,
+        "speedup_x": 1.0,
+        "sram_bytes_saved_mb": 6.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "3fc23c2864d3bcc9",
+      "module_name": "fused_rope",
+      "category": "triton_kernel",
+      "family": "Positional Embedding",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_unified_rope_offset_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=12, T=2048, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.08,
+        "latency_pytorch_ms": 0.079,
+        "speedup_x": 1.0,
+        "sram_bytes_saved_mb": 6.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "module_name": "sparse_attn",
+  "category": "triton_kernel",
+  "family": "Sparse/Routing",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "2dcff22e938fb068",
+    "module_name": "sparse_attn",
+    "category": "triton_kernel",
+    "family": "Sparse/Routing",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "fused_lsh_hash_and_bin_triton",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=2, H=8, N=2048, D=64, Buckets=8"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.395,
+      "latency_pytorch_ms": 0.102,
+      "speedup_x": 0.26,
+      "sram_bytes_saved_mb": 4.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "2dcff22e938fb068",
+      "module_name": "sparse_attn",
+      "category": "triton_kernel",
+      "family": "Sparse/Routing",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_lsh_hash_and_bin_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, N=2048, D=64, Buckets=8"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.395,
+        "latency_pytorch_ms": 0.102,
+        "speedup_x": 0.26,
+        "sram_bytes_saved_mb": 4.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "2dcff22e938fb068",
+      "module_name": "sparse_attn",
+      "category": "triton_kernel",
+      "family": "Sparse/Routing",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_lsh_hash_and_bin_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, N=2048, D=64, Buckets=8"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.395,
+        "latency_pytorch_ms": 0.102,
+        "speedup_x": 0.26,
+        "sram_bytes_saved_mb": 4.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

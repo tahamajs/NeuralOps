@@ -1,0 +1,95 @@
+{
+  "module_name": "autotuner",
+  "category": "triton_kernel",
+  "family": "Compiler Infrastructure",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "4b0a5565a654cf00",
+    "module_name": "autotuner",
+    "category": "triton_kernel",
+    "family": "Compiler Infrastructure",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "estimate_kernel_sram_bytes",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "Tile=64x64, d=64, Stages=3"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.012,
+      "latency_pytorch_ms": 0.045,
+      "speedup_x": 3.75,
+      "sram_bytes_saved_mb": 0.07
+    },
+    "notes": "Parity: PASS (Analytic)"
+  },
+  "active_records": [
+    {
+      "record_id": "4b0a5565a654cf00",
+      "module_name": "autotuner",
+      "category": "triton_kernel",
+      "family": "Compiler Infrastructure",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "estimate_kernel_sram_bytes",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Tile=64x64, d=64, Stages=3"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.012,
+        "latency_pytorch_ms": 0.045,
+        "speedup_x": 3.75,
+        "sram_bytes_saved_mb": 0.07
+      },
+      "notes": "Parity: PASS (Analytic)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "4b0a5565a654cf00",
+      "module_name": "autotuner",
+      "category": "triton_kernel",
+      "family": "Compiler Infrastructure",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "estimate_kernel_sram_bytes",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Tile=64x64, d=64, Stages=3"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.012,
+        "latency_pytorch_ms": 0.045,
+        "speedup_x": 3.75,
+        "sram_bytes_saved_mb": 0.07
+      },
+      "notes": "Parity: PASS (Analytic)"
+    }
+  ]
+}

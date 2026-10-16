@@ -1,0 +1,95 @@
+{
+  "module_name": "_common / _types",
+  "category": "triton_kernel",
+  "family": "Pointers & Layout Safety",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "6c11537e4bdb9b5f",
+    "module_name": "_common / _types",
+    "category": "triton_kernel",
+    "family": "Pointers & Layout Safety",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "pad_to_triton_power_of_2",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "Din=50 -> Padded=64 -> Dout=50"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.007,
+      "latency_pytorch_ms": 0.03,
+      "speedup_x": 4.29,
+      "sram_bytes_saved_mb": 0.0
+    },
+    "notes": "Parity: PASS (Exact)"
+  },
+  "active_records": [
+    {
+      "record_id": "6c11537e4bdb9b5f",
+      "module_name": "_common / _types",
+      "category": "triton_kernel",
+      "family": "Pointers & Layout Safety",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "pad_to_triton_power_of_2",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Din=50 -> Padded=64 -> Dout=50"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.007,
+        "latency_pytorch_ms": 0.03,
+        "speedup_x": 4.29,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: PASS (Exact)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "6c11537e4bdb9b5f",
+      "module_name": "_common / _types",
+      "category": "triton_kernel",
+      "family": "Pointers & Layout Safety",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "pad_to_triton_power_of_2",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Din=50 -> Padded=64 -> Dout=50"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.007,
+        "latency_pytorch_ms": 0.03,
+        "speedup_x": 4.29,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: PASS (Exact)"
+    }
+  ]
+}

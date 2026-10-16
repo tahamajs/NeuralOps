@@ -1,0 +1,95 @@
+{
+  "module_name": "varlen_attention",
+  "category": "triton_kernel",
+  "family": "Flash / Varlen Attn",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "11a58e0c20d5c2fb",
+    "module_name": "varlen_attention",
+    "category": "triton_kernel",
+    "family": "Flash / Varlen Attn",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "_varlen_attention_fwd",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "Tokens=4096, H=8, d=64"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.655,
+      "latency_pytorch_ms": 0.657,
+      "speedup_x": 1.0,
+      "sram_bytes_saved_mb": 8.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "11a58e0c20d5c2fb",
+      "module_name": "varlen_attention",
+      "category": "triton_kernel",
+      "family": "Flash / Varlen Attn",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "_varlen_attention_fwd",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Tokens=4096, H=8, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.655,
+        "latency_pytorch_ms": 0.657,
+        "speedup_x": 1.0,
+        "sram_bytes_saved_mb": 8.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "11a58e0c20d5c2fb",
+      "module_name": "varlen_attention",
+      "category": "triton_kernel",
+      "family": "Flash / Varlen Attn",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "_varlen_attention_fwd",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "Tokens=4096, H=8, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.655,
+        "latency_pytorch_ms": 0.657,
+        "speedup_x": 1.0,
+        "sram_bytes_saved_mb": 8.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

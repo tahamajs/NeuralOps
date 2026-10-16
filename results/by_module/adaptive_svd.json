@@ -1,0 +1,230 @@
+{
+  "module_name": "adaptive_svd",
+  "category": "compressor",
+  "family": "unified-4models",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_record": {
+    "record_id": "428a6aa94db8bf26",
+    "module_name": "adaptive_svd",
+    "category": "compressor",
+    "family": "unified-4models",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
+    "generation_method": {
+      "algorithm": "4-Model Unified Evaluation Suite",
+      "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+    },
+    "experimental_setup": {
+      "backbone": "gpt_neo",
+      "dataset": "SST-2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "latency_ms": 30.85397720336914
+    },
+    "notes": "Status: SKIP_NO_WEIGHTS"
+  },
+  "active_records": [
+    {
+      "record_id": "e2a12504749a584d",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 64.22,
+        "latency_ms": 185.8461537361145
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "991c90afa414e122",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "roberta",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "latency_ms": 146.57834362983704
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "6f8086cd6a8c886a",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 73.74,
+        "latency_ms": 66.50451374053955
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "428a6aa94db8bf26",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "gpt_neo",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "latency_ms": 30.85397720336914
+      },
+      "notes": "Status: SKIP_NO_WEIGHTS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "e2a12504749a584d",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 64.22,
+        "latency_ms": 185.8461537361145
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "991c90afa414e122",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "roberta",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "latency_ms": 146.57834362983704
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "6f8086cd6a8c886a",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 73.74,
+        "latency_ms": 66.50451374053955
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "428a6aa94db8bf26",
+      "module_name": "adaptive_svd",
+      "category": "compressor",
+      "family": "unified-4models",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "4-Model Unified Evaluation Suite",
+        "source_artifact": "results/01_unified_runs/unified_adaptive_svd/4models_summary.json"
+      },
+      "experimental_setup": {
+        "backbone": "gpt_neo",
+        "dataset": "SST-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "latency_ms": 30.85397720336914
+      },
+      "notes": "Status: SKIP_NO_WEIGHTS"
+    }
+  ]
+}

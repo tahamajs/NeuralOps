@@ -1,0 +1,149 @@
+{
+  "module_name": "kernel",
+  "category": "compressor",
+  "family": "triton",
+  "total_runs": 2,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "5d6218ab1a561021",
+    "module_name": "kernel",
+    "category": "compressor",
+    "family": "triton",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": null,
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": null
+    },
+    "metrics": {
+      "latency_triton_ms": 10.09,
+      "latency_pytorch_ms": 0.09,
+      "speedup_x": 0.01,
+      "sram_bytes_saved_mb": 0.0
+    },
+    "notes": "Parity: None"
+  },
+  "active_records": [
+    {
+      "record_id": "2955877ceaf07a2d",
+      "module_name": "kernel",
+      "category": "attention",
+      "family": "triton",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": null,
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": null
+      },
+      "metrics": {
+        "latency_triton_ms": 1.42,
+        "latency_pytorch_ms": 1.1,
+        "speedup_x": 0.77,
+        "sram_bytes_saved_mb": 768.0
+      },
+      "notes": "Parity: None"
+    },
+    {
+      "record_id": "5d6218ab1a561021",
+      "module_name": "kernel",
+      "category": "compressor",
+      "family": "triton",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": null,
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": null
+      },
+      "metrics": {
+        "latency_triton_ms": 10.09,
+        "latency_pytorch_ms": 0.09,
+        "speedup_x": 0.01,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: None"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "2955877ceaf07a2d",
+      "module_name": "kernel",
+      "category": "attention",
+      "family": "triton",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": null,
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": null
+      },
+      "metrics": {
+        "latency_triton_ms": 1.42,
+        "latency_pytorch_ms": 1.1,
+        "speedup_x": 0.77,
+        "sram_bytes_saved_mb": 768.0
+      },
+      "notes": "Parity: None"
+    },
+    {
+      "record_id": "5d6218ab1a561021",
+      "module_name": "kernel",
+      "category": "compressor",
+      "family": "triton",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": null,
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": null
+      },
+      "metrics": {
+        "latency_triton_ms": 10.09,
+        "latency_pytorch_ms": 0.09,
+        "speedup_x": 0.01,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: None"
+    }
+  ]
+}

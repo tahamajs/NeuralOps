@@ -1,0 +1,95 @@
+{
+  "module_name": "fused_ce",
+  "category": "triton_kernel",
+  "family": "Fused Loss",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "0911d2c0ce",
+  "latest_timestamp": "2026-10-15T12:02:42+03:30",
+  "latest_record": {
+    "record_id": "19ff06841f7b343e",
+    "module_name": "fused_ce",
+    "category": "triton_kernel",
+    "family": "Fused Loss",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T12:02:42+03:30",
+    "git_commit_sha": "0911d2c0ce",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "fused_cross_entropy",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "N=4096, Vocab=32000"
+    },
+    "metrics": {
+      "latency_triton_ms": 2.346,
+      "latency_pytorch_ms": 2.307,
+      "speedup_x": 0.98,
+      "sram_bytes_saved_mb": 250.0
+    },
+    "notes": "Parity: PASS"
+  },
+  "active_records": [
+    {
+      "record_id": "19ff06841f7b343e",
+      "module_name": "fused_ce",
+      "category": "triton_kernel",
+      "family": "Fused Loss",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_cross_entropy",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "N=4096, Vocab=32000"
+      },
+      "metrics": {
+        "latency_triton_ms": 2.346,
+        "latency_pytorch_ms": 2.307,
+        "speedup_x": 0.98,
+        "sram_bytes_saved_mb": 250.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "19ff06841f7b343e",
+      "module_name": "fused_ce",
+      "category": "triton_kernel",
+      "family": "Fused Loss",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T12:02:42+03:30",
+      "git_commit_sha": "0911d2c0ce",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fused_cross_entropy",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "N=4096, Vocab=32000"
+      },
+      "metrics": {
+        "latency_triton_ms": 2.346,
+        "latency_pytorch_ms": 2.307,
+        "speedup_x": 0.98,
+        "sram_bytes_saved_mb": 250.0
+      },
+      "notes": "Parity: PASS"
+    }
+  ]
+}

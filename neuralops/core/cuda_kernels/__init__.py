@@ -218,6 +218,87 @@ from neuralops.core.cuda_kernels.sparse_attention import (
     block_sparse_attn_pytorch_ref,
 )
 
+from neuralops.core.cuda_kernels.entmax_bisect import (
+    entmax_bisect,
+    fused_entmax_bisect_pytorch,
+)
+from neuralops.core.cuda_kernels.split_head_norm import (
+    split_head_norm,
+    split_head_norm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.aegis_gate_norm import (
+    aegis_gate_norm,
+    aegis_gate_norm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.entropy_pruning import (
+    entropy_pruning,
+    entropy_pruning_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.favor_plus import (
+    favor_plus,
+    favor_plus_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.fwht_transform import (
+    fwht_transform,
+    fast_hadamard_transform,
+)
+from neuralops.core.cuda_kernels.rms_variance_match import (
+    rms_variance_match,
+    fused_rms_variance_match_triton,
+)
+from neuralops.core.cuda_kernels.spectral_shrinkage import (
+    spectral_shrinkage,
+    spectral_shrinkage_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.adaptive_span import (
+    adaptive_span,
+    fused_adaptive_span_penalty_pytorch,
+)
+from neuralops.core.cuda_kernels.dynamic_conv1d import (
+    dynamic_conv1d,
+    fused_dynamic_conv1d_pytorch,
+)
+from neuralops.core.cuda_kernels.paged_recurrent_step import (
+    paged_recurrent_step,
+    paged_recurrent_state_step_pytorch,
+)
+from neuralops.core.cuda_kernels.paged_kv_evict import (
+    paged_kv_evict,
+    paged_kv_compact_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.unified_rope_offset import (
+    unified_rope_offset,
+    fused_unified_rope_offset_pytorch,
+)
+from neuralops.core.cuda_kernels.flash_decode_stage2 import (
+    flash_decode_stage2,
+    flash_decode_stage2_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.svd_prefix_scan import (
+    svd_prefix_scan,
+    svd_prefix_scan_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.gdn_delta_rule import (
+    gdn_delta_rule,
+    gdn_delta_rule_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.hgrn2_spatial_scan import (
+    hgrn2_spatial_scan,
+    hgrn2_spatial_scan_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.gla_unnormalized_scan import (
+    gla_unnormalized_scan,
+    gla_unnormalized_scan_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.bitonic_topk import (
+    bitonic_topk,
+    bitonic_topk_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.logcumsumexp import (
+    logcumsumexp,
+    logcumsumexp_pytorch_ref,
+)
+
 __all__ = [
     "load_cuda_module",
     "get_cuda_arch_flags",
@@ -330,4 +411,45 @@ __all__ = [
     "sliding_window_pytorch_ref",
     "block_sparse_attn",
     "block_sparse_attn_pytorch_ref",
+    # 20 Additional Ultra-Optimized CUDA Kernels
+    "entmax_bisect",
+    "fused_entmax_bisect_pytorch",
+    "split_head_norm",
+    "split_head_norm_pytorch_ref",
+    "aegis_gate_norm",
+    "aegis_gate_norm_pytorch_ref",
+    "entropy_pruning",
+    "entropy_pruning_pytorch_ref",
+    "favor_plus",
+    "favor_plus_pytorch_ref",
+    "fwht_transform",
+    "fast_hadamard_transform",
+    "rms_variance_match",
+    "fused_rms_variance_match_triton",
+    "spectral_shrinkage",
+    "spectral_shrinkage_pytorch_ref",
+    "adaptive_span",
+    "fused_adaptive_span_penalty_pytorch",
+    "dynamic_conv1d",
+    "fused_dynamic_conv1d_pytorch",
+    "paged_recurrent_step",
+    "paged_recurrent_state_step_pytorch",
+    "paged_kv_evict",
+    "paged_kv_compact_pytorch_ref",
+    "unified_rope_offset",
+    "fused_unified_rope_offset_pytorch",
+    "flash_decode_stage2",
+    "flash_decode_stage2_pytorch_ref",
+    "svd_prefix_scan",
+    "svd_prefix_scan_pytorch_ref",
+    "gdn_delta_rule",
+    "gdn_delta_rule_pytorch_ref",
+    "hgrn2_spatial_scan",
+    "hgrn2_spatial_scan_pytorch_ref",
+    "gla_unnormalized_scan",
+    "gla_unnormalized_scan_pytorch_ref",
+    "bitonic_topk",
+    "bitonic_topk_pytorch_ref",
+    "logcumsumexp",
+    "logcumsumexp_pytorch_ref",
 ]
