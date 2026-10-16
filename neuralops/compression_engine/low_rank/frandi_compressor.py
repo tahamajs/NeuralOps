@@ -202,14 +202,18 @@ class FRanDILinear(nn.Module):
         self.lora_A.data.zero_()
         self.lora_B.data.zero_()
         self._cached_weight = None
+        self._unmerged_B = self.B.data.clone()
 
     def merge_and_unload(self) -> FRanDILinear:
         self.merge()
         return self
 
     def unmerge(self) -> None:
-        # Not implemented (would require tracking original B).
-        raise NotImplementedError("FRanDILinear.unmerge is not supported.")
+        """Restores original B weights if merge() was previously called."""
+        if hasattr(self, "_unmerged_B") and self._unmerged_B is not None:
+            self.B.data.copy_(self._unmerged_B)
+            self._cached_weight = None
+            self._unmerged_B = None
 
     # ------------------------------------------------------------------
     @staticmethod
