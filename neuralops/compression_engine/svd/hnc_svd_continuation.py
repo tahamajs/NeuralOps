@@ -462,19 +462,27 @@ class HessianNullSpaceSVDContinuation:
         target_w: torch.Tensor,
         probe_inputs: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        """Run single-layer null-space continuation directly on a weight tensor."""
-        w = target_w.clone().detach()
+        """Run scale-invariant null-space spectral continuation and whitened truncation on weight tensor."""
+        w = target_w.clone().detach().float()
+        w_0 = w.clone()
         d_out, d_in = w.shape
-        dev = w.device
+        dev = target_w.device
+        orig_dtype = target_w.dtype
+
         if probe_inputs is not None:
-            px = probe_inputs.to(dev)
+            px = probe_inputs.to(dev).float()
             if px.dim() > 2:
                 px = px.view(-1, px.shape[-1])
             if px.shape[-1] != d_in:
-                px = torch.randn(16, d_in, device=dev)
+                px = torch.randn(16, d_in, device=dev, dtype=torch.float32)
         else:
-            px = torch.randn(16, d_in, device=dev)
-        Hx = torch.matmul(px.t(), px) / max(float(px.shape[0]), 1.0)
+            px = torch.randn(16, d_in, device=dev, dtype=torch.float32)
+
+        N_tok = max(px.shape[0], 1)
+        Hx = torch.matmul(px.t(), px) / float(N_tok)
+
+        # Stage A: Scale-Invariant Null-Space Spectral Continuation Walk
+        cur_eta = self.eta
         for _ in range(self.walk_steps):
             _, grad_phi, _ = compute_spectral_tail_potential_and_gradient(
                 w, rank=self.target_rank, gamma_nuc=self.gamma_nuc, gamma_bump=self.gamma_bump
@@ -482,15 +490,37 @@ class HessianNullSpaceSVDContinuation:
             delta_w, _ = solve_layerwise_kronecker_nullspace_step(
                 w, grad_phi, input_covariance_Hx=Hx, mu_rel=self.mu_rel
             )
-            w = (w - self.eta * delta_w).detach()
-        return w
+            dw_norm = torch.norm(delta_w) + 1e-8
+            w_norm = torch.norm(w)
+            w = (w + cur_eta * w_norm * (delta_w / dw_norm)).detach()
+
+        # Stage B: Generalized Eckart-Young Activation-Aware Cholesky-Whitened SVD Truncation
+        r = min(self.target_rank, d_out, d_in)
+        try:
+            reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
+            Sx = Hx + reg * torch.eye(d_in, device=dev, dtype=torch.float32)
+            L = torch.linalg.cholesky(Sx)
+            W_whitened = torch.matmul(w, L)
+            U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
+            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+            V_unwhitened = torch.linalg.solve_triangular(
+                L, (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+            ).t()
+            W_hat = torch.matmul(U_r, V_unwhitened)
+        except Exception:
+            U, S, Vh = torch.linalg.svd(w, full_matrices=False)
+            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+            V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+            W_hat = torch.matmul(U_r, V_r)
+
+        return W_hat.to(dtype=orig_dtype)
 
     def steer_and_compress(
         self,
         probe_inputs: Union[torch.Tensor, List[Any], Tuple[Any, ...]],
         target_linear_modules: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Execute the predict-correct HNC continuation walk and low-rank factorize steered weights."""
+        """Execute the 4-Stage HNC continuation walk, Cholesky-whitened SVD truncation, and low-rank factor restoration."""
         self.model.eval()
         self.model.to(self.device)
 
@@ -524,7 +554,6 @@ class HessianNullSpaceSVDContinuation:
                     target_layers[name] = mod
             else:
                 if isinstance(mod, nn.Linear) and mod.weight.ndim == 2:
-                    # Filter small embeddings or heads if needed
                     if min(mod.weight.shape) > self.target_rank:
                         target_layers[name] = mod
 
@@ -537,37 +566,36 @@ class HessianNullSpaceSVDContinuation:
         input_covariances = {}
         input_means = {}
 
-        if self.mode == "kronecker":
-            cached_inputs = {name: [] for name in target_layers}
-            hooks = []
-            for name, mod in target_layers.items():
-                def _hook(m, inp, out, layer_name=name):
-                    cached_inputs[layer_name].append(inp[0].detach())
-                hooks.append(mod.register_forward_hook(_hook))
+        cached_inputs = {name: [] for name in target_layers}
+        hooks = []
+        for name, mod in target_layers.items():
+            def _hook(m, inp, out, layer_name=name):
+                cached_inputs[layer_name].append(inp[0].detach())
+            hooks.append(mod.register_forward_hook(_hook))
 
-            with torch.no_grad():
-                for b in batches:
-                    if isinstance(b, dict):
-                        _ = self.model(**b)
-                    elif isinstance(b, (list, tuple)):
-                        _ = self.model(*b)
-                    else:
-                        _ = self.model(b)
+        with torch.no_grad():
+            for b in batches:
+                if isinstance(b, dict):
+                    _ = self.model(**b)
+                elif isinstance(b, (list, tuple)):
+                    _ = self.model(*b)
+                else:
+                    _ = self.model(b)
 
-            for h in hooks:
-                h.remove()
+        for h in hooks:
+            h.remove()
 
-            active_target_layers = {}
-            for name, inps in cached_inputs.items():
-                if not inps:
-                    continue
-                flat_inps = torch.cat([inp.reshape(-1, inp.shape[-1]) for inp in inps], dim=0).float()
-                N_tok = flat_inps.shape[0]
-                Hx = torch.matmul(flat_inps.t(), flat_inps) / max(N_tok, 1)
-                input_covariances[name] = Hx
-                input_means[name] = torch.mean(flat_inps, dim=0)
-                active_target_layers[name] = target_layers[name]
-            target_layers = active_target_layers
+        active_target_layers = {}
+        for name, inps in cached_inputs.items():
+            if not inps:
+                continue
+            flat_inps = torch.cat([inp.reshape(-1, inp.shape[-1]) for inp in inps], dim=0).float()
+            N_tok = flat_inps.shape[0]
+            Hx = torch.matmul(flat_inps.t(), flat_inps) / max(N_tok, 1)
+            input_covariances[name] = Hx
+            input_means[name] = torch.mean(flat_inps, dim=0)
+            active_target_layers[name] = target_layers[name]
+        target_layers = active_target_layers
 
         # 4. Continuation Walk Loop (Predict - Correct - Accept/Reject)
         accepted_steps = 0
@@ -579,10 +607,7 @@ class HessianNullSpaceSVDContinuation:
             # Backup weights for rollback on rejection
             saved_weights = {name: mod.weight.data.clone() for name, mod in target_layers.items()}
 
-            # A. PREDICT: Compute SVD tail potential gradient and null-space step
-            total_dir_norm = 0.0
-            step_directions = {}
-
+            # A. PREDICT: Scale-Invariant Null-Space Step
             for name, mod in target_layers.items():
                 W = mod.weight.data
                 _, grad_phi, stats = compute_spectral_tail_potential_and_gradient(
@@ -592,28 +617,23 @@ class HessianNullSpaceSVDContinuation:
                     gamma_bump=self.gamma_bump,
                 )
 
-                if self.mode == "kronecker":
+                if name in input_covariances and self.mode == "kronecker":
                     Hx = input_covariances[name]
                     D_W, _ = solve_layerwise_kronecker_nullspace_step(W, grad_phi, Hx, mu_rel=self.mu_rel)
                 else:
                     D_W = grad_phi
 
-                step_directions[name] = D_W
-                total_dir_norm += torch.norm(D_W).item() ** 2
-
-            total_dir_norm = math.sqrt(total_dir_norm) + 1e-9
-
-            # Apply normalized prediction step
-            for name, mod in target_layers.items():
-                D_W = step_directions[name]
-                mod.weight.data.add_(cur_eta * (D_W / total_dir_norm))
+                # Scale step proportionally to ||W||_F
+                dw_norm = torch.norm(D_W) + 1e-8
+                w_norm = torch.norm(W)
+                step_direction = cur_eta * w_norm * (D_W / dw_norm)
+                mod.weight.data.add_(step_direction)
 
             # B. CORRECT: Run m gradient descent restoration steps on L_func
             if self.restore_steps_m > 0:
                 for _ in range(self.restore_steps_m):
                     self.model.zero_grad()
                     loss_restore = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
-                    # Gradients only wrt target weights
                     target_params = [mod.weight for mod in target_layers.values()]
                     restore_grads = torch.autograd.grad(loss_restore, target_params, allow_unused=True)
                     with torch.no_grad():
@@ -633,35 +653,78 @@ class HessianNullSpaceSVDContinuation:
                 rejected_steps += 1
                 step_history.append({"step": step, "status": "REJECTED", "loss": cur_loss, "eta": cur_eta})
             else:
-                # Accept step: grow step size
                 cur_eta = min(1.1 * cur_eta, 0.5)
                 accepted_steps += 1
                 step_history.append({"step": step, "status": "ACCEPTED", "loss": cur_loss, "eta": cur_eta})
 
-        # 5. Low-Rank Factorization with Bias & Energy Restoration
-        factorized_modules = {}
+        # 5. Generalized Eckart-Young Cholesky-Whitened SVD Truncation & Bias Drift Compensation
+        low_rank_factors = {}
         for name, mod in target_layers.items():
-            W_final = mod.weight.data.float()
+            W_steered = mod.weight.data.float()
             W_0 = initial_weights[name].float()
+            d_out, d_in = W_steered.shape
+            r = min(self.target_rank, d_out, d_in)
 
-            U, S, Vh = torch.linalg.svd(W_final, full_matrices=False)
-            r = min(self.target_rank, len(S))
+            # Activation-Aware Cholesky-Whitened Truncation
+            if name in input_covariances:
+                Hx = input_covariances[name].float()
+                try:
+                    reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
+                    Sx = Hx + reg * torch.eye(d_in, device=self.device, dtype=torch.float32)
+                    L = torch.linalg.cholesky(Sx)
+                    W_whitened = torch.matmul(W_steered, L)
+                    U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
+                    U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+                    V_unwhitened = torch.linalg.solve_triangular(
+                        L, (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+                    ).t()
+                    A_r = nn.Parameter(U_r.to(device=self.device, dtype=torch.float32))
+                    B_r = nn.Parameter(V_unwhitened.to(device=self.device, dtype=torch.float32))
+                except Exception:
+                    U, S, Vh = torch.linalg.svd(W_steered, full_matrices=False)
+                    A_r = nn.Parameter((U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(self.device, dtype=torch.float32))
+                    B_r = nn.Parameter((torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).to(self.device, dtype=torch.float32))
+            else:
+                U, S, Vh = torch.linalg.svd(W_steered, full_matrices=False)
+                A_r = nn.Parameter((U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(self.device, dtype=torch.float32))
+                B_r = nn.Parameter((torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).to(self.device, dtype=torch.float32))
 
-            # Symmetric singular energy distribution
-            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
-            V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-            W_hat = torch.matmul(U_r, V_r)
+            W_hat = torch.matmul(A_r, B_r)
 
-            # Bias drift correction
+            # Stage C: Bias drift compensation
             if name in input_means:
                 mu_x = input_means[name].float()
                 drift_bias = torch.matmul(W_0 - W_hat, mu_x)
                 if mod.bias is not None:
                     mod.bias.data.add_(drift_bias.to(dtype=mod.bias.dtype))
 
-            # Update weight to rank-r factorized approximation
             mod.weight.data.copy_(W_hat.to(dtype=mod.weight.dtype))
-            factorized_modules[name] = {"U": U_r, "V": V_r, "rank": r}
+            low_rank_factors[name] = (A_r, B_r, mod)
+
+        # 6. Stage D: Post-Truncation Low-Rank Factor Function-Restoration Steps
+        # Invariant: rank(W_hat) <= r strictly preserved because W_hat = A_r @ B_r
+        optimizer_factors = []
+        for name, (A_r, B_r, mod) in low_rank_factors.items():
+            optimizer_factors.extend([A_r, B_r])
+
+        if optimizer_factors:
+            post_opt = torch.optim.Adam(optimizer_factors, lr=1e-3, betas=(0.9, 0.99))
+            m_post = 15
+            for _ in range(m_post):
+                post_opt.zero_grad()
+                # Apply current low-rank products into model weights
+                for name, (A_r, B_r, mod) in low_rank_factors.items():
+                    mod.weight.data = torch.matmul(A_r, B_r).to(dtype=mod.weight.dtype)
+
+                loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
+                loss_post.backward()
+                post_opt.step()
+
+            # Finalize weights strictly from A_r @ B_r
+            with torch.no_grad():
+                for name, (A_r, B_r, mod) in low_rank_factors.items():
+                    final_W = torch.matmul(A_r, B_r).to(dtype=mod.weight.dtype)
+                    mod.weight.data.copy_(final_W)
 
         final_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
         return {
