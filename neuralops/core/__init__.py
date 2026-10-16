@@ -113,12 +113,10 @@ from neuralops.core import attention_utils
 from neuralops.core import base
 from neuralops.core import cache_utils
 from neuralops.core import common
-from neuralops.core import compression_engine
 from neuralops.core import compression_pipeline
 from neuralops.core import config
 from neuralops.core import cuda_graph
 from neuralops.core import fused_norm_attention
-from neuralops.core import gqa_utils
 from neuralops.core import memory
 from neuralops.core import metrics
 from neuralops.core import model_family
@@ -128,7 +126,6 @@ from neuralops.core import pruning_utils
 from neuralops.core import quantized_attention
 from neuralops.core import registry
 from neuralops.core import replace_attention
-from neuralops.core import rope
 from neuralops.core import selective_scan
 from neuralops.core import snapshot_restore
 from neuralops.core import svd_utils
