@@ -434,7 +434,7 @@ class HessianNullSpaceSVDContinuation:
         walk_steps: int = 600,
         step_size_eta: float = 0.03,
         restore_steps_m: int = 12,
-        restore_lr: float = 1e-3,
+        restore_lr: float = 0.05,
         loss_ceiling_tau: float = 1e-2,
         mu_rel: float = 1e-7,
         gamma_nuc: float = 1e-3,
@@ -700,6 +700,7 @@ class HessianNullSpaceSVDContinuation:
                 mod.weight.data.add_(step_direction)
 
             # B. CORRECT: Run m gradient descent restoration steps on L_func
+            pre_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
             if self.restore_steps_m > 0:
                 for _ in range(self.restore_steps_m):
                     self.model.zero_grad()
@@ -711,9 +712,13 @@ class HessianNullSpaceSVDContinuation:
                             if g is not None:
                                 p.sub_(self.restore_lr * g)
 
+            post_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
+            delta = pre_loss - post_loss
+            if step % 50 == 0 or step == 0:
+                logger.info("Step %d: pre=%.6e, post=%.6e, delta=%.6e", step, pre_loss, post_loss, delta)
+
             # C. ACCEPT / REJECT: Check loss ceiling
-            with torch.no_grad():
-                cur_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
+            cur_loss = post_loss
 
             if cur_loss > self.loss_ceiling_tau:
                 # Reject step: rollback and shrink step size
