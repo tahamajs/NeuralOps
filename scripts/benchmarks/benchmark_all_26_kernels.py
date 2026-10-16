@@ -76,8 +76,8 @@ def main():
         fused_linformer_seq_proj_triton,
     )
     print("\n--- 2. low_rank (Linformer Projection) ---")
-    seq_len = 2048
-    x_lin = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
+    seq_len = 4096
+    x_lin = torch.randn(4, 8, seq_len, 64, device=device, dtype=dtype)
     proj_lin = torch.randn(64, seq_len, device=device, dtype=dtype)
     bench_pair("fused_linformer_seq_proj", f"(T={seq_len})", fused_linformer_seq_proj_triton, fused_linformer_seq_proj_pytorch, proj_lin, x_lin)
 
@@ -87,7 +87,7 @@ def main():
         fused_kronecker_batched_gemm_triton,
     )
     print("\n--- 3. low_rank (Kronecker Batched GEMM) ---")
-    x_kron = torch.randn(2, 64, 256, device=device, dtype=dtype)
+    x_kron = torch.randn(4, 128, 256, device=device, dtype=dtype)
     A_kron = torch.randn(16, 16, device=device, dtype=dtype)
     B_kron = torch.randn(16, 16, device=device, dtype=dtype)
     bench_pair("fused_kronecker_gemm", "(dim=256, r=16)", fused_kronecker_batched_gemm_triton, fused_kronecker_batched_gemm_pytorch, x_kron, A_kron, B_kron)
@@ -99,11 +99,11 @@ def main():
     )
     print("\n--- 4. low_rank (Nystrom Landmark Pinv) ---")
     m = 32
-    F1 = F.softmax(torch.randn(2, 4, 256, m, device=device, dtype=torch.float32), dim=-1)
-    F2_pinv = torch.randn(2, 4, m, m, device=device, dtype=torch.float32)
-    F3 = F.softmax(torch.randn(2, 4, m, 256, device=device, dtype=torch.float32), dim=-1)
-    V_nys = torch.randn(2, 4, 256, 64, device=device, dtype=torch.float32)
-    bench_pair("fused_nystrom_landmark_pinv", f"(m={m}, N=256)", fused_nystrom_landmark_pinv_step_triton, fused_nystrom_landmark_pinv_step_pytorch, F1, F2_pinv, F3, V_nys)
+    F1 = F.softmax(torch.randn(4, 8, 512, m, device=device, dtype=torch.float32), dim=-1)
+    F2_pinv = torch.randn(4, 8, m, m, device=device, dtype=torch.float32)
+    F3 = F.softmax(torch.randn(4, 8, m, 512, device=device, dtype=torch.float32), dim=-1)
+    V_nys = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float32)
+    bench_pair("fused_nystrom_landmark_pinv", f"(m={m}, N=512)", fused_nystrom_landmark_pinv_step_triton, fused_nystrom_landmark_pinv_step_pytorch, F1, F2_pinv, F3, V_nys)
 
     # 5. sliding_window
     from neuralops.core.triton_kernels.sliding_window import (
@@ -187,8 +187,8 @@ def main():
     )
     print("\n--- 12. fused_ce (Fused Cross-Entropy) ---")
     vocab = 32768
-    logits_ce = torch.randn(2, 128, vocab, device=device, dtype=dtype)
-    targets_ce = torch.randint(0, vocab, (2, 128), device=device)
+    logits_ce = torch.randn(4, 256, vocab, device=device, dtype=dtype)
+    targets_ce = torch.randint(0, vocab, (4, 256), device=device)
     bench_pair("fused_ce", f"(V={vocab})", fused_cross_entropy, fused_cross_entropy_pytorch, logits_ce, targets_ce)
 
     # 13. fused_kd
@@ -246,8 +246,8 @@ def main():
         fused_mqa_bias_scale_pytorch,
     )
     print("\n--- 17. gqa (Fused MQA Bias & Scaling) ---")
-    scores_gqa = torch.randn(2, 4, 128, 128, device=device, dtype=torch.float32)
-    bench_pair("fused_mqa_bias_scale", "(128x128, causal)", fused_mqa_bias_scale_triton, fused_mqa_bias_scale_pytorch, scores_gqa, 0.25, is_causal=True, past_len=4)
+    scores_gqa = torch.randn(4, 8, 256, 256, device=device, dtype=torch.float32)
+    bench_pair("fused_mqa_bias_scale", "(256x256, causal)", fused_mqa_bias_scale_triton, fused_mqa_bias_scale_pytorch, scores_gqa, 0.25, is_causal=True, past_len=4)
 
     # 18. sparse_attn: fused_hamming_scores
     from neuralops.core.triton_kernels.sparse_attn import (
@@ -255,12 +255,12 @@ def main():
         fused_hamming_scores_pytorch,
     )
     print("\n--- 18. sparse_attn (Fused Hamming Bit Scores) ---")
-    Q_ham = torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32)
-    K_ham = torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32)
-    lora_q = torch.randn(4, device=device, dtype=torch.float32)
-    lora_k = torch.randn(4, device=device, dtype=torch.float32)
+    Q_ham = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
+    K_ham = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
+    lora_q = torch.randn(8, device=device, dtype=torch.float32)
+    lora_k = torch.randn(8, device=device, dtype=torch.float32)
     temp = torch.tensor([1.2], device=device, dtype=torch.float32)
-    bench_pair("fused_hamming_scores", "(128x32)", fused_hamming_scores_triton, fused_hamming_scores_pytorch, Q_ham, K_ham, lora_q, lora_k, temp)
+    bench_pair("fused_hamming_scores", "(256x64)", fused_hamming_scores_triton, fused_hamming_scores_pytorch, Q_ham, K_ham, lora_q, lora_k, temp)
 
     # 19. elementwise: fused_favor_plus_feature_map
     from neuralops.core.triton_kernels.elementwise import (
@@ -268,9 +268,9 @@ def main():
         fused_favor_plus_feature_map_pytorch,
     )
     print("\n--- 19. elementwise (FAVOR+ Feature Map) ---")
-    x_fav = torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32)
-    omega_fav = torch.randn(64, 32, device=device, dtype=torch.float32)
-    bench_pair("fused_favor_plus", "(128x32, M=64)", fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch, x_fav, omega_fav, num_features=64, kernel_type="favor_plus")
+    x_fav = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
+    omega_fav = torch.randn(128, 64, device=device, dtype=torch.float32)
+    bench_pair("fused_favor_plus", "(256x64, M=128)", fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch, x_fav, omega_fav, num_features=128, kernel_type="favor_plus")
 
     # 20. fused_rope: fused_unified_rope_offset
     from neuralops.core.triton_kernels.fused_rope import (
@@ -278,10 +278,10 @@ def main():
         fused_unified_rope_offset_pytorch,
     )
     print("\n--- 20. fused_rope (Unified RoPE Offset) ---")
-    x_rope = torch.randn(2, 4, 256, 64, device=device, dtype=torch.float32)
-    cos_rope = torch.cos(torch.randn(256, 16, device=device, dtype=torch.float32))
-    sin_rope = torch.sin(torch.randn(256, 16, device=device, dtype=torch.float32))
-    bench_pair("fused_unified_rope_offset", "(256x64, rot=32)", fused_unified_rope_offset_triton, fused_unified_rope_offset_pytorch, x_rope, cos_rope, sin_rope, 32)
+    x_rope = torch.randn(4, 8, 512, 64, device=device, dtype=torch.float32)
+    cos_rope = torch.cos(torch.randn(512, 16, device=device, dtype=torch.float32))
+    sin_rope = torch.sin(torch.randn(512, 16, device=device, dtype=torch.float32))
+    bench_pair("fused_unified_rope_offset", "(512x64, rot=32)", fused_unified_rope_offset_triton, fused_unified_rope_offset_pytorch, x_rope, cos_rope, sin_rope, 32)
 
     # 21. block_sparse: fused_moba_block_router_combine
     from neuralops.core.triton_kernels.block_sparse import (
@@ -289,10 +289,10 @@ def main():
         fused_moba_block_router_combine_pytorch,
     )
     print("\n--- 21. block_sparse (MoBA Block Router) ---")
-    Qb_moba = torch.randn(2, 2, 8, 16, 32, device=device, dtype=torch.float32)
-    Kb_moba = torch.randn(2, 2, 8, 16, 32, device=device, dtype=torch.float32)
-    Vb_moba = torch.randn(2, 2, 8, 16, 32, device=device, dtype=torch.float32)
-    bench_pair("fused_moba_block_router", "(8x16x32)", fused_moba_block_router_combine_triton, fused_moba_block_router_combine_pytorch, Qb_moba, Kb_moba, Vb_moba, 0.25, top_k=2, is_causal=True)
+    Qb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
+    Kb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
+    Vb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
+    bench_pair("fused_moba_block_router", "(16x16x32)", fused_moba_block_router_combine_triton, fused_moba_block_router_combine_pytorch, Qb_moba, Kb_moba, Vb_moba, 0.25, top_k=2, is_causal=True)
 
     # 22. linear_attn: fused_rala_augmented_scan
     from neuralops.core.triton_kernels.linear_attn import (
@@ -300,12 +300,12 @@ def main():
         fused_rala_augmented_scan_pytorch,
     )
     print("\n--- 22. linear_attn (RALA Augmented Scan) ---")
-    q_rala = F.softplus(torch.randn(2, 2, 64, 32, device=device, dtype=torch.float32))
-    k_rala = F.softplus(torch.randn(2, 2, 64, 32, device=device, dtype=torch.float32))
-    v_rala = torch.randn(2, 2, 64, 32, device=device, dtype=torch.float32)
-    lora_U = torch.randn(2, 32, 4, device=device, dtype=torch.float32)
-    lora_V = torch.randn(2, 32, 4, device=device, dtype=torch.float32)
-    bench_pair("fused_rala_augmented_scan", "(64x32, r=4)", fused_rala_augmented_scan_triton, fused_rala_augmented_scan_pytorch, q_rala, k_rala, v_rala, lora_U, lora_V, is_causal=True)
+    q_rala = F.softplus(torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32))
+    k_rala = F.softplus(torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32))
+    v_rala = torch.randn(2, 4, 128, 32, device=device, dtype=torch.float32)
+    lora_U = torch.randn(4, 32, 4, device=device, dtype=torch.float32)
+    lora_V = torch.randn(4, 32, 4, device=device, dtype=torch.float32)
+    bench_pair("fused_rala_augmented_scan", "(128x32, r=4)", fused_rala_augmented_scan_triton, fused_rala_augmented_scan_pytorch, q_rala, k_rala, v_rala, lora_U, lora_V, is_causal=True)
 
     # 23. state_update: fused_recurrent_linear_step
     from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
@@ -331,10 +331,10 @@ def main():
         fused_jamba_hybrid_ssm_attn_gate_pytorch,
     )
     print("\n--- 24. selective_scan (Jamba Hybrid Gate) ---")
-    attn_out_j = torch.randn(2, 128, 256, device=device, dtype=torch.float32)
-    ssm_out_j = torch.randn(2, 128, 256, device=device, dtype=torch.float32)
-    alpha_j = torch.randn(4, device=device, dtype=torch.float32)
-    bench_pair("fused_jamba_hybrid_gate", "(128x256, H=4)", fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch, attn_out_j, ssm_out_j, alpha_j)
+    attn_out_j = torch.randn(4, 256, 512, device=device, dtype=torch.float32)
+    ssm_out_j = torch.randn(4, 256, 512, device=device, dtype=torch.float32)
+    alpha_j = torch.randn(8, device=device, dtype=torch.float32)
+    bench_pair("fused_jamba_hybrid_gate", "(256x512, H=8)", fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch, attn_out_j, ssm_out_j, alpha_j)
 
     # 25. fms_scan: fused_goldfinch_hopfield_lookup
     from neuralops.core.triton_kernels.fms_scan import (
@@ -342,9 +342,9 @@ def main():
         fused_goldfinch_hopfield_lookup_pytorch,
     )
     print("\n--- 25. fms_scan (Goldfinch Hopfield Lookup) ---")
-    g_gf = torch.sigmoid(torch.randn(2, 256, 64, device=device, dtype=torch.float32))
-    v_gf = torch.tanh(torch.randn(2, 256, 64, device=device, dtype=torch.float32))
-    bench_pair("fused_goldfinch_hopfield", "(256x64, chunk=16)", fused_goldfinch_hopfield_lookup_triton, fused_goldfinch_hopfield_lookup_pytorch, g_gf, v_gf, chunk_size=16)
+    g_gf = torch.sigmoid(torch.randn(4, 512, 128, device=device, dtype=torch.float32))
+    v_gf = torch.tanh(torch.randn(4, 512, 128, device=device, dtype=torch.float32))
+    bench_pair("fused_goldfinch_hopfield", "(512x128, chunk=16)", fused_goldfinch_hopfield_lookup_triton, fused_goldfinch_hopfield_lookup_pytorch, g_gf, v_gf, chunk_size=16)
 
     # 26. flash_decoding: flash_decode_kernel
     from neuralops.core.triton_kernels.flash_decoding import (
