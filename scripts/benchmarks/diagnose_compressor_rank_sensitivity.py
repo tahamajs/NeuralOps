@@ -32,16 +32,27 @@ from scripts.benchmarks.batch_validate_all_compressors import (
     evaluate,
 )
 
-def extract_weight_signature(model: nn.Module) -> torch.Tensor:
-    """Concatenate sample weights into a single flat vector for exact difference check."""
-    params = []
-    for p in model.parameters():
-        if p.ndim >= 2 and p.numel() > 100:
-            params.append(p.data.detach().reshape(-1))
-    if not params:
-        for p in model.parameters():
-            params.append(p.data.detach().reshape(-1))
-    return torch.cat(params).float()
+def extract_reconstructed_weights(model: nn.Module) -> torch.Tensor:
+    """Extract reconstructed full-rank dense weights across layers."""
+    tensors = []
+    for name, m in model.named_modules():
+        if hasattr(m, "U") and hasattr(m, "V") and m.U is not None and m.V is not None:
+            # Low-rank factorized layer
+            U, V = m.U.data.float(), m.V.data.float()
+            if U.shape[1] == V.shape[0]:
+                w = torch.matmul(U, V)
+            elif U.shape[1] == V.shape[1]:
+                w = torch.matmul(U, V.t())
+            elif U.shape[0] == V.shape[0]:
+                w = torch.matmul(U.t(), V)
+            else:
+                w = torch.matmul(U, V)
+            tensors.append(w.reshape(-1))
+        elif hasattr(m, "weight") and m.weight is not None and m.weight.ndim == 2 and m.weight.numel() > 100:
+            tensors.append(m.weight.data.float().reshape(-1))
+    if tensors:
+        return torch.cat(tensors)
+    return torch.tensor([0.0])
 
 def run_diagnostic():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -50,8 +61,9 @@ def run_diagnostic():
     torch.manual_seed(42)
     anchor = load_synthetic_block(device)
     probe, heldout, _, _ = get_probe_data("synth_block", device)
-    W_orig = extract_weight_signature(anchor)
-    y_anchor = anchor(heldout)
+    W_orig = extract_reconstructed_weights(anchor)
+    with torch.no_grad():
+        y_anchor = anchor(heldout)
 
     results = {
         "VALID": [],
@@ -60,9 +72,9 @@ def run_diagnostic():
         "FAILED": [],
     }
 
-    print("\n" + "=" * 105)
-    print(f"{'Method':<28s} {'Status':<22s} {'Diff(r8,r64)':<14s} {'Diff(r8,orig)':<14s} {'Err(r8) -> Err(r64)':<22s}")
-    print("=" * 105)
+    print("\n" + "=" * 115)
+    print(f"{'Method':<28s} {'Status':<22s} {'LogitDiff(8,64)':<16s} {'RelErr(r8)':<12s} {'RelErr(r64)':<12s} {'Details'}")
+    print("=" * 115)
 
     for method in COMPRESSOR_REGISTRY_KEYS:
         # Test rank 8
@@ -70,7 +82,7 @@ def run_diagnostic():
         comp8 = get_compressor(method, m8, 8, probe)
         if comp8 is None:
             results["FAILED"].append((method, "Constructor returned None"))
-            print(f"{method:<28s} {'FAILED (None)':<22s} {'—':<14s} {'—':<14s} {'—':<22s}")
+            print(f"{method:<28s} {'FAILED (None)':<22s} {'—':<16s} {'—':<12s} {'—':<12s} Constructor failed")
             continue
 
         try:
@@ -85,12 +97,12 @@ def run_diagnostic():
             elif getattr(comp8, "model", None) is not None:
                 m8 = comp8.model
             
-            w8 = extract_weight_signature(m8)
-            out8 = evaluate(m8, heldout, y_anchor, "synth_block", device)
-            err8 = out8["rel_err"]
+            with torch.no_grad():
+                out8_logits = m8(heldout)
+            err8 = (torch.norm(out8_logits.float() - y_anchor.float()) / torch.norm(y_anchor.float())).item()
         except Exception as e:
             results["FAILED"].append((method, str(e)[:40]))
-            print(f"{method:<28s} {'FAILED (Exec r8)':<22s} {'—':<14s} {'—':<14s} {'—':<22s}")
+            print(f"{method:<28s} {'FAILED (Exec r8)':<22s} {'—':<16s} {'—':<12s} {'—':<12s} {str(e)[:30]}")
             continue
 
         # Test rank 64
@@ -98,7 +110,7 @@ def run_diagnostic():
         comp64 = get_compressor(method, m64, 64, probe)
         if comp64 is None:
             results["FAILED"].append((method, "Rank 64 constructor failed"))
-            print(f"{method:<28s} {'FAILED (r64 None)':<22s} {'—':<14s} {'—':<14s} {'—':<22s}")
+            print(f"{method:<28s} {'FAILED (r64 None)':<22s} {'—':<16s} {'—':<12s} {'—':<12s} Rank 64 init failed")
             continue
 
         try:
@@ -113,29 +125,32 @@ def run_diagnostic():
             elif getattr(comp64, "model", None) is not None:
                 m64 = comp64.model
 
-            w64 = extract_weight_signature(m64)
-            out64 = evaluate(m64, heldout, y_anchor, "synth_block", device)
-            err64 = out64["rel_err"]
+            with torch.no_grad():
+                out64_logits = m64(heldout)
+            err64 = (torch.norm(out64_logits.float() - y_anchor.float()) / torch.norm(y_anchor.float())).item()
         except Exception as e:
             results["FAILED"].append((method, str(e)[:40]))
-            print(f"{method:<28s} {'FAILED (Exec r64)':<22s} {'—':<14s} {'—':<14s} {'—':<22s}")
+            print(f"{method:<28s} {'FAILED (Exec r64)':<22s} {'—':<16s} {'—':<12s} {'—':<12s} {str(e)[:30]}")
             continue
 
-        diff_8_64 = (w8 - w64).abs().max().item()
-        diff_8_orig = (w8 - W_orig).abs().max().item()
+        logit_diff = (out8_logits - out64_logits).abs().max().item()
+        err_diff = abs(err8 - err64)
         err_str = f"{err8:.4f} -> {err64:.4f}"
 
-        if diff_8_orig < 1e-6:
+        if err8 < 1e-6 and err64 < 1e-6:
             status = "NO_OP_FALLBACK"
             results["NO_OP_FALLBACK"].append((method, err_str))
-        elif diff_8_64 < 1e-6:
+            detail = "Identity/Fallback to uncompressed (0 error)"
+        elif logit_diff < 1e-6 or err_diff < 1e-5:
             status = "NO_OP_IGNORES_RANK"
             results["NO_OP_IGNORES_RANK"].append((method, err_str))
+            detail = "Constant output across ranks (rank ignored)"
         else:
             status = "VALID"
             results["VALID"].append((method, err_str))
+            detail = f"Rank-sensitive: error drops by {err8 - err64:+.4f}"
 
-        print(f"{method:<28s} {status:<22s} {diff_8_64:<14.6f} {diff_8_orig:<14.6f} {err_str:<22s}")
+        print(f"{method:<28s} {status:<22s} {logit_diff:<16.6f} {err8:<12.4f} {err64:<12.4f} {detail}")
 
     print("\n" + "=" * 60)
     print("CATEGORICAL BREAKDOWN:")
