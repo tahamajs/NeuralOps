@@ -96,9 +96,9 @@ We organize all 131 canonical attention mechanisms into six foundational mathema
 Model compression algorithms in NeuralOps operate along four distinct mathematical axes:
 \begin{itemize}
     \item \textbf{Activation-Aware SVD (32 Engines):} Solves $\min_{\text{rank}(W_r) \le r} \| (W - W_r) X \|_F$ via Cholesky activation whitening $S = X X^\top = L L^\top$, factoring $\tilde{W} = W L = U \Sigma V^\top$. Engines: \texttt{a3\_compressor}, \texttt{asvd}, \texttt{svd\_llm\_compressor}, \texttt{direct\_svd}, \texttt{dobi\_svd}.
-    \item \textbf{Vector Quantization & Codebooks (8 Engines):} Maps weight matrices to discrete centroid codebooks $W_{i, j} \approx \mathcal{C}[\arg\min_k \| W_{i, j} - c_k \|_2]$. Engines: \texttt{kmeans\_quantize}, \texttt{coopq\_quantizer}, \texttt{astro\_quantizer}, \texttt{uniql\_compressor}.
-    \item \textbf{Pruning & Sparsification (18 Engines):} Generates sparse binary masks $M \in \{0, 1\}^{d \times d}$ via second-order Taylor expansion or fluctuating activation norms. Engines: \texttt{sparsegpt}, \texttt{slicegpt}, \texttt{flap}, \texttt{admm\_pruner}, \texttt{bonsai\_pruner}.
-    \item \textbf{Tensor Decompositions & Hashing (14 Engines):} Decomposes weights into low-rank tensor trains, Kronecker products, or hashed random offsets. Engines: \texttt{kronecker\_compressor}, \texttt{tt\_compressor}, \texttt{mlorq\_compressor}, \texttt{roast\_hashed\_linear}.
+    \item \textbf{Vector Quantization \& Codebooks (8 Engines):} Maps weight matrices to discrete centroid codebooks $W_{i, j} \approx \mathcal{C}[\arg\min_k \| W_{i, j} - c_k \|_2]$. Engines: \texttt{kmeans\_quantize}, \texttt{coopq\_quantizer}, \texttt{astro\_quantizer}, \texttt{uniql\_compressor}.
+    \item \textbf{Pruning \& Sparsification (18 Engines):} Generates sparse binary masks $M \in \{0, 1\}^{d \times d}$ via second-order Taylor expansion or fluctuating activation norms. Engines: \texttt{sparsegpt}, \texttt{slicegpt}, \texttt{flap}, \texttt{admm\_pruner}, \texttt{bonsai\_pruner}.
+    \item \textbf{Tensor Decompositions \& Hashing (14 Engines):} Decomposes weights into low-rank tensor trains, Kronecker products, or hashed random offsets. Engines: \texttt{kronecker\_compressor}, \texttt{tt\_compressor}, \texttt{mlorq\_compressor}, \texttt{roast\_hashed\_linear}.
 \end{itemize}
 
 \section{Mathematical Formulations and Theoretical Proofs}
