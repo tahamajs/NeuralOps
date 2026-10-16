@@ -979,7 +979,7 @@ def heal_replaced_model(
         init_coss.append(cos_sim0)
         final_coss.append(final_cos)
 
-    return {
+    out_stats = {
         "num_healed_layers": len(per_layer_stats),
         "steps": steps,
         "also_ridge_init": also_ridge_init,
@@ -990,6 +990,38 @@ def heal_replaced_model(
         "elapsed_sec": float(time.perf_counter() - t0),
         "per_layer": per_layer_stats,
     }
+
+    if log_to_ledger:
+        try:
+            from neuralops.core.results_ledger import log_experiment_result
+            log_experiment_result(
+                module_name="surgical_micro_healing",
+                category="ablation",
+                family="surgery-healing",
+                generation_method={
+                    "algorithm": "Fast Layerwise Subspace Micro-Healing",
+                    "pipeline_stages": ["analytical_ridge_init" if also_ridge_init else "none", "adamw_cosine_micro_tuning"],
+                    "source_component": "neuralops.core._attention_surgery.heal_replaced_model",
+                },
+                experimental_setup={
+                    "steps": steps,
+                    "lr": lr,
+                    "also_ridge_init": also_ridge_init,
+                    "num_healed_layers": len(per_layer_stats),
+                },
+                metrics={
+                    "initial_mse": out_stats["initial_mse"],
+                    "final_mse": out_stats["final_mse"],
+                    "initial_cosine_sim": out_stats["initial_cosine_sim"],
+                    "final_cosine_sim": out_stats["final_cosine_sim"],
+                    "elapsed_sec": out_stats["elapsed_sec"],
+                },
+                notes="Layerwise attention surgery alignment metrics",
+            )
+        except Exception:
+            pass
+
+    return out_stats
 
 
 __all__ = [

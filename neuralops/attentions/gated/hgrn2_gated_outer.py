@@ -496,8 +496,13 @@ class HGRN2GatedOuterBlock(BaseAttention):
                         except Exception:
                             pass
                     from neuralops.core.triton_kernels.gla_scan import gla_scan_triton
-                    y_triton = gla_scan_triton(q.float(), k.float(), v.float(), f.float()).to(q.dtype)
-                    return y_triton, torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+                    y_triton, s_final = gla_scan_triton(
+                        q.float(), k.float(), v.float(), f.float(),
+                        initial_state=initial_state,
+                        return_final_state=True,
+                        use_normalizer=False,
+                    )
+                    return y_triton.to(q.dtype), s_final
             except Exception as e:
                 logger.debug("HGRN2 outer Triton scan failed, falling back to chunked PyTorch: %s", e)
 

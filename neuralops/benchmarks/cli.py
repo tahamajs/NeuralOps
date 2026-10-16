@@ -259,6 +259,36 @@ def _build_parser() -> argparse.ArgumentParser:
     scaff_p.add_argument("--family", type=str, default="linear-scan", help="Mathematical family tag")
     scaff_p.add_argument("--output", type=str, default=None, help="Output python file destination")
 
+    # 23. results & ledger
+    res_p = subparsers.add_parser("results", aliases=["ledger"], help="Query, version, plot, and manage experiment results ledger")
+    res_p.add_argument("--module", type=str, default=None, help="Filter by module name")
+    res_p.add_argument("--category", type=str, default=None, help="Filter by category (attention, compressor, triton_kernel, cuda_kernel, ablation)")
+    res_p.add_argument("--family", type=str, default=None, help="Filter by mathematical family")
+    res_p.add_argument("--dataset", type=str, default=None, help="Filter by dataset (SST-2, WikiText-2, etc.)")
+    res_p.add_argument("--backbone", type=str, default=None, help="Filter by backbone (DistilBERT, RoBERTa, GPT-2, Qwen)")
+    res_p.add_argument("--method", type=str, default=None, help="Filter by generation method substring")
+    res_p.add_argument("--git-sha", type=str, default=None, help="Filter by exact or prefix Git commit SHA")
+    res_p.add_argument("--version-tag", type=str, default=None, help="Filter by version tag (e.g. v1.3.7)")
+    res_p.add_argument("--all-revisions", action="store_true", help="Include superseded historical revisions")
+    res_p.add_argument("--limit", type=int, default=50, help="Maximum records to return")
+    res_p.add_argument("--format", type=str, choices=["table", "markdown", "latex", "csv", "json"], default="table", help="Output format")
+    res_p.add_argument("--dossier", type=str, default=None, help="Display full history dossier for module")
+    res_p.add_argument("--diff", type=str, default=None, help="Compare revisions/versions of module")
+    res_p.add_argument("--rev-a", type=str, default=None, help="Base revision/git for diff")
+    res_p.add_argument("--rev-b", type=str, default=None, help="Target revision/git for diff")
+    res_p.add_argument("--plot", type=str, choices=["bar", "pareto", "scaling", "diff"], default=None, help="Generate chart")
+    res_p.add_argument("--x-metric", type=str, default="peak_vram_mb", help="X-axis metric for plot")
+    res_p.add_argument("--y-metric", type=str, default="accuracy", help="Y-axis metric for plot")
+    res_p.add_argument("--out", type=str, default=None, help="Output destination for plot SVG/PNG or table export")
+    res_p.add_argument("--add", action="store_true", help="Add or update a result record")
+    res_p.add_argument("--metrics", type=str, default=None, help="JSON string of metrics for --add")
+    res_p.add_argument("--setup", type=str, default=None, help="JSON string of setup for --add")
+    res_p.add_argument("--mode", type=str, choices=["upsert", "replace", "new_version"], default="upsert", help="Insertion mode")
+    res_p.add_argument("--delete", action="store_true", help="Delete matching records")
+    res_p.add_argument("--id", type=str, default=None, help="Specific record ID for --delete")
+    res_p.add_argument("--hard", action="store_true", help="Physically purge records (hard delete)")
+    res_p.add_argument("--sync", action="store_true", help="Rebuild SQLite and per-module dossiers from JSONL")
+
     return parser
 
 
@@ -903,6 +933,111 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[✓] Scaffold written to '{args.output}'.")
         else:
             print(code)
+        return 0
+    elif args.subcommand in ("results", "ledger"):
+        from neuralops.core.results_ledger import get_default_ledger, ResultRecord
+        import json
+
+        ledger = get_default_ledger()
+
+        # Handle Dossier
+        if getattr(args, "dossier", None):
+            dossier = ledger.get_module_dossier(args.dossier)
+            if not dossier:
+                print(f"[-] No dossier found for module '{args.dossier}'.")
+                return 1
+            print(json.dumps(dossier, indent=2, ensure_ascii=False))
+            return 0
+
+        # Handle Diff
+        if getattr(args, "diff", None):
+            diff_res = ledger.compare_versions(args.diff, rev_a=args.rev_a, rev_b=args.rev_b)
+            print(json.dumps(diff_res, indent=2, ensure_ascii=False))
+            return 0
+
+        # Handle Sync
+        if getattr(args, "sync", False):
+            print("[+] Syncing Results Ledger...")
+            ledger.rewrite_jsonl_from_sqlite()
+            print("[✓] Master ledger rewritten and synchronized.")
+            return 0
+
+        # Handle Delete
+        if getattr(args, "delete", False):
+            rec_ids = [args.id] if args.id else None
+            count = ledger.delete_records(
+                record_ids=rec_ids,
+                module_name=args.module,
+                category=args.category,
+                version_tag=args.version_tag,
+                hard_delete=args.hard,
+            )
+            mode_str = "hard purged" if args.hard else "soft deleted"
+            print(f"[✓] Successfully {mode_str} {count} record(s).")
+            return 0
+
+        # Handle Add
+        if getattr(args, "add", False):
+            if not args.module:
+                print("[-] --module is required when using --add.")
+                return 1
+            metrics = json.loads(args.metrics) if args.metrics else {}
+            setup = json.loads(args.setup) if args.setup else {}
+            if args.dataset:
+                setup["dataset"] = args.dataset
+            if args.backbone:
+                setup["backbone"] = args.backbone
+            rec = ledger.add_or_replace(
+                ResultRecord(
+                    record_id="",
+                    module_name=args.module,
+                    category=args.category or "attention",
+                    family=args.family or "general",
+                    version_tag=args.version_tag or "v1.3.7",
+                    generation_method={"algorithm": args.method or "CLI Entry"},
+                    experimental_setup=setup,
+                    metrics=metrics,
+                ),
+                mode=args.mode,
+            )
+            print(f"[✓] Record stored: {rec.record_id} (Rev {rec.revision}, Status: {rec.status})")
+            return 0
+
+        # Query & Plot / Export
+        records = ledger.query(
+            module_name=args.module,
+            category=args.category,
+            family=args.family,
+            dataset=args.dataset,
+            backbone=args.backbone,
+            method_contains=args.method,
+            git_sha=args.git_sha,
+            version_tag=args.version_tag,
+            only_active=not args.all_revisions,
+            limit=args.limit,
+        )
+
+        if getattr(args, "plot", None):
+            plot_res = ledger.plot_results(
+                records,
+                chart_type=args.plot,
+                x_metric=args.x_metric,
+                y_metric=args.y_metric,
+                output_path=args.out,
+            )
+            print(plot_res["ascii"])
+            if plot_res.get("svg_path"):
+                print(f"[✓] Vector chart saved to '{plot_res['svg_path']}'.")
+            return 0
+
+        fmt = "markdown" if args.format == "table" else args.format
+        output_str = ledger.export_table(records, format=fmt)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as f:
+                f.write(output_str)
+            print(f"[✓] Table exported to '{args.out}'.")
+        else:
+            print(output_str)
         return 0
 
     return 0
