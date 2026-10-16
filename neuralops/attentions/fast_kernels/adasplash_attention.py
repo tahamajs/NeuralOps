@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half
+from neuralops.core.utils.rope import _rotate_half
 from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 from neuralops.core.triton_kernels.elementwise import fused_entmax_bisect_triton
 from neuralops.utils.compat import maybe_apply_rotary, repeat_kv

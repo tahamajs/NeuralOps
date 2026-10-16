@@ -23,9 +23,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
-from neuralops.core.gqa_utils import repeat_kv
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half, apply_rotary_pos_emb
+from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
