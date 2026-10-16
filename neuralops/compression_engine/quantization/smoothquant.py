@@ -90,10 +90,13 @@ def smoothquant_model(
     calib_data: list[torch.Tensor],
     alpha: float = 0.5,
 ) -> dict[str, torch.Tensor]:
-    """Applies SmoothQuant to all nn.Linear layers in model and returns scale dict."""
+    """Applies SmoothQuant to eligible nn.Linear layers in model, protecting task heads."""
+    from neuralops.utils.compat.architectures import should_compress_linear
     scales = {}
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
+            if not should_compress_linear(model, name):
+                continue
             _, s = smoothquant_layer(module, alpha=alpha, calib_data=calib_data)
             scales[name] = s
     return scales
