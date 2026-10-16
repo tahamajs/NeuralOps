@@ -495,7 +495,7 @@ class HessianNullSpaceSVDContinuation:
             w = (w + cur_eta * w_norm * (delta_w / dw_norm)).detach()
 
         # Stage B: Generalized Eckart-Young Activation-Aware Cholesky-Whitened SVD Truncation
-        r = min(self.target_rank, d_out, d_in)
+        r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
         try:
             reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
             Sx = Hx + reg * torch.eye(d_in, device=dev, dtype=torch.float32)
@@ -504,9 +504,19 @@ class HessianNullSpaceSVDContinuation:
             U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
             U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
             V_unwhitened = torch.linalg.solve_triangular(
-                L, (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+                L.t(), (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=True
             ).t()
-            W_hat = torch.matmul(U_r, V_unwhitened)
+            # Post-truncation local factor refinement
+            U_param = nn.Parameter(U_r.clone())
+            V_param = nn.Parameter(V_unwhitened.clone())
+            opt_local = torch.optim.Adam([U_param, V_param], lr=1e-3)
+            for _ in range(15):
+                opt_local.zero_grad()
+                diff_act = torch.matmul(torch.matmul(U_param, V_param) - w_0, px.t())
+                loss_act = 0.5 * torch.mean(diff_act ** 2)
+                loss_act.backward()
+                opt_local.step()
+            W_hat = torch.matmul(U_param.data, V_param.data)
         except Exception:
             U, S, Vh = torch.linalg.svd(w, full_matrices=False)
             U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
@@ -554,7 +564,7 @@ class HessianNullSpaceSVDContinuation:
                     target_layers[name] = mod
             else:
                 if isinstance(mod, nn.Linear) and mod.weight.ndim == 2:
-                    if min(mod.weight.shape) > self.target_rank:
+                    if min(mod.weight.shape) > 1:
                         target_layers[name] = mod
 
         if not target_layers:
@@ -663,7 +673,7 @@ class HessianNullSpaceSVDContinuation:
             W_steered = mod.weight.data.float()
             W_0 = initial_weights[name].float()
             d_out, d_in = W_steered.shape
-            r = min(self.target_rank, d_out, d_in)
+            r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
 
             # Activation-Aware Cholesky-Whitened Truncation
             if name in input_covariances:
@@ -676,7 +686,7 @@ class HessianNullSpaceSVDContinuation:
                     U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
                     U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
                     V_unwhitened = torch.linalg.solve_triangular(
-                        L, (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+                        L.t(), (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=True
                     ).t()
                     A_r = nn.Parameter(U_r.to(device=self.device, dtype=torch.float32))
                     B_r = nn.Parameter(V_unwhitened.to(device=self.device, dtype=torch.float32))
@@ -705,26 +715,35 @@ class HessianNullSpaceSVDContinuation:
         # Invariant: rank(W_hat) <= r strictly preserved because W_hat = A_r @ B_r
         optimizer_factors = []
         for name, (A_r, B_r, mod) in low_rank_factors.items():
+            A_r.requires_grad_(True)
+            B_r.requires_grad_(True)
             optimizer_factors.extend([A_r, B_r])
 
         if optimizer_factors:
-            post_opt = torch.optim.Adam(optimizer_factors, lr=1e-3, betas=(0.9, 0.99))
-            m_post = 15
-            for _ in range(m_post):
-                post_opt.zero_grad()
-                # Apply current low-rank products into model weights
-                for name, (A_r, B_r, mod) in low_rank_factors.items():
-                    mod.weight.data = torch.matmul(A_r, B_r).to(dtype=mod.weight.dtype)
+            # Temporarily replace mod.weight parameter with dynamic low-rank matrix product
+            orig_params = {}
+            for name, (A_r, B_r, mod) in low_rank_factors.items():
+                orig_params[name] = mod._parameters.pop("weight")
 
-                loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
-                loss_post.backward()
-                post_opt.step()
+            try:
+                post_opt = torch.optim.Adam(optimizer_factors, lr=1e-3, betas=(0.9, 0.99))
+                m_post = 20
+                for _ in range(m_post):
+                    post_opt.zero_grad()
+                    for name, (A_r, B_r, mod) in low_rank_factors.items():
+                        mod.weight = torch.matmul(A_r, B_r)
 
-            # Finalize weights strictly from A_r @ B_r
-            with torch.no_grad():
-                for name, (A_r, B_r, mod) in low_rank_factors.items():
-                    final_W = torch.matmul(A_r, B_r).to(dtype=mod.weight.dtype)
-                    mod.weight.data.copy_(final_W)
+                    loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
+                    loss_post.backward()
+                    post_opt.step()
+            finally:
+                # Ensure mod.weight is always properly restored as nn.Parameter
+                with torch.no_grad():
+                    for name, (A_r, B_r, mod) in low_rank_factors.items():
+                        if hasattr(mod, "weight"):
+                            del mod.weight
+                        final_W = torch.matmul(A_r.data, B_r.data).to(dtype=orig_params[name].dtype)
+                        mod.register_parameter("weight", nn.Parameter(final_W))
 
         final_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
         return {
@@ -735,3 +754,4 @@ class HessianNullSpaceSVDContinuation:
             "target_layers_count": len(target_layers),
             "step_history": step_history,
         }
+
