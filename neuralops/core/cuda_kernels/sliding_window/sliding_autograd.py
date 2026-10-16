@@ -1,5 +1,6 @@
 """
-Sliding Window Attention Python Interface & 3-Level Fallback (Module 7).
+Sliding Window Attention Python Interface, Autograd Functions, and 3-Level Fallback (Module 7).
+Supports arbitrary window sizes, attention sinks, FP16/BF16/FP32, and exact analytical backward pass.
 """
 
 from __future__ import annotations
@@ -42,11 +43,12 @@ def sliding_window_pytorch_ref(
     num_sinks: int = 4,
     scale: float | None = None,
 ) -> torch.Tensor:
+    """Pure PyTorch reference with FP32 stability."""
     B, H, N, D = q.shape
     if scale is None:
         scale = 1.0 / (D ** 0.5)
 
-    scores = torch.matmul(q, k.transpose(-1, -2)) * scale
+    scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
 
     q_idx = torch.arange(N, device=q.device).unsqueeze(1)
     k_idx = torch.arange(N, device=q.device).unsqueeze(0)
@@ -60,10 +62,29 @@ def sliding_window_pytorch_ref(
 
     probs = F.softmax(scores, dim=-1)
     probs = torch.nan_to_num(probs, nan=0.0)
-    return torch.matmul(probs, v)
+    return torch.matmul(probs, v.float()).to(q.dtype)
 
 
-def sliding_window_attn(
+def _sliding_window_triton_fallback(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    window_size: int = 128,
+    num_sinks: int = 4,
+    scale: float | None = None,
+) -> torch.Tensor | None:
+    # Standard Triton sliding_window kernel handles window_size without attention sinks
+    if num_sinks > 0:
+        return None
+
+    try:
+        from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+        return sliding_window_triton(q, k, v, window_size=window_size)
+    except Exception:
+        return None
+
+
+def _sliding_window_forward_dispatch(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
@@ -77,15 +98,9 @@ def sliding_window_attn(
     mod = _get_module()
     cuda_fn = mod.sliding_window_attn_fwd if mod is not None else None
 
-    triton_fn = None
-    try:
-        from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_triton
-    except Exception:
-        pass
-
     return dispatch(
         cuda_fn,
-        None,
+        _sliding_window_triton_fallback,
         sliding_window_pytorch_ref,
         q,
         k,
@@ -95,3 +110,67 @@ def sliding_window_attn(
         scale,
         kernel_name="sliding_window_attn",
     )
+
+
+class _SlidingWindowAttnFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, k, v, window_size: int, num_sinks: int, scale: float):
+        out = _sliding_window_forward_dispatch(q, k, v, window_size, num_sinks, scale)
+        ctx.save_for_backward(q, k, v)
+        ctx.window_size = window_size
+        ctx.num_sinks = num_sinks
+        ctx.scale = scale
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        q, k, v = ctx.saved_tensors
+        window_size = ctx.window_size
+        num_sinks = ctx.num_sinks
+        scale = ctx.scale
+
+        B, H, N, D = q.shape
+        scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+
+        q_idx = torch.arange(N, device=q.device).unsqueeze(1)
+        k_idx = torch.arange(N, device=q.device).unsqueeze(0)
+
+        causal = k_idx <= q_idx
+        in_window = k_idx >= (q_idx - window_size + 1)
+        is_sink = k_idx < num_sinks
+
+        valid_mask = causal & (in_window | is_sink)
+        scores = scores.masked_fill(~valid_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+
+        p = F.softmax(scores, dim=-1)
+        p = torch.nan_to_num(p, nan=0.0)
+
+        grad_out_f = grad_output.float()
+        grad_v = torch.matmul(p.transpose(-1, -2), grad_out_f).to(v.dtype)
+
+        grad_p = torch.matmul(grad_out_f, v.float().transpose(-1, -2))
+        sum_p_grad_p = (p * grad_p).sum(dim=-1, keepdim=True)
+        grad_scores = p * (grad_p - sum_p_grad_p) * scale
+
+        grad_q = torch.matmul(grad_scores, k.float()).to(q.dtype)
+        grad_k = torch.matmul(grad_scores.transpose(-1, -2), q.float()).to(k.dtype)
+
+        return grad_q, grad_k, grad_v, None, None, None
+
+
+def sliding_window_attn(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    window_size: int = 128,
+    num_sinks: int = 4,
+    scale: float | None = None,
+) -> torch.Tensor:
+    """Sliding Window Attention with autograd backward pass and 3-level fallback."""
+    if scale is None:
+        scale = 1.0 / (q.shape[-1] ** 0.5)
+
+    if any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
+        return _SlidingWindowAttnFunction.apply(q, k, v, window_size, num_sinks, scale)
+
+    return _sliding_window_forward_dispatch(q, k, v, window_size, num_sinks, scale)
