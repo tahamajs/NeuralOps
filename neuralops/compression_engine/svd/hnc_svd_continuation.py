@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Mapping
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
@@ -49,7 +50,7 @@ def compute_function_matching_loss(
     total_samples = 0
 
     for x_batch, y_anchor in zip(batches, anchor_outputs):
-        if isinstance(x_batch, dict):
+        if isinstance(x_batch, (dict, Mapping)):
             out = model(**x_batch)
         elif isinstance(x_batch, (list, tuple)):
             out = model(*x_batch)
@@ -549,10 +550,15 @@ class HessianNullSpaceSVDContinuation:
             if isinstance(probe_inputs, torch.Tensor):
                 batches = [probe_inputs.to(self.device)]
             else:
-                batches = [b.to(self.device) if isinstance(b, torch.Tensor) else b for b in probe_inputs]
+                batches = [
+                    {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in b.items()}
+                    if isinstance(b, Mapping)
+                    else (b.to(self.device) if isinstance(b, torch.Tensor) else b)
+                    for b in probe_inputs
+                ]
 
             for b in batches:
-                if isinstance(b, dict):
+                if isinstance(b, (dict, Mapping)):
                     o = self.model(**b)
                 elif isinstance(b, (list, tuple)):
                     o = self.model(*b)
@@ -606,7 +612,7 @@ class HessianNullSpaceSVDContinuation:
 
         with torch.no_grad():
             for b in batches:
-                if isinstance(b, dict):
+                if isinstance(b, (dict, Mapping)):
                     _ = self.model(**b)
                 elif isinstance(b, (list, tuple)):
                     _ = self.model(*b)
@@ -658,7 +664,7 @@ class HessianNullSpaceSVDContinuation:
                             relin_inputs[layer_name].append(inp[0].detach())
                         r_hooks.append(mod.register_forward_hook(_rhook))
                     for b in batches:
-                        if isinstance(b, dict):
+                        if isinstance(b, (dict, Mapping)):
                             _ = self.model(**b)
                         elif isinstance(b, (list, tuple)):
                             _ = self.model(*b)
