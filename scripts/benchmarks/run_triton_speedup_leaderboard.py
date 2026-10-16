@@ -132,8 +132,8 @@ def run_tier1_benchmarks(device: str = "cuda") -> List[Dict[str, Any]]:
     try:
         from neuralops.core.triton_kernels.gla_scan import gla_scan_triton, gla_scan_pytorch
         B, H, T, D = 2, 8, 1024, 64
-        q = torch.randn(B, H, T, D, device=device, dtype=torch.float16)
-        k = torch.randn(B, H, T, D, device=device, dtype=torch.float16)
+        q = F.elu(torch.randn(B, H, T, D, device=device, dtype=torch.float16)) + 1.0
+        k = F.elu(torch.randn(B, H, T, D, device=device, dtype=torch.float16)) + 1.0
         v = torch.randn(B, H, T, D, device=device, dtype=torch.float16)
         g = torch.sigmoid(torch.randn(B, H, T, device=device, dtype=torch.float16))
 
