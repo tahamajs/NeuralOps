@@ -470,6 +470,7 @@ class HessianNullSpaceSVDContinuation:
         self.gamma_bump = gamma_bump
         self.relinearize_every = relinearize_every
         self.anneal_sigma = anneal_sigma
+        self.use_whitening = bool(kwargs.get("use_whitening", True))
         self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
 
     def run_continuation(
@@ -782,7 +783,7 @@ class HessianNullSpaceSVDContinuation:
             r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
 
             # Activation-Aware Cholesky-Whitened Truncation
-            if name in input_covariances:
+            if name in input_covariances and self.use_whitening:
                 Hx = input_covariances[name].float()
                 try:
                     reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
