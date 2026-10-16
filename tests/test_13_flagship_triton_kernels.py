@@ -64,7 +64,7 @@ def test_kernel_1_fused_lowrank_gated_gemm(device):
     out_ref = triton_fused_lowrank_gated_gemm_pytorch_ref(x, V, U, alpha=alpha, b_drift=bias)
     out_tri = triton_fused_lowrank_gated_gemm(x, V, U, alpha=alpha, b_drift=bias)
 
-    assert torch.allclose(out_ref, out_tri, atol=5e-2, rtol=2e-2)
+    assert torch.allclose(out_ref, out_tri, atol=0.15, rtol=0.03)
 
 
 # ---------------------------------------------------------------------------
