@@ -1,0 +1,98 @@
+{
+  "module_name": "pytorch_mha_baseline",
+  "category": "attention",
+  "family": "PyTorch Reference",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "328e7ec002",
+  "latest_timestamp": "2026-10-16T08:05:46Z",
+  "latest_record": {
+    "record_id": "39c195d90de7fb99",
+    "module_name": "pytorch_mha_baseline",
+    "category": "attention",
+    "family": "PyTorch Reference",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T08:05:46Z",
+    "git_commit_sha": "328e7ec002",
+    "generation_method": {
+      "algorithm": "PyTorch Reference",
+      "source_artifact": "results/competitive_comparison_v137.json"
+    },
+    "experimental_setup": {
+      "seq_len": null,
+      "batch_size": 2,
+      "embed_dim": 768,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "latency_triton_ms": 19.116,
+      "throughput_tok_s": 428551.8,
+      "peak_vram_mb": 912.57,
+      "speedup_x": 1.0
+    },
+    "notes": "Cross-Framework Competitive Benchmark"
+  },
+  "active_records": [
+    {
+      "record_id": "39c195d90de7fb99",
+      "module_name": "pytorch_mha_baseline",
+      "category": "attention",
+      "family": "PyTorch Reference",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "PyTorch Reference",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 19.116,
+        "throughput_tok_s": 428551.8,
+        "peak_vram_mb": 912.57,
+        "speedup_x": 1.0
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "39c195d90de7fb99",
+      "module_name": "pytorch_mha_baseline",
+      "category": "attention",
+      "family": "PyTorch Reference",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "PyTorch Reference",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 19.116,
+        "throughput_tok_s": 428551.8,
+        "peak_vram_mb": 912.57,
+        "speedup_x": 1.0
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    }
+  ]
+}

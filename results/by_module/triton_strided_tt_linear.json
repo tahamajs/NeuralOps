@@ -1,0 +1,98 @@
+{
+  "module_name": "triton_strided_tt_linear",
+  "category": "triton_kernel",
+  "family": "sram-fused-kernel",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d394b9df89",
+  "latest_timestamp": "2026-10-16T19:33:57+03:30",
+  "latest_record": {
+    "record_id": "522fc04ef8cd26ca",
+    "module_name": "triton_strided_tt_linear",
+    "category": "triton_kernel",
+    "family": "sram-fused-kernel",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T19:33:57+03:30",
+    "git_commit_sha": "d394b9df89",
+    "generation_method": {
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+      "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "target_modules": "tt_compressor"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.3240652847290039,
+      "latency_pytorch_ms": 0.34694145202636717,
+      "speedup_x": 1.0705912307654095,
+      "cosine_sim": 0.9999997615814209,
+      "peak_vram_mb": 50.08544921875,
+      "relative_error": 0.000761179777327925
+    },
+    "notes": "Target: tt_compressor"
+  },
+  "active_records": [
+    {
+      "record_id": "522fc04ef8cd26ca",
+      "module_name": "triton_strided_tt_linear",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T19:33:57+03:30",
+      "git_commit_sha": "d394b9df89",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "tt_compressor"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.3240652847290039,
+        "latency_pytorch_ms": 0.34694145202636717,
+        "speedup_x": 1.0705912307654095,
+        "cosine_sim": 0.9999997615814209,
+        "peak_vram_mb": 50.08544921875,
+        "relative_error": 0.000761179777327925
+      },
+      "notes": "Target: tt_compressor"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "522fc04ef8cd26ca",
+      "module_name": "triton_strided_tt_linear",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T19:33:57+03:30",
+      "git_commit_sha": "d394b9df89",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "tt_compressor"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.3240652847290039,
+        "latency_pytorch_ms": 0.34694145202636717,
+        "speedup_x": 1.0705912307654095,
+        "cosine_sim": 0.9999997615814209,
+        "peak_vram_mb": 50.08544921875,
+        "relative_error": 0.000761179777327925
+      },
+      "notes": "Target: tt_compressor"
+    }
+  ]
+}

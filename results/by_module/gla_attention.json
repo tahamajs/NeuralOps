@@ -1,0 +1,192 @@
+{
+  "module_name": "gla_attention",
+  "category": "attention",
+  "family": "attention",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "5d553a2079",
+  "latest_timestamp": "2026-10-15T04:02:13+03:30",
+  "latest_record": {
+    "record_id": "9c429c488e95a5c9",
+    "module_name": "gla_attention",
+    "category": "attention",
+    "family": "attention",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T04:02:13+03:30",
+    "git_commit_sha": "5d553a2079",
+    "generation_method": {
+      "algorithm": "End-to-End Evaluation & Perplexity Probe",
+      "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2 / WikiText-2",
+      "backbone": "DistilBERT / GPT-2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "ppl": 0.0
+    },
+    "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+  },
+  "active_records": [
+    {
+      "record_id": "6146bf3d6583d09b",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 7.722
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "28817cbc1aa46279",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "NeuralOps (Triton Fused)",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "NeuralOps (Triton Fused)",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.228,
+        "throughput_tok_s": 2538085.5,
+        "peak_vram_mb": 198.54,
+        "speedup_x": 1.0
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "9c429c488e95a5c9",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "ppl": 0.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "6146bf3d6583d09b",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "subquadratic-attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
+      },
+      "metrics": {
+        "latency_triton_ms": 7.722
+      },
+      "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "28817cbc1aa46279",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "NeuralOps (Triton Fused)",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T08:05:46Z",
+      "git_commit_sha": "328e7ec002",
+      "generation_method": {
+        "algorithm": "NeuralOps (Triton Fused)",
+        "source_artifact": "results/competitive_comparison_v137.json"
+      },
+      "experimental_setup": {
+        "seq_len": null,
+        "batch_size": 2,
+        "embed_dim": 768,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.228,
+        "throughput_tok_s": 2538085.5,
+        "peak_vram_mb": 198.54,
+        "speedup_x": 1.0
+      },
+      "notes": "Cross-Framework Competitive Benchmark"
+    },
+    {
+      "record_id": "9c429c488e95a5c9",
+      "module_name": "gla_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "ppl": 0.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "module_name": "flash_gqa",
+  "category": "cuda_kernel",
+  "family": "3-level-native-cuda",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "9ed147b99c",
+  "latest_timestamp": "2026-10-16T21:00:09+03:30",
+  "latest_record": {
+    "record_id": "c4e0a0804830c924",
+    "module_name": "flash_gqa",
+    "category": "cuda_kernel",
+    "family": "3-level-native-cuda",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T21:00:09+03:30",
+    "git_commit_sha": "9ed147b99c",
+    "generation_method": {
+      "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+      "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "latency_cuda_ms": 0.08383487701416016,
+      "latency_triton_ms": 0.03383296012878418,
+      "latency_pytorch_ms": 0.20833280563354492,
+      "speedup_x": 2.485037409887968
+    },
+    "notes": "3-Level Execution Hierarchy Benchmark"
+  },
+  "active_records": [
+    {
+      "record_id": "c4e0a0804830c924",
+      "module_name": "flash_gqa",
+      "category": "cuda_kernel",
+      "family": "3-level-native-cuda",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:00:09+03:30",
+      "git_commit_sha": "9ed147b99c",
+      "generation_method": {
+        "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+        "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_cuda_ms": 0.08383487701416016,
+        "latency_triton_ms": 0.03383296012878418,
+        "latency_pytorch_ms": 0.20833280563354492,
+        "speedup_x": 2.485037409887968
+      },
+      "notes": "3-Level Execution Hierarchy Benchmark"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "c4e0a0804830c924",
+      "module_name": "flash_gqa",
+      "category": "cuda_kernel",
+      "family": "3-level-native-cuda",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:00:09+03:30",
+      "git_commit_sha": "9ed147b99c",
+      "generation_method": {
+        "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+        "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_cuda_ms": 0.08383487701416016,
+        "latency_triton_ms": 0.03383296012878418,
+        "latency_pytorch_ms": 0.20833280563354492,
+        "speedup_x": 2.485037409887968
+      },
+      "notes": "3-Level Execution Hierarchy Benchmark"
+    }
+  ]
+}

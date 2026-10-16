@@ -1,0 +1,77 @@
+{
+  "module_name": "roast",
+  "category": "attention",
+  "family": "general",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_record": {
+    "record_id": "8e33ba9b214886c1",
+    "module_name": "roast",
+    "category": "attention",
+    "family": "general",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
+    "generation_method": {
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
+    },
+    "metrics": {},
+    "notes": "Master Aggregated Results"
+  },
+  "active_records": [
+    {
+      "record_id": "8e33ba9b214886c1",
+      "module_name": "roast",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "8e33ba9b214886c1",
+      "module_name": "roast",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    }
+  ]
+}

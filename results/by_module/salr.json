@@ -1,0 +1,125 @@
+{
+  "module_name": "salr",
+  "category": "attention",
+  "family": "general",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "b3e2b3ad08",
+  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_record": {
+    "record_id": "76cdf7f2fac520bb",
+    "module_name": "salr",
+    "category": "attention",
+    "family": "general",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T00:07:14+03:30",
+    "git_commit_sha": "b3e2b3ad08",
+    "generation_method": {
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
+    },
+    "metrics": {},
+    "notes": "Master Aggregated Results"
+  },
+  "active_records": [
+    {
+      "record_id": "929bb213b67285a1",
+      "module_name": "salr",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 45.87,
+        "relative_error": 0.1956
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "76cdf7f2fac520bb",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "929bb213b67285a1",
+      "module_name": "salr",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T09:08:37Z",
+      "git_commit_sha": "25d9fe36fa",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 45.87,
+        "relative_error": 0.1956
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "76cdf7f2fac520bb",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {},
+      "notes": "Master Aggregated Results"
+    }
+  ]
+}

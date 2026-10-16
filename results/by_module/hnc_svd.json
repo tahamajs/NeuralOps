@@ -1,1 +1,1236 @@
-{"module_name": "hnc_svd", "category": "compressor", "family": "hnc-svd", "history": [{"record_id": "rec_hnc_svd_v137_001", "module_name": "hnc_svd", "category": "compressor", "family": "hnc-svd", "version_tag": "v1.3.7", "revision": 1, "status": "verified", "timestamp_utc": "2026-10-15T12:00:00Z", "git_commit_sha": "f8a92b3c1d", "generation_method": "HNC Nullspace Projection + Cholesky Whitening", "experimental_setup": {"dataset": "sst2", "backbone": "roberta-base", "rank": 32, "hardware": "NVIDIA RTX 4070 Laptop GPU (SM 8.9)"}, "metrics": {"eval_accuracy": 93.4, "compression_ratio": 2.0, "latency_ms": 0.74, "relative_frobenius_error": 0.042}, "notes": "Order-2 nullspace projection with exact Cholesky whitening conditioning."}]}
+{
+  "module_name": "hnc_svd",
+  "category": "ablation",
+  "family": "hnc-svd",
+  "total_runs": 23,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "e65ad0b5ee",
+  "latest_timestamp": "2026-10-16T13:58:12+03:30",
+  "latest_record": {
+    "record_id": "bc0bd7c5b0e9a746",
+    "module_name": "hnc_svd",
+    "category": "ablation",
+    "family": "hnc-svd",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T13:58:12+03:30",
+    "git_commit_sha": "e65ad0b5ee",
+    "generation_method": {
+      "algorithm": "HNC-SVD",
+      "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "rank": 64
+    },
+    "metrics": {
+      "cosine_sim": 0.0,
+      "relative_error": 0.0,
+      "accuracy": 0.0,
+      "speedup_x": 1.0
+    },
+    "notes": "Table: table_5_transformer_lm_end_to_end"
+  },
+  "active_records": [
+    {
+      "record_id": "dbdf8bd7dbc9b550",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.26189562678337097,
+        "accuracy": 62.5,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "84abcb819da1bee7",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.18181423842906952,
+        "accuracy": 72.0703125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "62f3343119992d22",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.2541760802268982,
+        "accuracy": 62.6953125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "620b9661096cbd14",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.17317359149456024,
+        "accuracy": 73.73046875,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "1b12218a635e3f40",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.23321287333965302,
+        "accuracy": 66.30859375,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "b5dccc39d9e3d54f",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.16099770367145538,
+        "accuracy": 74.609375,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "df753019ec7074a6",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.19435864686965942,
+        "accuracy": 71.58203125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "049f150122732c93",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.14644907414913177,
+        "accuracy": 77.05078125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "c68848b03a330a27",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.7255390286445618,
+        "relative_error": 0.6955943703651428,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "258cf03d5c077e4d",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.738824725151062,
+        "relative_error": 0.6764849424362183,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "3a90fa16f173d56a",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.8246016502380371,
+        "relative_error": 0.5675161480903625,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "44aeab7643854553",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.8725163340568542,
+        "relative_error": 0.49005770683288574,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "6aefef255ce8e91d",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.9160573482513428,
+        "relative_error": 0.40114253759384155,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "32c7129e51f28f43",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.9384334087371826,
+        "relative_error": 0.35170233249664307,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "6ededa1d1f19d852",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.9597232341766357,
+        "relative_error": 0.28435686230659485,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "f34e58394e1542ac",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.9716979265213013,
+        "relative_error": 0.23684746026992798,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "cf92248d8d4b599e",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 256
+      },
+      "metrics": {
+        "cosine_sim": 1.0,
+        "relative_error": 5.093409640721802e-07,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "b4e0e174e39adcbf",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 256
+      },
+      "metrics": {
+        "cosine_sim": 1.0,
+        "relative_error": 5.093409640721802e-07,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "8a23381296d23469",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": null
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_4_triton_kernel_speedup"
+    },
+    {
+      "record_id": "c2648a971a9499fc",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "64846da0c81a1258",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "ac9496e272218d48",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "bc0bd7c5b0e9a746",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "dbdf8bd7dbc9b550",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.26189562678337097,
+        "accuracy": 62.5,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "84abcb819da1bee7",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.18181423842906952,
+        "accuracy": 72.0703125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "62f3343119992d22",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.2541760802268982,
+        "accuracy": 62.6953125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "620b9661096cbd14",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.17317359149456024,
+        "accuracy": 73.73046875,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "1b12218a635e3f40",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.23321287333965302,
+        "accuracy": 66.30859375,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "b5dccc39d9e3d54f",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.16099770367145538,
+        "accuracy": 74.609375,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "df753019ec7074a6",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.19435864686965942,
+        "accuracy": 71.58203125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "049f150122732c93",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.14644907414913177,
+        "accuracy": 77.05078125,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_1_transformer_block"
+    },
+    {
+      "record_id": "c68848b03a330a27",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.7255390286445618,
+        "relative_error": 0.6955943703651428,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "258cf03d5c077e4d",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.738824725151062,
+        "relative_error": 0.6764849424362183,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "3a90fa16f173d56a",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.8246016502380371,
+        "relative_error": 0.5675161480903625,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "44aeab7643854553",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.8725163340568542,
+        "relative_error": 0.49005770683288574,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "6aefef255ce8e91d",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.9160573482513428,
+        "relative_error": 0.40114253759384155,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "32c7129e51f28f43",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.9384334087371826,
+        "relative_error": 0.35170233249664307,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "6ededa1d1f19d852",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.9597232341766357,
+        "relative_error": 0.28435686230659485,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "f34e58394e1542ac",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.9716979265213013,
+        "relative_error": 0.23684746026992798,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "cf92248d8d4b599e",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "Raw Truncated SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 256
+      },
+      "metrics": {
+        "cosine_sim": 1.0,
+        "relative_error": 5.093409640721802e-07,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "b4e0e174e39adcbf",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC Aligned SVD (Ours)",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 256
+      },
+      "metrics": {
+        "cosine_sim": 1.0,
+        "relative_error": 5.093409640721802e-07,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_2_svd_linear_attention"
+    },
+    {
+      "record_id": "8a23381296d23469",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": null
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_4_triton_kernel_speedup"
+    },
+    {
+      "record_id": "c2648a971a9499fc",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 8
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "64846da0c81a1258",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 16
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "ac9496e272218d48",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 32
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    },
+    {
+      "record_id": "bc0bd7c5b0e9a746",
+      "module_name": "hnc_svd",
+      "category": "ablation",
+      "family": "hnc-svd",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T13:58:12+03:30",
+      "git_commit_sha": "e65ad0b5ee",
+      "generation_method": {
+        "algorithm": "HNC-SVD",
+        "source_artifact": "results/hnc_svd_comprehensive_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "rank": 64
+      },
+      "metrics": {
+        "cosine_sim": 0.0,
+        "relative_error": 0.0,
+        "accuracy": 0.0,
+        "speedup_x": 1.0
+      },
+      "notes": "Table: table_5_transformer_lm_end_to_end"
+    }
+  ]
+}

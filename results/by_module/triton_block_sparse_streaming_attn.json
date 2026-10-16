@@ -1,0 +1,98 @@
+{
+  "module_name": "triton_block_sparse_streaming_attn",
+  "category": "triton_kernel",
+  "family": "sram-fused-kernel",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d394b9df89",
+  "latest_timestamp": "2026-10-16T19:33:57+03:30",
+  "latest_record": {
+    "record_id": "9c916b86837efb0b",
+    "module_name": "triton_block_sparse_streaming_attn",
+    "category": "triton_kernel",
+    "family": "sram-fused-kernel",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T19:33:57+03:30",
+    "git_commit_sha": "d394b9df89",
+    "generation_method": {
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+      "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "target_modules": "nsa_attention, moba_attention"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.03017728090286255,
+      "latency_pytorch_ms": 8.324895629882812,
+      "speedup_x": 275.8663266143747,
+      "cosine_sim": 1.0,
+      "peak_vram_mb": 41.8994140625,
+      "relative_error": 0.0004350261006038636
+    },
+    "notes": "Target: nsa_attention, moba_attention"
+  },
+  "active_records": [
+    {
+      "record_id": "9c916b86837efb0b",
+      "module_name": "triton_block_sparse_streaming_attn",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T19:33:57+03:30",
+      "git_commit_sha": "d394b9df89",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "nsa_attention, moba_attention"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.03017728090286255,
+        "latency_pytorch_ms": 8.324895629882812,
+        "speedup_x": 275.8663266143747,
+        "cosine_sim": 1.0,
+        "peak_vram_mb": 41.8994140625,
+        "relative_error": 0.0004350261006038636
+      },
+      "notes": "Target: nsa_attention, moba_attention"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "9c916b86837efb0b",
+      "module_name": "triton_block_sparse_streaming_attn",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T19:33:57+03:30",
+      "git_commit_sha": "d394b9df89",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "nsa_attention, moba_attention"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.03017728090286255,
+        "latency_pytorch_ms": 8.324895629882812,
+        "speedup_x": 275.8663266143747,
+        "cosine_sim": 1.0,
+        "peak_vram_mb": 41.8994140625,
+        "relative_error": 0.0004350261006038636
+      },
+      "notes": "Target: nsa_attention, moba_attention"
+    }
+  ]
+}
