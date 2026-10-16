@@ -40,7 +40,12 @@ __global__ void paged_attention_kernel(
     const int tid = threadIdx.x;
 
     const int context_len = context_lens[seq_idx];
-    if (context_len <= 0) return;
+    if (context_len <= 0) {
+        for (int d = tid; d < HEAD_DIM; d += blockDim.x) {
+            out[seq_idx * num_heads * HEAD_DIM + head_idx * HEAD_DIM + d] = 0.0f;
+        }
+        return;
+    }
 
     const int kv_head_idx = head_idx / (num_heads / num_kv_heads);
     const int num_blocks = (context_len + BLOCK_SIZE - 1) / BLOCK_SIZE;
