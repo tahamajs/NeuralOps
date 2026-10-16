@@ -1,0 +1,3 @@
+# Appendix B. Implementation Details & Code Mapping
+
+Detailed mappings of `hgrn2_gated_outer` to PyTorch layers, autograd functions, and Triton kernels.

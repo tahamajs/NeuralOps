@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{ORION: Optimized Rectified Input-aware Orthogonal Network for Hybrid Attention with SVD Factorization}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -37,7 +39,7 @@ Each Q/K/V/O projection is factorized via SVD at rank $r = 64$, with
 the top-$r$ singular vectors retained:
 
 \[
-W \approx U_r \Sigma_r V_r^\top = (U_r \Sigma_r^{1/2})(\Sigma_r^{1/2} V_r^\top)
+W \approx U\_r \Sigma\_r V\_r^\top = (U\_r \Sigma\_r^{1/2})(\Sigma\_r^{1/2} V\_r^\top)
 \]
 
 The factors are frozen; LoRA adapters provide recovery.
@@ -82,8 +84,8 @@ The \texttt{copy\_weights} method contains:
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 If \texttt{UniversalAdapter.get\_weight\_bias} fails for any of the four 
@@ -104,6 +106,7 @@ for reproducibility.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -149,6 +152,747 @@ mechanisms.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{ORION} \\
+\midrule
+\textbf{Factorization} & Post-hoc SVD & Zero-shot SVD \\
+\textbf{Head mechanism} & Uniform & Bifurcated (2/3, 1/3) \\
+\textbf{Parameter reduction} & Often none & \textbf{~6$\times$} \\
+\textbf{Robustness} & Varies & \textbf{\texttt{copy\_weights} raises} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} ORION is one of the few modules in our framework 
+that \textbf{actually reduces parameters}. It combines three orthogonal 
+techniques, though one of them (the \texttt{copy\_weights} raise) is a bug.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{SVD Decomposition}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+with $U \in \mathbb{R}^{m \times m}$, $\Sigma \in \mathbb{R}^{m \times n}$, 
+$V \in \mathbb{R}^{n \times n}$.
+
+\textbf{Truncated:} $W_r = U_r \Sigma_r V_r^\top$. Error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
+
+\textbf{Symmetric factorization:}
+
+\[
+W\_r = (U\_r \Sigma\_r^{1/2})(\Sigma\_r^{1/2} V\_r^\top)
+\tag{3.2}
+\]
+
+with $W_\text{up} = U_r \Sigma_r^{1/2} \in \mathbb{R}^{m \times r}$, 
+$W_\text{down} = \Sigma_r^{1/2} V_r^\top \in \mathbb{R}^{r \times n}$.
+
+\textbf{Parameter count:} $r(m + n)$ vs $mn$.
+
+\subsection{Energy-Based Rank Selection}
+
+Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, the energy 
+captured by the top-$r$:
+
+\[
+E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
+\tag{3.3}
+\]
+
+ORION selects the smallest $r$ such that $E(r) \geq \eta$ (energy threshold, 
+default 0.95).
+
+\subsection{Random Fourier Features}
+
+Approximate $\exp(q^\top k)$ via:
+
+\[
+\exp(q^\top k) \approx \phi(q)^\top \phi(k), \quad
+\phi(x) = \frac{1}{\sqrt{2F}} [\cos(\Omega x), \sin(\Omega x)]
+\tag{3.4}
+\]
+
+with $\Omega \in \mathbb{R}^{d_h \times F}$.
+
+\subsection{Linear Attention with RFF}
+
+\[
+O\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\tag{3.5}
+\]
+
+Cost: $\mathcal{O}(L F d)$.
+
+\subsection{Softpick (Simplified)}
+
+ORION's softpick:
+
+\[
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1) + \epsilon}
+\tag{3.6}
+\]
+
+\textbf{Key property:} For $x_i = -10^4$ (masked), $e^{x_i} - 1 \approx -1$, 
+$\text{ReLU}(-1) = 0$. Masked positions contribute zero.
+
+\subsection{LoRA}
+
+Standard (Hu et al., 2021).
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+ORION replaces the standard attention block with:
+
+\begin{enumerate}
+\item \textbf{Factorized projections} ($W_\text{up} W_\text{down}$) instead of full
+  matrices.
+\item \textbf{Bifurcated heads}: kernel and full.
+\item \textbf{RFF-based linear attention} for kernel heads.
+\item \textbf{Softpick full attention} for full heads.
+
+\end{enumerate}
+\begin{lstlisting}
+                Input X
+                   |
+        +----------+----------+
+        |                     |
+                               
+    +-------+            +-------+
+    |  Q    |            |  K/V  |
+    | Factor|            | Factor|
+    +---+---+            +---+---+
+        |                    |
+        +------+-------------+
+               |
+       +-------+--------+
+       |                |
+                         
+   Kernel heads    Full heads
+   (2/3)           (1/3)
+       |                |
+                         
+   RFF linear      Softpick
+   attention       full attention
+       |                |
+       +-------+--------+
+               |
+                
+        Concatenate + out\_proj (factorized)
+               |
+                
+            Output Y
+\end{lstlisting}
+
+\subsection{Factorized Projection}
+
+For each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\begin{enumerate}
+\item Compute SVD: $W = U \Sigma V^\top$.
+\item Energy threshold: select smallest $r$ with $E(r) \geq \eta$.
+\item Set $W_\text{up} = U_{:, :r} \Sigma_{:r, :r}^{1/2}$, $W_\text{down} = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top$.
+\item Store as \texttt{up} and \texttt{down} linear layers.
+
+\end{enumerate}
+\textbf{Default:} $\eta = 0.95$, min rank 4, max rank 64.
+
+\textbf{Forward:}
+
+\[
+y = W\_\text{up}(W\_\text{down} x) + b
+\tag{4.1}
+\]
+
+\textbf{LoRA recovery:}
+
+\[
+y = W\_\text{up}(W\_\text{down} x) + \frac{\alpha\_L}{r\_L} B(A x) + b
+\tag{4.2}
+\]
+
+\subsection{Head Bifurcation}
+
+For $H$ heads:
+
+\[
+H\_f = \max(1, \lfloor H / 3 \rfloor), \quad H\_k = H - H\_f
+\tag{4.3}
+\]
+
+For $H = 12$: $H_f = 4$, $H_k = 8$.
+
+Kernel heads index $0, \ldots, H_k - 1$; full heads index $H_k, \ldots, H - 1$.
+
+\subsection{Kernel Heads (Linear Attention with RFF)}
+
+For the first $H_k$ heads:
+
+\[
+Q\_\phi = \phi(Q\_k), \quad K\_\phi = \phi(K\_k)
+\tag{4.4}
+\]
+
+where $\phi(x) = [\cos(\Omega x), \sin(\Omega x)] / \sqrt{2F}$.
+
+\textbf{Non-causal path:}
+
+\[
+KV = K\_\phi^\top V, \quad Z = \sum\_j K\_\phi^{(j)}
+\tag{4.5}
+\]
+
+\[
+O\_{\text{kernel}, i} = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z}
+\tag{4.6}
+\]
+
+\textbf{Causal path (chunked):}
+
+For chunk size $C = 64$, iterate over chunks. Within each chunk, compute 
+intra-chunk causal attention; across chunks, use the running state $S, Z$.
+
+\subsection{Full Heads (Softpick Attention)}
+
+For the last $H_f$ heads:
+
+\[
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d\_h}}
+\tag{4.7}
+\]
+
+Mask causal and padding:
+
+\[
+\text{scores}\_{ij} \leftarrow \begin{cases} \text{scores}\_{ij} & j \leq i \text{ and valid} \\ -10^4 & \text{otherwise} \end{cases}
+\tag{4.8}
+\]
+
+Softpick:
+
+\[
+\text{attn}\_{ij} = \frac{\text{ReLU}(e^{\text{scores}\_{ij}} - 1)}{\sum\_k \text{ReLU}(e^{\text{scores}\_{ik}} - 1) + \epsilon}
+\tag{4.9}
+\]
+
+\textbf{Note on masked positions:} For masked positions with score $-10^4$, 
+$e^{-10^4} \approx 0$, $\text{ReLU}(-1) = 0$. So masked keys contribute 
+zero. \textbf{But} if all keys in a row are masked, the denominator becomes 0 
+(plus epsilon) and the output is all zeros -- no attention.
+
+\subsection{Output Fusion}
+
+Concatenate kernel and full heads:
+
+\[
+O = \text{concat}(O\_{\text{kernel}}, O\_{\text{full}})
+\tag{4.10}
+\]
+
+Then apply the factorized output projection.
+
+\subsection{Parameter Analysis}
+
+For a single projection $W \in \mathbb{R}^{d \times d}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Variant} & \textbf{Params} \\
+\midrule
+Original & $d^2$ \\
+Factorized (rank $r$) & $r(d + d) = 2rd$ \\
+\textbf{Ratio} & $\frac{d}{2r}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r = 64$: \textbf{6$\times$ reduction}.
+
+For Q projection, ORION uses $r = 64$ and $d = 768$:
+
+\[
+768 \times 768 = 589,824 \quad \rightarrow \quad 2 \times 64 \times 768 = 98,304
+\]
+
+\textbf{Per layer (DistilBERT):}
+\begin{itemize}
+\item Q, K, V, O factorized: $4 \times 98,304 = 393,216$ vs original $4 \times 589,824 = 2,359,296$.
+\item \textbf{Savings per layer: ~1.97M params.}
+
+\end{itemize}
+For 6 layers: \textbf{~11.8M savings.}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+Kernel heads (linear) & $\mathcal{O}(L F d)$ \\
+Full heads (softpick) & $\mathcal{O}(L^2 d)$ \\
+Fusion & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total:} $\mathcal{O}(L^2 d) \cdot (H_f / H) + \mathcal{O}(L F d) \cdot (H_k / H)$.
+
+For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$\times$} compared to full 
+attention (assuming linear cost is negligible for short sequences).
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} ORION forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: # Factorized projections
+2: Q\_all $\leftarrow$ W\_Q\_up(W\_Q\_down(X))
+3: K\_all $\leftarrow$ W\_K\_up(W\_K\_down(X))
+4: V\_all $\leftarrow$ W\_V\_up(W\_V\_down(X))
+5:
+6: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+7: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+8:
+9: # Split heads
+10: Q\_kernel, Q\_full $\leftarrow$ Q[:, :H\_k], Q[:, H\_k:]
+11: K\_kernel, K\_full $\leftarrow$ K[:, :H\_k], K[:, H\_k:]
+12: V\_kernel, V\_full $\leftarrow$ V[:, :H\_k], V[:, H\_k:]
+13:
+14: # Kernel heads
+15: O\_kernel $\leftarrow$ RFF\_linear\_attention(Q\_kernel, K\_kernel, V\_kernel)
+16:
+17: # Full heads
+18: O\_full $\leftarrow$ softpick\_attention(Q\_full, K\_full, V\_full)
+19:
+20: # Concatenate + output
+21: O $\leftarrow$ concat(O\_kernel, O\_full)
+22: Y $\leftarrow$ W\_O\_up(W\_O\_down(O))
+23: return Y
+\end{lstlisting}
+
+\subsection{The `copy\_weights` Bug}
+
+\textbf{Critical.} The \texttt{copy\_weights} method contains:
+
+\begin{lstlisting}
+missing = [k for k, (w, \_) in extracted.items() if w is None and (k != "o" or not self.is\_nested\_encoder)]
+if missing:
+    try:
+        from framework.core.adapters import UniversalAdapter
+        adapter = UniversalAdapter()
+        for k in missing:
+            w, b = adapter.get\_weight\_bias(src, k)
+            if w is not None:
+                extracted[k] = (w.clone(), b.clone() if b is not None else None)
+    except Exception as e:
+        print(f'copy\_weights failed: {e}')
+        raise RuntimeError(f"copy\_weights failed: {e}")  # $\leftarrow$ BUG
+\end{lstlisting}
+
+\textbf{Two failure modes:}
+
+\begin{enumerate}
+\item \textbf{UniversalAdapter raises:} $\to$ RuntimeError propagates.
+\item \textbf{UniversalAdapter returns None for all missing:} $\to$ \texttt{extracted[k]} stays None, then \texttt{missing\_after} check triggers another RuntimeError.
+
+\end{enumerate}
+In both cases, the injection aborts. If the caller catches the exception, 
+the module keeps \textbf{random init weights} $\to$ collapse.
+
+\textbf{Fix:}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.debug(f"UniversalAdapter failed: {e}")
+    # Continue
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{SVD Optimality}
+
+The truncated SVD is the optimal rank-$r$ approximation in Frobenius norm 
+(Eckart-Young).
+
+\subsubsection{RFF Approximation}
+
+RFF approximates the Gaussian kernel $\exp(-\|q - k\|^2 / 2)$. The 
+approximation error decreases as $\mathcal{O}(1/\sqrt{F})$.
+
+\subsubsection{Softpick Properties}
+
+ORION's softpick produces \textbf{sparse} attention: for $x_i$ sufficiently 
+negative, $\text{ReLU}(e^{x_i} - 1) = 0$. This differs from softmax which 
+always produces nonzero weights.
+
+\textbf{Potential issue:} If all $x_i < 0$, all weights are zero $\to$ output is 
+zero. This happens on masked rows.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Architecture} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & No & No & No \\
+RoBERTa & Yes & No & No \\
+GPT-2 & No & No & No \\
+Qwen3.5 & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+Standard four-architecture copy with additional factorization step:
+
+\begin{lstlisting}
+with torch.no\_grad():
+    for proj\_key, target\_mod in target\_map.items():
+        w, b = extracted[proj\_key]
+        if w is None:
+            continue
+        if w.ndim != 2:
+            w = w.reshape(w.size(0), -1)
+        if w.shape != (target\_mod.out\_features, target\_mod.in\_features) \
+           and (target\_mod.out\_features, target\_mod.in\_features) == w.t().shape:
+            w = w.t()
+        target\_mod.decompose\_from\_weight(w[:target\_mod.out\_features, :target\_mod.in\_features], ...)
+\end{lstlisting}
+
+The \texttt{decompose\_from\_weight} method:
+\begin{enumerate}
+\item Computes SVD.
+\item Selects rank by energy threshold.
+\item Sets \texttt{down.weight = $\Sigma$^{1/2} V^T}, \texttt{up.weight = U $\Sigma$^{1/2}}.
+
+\end{enumerate}
+\subsection{GQA Handling}
+
+For Qwen with $H_{kv} < H$, the K and V projections have smaller output 
+dimensions. The factorization is done at the appropriate rank.
+
+\begin{lstlisting}
+self.k\_proj = FactorisedLinear(hidden\_size, self.all\_kv\_head\_size, ...)
+self.v\_proj = FactorisedLinear(hidden\_size, self.all\_kv\_head\_size, ...)
+\end{lstlisting}
+
+\subsection{The `copy\_weights` Failure Path}
+
+\textbf{Case 1: UniversalAdapter succeeds for all projections.}
+\begin{itemize}
+\item Standard extraction works.
+\item No issue.
+
+\end{itemize}
+\textbf{Case 2: UniversalAdapter fails, but the direct extraction already succeeded.}
+\begin{itemize}
+\item \texttt{missing} is empty $\to$ no try/except triggered.
+\item No issue.
+
+\end{itemize}
+\textbf{Case 3: UniversalAdapter raises.}
+\begin{itemize}
+\item \texttt{raise RuntimeError} aborts \texttt{copy\_weights}.
+\item \texttt{inject\_orion} catches it (the outer try/except) $\to$ returns None.
+\item \textbf{Safe} -- the module is not installed.
+
+\end{itemize}
+\textbf{Case 4: UniversalAdapter returns None for all \texttt{missing}.}
+\begin{itemize}
+\item \texttt{missing\_after} is non-empty $\to$ RuntimeError.
+\item Same as case 3.
+
+\end{itemize}
+\textbf{Case 5: UniversalAdapter raises but injection proceeds anyway.}
+\begin{itemize}
+\item Not possible -- \texttt{inject\_orion} has its own try/except.
+
+\end{itemize}
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject ORION
+\begin{lstlisting}
+Input:  layer  , config
+Output: new attention in  
+
+1: src $\leftarrow$ extract\_attention( )
+2: new $\leftarrow$ ORIONAttention(config, source\_attn=src)
+3: if new.copy\_weights fails: exception $\to$ return None
+4: install new in  .attention.self (or .attn, .self\_attn)
+5: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{`FactorisedLinear.weight` Materializes Full Matrix}
+
+\begin{lstlisting}
+@property
+def weight(self):
+    return torch.matmul(self.up.weight, self.down.weight)
+\end{lstlisting}
+
+For 768$\times$768 this is fine. For 3072$\times$768 with rank 64: \texttt{64 $\times$ 3072 + 64 $\times$ 768} 
+= 245K params, materializing to 2.36M -- a 10$\times$ overhead. Used in Frobenius 
+check inside \texttt{copy\_weights}.
+
+\subsubsection{The `raise` Bug}
+
+See Section 4.10.
+
+\subsubsection{Softpick Masked Rows}
+
+As noted, if a row is entirely masked, output is zero.
+
+\subsubsection{The `\_kernel\_linear\_attention` Python Loop (Decoder)}
+
+For $N = 128$, chunk\_size = 64: 2 iterations. Acceptable but not 
+vectorized.
+
+\subsubsection{`rff\_proj` is not persistent}
+
+\begin{lstlisting}
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=False)
+\end{lstlisting}
+
+With \texttt{persistent=False}, \texttt{rff\_proj} is not saved in \texttt{state\_dict()}. On 
+reload, it is re-initialized randomly. \textbf{This is a bug} -- the RFF 
+projection must be preserved.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("orion")
+@ATTENTION\_REGISTRY.register("orion\_attention")
+@ATTENTION\_REGISTRY.register("orion\_module")
+class ORIONAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Compatibility with Recovery}
+
+The \texttt{FactorisedLinear} supports LoRA adapters. The recovery pipeline:
+\begin{enumerate}
+\item Factorize base weights.
+\item Add LoRA adapters.
+\item Freeze base, train LoRA.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of orion.}
+\label{fig:arch_orion}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{SVD rank} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & 64 \\
+RoBERTa & 12 & 768 & 12 & 124.6M & 64 \\
+GPT-2 & 12 & 768 & 12 & 124.4M & 64 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013).
+
+\subsection{ORION Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{svd\_energy} & 95\% (default 0.95) \\
+\texttt{svd\_min\_rank} & 32 (default 4) \\
+\texttt{svd\_max\_rank} & 64 (default 64) \\
+\texttt{num\_kernel\_heads} & Auto: 2/3 of heads \\
+\texttt{num\_full\_heads} & Auto: 1/3 of heads \\
+\texttt{rff\_features} & 64 (default 256) \\
+\texttt{softpick\_temperature} & 1.0 (default 1.0) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params (before/after)
+\item Peak VRAM
+\item Inference time
+\item Parameter reduction ratio
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_orion.py \
+    --models distilbert,roberta,gpt2 \
+    --svd\_energy 95\% \
+    --svd\_max\_rank 64 \
+    --rff\_features 64 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+\subsection{Ablations}
+
+\begin{itemize}
+\item SVD energy: 0.90, 0.95, 0.99
+\item SVD max rank: 32, 64, 128
+\item RFF features: 128, 256, 512
+\item Head split: 2/3:1/3, 1/2:1/2, 3/4:1/4
+
+\end{itemize}
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{orion} -- our method
+\item Prior modules: \texttt{a3}, \texttt{cosformer}, \texttt{nasc}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy and parameter reduction on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -157,11 +901,11 @@ mechanisms.
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Orion Module} & \textbf{55.85\%} & -35.09\% & PASS_LOW & 0.6971 & 0 & \textbf{1.23$\times$} & 300.3 MB & 10.2 & -- \\
+DistilBERT & \textbf{Orion Module} & \textbf{55.85\%} & -35.09\% & PASS\_LOW & 0.6971 & 0 & \textbf{1.23$\times$} & 300.3 MB & 10.2 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Orion Module} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 584.6 MB & 19.5 & -- \\
+RoBERTa & \textbf{Orion Module} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 584.6 MB & 19.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Orion Module} & \textbf{50.80\%} & -7.11\% & PASS_LOW & 0.6733 & 0 & \textbf{1.25$\times$} & 496.8 MB & 23.9 & -- \\
+GPT-2 & \textbf{Orion Module} & \textbf{50.80\%} & -7.11\% & PASS\_LOW & 0.6733 & 0 & \textbf{1.25$\times$} & 496.8 MB & 23.9 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -357,12 +1101,13 @@ nasc & 0.85 & 32 & 0.85 & +1.6\% \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/orion_roberta_loss_convergence.png}
+\includegraphics[width=0.85\linewidth]{figures/orion\_roberta\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{orion}.}
 \label{fig:results_orion}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -372,8 +1117,8 @@ nasc & 0.85 & 32 & 0.85 & +1.6\% \\
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This matches the pattern in \texttt{aegis\_v4\_module.py}, \texttt{aegis\_v5\_module.py}, 
@@ -405,7 +1150,7 @@ has its own try/except.
 \subsection{The `rff\_proj` Persistence Bug}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=False)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=False)
 \end{lstlisting}
 
 \textbf{Problem.} \texttt{persistent=False} means \texttt{rff\_proj} is \textbf{not saved} in 
@@ -419,18 +1164,18 @@ behavior.
 
 \begin{lstlisting}
 model1 = ORIONAttention(...)
-sd = model1.state_dict()
-# rff_proj not in sd
+sd = model1.state\_dict()
+# rff\_proj not in sd
 
 model2 = ORIONAttention(...)
-model2.load_state_dict(sd, strict=False)
-# model2.rff_proj is different from model1.rff_proj
+model2.load\_state\_dict(sd, strict=False)
+# model2.rff\_proj is different from model1.rff\_proj
 \end{lstlisting}
 
 \textbf{Fix.} Set \texttt{persistent=True}:
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=True)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=True)
 \end{lstlisting}
 
 \subsection{Head Bifurcation Analysis}
@@ -460,7 +1205,7 @@ self.register_buffer("rff_proj", torch.randn(...), persistent=True)
 For ORION's softpick:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1) + \epsilon}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1) + \epsilon}
 \]
 
 \textbf{Test.} Compare softpick vs softmax on masked rows.
@@ -487,7 +1232,7 @@ while ORION softpick's denominator can be zero if all keys are masked.
 
 \begin{lstlisting}
 denom = p.sum(dim=dim, keepdim=True)
-p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
+p = torch.where(denom \textgreater{} 1e-8, p / denom, F.softmax(x, dim=dim))
 \end{lstlisting}
 
 \subsection{Parameter Reduction Analysis}
@@ -608,6 +1353,7 @@ Reduction & ~60\% & ~32\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -739,6 +1485,7 @@ choice for parameter-constrained deployments.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -827,6 +1574,7 @@ FFN projections, this is a memory spike.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -914,14 +1662,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -930,21 +1679,21 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_orion.py \
+python run\_all\_4\_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy 95\% \
-    --svd_max_rank 64 \
-    --rff_features 64 \
-    --recovery_steps 50
+    --svd\_energy 95\% \
+    --svd\_max\_rank 64 \
+    --rff\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -954,22 +1703,22 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_orion.py --models distilbert,roberta,gpt2
+python run\_all\_4\_orion.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{SVD Energy Ablation}
 
 \begin{lstlisting}
 for e in 0.90 0.95 0.99; do
-    python run_all_4_orion.py --svd_energy $e --output_suffix e$e
+    python run\_all\_4\_orion.py --svd\_energy $e --output_suffix e$e
 done
 \end{lstlisting}
 
 \subsubsection{Head Split Ablation}
 
 \begin{lstlisting}
-for split in "half" "23_13" "34_14" "all_kernel" "all_full"; do
-    python run_all_4_orion.py --head_split $split --output_suffix $split
+for split in "half" "23\_13" "34\_14" "all\_kernel" "all\_full"; do
+    python run\_all\_4\_orion.py --head\_split $split --output_suffix $split
 done
 \end{lstlisting}
 
@@ -977,8 +1726,8 @@ done
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -1002,9 +1751,9 @@ GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$\times$ \\
 \subsubsection{Check Parameter Count}
 
 \begin{lstlisting}
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if hasattr(mod, 'down') and hasattr(mod, 'up'):
-        orig = mod.in_features * mod.out_features
+        orig = mod.in\_features * mod.out\_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
         print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$\times$)")
 \end{lstlisting}
@@ -1012,15 +1761,15 @@ for name, mod in model.named_modules():
 \subsubsection{Check Head Split}
 
 \begin{lstlisting}
-print(f"Kernel heads: {model.num_kernel_heads}")
-print(f"Full heads: {model.num_full_heads}")
+print(f"Kernel heads: {model.num\_kernel\_heads}")
+print(f"Full heads: {model.num\_full\_heads}")
 \end{lstlisting}
 
 \subsubsection{Check rff\_proj Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
-assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
+sd = model.state\_dict()
+assert any('rff\_proj' in k for k in sd), "rff\_proj NOT in state\_dict!"  # This will FAIL
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -1044,6 +1793,7 @@ assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This w
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1192,6 +1942,7 @@ assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This w
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1200,13 +1951,13 @@ assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This w
 $W = U \Sigma V^\top$. Truncated at rank $r$:
 
 \[
-W_r = U_r \Sigma_r V_r^\top
+W\_r = U\_r \Sigma\_r V\_r^\top
 \]
 
 Split:
 
 \[
-W_\text{up} = U_r \Sigma_r^{1/2}, \quad W_\text{down} = \Sigma_r^{1/2} V_r^\top
+W\_\text{up} = U\_r \Sigma\_r^{1/2}, \quad W\_\text{down} = \Sigma\_r^{1/2} V\_r^\top
 \]
 
 Then $W_r = W_\text{up} W_\text{down}$.
@@ -1218,7 +1969,7 @@ Then $W_r = W_\text{up} W_\text{down}$.
 Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$:
 
 \[
-E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_i \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
 \]
 
 Select smallest $r$ such that $E(r) \geq \eta$.
@@ -1237,7 +1988,7 @@ $\Omega$ sampled from $\mathcal{N}(0, I)$.
 \subsection{A.4 Linear Attention}
 
 \[
-O_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+O\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 Precompute $KV = \sum_j \phi(k_j) v_j^\top \in \mathbb{R}^{2F \times d_h}$ 
@@ -1246,7 +1997,7 @@ and $Z = \sum_j \phi(k_j) \in \mathbb{R}^{2F}$.
 \subsection{A.5 Softpick}
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1) + \epsilon}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1) + \epsilon}
 \]
 
 \textbf{Property:} For $x_i < 0$, $\text{ReLU}(e^{x_i} - 1) = 0$. Sparsification 
@@ -1255,7 +2006,7 @@ is natural.
 \subsection{A.6 Head Split}
 
 \[
-H_f = \max(1, \lfloor H/3 \rfloor), \quad H_k = H - H_f
+H\_f = \max(1, \lfloor H/3 \rfloor), \quad H\_k = H - H\_f
 \]
 
 For $H = 12$: $(H_k, H_f) = (8, 4)$.
@@ -1265,7 +2016,7 @@ For $H = 12$: $(H_k, H_f) = (8, 4)$.
 Attention cost:
 
 \[
-T = H_k \cdot \mathcal{O}(L F d) + H_f \cdot \mathcal{O}(L^2 d)
+T = H\_k \cdot \mathcal{O}(L F d) + H\_f \cdot \mathcal{O}(L^2 d)
 \]
 
 For $H_k/H = 2/3$: attention reduced by ~1/3.
@@ -1283,6 +2034,7 @@ Ratio: $9.6	imes$.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1290,17 +2042,17 @@ Ratio: $9.6	imes$.
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, ..., max_rank=64):
-        self.rank = max(min_rank, min(max_rank, min(in_features, out_features)))
-        self.down = nn.Linear(in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_features, bias=True)
+    def \_\_init\_\_(self, in\_features, out\_features, ..., max\_rank=64):
+        self.rank = max(min\_rank, min(max\_rank, min(in\_features, out\_features)))
+        self.down = nn.Linear(in\_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out\_features, bias=True)
 
-    def decompose_from_weight(self, weight, bias=None):
-        U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
+    def decompose\_from\_weight(self, weight, bias=None):
+        U, S, Vt = torch.linalg.svd(weight.float(), full\_matrices=False)
         total = (S ** 2).sum()
         cum = torch.cumsum(S ** 2, dim=0) / total.clamp(min=1e-8)
-        rank = int((cum < self.energy).sum().item()) + 1
-        rank = max(self.min_rank, min(rank, min(weight.shape), self.max_rank))
+        rank = int((cum \textless{} self.energy).sum().item()) + 1
+        rank = max(self.min\_rank, min(rank, min(weight.shape), self.max\_rank))
         
         A = U[:, :rank] * S[:rank].unsqueeze(0)
         B = Vt[:rank, :]
@@ -1311,52 +2063,52 @@ class FactorisedLinear(nn.Module):
 \subsection{B.2 Head Split}
 
 \begin{lstlisting}
-self.num_full_heads = max(1, self.num_heads // 3)
-self.num_kernel_heads = self.num_heads - self.num_full_heads
+self.num\_full\_heads = max(1, self.num\_heads // 3)
+self.num\_kernel\_heads = self.num\_heads - self.num\_full\_heads
 \end{lstlisting}
 
 \subsection{B.3 Kernel Heads (Linear Attention)}
 
 \begin{lstlisting}
-def _kernel_linear_attention(self, Q, K, V):
-    proj = self.rff_proj[:Hk].float()
-    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q * scale, proj)
-    K_proj = torch.einsum("bhnd,hdf->bhnf", K * scale, proj)
-    Q_feat = torch.cat([torch.cos(Q_proj), torch.sin(Q_proj)], dim=-1) / math.sqrt(2 * F_dim)
-    K_feat = torch.cat([torch.cos(K_proj), torch.sin(K_proj)], dim=-1) / math.sqrt(2 * F_dim)
+def \_kernel\_linear\_attention(self, Q, K, V):
+    proj = self.rff\_proj[:Hk].float()
+    Q\_proj = torch.einsum("bhnd,hdf-\textgreater{}bhnf", Q * scale, proj)
+    K\_proj = torch.einsum("bhnd,hdf-\textgreater{}bhnf", K * scale, proj)
+    Q\_feat = torch.cat([torch.cos(Q\_proj), torch.sin(Q\_proj)], dim=-1) / math.sqrt(2 * F\_dim)
+    K\_feat = torch.cat([torch.cos(K\_proj), torch.sin(K\_proj)], dim=-1) / math.sqrt(2 * F\_dim)
     
-    if self.is_decoder:
-        for c in range(num_chunks):
+    if self.is\_decoder:
+        for c in range(num\_chunks):
             # chunked causal attention
             ...
     else:
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
-        K_sum = K_feat.sum(dim=2)
-        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
+        KV = torch.einsum("bhnf,bhnd-\textgreater{}bhfd", K\_feat, V)
+        K\_sum = K\_feat.sum(dim=2)
+        denom = torch.einsum("bhnf,bhf-\textgreater{}bhn", Q\_feat, K\_sum).unsqueeze(-1)
+        ctx = torch.einsum("bhnf,bhfd-\textgreater{}bhnd", Q\_feat, KV) / denom
     return ctx
 \end{lstlisting}
 
 \subsection{B.4 Full Heads (Softpick)}
 
 \begin{lstlisting}
-def _full_softpick_attention(self, Q, K, V, token_valid=None):
+def \_full\_softpick\_attention(self, Q, K, V, token\_valid=None):
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
-    if self.is_decoder:
-        causal_mask = torch.tril(...)
-        scores = scores.masked_fill(~causal_mask, -1e4)
-    if token_valid is not None:
-        scores = scores.masked_fill(~token_valid, -1e4)
-    attn_w = softpick(scores, dim=-1)
-    return torch.matmul(attn_w, V)
+    if self.is\_decoder:
+        causal\_mask = torch.tril(...)
+        scores = scores.masked\_fill(~causal\_mask, -1e4)
+    if token\_valid is not None:
+        scores = scores.masked\_fill(~token\_valid, -1e4)
+    attn\_w = softpick(scores, dim=-1)
+    return torch.matmul(attn\_w, V)
 \end{lstlisting}
 
 \subsection{B.5 The `copy\_weights` Bug}
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")  # $\leftarrow$ BUG
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")  # $\leftarrow$ BUG
 \end{lstlisting}
 
 \textbf{Fix:}
@@ -1370,13 +2122,13 @@ except Exception as e:
 \subsection{B.6 The `rff\_proj` Bug}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=False)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=False)
 \end{lstlisting}
 
 \textbf{Fix:}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=True)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=True)
 \end{lstlisting}
 
 \subsection{B.7 Softpick Masked Row Handling}
@@ -1388,7 +2140,7 @@ def softpick(x, dim=-1):
     p = F.relu(torch.exp(x.float()) - 1.0)
     denom = p.sum(dim=dim, keepdim=True)
     fallback = F.softmax(x.float(), dim=dim)
-    p = torch.where(denom > 1e-8, p / (denom + 1e-8), fallback)
+    p = torch.where(denom \textgreater{} 1e-8, p / (denom + 1e-8), fallback)
     return p.to(x.dtype)
 \end{lstlisting}
 
@@ -1415,7 +2167,7 @@ For $N = 128$, chunk=64: 2 iterations. Acceptable.
 \subsubsection{B.8.4 `num\_full\_heads` Minimum}
 
 \begin{lstlisting}
-self.num_full_heads = max(1, self.num_heads // 3)
+self.num\_full\_heads = max(1, self.num\_heads // 3)
 \end{lstlisting}
 
 For $H = 2$: $H_f = 1$, $H_k = 1$.
@@ -1423,9 +2175,9 @@ For $H = 2$: $H_f = 1$, $H_k = 1$.
 \subsection{B.9 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("orion")
-@ATTENTION_REGISTRY.register("orion_attention")
-@ATTENTION_REGISTRY.register("orion_module")
+@ATTENTION\_REGISTRY.register("orion")
+@ATTENTION\_REGISTRY.register("orion\_attention")
+@ATTENTION\_REGISTRY.register("orion\_module")
 class ORIONAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -1438,6 +2190,7 @@ Standard traversal with double-injection guard.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1563,10 +2316,10 @@ Reduction & 46.0\%$\times$ \\
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_orion.py --models distilbert,roberta,gpt2
+python run\_all\_4\_orion.py --models distilbert,roberta,gpt2
 
 for e in 0.90 0.95 0.99; do
-    python run_all_4_orion.py --svd_energy $e --output_suffix e$e
+    python run\_all\_4\_orion.py --svd\_energy $e --output_suffix e$e
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1574,6 +2327,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1581,7 +2335,7 @@ done
 
 \begin{lstlisting}
 except Exception as e:
-    raise RuntimeError(f"copy_weights failed: {e}")
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 \textbf{Impact.} Any UniversalAdapter failure aborts injection.
@@ -1591,7 +2345,7 @@ except Exception as e:
 \subsection{D.2 The `rff\_proj` Persistence Bug}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", ..., persistent=False)
+self.register\_buffer("rff\_proj", ..., persistent=False)
 \end{lstlisting}
 
 \textbf{Impact.} Train/test mismatch on model save/reload.
@@ -1599,14 +2353,14 @@ self.register_buffer("rff_proj", ..., persistent=False)
 \textbf{Verification.}
 
 \begin{lstlisting}
-sd = model1.state_dict()
-assert 'rff_proj' not in sd  # Confirms bug
+sd = model1.state\_dict()
+assert 'rff\_proj' not in sd  # Confirms bug
 \end{lstlisting}
 
 \subsection{D.3 Softpick Masked Row Collapse}
 
 \begin{lstlisting}
-p = F.relu(torch.exp(x_f) - 1.0)
+p = F.relu(torch.exp(x\_f) - 1.0)
 return p / (p.sum(dim=dim, keepdim=True) + 1e-8)
 \end{lstlisting}
 
@@ -1668,7 +2422,7 @@ All full & 0.85 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} RFF with <128 features underperforms.
+\textbf{Observation.} RFF with \textless{}128 features underperforms.
 
 \subsection{D.5 Failed Alternatives}
 
@@ -1716,6 +2470,7 @@ Persistent RFF & Not fixed \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1768,3 +2523,4 @@ downstream issues.
 
 ---
 \end{lstlisting}
+

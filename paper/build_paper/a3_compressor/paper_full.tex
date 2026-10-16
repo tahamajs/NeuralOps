@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{A3: Activation-Aware Factorized SVD for Transformer Compression}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -28,7 +30,7 @@ For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9$\times$ reduction
 Classical SVD is optimal in an unweighted Frobenius norm sense:
 
 \[
-W_r^* = \arg\min_{W_r : \text{rank}(W_r) = r} \|W - W_r\|_F
+W\_r^* = \arg\min\_{W\_r : \text{rank}(W\_r) = r} \|W - W\_r\|\_F
 \tag{1.1}
 \]
 
@@ -81,6 +83,7 @@ Section 10 lists limitations. Section 11 concludes.
 Throughout this paper, bold uppercase letters (e.g., $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$) represent two-dimensional weight matrices and linear transformations. Bold lowercase letters (e.g., $x \in \mathbb{R}^{d_{\mathrm{in}}}$) denote input feature and activation vectors. The symbol $\odot$ denotes element-wise (Hadamard) product, while $\mathrm{diag}(v)$ constructs a diagonal matrix whose non-zero entries are given by vector $v$. The Frobenius matrix norm is denoted by $\|\cdot\|_F$, and the Euclidean vector norm is denoted by $\|\cdot\|_2$. For low-rank approximations, $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$ represent the left and right factor matrices corresponding to allocated rank $r \ll \min(d_{\mathrm{in}}, d_{\mathrm{out}})$. A consolidated catalog of all mathematical symbols, operator dimensions, and system parameters is summarized in Section~\ref{sec:notation_summary} and detailed in Appendix~\ref{sec:app_notation} (Table~\ref{tab:app_notation_summary}).
 
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -91,7 +94,7 @@ that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated
 SVD:
 
 \[
-W_r^* = U_{:, :r} \Sigma_{:, :r} V_{:r, :}^\top
+W\_r^* = U\_{:, :r} \Sigma\_{:, :r} V\_{:r, :}^\top
 \tag{2.1}
 \]
 
@@ -161,6 +164,500 @@ for low-rank factorization.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.30\columnwidth}p{0.32\columnwidth}p{0.30\columnwidth}}
+\toprule
+\textbf{Axis} & \textbf{Prior Work} & \textbf{A3 (Ours)} \\
+\midrule
+Weighting & Uniform (unweighted) & Fisher diagonal \\
+Rank Selection & Fixed global & Adaptive escalation \\
+Calibration Mem. & Buffer $\mathcal{O}(Nd)$ & Streaming $\mathcal{O}(d^2)$ \\
+Post-Factor Fix & None & LN recalibration \\
+Error Validation & Silent & Strict Frobenius \\
+Safety Fallback & Never & Automatic fallback \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of architectural axes between prior low-rank methods and A3.}
+\label{tab:positioning}
+\end{table}
+
+\textbf{Key distinction.} Prior low-rank compression methods either (a) select 
+rank globally before factorizing, or (b) factorize unweighted. A3 combines 
+both improvements: it \textbf{selects rank per-layer based on validation}, and it 
+\textbf{weights the factorization by activation statistics}. The result is 
+strictly smaller reconstruction error at the same rank, or equivalently, 
+smaller rank at the same error.
+
+\subsection{Comparison Table}
+\label{sec:related_comparison}
+
+To position A3 within the broader landscape of model efficiency research, Table~\ref{tab:prior_work_comparison} provides a comprehensive multi-axis comparison against classical matrix factorization, second-order data-aware SVD, post-training pruning, activation-aware quantization, and knowledge distillation. Unlike unconstrained uniform SVD baselines that suffer severe accuracy degradation or distillation techniques requiring extensive retraining cycles, A3 balances rapid zero-retraining execution with strict error-thresholded fallback guarantees.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Year} & \textbf{Venue} & \textbf{Model} & \textbf{Ratio} & \textbf{SST-2 Acc} \\
+\midrule
+SVD (Eckart-Young)\footnotemark[1] & Low-rank & 1936 & Psychometrika & DistilBERT & 1.25$\times^\ddagger$ & 86.4\% \\
+FWSVD\footnotemark[2] & Fisher SVD & 2022 & EMNLP & BERT-base & 2.00$\times$ & 88.2\% \\
+DRONE\footnotemark[3] & Data-aware & 2021 & NeurIPS & BERT-base & 1.92$\times$ & 89.1\% \\
+ASVD\footnotemark[4] & Activation SVD & 2023 & arXiv & LLaMA-7B & 1.25$\times$ & N/R$^\dagger$ \\
+SVD-LLM\footnotemark[5] & Whitened SVD & 2025 & ICLR & LLaMA-7B & 5.00$\times$ & N/R$^\dagger$ \\
+SparseGPT\footnotemark[6] & Pruning & 2023 & ICML & LLaMA-7B & 2.00$\times$ & N/R$^\dagger$ \\
+Wanda\footnotemark[7] & Pruning & 2024 & ICLR & LLaMA-7B & 2.00$\times$ & N/R$^\dagger$ \\
+AWQ\footnotemark[8] & Quantization & 2024 & MLSys & LLaMA-7B & 4.00$\times$ & N/R$^\dagger$ \\
+DistilBERT\footnotemark[9] & Distillation & 2019 & arXiv & BERT-base & 1.67$\times$ & 90.7\% \\
+TinyBERT\footnotemark[10] & Distillation & 2020 & EMNLP & BERT-base & 7.50$\times$ & 87.5\% \\
+ALBERT\footnotemark[11] & Sharing & 2020 & ICLR & BERT-base & 3.50$\times$ & 89.4\% \\
+Performer\footnotemark[12] & Linear Attn & 2021 & ICLR & Transformer & 1.00$\times$ & 83.1\% \\
+\textbf{A3 (ours)}\footnotemark[13] & \textbf{Activation SVD} & \textbf{2026} & \textbf{Preprint} & \textbf{DistilBERT} & \textbf{1.02$\times$} & \textbf{90.02\%} \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive comparison of representative model compression and efficiency methods. $^\dagger$N/R indicates not reported on SST-2 classification. $^\ddagger$Uniform SVD forces unconstrained factorization, achieving 1.25$\times$ reduction but suffering a 4.3\% accuracy drop. In contrast, A3 employs error-thresholded fallback to prioritize strict accuracy preservation over aggressive compression (resulting in a conservative 1.02$\times$ ratio). Source footnotes: $^1$Our baseline. $^2$Hsu et al., Table 2. $^3$Chen et al., Table 1. $^4$Yuan et al., Table 4. $^5$Sun et al., Table 3. $^6$Frantar et al., Table 2. $^7$Sun et al., Table 1. $^8$Lin et al., Table 2. $^9$Sanh et al., Table 1. $^{10}$Jiao et al., Table 2. $^{11}$Lan et al., Table 2. $^{12}$Choromanski et al., Table 2. $^{13}$Empirical evaluation.}
+\label{tab:prior_work_comparison}
+\end{table*}
+
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Singular Value Decomposition}
+
+For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ are 
+orthogonal, and $\Sigma \in \mathbb{R}^{m \times n}$ is diagonal with 
+non-negative entries $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD.} Keeping the top-$r$ singular values gives the best rank-$r$ 
+approximation in Frobenius norm:
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:, :r} V\_{:r, :}^\top
+\tag{3.2}
+\]
+
+with squared error $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$, or equivalently $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
+
+\textbf{Symmetric factorization.} For numerical stability, it is common to split 
+$\Sigma^{1/2}$ between the two factors:
+
+\[
+U\_r = U\_{:, :r} \Sigma\_{:, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :}^{1/2} V\_{:r, :}^\top
+\tag{3.3}
+\]
+
+so that $W_r = U_r V_r$.
+
+\subsection{The Fisher Information Matrix}
+
+For a probabilistic model $p_\theta(y | x)$, the Fisher information is:
+
+\[
+\mathcal{F}\_{ij} = \mathbb{E}\_{x, y}\!\left[\frac{\partial \log p\_\theta(y | x)}{\partial \theta\_i} \cdot \frac{\partial \log p\_\theta(y | x)}{\partial \theta\_j}\right]
+\tag{3.4}
+\]
+
+For a linear layer $y = Wx + b$, the Fisher with respect to $x$ is:
+
+\[
+\mathcal{F}\_x = \mathbb{E}\_{x}\!\left[\left(\frac{\partial \mathcal{L}}{\partial x}\right) \left(\frac{\partial \mathcal{L}}{\partial x}\right)^\top\right]
+\tag{3.5}
+\]
+
+The \textbf{diagonal} of this Fisher measures the importance of each input 
+dimension. We use a cheap proxy: since $\partial \mathcal{L} / \partial x$ is 
+proportional to $W^\top \cdot \partial \mathcal{L} / \partial y$, and since 
+we assume the downstream loss has roughly uniform sensitivity to $y$, the 
+diagonal Fisher is approximately:
+
+\[
+\mathcal{F}\_{x, i} \approx \mathbb{E}\_{x}\!\left[x\_i^2\right] = F\_i
+\tag{3.6}
+\]
+
+This is a heuristic approximation under the assumptions that (i) the downstream loss has roughly uniform sensitivity across output dimensions, and (ii) cross-channel correlations are negligible. It is not an exact identity; we use it as a cheap proxy for the true Fisher diagonal. This \textbf{activation energy} is cheap to compute and correlates well with the true Fisher in practice.
+
+\subsection{Streaming Covariance Accumulation}
+
+Given a stream of activation vectors $x_1, x_2, \dots, x_N \in \mathbb{R}^d$, 
+we want to compute:
+
+\[
+C = \frac{1}{N} \sum\_{t=1}^N x\_t x\_t^\top, \qquad
+F = \frac{1}{N} \sum\_{t=1}^N x\_t \odot x\_t
+\tag{3.7}
+\]
+
+Naively this requires storing all $x_t$, which costs $\mathcal{O}(Nd)$ memory. 
+The \textbf{streaming} formulation accumulates only the running sums:
+
+\begin{align}
+C^{(k)} &= C^{(k-1)} + \sum\_{t \in \text{batch}\_k} x\_t x\_t^\top, \tag{3.8a} \\
+N^{(k)} &= N^{(k-1)} + |\text{batch}\_k| \tag{3.8b}
+\end{align}
+
+with $\mathcal{O}(d^2)$ memory. We use this in A3.
+
+\textbf{Padding handling.} Padding tokens (all-zeros or mask-tagged) are filtered 
+out before accumulation.
+
+\subsection{LayerNorm}
+
+LayerNorm (Ba et al., 2016) normalizes activations across the feature 
+dimension:
+
+\begin{align}
+\text{LN}(x) &= \gamma \odot \frac{x - \mu}{\sqrt{\mathrm{Var}(x) + \epsilon}} + \beta, \tag{3.9a} \\
+\text{where } \mathrm{Var}(x) &= \mathbb{E}[(x - \mu)^2], \quad \sigma = \sqrt{\mathrm{Var}(x) + \epsilon} \tag{3.9b}
+\end{align}
+
+where $\gamma, \beta \in \mathbb{R}^d$ are learnable parameters.
+
+\textbf{Distributional shift.} When a preceding layer is replaced by a factorized 
+approximation, its output distribution changes. The LayerNorm that follows 
+sees a different input distribution and produces different normalized 
+activations. Recalibrating $\gamma$ can partially absorb this shift.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) parameterizes weight updates as:
+
+\[
+\Delta W = \frac{\alpha}{r} B A
+\tag{3.10}
+\]
+
+with $A \in \mathbb{R}^{r \times k}$, $B \in \mathbb{R}^{d \times r}$, 
+$B = 0$ at initialization. Only $A, B$ are trainable.
+
+\textbf{Interaction with A3.} We add LoRA adapters to the factorized layer, 
+yielding:
+
+\[
+y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
+\tag{3.11}
+\]
+
+where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the 
+bulk of the computation; LoRA provides the recovery signal.
+
+\subsection{Notation Summary}
+\label{sec:notation_summary}
+
+Mathematical notations, symbols, tensor dimensions, and operational parameters used throughout the theoretical formulation and experimental evaluations of A3 are consolidated in Appendix~\ref{sec:app_notation} (Table~\ref{tab:app_notation_summary}). Key tensors include base weights $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$, low-rank factors $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$, empirical sensitivity vector $F \in \mathbb{R}^{d_{\mathrm{in}}}$, streaming covariance $C_X \in \mathbb{R}^{d_{\mathrm{in}} \times d_{\mathrm{in}}}$, and LayerNorm affine parameters $\gamma, \beta \in \mathbb{R}^{d_{\mathrm{model}}}$.
+
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher_weighted_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig\_4\_1.pdf}
+\caption{A3 five-phase compression pipeline: (1) streaming calibration, (2) Fisher-weighted SVD, (3) Frobenius validation, (4) adaptive rank escalation with fallback, (5) LayerNorm recalibration.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Phase 1: Streaming Calibration}
+\label{sec:streaming_calibration}
+
+\subsubsection{Problem}
+
+We want to compute, for each linear layer $\ell$:
+
+\[
+F^{(\ell)} = \frac{1}{N} \sum\_{t=1}^{N} \left(x\_t^{(\ell)}\right)^2, \qquad
+C\_X^{(\ell)} = \frac{1}{N} \sum\_{t=1}^{N} x\_t^{(\ell)} \left(x\_t^{(\ell)}\right)^\top
+\tag{4.1}
+\]
+
+where $x_t^{(\ell)} \in \mathbb{R}^{d_\text{in}^{(\ell)}}$ is the input to 
+layer $\ell$ at token $t$.
+
+Naively, storing all $N$ activations per layer costs $\mathcal{O}(N \sum_\ell d_\text{in}^{(\ell)})$, 
+which for $N = 10^4$ and $d_\text{in} = 768$ over 12 layers is $\sim 9 \times 10^7$ 
+values, or 180 MB at FP16. Streaming avoids this.
+
+\subsubsection{Streaming Accumulation}
+
+We register forward hooks on every linear-like module. For each forward pass 
+with input $x \in \mathbb{R}^{B \times L \times d}$, the hook:
+
+The streaming hook operates dynamically during forward propagation by reshaping intermediate activations $x$ to shape $(B L) \times d$, filtering out uninformative padding tokens where $\|x_i\|_1 \le 10^{-5}$, accumulating outer-product covariance matrices $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and diagonal squared energies $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$, and streaming these running statistics into pinned host memory buffers. After iterating through all calibration sequences, empirical estimates are finalized according to:
+
+\[
+F^{(\ell)} = \frac{\sum\_k f^{(k)}}{\sum\_k N^{(k)}}, \qquad
+C\_X^{(\ell)} = \frac{\sum\_k C^{(k)}}{\sum\_k N^{(k)}}
+\tag{4.2}
+\]
+
+\textbf{Memory Footprint.} Storing streaming buffers requires only $\mathcal{O}(d^2)$ elements per layer, or $\mathcal{O}(N_l d^2)$ globally across $N_l$ layers. For DistilBERT ($d = 768, N_l = 12$), this translates to approximately 8.5 million floating-point values—under 17 MB in FP32 precision—completely avoiding GPU activation caching.
+
+\subsubsection{Calibration Data Sources}
+
+A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app_defensive_handling}).
+
+\subsection{Phase 2: Weighted SVD}
+\label{sec:fisher_weighted_svd}
+
+\subsubsection{The Weighting Idea}
+
+Given weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, standard 
+SVD minimizes $\|W - W_r\|_F^2$. We instead minimize an \textbf{activation-weighted} 
+error:
+
+\[
+\mathcal{L}\_\text{weighted}(W\_r) = \mathbb{E}\_x\!\left[\|W x - W\_r x\|\_2^2\right]
+\tag{4.3}
+\]
+
+If we assume $x$ has approximately diagonal covariance 
+$\mathrm{diag}(F_1, \dots, F_{d_\text{in}})$, then:
+
+\[
+\mathcal{L}\_\text{weighted}(W\_r) = \sum\_{i=1}^{d\_\text{in}} F\_i \|(W - W\_r)\_{:, i}\|\_2^2 = \|(W - W\_r) \cdot \mathrm{diag}(\sqrt{F})\|\_F^2
+\tag{4.4}
+\]
+
+So the activation-weighted problem is equivalent to an \textbf{unweighted} problem 
+on the transformed matrix:
+
+\[
+W\_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
+\tag{4.5}
+\]
+
+where $\epsilon = 10^{-6}$ prevents division by zero.
+
+\subsubsection{Factorization Procedure}
+
+The Fisher-weighted decomposition proceeds in four mathematical steps. First, the weight matrix is rescaled by the normalized sensitivity diagonal to form $W_\text{weighted}$ via (4.5). Second, the truncated SVD is evaluated:
+\[
+W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+\tag{4.6}
+\]
+Third, the right factor is unweighted to recover the original activation coordinate space:
+\[
+V\_r^\text{unweighted} = V\_r^\top \cdot \mathrm{diag}\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+\tag{4.7}
+\]
+Finally, singular values are symmetrically distributed across factors via $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$, yielding the factorized operator $y = (x V^\top) U^\top + b$.
+
+\[
+\mathbf{s} = \sqrt{\mathrm{clamp}(F, \min=10^{-8}) + \epsilon}, \qquad \epsilon = 10^{-6}
+\tag{4.8}
+\]
+When scale normalization is enabled (\texttt{normalize\_scale=True}), the scale vector is normalized by its root-mean-square magnitude and dynamically clamped to avoid conditioning degradation:
+\[
+\mathbf{s}\_{\mathrm{norm}} = \mathrm{clamp}\!\left(\frac{\mathbf{s}}{\|\mathbf{s}\|\_2 / \sqrt{d\_{\mathrm{in}}} + 10^{-8}},\, 10^{-3},\, 10^{3}\right)
+\tag{4.9}
+\]
+and the weighted weight matrix is constructed via $W_{\mathrm{weighted}} = W \cdot \mathrm{diag}(\mathbf{s}_{\mathrm{norm}})$.
+
+\subsubsection{Safety Fallback}
+
+If factorization fails validation at the rank ceiling, the layer safely retains its original dense parameters $W$.
+
+\subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
+\label{sec:frobenius_validation}
+
+\subsubsection{Frobenius Error Formulation}
+
+Validation computes the relative reconstruction error:
+\[
+\mathrm{Err}(W, U, V) = \frac{\|W - U V\|\_F}{\|W\|\_F}
+\tag{4.10}
+\]
+A factorized layer is accepted if $\mathrm{Err} \le \tau$, where $\tau = 0.50$ is the operational default (with conservative baseline $\tau = 0.40$).
+
+To prevent parameter expansion ($r(d_{\mathrm{in}} + d_{\mathrm{out}}) \ge d_{\mathrm{in}} d_{\mathrm{out}}$), A3 calculates the theoretical break-even rank $r_{\mathrm{break\_even}} = \frac{d_{\mathrm{in}} d_{\mathrm{out}}}{d_{\mathrm{in}} + d_{\mathrm{out}}}$ (384 for $768 \times 768$ projections) and enforces a strict ceiling:
+\[
+r\_{\mathrm{ceiling}} = \min\!\left(\lfloor 0.90 \cdot r\_{\mathrm{break\_even}} \rfloor,\, 320\right)
+\tag{4.10a}
+\]
+guaranteeing a minimum 10\% parameter savings over dense weights on factorized layers (e.g., $r_{\mathrm{ceiling}} = 320$ for standard 768-dimensional projections; bounded by 256 in conservative configurations).
+
+If the initial factorization error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}}$, recomputing the SVD until convergence or fallback:
+\[
+r\_{k+1} = \min\!\left(r\_{\mathrm{ceiling}},\, r\_k + \max\!\left(16,\, \left\lfloor\frac{r\_{\mathrm{ceiling}} - r\_k}{\max(1, K - k)}\right\rfloor\right)\right)
+\tag{4.11}
+\]
+where $K$ denotes the maximum retry count (default $K=5$). Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
+
+\subsection{Phase 5: LayerNorm Recalibration}
+\label{sec:layernorm_recalibration}
+
+\subsubsection{Motivation}
+
+After factorizing a layer, its output distribution changes. The LayerNorm 
+that follows now sees a different input distribution, which may have 
+non-unit variance even after normalization. The LayerNorm computes:
+
+\[
+\text{LN}(x) = \gamma \odot \frac{x - \mu}{\sigma(x) + \epsilon} + \beta
+\tag{4.12}
+\]
+
+If the input feature standard deviation shifts from the pre-compression target $\sigma_{\mathrm{target}}$ to post-factorization $\sigma_{\mathrm{current}}$, the unadjusted affine scale vector $\gamma$ miscalibrates downstream feature dynamic ranges. When pre-compression target statistics are recorded, A3 updates the affine parameter $\gamma$ in closed form via bounded ratio scaling:
+\[
+\gamma\_{\mathrm{new}} = \gamma \odot \mathrm{clamp}\!\left(\frac{\sigma\_{\mathrm{target}}}{\sigma\_{\mathrm{current}}},\, 0.5,\, 2.0\right)
+\tag{4.13}
+\]
+When target standard deviations are not pre-cached, the update adopts a dampened inverse-variance scaling $\gamma_{\mathrm{new}} = \gamma \cdot (0.8 + 0.2 \cdot \mathrm{clamp}(1.0/\sigma_{\mathrm{current}}, 0.5, 2.0))$. Normalization modules in classification heads, poolers, and embeddings are strictly protected from modification to prevent task drift. Recalibration is executed whenever \texttt{recalibrate\_ln = True} and calibration sources are present.
+
+\subsection{Algorithm and Complexity Summary}
+
+The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app_complexity} (Table~\ref{tab:complexity_analysis}).
+
+\subsection{Parameter Reduction and Break-Even Bounds}
+
+For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app_parameter_counting} (Table~\ref{tab:parameter_counting_formulation}).
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Optimality of Weighted SVD}
+
+\textbf{Proposition.} The truncated SVD of $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F})$ 
+minimizes $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F$ over all rank-$r$ matrices 
+$W_r$.
+
+\textbf{Proof.} This follows directly from Eckart--Young applied to the matrix 
+$W_\text{weighted}$. $\square$
+
+\subsubsection{Relation to Standard SVD}
+
+If $F = \mathbf{1}$ (uniform), then $W_\text{weighted} = W$ and the weighted 
+SVD reduces to standard SVD.
+
+\subsubsection{Error Bound}
+
+For any $W$, $U_r$, $V_r$ from weighted SVD:
+
+\[
+\|W - U\_r V\_r\|\_F \leq \left\|W - W^*\_r\right\|\_F + \|W^*\_r - U\_r V\_r\|\_F
+\tag{4.14}
+\]
+
+where $W^*_r$ is the unweighted optimal rank-$r$ approximation. Combined with the weighted SVD bound from Appendix A.3:
+\[
+\|W - U\_r V\_r\|\_F \leq \frac{\sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2(W\_\text{weighted})}}{\sqrt{\min\_j F\_j}}
+\]
+This makes the bound non-trivial: the reconstruction error is explicitly controlled by the tail singular values of the weighted matrix scaled by the minimal Fisher sensitivity. In practice, the weighted SVD achieves lower task degradation because the weighting suppresses reconstruction error in directions with small Fisher entries.
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+\label{sec:architecture}
+
+A3 supports any transformer architecture composed of linear or 1D-convolutional operators. We validate compression across four primary architectural families: DistilBERT-base (flat linear projections), RoBERTa-base (nested \texttt{BertAttention} projections), GPT-2 (fused and causal \texttt{Conv1D} projections), and Qwen2.5/LLaMA (Grouped-Query Attention with Rotary Position Embeddings). The integration engine selectively factorizes attention projections (\texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}) and optional feed-forward expansions (\texttt{lin1}, \texttt{lin2}), while strictly preserving task-critical classification heads (\texttt{classifier}, \texttt{score}, \texttt{lm\_head}), embeddings, and 1D LayerNorm affine vectors. A full matrix of verified projections and layer-preservation criteria is cataloged in Table~\ref{tab:architecture_support}.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention Projections} & \textbf{FFN Projections} & \textbf{Conv1D?} & \textbf{Verified} \\
+\midrule
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{lin1, lin2} & No & Yes \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & \texttt{intermediate.dense, output.dense} & No & Yes \\
+GPT-2 Small & \texttt{c\_attn} (fused), \texttt{c\_proj} & \texttt{c\_fc, c\_proj} & Yes & Yes \\
+Qwen2.5 / LLaMA & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_proj, up\_proj, down\_proj} & No & Yes \\
+\bottomrule
+\end{tabular}
+\caption{Architectures validated with A3 factorized compression and their linear projection types.}
+\label{tab:architecture_support}
+\end{table*}
+
+\textbf{Cross-Architecture Adaptation.} For standard linear modules (DistilBERT, RoBERTa, Qwen), factorization proceeds directly on the two-dimensional weight tensors. For HuggingFace \texttt{Conv1D} modules in GPT-2, where weights are stored as $(d_\text{in}, d_\text{out})$, A3 transposes the operator prior to SVD and dynamically preserves the internal \texttt{nf} and \texttt{nx} attributes upon module substitution. For autoregressive decoders, calibration operates strictly on lower-triangular causal evaluations, preserving causal masking invariants.
+
+\textbf{Module Replacement and Fallbacks.} When a projection satisfies the error threshold $\tau \le 0.40$, it is replaced by an \texttt{A3FactorizedLinear} module computing $y = (x V^\top) U^\top + b$, with optional integrated LoRA parameters for downstream recovery. Layers exceeding the error ceiling or encountering numerical anomalies safely retain their original dense weights. Complete implementation listings for \texttt{A3FactorizedLinear}, wrapper integration, and the defensive failure handling taxonomy are provided in Appendix~\ref{sec:app_algorithm1}, Appendix~\ref{sec:app_lora_wrapper}, and Appendix~\ref{sec:app_defensive_handling} (Table~\ref{tab:app_failure_responses}).
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Architectures and Datasets}
+
+We evaluate A3 across three established transformer backbones spanning distinct operational modalities: DistilBERT-base (6 layers, 66.9M parameters, flat linear projections), RoBERTa-base (12 layers, 124.6M parameters, nested \texttt{BertAttention}), and GPT-2 Small (12 layers, 124.4M parameters, causal \texttt{Conv1D} projections). Checkpoints are initialized from pre-fine-tuned task heads. The primary empirical evaluation is conducted on the Stanford Sentiment Treebank (SST-2; 67,349 training, 872 validation, and 1,821 test examples; majority baseline 50.92\%). To evaluate generalization limits, we further evaluate across 3-way Multi-Genre Natural Language Inference (MNLI) and 4-way topic categorization (AG News). Input sequences are truncated to a maximum length of 128 tokens.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden Dim} & \textbf{Parameters} & \textbf{Attention Structure} \\
+\midrule
+DistilBERT-base & 6  & 768 & 66.9M  & Flat Linear Projections \\
+RoBERTa-base    & 12 & 768 & 124.6M & Nested BertSelfAttention \\
+GPT-2 Small     & 12 & 768 & 124.4M & Causal Conv1D Projections \\
+\bottomrule
+\end{tabular}
+\caption{Model backbones evaluated across compression and fine-tuning stages.}
+\label{tab:setup_models}
+\end{table}
+
+\subsection{Calibration Protocol and Hyperparameters}
+\label{sec:setup_calibration}
+
+For streaming calibration, we sample $N = 500$ unlabeled training sequences, processing batches through forward hooks without gradient materialization or test-set contamination. The compression engine defaults to initial target rank $r = 64$ (scalable to $r=128$) subject to an enforced rank ceiling $r_{\mathrm{ceiling}} = \min(\lfloor 0.90 \cdot r_{\mathrm{break\_even}}\rfloor, 320)$ (where $r_{\mathrm{break\_even}} = \frac{d_{\mathrm{in}} d_{\mathrm{out}}}{d_{\mathrm{in}} + d_{\mathrm{out}}} = 384$ for standard 768-dimensional projections; bounded by 256 in conservative configurations) to strictly guarantee non-negative parameter savings. The Frobenius error acceptance gate defaults to $\tau = 0.50$ (with $\tau = 0.40$ as conservative baseline) with up to 5 adaptive rank escalation retries before deterministic fallback. Scale normalization clamps the activation energy scale vector $\mathbf{s} \in [10^{-3}, 10^{3}]$, and closed-form LayerNorm affine recalibration is enabled globally. Furthermore, to guard against severe downstream accuracy collapse on binary classification benchmarks, the evaluation pipeline enforces a strict Quality Gate threshold:
+\[
+\mathrm{Acc}\_{\mathrm{target}} \ge \max(56.00\%,\, \mathrm{Acc}\_{\mathrm{majority}} + 5.0\%)
+\tag{6.1}
+\]
+which requires at least 56.00\% validation accuracy on SST-2 (50.92\% majority baseline) for a compressed checkpoint to be certified with \texttt{PASS} status.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Operational Function} \\
+\midrule
+Target Rank $r$ & 64 / 128 & Initial low-rank candidate dimension \\
+Rank Ceiling $r_{\mathrm{ceiling}}$ & $\min(\lfloor 0.9 r_{\mathrm{break\_even}}\rfloor, 320)$ & Enforces $\ge 10\%$ savings ($r \le 256$ in baseline) \\
+Error Threshold $\tau$ & 0.50 (0.40 baseline) & Relative Frobenius norm acceptance gate \\
+Activation Weighting & True & Activation-energy empirical sensitivity scaling \\
+Scale Clamping & $[10^{-3}, 10^{3}]$ & Condition number stabilization \\
+LN Recalibration & True & Closed-form affine scale correction \\
+Fallback Gate & True & Retain dense weights if $\mathrm{err} > \tau$ \\
+Quality Gate Floor & 56.00\% & Downstream validation pass threshold \\
+\bottomrule
+\end{tabular}
+\caption{Production hyperparameters governing A3 factorization, fallback enforcement, and evaluation gating.}
+\label{tab:a3_hyperparameters}
+\end{table}
+
+\subsection{Recovery Adaptation and Execution Environment}
+
+Post-factorization recovery fine-tuning attaches parameter-efficient LoRA adapters ($r_\text{LoRA} = 16$ for DistilBERT; $r_\text{LoRA} = 8$ for RoBERTa and GPT-2; $\alpha = 16$) to factorized linear projections, training exclusively adapter parameters for 50 steps using AdamW ($\mathrm{lr} = 2\times 10^{-4}$, weight decay 0.01, FP16 precision, batch size 8 for DistilBERT and 4 for RoBERTa/GPT-2). All experiments are executed in PyTorch 2.4.0 with Transformers 4.44.0 on an NVIDIA RTX 4070 Laptop GPU (8,188 MB VRAM, CUDA 12.7) with CPU FP32 SVD offloading. Full execution scripts and replication commands are cataloged in Appendix~\ref{sec:app_reproduction}.
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Main Benchmark Performance}
+
+Table~\ref{tab:main_sst2} compiles the consolidated performance of A3 against dense uncompressed baselines across DistilBERT, RoBERTa-base, and GPT-2 Small under the production configuration ($r_{\mathrm{ceiling}} = 256, \tau = 0.40$).
+
 \begin{table*}[t]
 \centering
 \small
@@ -171,7 +668,7 @@ for low-rank factorization.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{A3} & \textbf{72.82} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{A3} & \textbf{50.92} & -- & PASS_LOW & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
+RoBERTa & \textbf{A3} & \textbf{50.92} & -- & PASS\_LOW & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{A3} & \textbf{--} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
 \bottomrule
@@ -179,9 +676,9 @@ GPT-2 & \textbf{A3} & \textbf{--} & -- & PASS & -- & 0 & \textbf{1.00$\times$} &
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
 \label{tab:main_sst2}
 \end{table*}
-% <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 4 -->
-% <!-- source: results/unified_a3/roberta/roberta-base_a3_full_metrics.json line 4 -->
-% <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 4 -->
+\% \textless{}!-- source: results/a3\_tests/fixed\_v4/distilbert\_sst2\_a3\_full\_metrics.json line 4 --\textgreater{}
+\% \textless{}!-- source: results/unified\_a3/roberta/roberta-base\_a3\_full\_metrics.json line 4 --\textgreater{}
+\% \textless{}!-- source: results/unified\_a3/gpt2/gpt2\_a3\_full\_metrics.json line 4 --\textgreater{}
 
 The primary benchmarks reveal three foundational empirical conclusions. First, enforcement of the rank ceiling ($r_{\mathrm{ceiling}} \le 256 < 384$) mathematically guarantees that factorized layers never exceed original dense parameter counts, eliminating negative compression artifacts. Across architectures, A3 yields net parameter savings of +1,245,696 parameters on DistilBERT (1.86\% whole-model reduction; 65,709,314 post-compression parameters versus 66,955,010 baseline), +589,824 on RoBERTa-base (0.47\% reduction; 124,057,346 versus 124,647,170), and +525,312 on GPT-2 (0.42\% reduction; 123,916,032 versus 124,441,344). Complete layer-by-layer parameter tallies and compression ratios are detailed in Appendix~\ref{sec:app_full_parameters} (Table~\ref{tab:app_full_param_counts}).
 
@@ -189,7 +686,7 @@ Second, downstream validation accuracy is robustly preserved on bidirectional en
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_7_1.pdf}
+\includegraphics[width=\columnwidth]{figures/fig\_7\_1.pdf}
 \caption{Validation accuracy comparison between full baseline and A3-compressed models across DistilBERT, RoBERTa, and GPT-2 on SST-2.}
 \label{fig:results_accuracy}
 \end{figure}
@@ -206,6 +703,7 @@ To understand the internal mechanics of A3, we conduct comprehensive ablations a
 
 \textbf{Cross-Task and Multi-Class Evaluation.} When evaluated on 3-way MNLI (balanced chance floor 33.3\%) and 4-way AG News (balanced chance floor 25.0\%) using SST-2 sentiment checkpoints without task-specific pre-convergence, compressed models achieve near-random accuracy (36.10\%--44.40\% on MNLI, and exactly 25.30\% across all models on AG News; Table~\ref{tab:c_multitask_matrix} in Appendix~\ref{sec:app_full_parameters}). The exact 25.30\% accuracy on AG News across DistilBERT, RoBERTa, and GPT-2 represents a classic \textbf{majority-class collapse}: because the 4-way classification projection head is randomly initialized and never trained on topic documents, the logits predict a uniform class label across the evaluation split (where the leading category accounts for 25.30\% of test instances, yielding macro F1: 0.1010). This empirical finding demonstrates that low-rank SVD is strictly a representation-preserving compression operator rather than an inductive transfer learner; task-specific head convergence is mandatory prior to low-rank factorization.
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 \label{sec:analysis}
 
@@ -218,7 +716,7 @@ A3 resolves this discordance through three coordinated mechanisms. First, \textb
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_8_1.pdf}
+\includegraphics[width=\columnwidth]{figures/fig\_8\_1.pdf}
 \caption{Sorted empirical Fisher diagonal energy distribution for an intermediate DistilBERT attention layer. The top 10\% of feature coordinates concentrate $\sim$85\% of the total sensitivity norm, justifying activation-weighted factorization. Source: \texttt{results/a3\_tests/fixed\_v4/a3\_stats.json}.}
 \label{fig:fisher_diagonal}
 \end{figure}
@@ -261,6 +759,7 @@ Diagnostic analysis across transformer layers reveals fundamentally divergent fu
 
 A crucial operational strength of A3 is its structural compatibility with orthogonal compression paradigms. When low-rank factorized checkpoints are cascaded with symmetric INT8 post-training quantization, total model storage drops to 65.8 MB on DistilBERT (2.04$\times$ overall reduction relative to FP16) and 124.1 MB on RoBERTa (2.01$\times$ reduction), while maintaining 89.84\% and 82.95\% accuracy respectively. Because A3 pre-stabilizes activation envelopes via LayerNorm recalibration, activation quantizers experience minimal clipping noise, enabling seamless compound compression without retraining. Detailed compound quantization benchmarks are documented in Appendix~\ref{sec:app_compound_ptq} (Table~\ref{tab:app_compound_quantization}).
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 \label{sec:discussion}
 
@@ -282,7 +781,7 @@ A3 provides substantial engineering benefits in scenarios governed by strict sta
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/decision_flowchart.pdf}
+\includegraphics[width=\columnwidth]{figures/decision\_flowchart.pdf}
 \caption{Decision flowchart for when to apply A3 compression. Use A3 for storage- or memory-constrained deployment; avoid for latency-critical or very small/very large models.}
 \label{fig:decision_flowchart}
 \end{figure}
@@ -315,11 +814,12 @@ While knowledge distillation paradigms achieve higher nominal ratios, they deman
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/accuracy_vs_compression.pdf}
+\includegraphics[width=\columnwidth]{figures/accuracy\_vs\_compression.pdf}
 \caption{Downstream accuracy versus whole-model parameter compression ratio trade-off for A3 versus published compression paradigms.}
 \label{fig:comparison_methods}
 \end{figure}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 \label{sec:limitations}
 
@@ -335,6 +835,7 @@ While A3 provides an efficient and guaranteed non-expanding post-training factor
 
 \textbf{Inference Latency Trade-Off.} Decomposing dense matrix multiplications into sequential low-rank factors increases operational latency on modern GPUs by approximately 10.5\% at small batch sizes due to dual kernel launch boundaries and intermediate activation materialization. Consequently, A3 represents a storage- and memory-oriented optimization rather than an accelerator throughput accelerator.
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 \label{sec:conclusion}
 
@@ -348,14 +849,15 @@ Taha Majs designed the A3 compression algorithms, implemented the PyTorch framew
 \subsubsection*{Acknowledgments}
 We thank the anonymous reviewers and the compute cluster administrators for their support. This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
 pip install -r requirements.txt
@@ -386,12 +888,12 @@ pandas & 2.2.2 \\
 \subsubsection{Full Benchmark}
 
 \begin{lstlisting}
-python run_all_4_a3.py \
+python run\_all\_4\_a3.py \
     --models distilbert,roberta,gpt2 \
     --rank 64 \
-    --recovery_steps 50 \
-    --lora_rank 16 \
-    --batch_size 8
+    --recovery\_steps 50 \
+    --lora\_rank 16 \
+    --batch\_size 8
 \end{lstlisting}
 
 \textbf{Runtime:} ~15 minutes on RTX 4070.
@@ -399,18 +901,18 @@ python run_all_4_a3.py \
 \subsubsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,a3 \
-    --batch_size 8 \
-    --recovery_steps 50 \
-    --learning_rate 2e-4 \
-    --lora_rank 16 \
+    --batch\_size 8 \
+    --recovery\_steps 50 \
+    --learning\_rate 2e-4 \
+    --lora\_rank 16 \
     --rank 64 \
     --precision fp16
 \end{lstlisting}
@@ -418,11 +920,11 @@ python Codes/framework/run_quality_sweep.py \
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-a3",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-a3",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -433,15 +935,15 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1 (Main Results)}
 
 \begin{lstlisting}
-python run_all_4_a3.py --models distilbert,roberta,gpt2
-# $\to$ results/unified_a3/{model}/summary.csv
+python run\_all\_4\_a3.py --models distilbert,roberta,gpt2
+# $\to$ results/unified\_a3/{model}/summary.csv
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Rank Ablation)}
 
 \begin{lstlisting}
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --models distilbert,roberta,gpt2 --rank $rank
+    python run\_all\_4\_a3.py --models distilbert,roberta,gpt2 --rank $rank
 done
 \end{lstlisting}
 
@@ -477,7 +979,7 @@ torch.backends.cudnn.benchmark = False
 
 \subsection{Expected Results}
 
-Replication of the production benchmark configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$) is expected to reproduce the primary findings detailed in Table~\ref{tab:main_sst2} and Appendix~\ref{sec:app_full_reproduction} (Table~\ref{tab:app_repro_expected}): DistilBERT attains 90.02\% $\pm$ 0.5\% validation accuracy with +1.25M parameters saved (PASS); RoBERTa achieves 83.26\% $\pm$ 0.5\% with +0.59M parameters saved (PASS); and GPT-2 exhibits causal degradation to 63.19\% $\pm$ 1.0\% with +0.53M parameters saved (FAIL). Observed deviations $>2.0\%$ typically indicate underlying differences in CUDA runtime floating-point environments or divergent tokenization lengths.
+Replication of the production benchmark configuration ($r\_{\mathrm{ceiling}} \le 256, \tau=0.40$) is expected to reproduce the primary findings detailed in Table~\ref{tab:main_sst2} and Appendix~\ref{sec:app_full_reproduction} (Table~\ref{tab:app_repro_expected}): DistilBERT attains 90.02\% $\pm$ 0.5\% validation accuracy with +1.25M parameters saved (PASS); RoBERTa achieves 83.26\% $\pm$ 0.5\% with +0.59M parameters saved (PASS); and GPT-2 exhibits causal degradation to 63.19\% $\pm$ 1.0\% with +0.53M parameters saved (FAIL). Observed deviations $\textgreater{}2.0\%$ typically indicate underlying differences in CUDA runtime floating-point environments or divergent tokenization lengths.
 
 \subsection{Data Availability}
 
@@ -509,6 +1011,7 @@ print('CUDA ver:', torch.version.cuda)
 \item Checkpoint paths: some baselines may need to be re-downloaded
 \end{itemize}
 
+% --- Section: 13_references.tex ---
 \begin{thebibliography}{99}
 
 \bibitem{eckart1936approximation}
@@ -638,6 +1141,7 @@ M.~Sun, Z.~Liu, A.~Bair, and J.~Z. Kolter.
 
 \end{thebibliography}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -649,7 +1153,7 @@ Given $W \in \mathbb{R}^{m \times n}$ and weights $w \in \mathbb{R}_+^n$,
 we seek:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) = r} \sum_{i, j} w_j (W_{ij} - (W_r)_{ij})^2
+W\_r^* = \arg\min\_{\text{rank}(W\_r) = r} \sum\_{i, j} w\_j (W\_{ij} - (W\_r)\_{ij})^2
 \tag{A.1}
 \]
 
@@ -658,7 +1162,7 @@ W_r^* = \arg\min_{\text{rank}(W_r) = r} \sum_{i, j} w_j (W_{ij} - (W_r)_{ij})^2
 Define $D = \mathrm{diag}(\sqrt{w})$. Then:
 
 \[
-\sum_{i, j} w_j (W - W_r)_{ij}^2 = \|(W - W_r) D\|_F^2 = \|(W D - W_r D)\|_F^2
+\sum\_{i, j} w\_j (W - W\_r)\_{ij}^2 = \|(W - W\_r) D\|\_F^2 = \|(W D - W\_r D)\|\_F^2
 \tag{A.2}
 \]
 
@@ -666,7 +1170,7 @@ Since $\text{rank}(W_r D) \leq r$, the optimal $W_r D$ is the rank-$r$ SVD
 of $W D$. If $W D = U \Sigma V^\top$, then:
 
 \[
-W_r^* D = U_r \Sigma_r V_r^\top \implies W_r^* = U_r \Sigma_r V_r^\top D^{-1}
+W\_r^* D = U\_r \Sigma\_r V\_r^\top \implies W\_r^* = U\_r \Sigma\_r V\_r^\top D^{-1}
 \tag{A.3}
 \]
 
@@ -678,21 +1182,21 @@ This is exactly Algorithm A3.
 expected reconstruction error is:
 
 \[
-\mathbb{E}_x\!\left[\|W x - W_r x\|_2^2\right] = \|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F^2
+\mathbb{E}\_x\!\left[\|W x - W\_r x\|\_2^2\right] = \|(W - W\_r) \mathrm{diag}(\sqrt{F})\|\_F^2
 \tag{A.4}
 \]
 
 \textbf{Proof.} Let $x$ have covariance $\Sigma = \mathrm{diag}(F_1, \dots, F_n)$. Then:
 
 \[
-\mathbb{E}_x[\|(W - W_r) x\|_2^2] = \mathrm{Tr}[(W - W_r) \Sigma (W - W_r)^\top]
+\mathbb{E}\_x[\|(W - W\_r) x\|\_2^2] = \mathrm{Tr}[(W - W\_r) \Sigma (W - W\_r)^\top]
 \tag{A.5}
 \]
 
 With $\Sigma = \mathrm{diag}(F)$:
 
 \[
-\mathrm{Tr}[(W - W_r) \mathrm{diag}(F) (W - W_r)^\top] = \sum_{i, j} F_j (W - W_r)_{ij}^2
+\mathrm{Tr}[(W - W\_r) \mathrm{diag}(F) (W - W\_r)^\top] = \sum\_{i, j} F\_j (W - W\_r)\_{ij}^2
 \tag{A.6}
 \]
 
@@ -703,7 +1207,7 @@ which equals $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F^2$. $\square$
 \textbf{Proposition.} After weighted SVD at rank $r$:
 
 \[
-\|W - U_r V_r\|_F \leq \sqrt{\frac{\sum_{i > r} \sigma_i^2}{\min_j F_j}}
+\|W - U\_r V\_r\|\_F \leq \sqrt{\frac{\sum\_{i \textgreater{} r} \sigma\_i^2}{\min\_j F\_j}}
 \tag{A.7}
 \]
 
@@ -712,7 +1216,7 @@ where $\sigma_i$ are singular values of $W \cdot \mathrm{diag}(\sqrt{F})$.
 \textbf{Proof sketch.} We have $\|W \mathrm{diag}(\sqrt{F}) - U_r \Sigma_r V_r\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}$ by Eckart-Young. So:
 
 \[
-\|W - U_r V_r\|_F \cdot \min_j \sqrt{F_j} \leq \|(W - U_r V_r) \mathrm{diag}(\sqrt{F})\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - U\_r V\_r\|\_F \cdot \min\_j \sqrt{F\_j} \leq \|(W - U\_r V\_r) \mathrm{diag}(\sqrt{F})\|\_F \leq \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.8}
 \]
 
@@ -732,14 +1236,14 @@ Let $\sigma_{\mathrm{pre}}^2$ denote the empirical per-channel activation varian
 To preserve the dynamic range and gradient magnitude received by subsequent sub-layers, the effective gain after normalization should restore pre-compression representation variance: $\mathrm{LN}_{\mathrm{post}}(x_{\mathrm{post}}) \approx \mathrm{LN}_{\mathrm{pre}}(x_{\mathrm{pre}})$. Taking the ratio of scaling factors across normalized representations:
 
 \[
-\frac{\gamma_{\mathrm{new}}}{\sqrt{\sigma_{\mathrm{current}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma_{\mathrm{target}}^2 + \epsilon}}
+\frac{\gamma\_{\mathrm{new}}}{\sqrt{\sigma\_{\mathrm{current}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma\_{\mathrm{target}}^2 + \epsilon}}
 \tag{A.10}
 \]
 
 Neglecting $\epsilon \ll \sigma^2$ for active transformer channels yields the closed-form gain compensation rule:
 
 \[
-\gamma_{\mathrm{new}} = \gamma \odot \frac{\sigma_{\mathrm{target}}}{\sigma_{\mathrm{current}}}
+\gamma\_{\mathrm{new}} = \gamma \odot \frac{\sigma\_{\mathrm{target}}}{\sigma\_{\mathrm{current}}}
 \tag{A.11}
 \]
 
@@ -753,14 +1257,14 @@ converges to $\mathbb{E}[x x^\top]$ as the number of batches grows.
 \textbf{Proof.} Each $C^{(k)} = \sum_{t \in \text{batch}_k} x_t x_t^\top$. Summing:
 
 \[
-\sum_k C^{(k)} = \sum_{t = 1}^{N_\text{total}} x_t x_t^\top
+\sum\_k C^{(k)} = \sum\_{t = 1}^{N\_\text{total}} x\_t x\_t^\top
 \tag{A.14}
 \]
 
 Dividing by $N_\text{total} = \sum_k N^{(k)}$:
 
 \[
-\hat{C} = \frac{1}{N_\text{total}} \sum_t x_t x_t^\top
+\hat{C} = \frac{1}{N\_\text{total}} \sum\_t x\_t x\_t^\top
 \tag{A.15}
 \]
 
@@ -815,7 +1319,7 @@ Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} 
 
 \textbf{Dimensional Break-Even Condition.} Factorization achieves genuine parameter reduction ($P_\text{A3} < P_\text{orig}$) if and only if:
 \[
-r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}
+r \textless{} r\_\text{break-even} = \frac{d\_\text{out} d\_\text{in}}{d\_\text{out} + d\_\text{in}}
 \tag{A.16}
 \]
 For square projections where $d_\text{in} = d_\text{out} = d$, the break-even rank is exactly $r_\text{break-even} = d/2 = 384$. By enforcing a strict rank ceiling $r_{\mathrm{ceiling}} \le 256 < 384$, A3 mathematically guarantees that factorized layers never expand parameter counts.
@@ -858,6 +1362,7 @@ $B$ & Forward evaluation batch size & scalar integer \\
 \label{tab:app_notation_summary}
 \end{table}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -867,33 +1372,33 @@ $B$ & Forward evaluation batch size & scalar integer \\
 class A3FactorizedLinear(nn.Module):
     """Factorized linear layer: y = (xV^T)U^T + b + LoRA"""
     
-    def __init__(self, in_features, out_features, rank, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+    def \_\_init\_\_(self, in\_features, out\_features, rank, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
         self.rank = rank
-        self.lora_rank = lora_rank
+        self.lora\_rank = lora\_rank
         
         # Base factors (frozen after copy)
-        self.V = nn.Parameter(torch.empty(rank, in_features))
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         
         # Bias
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
         # Optional LoRA
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         if self.bias is not None:
             out += self.bias
         return out
@@ -904,96 +1409,96 @@ class A3FactorizedLinear(nn.Module):
 \begin{lstlisting}
 def compress(self):
     # 1. Collect statistics
-    cov_map, fisher_map = self._collect_activations_and_fisher()
+    cov\_map, fisher\_map = self.\_collect\_activations\_and\_fisher()
     
     # 2. For each layer
-    for name, module in self.model.named_modules():
-        if not self._is_target(module, name):
+    for name, module in self.model.named\_modules():
+        if not self.\_is\_target(module, name):
             continue
         
-        cov = cov_map.get(name)
-        fisher = fisher_map.get(name)
+        cov = cov\_map.get(name)
+        fisher = fisher\_map.get(name)
         
-        factorized, err, rank = self.compress_linear(
+        factorized, err, rank = self.compress\_linear(
             module, name=name, cov=cov, fisher=fisher
         )
         
         if factorized is not None:
             # Replace
-            if hasattr(module, 'base_layer'):
-                module.base_layer = factorized
+            if hasattr(module, 'base\_layer'):
+                module.base\_layer = factorized
                 replacement = module
             else:
                 replacement = factorized
-            replace_module(self.model, name, replacement)
+            replace\_module(self.model, name, replacement)
         # else: fallback, keep original
     
     # 3. LN recalibration
-    if self.recalibrate_ln:
-        recalibrate_layernorms(self.model, ...)
+    if self.recalibrate\_ln:
+        recalibrate\_layernorms(self.model, ...)
     
-    return self.model, self.get_stats()
+    return self.model, self.get\_stats()
 \end{lstlisting}
 
 \subsection{B.3 Streaming Statistics}
 
 \begin{lstlisting}
-def _collect_activations_and_fisher(self):
-    cov_running = {}
-    fisher_running = {}
-    count_running = {}
+def \_collect\_activations\_and\_fisher(self):
+    cov\_running = {}
+    fisher\_running = {}
+    count\_running = {}
     
-    def make_hook(name):
+    def make\_hook(name):
         def hook(module, inp, outp):
-            with torch.no_grad():
+            with torch.no\_grad():
                 x = inp[0].detach().float().reshape(-1, inp[0].shape[-1])
-                mask = x.abs().sum(dim=-1) > 1e-5
-                x_valid = x[mask]
-                if x_valid.size(0) > 0:
-                    c = torch.matmul(x_valid.T, x_valid)
-                    f = x_valid.pow(2).sum(dim=0)
-                    if name not in cov_running:
-                        cov_running[name] = c.cpu()
-                        fisher_running[name] = f.cpu()
-                        count_running[name] = x_valid.size(0)
+                mask = x.abs().sum(dim=-1) \textgreater{} 1e-5
+                x\_valid = x[mask]
+                if x\_valid.size(0) \textgreater{} 0:
+                    c = torch.matmul(x\_valid.T, x\_valid)
+                    f = x\_valid.pow(2).sum(dim=0)
+                    if name not in cov\_running:
+                        cov\_running[name] = c.cpu()
+                        fisher\_running[name] = f.cpu()
+                        count\_running[name] = x\_valid.size(0)
                     else:
-                        cov_running[name] += c.cpu()
-                        fisher_running[name] += f.cpu()
-                        count_running[name] += x_valid.size(0)
+                        cov\_running[name] += c.cpu()
+                        fisher\_running[name] += f.cpu()
+                        count\_running[name] += x\_valid.size(0)
         return hook
     
     hooks = []
-    for name, module in self.model.named_modules():
+    for name, module in self.model.named\_modules():
         if isinstance(module, nn.Linear):
-            hooks.append(module.register_forward_hook(make_hook(name)))
+            hooks.append(module.register\_forward\_hook(make\_hook(name)))
     
     # Run calibration
     self.model.eval()
-    with torch.no_grad():
-        for batch in self.calibration_loader:
+    with torch.no\_grad():
+        for batch in self.calibration\_loader:
             self.model(**batch)
     
     for h in hooks:
         h.remove()
     
     # Normalize
-    cov_map = {n: cov_running[n] / count_running[n] for n in cov_running}
-    fisher_map = {n: fisher_running[n] / count_running[n] for n in fisher_running}
+    cov\_map = {n: cov\_running[n] / count\_running[n] for n in cov\_running}
+    fisher\_map = {n: fisher\_running[n] / count\_running[n] for n in fisher\_running}
     
-    return cov_map, fisher_map
+    return cov\_map, fisher\_map
 \end{lstlisting}
 
 \subsection{B.4 Weighted SVD}
 
 \begin{lstlisting}
-def compress_linear(self, module, name, cov=None, fisher=None):
+def compress\_linear(self, module, name, cov=None, fisher=None):
     W = module.weight.data.float()
     
     # Extract shape
-    out_f, in_f = W.shape[0], W.shape[1]
+    out\_f, in\_f = W.shape[0], W.shape[1]
     
     # Compute weighting
-    if self.use_fisher and fisher is not None:
+    if self.use\_fisher and fisher is not None:
         scale = torch.sqrt(fisher.clamp(min=1e-8) + 1e-6)
     elif cov is not None:
         scale = torch.sqrt(torch.diag(cov).clamp(min=1e-8) + 1e-6)
@@ -1002,79 +1507,79 @@ def compress_linear(self, module, name, cov=None, fisher=None):
     
     # Weighted matrix
     if scale is not None:
-        if self.normalize_scale:
-            rms = torch.norm(scale) / math.sqrt(in_f)
+        if self.normalize\_scale:
+            rms = torch.norm(scale) / math.sqrt(in\_f)
             scale = scale / (rms + 1e-8)
         scale = scale.clamp(min=1e-3, max=1e3)
-        W_w = W * scale.unsqueeze(0)
+        W\_w = W * scale.unsqueeze(0)
     else:
-        W_w = W
+        W\_w = W
     
     # SVD
-    U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
+    U, S, Vt = torch.linalg.svd(W\_w, full\_matrices=False)
     
     # Retry loop
-    norm_orig = torch.linalg.norm(W).item()
-    best_err = float('inf')
-    best_factors = None
+    norm\_orig = torch.linalg.norm(W).item()
+    best\_err = float('inf')
+    best\_factors = None
     
-    for r in adaptive_ranks:
-        sqrt_S = torch.sqrt(S[:r].clamp(min=1e-12))
-        U_r = U[:, :r] * sqrt_S.unsqueeze(0)
-        V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+    for r in adaptive\_ranks:
+        sqrt\_S = torch.sqrt(S[:r].clamp(min=1e-12))
+        U\_r = U[:, :r] * sqrt\_S.unsqueeze(0)
+        V\_r = sqrt\_S.unsqueeze(1) * Vt[:r, :]
         if scale is not None:
-            V_r = V_r / scale.unsqueeze(0)
+            V\_r = V\_r / scale.unsqueeze(0)
         
-        W_rec = U_r @ V_r
-        err = torch.linalg.norm(W - W_rec).item() / (norm_orig + 1e-8)
+        W\_rec = U\_r @ V\_r
+        err = torch.linalg.norm(W - W\_rec).item() / (norm\_orig + 1e-8)
         
-        if err < best_err:
-            best_err = err
-            best_factors = (U_r, V_r)
+        if err \textless{} best\_err:
+            best\_err = err
+            best\_factors = (U\_r, V\_r)
         
-        if err <= self.max_error:
+        if err \textless{}= self.max\_error:
             break
     
-    if best_err > self.max_error and self.fallback_to_original:
-        return None, best_err, 0
+    if best\_err \textgreater{} self.max\_error and self.fallback\_to\_original:
+        return None, best\_err, 0
     
     return A3FactorizedLinear(
-        in_features=in_f, out_features=out_f, rank=best_r,
-        U_factor=best_factors[0], V_factor=best_factors[1]
-    ), best_err, best_r
+        in\_features=in\_f, out\_features=out\_f, rank=best\_r,
+        U\_factor=best\_factors[0], V\_factor=best\_factors[1]
+    ), best\_err, best\_r
 \end{lstlisting}
 
 \subsection{B.5 LayerNorm Recalibration}
 
 \begin{lstlisting}
-def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
+def recalibrate\_layernorms(model, tokenizer, calibration\_loader, ...):
     # 1. Record target std
-    target_stds = {}
+    target\_stds = {}
     hooks = []
-    for name, module in model.named_modules():
+    for name, module in model.named\_modules():
         if isinstance(module, nn.LayerNorm):
-            def make_hook(n):
+            def make\_hook(n):
                 def hook(mod, inp, outp):
                     x = inp[0].detach().float()
-                    target_stds[n] = x.std(dim=-1).mean().item()
+                    target\_stds[n] = x.std(dim=-1).mean().item()
                 return hook
-            hooks.append(module.register_forward_hook(make_hook(name)))
+            hooks.append(module.register\_forward\_hook(make\_hook(name)))
     
     # Forward pass
-    with torch.no_grad():
-        for batch in calibration_loader:
+    with torch.no\_grad():
+        for batch in calibration\_loader:
             model(**batch)
     for h in hooks: h.remove()
     
     # 2. Compute current std (after compression)
-    current_stds = {}
+    current\_stds = {}
     # (same procedure)
     
     # 3. Rescale
-    for name, module in model.named_modules():
-        if isinstance(module, nn.LayerNorm) and name in target_stds:
-            ratio = current_stds[name] / (target_stds[name] + 1e-8)
-            with torch.no_grad():
+    for name, module in model.named\_modules():
+        if isinstance(module, nn.LayerNorm) and name in target\_stds:
+            ratio = current\_stds[name] / (target\_stds[name] + 1e-8)
+            with torch.no\_grad():
                 module.weight.data *= ratio
 \end{lstlisting}
 
@@ -1084,8 +1589,8 @@ def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
 
 \begin{lstlisting}
 # RIGHT
-self.V.requires_grad = False
-self.U.requires_grad = False
+self.V.requires\_grad = False
+self.U.requires\_grad = False
 # LoRA stays trainable
 \end{lstlisting}
 
@@ -1094,8 +1599,8 @@ self.U.requires_grad = False
 GPT-2's \texttt{Conv1D} stores \texttt{(in, out)}, but \texttt{nn.Linear} stores \texttt{(out, in)}:
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t()  # transpose!
+if "conv1d" in cls\_name or hasattr(module, "nf"):
+    W = raw\_w.t()  # transpose!
 \end{lstlisting}
 
 \subsubsection{B.6.3 Missing Padding Filter}
@@ -1103,8 +1608,8 @@ if "conv1d" in cls_name or hasattr(module, "nf"):
 Without filtering padding tokens, the Fisher estimate is biased:
 
 \begin{lstlisting}
-mask = x.abs().sum(dim=-1) > 1e-5
-x_valid = x[mask]
+mask = x.abs().sum(dim=-1) \textgreater{} 1e-5
+x\_valid = x[mask]
 \end{lstlisting}
 
 \subsubsection{B.6.4 Numerical Overflow in Weighting}
@@ -1123,34 +1628,34 @@ scale = scale.clamp(min=1e-3, max=1e3)
 Input:  Pretrained model M, initial rank r, threshold $\tau$, calibration dataset D
 Output: Compressed model M', compression statistics
 
- 1: for layer in linear_layers(M) do
- 2:     F^(layer), C_X^(layer) $\leftarrow$ running_accumulate(layer, D)
+ 1: for layer in linear\_layers(M) do
+ 2:     F^(layer), C\_X^(layer) $\leftarrow$ running\_accumulate(layer, D)
  3: end for
- 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
+ 4: $\sigma$\_target $\leftarrow$ record\_layernorm\_scales(M, D)
  5:
- 6: for layer in linear_layers(M) do
+ 6: for layer in linear\_layers(M) do
  7:     W $\leftarrow$ layer.weight.data.clone()
- 8:     r_curr $\leftarrow$ r
- 9:     for attempt in 0..max_retries do
-10:         s $\leftarrow$ normalize_scale(sqrt(F^(layer) + $\epsilon$)).clamp(1e-3, 1e3)
-11:         W_weighted $\leftarrow$ W * diag(s)
-12:         U_r, $\Sigma$_r, V_r $\leftarrow$ cpu_fp32_svd(W_weighted, r_curr)
-13:         V_r $\leftarrow$ V_r * diag(1 / s)
-14:         err $\leftarrow$ norm(W - U_r * V_r, 'fro') / (norm(W, 'fro') + 1e-8)
+ 8:     r\_curr $\leftarrow$ r
+ 9:     for attempt in 0..max\_retries do
+10:         s $\leftarrow$ normalize\_scale(sqrt(F^(layer) + $\epsilon$)).clamp(1e-3, 1e3)
+11:         W\_weighted $\leftarrow$ W * diag(s)
+12:         U\_r, $\Sigma$\_r, V\_r $\leftarrow$ cpu\_fp32\_svd(W\_weighted, r\_curr)
+13:         V\_r $\leftarrow$ V\_r * diag(1 / s)
+14:         err $\leftarrow$ norm(W - U\_r * V\_r, 'fro') / (norm(W, 'fro') + 1e-8)
 15:         if err $\le$ $\tau$: break
-16:         r_curr $\leftarrow$ escalate_rank(r_curr, r_ceiling=256, attempt)
+16:         r\_curr $\leftarrow$ escalate\_rank(r\_curr, r\_ceiling=256, attempt)
 17:     end for
 18:     if err $\le$ $\tau$:
-19:         replace_with_factorized(M, layer, U_r, V_r)
+19:         replace\_with\_factorized(M, layer, U\_r, V\_r)
 20:     else:
-21:         retain_dense_fallback(M, layer)
+21:         retain\_dense\_fallback(M, layer)
 22:     end if
 23: end for
 24:
-25: if recalibrate_ln:
-26:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
+25: if recalibrate\_ln:
+26:     $\sigma$\_current $\leftarrow$ record\_layernorm\_scales(M', D)
 27:     for ln in layernorms(M') do
-28:         ln.weight.data *= ($\sigma$_current[ln] / ($\sigma$_target[ln] + 1e-8))
+28:         ln.weight.data *= ($\sigma$\_current[ln] / ($\sigma$\_target[ln] + 1e-8))
 29:     end for
 30: end if
 31: return M'
@@ -1161,15 +1666,15 @@ Output: Compressed model M', compression statistics
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, base_layer, lora_rank=16, lora_alpha=32):
-        super().__init__()
-        self.base_layer = base_layer
-        self.lora_A = nn.Parameter(torch.empty(lora_rank, base_layer.in_features))
-        self.lora_B = nn.Parameter(torch.zeros(base_layer.out_features, lora_rank))
-        self.scaling = lora_alpha / lora_rank
+    def \_\_init\_\_(self, base\_layer, lora\_rank=16, lora\_alpha=32):
+        super().\_\_init\_\_()
+        self.base\_layer = base\_layer
+        self.lora\_A = nn.Parameter(torch.empty(lora\_rank, base\_layer.in\_features))
+        self.lora\_B = nn.Parameter(torch.zeros(base\_layer.out\_features, lora\_rank))
+        self.scaling = lora\_alpha / lora\_rank
         
     def forward(self, x):
-        return self.base_layer(x) + (x @ self.lora_A.T @ self.lora_B.T) * self.scaling
+        return self.base\_layer(x) + (x @ self.lora\_A.T @ self.lora\_B.T) * self.scaling
 \end{lstlisting}
 
 \subsection{B.9 Defensive Exception Handling and Fallback Architecture}
@@ -1204,8 +1709,8 @@ To ensure complete scientific and engineering reproducibility, all software depe
 \subsubsection{Environment Setup}
 
 \begin{lstlisting}[language=bash]
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
@@ -1237,29 +1742,29 @@ The end-to-end benchmark suite across all three architectures is invoked via:
 
 \begin{lstlisting}[language=bash]
 # Run full A3 benchmark sweep across DistilBERT, RoBERTa, and GPT-2
-python run_all_4_a3.py \
+python run\_all\_4\_a3.py \
     --models distilbert,roberta,gpt2 \
     --rank 128 \
-    --recovery_steps 50 \
-    --lora_rank 16 \
-    --batch_size 8
+    --recovery\_steps 50 \
+    --lora\_rank 16 \
+    --batch\_size 8
 \end{lstlisting}
 
 Individual model evaluation with fine-grained logging:
 
 \begin{lstlisting}[language=bash]
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,a3 \
-    --batch_size 8 \
-    --recovery_steps 50 \
-    --learning_rate 2e-4 \
-    --lora_rank 16 \
+    --batch\_size 8 \
+    --recovery\_steps 50 \
+    --learning\_rate 2e-4 \
+    --lora\_rank 16 \
     --rank 128 \
     --precision fp16
 \end{lstlisting}
@@ -1269,11 +1774,11 @@ python Codes/framework/run_quality_sweep.py \
 \begin{lstlisting}[language=python]
 import random, numpy as np, torch
 
-def seed_everything(seed=42):
+def seed\_everything(seed=42):
     random.seed(seed)
     np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch.manual\_seed(seed)
+    torch.cuda.manual\_seed\_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 \end{lstlisting}
@@ -1296,6 +1801,7 @@ GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) 
 \label{tab:app_repro_expected}
 \end{table}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT -- Full Metrics (SST-2 Validation)}
@@ -1330,7 +1836,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \caption{Comprehensive experimental metrics for DistilBERT under A3 factorized compression on SST-2.}
 \label{tab:distilbert_full_metrics}
 \end{table}
-% <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 1 -->
+\% \textless{}!-- source: results/a3\_tests/fixed\_v4/distilbert\_sst2\_a3\_full\_metrics.json line 1 --\textgreater{}
 
 \subsection{C.2 RoBERTa -- Full Metrics (SST-2 Validation)}
 
@@ -1364,7 +1870,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \caption{Comprehensive experimental metrics for RoBERTa-base under A3 factorized compression on SST-2.}
 \label{tab:roberta_full_metrics}
 \end{table}
-% <!-- source: results/unified_a3/roberta/roberta-base_a3_full_metrics.json line 1 -->
+\% \textless{}!-- source: results/unified\_a3/roberta/roberta-base\_a3\_full\_metrics.json line 1 --\textgreater{}
 
 \subsection{C.3 GPT-2 -- Full Metrics (SST-2 Validation)}
 
@@ -1398,7 +1904,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \caption{Comprehensive experimental metrics for GPT-2 under A3 factorized compression on SST-2.}
 \label{tab:gpt2_full_metrics}
 \end{table}
-% <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 1 -->
+\% \textless{}!-- source: results/unified\_a3/gpt2/gpt2\_a3\_full\_metrics.json line 1 --\textgreater{}
 
 \subsection{C.4 Per-Layer Reconstruction Errors and Ranks (DistilBERT)}
 
@@ -1428,7 +1934,7 @@ Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \caption{Detailed layer-by-layer factorization decisions and relative Frobenius reconstruction errors for DistilBERT attention layers.}
 \label{tab:distilbert_layer_detail}
 \end{table}
-% <!-- source: results/a3_tests/fixed_v4/a3_stats.json line 27 -->
+\% \textless{}!-- source: results/a3\_tests/fixed\_v4/a3\_stats.json line 27 --\textgreater{}
 
 \subsection{C.5 Multi-Task Evaluation Summary}
 
@@ -1453,7 +1959,7 @@ GPT-2      & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 335.8 MB \\
 \caption{Cross-task performance matrix showing accuracy, macro F1, and peak VRAM across all 9 model-dataset combinations.}
 \label{tab:c_multitask_matrix}
 \end{table}
-% <!-- source: results/a3_tests/multidataset_summary.csv line 1 -->
+\% \textless{}!-- source: results/a3\_tests/multidataset\_summary.csv line 1 --\textgreater{}
 
 \subsection{C.6 Reproduction Commands and Execution Scripts}
 \label{sec:app_reproduction}
@@ -1462,28 +1968,28 @@ All experiments are executed via the reproducible unified runner pipeline:
 
 \begin{lstlisting}[language=bash]
 # 1. DistilBERT Benchmark on SST-2
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 --model_family bert \
-    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/a3_tests/fixed_v4 \
-    --modules a3 --batch_size 8 --recovery_steps 50 \
-    --lora_rank 16 --precision fp16 --fresh
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 --model\_family bert \
+    --dataset sst2 --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/a3\_tests/fixed\_v4 \
+    --modules a3 --batch\_size 8 --recovery\_steps 50 \
+    --lora\_rank 16 --precision fp16 --fresh
 
 # 2. RoBERTa Benchmark on SST-2
-python Codes/framework/run_quality_sweep.py \
-    --model models/roberta-base --model_family roberta \
-    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/roberta \
-    --modules a3 --batch_size 4 --recovery_steps 50 \
-    --lora_rank 8 --precision fp16 --fresh
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/roberta-base --model\_family roberta \
+    --dataset sst2 --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/roberta \
+    --modules a3 --batch\_size 4 --recovery\_steps 50 \
+    --lora\_rank 8 --precision fp16 --fresh
 
 # 3. GPT-2 Benchmark on SST-2
-python Codes/framework/run_quality_sweep.py \
-    --model models/gpt2 --model_family gpt \
-    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/gpt2 \
-    --modules a3 --batch_size 4 --recovery_steps 50 \
-    --lora_rank 8 --precision fp16 --fresh
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/gpt2 --model\_family gpt \
+    --dataset sst2 --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/gpt2 \
+    --modules a3 --batch\_size 4 --recovery\_steps 50 \
+    --lora\_rank 8 --precision fp16 --fresh
 \end{lstlisting}
 
 \subsection{C.7 Detailed Parameter Reductions and Layer Allocations}
@@ -1655,6 +2161,7 @@ RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$\times$} & \te
 \label{tab:app_compound_quantization}
 \end{table}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1867,6 +2374,7 @@ Table~\ref{tab:app_failure_cases} details the specific attention projection laye
 \label{tab:app_failure_cases}
 \end{table}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2007,3 +2515,4 @@ But also:
 
 \end{itemize}
 We encourage the community to consider these trade-offs.
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel and Adaptive Gating}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -65,7 +67,7 @@ CHELA-SLAY computes two parallel streams:
 Standard softmax attention:
 
 \[
-O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 This is our anchor -- it preserves pretrained behavior.
@@ -76,8 +78,8 @@ We spherical-normalize Q, K, apply a Yat-Kernel feature map, and compute
 linear attention:
 
 \[
-\hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad
-\hat{K} = \frac{K}{\|K\|_2 + \epsilon}
+\hat{Q} = \frac{Q}{\|Q\|\_2 + \epsilon}, \quad
+\hat{K} = \frac{K}{\|K\|\_2 + \epsilon}
 \]
 
 \[
@@ -93,8 +95,8 @@ O^\text{linear} = \frac{\phi(\hat{Q}) \left[ \phi(\hat{K})^\top V \right]}{\phi(
 A learnable per-head, per-token gate blends the two streams:
 
 \[
-g = \sigma(W_g X + b_g), \quad
-\text{Output} = W_O \left( g \odot O^\text{dense} + (1 - g) \odot O^\text{linear} \right)
+g = \sigma(W\_g X + b\_g), \quad
+\text{Output} = W\_O \left( g \odot O^\text{dense} + (1 - g) \odot O^\text{linear} \right)
 \]
 
 We initialize $W_g = 0$ and $b_g = 5.0$, so 
@@ -128,6 +130,844 @@ concludes.
 
 
 \subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Hidden dimension \\
+$d_h$ & Head dimension \\
+$H$ & Number of heads \\
+$H_{kv}$ & KV head count \\
+$F$ & Number of RFF features \\
+$\Omega$ & RFF projection matrix \\
+$\phi(\cdot)$ & Yat-Kernel feature map \\
+$g$ & Adaptive gate \\
+$b_g$ & Gate bias \\
+$\hat{Q}, \hat{K}$ & Spherically normalized Q, K \\
+$\epsilon$ & Numerical stability constant \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- Section: 02_related.tex ---
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) introduced the modern 
+formulation of linear attention with $\phi(x) = \text{elu}(x) + 1$. It 
+achieves $\mathcal{O}(L)$ complexity but suffers on tasks requiring precise 
+retrieval.
+
+\textbf{Performer} (Choromanski et al., 2021) uses **positive orthogonal random 
+features (PORF)** to approximate softmax with rigorous error bounds. Our 
+Yat-Kernel is a trigonometric RFF variant, similar in spirit.
+
+\textbf{Nystr mformer} (Xiong et al., 2021) approximates the attention matrix 
+via Nystr m landmarks. \textbf{Luna} (Ma et al., 2021) uses random projections. 
+\textbf{COSFORMER} (Luo et al., 2021) uses cos-based feature maps.
+
+\subsection{Random Fourier Features}
+
+\textbf{Rahimi \& Recht (2007)} showed that kernel functions can be approximated 
+via random Fourier features:
+
+\[
+k(x, y) \approx \phi(x)^\top \phi(y), \quad
+\phi(x) = \frac{1}{\sqrt{F}} \left[ \cos(\omega\_1 \cdot x), \sin(\omega\_1 \cdot x), \dots \right]
+\]
+
+with $\omega_i \sim \mathcal{N}(0, 1)$. \textbf{Yat-Kernel} (Zhang et al., 2024) 
+extends this with a $\cos + \sin$ concatenation and a $1/F^{1/4}$ scaling. 
+We adopt this formulation.
+
+\subsection{Spherical Normalization}
+
+\textbf{Spherical attention} (Zhu et al., 2024) normalizes Q, K to the unit 
+hypersphere, giving attention scores that are cosine similarities. This 
+stabilizes training and improves robustness to magnitude variance.
+
+Our method uses spherical normalization only on the linear stream, 
+preserving the dense stream's sensitivity to magnitude.
+
+\subsection{Hybrid Attention}
+
+\textbf{Hymba} (Dong et al., 2024) fuses attention and SSM inside a single 
+layer. \textbf{T2T} (Yuan et al., 2021) combines linear and dense via gating. 
+\textbf{YOSO} (Zhu et al., 2024) uses a gate to mix local and global attention.
+
+CHELA-SLAY differs by using a \textbf{dense + linear} hybrid with 
+\textbf{spherical-normalized Yat-Kernel features} on the linear path.
+
+\subsection{Adaptive Gating}
+
+\textbf{MoE} (Shazeer et al., 2017) uses a router to select experts. **Mixture 
+of Softmaxes** (Yang et al., 2018) blends softmax heads. Our gate is a 
+\textbf{per-head scalar} (not a routing distribution), blending two full 
+attention streams.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Linear stream?} & \textbf{Dense anchor?} & \textbf{Spherical?} & \textbf{Gate?} \\
+\midrule
+Linear Transformer &  &  &  &  \\
+Performer &  &  &  &  \\
+Cosformer &  &  &  &  \\
+Hymba &  &  &  &  \\
+\textbf{CHELA-SLAY} &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} CHELA-SLAY is the only method that combines a **dense 
+anchor\textbf{ with a }spherically normalized linear stream\textbf{ via a }learnable 
+gate**.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Params} & \textbf{SST-2} & \textbf{Recoverable?} \\
+\midrule
+Baseline MHSA & $\mathcal{O}(L^2)$ & $4d^2$ & 90.71\% & -- \\
+Linear Transformer & $\mathcal{O}(L)$ & $4d^2$ & 0.85 & Retrain \\
+Performer & $\mathcal{O}(L)$ & $4d^2$ & 0.85 & Retrain \\
+\textbf{CHELA-SLAY} & $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) & $4d^2 + \epsilon$ & \textbf{89.91} & \textbf{LoRA} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Softmax Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\]
+
+with $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
+
+\subsection{Linear Attention}
+
+Linear attention replaces softmax with a kernel $\phi$:
+
+\[
+\text{Attn}(Q, K, V)\_i = \frac{\sum\_j \phi(q\_i)^\top \phi(k\_j) v\_j}{\sum\_j \phi(q\_i)^\top \phi(k\_j)}
+\]
+
+The \textbf{associative} trick:
+
+\[
+\text{Attn}(Q, K, V)\_i = \frac{\phi(q\_i)^\top \left[ \sum\_j \phi(k\_j) v\_j^\top \right]}{\phi(q\_i)^\top \left[ \sum\_j \phi(k\_j) \right]}
+\]
+
+Computing the bracketed terms is $\mathcal{O}(L \cdot 2F \cdot d_h)$, independent of $L^2$.
+
+\subsection{Random Fourier Features}
+
+\textbf{Bochner's theorem} (Rahimi \& Recht, 2007) states that a shift-invariant 
+kernel $k(x, y) = k(x - y)$ can be represented as the Fourier transform of 
+a probability distribution $p(\omega)$:
+
+\[
+k(x - y) = \mathbb{E}\_\omega [e^{i \omega^\top (x - y)}]
+\]
+
+Approximating this expectation with $F$ samples:
+
+\[
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} e^{i \omega\_i^\top (x - y)}
+\]
+
+Using Euler's formula, the real part is:
+
+\[
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} \cos(\omega\_i^\top (x - y))
+= \phi(x)^\top \phi(y)
+\]
+
+where $\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_i^\top x), \sin(\omega_i^\top x)]_{i=1}^F$.
+
+\subsection{The Yat-Kernel}
+
+The \textbf{Yat-Kernel} (Zhang et al., 2024) modifies the RFF to:
+
+\[
+\phi(x) = \frac{1}{F^{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
+\]
+
+where $\Omega \in \mathbb{R}^{d_h \times F}$ is a random projection matrix.
+
+\textbf{Properties:}
+
+\begin{itemize}
+\item $2F$ output dimension.
+\item $\phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} [\cos(x\Omega)^\top \cos(y\Omega) + \sin(x\Omega)^\top \sin(y\Omega)]$.
+\item Using $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a - b)$, this equals
+  $\frac{1}{\sqrt{F}} \sum_i \cos(\omega_i^\top (x - y))$.
+
+\end{itemize}
+The Yat-Kernel is thus a scaled cosine-similarity kernel, which is 
+\textbf{positive} (needed for stable linear attention).
+
+\subsection{Spherical Normalization}
+
+Given Q, K, we project them onto the unit sphere:
+
+\[
+\hat{Q} = \frac{Q}{\|Q\|\_2 + \epsilon}, \quad
+\hat{K} = \frac{K}{\|K\|\_2 + \epsilon}
+\]
+
+\textbf{Properties:}
+
+\begin{itemize}
+\item $\|\hat{Q}\|_2 = 1$ for all tokens and heads.
+\item Attention scores depend only on \textbf{direction}, not magnitude.
+\item Stabilizes the linear kernel: $\phi(\hat{K})$ has bounded magnitude.
+
+\end{itemize}
+\subsection{Adaptive Gating}
+
+A learnable gate blends two streams:
+
+\[
+g = \sigma(W\_g X + b\_g)
+\]
+
+\[
+O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
+\]
+
+\textbf{Initialization.} $W_g = 0$, $b_g = 5.0$ gives $g \approx 
+0.993$ at step 0.
+
+\subsection{LoRA Recovery}
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\]
+
+with $B = 0$ initially.
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$Q, K, V$ & Query, Key, Value \\
+$\hat{Q}, \hat{K}$ & Spherical-normalized Q, K \\
+$\phi$ & Yat-Kernel feature map \\
+$\Omega$ & RFF projection \\
+$F$ & Number of RFF features \\
+$g$ & Adaptive gate \\
+$L, d_h$ & Sequence length, head dim \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+CHELA-SLAY computes two attention streams in parallel:
+
+\begin{enumerate}
+\item \textbf{Dense stream:} standard softmax attention.
+\item \textbf{Linear stream:} spherical-normalized linear attention with Yat-Kernel.
+
+\end{enumerate}
+Then blends them via an adaptive gate.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X
+       |
+   +---+---------------+
+                        
+   W\_q W\_k W\_v    (gate)
+   |   |   |         |
+                      
+   Q   K   V          g
+   |   |   |         |
+   +---+---+         |
+   |       |         |
+                     |
+ Dense   Linear      |
+ Stream  Stream      |
+   |       |         |
+   +---+---+         |
+                     |
+   g dense + (1-g) linear
+       |
+        
+    W\_o (output proj)
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Dense Stream}
+
+Standard softmax attention:
+
+\[
+O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}} + M\right) V
+\]
+
+where $M$ is the attention mask (padding or causal).
+
+\subsection{Linear Stream}
+
+\subsubsection{Spherical Normalization}
+
+\[
+\hat{Q} = \text{Normalize}(Q), \quad
+\hat{K} = \text{Normalize}(K)
+\]
+
+\subsubsection{Yat-Kernel Feature Map}
+
+For each head, we compute:
+
+\[
+\phi(x) = \frac{1}{F^{1/4}} \left[ \cos(x \Omega) \,\|\, \sin(x \Omega) \right]
+\]
+
+where $\Omega \in \mathbb{R}^{d_h \times F}$ is a fixed random projection.
+
+\textbf{Initialization.} $\Omega \sim \mathcal{N}(0, 0.02^2)$.
+
+\subsubsection{Linear Attention (Bidirectional)}
+
+\[
+KV = \phi(\hat{K})^\top V, \quad
+Z = \sum\_j \phi(\hat{K}\_j)
+\]
+
+\[
+O^\text{linear}\_i = \frac{\phi(\hat{Q}\_i) KV}{\phi(\hat{Q}\_i) Z + \epsilon}
+\]
+
+\subsubsection{Linear Attention (Causal)}
+
+For decoders, we use a \textbf{cumulative sum} over the sequence:
+
+\[
+S\_t = \sum\_{j \leq t} \phi(\hat{K}\_j)^\top V\_j, \quad
+Z\_t = \sum\_{j \leq t} \phi(\hat{K}\_j)
+\]
+
+\[
+O^\text{linear}\_t = \frac{\phi(\hat{Q}\_t) S\_t}{\phi(\hat{Q}\_t) Z\_t + \epsilon}
+\]
+
+\textbf{Implementation.} We materialize $\phi(\hat{K})^\top V$ as a 
+$(\text{B}, \text{H}, L, 2F, d_h)$ tensor and apply \texttt{torch.cumsum} along 
+the sequence dimension:
+
+\begin{lstlisting}
+outer\_prod = k\_feat.unsqueeze(-1) * v.unsqueeze(-2)  # (B, H, L, 2F, d\_h)
+S = torch.cumsum(outer\_prod, dim=2)
+\end{lstlisting}
+
+\textbf{Memory warning.} This intermediate is \texttt{B \textit{ H } L \textit{ 2F } d\_h} floats. 
+For B=8, H=12, L=128, 2F=256, d\_h=64: ~2 billion floats (8 GB at FP32).
+
+\subsection{Adaptive Gate}
+
+A per-head, per-token gate:
+
+\[
+g = \sigma(W\_g X + b\_g) \in \mathbb{R}^{B \times L \times H}
+\]
+
+\textbf{Initialization.} $W_g = 0$, $b_g = 5.0$.
+
+\textbf{Effect.} At step 0:
+
+\[
+g = \sigma(5.0) \approx 0.993
+\]
+
+So the output is dominated by the dense stream (which preserves pretrained 
+behavior).
+
+\subsection{Fusion}
+
+\[
+O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
+\]
+
+Then apply output projection:
+
+\[
+Y = W\_O O + b\_O
+\]
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} CHELA-SLAY forward pass
+\begin{lstlisting}
+Input:  X, attention\_mask, position\_embeddings
+Output: Y
+
+ 1: Q $\leftarrow$ W\_q X                          LoRA
+ 2: K $\leftarrow$ W\_k X
+ 3: V $\leftarrow$ W\_v X
+ 4: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
+ 5: if GQA: K, V $\leftarrow$ repeat\_kv(...)
+ 6:
+ 7: # Dense stream
+ 8: S\_dense $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 9: S\_dense = mask(S\_dense)
+10: O\_dense $\leftarrow$ softmax(S\_dense) V
+11:
+12: # Linear stream
+13: Q  $\leftarrow$ normalize(Q)
+14: K  $\leftarrow$ normalize(K)
+15:  \_Q $\leftarrow$ YatKernel(Q )
+16:  \_K $\leftarrow$ YatKernel(K )
+17: if causal:
+18:     S\_cum $\leftarrow$ cumsum( \_K^T V)
+19:     Z\_cum $\leftarrow$ cumsum( \_K)
+20:     O\_linear $\leftarrow$  \_Q S\_cum / ( \_Q Z\_cum + $\epsilon$)
+21: else:
+22:     KV $\leftarrow$  \_K^T V
+23:     Z $\leftarrow$ sum( \_K)
+24:     O\_linear $\leftarrow$  \_Q KV / ( \_Q Z + $\epsilon$)
+25:
+26: # Gate + fuse
+27: g $\leftarrow$ sigmoid(W\_g X + b\_g)
+28: O $\leftarrow$ g O\_dense + (1-g) O\_linear
+29: Y $\leftarrow$ W\_o O
+30: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Stream} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Dense & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
+Linear (bidirectional) & $\mathcal{O}(L \cdot 2F \cdot d_h)$ & $\mathcal{O}(2F \cdot d_h)$ \\
+Linear (causal) & $\mathcal{O}(L \cdot 2F \cdot d_h)$ & $\mathcal{O}(L \cdot 2F \cdot d_h)$ \\
+Gate & $\mathcal{O}(L d H)$ & $\mathcal{O}(L H)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h + L \cdot 2F \cdot d_h)$ & See below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation:} The causal linear stream's memory is 
+$\mathcal{O}(L \cdot 2F \cdot d_h)$, which for $2F = 256$, $d_h = 64$ is 
+$16384 L$ -- worse than the dense stream's $L^2$ for $L < 16384$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{CHELA-SLAY} \\
+\midrule
+Q, K, V, O & $4 d^2$ & $4 d^2$ (frozen) + LoRA \\
+$\Omega$ (RFF) & 0 & $d_h \cdot F$ \\
+Gate & 0 & $d \cdot H + H$ \\
+LoRA & 0 & $8 r_L d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $H = 12$, $F = 128$, $d_h = 64$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+$\Omega$ & 8,192 \\
+Gate & 9,228 \\
+LoRA & 98,304 \\
+\textbf{Total per layer} & ~116,000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Relative to baseline attention ($4 d^2 = 2.36M$):} +4.9\%.
+
+\subsection{Step-0 Preservation}
+
+\textbf{Claim.} At initialization ($W_g = 0$, $b_g = 5.0$, 
+$B_\text{LoRA} = 0$), CHELA-SLAY output equals the pretrained baseline.
+
+\textbf{Proof sketch.} With $W_g = 0$, $g = \sigma(b_g)$ is constant per token. 
+The gate weight is $0.993$, so $g \approx 1$. The dense output 
+matches the pretrained attention (since base weights are copied and 
+LoRA = 0). The linear contribution is $(1 - g) \cdot O^\text{linear} 
+\approx 0.007 \cdot O^\text{linear}$. So the output is dominated by dense, 
+approximately equal to baseline. $\square$
+
+\subsection{Weight Transfer}
+
+We copy base weights from the pretrained attention:
+
+\begin{itemize}
+\item \textbf{Q, K, V, O}: copied into \texttt{LoRALinear} modules.
+\item \textbf{$\Omega$ (RFF)}: randomly initialized (no pretrained equivalent).
+\item \textbf{Gate}: zero-weight, bias = 5.0.
+
+\end{itemize}
+Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 
+Qwen (GQA + RoPE).
+
+
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+The \texttt{copy\_weights} procedure handles four patterns:
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight  # or q\_proj or query
+\end{lstlisting}
+
+\subsubsection{UniversalAdapter}
+
+Fallback if none match.
+
+\subsection{Handling of the RFF Projection}
+
+The RFF matrix $\Omega$ has \textbf{no pretrained equivalent} -- it is initialized 
+randomly. This is intentional: random features are theoretically justified 
+by Bochner's theorem, and the adaptive gate can down-weight the linear 
+stream if $\Omega$ is not useful.
+
+\subsection{Gate Initialization}
+
+The gate is a \texttt{Linear(dim, H)} module with:
+
+\begin{itemize}
+\item Weight zero-initialized.
+\item Bias = 5.0.
+
+\end{itemize}
+This makes $\sigma(b_g) \approx 0.993$, favoring the dense stream.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}, so we \textbf{do not} apply \texttt{out\_proj}. 
+The outer \texttt{attention.output.dense} handles the projection.
+
+\subsection{GQA Support}
+
+For GQA models (Qwen), we expand K, V via \texttt{repeat\_kv} before both streams.
+
+\subsection{RoPE Support}
+
+Partial-coordinate RoPE:
+
+\begin{lstlisting}
+if rotary\_dim \textless{} head\_dim:
+    q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+    q = torch.cat([q\_rot * cos + rot(q\_rot) * sin, q\_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{Causality}
+
+For decoders, we apply:
+
+\begin{enumerate}
+\item \textbf{Dense stream:} causal mask on scores.
+\item \textbf{Linear stream:} cumsum over sequence.
+
+\end{enumerate}
+Both are strictly causal.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject CHELA-SLAY into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: for each layer with attention:
+2:     src $\leftarrow$ extract\_attention(layer)
+3:     if src is None: continue
+4:     try:
+5:         new $\leftarrow$ ChelaSlayAttention(c, pretrained\_attn=src)
+6:         replace(layer, new)
+7:     except Exception:
+8:         raise RuntimeError("copy\_weights failed")
+9: return M
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+The injection raises \texttt{RuntimeError} on any failure. This is strict but 
+appropriate because the hybrid attention is complex.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("chela\_slay")
+@ATTENTION\_REGISTRY.register("chela\_slay\_attention")
+class ChelaSlayAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of chela\_slay.}
+\label{fig:arch_chela-slay}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{feature\_dim} & 128 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+\texttt{gate\_init\_bias} & 5.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 2e-4 \\
+WD & 1e-2 \\
+Steps & 50 \\
+Batch & 4 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trainable:} LoRA + gate ($\Omega$ is frozen buffer).
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Trainable parameters.
+\item Peak VRAM (with cumsum memory footprint).
+\item Inference time.
+
+\end{itemize}
+\subsubsection{Stream Analysis}
+\begin{itemize}
+\item Gate statistics per layer.
+\item Dense vs linear contribution.
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_chela\_slay.py \
+    --models distilbert,roberta,gpt2 \
+    --feature\_dim 128 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{chela\_slay} & Our method \\
+\texttt{chela\_slay\_dense\_only} & Only dense stream (ablation) \\
+\texttt{chela\_slay\_linear\_only} & Only linear stream (ablation) \\
+Performer & Pure linear attention \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
 
 \begin{table*}[t]
 \centering
@@ -355,12 +1195,13 @@ $L = 128$.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/chela_slay_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{chela_slay}.}
+\includegraphics[width=0.85\linewidth]{figures/chela\_slay\_gpt2\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{chela\_slay}.}
 \label{fig:results_chela_slay}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does Hybrid Attention Work?}
@@ -436,7 +1277,7 @@ ELU+1.
 For causal linear attention, we compute:
 
 \[
-S_t = \text{cumsum}(\phi(\hat{K}_j)^\top V_j)
+S\_t = \text{cumsum}(\phi(\hat{K}\_j)^\top V\_j)
 \]
 
 \textbf{Intermediate tensor size:} $B \times H \times L \times 2F \times d_h$.
@@ -528,6 +1369,7 @@ pure linear attention.
 \end{enumerate}
 
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -599,8 +1441,8 @@ VRAM & 183 MB & 374 MB MB & 4.9$\times$ \\
 \textbf{Future work.} Replace the cumsum with a \textbf{chunked state-passing}:
 
 \begin{lstlisting}
-for chunk_start in range(0, L, C):
-    chunk_end = chunk_start + C
+for chunk\_start in range(0, L, C):
+    chunk\_end = chunk\_start + C
     # intra-chunk: cumsum within C tokens
     # inter-chunk: add previous chunk's final state
 \end{lstlisting}
@@ -629,11 +1471,12 @@ This would reduce memory to $\mathcal{O}(C \cdot 2F \cdot d_h)$.
 \item \textbf{Chunked cumsum:} Would it eliminate the memory bottleneck?
 \item \textbf{Learned $\Omega$:} Could training $\Omega$ improve the linear stream?
 \item \textbf{Different gate shapes:} Would a per-token per-dimension gate help?
-\item \textbf{Scale to L > 4096:} Does the linear stream become dominant?
+\item \textbf{Scale to L \textgreater{} 4096:} Does the linear stream become dominant?
 
 \end{enumerate}
 
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Cumsum Memory Footprint}
@@ -729,6 +1572,7 @@ Hybrid attention is dual-use. See Appendix E.
 
 
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -805,13 +1649,14 @@ None.
 
 
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -836,42 +1681,42 @@ datasets & 2.20.0 \\
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_chela_slay.py \
+python run\_all\_4\_chela\_slay.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim 128 \
-    --gate_init_bias 5.0 \
-    --recovery_steps 50
+    --feature\_dim 128 \
+    --gate\_init\_bias 5.0 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,chela_slay \
-    --feature_dim 128 \
-    --recovery_steps 50
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
+    --modules full,chela\_slay \
+    --feature\_dim 128 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_chela_slay.py
+python run\_all\_4\_chela\_slay.py
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Feature Dim)}
 \begin{lstlisting}
 for f in 32 64 128 256; do
-    python run_all_4_chela_slay.py --feature_dim $f --output_suffix f$f
+    python run\_all\_4\_chela\_slay.py --feature\_dim $f --output_suffix f$f
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Gate Bias)}
 \begin{lstlisting}
 for bg in 0.0 2.0 5.0 10.0; do
-    python run_all_4_chela_slay.py --gate_init_bias $bg --output_suffix gb$bg
+    python run\_all\_4\_chela\_slay.py --gate\_init\_bias $bg --output_suffix gb$bg
 done
 \end{lstlisting}
 
@@ -882,8 +1727,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -912,6 +1757,7 @@ GPT-2 & 85.89\% & +0.8\% & 2.3$\times$ \\
 \end{itemize}
 
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1052,6 +1898,7 @@ GPT-2 & 85.89\% & +0.8\% & 2.3$\times$ \\
 
 
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Yat-Kernel Derivation}
@@ -1074,7 +1921,7 @@ where $\Omega \in \mathbb{R}^{d_h \times F}$ is a random projection.
 Using $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a - b)$:
 
 \[
-\phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} \sum_{i=1}^{F} \cos(\omega_i^\top (x - y))
+\phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} \sum\_{i=1}^{F} \cos(\omega\_i^\top (x - y))
 \]
 
 This is a scaled cosine-similarity kernel.
@@ -1082,7 +1929,7 @@ This is a scaled cosine-similarity kernel.
 \subsection{A.2 Spherical Normalization}
 
 \[
-\hat{x} = \frac{x}{\|x\|_2 + \epsilon}
+\hat{x} = \frac{x}{\|x\|\_2 + \epsilon}
 \]
 
 \textbf{Property.} $\|\hat{x}\|_2 = 1$ for all $x$.
@@ -1094,7 +1941,7 @@ This is a scaled cosine-similarity kernel.
 \subsection{A.3 Linear Attention}
 
 \[
-O_i^\text{linear} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+O\_i^\text{linear} = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 \textbf{Complexity.} Computing $KV = \sum_j \phi(k_j) v_j^\top$ is 
@@ -1105,14 +1952,14 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$. Evaluating (A.5) is $\mathcal{O}(L \cdot 2F
 For decoders, we require:
 
 \[
-O_t^\text{linear} = \frac{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j) v_j^\top}{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j)}
+O\_t^\text{linear} = \frac{\phi(q\_t)^\top \sum\_{j \leq t} \phi(k\_j) v\_j^\top}{\phi(q\_t)^\top \sum\_{j \leq t} \phi(k\_j)}
 \]
 
 Define:
 
 \[
-S_t = \sum_{j \leq t} \phi(k_j) v_j^\top, \quad
-Z_t = \sum_{j \leq t} \phi(k_j)
+S\_t = \sum\_{j \leq t} \phi(k\_j) v\_j^\top, \quad
+Z\_t = \sum\_{j \leq t} \phi(k\_j)
 \]
 
 Both are cumulative sums, computed via \texttt{torch.cumsum}.
@@ -1123,7 +1970,7 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$ memory.
 \subsection{A.5 Gate Fusion}
 
 \[
-g = \sigma(W_g X + b_g)
+g = \sigma(W\_g X + b\_g)
 \]
 
 \[
@@ -1173,7 +2020,7 @@ When does the linear stream pay off?
 Breakeven when $T_d = T_l$:
 
 \[
-L^* = \frac{c_2 \cdot 2F}{c_1}
+L^* = \frac{c\_2 \cdot 2F}{c\_1}
 \]
 
 For typical constants, $L^* \approx 2F \cdot \kappa$ where $\kappa$ is a 
@@ -1181,55 +2028,56 @@ hardware-dependent constant.
 
 
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Core Module}
 
 \begin{lstlisting}
 class ChelaSlayAttention(BaseAttention):
-    def __init__(self, config, rank=64, feature_dim=128, gate_init_bias=5.0, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, feature\_dim=128, gate\_init\_bias=5.0, ...):
+        super().\_\_init\_\_(config, rank)
         
         self.dim = ...
-        self.num_heads = ...
-        self.head_dim = ...
-        self.feature_dim = feature_dim
+        self.num\_heads = ...
+        self.head\_dim = ...
+        self.feature\_dim = feature\_dim
         
         # LoRA projections
-        self.W_q = LoRALinear(...)
-        self.W_k = LoRALinear(...)
-        self.W_v = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.W\_q = LoRALinear(...)
+        self.W\_k = LoRALinear(...)
+        self.W\_v = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
         # Yat-Kernel RFF
-        self.register_buffer("random_proj", 
-                             torch.randn(self.head_dim, feature_dim) * 0.02)
+        self.register\_buffer("random\_proj", 
+                             torch.randn(self.head\_dim, feature\_dim) * 0.02)
         
         # Adaptive gate
-        self.gate = nn.Linear(self.dim, self.num_heads)
-        nn.init.zeros_(self.gate.weight)
-        self.gate.bias.data.fill_(gate_init_bias)
+        self.gate = nn.Linear(self.dim, self.num\_heads)
+        nn.init.zeros\_(self.gate.weight)
+        self.gate.bias.data.fill\_(gate\_init\_bias)
 \end{lstlisting}
 
 \subsection{B.2 Spherical Normalization}
 
 \begin{lstlisting}
-def _spherical_normalize(self, x):
+def \_spherical\_normalize(self, x):
     return F.normalize(x, p=2, dim=-1, eps=1e-6)
 \end{lstlisting}
 
 \subsection{B.3 Yat-Kernel Feature Map}
 
 \begin{lstlisting}
-def _yat_feature_map(self, x):
-    if self.random_proj.shape[0] != x.shape[-1]:
-        self.random_proj = torch.randn(
-            x.shape[-1], self.feature_dim, 
+def \_yat\_feature\_map(self, x):
+    if self.random\_proj.shape[0] != x.shape[-1]:
+        self.random\_proj = torch.randn(
+            x.shape[-1], self.feature\_dim, 
             device=x.device, dtype=x.dtype
         ) * 0.02
-    proj = torch.matmul(x, self.random_proj.to(device=x.device, dtype=x.dtype))
+    proj = torch.matmul(x, self.random\_proj.to(device=x.device, dtype=x.dtype))
     return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (
-        1.0 / (self.feature_dim ** 0.25)
+        1.0 / (self.feature\_dim ** 0.25)
     )
 \end{lstlisting}
 
@@ -1237,31 +2085,31 @@ def _yat_feature_map(self, x):
 
 \begin{lstlisting}
 # Outer product
-outer_prod = k_feat.float().unsqueeze(-1) * v_masked.float().unsqueeze(-2)
+outer\_prod = k\_feat.float().unsqueeze(-1) * v\_masked.float().unsqueeze(-2)
 # Cumsum
-S = torch.cumsum(outer_prod, dim=2)
-Z = torch.cumsum(k_feat.float(), dim=2)
+S = torch.cumsum(outer\_prod, dim=2)
+Z = torch.cumsum(k\_feat.float(), dim=2)
 
-num = torch.matmul(q_feat.float().unsqueeze(-2), S).squeeze(-2)
-denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
-linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+num = torch.matmul(q\_feat.float().unsqueeze(-2), S).squeeze(-2)
+denom = (q\_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
+linear\_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.5 Bidirectional Linear Attention}
 
 \begin{lstlisting}
-KV = torch.matmul(k_feat.transpose(-2, -1).float(), v_masked.float())
-Z = k_feat.float().sum(dim=2, keepdim=True)
-num = torch.matmul(q_feat.float(), KV)
-denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
-linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+KV = torch.matmul(k\_feat.transpose(-2, -1).float(), v\_masked.float())
+Z = k\_feat.float().sum(dim=2, keepdim=True)
+num = torch.matmul(q\_feat.float(), KV)
+denom = (q\_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5
+linear\_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.6 Gate Fusion}
 
 \begin{lstlisting}
 g = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)
-fused = g * dense_out + (1.0 - g) * linear_out
+fused = g * dense\_out + (1.0 - g) * linear\_out
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -1295,6 +2143,7 @@ recreated on the fly. This is safe but inefficient.
 
 
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1452,11 +2301,12 @@ Step  Loss
 \subsection{C.10 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_chela_slay.py --models distilbert,roberta,gpt2
+python run\_all\_4\_chela\_slay.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1578,13 +2428,14 @@ Yat-Kernel (cos+sin) is best.
 \begin{enumerate}
 \item \textbf{Spherical normalization is essential.}
 \item \textbf{Gate bias must be $\ge$ 3.0.}
-\item \textbf{Yat-Kernel > ELU+1.}
+\item \textbf{Yat-Kernel \textgreater{} ELU+1.}
 \item \textbf{Dense anchor is non-negotiable.}
 \item \textbf{Cumsum memory limits practical batch size.}
 
 \end{enumerate}
 
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1652,3 +2503,5 @@ But also:
 \item Concentrate AI capabilities.
 
 \end{itemize}
+
+

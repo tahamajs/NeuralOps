@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{LEKAv2: Linear-Time Efficient Kernel Attention with Landmark Distillation}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -51,8 +53,8 @@ LEKAv2 combines four components:
 Two independent RFF projections with dimensions $F$ and $F/2$:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W_1) \| \sin(x W_1)] 
-\| \frac{1}{\sqrt{F/2}} [\cos(x W_2) \| \sin(x W_2)]
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W\_1) \| \sin(x W\_1)] 
+\| \frac{1}{\sqrt{F/2}} [\cos(x W\_2) \| \sin(x W\_2)]
 \tag{1.2}
 \]
 
@@ -64,7 +66,7 @@ A learned scorer $s_\theta$ selects $L_\text{max} = \min(\rho L, L)$
 landmark tokens:
 
 \[
-\mathcal{L}_\text{idx} = \text{TopK}(s_\theta(\phi(K)), L_\text{max})
+\mathcal{L}\_\text{idx} = \text{TopK}(s\_\theta(\phi(K)), L\_\text{max})
 \tag{1.3}
 \]
 
@@ -75,7 +77,7 @@ Position 0 (\texttt{[CLS]}) is always retained.
 A ReLU-damped softmax that handles masked rows gracefully:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{(x_i - m)/T} - e^{-m/T})}{\sum_j \text{ReLU}(e^{(x_j - m)/T} - e^{-m/T})}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{(x\_i - m)/T} - e^{-m/T})}{\sum\_j \text{ReLU}(e^{(x\_j - m)/T} - e^{-m/T})}
 \tag{1.4}
 \]
 
@@ -87,7 +89,7 @@ A per-head learnable gate blends local sliding-window attention and
 global landmark attention:
 
 \[
-\text{out} = (1 - g) \cdot \text{Local} + g \cdot \text{Global}, \quad g = \sigma(w_h)
+\text{out} = (1 - g) \cdot \text{Local} + g \cdot \text{Global}, \quad g = \sigma(w\_h)
 \tag{1.5}
 \]
 
@@ -126,6 +128,7 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Linear Attention}
@@ -173,6 +176,755 @@ uniform attention).
 variance. We extend RFF with \textbf{dual-scale} features.
 
 \subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Linear} & \textbf{Landmark} & \textbf{Local} & \textbf{Softmax} \\
+\midrule
+Linear Transformer & Yes & No & No & -- \\
+Performer & Yes & No & No & RFF \\
+Nystr mformer & Yes & Fixed & No & -- \\
+Longformer & No & No & Yes & Softmax \\
+\textbf{LEKAv2} & \textbf{Yes} & \textbf{Learned} & \textbf{Yes} & \textbf{Softpick} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Kernel Attention}
+
+Standard softmax attention:
+
+\[
+\text{Attn}(Q, K, V) = \frac{\exp(QK^\top / \sqrt{d\_h}) V}{\exp(QK^\top / \sqrt{d\_h}) \mathbf{1}}
+\tag{3.1}
+\]
+
+If $\kappa(q, k) = \phi(q)^\top \phi(k)$:
+
+\[
+\text{Attn}(Q, K, V)\_i \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\tag{3.2}
+\]
+
+Complexity: $\mathcal{O}(L F d_h)$.
+
+\subsection{Random Fourier Features}
+
+For the Gaussian kernel $\kappa(x - y) = \exp(-\|x - y\|^2 / 2)$:
+
+\[
+\kappa(x - y) = \mathbb{E}\_{\omega \sim \mathcal{N}(0, I)}[\cos(\omega^\top (x - y))]
+\tag{3.3}
+\]
+
+Estimator with $F$ frequencies:
+
+\[
+\hat{\kappa}(x - y) = \frac{1}{F} \sum\_{i=1}^F [\cos(\omega\_i^\top x)\cos(\omega\_i^\top y) + \sin(\omega\_i^\top x)\sin(\omega\_i^\top y)]
+\tag{3.4}
+\]
+
+Feature map: $\phi(x) = \frac{1}{\sqrt{F}} [\cos(xW) \| \sin(xW)]$.
+
+\subsection{Landmark Distillation}
+
+Given a set of $L$ token features $\{\phi(k_i)\}$ and a scorer $s_\theta$:
+
+\[
+\mathcal{S}\_\text{land} = \text{TopK}(\{s\_\theta(\phi(k\_i))\}, L\_\text{max})
+\tag{3.5}
+\]
+
+The landmark features $\phi(K)_\text{land}$ replace the full aggregate:
+
+\[
+\text{Attn}\_\text{land}(q\_i) = \frac{\phi(q\_i)^\top \phi(K\_\text{land})^\top V\_\text{land}}{\phi(q\_i)^\top \phi(K\_\text{land})^\top \mathbf{1}}
+\tag{3.6}
+\]
+
+Complexity: $\mathcal{O}(L \cdot L_\text{max} \cdot 2F)$ for the scoring 
+attention.
+
+\subsection{Softpick}
+
+A variant of softmax that handles masked rows:
+
+\[
+\text{softpick}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
+\tag{3.7}
+\]
+
+where $m = \max_j x_j$ and $T$ is the temperature.
+
+\textbf{Property.} If all $x_i \leq 0$, the term $e^{(x_i - m)/T} - e^{-m/T} \leq 0$, 
+giving $\text{softpick} = 0$. In that case we fall back to a uniform 
+distribution.
+
+\textbf{Advantage over softmax.} Avoids uniform collapse when a full row is 
+masked.
+
+\subsection{Local Sliding Window}
+
+For window size $W$, each query attends to positions $[i - W/2, i + W/2]$:
+
+\[
+\text{Local}\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\tag{3.8}
+\]
+
+\subsection{Local-Global Gate}
+
+A per-head learnable scalar $g_h \in (0, 1)$:
+
+\[
+\text{out} = (1 - g\_h) \cdot \text{Local} + g\_h \cdot \text{Global}
+\tag{3.9}
+\]
+
+Initialized with $g_h = \sigma(-2) \approx 0.12$, biasing toward local.
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+LEKAv2 replaces standard attention with a hybrid pipeline:
+
+\begin{enumerate}
+\item \textbf{Project} Q, K, V (frozen base + LoRA).
+\item \textbf{Map} to dual-scale RFF features.
+\item \textbf{Select} landmarks via a learned scorer.
+\item \textbf{Compute} global landmark attention with \textbf{softpick}.
+\item \textbf{Compute} local sliding-window attention.
+\item \textbf{Fuse} via per-head gates.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+         Q/K/V Projection (frozen + LoRA)
+              |
+       +------+------+
+                      
+      Q      K      V
+       |      |      |
+                     |
+      (Q)    (K)     |  (Dual-scale RFF)
+       |      |      |
+       |             |
+       |  Landmark  |
+       |  Scorer    |
+       |      |      |
+       |             |
+       |  K\_land, V\_land
+       |      |      |
+       +------+------+
+               
+      +---------------+
+      |  Softpick     |
+      |  Attention    |
+      |  (Global)     |
+      +-------+-------+
+              |
+      +-------+-------+
+                       
+    Local   Global   Gate
+    Attn    Attn    ($\sigma$(w\_h))
+      |       |       |
+      +-------+-------+
+               
+      (1-g)Local + g Global
+              |
+               
+          out\_proj
+              |
+               
+           Output Y
+\end{lstlisting}
+
+\subsection{Dual-Scale Random Features}
+
+Two projections:
+
+\[
+W\_1 \in \mathbb{R}^{d\_h \times F}, \quad W\_2 \in \mathbb{R}^{d\_h \times F/2}
+\tag{4.1}
+\]
+
+Both initialized as $\mathcal{N}(0, 1/\sqrt{d_h})$ (scaled Gaussian).
+
+\textbf{Feature map:}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W\_1) \| \sin(x W\_1)] \| \frac{1}{\sqrt{F/2}} [\cos(x W\_2) \| \sin(x W\_2)]
+\tag{4.2}
+\]
+
+Output dimension: $2F + F = 3F$.
+
+\textbf{Why two scales?} The two projections capture different frequency 
+bands, similar to multi-resolution analysis.
+
+\subsection{Landmark Distillation}
+
+\textbf{Scorer.} A small MLP:
+
+\[
+s\_\theta(\phi(k)) = \text{MLP}(\text{LN}(\phi(k))) \in \mathbb{R}
+\tag{4.3}
+\]
+
+with architecture: LayerNorm($3F$) $\to$ Linear($3F$, 64) $\to$ GELU $\to$ Linear(64, 1).
+
+\textbf{Selection.}
+
+\[
+L\_\text{max} = \min\!\left(\max(L\_\text{min}, \lceil \rho L \rceil), L\right)
+\tag{4.4}
+\]
+
+\[
+\mathcal{S}\_\text{land} = \text{TopK}(s\_\theta, L\_\text{max})
+\tag{4.5}
+\]
+
+\textbf{Position 0 guarantee.} We set $s_\theta[:, 0] \leftarrow 10^4$ to force 
+retention.
+
+\textbf{Gather.} $K_\text{land} = K[\mathcal{S}_\text{land}]$, $V_\text{land} = V[\mathcal{S}_\text{land}]$.
+
+\subsection{Correction Matrix}
+
+Per-head learnable correction applied to landmark values:
+
+\[
+V\_\text{land}^\text{adj} = V\_\text{land} \cdot W\_\text{corr}^h
+\tag{4.6}
+\]
+
+where $W_\text{corr} \in \mathbb{R}^{H \times d_h \times d_h}$ is 
+initialized to the identity per head.
+
+\textbf{Purpose.} Allows the model to learn head-specific value transformations 
+during recovery.
+
+\subsection{Softpick Attention}
+
+\textbf{Scores.}
+
+\[
+\text{scores}\_{ij} = \phi(q\_i)^\top \phi(K\_\text{land})\_j^\top
+\tag{4.7}
+\]
+
+\textbf{Masking.} Padding and causal masks applied.
+
+\textbf{Softpick.}
+
+\[
+m\_i = \max\_j \text{scores}\_{ij}, \quad
+p\_{ij} = \text{ReLU}\!\left(e^{(\text{scores}\_{ij} - m\_i)/T} - e^{-m\_i/T}\right)
+\tag{4.8}
+\]
+
+with $T = 1.0$ and fallback to uniform when $\sum_j p_{ij} < 10^{-6}$.
+
+\textbf{Global context.}
+
+\[
+A\_\text{global} = \sum\_j p\_{ij} V\_{\text{land}, j}^\text{adj}
+\tag{4.9}
+\]
+
+\subsection{Local Sliding Window}
+
+\textbf{Window mask.}
+
+\[
+\text{mask}\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\tag{4.10}
+\]
+
+\textbf{Local scores.} Standard scaled dot-product:
+
+\[
+\text{local}\_{ij} = \frac{q\_i \cdot k\_j}{\sqrt{d\_h}} \cdot \text{mask}\_{ij}
+\tag{4.11}
+\]
+
+Then causal + padding masks.
+
+\textbf{Local attention.}
+
+\[
+A\_\text{local} = \text{softmax}(\text{local}) \cdot V
+\tag{4.12}
+\]
+
+\subsection{Local-Global Fusion}
+
+Per-head gate:
+
+\[
+g\_h = \sigma(w\_h), \quad w\_h^{(0)} = -2
+\tag{4.13}
+\]
+
+\textbf{Fusion.}
+
+\[
+\text{out}\_h = (1 - g\_h) \cdot A\_\text{local}^h + g\_h \cdot A\_\text{global}^h
+\tag{4.14}
+\]
+
+With $g_h^{(0)} \approx 0.12$, the local branch dominates initially.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} LEKAv2 forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
+ 2: reshape to (B, H, L, d\_h)
+ 3: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
+ 4: if GQA:  K, V $\leftarrow$ repeat\_kv
+ 5:  \_Q $\leftarrow$ dual\_rff(Q)                   (B, H, L, 3F)
+ 6:  \_K $\leftarrow$ dual\_rff(K)
+ 7: L\_max $\leftarrow$ max(min\_landmarks,   L)
+ 8: scores $\leftarrow$ landmark\_scorer( \_K)       (B, H, L)
+ 9: scores[:, :, 0] $\leftarrow$ 1e4
+10: idx $\leftarrow$ topk(scores, L\_max)
+11: K\_land $\leftarrow$ gather( \_K, idx); V\_land $\leftarrow$ gather(V, idx)
+12: V\_land\_adj $\leftarrow$ V\_land   W\_corr
+13: A\_glob $\leftarrow$ softpick( \_Q @ K\_land^T) @ V\_land\_adj
+14: A\_loc $\leftarrow$ softmax(masked(QK^T)) @ V    window + causal
+15: g $\leftarrow$ sigmoid(local\_gate)              (H,)
+16: out $\leftarrow$ (1-g) A\_loc + g A\_glob
+17: reshape to (B, L, d); out\_proj
+18: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+Per block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+Q/K/V projections & $O(L d^2)$ & $3 d^2$ \\
+Dual RFF & $O(L d (3F))$ & 0 (buffers) \\
+Landmark scorer & $O(L \cdot 3F)$ & $O(F)$ \\
+Landmark attention & $O(L \cdot L_\text{max} \cdot 3F)$ & 0 \\
+Local window attention & $O(L \cdot W \cdot d_h)$ & 0 \\
+Correction matrix & $O(L_\text{max} \cdot d_h^2)$ & $H d_h^2$ \\
+Fusion & $O(L d)$ & $H$ \\
+Output & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L d^2 + L \cdot L_\text{max} \cdot F)$ & $\sim 4 d^2 + H d_h^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $\rho = 0.5$ and $L \gg F$, the landmark term is 
+$O(L^2 \cdot F)$ -- \textbf{quadratic} in $L$! But with $L_\text{max} = \rho L$ 
+and $\rho = 0.5$, we get $O(L^2)$ again.
+
+\textbf{Note.} LEKAv2 is \textbf{not truly linear} unless we set $L_\text{max} = $ 
+constant. The current implementation uses $L_\text{max} = \rho L$ -- this 
+is effectively \textbf{linear-quadratic} (still $O(L^2)$ but with a smaller 
+constant).
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, $H = 12$, $d_h = 64$, $F = 128$, LoRA $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{LEKAv2} \\
+\midrule
+Q/K/V/O & $4 d^2 = 2.36M$ & $2.36M$ (frozen) \\
+LoRA & 0 & $98K$ \\
+RFF buffers & 0 & 0 (not params) \\
+Landmark scorer & 0 & ~$9K$ \\
+Correction matrix & 0 & $H d_h^2 = 49K$ \\
+Local gate & 0 & 12 \\
+\textbf{Total per layer} & 2.36M & 2.51M \\
+\textbf{Increase} & -- & \textbf{+6\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Modest parameter increase.
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters (frozen base).
+\item Landmark scorer.
+\item Correction matrix.
+\item Local gate.
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Q/K/V/O base weights.
+\item Random projection buffers (not parameters).
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+UniversalAdapter first, then fallbacks:
+
+\subsubsection{GPT-2 Fused Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+Standard attributes.
+
+\subsection{Soft Fallback}
+
+After UniversalAdapter fails, we log a warning. But the code still 
+raises \texttt{RuntimeError} at the end if any required projection is missing -- 
+this can kill the module.
+
+\subsection{Landmark Scorer Architecture}
+
+LayerNorm over $3F$ features $\to$ Linear($3F$, 64) $\to$ GELU $\to$ Linear(64, 1).
+
+\subsection{Correction Matrix Shape}
+
+$W_\text{corr} \in \mathbb{R}^{H \times d_h \times d_h}$, initialized 
+as $I_{d_h}$ per head.
+
+\textbf{Note.} For $H = 12, d_h = 64$, this is $12 \times 64 \times 64 = 49,152$ 
+parameters per layer.
+
+\subsection{Local-Global Gate}
+
+Per-head scalar $g_h \in (0, 1)$, initialized to $\sigma(-2) \approx 0.12$.
+
+\textbf{Note.} The gate is applied \textbf{before} the \texttt{output\_scale} in 
+LEKAv1 -- here, there is no \texttt{output\_scale}.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}. Raw context returned.
+
+\subsection{Causal Masking}
+
+\textbf{Global branch.} Masked via landmark positions:
+
+\begin{lstlisting}
+q\_pos = torch.arange(N).view(1, 1, N, 1)
+k\_land\_pos = land\_idx.unsqueeze(2)
+causal\_land\_mask = (k\_land\_pos \textless{}= q\_pos)
+attn\_weights = attn\_weights.masked\_fill(~causal\_land\_mask, -1e4)
+\end{lstlisting}
+
+\textbf{Local branch.} Standard causal mask.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject LEKAv2 into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: for layer in transformer\_layers(M):
+2:     src $\leftarrow$ extract\_attention(layer)
+3:     if src is None or is\_already\_injected: continue
+4:     try:
+5:         new $\leftarrow$ LEKAv2Attention(c, old\_attn=src)
+6:         replace(layer, new)
+7:     except Exception:
+8:         log\_error; continue
+9: return M
+\end{lstlisting}
+
+\subsection{Double-Injection Guard}
+
+\begin{lstlisting}
+if isinstance(src\_attn, LEKAv2Attention): return None
+if "LEKAv2" in src\_attn.\_\_class\_\_.\_\_name\_\_: return None
+if "LEKA" in src\_attn.\_\_class\_\_.\_\_name\_\_: return None
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("leka\_v2")
+@ATTENTION\_REGISTRY.register("leka\_v2\_attention")
+class LEKAv2Attention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Not supported.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of leka\_v2.}
+\label{fig:arch_leka-v2}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2 (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max length: 128.
+
+\subsection{Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{feature\_dim} F & 64 \\
+\texttt{landmark\_ratio} & 0.25 \\
+\texttt{min\_landmarks} & 64 \\
+\texttt{local\_window\_size} W & 128 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+Local gate $w_h$ & -2.0 ($\sigma$ $\approx$ 0.12) \\
+Softpick temperature T & 1.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Attention parameters.
+\item Peak VRAM.
+\item Inference time at L = 128, 256, 512, 1024.
+
+\end{itemize}
+\subsubsection{Component-specific}
+\begin{itemize}
+\item Mean landmark ratio.
+\item Mean local gate $g_h$.
+\item Landmark selection distribution.
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_leka\_v2.py \
+    --models distilbert,roberta,gpt2 \
+    --feature\_dim 64 \
+    --landmark\_ratio 0.25 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{leka\_v2} & Our method \\
+\texttt{leka\_v2\_no\_landmark} & Without landmark distillation \\
+\texttt{leka\_v2\_no\_local} & Without local branch \\
+\texttt{leka\_v2\_no\_dual} & Single-scale RFF \\
+\texttt{leka\_v2\_softmax} & Standard softmax instead of softpick \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
 
 \begin{table*}[t]
 \centering
@@ -413,12 +1165,13 @@ GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/leka_v2_distilbert_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v2}.}
+\includegraphics[width=0.85\linewidth]{figures/leka\_v2\_distilbert\_loss\_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka\_v2}.}
 \label{fig:results_leka_v2}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Contribution of Each Component}
@@ -564,6 +1317,7 @@ If $g_h \to 0$ or $g_h \to 1$, one branch is ignored.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -600,7 +1354,7 @@ ratio.
 \end{itemize}
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Very long sequences} (L > 4096): the landmark term becomes expensive.
+\item \textbf{Very long sequences} (L \textgreater{} 4096): the landmark term becomes expensive.
 \item \textbf{Latency-critical applications.}
 \item \textbf{Encoder-decoder models.}
 
@@ -675,6 +1429,7 @@ LEKAv2 composes with:
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Not Truly Linear at Default}
@@ -745,6 +1500,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -821,13 +1577,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -836,31 +1593,31 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_leka_v2.py \
+python run\_all\_4\_leka\_v2.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim 64 \
-    --landmark_ratio 0.25 \
-    --recovery_steps 50
+    --feature\_dim 64 \
+    --landmark\_ratio 0.25 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_leka_v2.py
+python run\_all\_4\_leka\_v2.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (  Ablation)}
 \begin{lstlisting}
 for rho in 0.25 0.5 0.75 1.0; do
-    python run_all_4_leka_v2.py --landmark_ratio $rho --output_suffix rho$rho
+    python run\_all\_4\_leka\_v2.py --landmark\_ratio $rho --output_suffix rho$rho
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Feature dim)}
 \begin{lstlisting}
 for f in 64 128 256 512; do
-    python run_all_4_leka_v2.py --feature_dim $f --output_suffix f$f
+    python run\_all\_4\_leka\_v2.py --feature\_dim $f --output_suffix f$f
 done
 \end{lstlisting}
 
@@ -871,8 +1628,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -903,6 +1660,7 @@ GPT-2 & 50.92\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1066,6 +1824,7 @@ GPT-2 & 50.92\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Dual-Scale RFF}
@@ -1073,26 +1832,26 @@ GPT-2 & 50.92\% & 0.85 \\
 Two projections:
 
 \[
-W_1 \in \mathbb{R}^{d_h \times F}, \quad W_2 \in \mathbb{R}^{d_h \times F/2}
+W\_1 \in \mathbb{R}^{d\_h \times F}, \quad W\_2 \in \mathbb{R}^{d\_h \times F/2}
 \tag{A.1}
 \]
 
 Feature map:
 
 \[
-\phi(x) = [\phi_1(x) \| \phi_2(x)]
+\phi(x) = [\phi\_1(x) \| \phi\_2(x)]
 \tag{A.2}
 \]
 
 where:
 
 \[
-\phi_1(x) = \frac{1}{\sqrt{F}} [\cos(xW_1) \| \sin(xW_1)]
+\phi\_1(x) = \frac{1}{\sqrt{F}} [\cos(xW\_1) \| \sin(xW\_1)]
 \tag{A.3}
 \]
 
 \[
-\phi_2(x) = \frac{1}{\sqrt{F/2}} [\cos(xW_2) \| \sin(xW_2)]
+\phi\_2(x) = \frac{1}{\sqrt{F/2}} [\cos(xW\_2) \| \sin(xW\_2)]
 \tag{A.4}
 \]
 
@@ -1103,14 +1862,14 @@ Output dimension: $2F + F = 3F$.
 Score for token $i$:
 
 \[
-s_i = \text{MLP}(\text{LN}(\phi(k_i)))
+s\_i = \text{MLP}(\text{LN}(\phi(k\_i)))
 \tag{A.5}
 \]
 
 Selection:
 
 \[
-\mathcal{S}_\text{land} = \text{TopK}(\{s_i\}, L_\text{max})
+\mathcal{S}\_\text{land} = \text{TopK}(\{s\_i\}, L\_\text{max})
 \tag{A.6}
 \]
 
@@ -1121,14 +1880,14 @@ Guarantee: $s_0 \leftarrow 10^4$.
 For scores $\text{scores}_{ij}$ and row max $m_i$:
 
 \[
-p_{ij} = \text{ReLU}\!\left(e^{(\text{scores}_{ij} - m_i)/T} - e^{-m_i/T}\right)
+p\_{ij} = \text{ReLU}\!\left(e^{(\text{scores}\_{ij} - m\_i)/T} - e^{-m\_i/T}\right)
 \tag{A.7}
 \]
 
 Normalize:
 
 \[
-\tilde{p}_{ij} = \frac{p_{ij}}{\sum_j p_{ij} + \epsilon}
+\tilde{p}\_{ij} = \frac{p\_{ij}}{\sum\_j p\_{ij} + \epsilon}
 \tag{A.8}
 \]
 
@@ -1137,7 +1896,7 @@ Normalize:
 \textbf{Property.} For all $j$ with $\text{scores}_{ij} \leq 0$:
 
 \[
-e^{(\text{scores}_{ij} - m_i)/T} \leq e^{-m_i/T} \implies p_{ij} = 0
+e^{(\text{scores}\_{ij} - m\_i)/T} \leq e^{-m\_i/T} \implies p\_{ij} = 0
 \tag{A.9}
 \]
 
@@ -1146,7 +1905,7 @@ e^{(\text{scores}_{ij} - m_i)/T} \leq e^{-m_i/T} \implies p_{ij} = 0
 Window mask:
 
 \[
-\text{mask}_{ij} = \mathbb{1}\{|i - j| \leq W/2\}
+\text{mask}\_{ij} = \mathbb{1}\{|i - j| \leq W/2\}
 \tag{A.10}
 \]
 
@@ -1155,21 +1914,21 @@ Window mask:
 Per-head gate:
 
 \[
-g_h = \sigma(w_h)
+g\_h = \sigma(w\_h)
 \tag{A.11}
 \]
 
 Fusion:
 
 \[
-\text{out}_h = (1 - g_h) \text{Local}_h + g_h \text{Global}_h
+\text{out}\_h = (1 - g\_h) \text{Local}\_h + g\_h \text{Global}\_h
 \tag{A.12}
 \]
 
 \subsection{A.6 Correction Matrix}
 
 \[
-V_\text{land}^\text{adj} = V_\text{land} \cdot W_\text{corr}
+V\_\text{land}^\text{adj} = V\_\text{land} \cdot W\_\text{corr}
 \tag{A.13}
 \]
 
@@ -1202,7 +1961,7 @@ Output proj & $O(L d^2)$ \\
 For $L_\text{max} = \rho L$:
 
 \[
-\text{Total} = O(L d^2 + \rho L^2 F + L W d_h)
+\text{Total} = O(L d^2 + \rho L^2 F + L W d\_h)
 \]
 
 \textbf{Quadratic unless $\rho = O(1/L)$.}
@@ -1216,20 +1975,21 @@ For $d = 768$, $H = 12$, $d_h = 64$, $F = 128$, LoRA rank $r_L = 16$:
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Dual-Scale Feature Map}
 
 \begin{lstlisting}
-def kernel_feature_map(self, x):
-    W1 = self.rand_proj1.to(x.dtype)
-    W2 = self.rand_proj2.to(x.dtype)
+def kernel\_feature\_map(self, x):
+    W1 = self.rand\_proj1.to(x.dtype)
+    W2 = self.rand\_proj2.to(x.dtype)
     
     proj1 = torch.matmul(x, W1)
-    f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(self.feature_dim)
+    f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(self.feature\_dim)
     
     proj2 = torch.matmul(x, W2)
-    f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(self.feature_dim // 2)
+    f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(self.feature\_dim // 2)
     
     return torch.cat([f1, f2], dim=-1)
 \end{lstlisting}
@@ -1237,24 +1997,24 @@ def kernel_feature_map(self, x):
 \subsection{B.2 Landmark Selection}
 
 \begin{lstlisting}
-def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None):
-    B, H, N, feat_dim = K_features.shape
-    target = num_landmarks or self.num_landmarks
-    L_max = min(target, N)
+def select\_landmarks(self, K\_features, V, valid\_mask=None, num\_landmarks=None):
+    B, H, N, feat\_dim = K\_features.shape
+    target = num\_landmarks or self.num\_landmarks
+    L\_max = min(target, N)
     
-    scores = self.landmark_scorer(K_features).squeeze(-1)  # (B, H, N)
-    if valid_mask is not None:
-        scores = scores.masked_fill((~valid_mask).unsqueeze(1), -1e4)
+    scores = self.landmark\_scorer(K\_features).squeeze(-1)  # (B, H, N)
+    if valid\_mask is not None:
+        scores = scores.masked\_fill((~valid\_mask).unsqueeze(1), -1e4)
     
     # Force position 0
     scores[:, :, 0] = 1e4
-    _, idx = scores.topk(L_max, dim=-1)
+    \_, idx = scores.topk(L\_max, dim=-1)
     idx = idx.clone()
     idx[:, :, 0] = 0
     
-    K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
-    V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
-    return K_land, V_land, idx
+    K\_land = torch.gather(K\_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat\_dim))
+    V\_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
+    return K\_land, V\_land, idx
 \end{lstlisting}
 
 \subsection{B.3 Softpick}
@@ -1264,16 +2024,16 @@ def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None):
 def softpick(x, dim=-1, temperature=1.0):
     x = x.float() / temperature
     m = x.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -100.0, torch.zeros_like(m), m)
+    m = torch.where(m \textless{} -100.0, torch.zeros\_like(m), m)
     z = x - m
-    exp_z = torch.exp(z)
-    exp_neg_m = torch.exp(-m).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
+    exp\_z = torch.exp(z)
+    exp\_neg\_m = torch.exp(-m).clamp(max=1e4)
+    p = F.relu(exp\_z - exp\_neg\_m)
     denom = p.sum(dim=dim, keepdim=True)
-    is_empty = denom < 1e-6
-    p_safe = p / denom.clamp(min=1e-6)
-    uniform = torch.ones_like(p) / p.shape[dim]
-    return torch.where(is_empty.expand_as(p), uniform, p_safe).to(x.dtype)
+    is\_empty = denom \textless{} 1e-6
+    p\_safe = p / denom.clamp(min=1e-6)
+    uniform = torch.ones\_like(p) / p.shape[dim]
+    return torch.where(is\_empty.expand\_as(p), uniform, p\_safe).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.4 Local Attention}
@@ -1281,25 +2041,25 @@ def softpick(x, dim=-1, temperature=1.0):
 \begin{lstlisting}
 idx = torch.arange(N)
 dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-window = min(self.local_window_size, N)
-window_mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
+window = min(self.local\_window\_size, N)
+window\_mask = (dist \textless{}= window // 2).unsqueeze(0).unsqueeze(0)
 
-local_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
-local_scores = local_scores.masked_fill(~window_mask, -1e4)
+local\_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+local\_scores = local\_scores.masked\_fill(~window\_mask, -1e4)
 
-if self.is_decoder:
+if self.is\_decoder:
     causal = torch.tril(torch.ones(N, N, dtype=torch.bool))
-    local_scores = local_scores.masked_fill(~causal, -1e4)
+    local\_scores = local\_scores.masked\_fill(~causal, -1e4)
 
-local_attn = F.softmax(local_scores, dim=-1).to(v.dtype)
-context_local = torch.matmul(local_attn, v)
+local\_attn = F.softmax(local\_scores, dim=-1).to(v.dtype)
+context\_local = torch.matmul(local\_attn, v)
 \end{lstlisting}
 
 \subsection{B.5 Fusion}
 
 \begin{lstlisting}
-gate_val = torch.sigmoid(self.local_gate).view(1, H, 1, 1)
-context = (1.0 - gate_val) * context_local + gate_val * context_leka
+gate\_val = torch.sigmoid(self.local\_gate).view(1, H, 1, 1)
+context = (1.0 - gate\_val) * context\_local + gate\_val * context\_leka
 \end{lstlisting}
 
 \textbf{Note the order.} With $w_h = -2$, $g_h \approx 0.12$, so $(1-g_h) \approx 0.88$ -- local path dominates.
@@ -1318,18 +2078,18 @@ quadratic.
 
 \subsubsection{B.6.3 Correction Matrix Scaling}
 
-For large $d_h$ (>128), the correction matrix is expensive.
+For large $d_h$ (\textgreater{}128), the correction matrix is expensive.
 
 \subsection{B.7 Diagnostic Checks}
 
 \begin{lstlisting}
 # After init
-assert self.rand_proj1.shape == (d_h, F)
-assert self.rand_proj2.shape == (d_h, F // 2)
-assert self.W_corr.shape == (H, d_h, d_h)
+assert self.rand\_proj1.shape == (d\_h, F)
+assert self.rand\_proj2.shape == (d\_h, F // 2)
+assert self.W\_corr.shape == (H, d\_h, d\_h)
 
 # After forward
-assert context.shape == (B, H, N, d_h)
+assert context.shape == (B, H, N, d\_h)
 assert not torch.isnan(context).any()
 \end{lstlisting}
 \begin{lstlisting}
@@ -1337,6 +2097,7 @@ assert not torch.isnan(context).any()
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1466,13 +2227,14 @@ Step  Loss
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_leka_v2.py --models distilbert,roberta,gpt2
+python run\_all\_4\_leka\_v2.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1607,6 +2369,7 @@ Random & 32 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1676,3 +2439,4 @@ But also:
 
 ---
 \end{lstlisting}
+

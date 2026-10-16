@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{BAM-UMoE: Unified Mixture of Experts Attention with Step-0 Representation Preservation}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -66,7 +68,7 @@ BAM-UMoE augments the \textbf{value pathway} of attention with a top-$k$ MoE
 branch:
 
 \[
-V' = V_{\text{base}} + \alpha \cdot \text{MoE}(X)
+V' = V\_{\text{base}} + \alpha \cdot \text{MoE}(X)
 \]
 
 where $X$ is the input hidden states, $V_\text{base} = X W_V^\top$ is the 
@@ -111,6 +113,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Mixture of Experts}
@@ -163,6 +166,604 @@ value pathway.
 control the MoE contribution's ramp-up.
 
 \subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Prior MoE} & \textbf{BAM-UMoE} \\
+\midrule
+Application & Pretraining & Post-hoc \\
+Step-0 preservation & Not typically & \textbf{Explicit} \\
+Base weights & Trained & Frozen \\
+Target & FFN capacity & \textbf{Value pathway} \\
+LoRA integration & Rare & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+BAM-UMoE is unique in explicitly targeting the \textbf{value pathway} with MoE 
+and providing a \textbf{three-part step-0 preservation} mechanism.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Multi-Head Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$, standard attention:
+
+\[
+Q = X W\_Q^\top, \quad K = X W\_K^\top, \quad V = X W\_V^\top
+\]
+
+\[
+\text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\]
+
+\subsection{Mixture of Experts}
+
+An MoE layer replaces a single FFN with $E$ expert FFNs and a router:
+
+\[
+\text{MoE}(X) = \sum\_{i \in \text{top-}k} g\_i \cdot \text{Expert}\_i(X)
+\]
+
+where $g_i$ is the router weight after softmax, and top-$k$ selects the 
+$k$ highest-weighted experts. Only those experts run forward.
+
+\textbf{Load balancing loss.} To prevent router collapse:
+
+\[
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
+\]
+
+where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
+mean router probability for expert $e$.
+
+\subsection{The Step-0 Preservation Problem}
+
+Adding a randomly initialized branch to a pretrained model perturbs its 
+output at step 0:
+
+\[
+\mathcal{A}'(X) = \mathcal{A}(X) + \Delta(X)
+\]
+
+with $\Delta(X) \neq 0$ in general. For catastrophic forgetting this is 
+harmful. BAM-UMoE enforces $\Delta(X) = 0$ at initialization via three 
+mechanisms:
+
+\begin{enumerate}
+\item \textbf{Zero-init final layer.} Every expert's last linear layer is zero.
+\item \textbf{Negative gating bias.} The gate outputs $\sigma(-3) \approx 0.047$.
+\item \textbf{Frozen base.} Base attention weights are exact copies.
+
+\end{enumerate}
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021):
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A, \quad B = 0 \text{ at init}
+\]
+
+with $A \in \mathbb{R}^{r_L \times d}$, $B \in \mathbb{R}^{d \times r_L}$.
+
+\subsection{Grouped-Query Attention}
+
+GQA uses $H_{kv} < H$ KV heads, repeated to match query heads. BAM-UMoE 
+preserves GQA structure.
+
+\subsection{Rotary Position Embeddings}
+
+RoPE rotates Q, K by position-dependent angles. BAM-UMoE supports **partial 
+RoPE** (Qwen3.5 with rotary\_dim \textless{} head\_dim) by rotating the first 
+\texttt{rotary\_dim} coordinates.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+BAM-UMoE augments attention with an MoE refinement of the value pathway. 
+The forward pass:
+
+\begin{enumerate}
+\item \textbf{Standard QKV projections} with frozen base weights ( 4.2).
+\item \textbf{MoE value refinement} applied additively to V ( 4.3).
+\item \textbf{Gated scaling} for controlled ramp-up ( 4.4).
+\item \textbf{Output projection} with nested bypass ( 4.5).
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the architecture.
+
+\begin{lstlisting}
+    +------------------------------------------+
+    |  Input X                                  |
+    +------------------+-----------------------+
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +-------+      +-------+      +-------+
+    | Q     |      | K     |      | V     |   $\leftarrow$ frozen base
+    | proj  |      | proj  |      | proj  |   + LoRA
+    +---+---+      +---+---+      +---+---+
+        |              |              |
+        |              |               
+        |              |      +--------------+
+        |              |      |  MoE Branch  |
+        |              |      |  (8 experts, |
+        |              |      |   top-2)     |
+        |              |      +------+-------+
+        |              |             |
+        |              |                $\times$ 0.1 $\times$ $\sigma$(gate)
+        |              |        +---------+
+        |              |        | Add     |
+        |              |        | to V    |
+        |              |        +----+----+
+        |              |             |
+        +--------------+-------------+
+                       |
+                        
+              +----------------+
+              |  Attention     |
+              |  (softmax)     |
+              +--------+-------+
+                       |
+                        
+              +----------------+
+              | Output proj    |
+              +--------+-------+
+                       |
+                        
+                      Y
+\end{lstlisting}
+
+\subsection{Phase 1: Base Attention}
+
+For each projection $P \in \{Q, K, V, O\}$, we use a \texttt{LoRALinear} module:
+
+\[
+\text{Proj}\_P(X) = X W\_P^\top + (X A\_P^\top) B\_P^\top \cdot s + b\_P
+\]
+
+where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and 
+$s = \alpha/r_L$ is the LoRA scaling.
+
+Base weights are copied exactly from the pretrained attention via 
+\texttt{copy\_weights} (see Section 5).
+
+\subsection{Phase 2: MoE Value Refinement}
+
+\subsubsection{MoE Architecture}
+
+The MoE branch produces a refinement signal of shape 
+$(B, L, H \cdot d_h)$:
+
+\[
+\text{MoE}(X) = \text{TopK-Gate}(X) \cdot \text{Experts}(X)
+\]
+
+Concretely:
+
+\[
+\begin{aligned}
+X\_\text{norm} &= \text{LayerNorm}(X) \\
+\logits &= \text{Router}(X\_\text{norm}) \in \mathbb{R}^{B \times L \times E} \\
+(\text{topk\_vals}, \text{topk\_idx}) &= \text{topk}(\logits, k) \\
+\text{scores} &= \text{softmax}(\text{topk\_vals}) \\
+E\_\text{out} &= \text{stack}([\text{Expert}\_e(X) \text{ for } e \in [E]]) \\
+\text{MoE}(X) &= \sum\_{j=1}^{k} \text{scores}\_j \cdot E\_\text{out}[\text{topk\_idx}\_j]
+\end{aligned}
+\]
+
+\subsubsection{Expert Architecture}
+
+Each expert is a 2-layer MLP:
+
+\[
+\text{Expert}\_e(X) = W\_2^{(e)} \cdot \text{GELU}(W\_1^{(e)} X + b\_1^{(e)}) + b\_2^{(e)}
+\]
+
+with $W_1^{(e)} \in \mathbb{R}^{(2d) \times d}$ and 
+$W_2^{(e)} \in \mathbb{R}^{d \times (2d)}$.
+
+\subsubsection{Step-0 Zero Initialization}
+
+\textbf{Critical.} We initialize:
+
+\[
+W\_2^{(e)} = 0, \quad b\_2^{(e)} = 0 \quad \forall e
+\]
+
+This ensures $\text{Expert}_e(X) = 0$ for all inputs, so 
+$\text{MoE}(X) = 0$ at step 0.
+
+\subsubsection{Auxiliary Load Balancing Loss}
+
+We add the Switch/GShard load-balancing loss:
+
+\[
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
+\]
+
+where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
+the mean router probability. This is added to the task loss with weight 
+$\lambda_\text{aux} = 0.01$ (default 0.01).
+
+\subsubsection{Value Integration}
+
+The MoE output is reshaped and added to $V$:
+
+\[
+V' = V + \alpha \cdot \text{MoE}(X)
+\]
+
+with $\alpha = 0.1$ (fixed). The 0.1 scaling keeps the MoE contribution 
+conservative -- even after training, the MoE never dominates the base.
+
+\subsection{Phase 3: Gated Ramp-Up}
+
+\subsubsection{The Gate}
+
+A learnable scalar gate:
+
+\[
+g\_\text{gate} = \sigma(b\_g), \quad b\_g \in \mathbb{R}
+\]
+
+initialized to $b_g = -3.0$, so $g_\text{gate} \approx 0.047$ at start.
+
+The final MoE contribution:
+
+\[
+\text{MoE}\_\text{final}(X) = g\_\text{gate} \cdot \text{MoE}(X)
+\]
+
+\textbf{Rationale.} Even with zero-init, the MoE branch's gradient at step 0 is 
+nonzero (since backprop through $W_2^{(e)} = 0$ gives nonzero gradient for 
+$W_1^{(e)}$). The gate provides \textbf{additional} attenuation to prevent early 
+drift.
+
+\subsubsection{Combined Output}
+
+The final forward pass:
+
+\[
+V' = V + \alpha \cdot g\_\text{gate} \cdot \text{MoE}(X)
+\]
+
+At step 0, $W_2^{(e)} = 0 \Rightarrow \text{MoE}(X) = 0 \Rightarrow V' = V$. 
+Exact preservation.
+
+\subsection{Phase 4: Output Projection}
+
+The output projection follows the standard pattern:
+
+\[
+Y = \text{Attn}(Q, K, V') W\_O^\top + b\_O
+\]
+
+with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied 
+(the outer \texttt{output.dense} performs it).
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} BAM-UMoE forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position\_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}, aux\_loss
+
+1:  Q $\leftarrow$ LoRALinear\_Q(X)                          Frozen base + LoRA
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
+4:
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V, H/H\_kv)
+7:
+8:  if not cross\_attention:
+9:      MoE\_out $\leftarrow$ UnifiedMoE(X)                  Top-2 MoE
+10:     V $\leftarrow$ V + 0.1   MoE\_out                    MoE refinement
+11:
+12: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d\_h                         FP32
+13: S $\leftarrow$ apply\_mask(S, causal, padding)
+14: A $\leftarrow$ softmax(S)
+15: C $\leftarrow$ A @ V
+16:
+17: if nested\_encoder: Y $\leftarrow$ C
+18: else: Y $\leftarrow$ LoRALinear\_O(C)
+19:
+20: return Y, MoE.aux\_loss
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+QKV projections & $O(L d^2)$ \\
+MoE router & $O(L d E)$ \\
+Expert forward (top-2) & $O(2 L d \cdot 2 d)$ \\
+Attention scores & $O(L^2 d_h)$ \\
+Context & $O(L^2 d_h)$ \\
+Output proj & $O(L d^2)$ \\
+\textbf{Total} & $O(L^2 d_h + L d^2 + L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
+of width $2d$), comparable to the base attention cost.
+
+\subsubsection{Parameter Count}
+
+For \texttt{UnifiedMoE(dim=d, num\_experts=E, output\_dim=d)}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Router LN & $2d$ \\
+Router & $d E$ \\
+Each expert & $2d \cdot 2d + 2d \cdot 2d = 8d^2$ \\
+Total experts & $8 d^2 E$ \\
+\textbf{MoE total} & $8 d^2 E + O(d E)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $E = 8$: \textbf{8 $\times$ 768  $\times$ 8 $\approx$ 37.7M params per layer}.
+
+\textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
+66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
+
+\textbf{BAM-UMoE is not a compression method.}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
+\midrule
+DistilBERT & Flat & No & No & No & No \\
+RoBERTa & Nested & Yes & No & No & No \\
+GPT-2 & Causal & No & No & No & No \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & No \\
+T5 & Enc-Dec & No & No & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight  # For reference, not applied
+is\_nested\_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+\begin{lstlisting}
+fused = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = fused.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, BAM-UMoE's \texttt{out\_lin} is not applied; the outer 
+\texttt{BertSelfOutput.dense} performs the projection. This avoids double projection.
+
+\subsection{Partial RoPE}
+
+For Qwen3.5 with \texttt{head\_dim=256} and \texttt{rotary\_dim=64}:
+\begin{lstlisting}
+q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+q\_rot = (q\_rot * cos) + (rotate\_half(q\_rot) * sin)
+q = torch.cat([q\_rot, q\_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+For encoder-decoder models, the MoE branch is \textbf{not applied} to 
+cross-attention. The reason: cross-attention V is projected from encoder 
+states, and pretrained cross-attention weights are highly calibrated. 
+Injecting unaligned MoE there would disrupt alignment.
+
+\begin{lstlisting}
+if not is\_cross\_attention:
+    moe\_delta\_v = self.qkv\_moe(hidden\_states).view(B, L, H, d\_h)
+    v = v + 0.1 * moe\_delta\_v
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("bam\_umoe")
+class BAMUMoEBlock(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises & Return None \\
+NaN in scores & \texttt{torch.nan\_to\_num} & Replace with 0 \\
+MoE overflow & \texttt{torch.clamp} & Clamp to $\pm$65000 \\
+Cross-attention MoE & Skip MoE branch & Preserve alignment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Numerical Stability}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of bam\_umoe.}
+\label{fig:arch_bam-umoe}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
+
+\subsection{Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{num\_experts} & 8 \\
+\texttt{top\_k} & 2 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+MoE scale $\alpha$ & 0.1 \\
+Gate bias $b_g$ & -3.0 \\
+Noise std (training) & 0.1 \\
+Expert multiplier & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metrics}
+
+\begin{itemize}
+\item Accuracy, F1, precision, recall
+\item Parameter count (before/after)
+\item Peak VRAM
+\item Inference time
+\item MoE load balance (expert utilization)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB VRAM, CUDA 12.1, PyTorch 2.4.0.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_bam\_umoe.py \
+    --models distilbert,roberta,gpt2 \
+    --num\_experts 8 \
+    --top\_k 2 \
+    --recovery\_steps 50
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
 
 \begin{table*}[t]
 \centering
@@ -314,12 +915,13 @@ GPT-2 & BAM-UMoE & 2.3 s s & 777 MB MB \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/bam_umoe_roberta_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{bam_umoe}.}
+\includegraphics[width=0.85\linewidth]{figures/bam\_umoe\_roberta\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{bam\_umoe}.}
 \label{fig:results_bam_umoe}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Step-0 Preservation Verification}
@@ -330,19 +932,19 @@ model's forward pass.
 \textbf{Test.} For DistilBERT:
 
 \begin{lstlisting}
-model_base = load_model()
-model_bam = inject_bam_umoe(model_base)
+model\_base = load\_model()
+model\_bam = inject\_bam\_umoe(model\_base)
 
 ids = torch.randint(0, 1000, (4, 32))
-with torch.no_grad():
-    logits_base = model_base(ids).logits
-    logits_bam = model_bam(ids).logits
+with torch.no\_grad():
+    logits\_base = model\_base(ids).logits
+    logits\_bam = model\_bam(ids).logits
 
-diff = (logits_base - logits_bam).abs().max().item()
+diff = (logits\_base - logits\_bam).abs().max().item()
 print(f"Max diff: {diff:.6e}")
 \end{lstlisting}
 
-\textbf{Expected:} \texttt{diff < 1e-5} (numerical precision).
+\textbf{Expected:} \texttt{diff \textless{} 1e-5} (numerical precision).
 
 \textbf{Observed:} \texttt{diff = 1.2e-6}.
 
@@ -407,7 +1009,7 @@ GPT-2 & 124.4M / 79.36\% & 570M / 81.42\% \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} MoE adds 0.6% accuracy at 4.4x parameter cost..
+\textbf{Observation.} MoE adds 0.6\% accuracy at 4.4x parameter cost..
 
 \subsection{Comparison with LoRA-Only Baseline}
 
@@ -436,7 +1038,7 @@ No systematic failures.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Step-0 preservation works} -- forward diff < 1.2e-6.
+\item \textbf{Step-0 preservation works} -- forward diff \textless{} 1.2e-6.
 \item \textbf{Load balancing is stable} -- entropy near max.
 \item \textbf{MoE adds capacity} -- but at high parameter cost.
 \item \textbf{Not a compression method.}
@@ -446,6 +1048,7 @@ No systematic failures.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -546,6 +1149,7 @@ Total compute: ~20 GPU-hours, ~0.8 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{BAM-UMoE is Not a Compression Method}
@@ -619,6 +1223,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -695,13 +1300,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -726,28 +1332,28 @@ datasets & 2.20.0 \\
 \subsection{Running BAM-UMoE}
 
 \begin{lstlisting}
-python run_all_4_bam_umoe.py \
+python run\_all\_4\_bam\_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts 8 \
-    --top_k 2 \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --num\_experts 8 \
+    --top\_k 2 \
+    --lora\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \begin{lstlisting}
 # Main results
-python run_all_4_bam_umoe.py --models distilbert,roberta,gpt2
+python run\_all\_4\_bam\_umoe.py --models distilbert,roberta,gpt2
 
 # Expert count ablation
 for E in 2 4 8 16; do
-    python run_all_4_bam_umoe.py --num_experts $E --output_suffix E$E
+    python run\_all\_4\_bam\_umoe.py --num\_experts $E --output_suffix E$E
 done
 
 # Top-k ablation
 for k in 1 2 4; do
-    python run_all_4_bam_umoe.py --top_k $k --output_suffix k$k
+    python run\_all\_4\_bam\_umoe.py --top\_k $k --output_suffix k$k
 done
 \end{lstlisting}
 
@@ -758,8 +1364,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -798,6 +1404,7 @@ GPT-2 & 81.42\% $\pm$ 1\% & 570M \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -940,6 +1547,7 @@ GPT-2 & 81.42\% $\pm$ 1\% & 570M \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Step-0 Preservation Proof}
@@ -950,20 +1558,20 @@ attention's forward pass.
 \textbf{Proof.} The MoE branch output is:
 
 \[
-\text{MoE}(X) = \sum_{j=1}^{k} \text{scores}_j \cdot E_{\text{out}}[\text{topk\_idx}_j]
+\text{MoE}(X) = \sum\_{j=1}^{k} \text{scores}\_j \cdot E\_{\text{out}}[\text{topk\_idx}\_j]
 \]
 
 where each $E_\text{out}[e] = \text{Expert}_e(X)$. By the zero-init of 
 $W_2^{(e)}$ and $b_2^{(e)}$:
 
 \[
-\text{Expert}_e(X) = 0 \cdot \text{GELU}(W_1^{(e)} X + b_1^{(e)}) + 0 = 0
+\text{Expert}\_e(X) = 0 \cdot \text{GELU}(W\_1^{(e)} X + b\_1^{(e)}) + 0 = 0
 \]
 
 Therefore $\text{MoE}(X) = 0$ for all $X$. So:
 
 \[
-V' = V + \alpha \cdot g_\text{gate} \cdot 0 = V
+V' = V + \alpha \cdot g\_\text{gate} \cdot 0 = V
 \]
 
 The attention then reduces to the pretrained attention with base weights 
@@ -978,7 +1586,7 @@ layer) is nonzero at step 0.
 on $W_2^{(e)}$ (multiplied by $\text{GELU}(W_1^{(e)} X)$). At $W_2^{(e)} = 0$:
 
 \[
-\frac{\partial \mathcal{L}}{\partial W_1^{(e)}} \propto \frac{\partial \mathcal{L}}{\partial \text{MoE}} \cdot \frac{\partial \text{MoE}}{\partial W_2^{(e)}} \cdot \frac{\partial W_2^{(e)}}{\partial W_1^{(e)}}
+\frac{\partial \mathcal{L}}{\partial W\_1^{(e)}} \propto \frac{\partial \mathcal{L}}{\partial \text{MoE}} \cdot \frac{\partial \text{MoE}}{\partial W\_2^{(e)}} \cdot \frac{\partial W\_2^{(e)}}{\partial W\_1^{(e)}}
 \]
 
 The last term is nonzero (since $W_2^{(e)}$ multiplies $\text{GELU}(W_1^{(e)} X)$). 
@@ -989,7 +1597,7 @@ So gradient flows despite $W_2^{(e)} = 0$. $\square$
 \textbf{Derivation.} Following Switch Transformer:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
 \]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
@@ -999,13 +1607,13 @@ mean router probability for expert $e$.
 $P_e = 1/E$ for all $e$:
 
 \[
-\mathcal{L}_\text{aux}^\text{min} = E \cdot \sum_{e=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot \frac{1}{E} = 1
+\mathcal{L}\_\text{aux}^\text{min} = E \cdot \sum\_{e=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot \frac{1}{E} = 1
 \]
 
 \textbf{Maximum.} If all tokens route to expert 0 ($f_0 = 1$, $P_0 = 1$), then:
 
 \[
-\mathcal{L}_\text{aux}^\text{max} = E \cdot 1 \cdot 1 = E
+\mathcal{L}\_\text{aux}^\text{max} = E \cdot 1 \cdot 1 = E
 \]
 
 So $\mathcal{L}_\text{aux} \in [1, E]$.
@@ -1053,81 +1661,82 @@ over valid (causal) positions. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 UnifiedMoE Module}
 
 \begin{lstlisting}
 class UnifiedMoE(nn.Module):
-    def __init__(self, dim, num_experts=8, top_k=2, output_dim=None,
-                 noise_std=0.1, expert_multiplier=2):
-        super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, dim, num\_experts=8, top\_k=2, output\_dim=None,
+                 noise\_std=0.1, expert\_multiplier=2):
+        super().\_\_init\_\_()
+        self.output\_scale = nn.Parameter(torch.ones(1))
         self.dim = dim
-        self.num_experts = max(1, num_experts)
-        self.top_k = min(max(1, top_k), self.num_experts)
-        self.out_dim = output_dim or dim
-        self.noise_std = noise_std
-        self.aux_loss = torch.tensor(0.0)
+        self.num\_experts = max(1, num\_experts)
+        self.top\_k = min(max(1, top\_k), self.num\_experts)
+        self.out\_dim = output\_dim or dim
+        self.noise\_std = noise\_std
+        self.aux\_loss = torch.tensor(0.0)
         
-        self.router_ln = nn.LayerNorm(self.dim)
-        self.router = nn.Linear(self.dim, self.num_experts, bias=False)
-        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+        self.router\_ln = nn.LayerNorm(self.dim)
+        self.router = nn.Linear(self.dim, self.num\_experts, bias=False)
+        nn.init.uniform\_(self.router.weight, -0.01, 0.01)
         
-        hidden_dim = self.out_dim * expert_multiplier
+        hidden\_dim = self.out\_dim * expert\_multiplier
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(dim, hidden_dim),
+                nn.Linear(dim, hidden\_dim),
                 nn.GELU(),
-                nn.Linear(hidden_dim, self.out_dim),
+                nn.Linear(hidden\_dim, self.out\_dim),
             )
-            for _ in range(self.num_experts)
+            for \_ in range(self.num\_experts)
         ])
         
         # Step-0 preservation: final expert layer zero
         for exp in self.experts:
-            nn.init.zeros_(exp[2].weight)
+            nn.init.zeros\_(exp[2].weight)
             if exp[2].bias is not None:
-                nn.init.zeros_(exp[2].bias)
+                nn.init.zeros\_(exp[2].bias)
         
-        self.gate_bias = nn.Parameter(torch.tensor([-3.0]))
+        self.gate\_bias = nn.Parameter(torch.tensor([-3.0]))
     
     def forward(self, x):
         B, L, D = x.shape
-        x_norm = self.router_ln(x)
-        logits = self.router(x_norm)
+        x\_norm = self.router\_ln(x)
+        logits = self.router(x\_norm)
         
-        if self.training and self.noise_std > 0:
-            noise = torch.randn_like(logits) * self.noise_std
-            routing_logits = logits + noise
+        if self.training and self.noise\_std \textgreater{} 0:
+            noise = torch.randn\_like(logits) * self.noise\_std
+            routing\_logits = logits + noise
         else:
-            routing_logits = logits
+            routing\_logits = logits
         
-        topk_vals, topk_idx = torch.topk(routing_logits, self.top_k, dim=-1)
-        scores = F.softmax(topk_vals, dim=-1)
-        scores = torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
+        topk\_vals, topk\_idx = torch.topk(routing\_logits, self.top\_k, dim=-1)
+        scores = F.softmax(topk\_vals, dim=-1)
+        scores = torch.nan\_to\_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
         
         # Auxiliary load balancing
-        if self.training and self.num_experts > 1:
-            router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num_experts)
-            expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
-            density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
-            prob_mean = router_probs.mean(dim=0)
-            self.aux_loss = self.num_experts * torch.sum(density * prob_mean)
+        if self.training and self.num\_experts \textgreater{} 1:
+            router\_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num\_experts)
+            expert\_mask = F.one\_hot(topk\_idx, num\_classes=self.num\_experts).float()
+            density = expert\_mask.sum(dim=2).view(-1, self.num\_experts).mean(dim=0)
+            prob\_mean = router\_probs.mean(dim=0)
+            self.aux\_loss = self.num\_experts * torch.sum(density * prob\_mean)
         else:
-            self.aux_loss = torch.tensor(0.0, device=x.device, dtype=torch.float32)
+            self.aux\_loss = torch.tensor(0.0, device=x.device, dtype=torch.float32)
         
         # Expert forward
-        experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
-        topk_out = torch.gather(
-            experts_out, 2,
-            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim)
+        experts\_out = torch.stack([exp(x) for exp in self.experts], dim=2)
+        topk\_out = torch.gather(
+            experts\_out, 2,
+            topk\_idx.unsqueeze(-1).expand(B, L, self.top\_k, self.out\_dim)
         )
-        out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
-        out = torch.clamp(torch.nan_to_num(out, nan=0.0), min=-65000.0, max=65000.0)
+        out = torch.sum(topk\_out * scores.unsqueeze(-1), dim=2)
+        out = torch.clamp(torch.nan\_to\_num(out, nan=0.0), min=-65000.0, max=65000.0)
         
-        gate = torch.sigmoid(self.gate_bias)
-        return out * self.output_scale * gate
+        gate = torch.sigmoid(self.gate\_bias)
+        return out * self.output\_scale * gate
 \end{lstlisting}
 
 \subsection{B.2 Numerical Stability}
@@ -1149,7 +1758,7 @@ from pretrained, causing catastrophic drift.
 
 \subsubsection{B.3.2 Gate Bias Too High}
 
-Gate bias > -1 gives fast ramp-up, destabilizing early training.
+Gate bias \textgreater{} -1 gives fast ramp-up, destabilizing early training.
 
 \subsubsection{B.3.3 Cross-Attention MoE}
 
@@ -1167,6 +1776,7 @@ For RoBERTa, do NOT apply \texttt{out\_lin} -- the outer layer does it.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT -- Complete Metrics}
@@ -1283,12 +1893,12 @@ Accuracy & 81.42\% \\
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 293000000,
-    "accuracy_pct": 89.5,
-    "num_experts": 8,
-    "top_k": 2,
-    "step0_diff": 1.2e-6
+    "params\_before": 66955010,
+    "params\_after": 293000000,
+    "accuracy\_pct": 89.5,
+    "num\_experts": 8,
+    "top\_k": 2,
+    "step0\_diff": 1.2e-6
   }
 }
 \end{lstlisting}
@@ -1297,6 +1907,7 @@ Accuracy & 81.42\% \\
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Failed Attempts}
@@ -1382,6 +1993,7 @@ Std & 0.10 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1446,7 +2058,7 @@ No human subjects.
 
 ---
 
-##   `build.py`   `apply_vars.py`
+##   `build.py`   `apply\_vars.py`
 
 (      A3/AASVD/Adaptive SVD/AdaSplash --        )
 
@@ -1457,3 +2069,4 @@ No human subjects.
 
 ---
 \end{lstlisting}
+

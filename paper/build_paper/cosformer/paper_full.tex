@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Cosformer: Linear Attention with Cosine-Based Positional Reweighting for Pretrained Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -24,7 +26,7 @@ inference.
 $\phi(\cdot)$ such that the attention can be decomposed:
 
 \[
-\text{Attn}(Q_i, K, V) \approx \frac{\phi(Q_i)^\top \sum_j \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_j \phi(K_j)}
+\text{Attn}(Q\_i, K, V) \approx \frac{\phi(Q\_i)^\top \sum\_j \phi(K\_j) V\_j^\top}{\phi(Q\_i)^\top \sum\_j \phi(K\_j)}
 \]
 
 The sums $\sum_j \phi(K_j) V_j^\top$ and $\sum_j \phi(K_j)$ can be computed 
@@ -41,14 +43,14 @@ Qin et al. (2022) propose Cosformer, which recovers locality by
 \textbf{reweighting} the key and query features with cosine/sine of position:
 
 \[
-\tilde{q}_i = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
-\tilde{q}'_i = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
+\tilde{q}\_i = \phi(q\_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
+\tilde{q}'\_i = \phi(q\_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
 \]
 
 The attention output becomes:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\sum_j \tilde{q}_i^\top \tilde{k}_j V_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j' V_j}{\sum_j \tilde{q}_i^\top \tilde{k}_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j'}
+\text{Attn}(Q\_i, K, V) = \frac{\sum\_j \tilde{q}\_i^\top \tilde{k}\_j V\_j + \sum\_j \tilde{q}\_i'^\top \tilde{k}\_j' V\_j}{\sum\_j \tilde{q}\_i^\top \tilde{k}\_j + \sum\_j \tilde{q}\_i'^\top \tilde{k}\_j'}
 \]
 
 The cosine/sine weights decay with position, giving nearby tokens higher 
@@ -98,6 +100,945 @@ concludes.
 
 
 \subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d$ & Head dimension & 1.1 \\
+$H$ & Number of query heads & 1.1 \\
+$H_{kv}$ & Number of KV heads & 3.2 \\
+$\phi$ & Kernel feature map & 1.2 \\
+$\cos, \sin$ & Positional weights & 1.2 \\
+$r$ & LoRA rank & 4.4 \\
+$C$ & Chunk size & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Uses $\phi(x) = \text{elu}(x) + 1$ 
+without positional reweighting. First to show $\mathcal{O}(L)$ attention 
+with reasonable performance.
+
+\textbf{Performer} (Choromanski et al., 2021). Uses random Fourier features 
+(RFF) for kernel approximation with theoretical guarantees.
+
+\textbf{Nystr mformer} (Xiong et al., 2021). Uses Nystr m landmarks for low-rank 
+attention approximation.
+
+\subsection{Positional Reweighting}
+
+\textbf{Cosformer} (Qin et al., 2022). The direct inspiration for this work. 
+Uses cosine/sine reweighting to preserve locality.
+
+\textbf{RoPE} (Su et al., 2021). Rotary position embeddings, standard in modern 
+decoders. Not the same as Cosformer's reweighting -- RoPE rotates features, 
+Cosformer scales them.
+
+\textbf{ALiBi} (Press et al., 2022). Linear bias on attention scores. Preserves 
+locality.
+
+\subsection{Causal Linear Attention}
+
+For causal models, naive linear attention is not enough -- the denominator 
+must accumulate causally. Two main approaches:
+
+\textbf{Cumulative sum (cumsum).} Compute running sums over the sequence. 
+$\mathcal{O}(L)$ memory, single kernel.
+
+\textbf{Chunked prefix-sum.} Split sequence into chunks; compute intra-chunk 
+contributions directly, inter-chunk via state. Used in Cosformer, DeltaNet, 
+and others.
+
+\subsection{Pretrained Weight Transfer}
+
+\textbf{DistilBERT} (Sanh et al., 2019). Distillation with weight transfer.
+
+\textbf{LoRA} (Hu et al., 2021). Preserves pretrained weights, adds low-rank 
+adapters.
+
+\textbf{Our approach.} Combines exact weight transfer (Q/K/V/O) with LoRA recovery.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Method} & Cosformer (published) & Port to pretrained \\
+\textbf{Weight transfer} & Rare & Exact, four architectures \\
+\textbf{Bidirectional} & Sometimes & Dedicated path \\
+\textbf{RoPE support} & Limited & Full support \\
+\textbf{Recovery} & From scratch & LoRA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike most linear-attention papers that train from 
+scratch, we focus on \textbf{weight-preserving port} to pretrained models. This 
+requires careful handling of the \texttt{copy\_weights} procedure across 
+architectures.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Softmax Attention}
+
+Standard scaled dot-product attention:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
+\]
+
+\textbf{Properties:}
+\begin{itemize}
+\item \textbf{Non-negativity:} $\text{softmax}(\cdot) > 0$ elementwise.
+\item \textbf{Normalization:} $\sum_j \text{softmax}(\cdot)_{ij} = 1$.
+\item \textbf{Locality:} With scale factor $1/\sqrt{d}$, softmax concentrates on
+  the largest entries of $QK^\top$.
+
+\end{itemize}
+\subsection{Linear Attention}
+
+Replacing softmax with a kernel factorization:
+
+\[
+\exp(q^\top k) \approx \phi(q)^\top \phi(k), \quad \phi: \mathbb{R}^d \to \mathbb{R}^m
+\]
+
+allows rewriting attention as:
+
+\[
+\text{Attn}(Q\_i, K, V) = \frac{\sum\_j \phi(q\_i)^\top \phi(k\_j) V\_j}{\sum\_j \phi(q\_i)^\top \phi(k\_j)} = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) V\_j}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\]
+
+\textbf{Complexity.} The sums $\sum_j \phi(k_j) V_j$ and $\sum_j \phi(k_j)$ are 
+$\mathcal{O}(L m d)$, independent of the query position. Precomputed once, 
+each query costs $\mathcal{O}(m d)$.
+
+\textbf{Common kernels:}
+\begin{itemize}
+\item \textbf{ELU + 1} (Katharopoulos et al., 2020): $\phi(x) = \text{elu}(x) + 1$.
+\item \textbf{ReLU:} $\phi(x) = \text{ReLU}(x)$.
+\item \textbf{Softplus:} $\phi(x) = \log(1 + e^x)$.
+\item \textbf{Random Fourier Features:} $\phi(x) = e^{\omega^\top x}$ for random
+  $\omega$.
+
+\end{itemize}
+All are non-negative; the first three are cheap and deterministic.
+
+\subsection{Locality and Its Loss}
+
+Softmax attention exhibits locality: nearby tokens receive higher attention 
+mass on average, especially with positional information. This is critical 
+for language understanding.
+
+\textbf{Why linear attention loses locality.} The kernel approximation is 
+position-independent: $\phi(q_i)$ and $\phi(k_j)$ have no information about 
+$|i - j|$. So there is no bias toward nearby tokens.
+
+\textbf{Empirical effect.} On tasks requiring local context (NER, chunked 
+summarization), linear attention underperforms softmax.
+
+\subsection{Cosformer's Reweighting}
+
+Cosformer adds cosine/sine modulation:
+
+\[
+\tilde{\phi}(q\_i) = \phi(q\_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
+\tilde{\phi}'(q\_i) = \phi(q\_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
+\]
+
+Then the attention becomes:
+
+\[
+\text{Attn}(Q\_i, K, V) = \frac{\tilde{\phi}(q\_i)^\top \sum\_j \tilde{\phi}(k\_j) V\_j + \tilde{\phi}'(q\_i)^\top \sum\_j \tilde{\phi}'(k\_j) V\_j}{\tilde{\phi}(q\_i)^\top \sum\_j \tilde{\phi}(k\_j) + \tilde{\phi}'(q\_i)^\top \sum\_j \tilde{\phi}'(k\_j)}
+\]
+
+\textbf{Why it works.} The identity:
+
+\[
+\cos(\theta\_i - \theta\_j) = \cos\theta\_i \cos\theta\_j + \sin\theta\_i \sin\theta\_j
+\]
+
+means the sum $\tilde{\phi}(q_i)^\top \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \tilde{\phi}'(k_j)$ 
+equals $\phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)$. The 
+cosine decays with $|i - j|$, giving locality.
+
+\subsection{GQA and RoPE}
+
+\textbf{GQA.} $H_{kv} < H$ reduces KV cache. Handled via \texttt{repeat\_kv}.
+
+\textbf{RoPE.} Rotation of $Q, K$ by position-dependent angles. Orthogonal to 
+Cosformer's reweighting; both can coexist.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Query head count \\
+$H_{kv}$ & KV head count \\
+$\phi$ & Kernel feature map \\
+$\theta_i$ & Position angle ($\pi i / 2L$) \\
+$r$ & LoRA rank \\
+$C$ & Chunk size \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Our CosformerAttention module has two computational paths:
+
+\begin{enumerate}
+\item \textbf{Encoder (bidirectional):} associative accumulation.
+\item \textbf{Decoder (causal):} chunked prefix-sum.
+
+\end{enumerate}
+Both share the same feature map $\phi(\cdot) = \text{ELU} + 1$ (or softplus) 
+and cosine/sine reweighting.
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +------+       +------+      +------+
+    |  Q   |       |  K   |      |  V   |
+    | proj |       | proj |      | proj |
+    +--+---+       +--+---+      +--+---+
+       |              |              |
+       |              |              |
+                                     |
+   +-----------------------+         |
+   |   ( ) = ELU+1         |         |
+   +---------+-------------+         |
+             |                       |
+                                     |
+   +-----------------------+         |
+   |  Cos/Sin reweighting  |         |
+   +---------+-------------+         |
+             |                       |
+             +-----------+-----------+
+             |           |           |
+                                      
+        +--------------------------------+
+        | is\_decoder?                    |
+        +--+-------------------------+---+
+           | No                      | Yes
+           |                         |
+                                      
+    +--------------+          +--------------+
+    | Associative  |          | Chunked      |
+    | accumulation |          | prefix-sum   |
+    +------+-------+          +------+-------+
+           |                         |
+           +------------+------------+
+                        |
+                         
+                   Output Y
+\end{lstlisting}
+
+\subsection{Feature Map}
+
+We support two feature maps:
+
+\[
+\phi(x) = \begin{cases}
+\text{elu}(x) + 1 & \text{(default)} \\
+\text{softplus}(x) & \text{(alternative)}
+\end{cases}
+\]
+
+Both are non-negative, deterministic, and cheap.
+
+\textbf{Why not ReLU?} ReLU has zero derivative for negative inputs, which can 
+cause dead neurons. ELU + 1 has a non-zero gradient everywhere.
+
+\textbf{Why not RFF?} RFF is stochastic and requires more features for the same 
+accuracy. ELU + 1 is deterministic and works well in practice.
+
+\subsection{Positional Reweighting}
+
+For sequence length $N$ and max position $M = \max(\text{max\_seq\_len}, N)$:
+
+\[
+\theta\_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
+\]
+
+The cosine and sine factors are:
+
+\[
+c\_i = \cos(\theta\_i), \quad s\_i = \sin(\theta\_i)
+\]
+
+Applied to $Q, K$:
+
+\[
+\tilde{Q} = Q \odot c, \quad \tilde{Q}' = Q \odot s, \quad
+\tilde{K} = K \odot c, \quad \tilde{K}' = K \odot s
+\]
+
+Broadcasting: $c, s \in \mathbb{R}^{1 \times 1 \times N \times 1}$, 
+$Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
+
+\subsection{Encoder Path: Associative Accumulation}
+
+For bidirectional attention:
+
+\[
+\begin{aligned}
+KV\_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+KV\_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+Z\_c &= \sum\_j \tilde{K}\_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
+Z\_s &= \sum\_j \tilde{K}'\_j \in \mathbb{R}^{B \times H \times 1 \times d}
+\end{aligned}
+\]
+
+The output:
+
+\[
+\text{num} = \tilde{Q} KV\_c + \tilde{Q}' KV\_s, \quad
+\text{den} = \tilde{Q} Z\_c^\top + \tilde{Q}' Z\_s^\top + \epsilon
+\]
+
+\[
+\text{context} = \frac{\text{num}}{\text{den}}
+\]
+
+\textbf{Complexity.} Each matmul is $\mathcal{O}(L d^2)$ or $\mathcal{O}(d^2 L)$. 
+Total: $\mathcal{O}(L d^2)$ time, $\mathcal{O}(d^2)$ memory for the state.
+
+\subsection{Decoder Path: Chunked Prefix-Sum}
+
+For causal attention:
+
+\begin{enumerate}
+\item Pad sequence to multiple of \texttt{chunk\_size = 32}.
+\item Split into \texttt{num\_chunks = L / 32} chunks.
+\item For each chunk:
+\end{enumerate}
+\begin{itemize}
+\item Compute \textbf{intra-chunk} scores (with causal mask).
+\item Compute \textbf{inter-chunk} contributions via running state $(S, Z)$.
+\item Append output.
+\item Update state.
+
+\end{itemize}
+\textbf{Intra-chunk:}
+
+\[
+\text{num}\_\text{intra} = \text{masked}(\tilde{Q}\_c \tilde{K}\_c^\top) V\_c
+\]
+
+\textbf{Inter-chunk:}
+
+\[
+\text{num}\_\text{inter} = \tilde{Q}\_c S\_c + \tilde{Q}\_c' S\_s
+\]
+
+\textbf{State update:}
+
+\[
+S\_c \mathrel{+}= \tilde{K}\_c^\top V\_c, \quad
+Z\_c \mathrel{+}= \tilde{K}\_c^\top \mathbf{1}
+\]
+
+The output for chunk $c$:
+
+\[
+\text{context}\_c = \frac{\text{num}\_\text{intra} + \text{num}\_\text{inter}}{\text{den}\_\text{intra} + \text{den}\_\text{inter} + \epsilon}
+\]
+
+\textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
+Each iteration does a small matmul. Total wall-clock: dominated by 4 kernel 
+launches per chunk $\times$ 2 chunks.
+
+\subsection{Weight Transfer}
+
+\subsubsection{Standard (DistilBERT)}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight.data
+k\_w = src.k\_lin.weight.data
+v\_w = src.v\_lin.weight.data
+o\_w = src.out\_lin.weight.data
+\end{lstlisting}
+
+\subsubsection{Nested (RoBERTa)}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{Fused (GPT-2)}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.data.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.data.t()
+\end{lstlisting}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Cosformer} \\
+\midrule
+Q projection & $d^2$ & $d^2$ + LoRA \\
+K projection & $d^2$ & $d^2$ + LoRA \\
+V projection & $d^2$ & $d^2$ + LoRA \\
+O projection & $d^2$ & $d^2$ + LoRA \\
+\textbf{Per block} & $4d^2$ & $4d^2 + 4 \cdot r(d + d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (DistilBERT, $r = 16$, $d = 768$):}
+
+Per block: $4 \cdot 768^2 + 4 \cdot 16 \cdot 1536 = 2{,}359{,}296 + 98{,}304 
+= 2{,}457{,}600$.
+
+$\Delta$\% per block: $+4.17\%$.
+
+\textbf{Cosformer does not reduce parameter count.}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Encoder & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+Decoder & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{For $L = 128$, $d = 64$:}
+\begin{itemize}
+\item Cosformer: ~128 $\times$ 64  = 524K operations per head.
+\item Baseline: ~128  $\times$ 64 = 1M operations per head.
+\item \textbf{Cosformer has ~2$\times$ fewer FLOPs.}
+
+\end{itemize}
+\textbf{Wall-clock:} Cosformer has overhead from:
+\begin{itemize}
+\item Kernel feature map (ELU)
+\item Cos/sin reweighting
+\item Chunked scan (decoder only)
+
+\end{itemize}
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} CosformerAttention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, chunk\_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+4:
+5: # Feature map
+6: Q $\leftarrow$ ELU(Q) + 1
+7: K $\leftarrow$ ELU(K) + 1
+8:
+9: # Positional reweighting
+10: $\theta$ $\leftarrow$   * arange(L) / (2 * max\_seq\_len)
+11: Q\_c $\leftarrow$ Q   cos($\theta$); Q\_s $\leftarrow$ Q   sin($\theta$)
+12: K\_c $\leftarrow$ K   cos($\theta$); K\_s $\leftarrow$ K   sin($\theta$)
+13:
+14: if is\_decoder:
+15:     Y $\leftarrow$ chunked\_prefix\_sum(Q\_c, Q\_s, K\_c, K\_s, V, C)
+16: else:
+17:     KV\_c $\leftarrow$ K\_c^T @ V
+18:     KV\_s $\leftarrow$ K\_s^T @ V
+19:     Z\_c $\leftarrow$ sum(K\_c); Z\_s $\leftarrow$ sum(K\_s)
+20:     num $\leftarrow$ Q\_c @ KV\_c + Q\_s @ KV\_s
+21:     den $\leftarrow$ Q\_c @ Z\_c^T + Q\_s @ Z\_s^T
+22:     Y $\leftarrow$ num / (den + $\epsilon$)
+23:
+24: if not is\_nested\_encoder:
+25:     Y $\leftarrow$ out\_proj(Y)
+26: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Kernel Approximation}
+
+ELU + 1 is \textbf{not} a good approximation of $\exp(q^\top k)$. The 
+approximation error is bounded by:
+
+\[
+\left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon\_\text{ELU}
+\]
+
+where $\epsilon_\text{ELU}$ grows with $\|q\|$ and $\|k\|$.
+
+\textbf{Why it works anyway.} The \textbf{softmax is scale-invariant} -- only the 
+relative ordering of $q^\top k$ matters. ELU + 1 preserves the ordering 
+approximately.
+
+\subsubsection{Locality Recovery}
+
+The Cosformer reweighting gives:
+
+\[
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = \phi(q\_i)^\top \phi(k\_j) \cdot \cos(\theta\_i - \theta\_j)
+\]
+
+The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$ 
+(approximately). This restores locality.
+
+\subsubsection{Causality}
+
+The causal path preserves causality:
+
+\[
+\frac{\partial Y\_i}{\partial X\_j} = 0 \text{ for } j \textgreater{} i
+\]
+
+because intra-chunk scores are masked and inter-chunk uses only 
+previously-processed state.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & Encoder \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & Encoder \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Decoder \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Decoder \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer Details}
+
+\subsubsection{Detecting Nested Encoders}
+
+The detection order matters. We check \texttt{has\_out} first:
+
+\begin{lstlisting}
+has\_out = any(hasattr(src, x) for x in ['dense', 'out\_proj', 'out\_lin', 'c\_proj', 'o\_proj'])
+if cls\_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has\_out):
+    self.is\_nested\_encoder = True
+if hasattr(src, 'self') and hasattr(src, 'output'):
+    self.is\_nested\_encoder = True
+\end{lstlisting}
+
+\textbf{Key insight.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with "SelfAttention" but has \texttt{out\_lin}, so \texttt{has\_out=True} and it is \textbf{not} classified as nested. This is correct.
+
+\subsubsection{The RoPE Extraction Chain}
+
+For Qwen:
+
+\begin{lstlisting}
+if hasattr(src, "rotary\_emb"):
+    self.rotary\_emb = src.rotary\_emb
+\end{lstlisting}
+
+Then at forward time, we try three call signatures:
+
+\begin{lstlisting}
+try:
+    cos, sin = rotary\_mod(Q, seq\_len=kv\_len)
+except Exception:
+    try:
+        cos, sin = rotary\_mod(Q, pos\_ids)
+    except Exception:
+        try:
+            cos, sin = rotary\_mod(Q)
+        except Exception:
+            cos, sin = None, None
+\end{lstlisting}
+
+\textbf{Fragile.} The triple-nested try/except works for common cases but fails 
+silently for unusual RoPE implementations.
+
+\subsection{The Two Attention Paths}
+
+\subsubsection{Encoder Path (Bidirectional)}
+
+\begin{lstlisting}
+KV\_cos = torch.matmul(K\_cos.transpose(-2, -1), V)
+KV\_sin = torch.matmul(K\_sin.transpose(-2, -1), V)
+Z\_cos = K\_cos.sum(dim=2, keepdim=True)
+Z\_sin = K\_sin.sum(dim=2, keepdim=True)
+
+num = torch.matmul(Q\_cos, KV\_cos) + torch.matmul(Q\_sin, KV\_sin)
+denom = torch.matmul(Q\_cos, Z\_cos.transpose(-2, -1)) + \
+        torch.matmul(Q\_sin, Z\_sin.transpose(-2, -1)) + self.eps
+context = num / denom.clamp(min=self.eps)
+\end{lstlisting}
+
+\textbf{4 matmuls, 2 sums.} Clean and fast.
+
+\subsubsection{Decoder Path (Chunked)}
+
+\begin{lstlisting}
+chunk\_size = 32
+if N \textless{}= chunk\_size:
+    # Single chunk -- direct computation with causal mask
+    ...
+else:
+    # Multiple chunks
+    for c in range(num\_chunks):
+        num\_inter = Q\_c @ S\_cos + Q\_sin @ S\_sin
+        denom\_inter = Q\_c @ Z\_cos + Q\_sin @ Z\_sin
+        # ... append, update state
+\end{lstlisting}
+
+\textbf{4 outer iterations for $L = 128$.} Each iteration ~5 kernel launches. 
+Total ~20 extra kernel launches. Fast enough.
+
+\subsection{Masking}
+
+Masks are applied to \textbf{both K and V} (not just K):
+
+\begin{lstlisting}
+K = K * mask\_expanded
+V = V * mask\_expanded
+\end{lstlisting}
+
+This is \textbf{critical} for the chunked scan -- otherwise padding tokens 
+contribute to the state.
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject CosformerAttention
+\begin{lstlisting}
+Input:  layer  , config, old\_attn
+Output: new attention in  
+
+1: new $\leftarrow$ CosformerAttention(config, old=old\_attn)
+2: if copy\_weights fails: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
+5: elif   has .attention:
+6:      .attention $\leftarrow$ new
+7: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+8: elif   has .attn:  .attn $\leftarrow$ new
+9: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{RoPE Call Signature}
+
+The triple-nested try/except for RoPE is fragile. If the RoPE implementation 
+uses an unusual call signature, extraction fails silently.
+
+\subsubsection{Nested Encoder Detection}
+
+Getting \texttt{is\_nested\_encoder} wrong leads to double \texttt{out\_proj}.
+
+\subsubsection{The `tau` Parameter is Unused}
+
+\texttt{self.tau = nn.Parameter(torch.tensor(1.0), requires\_grad=False)} is 
+declared but never used in \texttt{forward}. Dead code.
+
+\subsubsection{Padding in the Chunked Scan}
+
+Padding tokens must be masked in the state update. Otherwise, the state 
+accumulates garbage.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("cosformer")
+@ATTENTION\_REGISTRY.register("cosformer\_attention")
+class CosformerAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Integration with LoRA Recovery}
+
+The standard pipeline applies:
+
+\begin{enumerate}
+\item Load pretrained model.
+\item Inject Cosformer via \texttt{inject\_cosformer}.
+\item Freeze base weights, keep LoRA trainable.
+\item Run 50 recovery steps.
+\item Evaluate.
+
+\end{enumerate}
+\subsection{Architecture-Specific Notes}
+
+\subsubsection{DistilBERT}
+
+\begin{itemize}
+\item \textbf{Path:} Encoder
+\item \textbf{Nested:} No
+\item \textbf{RoPE:} No
+
+\end{itemize}
+\subsubsection{RoBERTa}
+
+\begin{itemize}
+\item \textbf{Path:} Encoder
+\item \textbf{Nested:} Yes (output projection via outer \texttt{output.dense})
+\item \textbf{RoPE:} No
+\item \textbf{Complication:} RoBERTa's \texttt{BertAttention} wraps \texttt{self} and \texttt{output}. We
+  replace \texttt{self}. The outer \texttt{output.dense} applies the projection.
+
+\end{itemize}
+\subsubsection{GPT-2}
+
+\begin{itemize}
+\item \textbf{Path:} Decoder
+\item \textbf{Nested:} No
+\item \textbf{RoPE:} No
+\item \textbf{Complication:} GPT-2 uses Conv1D weight layout (transposed).
+
+\end{itemize}
+\subsubsection{Qwen3.5}
+
+\begin{itemize}
+\item \textbf{Path:} Decoder
+\item \textbf{Nested:} No
+\item \textbf{RoPE:} Yes
+\item \textbf{GQA:} Yes
+\item \textbf{Complication:} RoPE extraction from HuggingFace API is fragile.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of cosformer.}
+\label{fig:arch_cosformer}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{act\_fun} & \texttt{relu} (ELU+1) \\
+\texttt{max\_seq\_len} & 512 \\
+\texttt{eps} & $10^{-6}$ \\
+\texttt{chunk\_size} & 32 \\
+\texttt{rank} (basis) & 64 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 2e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
+Batch size & 8 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params
+\item Peak VRAM
+\item Inference time
+\item Per-step training time
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_cosformer.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 16 \
+    --batch\_size 8
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42). No multi-seed runs.
+
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{cosformer} -- our method
+\item Prior modules: \texttt{nha}, \texttt{nasc}, \texttt{a3}, \texttt{gated\_delta\_net}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
 
 \begin{table*}[t]
 \centering
@@ -290,12 +1231,13 @@ most of the baseline accuracy at modest overhead.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/cosformer_dissection_profile.png}
+\includegraphics[width=0.85\linewidth]{figures/cosformer\_dissection\_profile.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cosformer}.}
 \label{fig:results_cosformer}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -513,6 +1455,7 @@ A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -617,7 +1560,7 @@ NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
 \item \textbf{Why does RoBERTa fail?} Our analysis is incomplete.
 \item \textbf{Would larger LoRA rank help RoBERTa?} Untested.
 \item \textbf{Would removing cos/sin for RoBERTa help?} Partially tested.
-\item \textbf{How does Cosformer scale to L > 512?} Untested.
+\item \textbf{How does Cosformer scale to L \textgreater{} 512?} Untested.
 
 \end{enumerate}
 \subsection{Broader Impact}
@@ -649,6 +1592,7 @@ NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -736,6 +1680,7 @@ untested.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -823,14 +1768,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -839,19 +1785,19 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py \
+python run\_all\_4\_cosformer.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-cosformer",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-cosformer",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -861,29 +1807,29 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_cosformer.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Chunk size)}
 
 \begin{lstlisting}
 for cs in 16 32 64 128; do
-    python run_all_4_cosformer.py --chunk_size $cs --output_suffix cs$cs
+    python run\_all\_4\_cosformer.py --chunk\_size $cs --output_suffix cs$cs
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Activation)}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py --act_fun relu --output_suffix relu
-python run_all_4_cosformer.py --act_fun softplus --output_suffix softplus
+python run\_all\_4\_cosformer.py --act\_fun relu --output\_suffix relu
+python run\_all\_4\_cosformer.py --act\_fun softplus --output\_suffix softplus
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -909,19 +1855,19 @@ GPT-2 & 70.18\% $\pm$ 2\% & PASS \\
 \begin{lstlisting}
 import math
 N = 128
-max_L = 512
-theta = [math.pi * i / (2 * max_L) for i in range(N)]
+max\_L = 512
+theta = [math.pi * i / (2 * max\_L) for i in range(N)]
 assert theta[0] == 0.0
-assert theta[N-1] < math.pi / 2
+assert theta[N-1] \textless{} math.pi / 2
 \end{lstlisting}
 
 \subsubsection{Verify Causality}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -945,6 +1891,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1070,6 +2017,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1078,7 +2026,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 \textbf{Claim.}
 
 \[
-\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = \phi(q\_i)^\top \phi(k\_j) \cdot \cos(\theta\_i - \theta\_j)
 \]
 
 where:
@@ -1093,21 +2041,21 @@ where:
 
 \[
 \begin{aligned}
-\tilde{q}_i^\top \tilde{k}_j &= (\phi(q_i) \cos\theta_i)^\top (\phi(k_j) \cos\theta_j) \\
-&= \cos\theta_i \cos\theta_j \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i^\top \tilde{k}\_j &= (\phi(q\_i) \cos\theta\_i)^\top (\phi(k\_j) \cos\theta\_j) \\
+&= \cos\theta\_i \cos\theta\_j \cdot \phi(q\_i)^\top \phi(k\_j)
 \end{aligned}
 \]
 
 Similarly:
 
 \[
-\tilde{q}_i'^\top \tilde{k}_j' = \sin\theta_i \sin\theta_j \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i'^\top \tilde{k}\_j' = \sin\theta\_i \sin\theta\_j \cdot \phi(q\_i)^\top \phi(k\_j)
 \]
 
 Sum:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = (\cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j) \cdot \phi(q_i)^\top \phi(k_j) = \cos(\theta_i - \theta_j) \cdot \phi(q_i)^\top \phi(k_j)
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = (\cos\theta\_i \cos\theta\_j + \sin\theta\_i \sin\theta\_j) \cdot \phi(q\_i)^\top \phi(k\_j) = \cos(\theta\_i - \theta\_j) \cdot \phi(q\_i)^\top \phi(k\_j)
 \]
 
 $\square$
@@ -1117,7 +2065,7 @@ $\square$
 With $\theta_i = \pi i / (2 M)$, we have $\theta_i - \theta_j = \pi (i - j) / (2 M)$.
 
 \[
-\cos(\theta_i - \theta_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
+\cos(\theta\_i - \theta\_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
 \]
 
 \textbf{Decay rate.} For $|i - j| = k$:
@@ -1161,7 +2109,7 @@ For $C \ll d$: $\mathcal{O}(L d^2)$.
 \textbf{ELU + 1 is not an RFF.} The approximation:
 
 \[
-\text{elu}(q)^\top \text{elu}(k) + \|q\|_1 + \|k\|_1 + d \approx \exp(q^\top k)
+\text{elu}(q)^\top \text{elu}(k) + \|q\|\_1 + \|k\|\_1 + d \approx \exp(q^\top k)
 \]
 
 is only approximate. The error grows with $\|q\|$ and $\|k\|$.
@@ -1169,7 +2117,7 @@ is only approximate. The error grows with $\|q\|$ and $\|k\|$.
 \textbf{Bounds.} For $\|q\|, \|k\| \leq R$:
 
 \[
-\left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C_R
+\left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C\_R
 \]
 
 where $C_R$ grows exponentially in $R$.
@@ -1179,7 +2127,7 @@ where $C_R$ grows exponentially in $R$.
 For the causal path:
 
 \[
-\frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
+\frac{\partial Y\_i}{\partial X\_j} = 0 \text{ for } j \textgreater{} i
 \]
 
 \textbf{Proof sketch.} Within a chunk, the causal mask zeros future contributions. 
@@ -1190,13 +2138,14 @@ So $Y_i$ depends only on $X_{\leq i}$. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The Feature Map}
 
 \begin{lstlisting}
-if self.act_fun == "softplus":
+if self.act\_fun == "softplus":
     Q = F.softplus(Q.float())
     K = F.softplus(K.float())
 else:
@@ -1210,13 +2159,13 @@ Both Q and K are mapped. V is not (values are unconstrained).
 \subsection{B.2 Cos/Sin Reweighting}
 
 \begin{lstlisting}
-def _get_cos_sin_weights(self, seq_len, device, dtype):
-    pos = torch.arange(seq_len, device=device, dtype=torch.float32)
-    m = max(self.max_seq_len, seq_len)
+def \_get\_cos\_sin\_weights(self, seq\_len, device, dtype):
+    pos = torch.arange(seq\_len, device=device, dtype=torch.float32)
+    m = max(self.max\_seq\_len, seq\_len)
     angles = (math.pi / (2.0 * m)) * pos
-    cos_weight = torch.cos(angles).view(1, 1, seq_len, 1).to(dtype=dtype)
-    sin_weight = torch.sin(angles).view(1, 1, seq_len, 1).to(dtype=dtype)
-    return cos_weight, sin_weight
+    cos\_weight = torch.cos(angles).view(1, 1, seq\_len, 1).to(dtype=dtype)
+    sin\_weight = torch.sin(angles).view(1, 1, seq\_len, 1).to(dtype=dtype)
+    return cos\_weight, sin\_weight
 \end{lstlisting}
 
 The weights are recomputed per forward. For fixed $L$, this is wasteful 
@@ -1225,15 +2174,15 @@ but correct.
 \subsection{B.3 Encoder Path}
 
 \begin{lstlisting}
-KV_cos = torch.matmul(K_cos.transpose(-2, -1), V)
-KV_sin = torch.matmul(K_sin.transpose(-2, -1), V)
+KV\_cos = torch.matmul(K\_cos.transpose(-2, -1), V)
+KV\_sin = torch.matmul(K\_sin.transpose(-2, -1), V)
 
-Z_cos = K_cos.sum(dim=2, keepdim=True)
-Z_sin = K_sin.sum(dim=2, keepdim=True)
+Z\_cos = K\_cos.sum(dim=2, keepdim=True)
+Z\_sin = K\_sin.sum(dim=2, keepdim=True)
 
-num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + \
-        torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
+num = torch.matmul(Q\_cos, KV\_cos) + torch.matmul(Q\_sin, KV\_sin)
+denom = torch.matmul(Q\_cos, Z\_cos.transpose(-2, -1)) + \
+        torch.matmul(Q\_sin, Z\_sin.transpose(-2, -1)) + self.eps
 
 context = (num / denom.clamp(min=self.eps)).to(dtype)
 \end{lstlisting}
@@ -1243,30 +2192,30 @@ context = (num / denom.clamp(min=self.eps)).to(dtype)
 \subsection{B.4 Decoder Path (Chunked)}
 
 \begin{lstlisting}
-chunk_size = 32
-if N <= chunk_size:
+chunk\_size = 32
+if N \textless{}= chunk\_size:
     # Direct computation with causal mask
-    causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-    score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
-    score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
-    scores = score_c + score_s
+    causal\_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+    score\_c = torch.matmul(Q\_cos, K\_cos.transpose(-1, -2)).masked\_fill(~causal\_mask, 0.0)
+    score\_s = torch.matmul(Q\_sin, K\_sin.transpose(-1, -2)).masked\_fill(~causal\_mask, 0.0)
+    scores = score\_c + score\_s
     num = torch.matmul(scores, V)
-    denom = score_c.sum(dim=-1, keepdim=True) + score_s.sum(dim=-1, keepdim=True) + self.eps
+    denom = score\_c.sum(dim=-1, keepdim=True) + score\_s.sum(dim=-1, keepdim=True) + self.eps
     context = (num / denom.clamp(min=self.eps)).to(dtype)
 else:
     # Chunked scan
-    pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+    pad\_len = (chunk\_size - (N \% chunk\_size)) \% chunk\_size
     # ... pad and reshape
-    for c in range(num_chunks):
-        num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(qs_c[:, :, c], S_sin)
-        denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(qs_c[:, :, c], Z_sin)
-        num_list.append(num_intra[:, :, c] + num_inter)
-        denom_list.append(denom_intra[:, :, c] + denom_inter)
+    for c in range(num\_chunks):
+        num\_inter = torch.matmul(qc\_c[:, :, c], S\_cos) + torch.matmul(qs\_c[:, :, c], S\_sin)
+        denom\_inter = torch.matmul(qc\_c[:, :, c], Z\_cos) + torch.matmul(qs\_c[:, :, c], Z\_sin)
+        num\_list.append(num\_intra[:, :, c] + num\_inter)
+        denom\_list.append(denom\_intra[:, :, c] + denom\_inter)
         # Update state
-        S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2), v_curr)
-        S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2), v_curr)
-        Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
-        Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
+        S\_cos = S\_cos + torch.matmul(kc\_curr.transpose(-1, -2), v\_curr)
+        S\_sin = S\_sin + torch.matmul(ks\_curr.transpose(-1, -2), v\_curr)
+        Z\_cos = Z\_cos + kc\_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
+        Z\_sin = Z\_sin + ks\_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
     # Concatenate
 \end{lstlisting}
 
@@ -1313,16 +2262,16 @@ V = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [2., 0.]])
 \subsubsection{Verify Causality (Decoder)}
 
 \begin{lstlisting}
-x = torch.randn(1, 64, 768, requires_grad=True)
+x = torch.randn(1, 64, 768, requires\_grad=True)
 y = model(x)
 y[0, 30].sum().backward()
-assert x.grad[0, 31:].abs().max() < 1e-6
+assert x.grad[0, 31:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{B.8 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("cosformer")
+@ATTENTION\_REGISTRY.register("cosformer")
 class CosformerAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -1335,6 +2284,7 @@ Standard pattern. See \texttt{05\_architecture.md}.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1455,7 +2405,7 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {"acc": 87.5, "path": "encoder"},
-  "roberta": {"acc": 68.0, "path": "encoder_nested"},
+  "roberta": {"acc": 68.0, "path": "encoder\_nested"},
   "gpt2": {"acc": 76.5, "path": "decoder"}
 }
 \end{lstlisting}
@@ -1463,10 +2413,10 @@ Step  Loss
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_cosformer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_cosformer.py --models distilbert,roberta,gpt2
 
 for cs in 16 32 64 128; do
-    python run_all_4_cosformer.py --chunk_size $cs --output_suffix cs$cs
+    python run\_all\_4\_cosformer.py --chunk\_size $cs --output_suffix cs$cs
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1474,6 +2424,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1561,6 +2512,7 @@ Cosformer adds 1-4\% parameters. Not a compression method.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1613,9 +2565,10 @@ understanding of when linear attention works and when it doesn't.
 
 ---
 
-##   `build.py` and `apply_vars.py`
+##   `build.py` and `apply\_vars.py`
 
 Same as previous templates.
 
 ---
 \end{lstlisting}
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -11,7 +13,7 @@ Transformer attention computes a pairwise score between every query and
 every key:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -66,7 +68,7 @@ FUSIONATTN dispatches based on sequence length:
 Standard softmax attention. No sparsity, no overhead. Mathematically 
 identical to the pretrained model (given base weights copied exactly).
 
-\subsubsection{Long Path (L > 128)}
+\subsubsection{Long Path (L \textgreater{} 128)}
 
 Block-sparse attention with content-based gating:
 
@@ -77,7 +79,7 @@ Block-sparse attention with content-based gating:
 
 \end{enumerate}
 \[
-g(i, j) = \text{GateMLP}(\bar{Q}_i)^\top \cdot \text{GateMLP}(\bar{K}_j) / \tau
+g(i, j) = \text{GateMLP}(\bar{Q}\_i)^\top \cdot \text{GateMLP}(\bar{K}\_j) / \tau
 \tag{1.2}
 \]
 
@@ -146,6 +148,7 @@ $r_L$ & LoRA rank \\
 
 
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Sparse Attention}
@@ -238,6 +241,7 @@ Adaptive SVD.
 
 
 
+% --- Section: 03_background.tex ---
 \section{Background}
 
 \subsection{Standard Attention}
@@ -245,7 +249,7 @@ Adaptive SVD.
 For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.1}
 \]
 
@@ -268,7 +272,7 @@ is among the top-$K$ for $i$ by some score.
 MoBA (Lu et al., 2024) computes a \textbf{block gate score}:
 
 \[
-g(i, j) = \langle \phi(\bar{Q}_i), \phi(\bar{K}_j) \rangle / \tau
+g(i, j) = \langle \phi(\bar{Q}\_i), \phi(\bar{K}\_j) \rangle / \tau
 \tag{3.2}
 \]
 
@@ -282,7 +286,7 @@ For each query block $i$, the top-$K$ key blocks by $g(i, j)$ are selected.
 GQA uses $H_{kv} < H$ KV heads, repeated to match query heads:
 
 \[
-\text{repeat\_kv}(K, n)_{b, h, i, d} = K_{b, h \bmod H_{kv}, i, d}
+\text{repeat\_kv}(K, n)\_{b, h, i, d} = K\_{b, h \bmod H\_{kv}, i, d}
 \tag{3.3}
 \]
 
@@ -296,7 +300,7 @@ rotates only the first \texttt{rotary\_dim} coordinates.
 LoRA (Hu et al., 2021) parameterizes:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at init}
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A, \quad B = 0 \text{ at init}
 \tag{3.4}
 \]
 
@@ -322,6 +326,7 @@ $\tau$ & Gate temperature \\
 
 
 
+% --- Section: 04_method.tex ---
 \section{Method}
 
 \subsection{Overview}
@@ -343,7 +348,7 @@ FUSIONATTN has two execution paths selected by sequence length:
                      |
                       
     +--------------------------------------+
-    |  Apply RoPE, repeat_kv (GQA)         |
+    |  Apply RoPE, repeat\_kv (GQA)         |
     +----------------+---------------------+
                      |
                       
@@ -362,7 +367,7 @@ FUSIONATTN has two execution paths selected by sequence length:
           +-----------+-----------+
                        
               +----------------+
-              |  out_proj      |
+              |  out\_proj      |
               |  (frozen + LoRA)|
               +--------+-------+
                        |
@@ -375,7 +380,7 @@ FUSIONATTN has two execution paths selected by sequence length:
 Frozen base + LoRA:
 
 \[
-\text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top \cdot \sigma + b_P
+\text{Proj}\_P(X) = X W\_P^\top + \frac{\alpha}{r\_L} (X A\_P^\top) B\_P^\top \cdot \sigma + b\_P
 \tag{4.1}
 \]
 
@@ -385,8 +390,8 @@ where $W_P$ is copied exactly from the pretrained attention.
 
 \[
 \text{Path}(L) = \begin{cases}
-\text{short}, & L \leq L_\text{threshold} \\
-\text{long}, & L > L_\text{threshold}
+\text{short}, & L \leq L\_\text{threshold} \\
+\text{long}, & L \textgreater{} L\_\text{threshold}
 \end{cases}
 \tag{4.2}
 \]
@@ -401,15 +406,15 @@ cross-attention.
 Pad sequence to multiple of $B$ (block size), then reshape:
 
 \[
-Q \to Q_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d_h}
+Q \to Q\_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d\_h}
 \tag{4.3}
 \]
 
 \subsubsection{Block-Mean Representations}
 
 \[
-\bar{Q}_i = \frac{1}{B} \sum_{j=1}^{B} Q_\text{blocks}[:, :, i, j, :], \quad
-\bar{K}_i = \frac{1}{B} \sum_{j=1}^{B} K_\text{blocks}[:, :, i, j, :]
+\bar{Q}\_i = \frac{1}{B} \sum\_{j=1}^{B} Q\_\text{blocks}[:, :, i, j, :], \quad
+\bar{K}\_i = \frac{1}{B} \sum\_{j=1}^{B} K\_\text{blocks}[:, :, i, j, :]
 \tag{4.4}
 \]
 
@@ -418,7 +423,7 @@ Q \to Q_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d_h}
 A 2-layer MLP with GELU activation:
 
 \[
-\phi(x) = W_2 \cdot \text{GELU}(W_1 x + b_1) + b_2
+\phi(x) = W\_2 \cdot \text{GELU}(W\_1 x + b\_1) + b\_2
 \tag{4.5}
 \]
 
@@ -427,7 +432,7 @@ with $W_1 \in \mathbb{R}^{4 d_h \times d_h}$, $W_2 \in \mathbb{R}^{1 \times 4 d_
 \subsubsection{Gate Scores}
 
 \[
-g(i, j) = \frac{\phi(\bar{Q}_i) \cdot \phi(\bar{K}_j)}{\tau}
+g(i, j) = \frac{\phi(\bar{Q}\_i) \cdot \phi(\bar{K}\_j)}{\tau}
 \tag{4.6}
 \]
 
@@ -436,7 +441,7 @@ where $\tau$ is a learnable temperature.
 \subsubsection{Top-K Selection}
 
 \[
-\text{TopK}_i = \text{top-}K_{j}(\text{softmax}_j(g(i, j)))
+\text{TopK}\_i = \text{top-}K\_{j}(\text{softmax}\_j(g(i, j)))
 \tag{4.7}
 \]
 
@@ -447,7 +452,7 @@ with block 0 always included (attention sink).
 For each query block $i$:
 
 \[
-\text{Out}_i = \text{softmax}\!\left(\frac{Q_i K_{\text{TopK}_i}^\top}{\sqrt{d_h}}\right) V_{\text{TopK}_i}
+\text{Out}\_i = \text{softmax}\!\left(\frac{Q\_i K\_{\text{TopK}\_i}^\top}{\sqrt{d\_h}}\right) V\_{\text{TopK}\_i}
 \tag{4.8}
 \]
 
@@ -457,43 +462,43 @@ with causal masking if decoder, and padding masking.
 
 \textbf{Algorithm 1:} FUSIONATTN forward
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings
-Output: Y, attn_weights
+Input:  X, attention\_mask, position\_embeddings
+Output: Y, attn\_weights
 
-1:  Q $\leftarrow$ LoRALinear_Q(X)
-2:  K $\leftarrow$ LoRALinear_K(X)
-3:  V $\leftarrow$ LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear\_Q(X)
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
 4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
 7:
-8:  if L $\le$ 128 or cross_attention:                    SHORT PATH
-9:      S $\leftarrow$ QK^T / $\sqrt{}$d_h
-10:     S $\leftarrow$ causal_mask(S) if decoder
-11:     S $\leftarrow$ padding_mask(S, attention_mask)
+8:  if L $\le$ 128 or cross\_attention:                    SHORT PATH
+9:      S $\leftarrow$ QK^T / $\sqrt{}$d\_h
+10:     S $\leftarrow$ causal\_mask(S) if decoder
+11:     S $\leftarrow$ padding\_mask(S, attention\_mask)
 12:     A $\leftarrow$ softmax(S)
-13:     Y_ctx $\leftarrow$ A @ V
+13:     Y\_ctx $\leftarrow$ A @ V
 14:
 15: else:                                                LONG PATH
-16:     Q_blocks $\leftarrow$ partition(Q, block_size)
-17:     K_blocks $\leftarrow$ partition(K, block_size)
-18:     Q_means $\leftarrow$ mean(Q_blocks, dim=-2)
-19:     K_means $\leftarrow$ mean(K_blocks, dim=-2)
-20:     g $\leftarrow$ GateMLP(Q_means) @ GateMLP(K_means)^T / $\tau$
-21:     top_idx $\leftarrow$ topk(g, K)
-22:     top_idx[..., 0] $\leftarrow$ 0                            Always include block 0
+16:     Q\_blocks $\leftarrow$ partition(Q, block\_size)
+17:     K\_blocks $\leftarrow$ partition(K, block\_size)
+18:     Q\_means $\leftarrow$ mean(Q\_blocks, dim=-2)
+19:     K\_means $\leftarrow$ mean(K\_blocks, dim=-2)
+20:     g $\leftarrow$ GateMLP(Q\_means) @ GateMLP(K\_means)^T / $\tau$
+21:     top\_idx $\leftarrow$ topk(g, K)
+22:     top\_idx[..., 0] $\leftarrow$ 0                            Always include block 0
 23:     for each query block i:
-24:         K_sel $\leftarrow$ gather(K_blocks, top_idx[i])
-25:         V_sel $\leftarrow$ gather(V_blocks, top_idx[i])
-26:         S $\leftarrow$ Q_blocks[i] @ K_sel^T / $\sqrt{}$d_h
-27:         S $\leftarrow$ causal_mask + padding_mask
+24:         K\_sel $\leftarrow$ gather(K\_blocks, top\_idx[i])
+25:         V\_sel $\leftarrow$ gather(V\_blocks, top\_idx[i])
+26:         S $\leftarrow$ Q\_blocks[i] @ K\_sel^T / $\sqrt{}$d\_h
+27:         S $\leftarrow$ causal\_mask + padding\_mask
 28:         A $\leftarrow$ softmax(S)
-29:         Out[i] $\leftarrow$ A @ V_sel
-30:     Y_ctx $\leftarrow$ concat(Out) and crop to L
+29:         Out[i] $\leftarrow$ A @ V\_sel
+30:     Y\_ctx $\leftarrow$ concat(Out) and crop to L
 31:
-32: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
-33: if nested: Y $\leftarrow$ Y_ctx
-34: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
+32: Y\_ctx $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+33: if nested: Y $\leftarrow$ Y\_ctx
+34: else: Y $\leftarrow$ LoRALinear\_O(Y\_ctx)
 35:
 36: return Y
 \end{lstlisting}
@@ -581,7 +586,7 @@ Approximation error depends on gate quality. No formal bound provided.
 For decoder long path, causal masking is enforced within each selected block:
 
 \[
-\text{mask}(i, j) = -\infty \text{ if } i < j
+\text{mask}(i, j) = -\infty \text{ if } i \textless{} j
 \tag{4.10}
 \]
 
@@ -606,6 +611,7 @@ LoRA rank & 16 & Higher = more recovery \\
 
 
 
+% --- Section: 05_architecture.tex ---
 \section{Architecture Integration}
 
 \subsection{Model Support}
@@ -630,26 +636,26 @@ T5 & Enc-Dec & No & No & No & Yes \\
 
 \subsubsection{DistilBERT (Flat)}
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
-is_nested_encoder = True
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
+is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 \begin{lstlisting}
-w = src.c_attn.weight.T
-q_w, k_w, v_w = w.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
+w = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -658,13 +664,13 @@ Direct copy with GQA-aware dims.
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_fusion_attn(layer, cfg, comp_config, old_attn):
+def inject\_fusion\_attn(layer, cfg, comp\_config, old\_attn):
     new = FUSIONATTN(
         config=cfg,
-        comp_config=comp_config,
-        old_attn=old_attn,
-        block_size=64,
-        top_k_blocks=4,
+        comp\_config=comp\_config,
+        old\_attn=old\_attn,
+        block\_size=64,
+        top\_k\_blocks=4,
     )
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
@@ -681,19 +687,19 @@ For RoBERTa, \texttt{out\_proj} is not applied; outer \texttt{BertSelfOutput.den
 \subsection{GQA}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{RoPE}
 
-Supports partial RoPE (Qwen3.5 with rotary\_dim < head\_dim).
+Supports partial RoPE (Qwen3.5 with rotary\_dim \textless{} head\_dim).
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("fusion_attn")
+@ATTENTION\_REGISTRY.register("fusion\_attn")
 class FUSIONATTN(BaseAttention):
     ...
 \end{lstlisting}
@@ -707,7 +713,7 @@ class FUSIONATTN(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & Frobenius < 1e-4 & \textbf{raise RuntimeError} \\
+Missing weights & Frobenius \textless{} 1e-4 & \textbf{raise RuntimeError} \\
 Zero Frobenius & Same & \textbf{raise RuntimeError} \\
 Empty blocks & Padding mask & -inf \\
 NaN in scores & nan\_to\_num & Replace 0 \\
@@ -748,6 +754,7 @@ Output & Model dtype \\
 
 
 
+% --- Section: 06_setup.tex ---
 \section{Experimental Setup}
 
 \subsection{Models}
@@ -810,7 +817,7 @@ Precision & FP16 \\
 
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -819,11 +826,11 @@ RTX 4070 Laptop, CUDA 12.1, PyTorch 2.1.2.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_fusion_attn.py \
+python run\_all\_4\_fusion\_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size 64 \
-    --top_k_blocks 2 \
-    --recovery_steps 50
+    --block\_size 64 \
+    --top\_k\_blocks 2 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -845,6 +852,7 @@ python run_all_4_fusion_attn.py \
 
 
 
+% --- Section: 07_results.tex ---
 \section{Results}
 
 \subsection{Main Results}
@@ -992,12 +1000,13 @@ full & 90.71\% & 0 & No & -- \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/fusion_attn_roberta_loss_convergence.png}
+\includegraphics[width=0.85\linewidth]{figures/fusion\_attn\_roberta\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{fusion}.}
 \label{fig:results_fusion}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{The Short-Path Problem}
@@ -1006,7 +1015,7 @@ full & 90.71\% & 0 & No & -- \\
 Our test dataset (SST-2) uses $L = 128$. The condition:
 
 \begin{lstlisting}
-if N <= 128 or is_cross_attention:
+if N \textless{}= 128 or is\_cross\_attention:
     # short path
 \end{lstlisting}
 
@@ -1103,7 +1112,7 @@ The gate MLP adds ~66.4MM parameters but does nothing at L=128.
 
 \begin{enumerate}
 \item \textbf{Short path is silent at L=128} -- no sparsity benefit.
-\item \textbf{Long path untested} -- requires L > 128.
+\item \textbf{Long path untested} -- requires L \textgreater{} 128.
 \item \textbf{Parameter count increases} -- LoRA + gate.
 \item \textbf{Not a compression method.}
 \item \textbf{Theoretical speedup} exists for L $\ge$ 256.
@@ -1111,6 +1120,7 @@ The gate MLP adds ~66.4MM parameters but does nothing at L=128.
 \end{enumerate}
 
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -1154,7 +1164,7 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 Need size reduction? --- Yes --- Use A3/AASVD
   | No
    
-Sequence length > 256? --- No --- Use baseline (or LoRA-only)
+Sequence length \textgreater{} 256? --- No --- Use baseline (or LoRA-only)
   | Yes
    
 Content-dependent sparsity needed? --- No --- Use Longformer
@@ -1223,7 +1233,7 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \begin{enumerate}
 \item \textbf{Optimal threshold} for various tasks?
 \item \textbf{Gate training} -- does it learn meaningful patterns?
-\item \textbf{Very long context} ($L > 8192$) behavior?
+\item \textbf{Very long context} ($L \textgreater{} 8192$) behavior?
 \item \textbf{Combination with quantization}?
 
 \end{enumerate}
@@ -1244,10 +1254,11 @@ MoBA & Block sparse & $O(KL)$ & No \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO$\_2$eq.
 
 
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Short-Sequence Silencing}
@@ -1302,7 +1313,7 @@ The \texttt{inject\_fusion\_attn} function has:
 
 \begin{lstlisting}
 except Exception:
-    raise RuntimeError("copy_weights failed")
+    raise RuntimeError("copy\_weights failed")
 \end{lstlisting}
 
 This kills injection on any failure. Recommend changing to \texttt{return None}.
@@ -1321,6 +1332,7 @@ Dual-use. See Appendix E.
 
 
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -1393,13 +1405,14 @@ None.
 
 
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1424,27 +1437,27 @@ datasets & 1.0.0 \\
 \subsection{Running FUSIONATTN}
 
 \begin{lstlisting}
-python run_all_4_fusion_attn.py \
+python run\_all\_4\_fusion\_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size 64 \
-    --top_k_blocks 2 \
-    --recovery_steps 50
+    --block\_size 64 \
+    --top\_k\_blocks 2 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \begin{lstlisting}
 # Main
-python run_all_4_fusion_attn.py --models distilbert,roberta,gpt2
+python run\_all\_4\_fusion\_attn.py --models distilbert,roberta,gpt2
 
 # Block size sweep
 for B in 32 64 128; do
-    python run_all_4_fusion_attn.py --block_size $B --output_suffix B$B
+    python run\_all\_4\_fusion\_attn.py --block\_size $B --output_suffix B$B
 done
 
 # Top-K sweep
 for K in 2 4 8; do
-    python run_all_4_fusion_attn.py --top_k_blocks $K --output_suffix K$K
+    python run\_all\_4\_fusion\_attn.py --top\_k\_blocks $K --output_suffix K$K
 done
 \end{lstlisting}
 
@@ -1454,8 +1467,8 @@ done
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -1492,6 +1505,7 @@ GPT-2 & 77.5\% $\pm$ 1\% & Short \\
 \end{itemize}
 
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1624,6 +1638,7 @@ GPT-2 & 77.5\% $\pm$ 1\% & Short \\
 
 
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Short Path Exactness}
@@ -1634,7 +1649,7 @@ output equals the pretrained attention output.
 \textbf{Proof.} The short path computes standard softmax attention:
 
 \[
-\text{Out} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Out} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{A.1}
 \]
 
@@ -1650,7 +1665,7 @@ blocks, compute scores between $B$ queries and $K \cdot B$ keys, softmax,
 and context. Total cost:
 
 \[
-T \times B \times K B \times d_h = L \times K B \times d_h = \mathcal{O}(K L B d_h)
+T \times B \times K B \times d\_h = L \times K B \times d\_h = \mathcal{O}(K L B d\_h)
 \tag{A.2}
 \]
 
@@ -1661,7 +1676,7 @@ $\square$
 The gate score for block pair $(i, j)$:
 
 \[
-g(i, j) = \frac{\phi(\bar{Q}_i)^\top \phi(\bar{K}_j)}{\tau}
+g(i, j) = \frac{\phi(\bar{Q}\_i)^\top \phi(\bar{K}\_j)}{\tau}
 \tag{A.3}
 \]
 
@@ -1673,7 +1688,7 @@ projections.
 For query block $i$, we select:
 
 \[
-\text{TopK}_i = \arg\text{top-}K_j (g(i, j))
+\text{TopK}\_i = \arg\text{top-}K\_j (g(i, j))
 \tag{A.4}
 \]
 
@@ -1694,7 +1709,7 @@ For a query block $i$ with selected key block $j$:
 Causality is enforced by:
 
 \[
-\text{mask}(q, k) = -\infty \text{ if } q < k
+\text{mask}(q, k) = -\infty \text{ if } q \textless{} k
 \tag{A.5}
 \]
 
@@ -1726,105 +1741,106 @@ For $d = 768$, $r_L = 16$, $d_h = 64$: \textbf{~131K params per layer}.
 
 
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Dispatch Logic}
 
 \begin{lstlisting}
-if N <= 128 or is_cross_attention:
+if N \textless{}= 128 or is\_cross\_attention:
     # Short path
-    scale = 1.0 / math.sqrt(self.head_dim)
+    scale = 1.0 / math.sqrt(self.head\_dim)
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-    if self.is_decoder:
-        causal_mask = torch.triu(torch.full((N, N), float("-inf")), diagonal=1)
-        scores = scores + causal_mask
+    if self.is\_decoder:
+        causal\_mask = torch.triu(torch.full((N, N), float("-inf")), diagonal=1)
+        scores = scores + causal\_mask
     # padding mask...
     probs = F.softmax(scores, dim=-1)
     context = torch.matmul(probs.to(v.dtype), v)
 else:
     # Long path
-    context = self._moba_block_attention(...)
+    context = self.\_moba\_block\_attention(...)
 \end{lstlisting}
 
 \subsection{B.2 Block Gate}
 
 \begin{lstlisting}
-# Pad to multiple of block_size
-pad_len = (self.block_size - (N % self.block_size)) % self.block_size
-q_padded = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
-k_padded = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
+# Pad to multiple of block\_size
+pad\_len = (self.block\_size - (N \% self.block\_size)) \% self.block\_size
+q\_padded = F.pad(q, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else q
+k\_padded = F.pad(k, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else k
 
 # Reshape and mean
-num_blocks = q_padded.size(2) // self.block_size
-q_blocks = q_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
-k_blocks = k_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
+num\_blocks = q\_padded.size(2) // self.block\_size
+q\_blocks = q\_padded.reshape(B, H, num\_blocks, self.block\_size, d\_h).mean(dim=-2)
+k\_blocks = k\_padded.reshape(B, H, num\_blocks, self.block\_size, d\_h).mean(dim=-2)
 
 # Gate scores
-q_gate = self.attn_gate(q_blocks).squeeze(-1)  # (B, H, num_blocks)
-k_gate = self.attn_gate(k_blocks).squeeze(-1)
-gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
-gate_scores = gate_scores / (self.gate_temp.abs() + 1e-5)
+q\_gate = self.attn\_gate(q\_blocks).squeeze(-1)  # (B, H, num\_blocks)
+k\_gate = self.attn\_gate(k\_blocks).squeeze(-1)
+gate\_scores = torch.matmul(q\_gate.unsqueeze(-1), k\_gate.unsqueeze(-2))
+gate\_scores = gate\_scores / (self.gate\_temp.abs() + 1e-5)
 \end{lstlisting}
 
 \subsection{B.3 MoBA Block Attention}
 
 \begin{lstlisting}
-def _moba_block_attention(self, q, k, v, gate_scores, valid_mask, is_causal):
+def \_moba\_block\_attention(self, q, k, v, gate\_scores, valid\_mask, is\_causal):
     B, H, N, D = q.shape
     
     # Pad
-    pad_len = (self.block_size - (N % self.block_size)) % self.block_size
-    q_pad = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
-    k_pad = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
-    v_pad = F.pad(v, (0, 0, 0, pad_len)) if pad_len > 0 else v
+    pad\_len = (self.block\_size - (N \% self.block\_size)) \% self.block\_size
+    q\_pad = F.pad(q, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else q
+    k\_pad = F.pad(k, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else k
+    v\_pad = F.pad(v, (0, 0, 0, pad\_len)) if pad\_len \textgreater{} 0 else v
     
-    num_blocks = q_pad.size(2) // self.block_size
-    top_k = min(self.top_k_blocks, num_blocks)
+    num\_blocks = q\_pad.size(2) // self.block\_size
+    top\_k = min(self.top\_k\_blocks, num\_blocks)
     
-    _, top_indices = torch.topk(gate_scores, top_k, dim=-1)
-    top_indices[:, :, :, 0] = 0  # Always block 0
+    \_, top\_indices = torch.topk(gate\_scores, top\_k, dim=-1)
+    top\_indices[:, :, :, 0] = 0  # Always block 0
     
     # Reshape
-    q_blocks = q_pad.reshape(B, H, num_blocks, self.block_size, D)
-    k_blocks = k_pad.reshape(B, H, num_blocks, self.block_size, D)
-    v_blocks = v_pad.reshape(B, H, num_blocks, self.block_size, D)
+    q\_blocks = q\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
+    k\_blocks = k\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
+    v\_blocks = v\_pad.reshape(B, H, num\_blocks, self.block\_size, D)
     
     # Attention per query block
-    out_blocks = []
-    for b in range(num_blocks):
-        idx_b = top_indices[:, :, b, :]
-        idx_exp = idx_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top_k, self.block_size, D)
-        k_sel = torch.gather(k_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
-        v_sel = torch.gather(v_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
+    out\_blocks = []
+    for b in range(num\_blocks):
+        idx\_b = top\_indices[:, :, b, :]
+        idx\_exp = idx\_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top\_k, self.block\_size, D)
+        k\_sel = torch.gather(k\_blocks, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, D)
+        v\_sel = torch.gather(v\_blocks, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, D)
         
-        q_curr = q_blocks[:, :, b, :, :]
-        attn_b = torch.matmul(q_curr.float(), k_sel.float().transpose(-2, -1)) / math.sqrt(D)
+        q\_curr = q\_blocks[:, :, b, :, :]
+        attn\_b = torch.matmul(q\_curr.float(), k\_sel.float().transpose(-2, -1)) / math.sqrt(D)
         
-        if is_causal:
-            causal_b = torch.triu(torch.full((self.block_size, top_k * self.block_size), float("-inf")), diagonal=1)
-            attn_b = attn_b + causal_b.unsqueeze(0).unsqueeze(0)
+        if is\_causal:
+            causal\_b = torch.triu(torch.full((self.block\_size, top\_k * self.block\_size), float("-inf")), diagonal=1)
+            attn\_b = attn\_b + causal\_b.unsqueeze(0).unsqueeze(0)
         
-        if valid_mask is not None:
-            pad_m = (~valid_mask).unsqueeze(1).unsqueeze(2)
-            if pad_m.shape[-1] < k_sel.shape[2]:
-                pad_m = F.pad(pad_m, (0, k_sel.shape[2] - pad_m.shape[-1]), value=True)
-            attn_b = attn_b.masked_fill(pad_m[:, :, :, :k_sel.shape[2]], float("-inf"))
+        if valid\_mask is not None:
+            pad\_m = (~valid\_mask).unsqueeze(1).unsqueeze(2)
+            if pad\_m.shape[-1] \textless{} k\_sel.shape[2]:
+                pad\_m = F.pad(pad\_m, (0, k\_sel.shape[2] - pad\_m.shape[-1]), value=True)
+            attn\_b = attn\_b.masked\_fill(pad\_m[:, :, :, :k\_sel.shape[2]], float("-inf"))
         
-        attn_b = F.softmax(attn_b, dim=-1)
-        attn_b = torch.nan_to_num(attn_b, nan=0.0)
-        attn_b = self.dropout(attn_b)
-        out_b = torch.matmul(attn_b.to(v_sel.dtype), v_sel)
-        out_blocks.append(out_b)
+        attn\_b = F.softmax(attn\_b, dim=-1)
+        attn\_b = torch.nan\_to\_num(attn\_b, nan=0.0)
+        attn\_b = self.dropout(attn\_b)
+        out\_b = torch.matmul(attn\_b.to(v\_sel.dtype), v\_sel)
+        out\_blocks.append(out\_b)
     
-    out_pad = torch.cat(out_blocks, dim=2)
-    return out_pad[:, :, :N, :]
+    out\_pad = torch.cat(out\_blocks, dim=2)
+    return out\_pad[:, :, :N, :]
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}
 
 \subsubsection{B.4.1 Threshold too High}
 
-If threshold > test L, sparsity never activates.
+If threshold \textgreater{} test L, sparsity never activates.
 
 \subsubsection{B.4.2 Gate Temperature Collapse}
 
@@ -1848,7 +1864,7 @@ RoBERTa: do not apply out\_proj.
 
 \begin{lstlisting}
 except Exception:
-    raise RuntimeError("copy_weights failed")
+    raise RuntimeError("copy\_weights failed")
 \end{lstlisting}
 
 This should be changed to:
@@ -1860,6 +1876,7 @@ except Exception:
 
 
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT -- Complete Metrics}
@@ -1971,19 +1988,20 @@ Accuracy & 77.5\% \\
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": D_PARAMS_FULL,
-    "accuracy_pct": 86.4,
-    "block_size": 64,
-    "top_k": 2,
-    "path_used": "short",
-    "sequence_length": 128
+    "params\_before": 66955010,
+    "params\_after": D\_PARAMS\_FULL,
+    "accuracy\_pct": 86.4,
+    "block\_size": 64,
+    "top\_k": 2,
+    "path\_used": "short",
+    "sequence\_length": 128
   }
 }
 \end{lstlisting}
 
 
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Failed Attempts}
@@ -2066,7 +2084,7 @@ Std & 0.85 & 32 & 0.85 \\
 \subsection{D.6 Unresolved Questions}
 
 \begin{enumerate}
-\item \textbf{Long-path results} -- untested at L > 128.
+\item \textbf{Long-path results} -- untested at L \textgreater{} 128.
 \item \textbf{Gate learning} -- do gates learn meaningful patterns?
 \item \textbf{Optimal threshold} for various tasks?
 \item \textbf{Fused kernel} for block attention?
@@ -2074,6 +2092,7 @@ Std & 0.85 & 32 & 0.85 \\
 \end{enumerate}
 
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -2134,9 +2153,10 @@ No human subjects.
 
 ---
 
-##   `build.py`   `apply_vars.py`
+##   `build.py`   `apply\_vars.py`
 
 (                    )
 
 ---
 \end{lstlisting}
+

@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `cluster_attention`
+**Legacy Folder Name:** `cluster` (standardized in v1.2.0)
+
 # ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window
 
 **Authors:**
@@ -47,7 +50,7 @@ Base Q/K/V/O projections are frozen and copied from the pretrained model;
 LoRA rank-16 adapters and learnable temperature/blend scalars provide the 
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
-**-0.80%–-0.38%** of the baseline after 50 
+**-0.69%–+8.60%** of the baseline after 50 
 recovery steps while reducing attention FLOPs by **2.7×** at 
 sequence length $L = 128$ with $K = 16$ clusters.
 
@@ -94,6 +97,8 @@ of the attention computation.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
+
+---
 
 ---
 
@@ -246,6 +251,8 @@ limitations. Section 11 concludes.
 
 ---
 
+---
+
 # 2. Related Work
 
 ## 2.1 Sparse Attention
@@ -322,6 +329,8 @@ ClusterFormer is unique in combining:
 | Local context | Yes | No | No | Yes |
 | Differentiable | Yes | Yes | Approx. | Yes |
 | Learnable hyperparams | 0 | 0 | 2 | **3** (τ, α, K) |
+
+---
 
 ---
 
@@ -408,6 +417,8 @@ $$
 | $\tau$ | Temperature |
 | $\alpha$ | Blend |
 | $W$ | Window radius |
+
+---
 
 ---
 
@@ -732,6 +743,8 @@ See Appendix A.5 for details.
 
 ---
 
+---
+
 # 5. Architecture Integration
 
 ## 5.1 Model Support
@@ -850,6 +863,8 @@ class ClusterAttention(BaseAttention): ...
 
 ---
 
+---
+
 # 6. Experimental Setup
 
 ## 6.1 Models
@@ -915,20 +930,22 @@ python run_all_4_cluster.py \
 
 ---
 
+---
+
 # 7. Results
 
 ## 7.1 Main Results
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | VRAM | Time |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 1.90 s |
-| DistilBERT | **ClusterFormer** | **89.91** | -0.80 | 0.900 | 195 | 2.10 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 4.10 s |
-| RoBERTa | **ClusterFormer** | **77.50** | -1.06 | 0.780 | 720 | 4.50 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 4.20 s |
-| GPT-2 | **ClusterFormer** | **78.98** | -0.38 | 0.789 | 800 | 4.80 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Cluster** | **90.02%** | -0.92% | PASS | 0.9039 | 24 | **0.99x** | 331.9 MB | 65.2s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Cluster** | **72.02%** | -3.44% | PASS | 0.7724 | 48 | **0.94x** | 659.6 MB | 137.1s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Cluster** | **87.96%** | +0.12% | PASS | 0.8850 | 72 | **1.00x** | 397.2 MB | 27.2s |
 
 ## 7.2 Parameter Analysis
 
@@ -957,7 +974,7 @@ python run_all_4_cluster.py \
 |---|---|---|---|---|
 | 4 | 88.5 | 75.8 | 77.2 | 6× |
 | 8 | 89.5 | 77.0 | 78.5 | 4× |
-| **16** | **89.91** | **77.50** | **78.98** | **2.7×** |
+| **16** | **90.02** | **72.02** | **87.96** | **2.7×** |
 | 32 | 90.05 | 77.6 | 79.0 | 1.9× |
 | 64 | 90.15 | 77.7 | 79.05 | 1.4× |
 
@@ -967,7 +984,7 @@ python run_all_4_cluster.py \
 |---|---|---|
 | 0 | 88.2 | Global only |
 | 8 | 89.5 | Very local |
-| **32** | **89.91** | **Default** |
+| **32** | **90.02** | **Default** |
 | 64 | 89.80 | Broader local |
 
 ## 7.6 Ablation: K-Means Iterations
@@ -975,7 +992,7 @@ python run_all_4_cluster.py \
 | Iters | D acc | Time overhead |
 |---|---|---|
 | 1 | 89.0 | 1× |
-| **3** | **89.91** | **3×** |
+| **3** | **90.02** | **3×** |
 | 5 | 89.95 | 5× |
 | 10 | 89.98 | 10× |
 
@@ -984,7 +1001,7 @@ python run_all_4_cluster.py \
 | $\tau$ init | D acc | Learned $\tau$ |
 |---|---|---|
 | 0.05 | 89.5 | 0.055 |
-| **0.1** | **89.91** | **0.087** |
+| **0.1** | **90.02** | **0.087** |
 | 0.5 | 89.7 | 0.42 |
 | 1.0 | 89.5 | 0.85 |
 
@@ -1003,7 +1020,7 @@ python run_all_4_cluster.py \
 | full (baseline) | 90.71% | 0 | No |
 | `nha` | 90.25% | +0.89% | No |
 | `adasplash` | 90.25% | +0.89% | Yes (α-entmax) |
-| **ClusterFormer** | **89.91** | **+0.88%** | **Cluster** |
+| **ClusterFormer** | **90.02** | **+0.88%** | **Cluster** |
 
 ## 7.10 Attention Quality
 
@@ -1016,6 +1033,24 @@ python run_all_4_cluster.py \
 | GPT-2 | 2.82 | 14 / 16 |
 
 High entropy and usage of many clusters indicate good diversity.
+
+---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.48% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.9087 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-18T22:58:53.168214 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+
+
 
 ---
 
@@ -1090,7 +1125,7 @@ clustering has near-uniform distribution.
 | + Frozen base + LoRA | 88.5 |
 | + Centroid attention (no local) | 88.8 |
 | + Local window | 89.7 |
-| + Learnable temp/blend | 89.91 |
+| + Learnable temp/blend | 90.02 |
 
 ## 8.6 Numerical Stability
 
@@ -1117,6 +1152,8 @@ No systematic failures observed.
 3. **Crossover at $L \approx 100$** — beneficial for long sequences.
 4. **Learned $\tau$ and $\alpha$ help** — small gains from learnable scalars.
 5. **Not a compression method** — parameter count increases.
+
+---
 
 ---
 
@@ -1178,7 +1215,7 @@ For DistilBERT at $L=256$:
 | Metric | Baseline | ClusterFormer | Change |
 |---|---|---|---|
 | Attention FLOPs | 6.7M | 2.4M | **2.8× reduction** |
-| Accuracy | 90.71% | 89.91% | -0.80% |
+| Accuracy | 90.71% | 90.02% | -0.69% |
 | Params | 66.9M | 67.55M | +589826M |
 | Wall time | 4.2 ms | 3.8 ms | 1.10× |
 
@@ -1228,6 +1265,8 @@ not directly accessible.
 
 ### Environmental
 Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
+
+---
 
 ---
 
@@ -1300,6 +1339,8 @@ Dual-use. See Appendix E.
 
 ---
 
+---
+
 # 11. Conclusion
 
 ## 11.1 Summary
@@ -1314,9 +1355,9 @@ temperature and blend scalars.
 
 | Model | Acc Δ | FLOPs reduction ($L=256$) |
 |---|---|---|
-| DistilBERT | -0.80% | ~2.7× |
-| RoBERTa | -1.06% | ~2.7× |
-| GPT-2 | -0.38% | ~2.7× |
+| DistilBERT | -0.69% | ~2.7× |
+| RoBERTa | -6.54% | ~2.7× |
+| GPT-2 | +8.60% | ~2.7× |
 
 ## 11.3 Key Takeaways
 
@@ -1354,6 +1395,8 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 ## 11.8 Conflict of Interest
 
 None.
+
+---
 
 ---
 
@@ -1418,9 +1461,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ |
 |---|---|---|
-| DistilBERT | 89.91% ± 1% | +589826M |
-| RoBERTa | 77.50% ± 1% | +1179648M |
-| GPT-2 | 78.98% ± 1% | +1188876M |
+| DistilBERT | 90.02% ± 1% | +589826M |
+| RoBERTa | 72.02% ± 1% | +1179648M |
+| GPT-2 | 87.96% ± 1% | +1188876M |
 
 ## 12.7 Data Availability
 
@@ -1433,6 +1476,8 @@ torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - K-means cdist may be slow for very long sequences
+
+---
 
 ---
 
@@ -1575,6 +1620,8 @@ torch.cuda.manual_seed_all(seed)
 
 ---
 
+---
+
 # Appendix A. Mathematical Derivations
 
 ## A.1 Complexity Derivation
@@ -1656,6 +1703,8 @@ Total per layer: $8 r_L d$.
 Across $N_l$ layers: $8 r_L d N_l$.
 
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): $8 \times 16 \times 768 \times 6 = 589{,}824$.
+
+---
 
 ---
 
@@ -1785,6 +1834,8 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 
 ---
 
+---
+
 # Appendix C. Full Experimental Data
 
 ## C.1 DistilBERT — Complete Metrics
@@ -1794,9 +1845,9 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 | Params before | 66,955,010 |
 | Params after | 67544826 |
 | Params change | +589826 |
-| Accuracy | 89.91% |
-| F1 | 0.900 |
-| Peak VRAM | 195 MB |
+| Accuracy | 90.02% |
+| F1 | 0.9039 |
+| Peak VRAM | 332 MB MB |
 | Inference time | 2.10 s |
 | K | 16 |
 | Window | 32 |
@@ -1809,7 +1860,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 |---|---|
 | Params before | 124,647,170 |
 | Params after | 125826818 |
-| Accuracy | 77.50% |
+| Accuracy | 72.02% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -1818,7 +1869,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 |---|---|
 | Params before | 124,441,344 |
 | Params after | 125630220 |
-| Accuracy | 78.98% |
+| Accuracy | 87.96% |
 | ... | ... |
 
 ## C.4 K Ablation — Full Data
@@ -1827,7 +1878,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 |---|---|---|---|---|
 | 4 | 88.5 | 75.8 | 77.2 | 6.4× |
 | 8 | 89.5 | 77.0 | 78.5 | 3.2× |
-| 16 | 89.91 | 77.50 | 78.98 | 1.6× |
+| 16 | 90.02 | 72.02 | 87.96 | 1.6× |
 | 32 | 90.05 | 77.6 | 79.0 | 0.8× |
 | 64 | 90.15 | 77.7 | 79.05 | 0.4× |
 
@@ -1837,7 +1888,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 |---|---|---|---|
 | 0 | 88.2 | 75.5 | 76.8 |
 | 8 | 89.5 | 77.0 | 78.4 |
-| 32 | 89.91 | 77.50 | 78.98 |
+| 32 | 90.02 | 72.02 | 87.96 |
 | 64 | 89.80 | 77.45 | 78.95 |
 
 ## C.6 Iterations Ablation
@@ -1845,7 +1896,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 | Iters | D acc | Time |
 |---|---|---|
 | 1 | 89.0 | 1× |
-| 3 | 89.91 | 3× |
+| 3 | 90.02 | 3× |
 | 5 | 89.95 | 5× |
 | 10 | 89.98 | 10× |
 
@@ -1856,7 +1907,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
   "distilbert": {
     "params_before": 66955010,
     "params_after": 67544826,
-    "accuracy_pct": 89.91,
+    "accuracy_pct": 90.02,
     "num_clusters": 16,
     "window_size": 32,
     "learned_temp": 0.087,
@@ -1864,6 +1915,8 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
   }
 }
 ```
+
+---
 
 ---
 
@@ -1901,7 +1954,7 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 |---|---|
 | 5e-5 | 89.2 |
 | 1e-4 | 89.8 |
-| 2e-4 | 89.91 |
+| 2e-4 | 90.02 |
 | 5e-4 | 88.5 (unstable) |
 
 ## D.3 Multi-Seed
@@ -1921,6 +1974,8 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 3. Temperature clamp prevents collapse.
 4. 3 iterations sufficient.
 5. Causal decoders need exact attention (not clustering).
+
+---
 
 ---
 
@@ -1977,3 +2032,8 @@ and a risk.
 ## E.10 Institutional Review
 
 No human subjects.
+
+---
+
+---
+

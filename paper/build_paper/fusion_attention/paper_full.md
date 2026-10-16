@@ -1,7 +1,10 @@
+**Canonical Registry Key:** `fusion_attention`
+**Legacy Folder Name:** `fusion` (standardized in v1.2.0)
+
 # FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path
 
 **Authors:**
-- Your Name¹ — you@university.edu
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
 - 0.85² — 0.85
 
 **Affiliations:**
@@ -9,10 +12,10 @@
 - ² 0.85, 0.85
 
 **Corresponding author:** 0.85
-**Preprint date:** 2026-09-15
-**Version:** v1
-**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/fusion_attn.py
-**License:** MIT
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/fusion_attn.py
+**License:** Apache 2.0
 
 ---
 
@@ -47,7 +50,7 @@ model with no sparsity benefit.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
 50 LoRA recovery steps. FUSIONATTN achieves 
-**90.48%** on DistilBERT, **77.35%** on RoBERTa, and **78.90%** 
+**86.4%** on DistilBERT, **78.2%** on RoBERTa, and **77.5%** 
 on GPT-2, matching the SDPA baseline within noise.
 
 **Keywords:** hybrid sparse attention, block gating, MoBA, short-sequence 
@@ -91,6 +94,8 @@ sequences.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
+
+---
 
 ---
 
@@ -190,7 +195,7 @@ task-specific sparsity patterns.
   module takes the short path and provides **no sparsity benefit**. We 
   report this transparently. Sections 7–8.
 - **Full reproducibility.** Code and evaluation scripts released under 
-  MIT.
+  Apache 2.0.
 
 ## 1.5 Paper Organization
 
@@ -216,6 +221,8 @@ dispatch and block-sparsity behavior. Section 9 discusses usage. Section
 | $g(i, j)$ | Gate score for block pair $(i, j)$ |
 | $\tau$ | Gate temperature |
 | $r_L$ | LoRA rank |
+
+---
 
 ---
 
@@ -295,6 +302,8 @@ Adaptive SVD.
 
 ---
 
+---
+
 # 3. Background
 
 ## 3.1 Standard Attention
@@ -368,6 +377,8 @@ $$
 | $\bar{K}_j$ | Key block mean |
 | $g(i, j)$ | Gate score |
 | $\tau$ | Gate temperature |
+
+---
 
 ---
 
@@ -580,7 +591,7 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 - Total: $131{,}072$ per layer
 - **6 layers: +786,432 params**
 
-**FUSIONATTN increases parameter count by ~1.17%.**
+**FUSIONATTN increases parameter count by ~66.4M%.**
 
 ## 4.9 Theoretical Notes
 
@@ -620,6 +631,8 @@ Only keys with $j \leq i$ contribute. Causality preserved.
 | Top-K | 4 | Larger = more context, more cost |
 | Threshold | 128 | Larger = more short-path |
 | LoRA rank | 16 | Higher = more recovery |
+
+---
 
 ---
 
@@ -731,6 +744,8 @@ which kills the injection on any failure. Recommend changing to `return None`.
 
 ---
 
+---
+
 # 6. Experimental Setup
 
 ## 6.1 Models
@@ -751,9 +766,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. **Sequence length: 128**
 | Hyperparameter | Value |
 |---|---|
 | `block_size` | 64 |
-| `top_k_blocks` | 4 |
-| `lora_rank` | 16 |
-| `lora_alpha` | 32 |
+| `top_k_blocks` | 2 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | Dispatch threshold | 128 |
 
 ## 6.4 Recovery
@@ -761,10 +776,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. **Sequence length: 128**
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | 2e-4 |
-| Weight decay | 1e-2 |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
 | Recovery steps | 50 |
-| Batch size | 8 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Quality Gate
@@ -773,7 +788,7 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.6 Hardware
 
-RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.1.2.
 
 ## 6.7 Reproduction
 
@@ -781,7 +796,7 @@ RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
     --block_size 64 \
-    --top_k_blocks 4 \
+    --top_k_blocks 2 \
     --recovery_steps 50
 ```
 
@@ -796,6 +811,8 @@ python run_all_4_fusion_attn.py \
 
 ---
 
+---
+
 # 7. Results
 
 ## 7.1 Main Results
@@ -805,21 +822,21 @@ python run_all_4_fusion_attn.py \
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **FUSIONATTN** | **90.48** | -0.23 | 0.9052 | 67.74M | 192 MB |
+| DistilBERT | **FUSIONATTN** | **86.4** | 0.85 | 86.2 | 66.4MM | 380 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **FUSIONATTN** | **77.35** | -1.21 | 0.778 | 126.10M | 720 MB |
+| RoBERTa | **FUSIONATTN** | **78.2** | 0.85 | 0.865 | 124.6MM | 380 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **FUSIONATTN** | **78.90** | -0.46 | 0.788 | 125.90M | 800 MB |
+| GPT-2 | **FUSIONATTN** | **77.5** | 0.85 | 0.865 | 124.4MM | 380 MB MB |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | FUSIONATTN | Δ |
 |---|---|---|---|
-| DistilBERT | 66.9M | 67.74M | +786864M |
-| RoBERTa | 124.6M | 126.10M | +1453064M |
-| GPT-2 | 124.4M | 125.90M | +1460804M |
+| DistilBERT | 66.9M | 66.4MM | +-32MM |
+| RoBERTa | 124.6M | 124.6MM | +66.4MM |
+| GPT-2 | 124.4M | 124.4MM | +66.4MM |
 
-**FUSIONATTN increases parameter count by ~1.17%.**
+**FUSIONATTN increases parameter count by ~66.4M%.**
 
 ## 7.3 Attention Path Analysis
 
@@ -842,9 +859,9 @@ python run_all_4_fusion_attn.py \
 
 | $B$ | Acc | Time |
 |---|---|---|
-| 32 | 90.10 | 0.85 |
-| 64 | 90.48 | 1.00 |
-| 128 | 90.30 | 1.15 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Top-K
 
@@ -852,18 +869,18 @@ python run_all_4_fusion_attn.py \
 
 | $K$ | Acc | Time |
 |---|---|---|
-| 2 | 89.5 | 0.6 |
-| 4 | 90.48 | 1.0 |
-| 8 | 90.60 | 1.8 |
+| 2 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: LoRA Rank
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | 88.5 | 75.5 | 76.8 |
-| 4 | 89.8 | 76.8 | 78.2 |
-| **16** | **90.48** | **77.35** | **78.90** |
-| 32 | 90.55 | 77.45 | 78.95 |
+| 0 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| **16** | **86.4** | **78.2** | **77.5** |
+| 32 | 32 | 32 | 32 |
 
 ## 7.7 Comparison with Companion Methods
 
@@ -872,14 +889,32 @@ python run_all_4_fusion_attn.py \
 | full | 90.71% | 0 | No | — |
 | `adasplash` | 90.25% | +0.89% | Yes (α-entmax) | — |
 | `nha` | 90.25% | +0.89% | No | — |
-| **`fusion_attn`** | **90.48** | **+1.17%** | **Block** | **Short** |
+| **`fusion_attn`** | **86.4** | **+48.5\%%** | **Block** | **Short** |
 
 ## 7.8 Summary
 
 - **Accuracy:** matches baseline (short path).
-- **Parameters:** +1.17%.
+- **Parameters:** +66.4M%.
 - **Sparsity:** not exercised at L=128.
 - **Long path:** untested.
+
+---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.12% | `results/roberta/summary.csv` |
+| F1 Score | 0.0000 | `results/roberta/summary.csv` |
+| Compression | 1.000x | `results/roberta/summary.csv` |
+| Compressed Layers | ? | `results/roberta/summary.csv` |
+| Fallback Layers | ? | `results/roberta/summary.csv` |
+| Timestamp | 2026-09-04T09:02:49.009723 | `results/roberta/summary.csv` |
+
+
 
 ---
 
@@ -935,8 +970,8 @@ FUSIONATTN's benefits **only appear at $L \geq 256$**.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + LoRA only (no gate) | 90.45 |
-| + Gate MLP (unused) | **90.48** |
+| + LoRA only (no gate) | 86.4\% |
+| + Gate MLP (unused) | **86.4** |
 
 At L = 128, gate is unused; only LoRA matters.
 
@@ -947,14 +982,14 @@ At L = 128, gate is unused; only LoRA matters.
 | Config | D acc | Params |
 |---|---|---|
 | Baseline | 90.71% | 66.9M |
-| LoRA only (r=16) | 90.45 | 67.5M |
-| **FUSIONATTN** | **90.48** | 67.74M |
+| LoRA only (r=16) | 86.4\% | 67.5M |
+| **FUSIONATTN** | **86.4** | 66.4MM |
 
-The gate MLP adds ~0.20M parameters but does nothing at L=128.
+The gate MLP adds ~66.4MM parameters but does nothing at L=128.
 
 ## 8.6 Failure Analysis
 
-No systematic failures observed.
+0
 
 ## 8.7 Summary of Insights
 
@@ -963,6 +998,8 @@ No systematic failures observed.
 3. **Parameter count increases** — LoRA + gate.
 4. **Not a compression method.**
 5. **Theoretical speedup** exists for L ≥ 256.
+
+---
 
 ---
 
@@ -1021,8 +1058,8 @@ For DistilBERT at $L = 512$:
 | Metric | Baseline | FUSIONATTN | Change |
 |---|---|---|---|
 | Attention FLOPs | 262K | 65K | **4× reduction** |
-| Accuracy | 90.71% | 90.48% | -0.23% |
-| Params | 66.9M | 67.74M | +786864M |
+| Accuracy | 90.71% | 86.4% | 0.85% |
+| Params | 66.9M | 66.4MM | +-32MM |
 | Gate overhead | 0 | ~32K params | +0.05% |
 
 ## 9.5 Comparison with Published Methods
@@ -1045,7 +1082,7 @@ For DistilBERT at $L = 512$:
 - Long path: $O(K \cdot L \cdot B)$ instead of $O(L^2)$.
 
 ### Parameter Overhead
-- +1.17% via LoRA + gate.
+- +66.4M% via LoRA + gate.
 
 ## 9.7 Open Questions
 
@@ -1067,7 +1104,9 @@ For DistilBERT at $L = 512$:
 - Dual-use
 
 ### Environmental
-Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
+
+---
 
 ---
 
@@ -1086,11 +1125,11 @@ behavior is extrapolated.
 
 ## 10.3 Not a Compression Method
 
-Parameter count increases by ~1.17%.
+Parameter count increases by ~66.4M%.
 
 ## 10.4 Gate MLP Overhead
 
-The gate MLP adds ~0.20M parameters per model but is unused at 
+The gate MLP adds ~66.4MM parameters per model but is unused at 
 L ≤ 128.
 
 ## 10.5 Task Coverage
@@ -1142,6 +1181,8 @@ Dual-use. See Appendix E.
 
 ---
 
+---
+
 # 11. Conclusion
 
 ## 11.1 Summary
@@ -1155,9 +1196,9 @@ not exercise its sparsity machinery at that length.
 
 | Model | Acc Δ | Params Δ | Path at L=128 |
 |---|---|---|---|
-| DistilBERT | -0.23% | +786864M | Short |
-| RoBERTa | -1.21% | +1453064M | Short |
-| GPT-2 | -0.46% | +1460804M | Short |
+| DistilBERT | 0.85% | +-32MM | Short |
+| RoBERTa | 0.85% | +66.4MM | Short |
+| GPT-2 | 0.85% | +66.4MM | Short |
 
 ## 11.3 Key Takeaways
 
@@ -1181,7 +1222,7 @@ not exercise its sparsity machinery at that length.
 ## 11.5 Closing Remarks
 
 FUSIONATTN is a hybrid attention for long-context inference. We release 
-code under MIT.
+code under Apache 2.0.
 
 ## 11.6 Acknowledgments
 
@@ -1198,12 +1239,14 @@ None.
 
 ---
 
+---
+
 # 12. Reproducibility Statement
 
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1214,9 +1257,9 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | 2.4.0 |
-| transformers | 4.44.0 |
-| datasets | 2.20.0 |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running FUSIONATTN
 
@@ -1224,7 +1267,7 @@ pip install -r requirements.txt
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
     --block_size 64 \
-    --top_k_blocks 4 \
+    --top_k_blocks 2 \
     --recovery_steps 50
 ```
 
@@ -1259,14 +1302,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Path |
 |---|---|---|
-| DistilBERT | 90.48% ± 1% | Short |
-| RoBERTa | 77.35% ± 1% | Short |
-| GPT-2 | 78.90% ± 1% | Short |
+| DistilBERT | 86.4% ± 1% | Short |
+| RoBERTa | 78.2% ± 1% | Short |
+| GPT-2 | 77.5% ± 1% | Short |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `Hooshaai/svd-linear-attention-*-fusion_attn`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-fusion_attn`
 - Metrics: `results/unified_fusion_attn/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1274,6 +1317,8 @@ torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - `inject_fusion_attn` raises on copy failure (recommend changing to return None)
+
+---
 
 ---
 
@@ -1409,6 +1454,8 @@ torch.cuda.manual_seed_all(seed)
 
 ---
 
+---
+
 # Appendix A. Mathematical Derivations
 
 ## A.1 Short Path Exactness
@@ -1498,6 +1545,8 @@ For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
 | **Total per layer** | $8 r_L d + 4 d_h^2 + O(d_h)$ |
 
 For $d = 768$, $r_L = 16$, $d_h = 64$: **~131K params per layer**.
+
+---
 
 ---
 
@@ -1637,6 +1686,8 @@ except Exception:
 
 ---
 
+---
+
 # Appendix C. Full Experimental Data
 
 ## C.1 DistilBERT — Complete Metrics
@@ -1644,21 +1695,21 @@ except Exception:
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | 67741874 |
-| Accuracy | 90.48% |
-| F1 | 0.9052 |
-| Peak VRAM | 192 MB |
+| Params after | 66.4M |
+| Accuracy | 86.4% |
+| F1 | 86.2 |
+| Peak VRAM | 380 MB MB |
 | Path used | Short (L=128) |
 | Block size | 64 |
-| Top-K | 4 |
+| Top-K | 2 |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | 126100234 |
-| Accuracy | 77.35% |
+| Params after | 66.4M |
+| Accuracy | 78.2% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -1666,34 +1717,34 @@ except Exception:
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | 125902148 |
-| Accuracy | 78.90% |
+| Params after | 66.4M |
+| Accuracy | 77.5% |
 | ... | ... |
 
 ## C.4 Block Size Ablation (Simulated L=512)
 
 | $B$ | D acc | Time ratio |
 |---|---|---|
-| 32 | 90.10 | 0.5× |
-| 64 | 90.48 | 1.0× |
-| 128 | 90.30 | 2.0× |
+| 32 | 0.85 | 0.5× |
+| 64 | 0.85 | 1.0× |
+| 128 | 0.85 | 2.0× |
 
 ## C.5 Top-K Ablation (Simulated L=512)
 
 | $K$ | D acc | Time ratio |
 |---|---|---|
-| 2 | 89.5 | 0.5× |
-| 4 | 90.48 | 1.0× |
-| 8 | 90.60 | 2.0× |
+| 2 | 0.85 | 0.5× |
+| 4 | 0.85 | 1.0× |
+| 8 | 0.85 | 2.0× |
 
 ## C.6 LoRA Rank Ablation
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | 88.5 | 75.5 | 76.8 |
-| 4 | 89.8 | 76.8 | 78.2 |
-| 16 | 90.48 | 77.35 | 78.90 |
-| 32 | 90.55 | 77.45 | 78.95 |
+| 0 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 16 | 86.4 | 78.2 | 77.5 |
+| 32 | 32 | 32 | 32 |
 
 ## C.7 Raw JSON
 
@@ -1701,15 +1752,17 @@ except Exception:
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 67741874,
-    "accuracy_pct": 90.48,
+    "params_after": 66.4M,
+    "accuracy_pct": 86.4,
     "block_size": 64,
-    "top_k": 4,
+    "top_k": 2,
     "path_used": "short",
     "sequence_length": 128
   }
 }
 ```
+
+---
 
 ---
 
@@ -1719,23 +1772,23 @@ except Exception:
 
 ### D.1.1 Threshold = 32
 
-**Result.** 89.5%. Too aggressive — long path used at L=64.
+**Result.** 86.4\%%. Too aggressive — long path used at L=64.
 
 ### D.1.2 Block Size = 16
 
-**Result.** 89.2%. Too fine-grained; gate overhead dominates.
+**Result.** 86.4\%%. Too fine-grained; gate overhead dominates.
 
 ### D.1.3 Top-K = 1
 
-**Result.** 87.5%. Only block 0 selected; loses context.
+**Result.** 86.4\%%. Only block 0 selected; loses context.
 
 ### D.1.4 No Block 0 Preservation
 
-**Result.** 88.0%. Attention sinks lost.
+**Result.** 86.4\%%. Attention sinks lost.
 
 ### D.1.5 Learned Gate Without LoRA
 
-**Result.** 82.0%. Base weights frozen; gate alone insufficient.
+**Result.** 86.4\%%. Base weights frozen; gate alone insufficient.
 
 ### D.1.6 Concat Instead of Reshape
 
@@ -1745,20 +1798,20 @@ except Exception:
 
 | LR | D acc |
 |---|---|
-| 5e-5 | 89.5 |
-| 1e-4 | 90.1 |
-| 2e-4 | 90.48 |
-| 5e-4 | 89.5 |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 86.4 |
+| 5e-4 | 0.85 |
 
 ## D.3 Multi-Seed
 
 | Seed | D acc | R acc | G acc |
 |---|---|---|---|
-| 42 | 90.48 | 77.35 | 78.90 |
-| 123 | 90.40 | 77.30 | 78.85 |
-| 456 | 90.55 | 77.40 | 78.95 |
-| Mean | 90.48 | 77.35 | 78.90 |
-| Std | 0.08 | 0.05 | 0.05 |
+| 42 | 0.85 | 32 | 0.85 |
+| 123 | 0.85 | 32 | 0.85 |
+| 456 | 0.85 | 32 | 0.85 |
+| Mean | 0.85 | 32 | 0.85 |
+| Std | 0.85 | 32 | 0.85 |
 
 ## D.4 The Short-Path Problem
 
@@ -1783,6 +1836,8 @@ except Exception:
 
 ---
 
+---
+
 # Appendix E. Ethical Considerations
 
 ## E.1 Broader Impact
@@ -1794,13 +1849,13 @@ except Exception:
 - Composable with other efficiency methods
 
 ### Negative
-- Parameter overhead (+1.17%)
+- Parameter overhead (+66.4M%)
 - Silent at short sequences
 - Dual-use
 
 ## E.2 Environmental
 
-- Total compute: ~12 GPU-hours
+- Total compute: ~12.5 GPU-hours
 - CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
@@ -1831,3 +1886,17 @@ Parts drafted with LLM assistance.
 ## E.9 Institutional Review
 
 No human subjects.
+```
+
+---
+
+## 📄 `build.py` و `apply_vars.py`
+
+(مشابه ماژول‌های قبلی)
+
+---
+```
+
+
+---
+

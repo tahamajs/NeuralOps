@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{FASA: Frequency/Variance-Aware Sparse Attention for Bidirectional Encoders}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -27,7 +29,7 @@ $V \in \mathbb{R}^{B \times H \times L \times d_h}$, select a subset
 $\mathcal{S} \subset \{1, \ldots, L\}$ with $|\mathcal{S}| = r L$ such that:
 
 \[
-\text{Attn}(Q, K_{\mathcal{S}}, V_{\mathcal{S}}) \approx \text{Attn}(Q, K, V)
+\text{Attn}(Q, K\_{\mathcal{S}}, V\_{\mathcal{S}}) \approx \text{Attn}(Q, K, V)
 \tag{1.1}
 \]
 
@@ -38,7 +40,7 @@ while computing the left-hand side at a fraction $r$ of the cost.
 FASA ranks tokens by the mean-over-heads variance of their key vectors:
 
 \[
-\text{imp}_i = \frac{1}{H} \sum_{h=1}^{H} \text{Var}_d(K_{i,h,d})
+\text{imp}\_i = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}\_d(K\_{i,h,d})
 \tag{1.2}
 \]
 
@@ -74,6 +76,745 @@ discusses. Section 10 lists limitations. Section 11 concludes.
 
 
 \subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d_h$ & Head dimension & 1.1 \\
+$H$ & Number of heads & 1.2 \\
+$r$ & Keep ratio & 1.3 \\
+$\text{imp}_i$ & Importance score of token $i$ & 1.3 \\
+$\mathcal{S}$ & Selected subset & 1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Token Pruning and KV Compression}
+
+\textbf{H2O} (Zhang et al., 2023). Keeps "heavy-hitter" tokens based on 
+accumulated attention scores. Requires attention scores at each step, which 
+FASA does not.
+
+\textbf{StreamingLLM} (Xiao et al., 2024). Pins the first few tokens as attention 
+sinks and keeps a sliding window. FASA's CLS-pinning is inspired by this.
+
+\textbf{SnapKV} (Li et al., 2024). Uses attention scores from a prefix window to 
+select which tokens to keep. FASA uses variance instead.
+
+\textbf{Scissorhands} (Liu et al., 2023). Uses an importance criterion based on 
+past attention patterns.
+
+\textbf{PyramidKV} (Cai et al., 2024). Allocates different budgets to different 
+layers.
+
+\subsection{Attention Sinks}
+
+\textbf{Xiao et al. (2024)} and \textbf{Gu et al. (2024)} show that transformers 
+allocate disproportionate attention to the first few tokens. This is the 
+basis for CLS-pinning in FASA.
+
+\subsection{Sparse Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sliding-window + global.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global.
+
+\textbf{FASA differs from these} in that sparsity is \textbf{data-dependent} 
+(variance of K) rather than architecturally fixed.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{FASA} \\
+\midrule
+\textbf{Importance criterion} & Attention scores (H2O, SnapKV) & \textbf{Variance of K} \\
+\textbf{Sink pinning} & First few tokens & \textbf{CLS only} \\
+\textbf{Causal support} & Yes (with careful masking) & \textbf{No (skips pruning)} \\
+\textbf{Training required} & No & No \\
+\textbf{Parameters added} & None & LoRA only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} FASA's importance criterion is \textbf{cheaper} than H2O 
+(no attention scores needed) but is \textbf{weaker} as a signal. Our ablation 
+in Section 8 quantifies this.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Scaled Dot-Product Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d\_h}}\right)V
+\tag{3.1}
+\]
+
+\textbf{Cost analysis.} The score matrix $QK^\top$ is $O(B H L^2)$. The value 
+matmul $AV$ is $O(B H L^2 d_h)$.
+
+\subsection{Token Pruning}
+
+Replace $K, V$ with subsets $K_{\mathcal{S}}, V_{\mathcal{S}}$:
+
+\[
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{QK\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
+\tag{3.2}
+\]
+
+\textbf{Cost.} $O(B H L \cdot |\mathcal{S}|)$ for scores and $O(B H L |\mathcal{S}| d_h)$ 
+for the value matmul. With $|\mathcal{S}| = rL$, cost reduces by factor $r$.
+
+\subsection{Variance as Importance}
+
+For a token's key vector $k \in \mathbb{R}^{d_h}$:
+
+\[
+\text{Var}(k) = \frac{1}{d\_h} \sum\_{j=1}^{d\_h} (k\_j - \bar{k})^2
+\tag{3.3}
+\]
+
+\textbf{Intuition.} Tokens whose keys have high variance have distinctive 
+dimensional activations. They are likely to be attended to because their 
+key inner-products with queries will span a wider range.
+
+\textbf{Counter-argument.} This is a \textbf{heuristic}. Tokens with low-variance 
+keys may still be highly attended if all queries align with them. Conversely, 
+high-variance keys may be noisy and unattended. The signal is imperfect.
+
+\subsection{Attention Sinks}
+
+\textbf{Empirical observation.} The first token receives disproportionate 
+attention in most transformer layers, even without any specific pretraining 
+objective targeting this.
+
+\textbf{Consequence.} Pruning the first token is catastrophic. FASA protects it:
+
+\begin{lstlisting}
+importance[:, 0] = 1e9
+\end{lstlisting}
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021):
+
+\[
+W\_{\text{eff}} = W\_{\text{frozen}} + \frac{\alpha}{r\_L} BA
+\tag{3.4}
+\]
+
+Used for recovery after injection.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d_h$ & Head dimension \\
+$H$ & Number of heads \\
+$r$ & Keep ratio \\
+$\mathcal{S}$ & Selected token subset \\
+$\text{Var}(k)$ & Variance of key vector \\
+$r_L$ & LoRA rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+FASA has two paths:
+
+\begin{lstlisting}
+                 Input X
+                    |
+                     
+              +-----------+
+              |  Q/K/V    |
+              | projection|
+              +-----+-----+
+                    |
+                     
+              +-----------+
+              | is\_causal |
+              | or cross? |
+              +--+----+---+
+                 | No | Yes
+                 |    |
+                       
+       +----------+  +------------------+
+       | FASA     |  | Standard full    |
+       | prune    |  | attention        |
+       | K/V      |  | (no pruning)     |
+       +----+-----+  +----------+-------+
+            |                   |
+            +----+--------------+
+                 |
+                  
+           Output Y
+\end{lstlisting}
+
+\subsection{Importance Scoring}
+
+For keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$:
+
+\[
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}\_{d\_h}(K\_{b,h,i,:})
+\tag{4.1}
+\]
+
+\textbf{Two aggregation steps:}
+\begin{enumerate}
+\item \textbf{Variance over head dimension $d_h$.} For each (batch, head, position),
+  compute the variance of the $d_h$-dimensional key vector.
+\item \textbf{Mean over heads.} Aggregate across heads into a per-position score.
+
+\end{enumerate}
+\textbf{Default method:} \texttt{importance\_method = "var"}.
+
+\textbf{Alternative:} \texttt{importance\_method = "l2"} uses the L2 norm of the key 
+instead:
+
+\[
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \|K\_{b,h,i,:}\|\_2
+\tag{4.2}
+\]
+
+\subsection{CLS Pinning}
+
+Index 0 is always preserved:
+
+\[
+\text{imp}(b, 0) \leftarrow 10^9
+\tag{4.3}
+\]
+
+This ensures CLS is selected by the top-$k$ operation regardless of its 
+variance.
+
+\subsection{Top-$k$ Selection}
+
+Let $r$ be the keep ratio. The number of tokens to keep:
+
+\[
+k = \max\!\left(8, \min\!\left(L, \lfloor r L \rfloor\right)\right)
+\tag{4.4}
+\]
+
+The \texttt{max(8, ...)} floor prevents over-pruning short sequences.
+
+The selected indices:
+
+\[
+\mathcal{S} = \text{topk}\_k(\text{imp}) \quad \text{(sorted ascending)}
+\tag{4.5}
+\]
+
+Sorting ensures stable gather and preserves positional order.
+
+\subsection{Pruned Attention}
+
+Given $\mathcal{S}$, gather:
+
+\[
+K\_{\mathcal{S}} = \text{gather}(K, \mathcal{S}), \quad
+V\_{\mathcal{S}} = \text{gather}(V, \mathcal{S})
+\tag{4.6}
+\]
+
+Then compute standard attention:
+
+\[
+\text{Attn}' = \text{softmax}\!\left(\frac{Q K\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
+\tag{4.7}
+\]
+
+\textbf{Cost reduction.} Scores matrix: $L \times L$ $\to$ $L \times k$. Value matmul: 
+$L \times L \times d_h$ $\to$ $L \times k \times d_h$.
+
+\subsection{The Decoder Path}
+
+\textbf{Critical.} For causal attention, FASA \textbf{does not prune}. The code:
+
+\begin{lstlisting}
+is\_causal = bool(self.is\_decoder and not is\_cross and L \textgreater{} 1)
+if is\_causal or is\_cross:
+    # Standard full attention
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+    if is\_causal:
+        causal\_mask = torch.triu(...)
+        scores = scores + causal\_mask
+    ...
+\end{lstlisting}
+
+\textbf{Why?} Pruning would remove tokens from the middle of the sequence. For 
+causal attention, a query at position $i$ attends to all $j \leq i$; if we 
+prune some $j$, the causal mask's diagonal structure is broken. To preserve 
+strict causality, FASA skips pruning.
+
+\textbf{Consequence.} For GPT-2, FASA does \textbf{no sparsification} -- it acts as a 
+LoRA-only adapter.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{FASA} \\
+\midrule
+Q/K/V/O projections & $4d^2$ & $4d^2 + \text{LoRA}$ \\
+Other & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{FASA does not add non-LoRA parameters.} The pruning is purely 
+algorithmic.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Bidirectional (pruned) & $O(L \cdot k \cdot d_h + L d^2)$ & $O(L k)$ \\
+Causal (unpruned) & $O(L^2 d_h + L d^2)$ & $O(L^2)$ \\
+Baseline MHSA & $O(L^2 d_h + L d^2)$ & $O(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $k = rL$ with $r = 0.5$: bidirectional scores reduce by factor 2.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} FASA forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_causal, fasa\_keep\_ratio r
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+ 4:
+ 5: is\_causal $\leftarrow$ is\_decoder and not cross
+ 6:
+ 7: if is\_causal or cross:
+ 8:     # Standard full attention (no pruning)
+ 9:     scores $\leftarrow$ Q K^T / sqrt(d\_h)
+10:     apply causal mask if needed
+11:     attn $\leftarrow$ softmax(scores)
+12:     out $\leftarrow$ attn @ V
+13: else:
+14:     # FASA pruning path
+15:     imp $\leftarrow$ mean\_over\_heads(Var\_over\_dh(K))
+16:     imp[:, 0] $\leftarrow$ 1e9                 CLS pinning
+17:     k $\leftarrow$ max(8, min(L, floor(r * L)))
+18:     S $\leftarrow$ sorted\_topk(imp, k)
+19:     K\_S $\leftarrow$ gather(K, S);  V\_S $\leftarrow$ gather(V, S)
+20:     scores $\leftarrow$ Q K\_S^T / sqrt(d\_h)
+21:     attn $\leftarrow$ softmax(scores)
+22:     out $\leftarrow$ attn @ V\_S
+23:
+24: if nested encoder:
+25:     return out
+26: else:
+27:     return out\_proj(out)
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Pruning Error}
+
+\textbf{Upper bound.} For any $Q$, the pruned attention differs from full attention by:
+
+\[
+\|\text{Attn}'(Q, K, V) - \text{Attn}(Q, K, V)\|\_2 \leq \|V\_{\bar{\mathcal{S}}}\|\_2 \cdot \max\_i \text{softmax}\_i
+\tag{4.8}
+\]
+
+where $\bar{\mathcal{S}}$ is the complement of $\mathcal{S}$. The error is 
+proportional to the \textbf{mass of pruned values}.
+
+\textbf{No formal bound} exists for FASA's variance-based selection. We provide 
+no theoretical guarantee that high-variance keys correspond to high-attention 
+keys.
+
+\subsubsection{CLS Pinning}
+
+The CLS token receives disproportionate attention in practice. Pinning it 
+avoids a catastrophic failure mode.
+
+\subsubsection{Causal Preservation}
+
+For causal decoders, the code explicitly avoids pruning, so causality is 
+preserved exactly. This is a \textbf{correctness guarantee}, not a heuristic.
+
+\subsubsection{Why the Decoder Path is a No-Op}
+
+The decoder path uses the \textbf{same standard full attention} as the baseline. 
+The only difference is that FASA adds LoRA adapters to the projections. 
+Hence GPT-2's accuracy is essentially unchanged.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{FASA pruning?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & (causal) \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & (causal) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.data
+is\_conv1d = "Conv1D" in cls\_name or c\_w.shape[0] \textless{} c\_w.shape[1]
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight.data
+# ... etc
+\end{lstlisting}
+
+\subsubsection{GQA Handling (Qwen)}
+
+For the K/V projections with $H_{kv} < H$:
+
+\begin{lstlisting}
+if src\_out == out\_d:
+    target\_w.data.copy\_(w\_oriented)
+elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
+    rep = src\_out // out\_d
+    target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+    rep = out\_d // src\_out
+    target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
+\end{lstlisting}
+
+This handles GQA pooling (mean) or expansion (repeat) as needed.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject FASA
+\begin{lstlisting}
+Input:  layer  , config, old\_attn
+Output: new attention in  
+
+1: new $\leftarrow$ MixAttentionMoSKA(config, old=old\_attn, fasa\_keep\_ratio=r)
+2: if copy\_weights fails: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
+5: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+6: elif   has .self\_attn:  .self\_attn $\leftarrow$ new
+7: elif   has .attn:  .attn $\leftarrow$ new
+8: return new
+\end{lstlisting}
+
+\subsection{Masking}
+
+For the pruned path, the padding mask is gathered:
+
+\begin{lstlisting}
+pruned\_mask = mask\_2d.gather(1, idx)
+\end{lstlisting}
+
+For the causal path, the padding mask is applied directly to the full 
+attention.
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+has\_out = any(hasattr(src, x) for x in ["dense", "out\_proj", "out\_lin", "c\_proj", "o\_proj"])
+is\_nested = cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+if hasattr(src, "self") and hasattr(src, "output"):
+    is\_nested = True
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("fasa")
+@ATTENTION\_REGISTRY.register("fasa\_attention")
+@ATTENTION\_REGISTRY.register("mixattention\_moska")
+class MixAttentionMoSKA(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Decoder Path is a No-Op}
+
+For GPT-2, FASA does \textbf{no pruning}. Users expecting speedup should be 
+aware.
+
+\subsubsection{Pruning Every Forward Pass}
+
+The importance score is recomputed every forward pass. This means the 
+selected $\mathcal{S}$ changes between calls on the same input if batch 
+composition changes. Not a bug, but worth documenting.
+
+\subsubsection{`attention\_mask` Fallback}
+
+\begin{lstlisting}
+mask = kwargs.get("mask", None)
+if attention\_mask is None and mask is not None:
+    attention\_mask = mask
+\end{lstlisting}
+
+Silent fallback. Not harmful but non-obvious.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of mixattention\_moska.}
+\label{fig:arch_mixattention-moska}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{FASA path} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & Bidirectional \\
+RoBERTa & 12 & 768 & 12 & 124.6M & Bidirectional \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal (no prune) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{FASA Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{fasa\_keep\_ratio} & 0.5 (default 0.5) \\
+\texttt{importance\_method} & 0.85 (\texttt{var}) \\
+\texttt{protect\_first\_token} & 0.85 (True) \\
+Min keep & 8 tokens \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params
+\item Peak VRAM
+\item Inference time
+\item \textbf{Effective sequence length} (kept tokens per layer)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_fasa.py \
+    --models distilbert,roberta,gpt2 \
+    --fasa\_keep\_ratio 0.5 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+\subsection{Ablations}
+
+\begin{itemize}
+\item Keep ratio: 0.25, 0.5, 0.75, 1.0
+\item Importance: \texttt{var} vs \texttt{l2}
+\item Protect first: on/off
+
+\end{itemize}
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{fasa} -- our method
+\item Prior modules: \texttt{cosformer}, \texttt{nha}, \texttt{a3}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
 
 \begin{table*}[t]
 \centering
@@ -281,12 +1022,13 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/mixattention_moska_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mixattention_moska}.}
+\includegraphics[width=0.85\linewidth]{figures/mixattention\_moska\_distilbert\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mixattention\_moska}.}
 \label{fig:results_mixattention_moska}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -385,8 +1127,8 @@ token is critical for classification.
 non-pruned branch:
 
 \begin{lstlisting}
-is_causal = bool(self.is_decoder and not is_cross and L > 1)
-if is_causal or is_cross:
+is\_causal = bool(self.is\_decoder and not is\_cross and L \textgreater{} 1)
+if is\_causal or is\_cross:
     # Standard attention
 \end{lstlisting}
 
@@ -487,6 +1229,7 @@ attention scores are needed to prune accurately.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -536,7 +1279,7 @@ Is the model bidirectional? -- No -- FASA gives no benefit
   |
   Yes
    
-Is L > 1024? -- No -- Overhead dominates
+Is L \textgreater{} 1024? -- No -- Overhead dominates
   |
   Yes
    
@@ -620,6 +1363,7 @@ keep ratio ($\ge$ 0.75).**
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -701,6 +1445,7 @@ improve accuracy.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -790,14 +1535,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -806,20 +1552,20 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_fasa.py \
+python run\_all\_4\_fasa.py \
     --models distilbert,roberta,gpt2 \
-    --fasa_keep_ratio 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --fasa\_keep\_ratio 0.5 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -829,37 +1575,37 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --models distilbert,roberta,gpt2
+python run\_all\_4\_fasa.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Keep Ratio Ablation}
 
 \begin{lstlisting}
 for r in 0.25 0.5 0.75 1.0; do
-    python run_all_4_fasa.py --fasa_keep_ratio $r --output_suffix k$r
+    python run\_all\_4\_fasa.py --fasa\_keep\_ratio $r --output_suffix k$r
 done
 \end{lstlisting}
 
 \subsubsection{Importance Method Ablation}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --importance_method var --output_suffix var
-python run_all_4_fasa.py --importance_method l2 --output_suffix l2
+python run\_all\_4\_fasa.py --importance\_method var --output\_suffix var
+python run\_all\_4\_fasa.py --importance\_method l2 --output\_suffix l2
 \end{lstlisting}
 
 \subsubsection{CLS Protection Ablation}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --protect_first_token true --output_suffix protect
-python run_all_4_fasa.py --protect_first_token false --output_suffix noprotect
+python run\_all\_4\_fasa.py --protect\_first\_token true --output\_suffix protect
+python run\_all\_4\_fasa.py --protect\_first\_token false --output\_suffix noprotect
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -884,7 +1630,7 @@ GPT-2 & 87.27\% $\pm$ 1\% & No-prune \\
 
 \begin{lstlisting}
 # Count actual kept tokens
-kept = int(L * fasa_keep_ratio)
+kept = int(L * fasa\_keep\_ratio)
 print(f"Expected kept tokens: {max(8, min(L, kept))}")
 \end{lstlisting}
 
@@ -894,15 +1640,15 @@ print(f"Expected kept tokens: {max(8, min(L, kept))}")
 # Index 0 should always be in the top-k
 imp = k.float().var(dim=-1).mean(dim=1)
 imp[:, 0] = 1e9
-_, idx = torch.topk(imp, keep, dim=-1)
+\_, idx = torch.topk(imp, keep, dim=-1)
 assert 0 in idx[0].tolist()
 \end{lstlisting}
 
 \subsubsection{Verify Decoder Skips Pruning}
 
 \begin{lstlisting}
-# For GPT-2, is_causal should be True
-assert model.is_decoder == True
+# For GPT-2, is\_causal should be True
+assert model.is\_decoder == True
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -925,6 +1671,7 @@ assert model.is_decoder == True
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1066,6 +1813,7 @@ assert model.is_decoder == True
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1074,14 +1822,14 @@ assert model.is_decoder == True
 For a key vector $k \in \mathbb{R}^{d_h}$:
 
 \[
-\text{Var}(k) = \frac{1}{d_h} \sum_{j=1}^{d_h} k_j^2 - \left(\frac{1}{d_h} \sum_{j=1}^{d_h} k_j\right)^2
+\text{Var}(k) = \frac{1}{d\_h} \sum\_{j=1}^{d\_h} k\_j^2 - \left(\frac{1}{d\_h} \sum\_{j=1}^{d\_h} k\_j\right)^2
 \tag{A.1}
 \]
 
 For per-head keys $K_{b,h,i,:}$, aggregate:
 
 \[
-\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \text{Var}(K_{b,h,i,:})
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}(K\_{b,h,i,:})
 \tag{A.2}
 \]
 
@@ -1090,7 +1838,7 @@ For per-head keys $K_{b,h,i,:}$, aggregate:
 Given scores $\text{imp} \in \mathbb{R}^{B \times L}$ and keep count $k$:
 
 \[
-\mathcal{S}_b = \text{argsort}_{k}(\text{imp}_{b,:}) \text{ sorted ascending}
+\mathcal{S}\_b = \text{argsort}\_{k}(\text{imp}\_{b,:}) \text{ sorted ascending}
 \tag{A.3}
 \]
 
@@ -1110,7 +1858,7 @@ ensures $0 \in \mathcal{S}_b$ for all batches.
 \subsection{A.4 Pruned Attention}
 
 \[
-\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{Q K_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{Q K\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
 \tag{A.5}
 \]
 
@@ -1119,7 +1867,7 @@ ensures $0 \in \mathcal{S}_b$ for all batches.
 \textbf{Claim.} For any query $q$, the difference between pruned and full attention is bounded by:
 
 \[
-\|\text{Attn}'(q) - \text{Attn}(q)\|_2 \leq \|V_{\bar{\mathcal{S}}}\|_\infty \cdot \left(1 + \max_i \sigma_i - \min_i \sigma_i\right)
+\|\text{Attn}'(q) - \text{Attn}(q)\|\_2 \leq \|V\_{\bar{\mathcal{S}}}\|\_\infty \cdot \left(1 + \max\_i \sigma\_i - \min\_i \sigma\_i\right)
 \tag{A.6}
 \]
 
@@ -1161,14 +1909,14 @@ dominate for small $L$.
 For causal decoders, the code chooses:
 
 \[
-\text{Attn}_\text{causal}' = \text{Attn}_\text{full} + \text{mask}
+\text{Attn}\_\text{causal}' = \text{Attn}\_\text{full} + \text{mask}
 \tag{A.7}
 \]
 
 No pruning occurs. This guarantees:
 
 \[
-\frac{\partial \text{Attn}_\text{causal}'_i}{\partial x_j} = 0 \text{ for } j > i
+\frac{\partial \text{Attn}\_\text{causal}'\_i}{\partial x\_j} = 0 \text{ for } j \textgreater{} i
 \tag{A.8}
 \]
 \begin{lstlisting}
@@ -1176,65 +1924,66 @@ No pruning occurs. This guarantees:
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The Pruning Function}
 
 \begin{lstlisting}
-def _fasa_prune(self, k, v, mask=None):
-    B, H, L, D_h = k.shape
-    if L <= 8:
+def \_fasa\_prune(self, k, v, mask=None):
+    B, H, L, D\_h = k.shape
+    if L \textless{}= 8:
         return k, v, mask, None
     
-    if self.importance_method == "l2":
+    if self.importance\_method == "l2":
         importance = torch.norm(k.float(), p=2, dim=-1).mean(dim=1)  # (B, L)
     else:
         importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
     
     if mask is not None:
-        mask_2d = get_token_valid_mask(mask, B, L, k.device)
-        importance = importance.masked_fill(~mask_2d, -10000.0)
+        mask\_2d = get\_token\_valid\_mask(mask, B, L, k.device)
+        importance = importance.masked\_fill(~mask\_2d, -10000.0)
     
-    if self.protect_first_token:
+    if self.protect\_first\_token:
         importance[:, 0] = 1e9
     
-    keep = max(8, min(L, int(L * self.fasa_keep_ratio)))
-    _, idx = torch.topk(importance, keep, dim=-1)
-    idx, _ = torch.sort(idx, dim=-1)
+    keep = max(8, min(L, int(L * self.fasa\_keep\_ratio)))
+    \_, idx = torch.topk(importance, keep, dim=-1)
+    idx, \_ = torch.sort(idx, dim=-1)
     
-    idx_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D_h)
-    k_pruned = k.gather(2, idx_exp)
-    v_pruned = v.gather(2, idx_exp)
+    idx\_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D\_h)
+    k\_pruned = k.gather(2, idx\_exp)
+    v\_pruned = v.gather(2, idx\_exp)
     
-    pruned_mask = None
+    pruned\_mask = None
     if mask is not None:
-        mask_2d = get_token_valid_mask(mask, B, L, k.device)
-        pruned_mask = mask_2d.gather(1, idx)
+        mask\_2d = get\_token\_valid\_mask(mask, B, L, k.device)
+        pruned\_mask = mask\_2d.gather(1, idx)
     
-    return k_pruned, v_pruned, pruned_mask, idx
+    return k\_pruned, v\_pruned, pruned\_mask, idx
 \end{lstlisting}
 
 \subsection{B.2 The Forward Path}
 
 \begin{lstlisting}
-is_causal = bool(self.is_decoder and not is_cross and L > 1)
+is\_causal = bool(self.is\_decoder and not is\_cross and L \textgreater{} 1)
 
-if is_causal or is_cross:
+if is\_causal or is\_cross:
     # Standard full attention -- no pruning
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-    if is_causal:
-        causal_mask = torch.triu(torch.full((L, L_kv), float("-inf"), ...), diagonal=1).unsqueeze(0).unsqueeze(0)
-        scores = scores + causal_mask
+    if is\_causal:
+        causal\_mask = torch.triu(torch.full((L, L\_kv), float("-inf"), ...), diagonal=1).unsqueeze(0).unsqueeze(0)
+        scores = scores + causal\_mask
     # ... apply mask, softmax, etc.
 else:
     # FASA pruning
-    k_p, v_p, p_mask, kept_idx = self._fasa_prune(k, v, eff_mask)
-    attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1)) * scale
-    if p_mask is not None:
-        attn_scores = attn_scores.masked_fill((p_mask == 0).unsqueeze(1).unsqueeze(2), -10000.0)
-    attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
-    out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    k\_p, v\_p, p\_mask, kept\_idx = self.\_fasa\_prune(k, v, eff\_mask)
+    attn\_scores = torch.matmul(q.float(), k\_p.float().transpose(-2, -1)) * scale
+    if p\_mask is not None:
+        attn\_scores = attn\_scores.masked\_fill((p\_mask == 0).unsqueeze(1).unsqueeze(2), -10000.0)
+    attn\_weights = F.softmax(attn\_scores, dim=-1).to(dtype)
+    out = torch.matmul(attn\_weights, v\_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all\_head\_size)
 \end{lstlisting}
 
 \subsection{B.3 Weight Transfer}
@@ -1242,15 +1991,15 @@ else:
 Standard four-architecture handling with additional GQA pooling logic:
 
 \begin{lstlisting}
-if proj_key in ("k", "v"):
-    if src_out == out_d:
-        target_w.data.copy_(w_oriented)
-    elif src_out > out_d and src_out % out_d == 0:
-        rep = src_out // out_d
-        target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
-    elif src_out < out_d and out_d % src_out == 0:
-        rep = out_d // src_out
-        target_w.data.copy_(w_oriented.repeat(rep, 1))
+if proj\_key in ("k", "v"):
+    if src\_out == out\_d:
+        target\_w.data.copy\_(w\_oriented)
+    elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
+        rep = src\_out // out\_d
+        target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+    elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+        rep = out\_d // src\_out
+        target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
     else:
         # Partial copy
         ...
@@ -1292,8 +2041,8 @@ accuracy collapse. This is a foot-gun.
 \subsubsection{Count Kept Tokens}
 
 \begin{lstlisting}
-with torch.no_grad():
-    _, _, _, idx = model._fasa_prune(k, v)
+with torch.no\_grad():
+    \_, \_, \_, idx = model.\_fasa\_prune(k, v)
     print(f"Kept: {idx.shape[-1]} / {k.shape[2]}")
 \end{lstlisting}
 
@@ -1312,9 +2061,9 @@ plt.show()
 \subsection{B.6 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("fasa")
-@ATTENTION_REGISTRY.register("fasa_attention")
-@ATTENTION_REGISTRY.register("mixattention_moska")
+@ATTENTION\_REGISTRY.register("fasa")
+@ATTENTION\_REGISTRY.register("fasa\_attention")
+@ATTENTION\_REGISTRY.register("mixattention\_moska")
 class MixAttentionMoSKA(BaseAttention):
     ...
 \end{lstlisting}
@@ -1328,6 +2077,7 @@ detection.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1452,10 +2202,10 @@ No protect & 0.85 & 0.85 \\
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_fasa.py --models distilbert,roberta,gpt2
+python run\_all\_4\_fasa.py --models distilbert,roberta,gpt2
 
 for r in 0.25 0.5 0.75 1.0; do
-    python run_all_4_fasa.py --fasa_keep_ratio $r --output_suffix k$r
+    python run\_all\_4\_fasa.py --fasa\_keep\_ratio $r --output_suffix k$r
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1463,6 +2213,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1612,6 +2363,7 @@ Fused gather (manual) & No improvement \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1664,9 +2416,10 @@ no-op is intended to enable such decision-making.
 
 ---
 
-##   `build.py` and `apply_vars.py`
+##   `build.py` and `apply\_vars.py`
 
 Same as previous templates.
 
 ---
 \end{lstlisting}
+

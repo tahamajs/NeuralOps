@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Dobi-SVD: Differentiable Low-Rank Factorization with Learnable Spectral Gating}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -14,8 +16,8 @@ is replaced with:
 
 \[
 W \approx U V, \qquad
-U \in \mathbb{R}^{d_\text{out} \times r}, \quad
-V \in \mathbb{R}^{r \times d_\text{in}}
+U \in \mathbb{R}^{d\_\text{out} \times r}, \quad
+V \in \mathbb{R}^{r \times d\_\text{in}}
 \tag{1.1}
 \]
 
@@ -129,6 +131,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -188,6 +191,935 @@ Dobi-SVD decomposes into rank components with gating.
 
 \subsection{Model Compression}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Rank selection} & \textbf{Differentiable?} & \textbf{Post-hoc pruning?} \\
+\midrule
+DistilBERT & -- (distillation) & -- & -- \\
+AWQ & -- (quantization) & -- & -- \\
+SparseGPT & -- (pruning) & -- & -- \\
+MinimalSVD & Energy &  &  \\
+SVD-LLM V2 & Energy &  &  \\
+MLA & Fixed latent &  &  \\
+AdaLoRA & Learned budget &  & Partial \\
+\textbf{Dobi-SVD} & \textbf{Learnable gates} & \textbf{ } & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+Dobi-SVD differs from prior work along three axes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{Dobi-SVD} \\
+\midrule
+\textbf{Rank representation} & Integer & Continuous gates \\
+\textbf{Differentiability} & No & Yes \\
+\textbf{Post-hoc pruning} & Retrain & Threshold gates \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike fixed or energy-selected rank, Dobi-SVD's rank 
+is \textbf{learned jointly with recovery}. After training, gates provide a 
+data-driven signal for which components to keep.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Truncated SVD}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+Truncated to rank $r$:
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
+\tag{3.2}
+\]
+
+Optimal in Frobenius norm by Eckart--Young.
+
+\textbf{Symmetric form.} Split $\Sigma^{1/2}$:
+
+\[
+W\_r = \underbrace{U\_{:, :r} \Sigma\_{:r, :r}^{1/2}}\_{U\_r} \cdot \underbrace{\Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top}\_{V\_r}
+\tag{3.3}
+\]
+
+Dobi-SVD uses this form.
+
+\subsection{Sigmoid Gating}
+
+The sigmoid function:
+
+\[
+\sigma(x) = \frac{1}{1 + e^{-x}}
+\tag{3.4}
+\]
+
+\begin{itemize}
+\item $\sigma(0) = 0.5$
+\item $\sigma(2.5) \approx 0.924$
+\item $\sigma(5) \approx 0.993$
+\item $\sigma(-5) \approx 0.007$
+
+\end{itemize}
+Dobi-SVD uses sigmoid to gate each rank component:
+
+\[
+\sigma(\alpha\_i) \in (0, 1)
+\tag{3.5}
+\]
+
+The gate controls the contribution of the $i$-th rank component to the 
+output.
+
+\subsection{Gate-Compensated Initialization}
+
+If we initialize $U, V$ from SVD and gates $\alpha = \alpha_\text{init}$, 
+the initial output is:
+
+\[
+y\_\text{init} = (x (V\_r \odot \sigma(\alpha\_\text{init}))^\top) U\_r^\top
+\tag{3.6}
+\]
+
+This differs from the SVD approximation by a factor of $\sigma(\alpha_\text{init})$ 
+in the $V$ factor. To make $y_\text{init}$ equal the SVD approximation, 
+we pre-scale $V$:
+
+\[
+V\_r \leftarrow \frac{V\_r}{\sigma(\alpha\_\text{init})}
+\tag{3.7}
+\]
+
+Then at step 0:
+
+\[
+y\_\text{init} = (x (V\_r / \sigma\_\text{init} \odot \sigma\_\text{init})^\top) U\_r^\top = (x V\_r^\top) U\_r^\top
+\tag{3.8}
+\]
+
+\textbf{This is exactly the SVD approximation.} The gating is a differentiable 
+refinement.
+
+\subsection{Multi-Head Self-Attention}
+
+Standard MHSA:
+
+\[
+\begin{aligned}
+Q &= X W\_Q, \quad K = X W\_K, \quad V = X W\_V \\
+\text{MHSA}(X) &= \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
+\end{aligned}
+\tag{3.9}
+\]
+
+Dobi-SVD factorizes $W_Q, W_K, W_V, W_O$ (when \texttt{target\_attention\_only = True}).
+
+\subsection{Grouped-Query Attention (GQA)}
+
+$H_{kv} < H$ KV heads. Repeated $H / H_{kv}$ times during forward.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable residuals:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\tag{3.10}
+\]
+
+with $B = 0$ at initialization. In Dobi-SVD, LoRA is applied to the 
+\textbf{wrapped layer}, not inside \texttt{DobiSVDLinearLayer}.
+
+\subsection{Conv1D in GPT-2}
+
+GPT-2 uses HuggingFace \texttt{Conv1D}, storing \texttt{(in, out)}:
+
+\begin{lstlisting}
+self.weight = nn.Parameter(torch.empty(nx, nf))
+\end{lstlisting}
+
+Dobi-SVD detects this and transposes before SVD.
+
+\subsection{Orthogonal Initialization}
+
+Dobi-SVD initializes $U, V$ orthogonally for numerical stability. For 
+FP16, initialization is done in FP32 and cast.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Dobi-SVD replaces each target linear layer with a **differentiable 
+factorized module**:
+
+\[
+y = (x (V \odot \sigma(\alpha))^\top) U^\top + b
+\tag{4.1}
+\]
+
+where:
+
+\begin{itemize}
+\item $U \in \mathbb{R}^{d_\text{out} \times r}$ -- left factor (frozen initially, initialized from SVD)
+\item $V \in \mathbb{R}^{r \times d_\text{in}}$ -- right factor (frozen, gate-compensated)
+\item $\alpha \in \mathbb{R}^r$ -- learnable gate logits (trainable)
+\item $b \in \mathbb{R}^{d_\text{out}}$ -- bias
+
+\end{itemize}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +----------------------------------------------+
+   |  Input weight W $\in$ R^{d\_out $\times$ d\_in}           |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  SVD: W = U $\Sigma$ V^T                             |
+   |  Rank r selected by energy threshold          |
+   |  U\_r = U[:, :r] $\Sigma$[:r]^1/2                     |
+   |  V\_r = $\Sigma$[:r]^1/2 V[:r, :]^T                   |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Gate compensation:                           |
+   |  V\_r $\leftarrow$ V\_r / $\sigma$($\alpha$\_init)                        |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Create DobiSVDLinearLayer:                   |
+   |  U $\leftarrow$ U\_r                                       |
+   |  V $\leftarrow$ V\_r                                       |
+   |  $\alpha$ $\leftarrow$ init\_gate\_val (learnable)                |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Recovery training:                            |
+   |  Train $\alpha$ and LoRA adapters                    |
+   +----------------------------------------------+
+\end{lstlisting}
+
+\subsection{The `DobiSVDLinearLayer`}
+
+\subsubsection{Module Structure}
+
+\begin{lstlisting}
+class DobiSVDLinearLayer(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True,
+                 init\_gate\_val=2.5, ...):
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
+        self.gate = nn.Parameter(torch.full((rank,), fill\_value=init\_gate\_val))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out\_features))
+\end{lstlisting}
+
+\subsubsection{Forward Pass}
+
+\begin{lstlisting}
+def forward(self, x):
+    g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
+    V\_gated = self.V * g                         # (rank, in\_features)
+    latent = F.linear(x, V\_gated)                # (..., rank)
+    out = F.linear(latent, self.U, self.bias)    # (..., out\_features)
+    return out
+\end{lstlisting}
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
+Dobi-SVD at rank $r$ & $r d_\text{in} + d_\text{out} r + r$ \\
+= & $r(d_\text{in} + d_\text{out} + 1)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example} for a $768 \times 768$ projection at $r = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+Dobi-SVD $r=128$ & 196,736 & 3.00$\times$ \\
+Dobi-SVD $r=64$ & 98,368 & 6.00$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Initialization Procedure}
+
+\subsubsection{Step 1: SVD}
+
+\[
+W = U \Sigma V^\top
+\tag{4.2}
+\]
+
+\subsubsection{Step 2: Truncate at rank $r$}
+
+\[
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
+\tag{4.3}
+\]
+
+\subsubsection{Step 3: Gate compensation}
+
+Let $\sigma_\text{init} = \sigma(\alpha_\text{init})$. Pre-scale $V_r$:
+
+\[
+V\_r \leftarrow V\_r / \sigma\_\text{init}
+\tag{4.4}
+\]
+
+This ensures the initial forward equals the SVD reconstruction.
+
+\subsubsection{Step 4: Store}
+
+\begin{lstlisting}
+layer.U.data.copy\_(U\_r)
+layer.V.data.copy\_(V\_r)
+layer.gate.data.fill\_(init\_gate\_val)
+\end{lstlisting}
+
+\subsection{Rank Selection}
+
+\subsubsection{Parameter Reduction Constraint}
+
+The rank must satisfy:
+
+\[
+r (d\_\text{in} + d\_\text{out} + 1) \textless{} d\_\text{in} d\_\text{out}
+\tag{4.5}
+\]
+
+For square matrices at $d = 768$:
+
+\[
+r \textless{} \frac{d^2}{2d + 1} \approx \frac{d}{2}
+\tag{4.6}
+\]
+
+Dobi-SVD uses an upper bound:
+
+\[
+r\_\text{max} = \max\!\left(1, \min\!\left(d\_\text{in} - 1, d\_\text{out} - 1, \left\lfloor \frac{d\_\text{in} d\_\text{out}}{d\_\text{in} + d\_\text{out}} \right\rfloor - 1, 32\right)\right)
+\tag{4.7}
+\]
+
+Default \texttt{RANK\_CAP = 128}.
+
+\subsubsection{Initial Rank}
+
+If \texttt{rank} is not specified, use:
+
+\[
+r\_\text{init} = \max\!\left(1, \text{round}(2.1$\times$ \cdot \min(d\_\text{in}, d\_\text{out}))\right)
+\tag{4.8}
+\]
+
+Default \texttt{INIT\_RANK\_RATIO = 0.5}.
+
+\subsubsection{Adaptive Retry}
+
+If reconstruction error exceeds \texttt{max\_error}, Dobi-SVD retries with:
+
+\[
+r\_{k+1} = \min(1.5 \cdot r\_k, r\_\text{max})
+\tag{4.9}
+\]
+
+up to \texttt{max\_retries} (default 2).
+
+\subsection{Training}
+
+\subsubsection{Trainable Parameters}
+
+\begin{itemize}
+\item \textbf{Gates} $\alpha \in \mathbb{R}^r$ (one scalar per rank component)
+\item \textbf{LoRA adapters} (attached to the wrapped layer)
+\item \textbf{Non-target layers} are frozen
+
+\end{itemize}
+\subsubsection{Loss}
+
+Standard cross-entropy on the downstream task:
+
+\[
+\mathcal{L} = -\frac{1}{N} \sum\_i \log p\_\theta(y\_i \mid x\_i)
+\tag{4.10}
+\]
+
+Gradient flows through $\sigma(\alpha)$ to the gate logits.
+
+\subsection{Post-Hoc Rank Pruning}
+
+After training, gates are inspected. Let:
+
+\[
+r\_\text{eff} = \left|\{i : \sigma(\alpha\_i) \textgreater{} \tau\_g\}\right|
+\tag{4.11}
+\]
+
+for a threshold $\tau_g$ (e.g., 0.5). Components with $\sigma(\alpha_i) \leq \tau_g$ 
+can be \textbf{removed} without retraining, at the cost of a small accuracy drop.
+
+\textbf{Algorithm 2:} Post-hoc rank pruning
+\begin{lstlisting}
+Input:  trained DobiSVDLinearLayer, threshold $\tau$\_g
+Output: pruned layer with rank r\_eff
+
+1:  gates $\leftarrow$ sigmoid(layer.gate)
+2:  keep\_idx $\leftarrow$ where(gates \textgreater{} $\tau$\_g)
+3:  r\_eff $\leftarrow$ len(keep\_idx)
+4:  V\_pruned $\leftarrow$ layer.V[keep\_idx, :]
+5:  U\_pruned $\leftarrow$ layer.U[:, keep\_idx]
+6:  gate\_pruned $\leftarrow$ layer.gate[keep\_idx]
+7:  return DobiSVDLinearLayer with (U\_pruned, V\_pruned, gate\_pruned)
+\end{lstlisting}
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} Dobi-SVD compression
+\begin{lstlisting}
+Input:  model M, rank r, gate\_init $\alpha$\_0, threshold $\tau$
+Output: compressed model M'
+
+1:  for each target layer   in M do
+2:      W $\leftarrow$ weight( )
+3:      U, $\Sigma$, V^T $\leftarrow$ svd(W)
+4:      U\_r $\leftarrow$ U[:, :r]   $\Sigma$[:r]^1/2
+5:      V\_r $\leftarrow$ $\Sigma$[:r]^1/2   V^T[:r, :]
+6:      V\_r $\leftarrow$ V\_r / $\sigma$($\alpha$\_0)               Gate compensation
+7:
+8:      # Reconstruction validation
+9:      W\_recon $\leftarrow$ U\_r   (V\_r   $\sigma$($\alpha$\_0))
+10:     err $\leftarrow$  W - W\_recon \_F /  W \_F
+11:     if err \textgreater{} $\tau$:
+12:         if fallback: skip  
+13:         else: escalate r and retry
+14:
+15:     # Replace
+16:     layer\_new $\leftarrow$ DobiSVDLinearLayer(U\_r, V\_r, gate=$\alpha$\_0)
+17:     replace( , layer\_new)
+18: end for
+19:
+20: # Recovery training (external)
+21: train\_gates\_and\_lora(M)
+22:
+23: # Post-hoc pruning (optional)
+24: for each compressed layer:
+25:     prune\_gates\_below(layer, $\tau$\_g)
+26: return M
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Extraction & $\mathcal{O}(N_l d^2)$ & $\mathcal{O}(d^2)$ \\
+SVD per layer & $\mathcal{O}(d^3)$ & $\mathcal{O}(d^2)$ \\
+Reconstruction & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
+Total & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Lossless Initialization}
+
+\textbf{Proposition.} If gates are initialized at $\alpha_0$ and $V$ is 
+pre-scaled by $1/\sigma(\alpha_0)$, then the initial forward pass equals 
+the truncated SVD:
+
+\[
+y\_0 = (x (V\_r / \sigma(\alpha\_0) \odot \sigma(\alpha\_0))^\top) U\_r^\top = (x V\_r^\top) U\_r^\top
+\tag{4.12}
+\]
+
+$\square$
+
+\subsubsection{Gradient of Gate}
+
+The gradient of the loss with respect to $\alpha_i$:
+
+\[
+\frac{\partial \mathcal{L}}{\partial \alpha\_i}
+= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial \sigma(\alpha\_i)} \cdot \sigma(\alpha\_i)(1 - \sigma(\alpha\_i))
+\tag{4.13}
+\]
+
+The $\sigma(1-\sigma)$ factor provides a natural gradient landscape 
+that can push gates toward 0 (pruning) or 1 (retention).
+
+\subsubsection{Rank Reduction Bound}
+
+If after training we prune all gates with $\sigma(\alpha_i) \leq \tau_g$, the 
+effective rank is:
+
+\[
+r\_\text{eff} = \#\{i : \sigma(\alpha\_i) \textgreater{} \tau\_g\}
+\tag{4.14}
+\]
+
+and the parameter count is:
+
+\[
+|\theta\_\text{eff}| = r\_\text{eff}(d\_\text{in} + d\_\text{out} + 1)
+\tag{4.15}
+\]
+
+\subsection{Summary}
+
+Dobi-SVD:
+\begin{enumerate}
+\item Factorizes each target layer with SVD.
+\item Adds a learnable gate per rank component.
+\item Pre-scales $V$ for lossless initialization.
+\item Trains gates jointly with LoRA recovery.
+\item Optionally prunes gates post-hoc.
+\item Achieves \textbf{real parameter reduction} with \textbf{learnable rank}.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Target Module Selection}
+
+Dobi-SVD with \texttt{target\_attention\_only = True} (default) targets only 
+attention projections:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Pattern} & \textbf{Examples} \\
+\midrule
+\texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj} & Qwen \\
+\texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin} & DistilBERT \\
+\texttt{c\_attn}, \texttt{c\_proj} & GPT-2 \\
+\texttt{query}, \texttt{key}, \texttt{value} & RoBERTa \\
+Anything containing \texttt{attn} or \texttt{attention} & Any \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With \texttt{target\_attention\_only = False}, all compressible layers are targeted 
+(including FFN). Non-target layers are frozen.
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+All four are targeted. Direct SVD, no special handling.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query, key, value
++-- output
+    +-- dense
+\end{lstlisting}
+
+The \texttt{query, key, value} are targeted. \texttt{output.dense} may be targeted if 
+\texttt{target\_attention\_only = False}.
+
+Nested encoder detection is \textbf{not} required because Dobi-SVD operates on 
+\textbf{individual linear layers}, not on the attention module as a whole. It 
+simply replaces \texttt{query} $\to$ \texttt{DobiSVDLinearLayer(query)}.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Conv1D handling:} Dobi-SVD detects Conv1D by checking:
+
+\begin{lstlisting}
+is\_conv1d = "conv1d" in cls\_name or hasattr(target\_mod, "nf")
+\end{lstlisting}
+
+and transposes weights before SVD. The output shape is preserved 
+(Conv1D stores \texttt{(in, out)}; Dobi-SVD expects \texttt{(out, in)}).
+
+\textbf{Attention-only filtering:} \texttt{c\_attn} and \texttt{c\_proj} are in the \texttt{\_ATTN\_NAMES} 
+set, so they are targeted.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+Each is targeted individually. GQA is handled at the \textbf{attention level}, 
+not by Dobi-SVD. The compressor just factorizes the linear layers.
+
+\subsection{LoRALinear Wrapping}
+
+When a target layer is inside a \texttt{LoRALinear} wrapper, Dobi-SVD preserves 
+the wrapper:
+
+\begin{lstlisting}
+if hasattr(module, "base\_layer"):
+    module.base\_layer = new\_layer
+elif hasattr(module, "linear") and hasattr(module, "lora\_A"):
+    module.linear = new\_layer
+else:
+    replace\_module(self.model, name, new\_layer)
+\end{lstlisting}
+
+After replacement, LoRA parameters remain trainable:
+
+\begin{lstlisting}
+for p\_name, p in module.named\_parameters():
+    if any(t in p\_name.lower() for t in ("lora\_a", "lora\_b", "adapter")):
+        p.requires\_grad = True
+\end{lstlisting}
+
+\subsection{Injection Hook}
+
+Dobi-SVD uses a \textbf{compressor-level API} (not an attention-level one):
+
+\begin{lstlisting}
+def dobi\_factory(model, comp\_config, **kwargs):
+    compressor = DobiSVDCompressor(model, ...)
+    compressed\_model, stats = compressor.compress()
+    return compressed\_model
+
+@COMPRESSOR\_REGISTRY.register("inject\_dobi")
+def inject\_dobi(model=None, layer=None, **kwargs):
+    target = layer if layer is not None else model
+    try:
+        return dobi\_factory(target, **kwargs)
+    except Exception as e:
+        logger.error("inject\_dobi failed: \%s", e)
+        return None
+\end{lstlisting}
+
+\textbf{Note.} Dobi-SVD works on the \textbf{whole model} or on a \textbf{single layer}. 
+For whole-model, it traverses \texttt{named\_modules()}.
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing bias info & Shape check & Infer from weight \\
+Conv1D orientation & \texttt{hasattr(target, "nf")} & Transpose \\
+Reconstruction error high & Frobenius check & Retry, then fallback \\
+Near-zero Frobenius & Norm check & Skip layer \\
+SVD failure & Try/except & Skip layer \\
+LoRA wrapper & \texttt{hasattr(module, "base\_layer")} & Preserve wrapper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@COMPRESSOR\_REGISTRY.register("dobi")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd")
+@COMPRESSOR\_REGISTRY.register("dobi\_compressor")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd\_compressor")
+@COMPRESSOR\_REGISTRY.register("dobi\_factory")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd\_factory")
+def dobi\_factory(model, comp\_config, **kwargs):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery Pipeline}
+
+Dobi-SVD integrates cleanly with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item \textbf{Compress} target layers $\to$ \texttt{DobiSVDLinearLayer} with gates.
+\item \textbf{Gates} are trainable, LoRA adapters (if wrapped) are trainable.
+\item \textbf{Recovery fine-tuning} trains gates + LoRA.
+\item \textbf{Post-hoc pruning} (optional) removes near-zero gates.
+\item \textbf{Evaluation} uses the compressed model.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of dobi\_svd.}
+\label{fig:arch_dobi-svd}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal Conv1D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: \textbf{50.92\%}.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+Rank $r$ & 32 & Nominal rank \\
+\texttt{init\_rank\_ratio} & 2.1$\times$ & When \texttt{rank=None} \\
+\texttt{init\_gate\_val} & 0.5 & Sigmoid init $\approx$ 1.0 \\
+\texttt{max\_error} & 0.024 & Frobenius threshold \\
+\texttt{max\_retries} & 2 & Rank escalation \\
+\texttt{fallback\_to\_original} & True & Safe fallback \\
+\texttt{target\_attention\_only} & True & Only attention \\
+Rank cap & 128 & Maximum rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+Trainable & Gates + LoRA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Nominal rank $r$
+\item \textbf{Effective rank} $r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}$
+\item \textbf{Effective parameter ratio} (using $r_\text{eff}$)
+\item Reconstruction error
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Peak inference VRAM
+\item Inference time
+\item Total parameters
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_dobi.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --init\_gate\_val 0.5 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 minutes.
+
+\subsection{Seeds}
+
+All experiments use seed 42.
+
+\subsection{Baselines}
+
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed model.
+\item \textbf{\texttt{dobi}:} Our method with learning gates.
+\item \textbf{\texttt{dobi\_pruned}:} Dobi with post-hoc gate pruning at $\tau$\_g=0.5.
+\item \textbf{Companion methods:} \texttt{minimal\_svd}, \texttt{svd\_llm\_v2}, \texttt{mla}.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -200,7 +1132,7 @@ DistilBERT & \textbf{Dobi Svd} & \textbf{90.94\%} & +0.00\% & PASS & 0.9125 & 0 
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Dobi Svd} & \textbf{89.56\%} & -1.04\% & PASS & 0.9043 & 73 & \textbf{1.00$\times$} & 333.7 MB & 62.8 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Dobi Svd} & \textbf{49.54\%} & +0.00\% & PASS_LOW & 0.2903 & 0 & \textbf{1.00$\times$} & 389.6 MB & 47.6 & -- \\
+GPT-2 & \textbf{Dobi Svd} & \textbf{49.54\%} & +0.00\% & PASS\_LOW & 0.2903 & 0 & \textbf{1.00$\times$} & 389.6 MB & 47.6 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -425,12 +1357,13 @@ GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 & 0.85\% \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/dobi_svd_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{dobi_svd}.}
+\includegraphics[width=0.85\linewidth]{figures/dobi\_svd\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{dobi\_svd}.}
 \label{fig:results_dobi_svd}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -631,6 +1564,7 @@ High reconstruction error & 0.024 & Rank too small \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -666,7 +1600,7 @@ yields \textbf{0.85\%} additional rank reduction without retraining.
 \begin{itemize}
 \item \textbf{When rank is known} -- MinimalSVD is simpler
 \item \textbf{When gates cannot be trained} -- need recovery steps
-\item \textbf{Extremely small models} (<10M params)
+\item \textbf{Extremely small models} (\textless{}10M params)
 
 \end{itemize}
 \subsection{Decision Flowchart}
@@ -766,6 +1700,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -788,8 +1723,8 @@ Only SST-2 is evaluated. Dobi-SVD may behave differently on:
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B params & Not tested \\
+\textgreater{}24 layers & Not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -866,6 +1801,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -948,14 +1884,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -981,13 +1918,13 @@ numpy & 1.0.0 \\
 \subsection{Running Dobi-SVD}
 
 \begin{lstlisting}
-python run_all_4_dobi.py \
+python run\_all\_4\_dobi.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
-    --init_gate_val 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --init\_gate\_val 0.5 \
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes.
@@ -995,44 +1932,44 @@ python run_all_4_dobi.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_dobi/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --output\_dir results/unified\_dobi/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,dobi \
     --rank 32 \
-    --init_gate_val 0.5
+    --init\_gate\_val 0.5
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_dobi.py --models distilbert,roberta,gpt2
+python run\_all\_4\_dobi.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Rank ablation)}
 \begin{lstlisting}
 for r in 64 128 192 256; do
-    python run_all_4_dobi.py --rank $r --output_suffix r$r
+    python run\_all\_4\_dobi.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (Init gate ablation)}
 \begin{lstlisting}
 for g in 1.0 2.5 4.0 5.0; do
-    python run_all_4_dobi.py --init_gate_val $g --output_suffix g$g
+    python run\_all\_4\_dobi.py --init\_gate\_val $g --output_suffix g$g
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.8 (Pruning threshold)}
 \begin{lstlisting}
-python post_hoc_prune.py --tau 0.1 --output_suffix tau1
-python post_hoc_prune.py --tau 0.3 --output_suffix tau3
-python post_hoc_prune.py --tau 0.5 --output_suffix tau5
-python post_hoc_prune.py --tau 0.7 --output_suffix tau7
+python post\_hoc\_prune.py --tau 0.1 --output\_suffix tau1
+python post\_hoc\_prune.py --tau 0.3 --output\_suffix tau3
+python post\_hoc\_prune.py --tau 0.5 --output\_suffix tau5
+python post\_hoc\_prune.py --tau 0.7 --output\_suffix tau7
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -1041,7 +1978,7 @@ python post_hoc_prune.py --tau 0.7 --output_suffix tau7
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1064,10 +2001,10 @@ GPT-2 & 58.14\% $\pm$ 1\% & 0.85 \\
 \subsection{Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-dobi",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-dobi",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1095,6 +2032,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1241,6 +2179,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1249,7 +2188,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \textbf{Theorem.} For $W \in \mathbb{R}^{m \times n}$ and $r \leq \min(m, n)$:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r^* = \arg\min\_{\text{rank}(W\_r) \leq r} \|W - W\_r\|\_F = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{A.1}
 \]
 
@@ -1261,7 +2200,7 @@ $\square$
 initialized to $\alpha_0$, then the gate-compensated forward equals the SVD:
 
 \[
-(x (V_r / \sigma(\alpha_0) \odot \sigma(\alpha_0))^\top) U_r^\top = (x V_r^\top) U_r^\top
+(x (V\_r / \sigma(\alpha\_0) \odot \sigma(\alpha\_0))^\top) U\_r^\top = (x V\_r^\top) U\_r^\top
 \tag{A.2}
 \]
 
@@ -1272,8 +2211,8 @@ initialized to $\alpha_0$, then the gate-compensated forward equals the SVD:
 Let $y = (x (V \odot g)^\top) U^\top$ where $g = \sigma(\alpha)$. Then:
 
 \[
-\frac{\partial \mathcal{L}}{\partial \alpha_i}
-= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial g_i} \cdot \sigma(\alpha_i)(1 - \sigma(\alpha_i))
+\frac{\partial \mathcal{L}}{\partial \alpha\_i}
+= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial g\_i} \cdot \sigma(\alpha\_i)(1 - \sigma(\alpha\_i))
 \tag{A.3}
 \]
 
@@ -1285,7 +2224,7 @@ natural gradient landscape for pruning.
 Let $\tau_g$ be the pruning threshold. The effective rank is:
 
 \[
-r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}
+r\_\text{eff} = \#\{i : \sigma(\alpha\_i) \textgreater{} \tau\_g\}
 \tag{A.4}
 \]
 
@@ -1310,7 +2249,7 @@ Without bias & $r(d_\text{in} + d_\text{out} + 1)$ \\
 \textbf{Reduction factor:}
 
 \[
-\rho = \frac{d_\text{in} d_\text{out}}{r(d_\text{in} + d_\text{out} + 1)}
+\rho = \frac{d\_\text{in} d\_\text{out}}{r(d\_\text{in} + d\_\text{out} + 1)}
 \tag{A.5}
 \]
 
@@ -1319,14 +2258,14 @@ Without bias & $r(d_\text{in} + d_\text{out} + 1)$ \\
 Requiring $\rho > 1$:
 
 \[
-r < \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out} + 1}
+r \textless{} \frac{d\_\text{in} d\_\text{out}}{d\_\text{in} + d\_\text{out} + 1}
 \tag{A.6}
 \]
 
 Dobi-SVD enforces this via \texttt{max\_reduction\_r}:
 
 \[
-r_\text{max} = \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1
+r\_\text{max} = \left\lfloor \frac{d\_\text{in} d\_\text{out}}{d\_\text{in} + d\_\text{out}} \right\rfloor - 1
 \tag{A.7}
 \]
 
@@ -1353,14 +2292,14 @@ $1/\sigma \approx 1.0$, well-conditioned.
 After initialization, the reconstruction error is:
 
 \[
-\text{err}_0 = \frac{\|W - U_r V_r\|_F}{\|W\|_F}
+\text{err}\_0 = \frac{\|W - U\_r V\_r\|\_F}{\|W\|\_F}
 \tag{A.8}
 \]
 
 After training with gates $\alpha$:
 
 \[
-\text{err}_t = \frac{\|W - U_r (V_r \odot \sigma(\alpha))\|_F}{\|W\|_F}
+\text{err}\_t = \frac{\|W - U\_r (V\_r \odot \sigma(\alpha))\|\_F}{\|W\|\_F}
 \tag{A.9}
 \]
 
@@ -1370,6 +2309,7 @@ We expect $\text{err}_t \geq \text{err}_0$ due to gate drift.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1377,29 +2317,29 @@ We expect $\text{err}_t \geq \text{err}_0$ due to gate drift.
 
 \begin{lstlisting}
 class DobiSVDLinearLayer(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True,
-                 init_gate_val=2.5, dtype=torch.float32, device=None):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = max(1, min(rank, in_features, out_features))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True,
+                 init\_gate\_val=2.5, dtype=torch.float32, device=None):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = max(1, min(rank, in\_features, out\_features))
         
-        self.V = nn.Parameter(torch.empty(self.rank, in_features, ...))
-        self.U = nn.Parameter(torch.empty(out_features, self.rank, ...))
-        self.gate = nn.Parameter(torch.full((self.rank,), init_gate_val, ...))
+        self.V = nn.Parameter(torch.empty(self.rank, in\_features, ...))
+        self.U = nn.Parameter(torch.empty(out\_features, self.rank, ...))
+        self.gate = nn.Parameter(torch.full((self.rank,), init\_gate\_val, ...))
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, ...))
+            self.bias = nn.Parameter(torch.empty(out\_features, ...))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
-        if x.shape[-1] != self.in_features:
+        if x.shape[-1] != self.in\_features:
             # Pad or truncate
             ...
         g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
-        V_gated = self.V * g
-        latent = F.linear(x, V_gated)
+        V\_gated = self.V * g
+        latent = F.linear(x, V\_gated)
         out = F.linear(latent, self.U, self.bias)
         return out
 \end{lstlisting}
@@ -1407,26 +2347,26 @@ class DobiSVDLinearLayer(nn.Module):
 \subsection{B.2 Initialization with Gate Compensation}
 
 \begin{lstlisting}
-# In compress_linear:
-init_gate_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init_gate_val)))
+# In compress\_linear:
+init\_gate\_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init\_gate\_val)))
 
-U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
+U\_r = (U[:, :r] * sqrt\_S.unsqueeze(0)).to(dtype=dtype, device=device)
+V\_r = (sqrt\_S.unsqueeze(1) * Vt[:r, :] * init\_gate\_scale).to(dtype=dtype, device=device)
 
-dobi_layer = DobiSVDLinearLayer(
-    in_features=in_f, out_features=out_f, rank=r,
-    bias=target_mod.bias is not None,
-    init_gate_val=self.init_gate_val,
+dobi\_layer = DobiSVDLinearLayer(
+    in\_features=in\_f, out\_features=out\_f, rank=r,
+    bias=target\_mod.bias is not None,
+    init\_gate\_val=self.init\_gate\_val,
     dtype=dtype, device=device,
 )
-dobi_layer.set_low_rank_factors(U_r, V_r)
+dobi\_layer.set\_low\_rank\_factors(U\_r, V\_r)
 \end{lstlisting}
 
 \subsection{B.3 Reconstruction Validation}
 
 \begin{lstlisting}
-W_recon = dobi_layer.weight.float()   # This uses sigmoid(gate) internally
-err = float(torch.norm(W - W_recon, p="fro").item() / norm_w)
+W\_recon = dobi\_layer.weight.float()   # This uses sigmoid(gate) internally
+err = float(torch.norm(W - W\_recon, p="fro").item() / norm\_w)
 \end{lstlisting}
 
 The \texttt{.weight} property computes:
@@ -1443,51 +2383,51 @@ def weight(self):
 \begin{lstlisting}
 class DobiSVDCompressor(BaseCompressor):
     def compress(self):
-        for name, module in target_layers:
-            new_layer, err, r = self.compress_linear(module)
+        for name, module in target\_layers:
+            new\_layer, err, r = self.compress\_linear(module)
             
-            if new_layer is None or err > self.max_error:
-                if self.fallback_to_original:
-                    self.fallback_layers.append(name)
+            if new\_layer is None or err \textgreater{} self.max\_error:
+                if self.fallback\_to\_original:
+                    self.fallback\_layers.append(name)
                     for p in module.parameters():
-                        p.requires_grad = False
+                        p.requires\_grad = False
                     continue
             
             # Replace
-            if hasattr(module, "base_layer"):
-                module.base_layer = new_layer
-            elif hasattr(module, "linear") and hasattr(module, "lora_A"):
-                module.linear = new_layer
+            if hasattr(module, "base\_layer"):
+                module.base\_layer = new\_layer
+            elif hasattr(module, "linear") and hasattr(module, "lora\_A"):
+                module.linear = new\_layer
             else:
-                replace_module(self.model, name, new_layer)
+                replace\_module(self.model, name, new\_layer)
 \end{lstlisting}
 
 \subsection{B.5 Registry}
 
 \begin{lstlisting}
-@COMPRESSOR_REGISTRY.register("dobi")
-@COMPRESSOR_REGISTRY.register("dobi_svd")
-@COMPRESSOR_REGISTRY.register("dobi_compressor")
-def dobi_factory(model, comp_config, **kwargs):
+@COMPRESSOR\_REGISTRY.register("dobi")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd")
+@COMPRESSOR\_REGISTRY.register("dobi\_compressor")
+def dobi\_factory(model, comp\_config, **kwargs):
     ...
 \end{lstlisting}
 
 \subsection{B.6 Post-Hoc Pruning Script}
 
 \begin{lstlisting}
-def prune_gates(model, tau=0.5):
-    for name, module in model.named_modules():
+def prune\_gates(model, tau=0.5):
+    for name, module in model.named\_modules():
         if isinstance(module, DobiSVDLinearLayer):
             g = torch.sigmoid(module.gate)
-            keep = g > tau
-            r_eff = keep.sum().item()
+            keep = g \textgreater{} tau
+            r\_eff = keep.sum().item()
             
-            if r_eff < module.rank:
+            if r\_eff \textless{} module.rank:
                 # Physically prune
                 module.V.data = module.V.data[keep, :]
                 module.U.data = module.U.data[:, keep]
                 module.gate.data = module.gate.data[keep]
-                module.rank = r_eff
+                module.rank = r\_eff
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -1511,9 +2451,9 @@ Default $\alpha_0 = 2.5$ is a good balance.
 \subsubsection{B.7.3 Conv1D Orientation}
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(target_mod, "nf"):
+if "conv1d" in cls\_name or hasattr(target\_mod, "nf"):
     # Conv1D stores (in, out); need (out, in)
-    W = raw_w.t().float()
+    W = raw\_w.t().float()
 \end{lstlisting}
 
 \subsubsection{B.7.4 Missing LoRA Preservation}
@@ -1521,12 +2461,12 @@ if "conv1d" in cls_name or hasattr(target_mod, "nf"):
 When a layer is wrapped in \texttt{LoRALinear}:
 
 \begin{lstlisting}
-if hasattr(module, "base_layer"):
-    module.base_layer = new_layer   # Preserve wrapper
+if hasattr(module, "base\_layer"):
+    module.base\_layer = new\_layer   # Preserve wrapper
     # LoRA stays trainable
-    for p_name, p in module.named_parameters():
-        if "lora_" in p_name.lower():
-            p.requires_grad = True
+    for p\_name, p in module.named\_parameters():
+        if "lora\_" in p\_name.lower():
+            p.requires\_grad = True
 \end{lstlisting}
 
 \subsection{B.8 Gate Dynamics Monitoring}
@@ -1534,7 +2474,7 @@ if hasattr(module, "base_layer"):
 During training, monitor gate statistics:
 
 \begin{lstlisting}
-for name, module in model.named_modules():
+for name, module in model.named\_modules():
     if isinstance(module, DobiSVDLinearLayer):
         gates = torch.sigmoid(module.gate)
         print(f"{name}: mean={gates.mean():.3f} min={gates.min():.3f}")
@@ -1545,9 +2485,9 @@ for name, module in model.named_modules():
 When \texttt{fallback\_to\_original = True} and error exceeds threshold:
 
 \begin{lstlisting}
-self.fallback_layers.append(name)
+self.fallback\_layers.append(name)
 for p in module.parameters():
-    p.requires_grad = False   # Freeze the original layer
+    p.requires\_grad = False   # Freeze the original layer
 \end{lstlisting}
 
 This ensures recovery training does not touch fallback layers.
@@ -1559,6 +2499,7 @@ This ensures recovery training does not touch fallback layers.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1639,7 +2580,7 @@ Compressed layers & 0.85 \\
 \small
 \begin{tabular}{llllll}
 \toprule
-\textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% < 0.3} & \textbf{\% > 0.9} \\
+\textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% \textless{} 0.3} & \textbf{\% \textgreater{} 0.9} \\
 \midrule
 0 & q\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
 0 & k\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
@@ -1752,14 +2693,14 @@ Step  Loss  Mean gate
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": D_PARAMS_FULL,
-    "effective_ratio": 50\%,
-    "accuracy_pct": 86.4,
+    "params\_before": 66955010,
+    "params\_after": D\_PARAMS\_FULL,
+    "effective\_ratio": 50\%,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "nominal_rank": 32,
-    "effective_rank": 32,
-    "mean_gate": 0.88
+    "nominal\_rank": 32,
+    "effective\_rank": 32,
+    "mean\_gate": 0.88
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1770,6 +2711,7 @@ Step  Loss  Mean gate
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1874,7 +2816,7 @@ empirically, no benefit from making it learnable.
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
 Orthogonal init for U/V & Slow convergence & No change \\
-LayerNorm recalibration & Distribution shift & <0.3\% gain \\
+LayerNorm recalibration & Distribution shift & \textless{}0.3\% gain \\
 Separate LR for gates & Training stability & No change \\
 Adaptive gate bias & Convergence & No change \\
 \bottomrule
@@ -1930,6 +2872,7 @@ MLA & 0.85 & 2.1$\times$ &  \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1995,3 +2938,4 @@ enable more aggressive compression that may hide systematic biases.
 
 ---
 \end{lstlisting}
+

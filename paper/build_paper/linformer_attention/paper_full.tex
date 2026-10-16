@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Linformer Attention: Production-Hardened Low-Rank Sequence Projection for Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -10,7 +12,7 @@
 Transformer self-attention has quadratic complexity in sequence length $L$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V, 
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V, 
 \quad QK^\top \in \mathbb{R}^{L \times L}
 \tag{1.1}
 \]
@@ -25,14 +27,14 @@ exploit this by projecting $K$ and $V$ to a fixed dimension $k \ll L$ via
 learned matrices $E, F \in \mathbb{R}^{k \times L}$:
 
 \[
-\tilde{K} = E K, \quad \tilde{V} = F V, \quad \tilde{K}, \tilde{V} \in \mathbb{R}^{k \times d_h}
+\tilde{K} = E K, \quad \tilde{V} = F V, \quad \tilde{K}, \tilde{V} \in \mathbb{R}^{k \times d\_h}
 \tag{1.2}
 \]
 
 Attention then becomes $\mathcal{O}(L \cdot k)$:
 
 \[
-\text{Attn}_\text{Lin}(Q, K, V) = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d_h}}\right) \tilde{V}
+\text{Attn}\_\text{Lin}(Q, K, V) = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d\_h}}\right) \tilde{V}
 \tag{1.3}
 \]
 
@@ -44,8 +46,8 @@ Given a pretrained transformer $\mathcal{M}$ and a target low-rank dimension
 $k$, we seek an implementation of Linformer such that:
 
 \[
-\text{Cost}(\mathcal{A}_\text{Lin}) = \mathcal{O}(L \cdot k), \qquad
-\mathcal{A}_\text{Lin} \approx \mathcal{A}
+\text{Cost}(\mathcal{A}\_\text{Lin}) = \mathcal{O}(L \cdot k), \qquad
+\mathcal{A}\_\text{Lin} \approx \mathcal{A}
 \tag{1.4}
 \]
 
@@ -70,7 +72,7 @@ We present a production-hardened Linformer with three key contributions:
 We initialize $E$ and $F$ as identity-in-first-block:
 
 \[
-E_{ij} = \begin{cases} 1 & i = j, i < \min(k, L_\text{max}) \\ \sim \mathcal{N}(0, 0.02^2) & \text{otherwise} \end{cases}
+E\_{ij} = \begin{cases} 1 & i = j, i \textless{} \min(k, L\_\text{max}) \\ \sim \mathcal{N}(0, 0.02^2) & \text{otherwise} \end{cases}
 \tag{1.5}
 \]
 
@@ -95,7 +97,7 @@ information, breaking causality. We detect this case and fall back to
 \textbf{exact dense causal attention} when $L > k$:
 
 \[
-\text{if } \text{is\_decoder} \text{ and } L > k: \text{ use dense causal}
+\text{if } \text{is\_decoder} \text{ and } L \textgreater{} k: \text{ use dense causal}
 \tag{1.6}
 \]
 
@@ -131,6 +133,7 @@ deployment. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Low-Rank Attention}
@@ -170,6 +173,853 @@ window. Linformer belongs to the "global low-rank" category.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Learned?} & \textbf{Causal-safe?} & \textbf{Multi-arch?} \\
+\midrule
+Standard & $\mathcal{O}(L^2)$ & -- & Yes & Yes \\
+Linformer (orig.) & $\mathcal{O}(L k)$ & Yes & Partial & Encoder only \\
+Performer & $\mathcal{O}(L)$ & RFF (fixed) & Partial & Encoder \\
+Longformer & $\mathcal{O}(L W)$ & No & Yes & Encoder \\
+\textbf{Ours} & $\mathcal{O}(L k)$ & Yes & \textbf{Yes (fallback)} & \textbf{4 models} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Our implementation is the first to support GPT-2 
+Conv1D, RoBERTa nested, and Qwen GQA/RoPE with a causal-safe fallback, 
+while preserving the original Linformer complexity.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Standard Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.2}
+\]
+
+Complexity: $\mathcal{O}(L^2 d_h)$ for scores, $\mathcal{O}(L^2)$ for softmax.
+
+\subsection{The Linformer Observation}
+
+Wang et al. (2020) showed that the attention matrix $P = \text{softmax}(QK^\top/\sqrt{d_h})$ 
+has \textbf{low-rank structure}. Specifically, the singular values of $P$ decay 
+rapidly; most of the "energy" is captured by the top $k$ components.
+
+\textbf{Consequence.} If $P$ is approximately rank $k$, then:
+
+\[
+P V \approx \tilde{P} \tilde{V}
+\tag{3.3}
+\]
+
+where $\tilde{P} \in \mathbb{R}^{L \times k}$ and $\tilde{V} \in \mathbb{R}^{k \times d_h}$.
+
+\subsection{Low-Rank Projection}
+
+Linformer uses \textbf{learned linear projections} for $K$ and $V$:
+
+\[
+\tilde{K} = E K, \quad \tilde{V} = F V
+\tag{3.4}
+\]
+
+where $E, F \in \mathbb{R}^{k \times L}$. Attention becomes:
+
+\[
+\text{Attn}\_\text{Lin} = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d\_h}}\right) \tilde{V}
+\tag{3.5}
+\]
+
+Complexity: 
+\begin{itemize}
+\item $E K$: $\mathcal{O}(L k d_h)$
+\item $Q \tilde{K}^\top$: $\mathcal{O}(L k d_h)$
+\item Softmax: $\mathcal{O}(L k)$
+\item $\cdot \tilde{V}$: $\mathcal{O}(L k d_h)$
+\item \textbf{Total:} $\mathcal{O}(L k d_h)$
+
+\end{itemize}
+For fixed $k$, this is \textbf{linear in $L$}.
+
+\subsection{E, F Initialization}
+
+Naive initialization (Gaussian) makes $E K \approx 0$, wasting the first 
+few hundred training steps. We initialize:
+
+\[
+E = \begin{pmatrix} I\_{\min(k, L\_\text{max})} & 0 \\ 0 & \epsilon \end{pmatrix}
+\tag{3.6}
+\]
+
+where $\epsilon \sim \mathcal{N}(0, 0.02^2)$. This makes the initial 
+projection (approximately) the identity for the first $\min(k, L_\text{max})$ 
+positions.
+
+\subsection{Causal Masking}
+
+For decoders, query at position $i$ attends to keys $j \leq i$. The mask:
+
+\[
+\text{mask}\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
+\tag{3.7}
+\]
+
+\textbf{Problem with Linformer for causality.} Projecting $K$ to $\tilde{K} = E K$ 
+mixes all positions, including future ones. After projection, we cannot 
+recover the original positional structure -- the causal mask over compressed 
+keys would be meaningless.
+
+\textbf{Solution.} For decoders, if $L > k$ (meaning we actually compress), we 
+fall back to exact dense attention with a triangular mask.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+Modern models (Qwen, LLaMA, Mistral) use $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}, \quad
+\text{repeat\_kv}(K, V) \to H \text{ heads}
+\tag{3.8}
+\]
+
+Our implementation expands $K, V$ before projection.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
+
+\[
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
+\tag{3.9}
+\]
+
+Applied before Linformer projection. After projection, position information 
+is compressed along with the values.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021):
+
+\[
+\Delta W = \frac{\alpha}{r} B A, \quad B = 0 \text{ initially}
+\tag{3.10}
+\]
+
+Applied to all four projections for recovery.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+Our Linformer implementation has four phases:
+
+\begin{enumerate}
+\item \textbf{Projection} ( 4.2): standard $Q, K, V$ projections.
+\item \textbf{RoPE} ( 4.2): optional rotary embeddings.
+\item \textbf{GQA expansion} ( 4.3): expand KV heads.
+\item \textbf{Adaptive Linformer projection} ( 4.4): project $K, V$ to dimension $k$.
+\item \textbf{Attention} ( 4.5): standard scaled-dot-product on projected tensors.
+\item \textbf{Causal handling} ( 4.6): fallback to dense if needed.
+
+\end{enumerate}
+\subsection{Projections and RoPE}
+
+Standard projections via LoRALinear:
+
+\begin{lstlisting}
+q = self.q\_proj(hidden\_states)
+k = self.k\_proj(hidden\_states)
+v = self.v\_proj(hidden\_states)
+\end{lstlisting}
+
+Reshape to multi-head:
+
+\begin{lstlisting}
+q = q.view(B, N, H, d\_h).transpose(1, 2)
+k = k.view(B, N, H\_kv, d\_h).transpose(1, 2)
+v = v.view(B, N, H\_kv, d\_h).transpose(1, 2)
+\end{lstlisting}
+
+Apply RoPE if position embeddings available.
+
+\subsection{GQA Expansion}
+
+\begin{lstlisting}
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
+\end{lstlisting}
+
+After this, $K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
+
+\subsection{Adaptive Linformer Projection}
+
+\subsubsection{Three Cases}
+
+Given sequence length $L$, projection dim $k$, and pre-allocated $L_\text{max}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Case} & \textbf{Condition} & \textbf{Action} \\
+\midrule
+\textbf{Short} & $L \leq k$ & Use $E[:L, :L]$, no compression \\
+\textbf{Medium} & $L \leq L_\text{max}$ & Use $E[:k, :L]$, standard Linformer \\
+\textbf{Long} & $L > L_\text{max}$ & Interpolate $E$ to length $L$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Short Case ($L \leq k$)}
+
+For short sequences, no compression is applied:
+
+\begin{lstlisting}
+E\_act = self.E[:L, :L]
+K\_proj = E\_act @ k  # (B, H, L, d\_h)
+\end{lstlisting}
+
+This preserves exact attention for short sequences, ensuring no accuracy 
+loss when compression isn't needed.
+
+\subsubsection{Medium Case ($L \leq L_\text{max}$)}
+
+Standard Linformer:
+
+\begin{lstlisting}
+k\_eff = min(self.k\_proj\_dim, L)
+E\_act = self.E[:k\_eff, :L]
+K\_proj = E\_act @ k  # (B, H, k\_eff, d\_h)
+\end{lstlisting}
+
+$K$ and $V$ are projected from $L$ to $k_\text{eff}$ positions.
+
+\subsubsection{Long Case ($L > L_\text{max}$)}
+
+For sequences longer than the pre-allocated max:
+
+\begin{lstlisting}
+E\_act = F.interpolate(
+    self.E[:k\_eff].unsqueeze(0),
+    size=L,
+    mode="linear",
+    align\_corners=False,
+).squeeze(0)
+\end{lstlisting}
+
+Linear interpolation extends $E$ to length $L$. This is a graceful 
+degradation -- not part of the original Linformer paper, but necessary for 
+robustness.
+
+\subsection{Attention on Projected Tensors}
+
+\subsubsection{Scores}
+
+\[
+\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{B \times H \times L \times k\_\text{eff}}
+\tag{4.1}
+\]
+
+Computed in FP32 for stability.
+
+\subsubsection{Softmax}
+
+Standard softmax over $k_\text{eff}$ dimension.
+
+\subsubsection{Context}
+
+\[
+\text{context} = \text{attn} \cdot \tilde{V} \in \mathbb{R}^{B \times H \times L \times d\_h}
+\tag{4.2}
+\]
+
+\subsubsection{Output Projection}
+
+\begin{lstlisting}
+context = context.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
+out = self.out\_proj(context * self.output\_scale)
+\end{lstlisting}
+
+Where \texttt{output\_scale} is a learnable scalar initialized to 1.
+
+\subsection{Causal Handling for Decoders}
+
+\textbf{The problem.} For a decoder, projecting $K$ via $E$ mixes future and past 
+information:
+
+\[
+\tilde{K}\_j = \sum\_{i=1}^L E\_{j, i} K\_i
+\tag{4.3}
+\]
+
+The resulting $\tilde{K}_j$ depends on \textbf{all} positions, not just $j$. A 
+causal mask over $\tilde{K}_j$ is meaningless.
+
+\textbf{The solution.} Fall back to exact dense attention:
+
+\begin{lstlisting}
+if self.is\_decoder and L \textgreater{} self.k\_proj\_dim:
+    # Cannot compress without breaking causality
+    causal\_scores = q @ k.transpose(-2, -1) / sqrt(d\_h)
+    causal\_mask = tril(ones(L, L))
+    scores = causal\_scores.masked\_fill(~causal\_mask, -inf)
+    V\_proj = v  # Use unprojected V
+\end{lstlisting}
+
+This preserves causality at the cost of $\mathcal{O}(L^2)$ for decoders 
+with $L > k$.
+
+For short sequences ($L \leq k$), the projection is identity-like, so 
+causality is approximately preserved. We use the projected path in this 
+case.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Linformer forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, k, L\_max
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q; K $\leftarrow$ X W\_K; V $\leftarrow$ X W\_V
+ 2: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 4: if L $\le$ k:
+ 5:     E\_act $\leftarrow$ E[:L, :L]; F\_act $\leftarrow$ F[:L, :L]
+ 6:     V\_proj $\leftarrow$ F\_act @ V
+ 7: elif L $\le$ L\_max:
+ 8:     k\_eff $\leftarrow$ min(k, L)
+ 9:     E\_act $\leftarrow$ E[:k\_eff, :L]; F\_act $\leftarrow$ F[:k\_eff, :L]
+10:     V\_proj $\leftarrow$ F\_act @ V
+11: else:
+12:     E\_act $\leftarrow$ interpolate(E, size=L); F\_act $\leftarrow$ interpolate(F, size=L)
+13:     V\_proj $\leftarrow$ F\_act @ V
+14: K\_proj $\leftarrow$ E\_act @ K
+15: scores $\leftarrow$ Q @ K\_proj^T / $\sqrt{}$d\_h
+16: if is\_decoder and L \textgreater{} k:
+17:     # Fallback: dense causal attention
+18:     scores $\leftarrow$ Q @ K^T / $\sqrt{}$d\_h
+19:     V\_proj $\leftarrow$ V
+20:     scores $\leftarrow$ mask\_causal(scores)
+21: scores $\leftarrow$ mask\_padding(scores)
+22: attn $\leftarrow$ softmax(scores)
+23: out $\leftarrow$ attn @ V\_proj
+24: out $\leftarrow$ out\_proj(out * output\_scale)
+25: return out
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Encoder Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+$Q, K, V$ projections & $\mathcal{O}(L d^2)$ \\
+$E K$ & $\mathcal{O}(k L d_h)$ \\
+$Q \tilde{K}^\top$ & $\mathcal{O}(L k d_h)$ \\
+Softmax & $\mathcal{O}(L k)$ \\
+$\text{attn} \cdot \tilde{V}$ & $\mathcal{O}(L k d_h)$ \\
+Output projection & $\mathcal{O}(L d^2)$ \\
+\textbf{Total} & $\mathcal{O}(L k d_h + L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For fixed $k$ and $d$: \textbf{linear in $L$}.
+
+\subsubsection{Decoder Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Case} & \textbf{Complexity} \\
+\midrule
+$L \leq k$ & $\mathcal{O}(L k d_h)$ \\
+$L > k$ & $\mathcal{O}(L^2 d_h)$ (fallback) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trade-off.} Encoders benefit from linearity; long-sequence decoders 
+fall back to quadratic.
+
+\subsubsection{Memory}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Tensor} & \textbf{Size} \\
+\midrule
+$E, F$ & $2 k L_\text{max}$ \\
+Attention scores & $\mathcal{O}(L k)$ \\
+Context & $\mathcal{O}(L d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Much smaller than baseline $\mathcal{O}(L^2)$ for the scores matrix.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+$W_Q, W_K, W_V, W_O$ & $4 d^2$ (frozen) & $4 d^2$ (frozen) & 0 \\
+LoRA adapters & 0 & $4 r_L (d + d)$ & +small \\
+$E, F$ & 0 & $2 k L_\text{max}$ & +medium \\
+\texttt{output\_scale} & 0 & 1 & ~0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $k = 64$, $L_\text{max} = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Baseline per layer & 2,359,296 \\
+LoRA (rank 16) & 98,304 \\
+E, F & $2 \cdot 64 \cdot 512 = 65,536$ \\
+output\_scale & 1 \\
+\textbf{Total added} & ~163,841 \\
+\textbf{Change} & \textbf{+6.9\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We state this \textbf{explicitly} in the abstract.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Low-Rank Approximation Bound}
+
+If the attention matrix $P$ has effective rank $r \ll L$, then:
+
+\[
+\|P - \tilde{P}\|\_F \leq \sqrt{\sum\_{i=r+1}^L \sigma\_i^2}
+\tag{4.4}
+\]
+
+where $\sigma_i$ are singular values of $P$. For $k \geq r$:
+
+\[
+\|P - \tilde{P}\|\_F \approx 0
+\tag{4.5}
+\]
+
+\subsubsection{Causal Preservation}
+
+\textbf{Claim.} For decoders with $L > k$, the fallback preserves causality.
+
+\textbf{Proof.} The fallback uses standard dense attention with a triangular mask, 
+which is causally correct by construction. $\square$
+
+\subsubsection{Identity Initialization}
+
+\textbf{Claim.} With $E = I$, the projection $\tilde{K} = K$ and Linformer 
+reduces to standard attention.
+
+\textbf{Proof.} $E K = I K = K$. $\square$
+
+This means our initialization starts at exactly the standard attention and 
+deviates only as $E$ is trained.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+Linformer copies base weights via \texttt{copy\_weights}, handling four patterns:
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA)}
+
+\begin{lstlisting}
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsection{The E, F Matrices}
+
+\begin{lstlisting}
+self.E = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
+self.F = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
+
+with torch.no\_grad():
+    nn.init.normal\_(self.E, std=0.02)
+    nn.init.normal\_(self.F, std=0.02)
+    min\_dim = min(self.k\_proj\_dim, self.max\_seq\_len)
+    self.E.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
+    self.F.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
+\end{lstlisting}
+
+\textbf{Why diagonal init?} Without it, $E K \approx 0$ and the model starts 
+broken. With diagonal init, the initial projection $\approx$ identity.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}. Our forward returns raw 
+context, and the outer \texttt{BertSelfOutput.dense} applies the output projection:
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    out = context * self.output\_scale
+else:
+    out = self.out\_proj(context * self.output\_scale)
+\end{lstlisting}
+
+\subsection{RoPE Handling}
+
+Captured from source attention:
+
+\begin{lstlisting}
+if hasattr(src, "rotary\_emb"):
+    self.rotary\_emb = src.rotary\_emb
+\end{lstlisting}
+
+Applied before projection:
+
+\begin{lstlisting}
+if pos\_emb is not None:
+    q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
+\end{lstlisting}
+
+\textbf{Order matters:} RoPE $\to$ Linformer projection. Reverse order would corrupt 
+position information.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Linformer into a model
+\begin{lstlisting}
+Input:  model M, k, L\_max
+Output: M with attention replaced
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ LinformerAttention(cfg, k, L\_max, old\_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing} non-empty & Raise RuntimeError \\
+Near-zero norm & Frobenius check & Raise RuntimeError \\
+$L > L_\text{max}$ & Shape mismatch & Interpolate $E, F$ \\
+Decoder $L > k$ & \texttt{is\_decoder and L \textgreater{} k} & Fallback to dense \\
+NaN in scores & \texttt{torch.isnan} & \texttt{nan\_to\_num} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("linformer")
+@ATTENTION\_REGISTRY.register("linformer\_attention")
+class LinformerAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery}
+
+Base weights are frozen; LoRA adapters train:
+
+\begin{lstlisting}
+self.q\_proj = LoRALinear(..., freeze\_base=True)
+self.k\_proj = LoRALinear(..., freeze\_base=True)
+self.v\_proj = LoRALinear(..., freeze\_base=True)
+self.out\_proj = LoRALinear(..., freeze\_base=True)
+\end{lstlisting}
+
+Additionally trainable:
+\begin{itemize}
+\item \texttt{E}, \texttt{F}: the projection matrices
+\item \texttt{output\_scale}: a scalar
+
+\end{itemize}
+For $d = 768$, $k = 64$, $L_\text{max} = 512$:
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of linformer\_attention.}
+\label{fig:arch_linformer-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max sequence length: 128.
+
+\subsection{Hyperparameters}
+
+\subsubsection{Linformer-specific}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{linformer\_k} & 4 \\
+\texttt{max\_seq\_len} & 84.5 \\
+E, F init & diagonal + noise 0.02 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{recovery\_steps} & 50 \\
+\texttt{batch\_size} & 32 \\
+LR & 1e-4 \\
+WD & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Params (before/after)
+\item Peak VRAM
+\item Inference time
+\item Effective complexity ($L \cdot k$)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_linformer.py \
+    --models distilbert,roberta,gpt2 \
+    --linformer\_k 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{linformer} & Our implementation \\
+\texttt{linformer\_no\_E} & E = identity (ablation) \\
+\texttt{linformer\_random\_E} & Random E init (ablation) \\
+\texttt{linformer\_no\_causal\_fallback} & Break causality (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -182,7 +1032,7 @@ DistilBERT & \textbf{Linformer} & \textbf{90.60\%} & -0.34\% & PASS & 0.9089 & 2
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Linformer} & \textbf{75.57\%} & +0.11\% & PASS & 0.7760 & 48 & \textbf{0.93$\times$} & 653.3 MB & 25.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Linformer} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6753 & 0 & \textbf{0.98$\times$} & 573.2 MB & 7.5 & -- \\
+GPT-2 & \textbf{Linformer} & \textbf{51.03\%} & -6.88\% & PASS\_LOW & 0.6753 & 0 & \textbf{0.98$\times$} & 573.2 MB & 7.5 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -341,12 +1191,13 @@ No fallback (incorrect) & 0.85 & 2.3 s s \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/linformer_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{linformer_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/linformer\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{linformer\_attention}.}
 \label{fig:results_linformer_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does Linformer Work?}
@@ -455,6 +1306,7 @@ This wastes parameters.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -550,6 +1402,7 @@ Accuracy & 90.71\% & 50.92\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Decoder Fallback}
@@ -615,6 +1468,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -687,13 +1541,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -702,34 +1557,34 @@ pip install -r requirements.txt
 \subsection{Running Linformer}
 
 \begin{lstlisting}
-python run_all_4_linformer.py \
+python run\_all\_4\_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k 4 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --linformer\_k 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,linformer \
-    --linformer_k 4 \
-    --recovery_steps 50
+    --linformer\_k 4 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_linformer.py
+python run\_all\_4\_linformer.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (k ablation)}
 \begin{lstlisting}
 for k in 16 32 64 128 256; do
-    python run_all_4_linformer.py --linformer_k $k --output_suffix k$k
+    python run\_all\_4\_linformer.py --linformer\_k $k --output_suffix k$k
 done
 \end{lstlisting}
 
@@ -739,7 +1594,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -770,6 +1625,7 @@ GPT-2 & 77.5\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -907,6 +1763,7 @@ GPT-2 & 77.5\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Linformer Projection}
@@ -914,7 +1771,7 @@ GPT-2 & 77.5\% $\pm$ 1\% \\
 Given $K \in \mathbb{R}^{L \times d_h}$ and $E \in \mathbb{R}^{k \times L}$:
 
 \[
-\tilde{K} = E K \in \mathbb{R}^{k \times d_h}
+\tilde{K} = E K \in \mathbb{R}^{k \times d\_h}
 \tag{A.1}
 \]
 
@@ -923,7 +1780,7 @@ Similarly $\tilde{V} = F V$.
 \subsection{A.2 Attention}
 
 \[
-\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times k}
+\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d\_h}} \in \mathbb{R}^{L \times k}
 \tag{A.2}
 \]
 
@@ -933,7 +1790,7 @@ Similarly $\tilde{V} = F V$.
 \]
 
 \[
-\text{out} = \text{attn} \tilde{V} \in \mathbb{R}^{L \times d_h}
+\text{out} = \text{attn} \tilde{V} \in \mathbb{R}^{L \times d\_h}
 \tag{A.4}
 \]
 
@@ -960,7 +1817,7 @@ $\text{attn} \tilde{V}$ & $L k d_h$ \\
 If $P = \text{softmax}(QK^\top/\sqrt{d_h})$ has singular values $\sigma_1 \geq \sigma_2 \geq \dots$:
 
 \[
-\|P - P_k\|_F = \sqrt{\sum_{i > k} \sigma_i^2}
+\|P - P\_k\|\_F = \sqrt{\sum\_{i \textgreater{} k} \sigma\_i^2}
 \tag{A.5}
 \]
 
@@ -971,7 +1828,7 @@ For fixed $k$, this is the minimum approximation error over rank-$k$ matrices.
 With $E = [I; \epsilon]$ (identity block + noise):
 
 \[
-E K = \begin{pmatrix} K_{1:\min(k,L)} \\ \epsilon K \end{pmatrix}
+E K = \begin{pmatrix} K\_{1:\min(k,L)} \\ \epsilon K \end{pmatrix}
 \tag{A.6}
 \]
 
@@ -989,7 +1846,7 @@ causal attention is causally correct. $\square$
 For $L > L_\text{max}$, we interpolate:
 
 \[
-E_\text{ext}[i] = \text{interp}(E[i], L)
+E\_\text{ext}[i] = \text{interp}(E[i], L)
 \tag{A.7}
 \]
 
@@ -1000,69 +1857,70 @@ not preserve the identity-init property.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Core Forward}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, N, D = hidden_states.shape
-    H, d = self.num_heads, self.head_dim
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, N, D = hidden\_states.shape
+    H, d = self.num\_heads, self.head\_dim
     
     # 1. Project
-    q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, N, H, d).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, N, self.num\_kv\_heads, d).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, N, self.num\_kv\_heads, d).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Adaptive E, F slicing
     L = N
-    k_eff = min(self.k_proj_dim, L)
+    k\_eff = min(self.k\_proj\_dim, L)
     
-    if L <= self.k_proj_dim:
-        E_act = self.E[:L, :L]
-        F_act = self.F[:L, :L]
-    elif L <= self.max_seq_len:
-        E_act = self.E[:k_eff, :L]
-        F_act = self.F[:k_eff, :L]
+    if L \textless{}= self.k\_proj\_dim:
+        E\_act = self.E[:L, :L]
+        F\_act = self.F[:L, :L]
+    elif L \textless{}= self.max\_seq\_len:
+        E\_act = self.E[:k\_eff, :L]
+        F\_act = self.F[:k\_eff, :L]
     else:
-        E_act = F.interpolate(self.E[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
-        F_act = F.interpolate(self.F[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+        E\_act = F.interpolate(self.E[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+        F\_act = F.interpolate(self.F[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
     
-    K_proj = torch.matmul(E_act, k)
-    V_proj = torch.matmul(F_act, v)
+    K\_proj = torch.matmul(E\_act, k)
+    V\_proj = torch.matmul(F\_act, v)
     
     # 5. Attention
-    scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).float()) * scale
+    scores = torch.matmul(q.float(), K\_proj.transpose(-2, -1).float()) * scale
     
     # 6. Causal fallback
-    if self.is_decoder and L > self.k_proj_dim:
-        causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
-        causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-        scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
-        V_proj = v
+    if self.is\_decoder and L \textgreater{} self.k\_proj\_dim:
+        causal\_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+        causal\_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+        scores = causal\_scores.masked\_fill(~causal\_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        V\_proj = v
     
     # 7. Masking
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 8. Softmax + output
     attn = F.softmax(scores, dim=-1)
-    context = torch.matmul(attn, V_proj)
-    context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    context = torch.matmul(attn, V\_proj)
+    context = context.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
-    if self.is_nested_encoder:
-        out = context * self.output_scale
+    if self.is\_nested\_encoder:
+        out = context * self.output\_scale
     else:
-        out = self.out_proj(context * self.output_scale)
+        out = self.out\_proj(context * self.output\_scale)
     
     return out, None
 \end{lstlisting}
@@ -1070,29 +1928,29 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 \subsection{B.2 E, F Initialization}
 
 \begin{lstlisting}
-self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
-self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
+self.E = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
+self.F = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
 
-with torch.no_grad():
-    nn.init.normal_(self.E, std=0.02)
-    nn.init.normal_(self.F, std=0.02)
-    min_dim = min(self.k_proj_dim, self.max_seq_len)
-    self.E.data[:min_dim, :min_dim].fill_diagonal_(1.0)
-    self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+with torch.no\_grad():
+    nn.init.normal\_(self.E, std=0.02)
+    nn.init.normal\_(self.F, std=0.02)
+    min\_dim = min(self.k\_proj\_dim, self.max\_seq\_len)
+    self.E.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
+    self.F.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
 \end{lstlisting}
 
 \subsection{B.3 Adaptive Slicing}
 
 \begin{lstlisting}
-if L <= self.k_proj_dim:
+if L \textless{}= self.k\_proj\_dim:
     # Short: identity-like
-    E_act = self.E[:L, :L]
-elif L <= self.max_seq_len:
+    E\_act = self.E[:L, :L]
+elif L \textless{}= self.max\_seq\_len:
     # Standard Linformer
-    E_act = self.E[:k_eff, :L]
+    E\_act = self.E[:k\_eff, :L]
 else:
     # Extrapolation
-    E_act = F.interpolate(self.E[:k_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
+    E\_act = F.interpolate(self.E[:k\_eff].unsqueeze(0), size=L, mode="linear").squeeze(0)
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}
@@ -1105,7 +1963,7 @@ position information is compressed and RoPE is meaningless.
 \subsubsection{B.4.2 Breaking Causality}
 
 Without the fallback, GPT-2 would see future tokens. Always check 
-\texttt{is\_decoder and L > k}.
+\texttt{is\_decoder and L \textgreater{} k}.
 
 \subsubsection{B.4.3 Naive E, F Init}
 
@@ -1123,6 +1981,7 @@ GPT-2's Conv1D stores (in, out). Transpose before chunking.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1228,13 +2087,14 @@ Step  Loss
 \subsection{C.7 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_linformer.py --linformer_k 64
+python run\_all\_4\_linformer.py --linformer\_k 64
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1289,7 +2149,7 @@ complexity.
 
 \subsubsection{D.2.2 Per-Head E, F}
 
-Different E, F per head. Result: 12$\times$ params, <0.5\% improvement.
+Different E, F per head. Result: 12$\times$ params, \textless{}0.5\% improvement.
 
 \subsubsection{D.2.3 Learned L\_max}
 
@@ -1348,6 +2208,7 @@ Sweet spot: k = 64.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1407,3 +2268,4 @@ Drafted with LLM assistance. Content reviewed by authors.
 
 ---
 \end{lstlisting}
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{SALT: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Attention}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -14,7 +16,7 @@ is the most widely used: it freezes the base weight $W$ and adds a trainable
 rank-$r$ update:
 
 \[
-W_\text{LoRA} = W_\text{frozen} + \frac{\alpha}{r} B A
+W\_\text{LoRA} = W\_\text{frozen} + \frac{\alpha}{r} B A
 \tag{1.1}
 \]
 
@@ -49,7 +51,7 @@ We seek a parameterization $\mathcal{P}(W)$ such that:
 SALT parameterizes $W$ as:
 
 \[
-W = U_{:,:r} \cdot \text{diag}(\Sigma_{:r} \odot \gamma) \cdot V_{:r,:}^\top + A B
+W = U\_{:,:r} \cdot \text{diag}(\Sigma\_{:r} \odot \gamma) \cdot V\_{:r,:}^\top + A B
 \tag{1.2}
 \]
 
@@ -98,6 +100,865 @@ Section 11 concludes.
 
 \subsection{Notation}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$W$ \& Weight matrix & 1.1 \\
+$d_\text{in}, d_\text{out}$ \& Input/output dims & 1.1 \\
+$r$ \& SALT rank & 1.1 \\
+$U, \Sigma, V$ \& SVD factors & 3.1 \\
+$\gamma$ \& Singular value scale & 1.3 \\
+$A, B$ \& Low-rank residual & 1.3 \\
+$\alpha$ \& LoRA scaling & 3.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Low-Rank Adaptation}
+
+\subsubsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes updates as $\Delta W = \frac{\alpha}{r} BA$. 
+Base weights are frozen.
+
+\textbf{Limitation:} Total parameters unchanged.
+
+\subsubsection{AdaLoRA}
+
+AdaLoRA (Zhang et al., 2023) adaptively allocates rank across layers.
+
+\textbf{Limitation:} Still freezes full base weights.
+
+\subsubsection{DoRA}
+
+DoRA (Liu et al., 2024) decomposes weights into magnitude and direction.
+
+\textbf{Limitation:} Magnitude is scalar per output; still stores full W.
+
+\subsection{Low-Rank Weights}
+
+\subsubsection{SVD Compression}
+
+Classical SVD compression (Denton et al., 2014) replaces W with $U_r \Sigma_r V_r^\top$.
+
+\textbf{Limitation:} No adaptation after compression; accuracy may drop.
+
+\subsubsection{Tensor Decomposition}
+
+Tensor train (Novikov et al., 2015) and Tucker decomposition.
+
+\textbf{Limitation:} Complex to train; not pretrained-friendly.
+
+\subsubsection{ALBERT Factorized Embeddings}
+
+ALBERT (Lan et al., 2020) factorizes the embedding matrix.
+
+\textbf{Limitation:} Only embeddings, not attention weights.
+
+\subsection{Hybrid Methods}
+
+\subsubsection{PiSSA}
+
+PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W.
+
+\textbf{Difference from SALT:} PiSSA still stores the full W; SALT stores only 
+$U_r, \Sigma_r, V_r$.
+
+\subsubsection{OLoRA}
+
+OLoRA (B y kaky z, 2024) initializes LoRA with orthogonal matrices.
+
+\textbf{Difference:} OLoRA does not reduce total parameters.
+
+\subsubsection{GaLore}
+
+GaLore (Zhao et al., 2024) projects gradients into a low-rank subspace.
+
+\textbf{Difference:} GaLore reduces gradient memory, not weight storage.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Axis} & \textbf{LoRA} & \textbf{PiSSA} & \textbf{SVD Comp} & \textbf{SALT} \\
+\midrule
+Total params reduced? \& No \& No \& Yes & \textbf{Yes} \\
+Trainable adaptation? \& Yes \& Yes \& No & \textbf{Yes} \\
+Pretrained init? \& Base only \& SVD init \& Base & \textbf{SVD + $\gamma$ + AB} \\
+Inference speedup? \& No \& No \& Yes (if fused) \& No (naive) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} SALT reduces \textbf{total} parameters AND supports 
+adaptation AND starts from the pretrained state. Prior work achieves at most 
+two of these three.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Singular Value Decomposition}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+where $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ are 
+orthogonal, and $\Sigma$ is diagonal with $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD.}
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
+\tag{3.2}
+\]
+
+This is the best rank-$r$ approximation in Frobenius norm (Eckart-Young).
+
+\subsection{Low-Rank Adaptation (LoRA)}
+
+LoRA:
+
+\[
+W\_\text{eff} = W + \frac{\alpha}{r} BA
+\tag{3.3}
+\]
+
+with $A \in \mathbb{R}^{r \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r}$.
+
+\subsection{Singular Value Modulation}
+
+Given fixed $U, \Sigma, V$, one can modulate the singular values via a 
+diagonal scale:
+
+\[
+W(\gamma) = U \text{diag}(\Sigma \odot \gamma) V^\top
+\tag{3.4}
+\]
+
+with $\gamma \in \mathbb{R}^r$. Setting $\gamma = \mathbf{1}$ recovers the 
+original.
+
+\textbf{Effect.} Increasing $\gamma_i$ amplifies the $i$-th singular direction. 
+Decreasing suppresses it.
+
+\subsection{Parameter Counting}
+
+For a weight $W \in \mathbb{R}^{m \times n}$ at rank $r$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Representation} & \textbf{Parameters} \\
+\midrule
+Full W & $mn$ \\
+Truncated SVD ($U_r, \Sigma_r, V_r$) & $r(m + n + 1)$ \\
+LoRA ($A, B$) & $r(m + n)$ \\
+SALT ($U_r, \Sigma_r, V_r, \gamma, A, B$) & $2r(m + n) + 2r$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (m = n = 768, r = 16):}
+
+\begin{itemize}
+\item Full: 589,824
+\item Truncated SVD: 24,592
+\item LoRA: 24,576
+\item SALT: 49,184 $\to$ \textbf{~12$\times$ reduction vs full}
+
+\end{itemize}
+\subsection{Forward Pass Efficiency}
+
+At inference, computing $y = Wx$ requires:
+
+\begin{itemize}
+\item \textbf{Full W:} one matmul $Wx$ -- cost $\mathcal{O}(mn)$
+\item \textbf{Low-rank W = UV:} two matmuls $Vx$ then $U(\cdot)$ -- cost $\mathcal{O}(r(m+n))$
+\item \textbf{SALT (naive):} reconstruct W then one matmul -- cost $\mathcal{O}(mn + r(m+n))$, \textbf{slower}
+\item \textbf{SALT (fused):} three matmuls -- cost $\mathcal{O}(r(m+n))$
+
+\end{itemize}
+\textbf{Observation.} Realizing the inference benefit requires \textbf{fused kernels} 
+or a forward pass that avoids materializing W.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$W$ \& Weight matrix \\
+$U, \Sigma, V$ \& SVD factors \\
+$r$ \& Rank \\
+$\gamma$ \& Singular value scale \\
+$A, B$ \& Low-rank residual \\
+$d_\text{in}, d_\text{out}$ \& Input/output dims \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+SALT replaces each linear projection $W$ with a three-component parameterization:
+
+\begin{lstlisting}
+    Weight W $\in$ R^{d\_out $\times$ d\_in}
+            |
+             
+    +-------------------------+
+    |  Truncated SVD          |
+    |  W $\approx$ U\_r $\Sigma$\_r V\_r^T      |
+    +-----------+-------------+
+                |
+    +-----------+------------+
+                              
+    +--------------+   +-----------------+
+    |  Buffers     |   |  Trainable      |
+    |  U, S, Vt    |   |  $\gamma$, A, B        |
+    |  (frozen)    |   |                 |
+    +--------------+   +-----------------+
+                |                 |
+                +--------+--------+
+                          
+    +--------------------------------------+
+    |  Forward:                             |
+    |  W\_eff = U diag(S   $\gamma$) V^T + A B     |
+    |  y = W\_eff x + b                      |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{The SVD Skeleton}
+
+Given a pretrained weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, 
+compute its SVD:
+
+\[
+W = U \Sigma V^\top, \quad U \in \mathbb{R}^{d\_\text{out} \times d\_\text{out}}, 
+\Sigma \in \mathbb{R}^{d\_\text{out}}, V \in \mathbb{R}^{d\_\text{in} \times d\_\text{in}}
+\tag{4.1}
+\]
+
+Keep the top-$r$:
+
+\[
+U\_r = U\_{:, :r}, \quad S\_r = \Sigma\_{:r}, \quad V\_r = V\_{:r, :}^\top
+\tag{4.2}
+\]
+
+We store $U_r, S_r, V_r$ as \textbf{buffers} (non-trainable), typically in the 
+model's dtype (FP16 or FP32).
+
+\subsection{Singular Value Modulation}
+
+We add a trainable scale $\gamma \in \mathbb{R}^r$, initialized to 1:
+
+\[
+\Sigma\_\gamma = S\_r \odot \gamma
+\tag{4.3}
+\]
+
+This allows the model to amplify or suppress retained singular directions.
+
+\textbf{Why is this useful?}
+\begin{itemize}
+\item The pretrained SVD is optimal in Frobenius norm but not for the downstream
+  task.
+\item $\gamma$ provides a small number of trainable parameters ($r$) that adjust
+  the spectral profile.
+
+\end{itemize}
+\subsection{Low-Rank Residual}
+
+We add a trainable low-rank residual $AB$:
+
+\[
+A \in \mathbb{R}^{d\_\text{out} \times r}, \quad 
+B \in \mathbb{R}^{r \times d\_\text{in}}
+\tag{4.4}
+\]
+
+\textbf{Initialization:}
+\begin{itemize}
+\item $A \sim \mathcal{N}(0, 0.01^2)$ (small random)
+\item $B = 0$
+
+\end{itemize}
+So $AB = 0$ at initialization.
+
+\textbf{Why a residual?} The SVD skeleton captures the top-$r$ directions. If 
+these are insufficient, the residual can add capacity -- but starting from 
+zero avoids disrupting the pretrained state.
+
+\subsection{Combined Weight}
+
+The effective weight is:
+
+\[
+W\_\text{SALT} = U\_r \cdot \text{diag}(S\_r \odot \gamma) \cdot V\_r + A B
+\tag{4.5}
+\]
+
+\textbf{At initialization:} $W_\text{SALT} = U_r \text{diag}(S_r) V_r$ -- the 
+rank-$r$ truncated SVD of $W_\text{pretrained}$.
+
+\subsection{Forward Pass}
+
+\subsubsection{Naive (Our Implementation)}
+
+\begin{lstlisting}
+def forward(self, x):
+    adapted\_S = self.S * self.gamma
+    W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt  # reconstruct
+    W\_lora = self.A @ self.B                             # reconstruct
+    W = (W\_svd + W\_lora).to(dtype=x.dtype)
+    return F.linear(x, W, self.bias)                     # full matmul
+\end{lstlisting}
+
+\textbf{Cost.} $\mathcal{O}(d_\text{out} \cdot r \cdot d_\text{in} + d_\text{out} \cdot d_\text{in})$ 
+per forward -- \textbf{worse than baseline} due to reconstruction.
+
+\subsubsection{Fused (Future Work)}
+
+The ideal forward avoids reconstructing W:
+
+\begin{lstlisting}
+def forward(self, x):
+    # 1. Project to rank space
+    z = F.linear(x, self.Vt)                        # (B, L, r)
+    # 2. Scale by S * gamma
+    z = z * (self.S * self.gamma)
+    # 3. Project back
+    y\_svd = F.linear(z, self.U)                     # (B, L, d\_out)
+    # 4. LoRA branch
+    y\_lora = F.linear(F.linear(x, self.B), self.A)
+    return y\_svd + y\_lora + self.bias
+\end{lstlisting}
+
+\textbf{Cost.} $\mathcal{O}(r(d_\text{out} + d_\text{in}))$ -- same as low-rank W.
+
+\textbf{We do NOT implement the fused version.} The paper documents the naive 
+version and its limitation.
+
+\subsection{Parameter Counting}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Shape} & \textbf{Trainable?} & \textbf{Params} \\
+\midrule
+$U_r$ & $(d_\text{out}, r)$ \& No (buffer) & $d_\text{out} \cdot r$ \\
+$S_r$ & $(r,)$ \& No (buffer) & $r$ \\
+$V_r$ & $(r, d_\text{in})$ \& No (buffer) & $r \cdot d_\text{in}$ \\
+$\gamma$ & $(r,)$ \& Yes & $r$ \\
+$A$ & $(d_\text{out}, r)$ \& Yes & $d_\text{out} \cdot r$ \\
+$B$ & $(r, d_\text{in})$ \& Yes & $r \cdot d_\text{in}$ \\
+bias & $(d_\text{out},)$ \& Yes & $d_\text{out}$ \\
+\textbf{Total} &  &  & $2r(d_\text{out} + d_\text{in}) + 2r + d_\text{out}$ \\
+\textbf{Full W} &  &  & $d_\text{out} \cdot d_\text{in}$ \\
+\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Initialization}
+
+\subsubsection{SVD Buffers}
+
+For each projection, compute SVD of the pretrained weight and keep the 
+top-$r$.
+
+\subsubsection{Trainable Parameters}
+
+\begin{itemize}
+\item $\gamma \leftarrow \mathbf{1}$
+\item $A \sim \mathcal{N}(0, 0.01^2)$
+\item $B \leftarrow \mathbf{0}$
+\item bias $\leftarrow$ pretrained bias
+
+\end{itemize}
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} SALT initialization
+\begin{lstlisting}
+Input:  W $\in$ R^{d\_out $\times$ d\_in}, bias b, rank r
+Output: SALTLinear module
+
+1: U, S, Vt $\leftarrow$ svd(W, full\_matrices=False)
+2: U\_r $\leftarrow$ U[:, :r];  S\_r $\leftarrow$ S[:r];  Vt\_r $\leftarrow$ Vt[:r, :]
+3: register\_buffer("U", U\_r)
+4: register\_buffer("S", S\_r)
+5: register\_buffer("Vt", Vt\_r)
+6: $\gamma$ $\leftarrow$ ones(r)
+7: A $\leftarrow$ randn(d\_out, r) * 0.01
+8: B $\leftarrow$ zeros(r, d\_in)
+9: bias $\leftarrow$ b
+10: return SALTLinear(U\_r, S\_r, Vt\_r, $\gamma$, A, B, bias)
+\end{lstlisting}
+
+\textbf{Algorithm 2:} SALT forward (naive)
+\begin{lstlisting}
+Input:  x $\in$ R^{B $\times$ L $\times$ d\_in}
+Output: y $\in$ R^{B $\times$ L $\times$ d\_out}
+
+1: S\_$\gamma$ $\leftarrow$ S * $\gamma$
+2: W\_svd $\leftarrow$ (U * S\_$\gamma$) @ Vt            (d\_out, d\_in)
+3: W\_lora $\leftarrow$ A @ B                     (d\_out, d\_in)
+4: W $\leftarrow$ W\_svd + W\_lora
+5: y $\leftarrow$ x @ W^T + bias
+6: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Naive forward & $\mathcal{O}(BL(d_\text{out} d_\text{in} + r(d_\text{out} + d_\text{in})))$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+Fused forward & $\mathcal{O}(BL r (d_\text{out} + d_\text{in}))$ & $\mathcal{O}(r(d_\text{out} + d_\text{in}))$ \\
+Baseline & $\mathcal{O}(BL d_\text{out} d_\text{in})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The naive forward has extra work} from reconstruction. The fused forward 
+realizes the low-rank speedup but is not implemented in this work.
+
+\subsection{Design Choices}
+
+\subsubsection{Why SVD Buffers Instead of Trainable?}
+
+Buffers avoid accidental modification. If $U, S, V$ were trainable, the model 
+could drift arbitrarily far from the pretrained state. Freezing them ensures 
+that changes are localized to $\gamma$ and $AB$.
+
+\subsubsection{Why $\gamma$?}
+
+A scalar per singular value provides a minimal but expressive modulation. 
+It has only $r$ parameters (16 for r=16) -- negligible overhead.
+
+\subsubsection{Why A ~ Small Random, B = 0?}
+
+Standard LoRA init. Ensures $AB = 0$ at start, so the model matches the 
+truncated SVD initialization.
+
+\subsubsection{Why the Same Rank for SVD and Residual?}
+
+Using a single rank parameter simplifies the API. In principle, SVD rank and 
+residual rank could differ.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No & 0.85 \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) \& No \& No \& No & 0.85 \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+\begin{lstlisting}
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
+        weight = weight.t()
+    split\_size = weight.shape[0] // 3
+    q\_w, k\_w, v\_w = weight[:split\_size], weight[split\_size:2*split\_size], weight[2*split\_size:]
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+if hasattr(src, "self"):
+    s = src.self
+    extracted["q"] = s.query.weight.data
+    extracted["k"] = s.key.weight.data
+    extracted["v"] = s.value.weight.data
+if hasattr(src.output, "dense"):
+    extracted["o"] = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_lin.weight.data
+extracted["k"] = src.k\_lin.weight.data
+extracted["v"] = src.v\_lin.weight.data
+extracted["o"] = src.out\_lin.weight.data
+\end{lstlisting}
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+self.is\_nested\_encoder = (
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
+) and not has\_out\_proj
+\end{lstlisting}
+
+\textbf{Test cases:}
+\begin{itemize}
+\item DistilBERT \texttt{MultiHeadSelfAttention}: \texttt{has\_out\_proj=True} (has \texttt{out\_lin}) $\to$ \texttt{False}
+\item RoBERTa \texttt{BertSelfAttention}: \texttt{has\_out\_proj=False} $\to$ \texttt{True}
+\item GPT-2 \texttt{GPT2Attention}: \texttt{has\_out\_proj=True} (has \texttt{c\_proj}) $\to$ \texttt{False}
+
+\end{itemize}
+\subsection{GQA Handling}
+
+For Qwen with $H_{kv} < H$, we compress K and V to \texttt{kv\_head\_size}:
+
+\begin{lstlisting}
+if src\_out == out\_dim:
+    final\_w = w\_oriented
+elif src\_out \textgreater{} out\_dim and src\_out \% out\_dim == 0:
+    # GQA: pool (mean) over groups
+    rep = src\_out // out\_dim
+    final\_w = w\_oriented.view(out\_dim, rep, -1).mean(dim=1)
+\end{lstlisting}
+
+This is a \textbf{lossy} operation: if the pretrained K has more heads than our 
+target, we average them.
+
+\subsection{SALTLinear Construction}
+
+For each projection, we:
+
+\begin{enumerate}
+\item Extract the pretrained weight $W$
+\item Orient it to $(d_\text{out}, d_\text{in})$
+\item Compute SVD and keep top-$r$
+\item Construct a \texttt{SALTLinear} with the SVD buffers, $\gamma = 1$, $A$ random,
+  $B = 0$
+
+\end{enumerate}
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 3:} Inject SALT into a model
+\begin{lstlisting}
+Input:  model M, config c, rank r
+Output: M with SALTLinear projections
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ extract\_attention( )
+3:     if src is None: continue
+4:     new\_attn $\leftarrow$ SALTAttention(c, rank=r, pretrained\_attn=src)
+5:     replace\_attention( , new\_attn)
+6: end for
+7: return M
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weight & \texttt{copy\_weights} & \textbf{Raises RuntimeError} \\
+Zero norm \& Frobenius check & \textbf{Raises RuntimeError} \\
+Injection exception \& try/except in inject & \textbf{Raises RuntimeError} \\
+Nested encoder & \texttt{has\_out\_proj} \& Set \texttt{is\_nested\_encoder} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Our implementation \textbf{raises} on any error, unlike other modules 
+which log and continue. This is a bug -- see  10.
+
+\subsection{`output\_scale` Bug}
+
+The \texttt{SALTLinear} module defines \texttt{self.output\_scale} but \textbf{never uses it}:
+
+\begin{lstlisting}
+if not hasattr(self, 'output\_scale'):
+    self.output\_scale = nn.Parameter(torch.ones(1))
+\end{lstlisting}
+
+The forward pass does not multiply by \texttt{output\_scale}. This is dead code, 
+wasting one parameter per layer.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Conv1D Orientation}
+
+GPT-2's \texttt{Conv1D} stores \texttt{(in, out)}. We transpose:
+
+\begin{lstlisting}
+if weight.shape[1] == 3 * self.hidden\_size:
+    weight = weight.t()
+\end{lstlisting}
+
+\subsubsection{GQA Pooling}
+
+When \texttt{src\_out \textgreater{} out\_dim}, we average groups. This is lossy but necessary 
+if the source has more KV heads than target.
+
+\subsubsection{Nested Encoder}
+
+For nested, we do not extract \texttt{o}. The outer block's \texttt{output.dense} handles it.
+
+\subsection{Compatibility with Framework}
+
+SALT is registered as:
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("salt\_attention")
+@ATTENTION\_REGISTRY.register("salt")
+class SALTAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+It integrates with the LoRA recovery pipeline.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of salt.}
+\label{fig:arch_salt}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{SALT Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Note} \\
+\midrule
+Rank $r$ & 32 \& SVD and residual \\
+$\gamma$ init & 1.0 & -- \\
+$A$ init & $\mathcal{N}(0, 0.01^2)$ & -- \\
+$B$ init & 0 & -- \\
+Freeze SVD \& Yes \& Buffers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer \& AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision \& FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} SALT has no separate LoRA adapters -- the trainable parameters are 
+$\gamma, A, B$.
+
+\subsection{Evaluation}
+
+\subsubsection{Quality Metrics}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+
+\end{itemize}
+\subsubsection{Efficiency Metrics}
+
+\begin{itemize}
+\item Total params
+\item Trainable params
+\item Storage size (MB on disk)
+\item Peak VRAM at inference
+\item Inference time
+
+\end{itemize}
+\textbf{Storage size is the primary SALT benefit.} Inference VRAM is not reduced 
+(naive forward).
+
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU \& RTX 4070 Laptop (8 GB) \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_salt.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed 42.
+
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{salt} -- our method
+\item Prior modules: \texttt{nha}, \texttt{a3}, \texttt{rala}, \texttt{routing}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -108,9 +969,9 @@ Section 11 concludes.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Salt Attention} & \textbf{80.28\%} & -10.20\% & PASS & 0.8102 & 0 & \textbf{1.24$\times$} & 337.8 MB & 8.8 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Salt Attention} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.18$\times$} & 338.5 MB & 15.7 & -- \\
+RoBERTa & \textbf{Salt Attention} & \textbf{50.92\%} & -24.19\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.18$\times$} & 338.5 MB & 15.7 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Salt Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.26$\times$} & 583.3 MB & 18.0 & -- \\
+GPT-2 & \textbf{Salt Attention} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.26$\times$} & 583.3 MB & 18.0 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -300,12 +1161,13 @@ a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/salt_gpt2_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/salt\_gpt2\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{salt}.}
 \label{fig:results_salt}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -321,9 +1183,9 @@ SALT achieves two things simultaneously:
 \textbf{Why?} Because the forward pass reconstructs W:
 
 \begin{lstlisting}
-W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt   # full (d_out, d_in)
-W_lora = self.A @ self.B                               # full (d_out, d_in)
-W = W_svd + W_lora
+W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt   # full (d\_out, d\_in)
+W\_lora = self.A @ self.B                               # full (d\_out, d\_in)
+W = W\_svd + W\_lora
 \end{lstlisting}
 
 At runtime, we materialize a full $d_\text{out} \times d_\text{in}$ matrix, 
@@ -354,9 +1216,9 @@ The correct forward avoids reconstruction:
 def forward(self, x):
     z = F.linear(x, self.Vt)                        # (B, L, r)
     z = z * (self.S * self.gamma)
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)
-    return y_svd + y_lora + self.bias
+    y\_svd = F.linear(z, self.U)                     # (B, L, d\_out)
+    y\_lora = F.linear(F.linear(x, self.B), self.A)
+    return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 \textbf{Cost:} $\mathcal{O}(BL \cdot r \cdot (d_\text{out} + d_\text{in}))$ -- 
@@ -420,8 +1282,8 @@ PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W:
 \texttt{SALTLinear.\_\_init\_\_} defines:
 
 \begin{lstlisting}
-if not hasattr(self, 'output_scale'):
-    self.output_scale = nn.Parameter(torch.ones(1))
+if not hasattr(self, 'output\_scale'):
+    self.output\_scale = nn.Parameter(torch.ones(1))
 \end{lstlisting}
 
 But \texttt{forward} never uses \texttt{output\_scale}. This is dead code, adding 1 unused 
@@ -435,8 +1297,8 @@ Our \texttt{copy\_weights} \textbf{raises} if extraction fails:
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This aborts injection for the entire model. Other modules in our framework 
@@ -445,7 +1307,7 @@ log a warning and continue. This is a bug.
 \subsubsection{RuntimeError on Zero Norm}
 
 \begin{lstlisting}
-if norm < 1e-4:
+if norm \textless{} 1e-4:
     raise RuntimeError(f"... near-zero Frobenius norm ({norm.item():.6f})")
 \end{lstlisting}
 
@@ -469,6 +1331,7 @@ Same issue.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -587,6 +1450,7 @@ SVD Comp & 10\% & 10\% (fused) & 0.5$\times$ (fused) \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -601,9 +1465,9 @@ inference VRAM is identical to the baseline.
 \begin{lstlisting}
 z = F.linear(x, self.Vt)
 z = z * (self.S * self.gamma)
-y_svd = F.linear(z, self.U)
-y_lora = F.linear(F.linear(x, self.B), self.A)
-return y_svd + y_lora + self.bias
+y\_svd = F.linear(z, self.U)
+y\_lora = F.linear(F.linear(x, self.B), self.A)
+return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 Expected speedup: 2-4$\times$.
@@ -614,7 +1478,7 @@ Unlike other modules in our framework, SALT \textbf{raises} on extraction failur
 
 \begin{lstlisting}
 except Exception as e:
-    raise RuntimeError(f"copy_weights failed: {e}")
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This aborts injection for the entire model. Should be a warning.
@@ -683,6 +1547,7 @@ This is \textbf{not}:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -764,14 +1629,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -780,20 +1646,20 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_salt.py \
+python run\_all\_4\_salt.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-salt",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-salt",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -803,14 +1669,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1}
 
 \begin{lstlisting}
-python run_all_4_salt.py --models distilbert,roberta,gpt2
+python run\_all\_4\_salt.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (rank ablation)}
 
 \begin{lstlisting}
 for r in 4 8 16 32 64; do
-    python run_all_4_salt.py --rank $r --output_suffix r$r
+    python run\_all\_4\_salt.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -819,8 +1685,8 @@ done
 \begin{lstlisting}
 import random, numpy as np, torch
 seed = 42
-random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+random.seed(seed); np.random.seed(seed); torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -873,6 +1739,7 @@ print(f"Total parameters: {total}")
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1004,6 +1871,7 @@ print(f"Total parameters: {total}")
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1012,7 +1880,7 @@ print(f"Total parameters: {total}")
 The rank-$r$ SVD approximation satisfies:
 
 \[
-\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - W\_r\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.1}
 \]
 
@@ -1023,7 +1891,7 @@ This is optimal (Eckart-Young).
 We define:
 
 \[
-W_\text{SALT}(\gamma, A, B) = U_r \text{diag}(\Sigma_r \odot \gamma) V_r + AB
+W\_\text{SALT}(\gamma, A, B) = U\_r \text{diag}(\Sigma\_r \odot \gamma) V\_r + AB
 \tag{A.2}
 \]
 
@@ -1039,7 +1907,7 @@ At init:
 So:
 
 \[
-W_\text{SALT}(\mathbf{1}, A, 0) = U_r \Sigma_r V_r + A \cdot 0 = W_r
+W\_\text{SALT}(\mathbf{1}, A, 0) = U\_r \Sigma\_r V\_r + A \cdot 0 = W\_r
 \tag{A.3}
 \]
 
@@ -1093,14 +1961,14 @@ Full W = 589,824. Ratio = 11.99$\times$.
 \subsubsection{Naive Forward}
 
 \[
-T_\text{naive} = T_\text{reconstruct} + T_\text{matmul} = \mathcal{O}(d_\text{out} r d_\text{in}) + \mathcal{O}(BL d_\text{out} d_\text{in})
+T\_\text{naive} = T\_\text{reconstruct} + T\_\text{matmul} = \mathcal{O}(d\_\text{out} r d\_\text{in}) + \mathcal{O}(BL d\_\text{out} d\_\text{in})
 \tag{A.5}
 \]
 
 \subsubsection{Fused Forward}
 
 \[
-T_\text{fused} = \mathcal{O}(BL r (d_\text{out} + d_\text{in}))
+T\_\text{fused} = \mathcal{O}(BL r (d\_\text{out} + d\_\text{in}))
 \tag{A.6}
 \]
 
@@ -1113,7 +1981,7 @@ from the matmul, not reconstruction).
 For $H_{kv} < H$, the source has more KV heads. We pool:
 
 \[
-W_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum_{j=1}^{\text{rep}} W_{k}[i \cdot \text{rep} + j, :]
+W\_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum\_{j=1}^{\text{rep}} W\_{k}[i \cdot \text{rep} + j, :]
 \tag{A.7}
 \]
 
@@ -1123,6 +1991,7 @@ This is a mean-pooling over groups of size $\text{rep} = H / H_{kv}$.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1130,67 +1999,67 @@ This is a mean-pooling over groups of size $\text{rep} = H / H_{kv}$.
 
 \begin{lstlisting}
 class SALTLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=16,
-                 original_weight=None, original_bias=None):
-        super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))  # DEAD CODE
+    def \_\_init\_\_(self, in\_features, out\_features, rank=16,
+                 original\_weight=None, original\_bias=None):
+        super().\_\_init\_\_()
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))  # DEAD CODE
         
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, min(in_features, out_features))
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, min(in\_features, out\_features))
 
-        W = original_weight.float() if original_weight is not None else ...
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        W = original\_weight.float() if original\_weight is not None else ...
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Buffers
-        self.register_buffer("U", U[:, :self.rank])
-        self.register_buffer("Vt", Vt[:self.rank, :])
-        self.register_buffer("S", S[:self.rank])
+        self.register\_buffer("U", U[:, :self.rank])
+        self.register\_buffer("Vt", Vt[:self.rank, :])
+        self.register\_buffer("S", S[:self.rank])
         
         # Trainable
         self.gamma = nn.Parameter(torch.ones(self.rank))
-        self.A = nn.Parameter(torch.randn(out_features, self.rank) * 0.01)
-        self.B = nn.Parameter(torch.zeros(self.rank, in_features))
+        self.A = nn.Parameter(torch.randn(out\_features, self.rank) * 0.01)
+        self.B = nn.Parameter(torch.zeros(self.rank, in\_features))
         
-        if original_bias is not None:
-            self.bias = nn.Parameter(original_bias.clone())
+        if original\_bias is not None:
+            self.bias = nn.Parameter(original\_bias.clone())
         else:
-            self.bias = nn.Parameter(torch.zeros(out_features))
+            self.bias = nn.Parameter(torch.zeros(out\_features))
     
     @property
     def weight(self):
-        adapted_S = self.S * self.gamma
-        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
-        return W_svd + W_lora
+        adapted\_S = self.S * self.gamma
+        W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt
+        W\_lora = self.A @ self.B
+        return W\_svd + W\_lora
     
     def forward(self, x):
-        adapted_S = self.S * self.gamma
-        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
-        W = (W_svd + W_lora).to(dtype=x.dtype)
+        adapted\_S = self.S * self.gamma
+        W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt
+        W\_lora = self.A @ self.B
+        W = (W\_svd + W\_lora).to(dtype=x.dtype)
         return F.linear(x, W, self.bias.to(dtype=x.dtype))
 \end{lstlisting}
 
 \subsection{B.2 Fused Forward (Not Implemented)}
 
 \begin{lstlisting}
-def forward_fused(self, x):
+def forward\_fused(self, x):
     z = F.linear(x, self.Vt)                         # (B, L, r)
     z = z * (self.S * self.gamma)                     # scale
-    y_svd = F.linear(z, self.U)                       # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d_out)
-    return y_svd + y_lora + self.bias
+    y\_svd = F.linear(z, self.U)                       # (B, L, d\_out)
+    y\_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d\_out)
+    return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 \subsection{B.3 Weight Extraction}
 
 \begin{lstlisting}
 # GPT-2
-if hasattr(src, "c_attn"):
-    weight = src.c_attn.weight.data
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
     ...
 
@@ -1200,7 +2069,7 @@ if hasattr(src, "self") and hasattr(src.self, "query"):
     ...
 
 # DistilBERT
-extracted["q"] = src.q_lin.weight.data
+extracted["q"] = src.q\_lin.weight.data
 ...
 \end{lstlisting}
 
@@ -1209,33 +2078,33 @@ extracted["q"] = src.q_lin.weight.data
 \subsubsection{B.4.1 Conv1D Orientation}
 
 \begin{lstlisting}
-if weight.shape[1] == 3 * self.hidden_size:
+if weight.shape[1] == 3 * self.hidden\_size:
     weight = weight.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 \subsubsection{B.4.2 GQA Pooling}
 
 \begin{lstlisting}
-if src_out > out_dim and src_out % out_dim == 0:
-    rep = src_out // out_dim
-    final_w = w_oriented.view(out_dim, rep, -1).mean(dim=1)
+if src\_out \textgreater{} out\_dim and src\_out \% out\_dim == 0:
+    rep = src\_out // out\_dim
+    final\_w = w\_oriented.view(out\_dim, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 \subsubsection{B.4.3 Nested Encoder Detection}
 
 \begin{lstlisting}
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", ...))
-self.is_nested_encoder = (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
-) and not has_out_proj
+has\_out\_proj = any(hasattr(src, attr) for attr in ("dense", "out\_proj", ...))
+self.is\_nested\_encoder = (
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
+) and not has\_out\_proj
 \end{lstlisting}
 
 \subsection{B.5 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("salt_attention")
-@ATTENTION_REGISTRY.register("salt")
+@ATTENTION\_REGISTRY.register("salt\_attention")
+@ATTENTION\_REGISTRY.register("salt")
 class SALTAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -1244,15 +2113,16 @@ class SALTAttention(BaseAttention):
 
 \begin{lstlisting}
 # Verify injection
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if isinstance(mod, SALTLinear):
-        print(f"{name}: rank={mod.rank}, gamma_norm={mod.gamma.norm().item():.4f}")
+        print(f"{name}: rank={mod.rank}, gamma\_norm={mod.gamma.norm().item():.4f}")
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1424,11 +2294,11 @@ Step  Loss
 {
   "distilbert": {
     "accuracy": 86.4,
-    "params_before": 66955010,
-    "params_after": 66.4M,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
     "reduction": 48.2\%,
-    "storage_mb": 256 MB,
-    "peak_vram_mb": 380 MB
+    "storage\_mb": 256 MB,
+    "peak\_vram\_mb": 380 MB
   },
   ...
 }
@@ -1437,13 +2307,14 @@ Step  Loss
 \subsection{C.10 Reproduction}
 
 \begin{lstlisting}
-python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank 32
+python run\_all\_4\_salt.py --models distilbert,roberta,gpt2 --rank 32
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1562,6 +2433,7 @@ benefit.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1627,7 +2499,7 @@ None.
 
 ---
 
-##   `build.py`   `apply_vars.py`
+##   `build.py`   `apply\_vars.py`
 
                      . `SECTIONS`                           :
 
@@ -1644,3 +2516,4 @@ SECTIONS = [
 
 ---
 \end{lstlisting}
+

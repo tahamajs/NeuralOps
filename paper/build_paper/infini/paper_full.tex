@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Infini-Attention: Compressive Memory with Sliding-Window Local Attention for Transformer Inference}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -64,15 +66,15 @@ The local branch uses sliding-window attention, which for causal models
 combines a causal mask and a distance-band mask:
 
 \[
-\text{LocalAttn}_{ij} = \text{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}} + M_{ij}\right), \quad
-M_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+\text{LocalAttn}\_{ij} = \text{softmax}\!\left(\frac{Q\_i K\_j^\top}{\sqrt{d\_h}} + M\_{ij}\right), \quad
+M\_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
 \tag{1.2}
 \]
 
 The memory branch computes:
 
 \[
-\text{MemAttn}_i = \text{softmax}\!\left(\frac{Q_i M^\top}{\sqrt{d_h}}\right) M
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
 \tag{1.3}
 \]
 
@@ -110,6 +112,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -160,6 +163,794 @@ low-rank adapters. Infini-Attention uses LoRA for recovery.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Infini-Attention} \\
+\midrule
+\textbf{Local attention} & Sliding window & Sliding window \\
+\textbf{Global context} & Fixed global tokens or kNN & \textbf{Learned memory matrix} \\
+\textbf{Fusion} & Concatenation & \textbf{Gated scalar} \\
+\textbf{Multi-architecture} & Usually one family & \textbf{Four families} \\
+\textbf{Parameter effect} & Varies & \textbf{Increases} (memory + LoRA) \\
+\textbf{Gate init} & N/A & \textbf{$\beta$ = -5 (memory silent)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Prior compressive memory methods either (a) compress 
+past activations (Compressive Transformer), or (b) query a database (kNN). 
+Infini-Attention learns a \textbf{fixed-size parametric memory} per head, 
+trained jointly with LoRA.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
+\tag{3.1}
+\]
+
+with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
+
+\[
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
+\tag{3.2}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(L^2 d)$.
+
+\subsection{Sliding-Window Attention}
+
+Restrict attention to a window of size $W$ around each position:
+
+\[
+\text{SWA}(X)\_i = \text{softmax}\!\left(\frac{Q\_i K\_{[i-W:i+W]}^\top}{\sqrt{d\_h}}\right) V\_{[i-W:i+W]}
+\tag{3.3}
+\]
+
+For causal models, the window is one-sided: $K_{[i-W:i]}$.
+
+\textbf{Complexity:} $\mathcal{O}(L \cdot W \cdot d)$.
+
+\textbf{Trade-off.} Tokens outside the window cannot attend to each other. 
+Global information must propagate through the residual stream, which 
+requires many layers.
+
+\subsection{Compressive Memory}
+
+A compressive memory $M \in \mathbb{R}^{d_c \times d_h}$ is a small matrix 
+that acts as $d_c$ learned "virtual tokens". Queries attend to it via:
+
+\[
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
+\tag{3.4}
+\]
+
+\textbf{Intuition.} The memory summarizes the global context in $d_c$ slots. 
+Since $d_c \ll L$, this is a form of learned summarization.
+
+\textbf{Complexity:} $\mathcal{O}(L \cdot d_c \cdot d_h)$.
+
+\subsection{Gated Combination}
+
+Given two branches (local and memory), we combine them via a scalar gate:
+
+\[
+\text{output} = \text{local} + \sigma(\beta) \cdot \text{memory}
+\tag{3.5}
+\]
+
+with $\beta$ a learnable scalar. The addition (rather than concatenation) 
+preserves the pretrained output distribution when $\sigma(\beta) \to 0$.
+
+\textbf{Initialization.} Setting $\beta = -5$ gives $\sigma(-5) \approx 0.0067$, 
+meaning the memory contributes \textless{}1\% at start.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+For GQA with $H_{kv} < H$, we repeat $K, V$ $H / H_{kv}$ times before 
+attention. Infini-Attention supports GQA via \texttt{repeat\_kv}.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE rotates Q, K by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.6}
+\]
+
+Infini-Attention preserves RoPE via \texttt{rotary\_emb}.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) freezes $W$ and adds $\frac{\alpha}{r} B A$ with 
+$B = 0$ at initialization.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Infini-Attention replaces MHSA with a two-branch block:
+
+\begin{enumerate}
+\item \textbf{Local branch:} sliding-window attention over the input sequence.
+\item \textbf{Memory branch:} attention to a learned compressive memory matrix.
+\item \textbf{Fusion:} additive gated combination.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    +----------------+---------------------------+
+                     |
+        +------------+------------+
+                                   
+    +----------+             +----------+
+    | Q/K/V    |             | Q        |
+    | proj     |             |          |
+    +----+-----+             +----+-----+
+         |                        |
+                                   
+    +--------------+      +--------------+
+    | Local        |      | Memory       |
+    | Sliding-     |      | attention    |
+    | window       |      | on M         |
+    +------+-------+      +------+-------+
+           |                     |
+           +----------+----------+
+                       
+              +---------------+
+              | out\_local +   |
+              | $\sigma$($\beta$) out\_mem  |
+              +-------+-------+
+                       
+              +---------------+
+              | out\_proj      |
+              +---------------+
+\end{lstlisting}
+
+\subsection{Local Sliding-Window Branch}
+
+\subsubsection{Mask Construction}
+
+For causal models, the local mask is:
+
+\[
+M\_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
+\tag{4.1}
+\]
+
+For bidirectional models (encoders), the mask is symmetric:
+
+\[
+M\_{ij}^\text{local} = \begin{cases} 0 & |i - j| \textless{} W \\ -\infty & \text{otherwise} \end{cases}
+\tag{4.2}
+\]
+
+\subsubsection{Local Attention}
+
+\[
+\text{LocalAttn}\_i = \text{softmax}\!\left(\frac{Q\_i K^\top}{\sqrt{d\_h}} + M^\text{local}\right) V
+\tag{4.3}
+\]
+
+The softmax is computed in FP32 for stability, then cast back to the model 
+dtype.
+
+\subsubsection{Why Sliding Window?}
+
+The window captures \textbf{local syntax}: adjacent words, subword fragments, 
+short-range dependencies. Full attention over long sequences spends most 
+of its compute on long-range connections that are often rare.
+
+\subsection{Compressive Memory Branch}
+
+\subsubsection{The Memory Matrix}
+
+Each head has a learned memory:
+
+\[
+M\_h \in \mathbb{R}^{d\_c \times d\_h}
+\tag{4.4}
+\]
+
+where $d_c$ is the compression dimension. The full memory is 
+$M \in \mathbb{R}^{H \times d_c \times d_h}$.
+
+\textbf{Interpretation.} $M_h$ acts as $d_c$ learned "virtual key-value pairs". 
+Since the same $M_h$ is used for every position, it captures global context 
+that is shared across the sequence.
+
+\subsubsection{Memory Attention}
+
+\[
+\text{MemAttn}\_i = \text{softmax}\!\left(\frac{Q\_i M^\top}{\sqrt{d\_h}}\right) M
+\tag{4.5}
+\]
+
+The softmax is over the $d_c$ memory slots. This has complexity 
+$\mathcal{O}(L \cdot d_c \cdot d_h)$.
+
+\subsubsection{Memory Initialization}
+
+We initialize the memory with small random values:
+
+\[
+M \sim \mathcal{N}\!\left(0, \frac{1}{\sqrt{d\_c}}\right) \cdot 0.001
+\tag{4.6}
+\]
+
+The scale factor $0.001$ ensures the memory output is small initially, 
+so the memory branch contributes minimally before training.
+
+\subsection{Gated Fusion}
+
+\subsubsection{The Formula}
+
+\[
+\text{output} = \text{LocalAttn} + \sigma(\beta) \cdot \text{MemAttn}
+\tag{4.7}
+\]
+
+with $\beta \in \mathbb{R}$ a learnable scalar.
+
+\subsubsection{Why Additive?}
+
+Additive fusion preserves the pretrained output magnitude at initialization. 
+Concatenation would change the output distribution. Multiplicative fusion 
+would zero out the local branch when $\sigma(\beta) \approx 0$.
+
+\subsubsection{Why Sigmoid Gate?}
+
+The sigmoid $\sigma(\beta) \in (0, 1)$ bounds the memory contribution. This 
+prevents the memory branch from dominating the output.
+
+\subsubsection{Initialization Strategy}
+
+We initialize $\beta = -5$. Then:
+
+\[
+\sigma(-5) \approx 0.0067
+\tag{4.8}
+\]
+
+The memory contributes less than 1\% at initialization. The model starts 
+by exactly reproducing local sliding-window attention (which itself 
+approximates the pretrained attention in the window).
+
+\textbf{Why not initialize $\beta = 0$?} $\sigma(0) = 0.5$ would make the memory 
+contribute 50\% at start, potentially disrupting the pretrained behavior. 
+$-\infty$ would freeze the memory. $-5$ is a good compromise.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Infini-Attention forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, window W
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)                  Frozen W + LoRA
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+6:
+7:  # Local branch
+8:  S\_local $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+9:  S\_local $\leftarrow$ S\_local + causal\_mask + window\_mask
+10: P\_local $\leftarrow$ softmax(S\_local)
+11: out\_local $\leftarrow$ P\_local V
+12:
+13: # Memory branch
+14: S\_mem $\leftarrow$ Q M^T / $\sqrt{}$d\_h
+15: P\_mem $\leftarrow$ softmax(S\_mem)
+16: out\_mem $\leftarrow$ P\_mem M
+17:
+18: # Gated fusion
+19: gate $\leftarrow$ sigmoid($\beta$)
+20: combined $\leftarrow$ out\_local + gate   out\_mem
+21:
+22: combined $\leftarrow$ concat\_heads(combined)
+23: Y $\leftarrow$ W\_O combined + LoRA\_O(combined)
+24: return Y
+\end{lstlisting}
+
+\subsection{Weight Transfer}
+
+Infini-Attention transfers weights from the pretrained attention via the 
+same routine as NHA/EAT ( 5).
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Local attention & $\mathcal{O}(L W d_h H)$ & $\mathcal{O}(L W H)$ \\
+Memory attention & $\mathcal{O}(L d_c d_h H)$ & $\mathcal{O}(L d_c H)$ \\
+Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L W d + L d_c d)$ & $\mathcal{O}(L W + L d_c)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Comparison with full attention:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Full MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Sliding window & $\mathcal{O}(L W d)$ & $\mathcal{O}(L W)$ \\
+\textbf{Infini-Attention} & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $W = d_c = 128$ and $L = 4096$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Relative time} \\
+\midrule
+Full MHSA & 1.00$\times$ \\
+Sliding window & 0.031$\times$ \\
+\textbf{Infini-Attention} & \textbf{0.062$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The memory roughly doubles the cost of pure sliding window, but is still 
+~16$\times$ cheaper than full attention.
+
+\subsection{Parameter Analysis}
+
+Infini-Attention \textbf{adds} parameters to the model. Per attention layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Memory $M$ & $H \cdot d_c \cdot d_h$ \\
+Gate $\beta$ & 1 \\
+LoRA Q & $r(d + H d_h)$ \\
+LoRA K & $r(d + H_{kv} d_h)$ \\
+LoRA V & $r(d + H_{kv} d_h)$ \\
+LoRA O & $r(H d_h + d)$ \\
+\textbf{Total} & see below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($H = 12$, $d_h = 64$, $d_c = 128$, $d = 768$, $r = 16$, 
+$N_\ell = 6$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Memory & 98,304 & 589,824 \\
+Gate & 1 & 6 \\
+LoRA (all 4) & 4 $\times$ 24,576 = 98,304 & 589,824 \\
+\textbf{Total} & \textbf{196,609} & \textbf{1,179,654} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a \textbf{+1.76\%} parameter increase on DistilBERT.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Effect of Gate Initialization}
+
+\textbf{Claim.} With $\beta = -5$, the memory contributes less than 1\% to the 
+output at initialization.
+
+\textbf{Proof.} $\sigma(-5) = \frac{1}{1 + e^5} \approx 0.0067$. Since 
+$\|\text{MemAttn}\|_2$ is bounded by $\|M\|_F$, the memory output is at 
+most $\sigma(-5) \|M\|_F \approx 0.007 \|M\|_F$. For small $\|M\|_F$ 
+(initialized at $0.001$ scale), the contribution is negligible. $\square$
+
+\subsubsection{Memory Complexity}
+
+\textbf{Claim.} The memory matrix $M$ has complexity $\mathcal{O}(H d_c d_h)$.
+
+\textbf{Proof.} Per head, $M_h \in \mathbb{R}^{d_c \times d_h}$ has $d_c d_h$ 
+parameters. There are $H$ heads, so total is $H d_c d_h$. $\square$
+
+\subsubsection{Fusion Preserves Pretrained Behavior}
+
+\textbf{Claim.} If the local branch reproduces the pretrained attention output 
+within the window and $\beta \to -\infty$, then Infini-Attention reduces to 
+sliding-window attention.
+
+\textbf{Proof.} As $\beta \to -\infty$, $\sigma(\beta) \to 0$, so 
+$\text{output} \to \text{LocalAttn}$. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adaptive Rank}
+
+Infini-Attention scales compression dimensions based on model depth:
+
+\begin{lstlisting}
+num\_layers = config.num\_hidden\_layers
+if num\_layers \textgreater{} 12:
+    self.rank = max(self.rank, 128)
+    self.lora\_rank = max(self.lora\_rank, 32)
+elif num\_layers \textgreater{} 6:
+    self.rank = max(self.rank, 64)
+    self.lora\_rank = max(self.lora\_rank, 32)
+\end{lstlisting}
+
+This ensures RoBERTa (12 layers) and larger models get sufficient 
+capacity.
+
+\subsection{Copy Weights}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = (s.query.weight.data, s.query.bias.data)
+extracted["k"] = (s.key.weight.data, s.key.bias.data)
+extracted["v"] = (s.value.weight.data, s.value.bias.data)
+extracted["o"] = (src.output.dense.weight.data, src.output.dense.bias.data)
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True} (RoBERTa's \texttt{attention.output.dense} applies the 
+output projection).
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.data.t()  # transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:768])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[768:1536])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[1536:2304])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+
+Direct copy from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}; RoPE preserved via 
+\texttt{rotary\_emb}.
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out = (hasattr(src, "dense") or hasattr(src, "out\_proj")
+           or hasattr(src, "out\_lin") or hasattr(src, "c\_proj")
+           or hasattr(src, "o\_proj"))
+
+is\_nested = False
+if (cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+    or (hasattr(src, "query") and not has\_out)):
+    is\_nested = True
+if hasattr(src, "self") and hasattr(src, "output"):
+    is\_nested = True
+self.is\_nested\_encoder = is\_nested
+\end{lstlisting}
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject\_infini(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = InfiniAttention(config=model\_config, old\_attn=src, **kwargs)
+    if src is not None:
+        new\_attn.copy\_weights(src)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
+\end{lstlisting}
+
+\subsection{The `InfiniAttention` Module Structure}
+
+\begin{lstlisting}
+class InfiniAttention(BaseAttention):
+    def \_\_init\_\_(self, config, rank=64, compress\_dim=128,
+                 local\_window=128, pretrained\_attn=None, ...):
+        super().\_\_init\_\_(config, rank)
+        self.q\_proj = LoRALinear(d, H*d\_h, lora\_rank=r)
+        self.k\_proj = LoRALinear(d, H\_kv*d\_h, lora\_rank=r)
+        self.v\_proj = LoRALinear(d, H\_kv*d\_h, lora\_rank=r)
+        self.out\_proj = LoRALinear(H*d\_h, d, lora\_rank=r)
+        
+        self.memory = nn.Parameter(torch.randn(1, H, d\_c, d\_h) * 0.001)
+        self.beta = nn.Parameter(torch.tensor([-5.0]))
+        
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
+\end{lstlisting}
+
+\subsection{Causality}
+
+For decoders, the causal + window mask ensures:
+
+\[
+M\_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j \textless{} W \\ -\infty & \text{otherwise} \end{cases}
+\tag{5.1}
+\]
+
+\textbf{Verification.} Gradient of output at position $i$ w.r.t. input at 
+position $j > i$ is zero.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises & Injection fails \\
+Small Frobenius norm & Explicit check & Raises RuntimeError \\
+Nested encoder mis-set & Logits differ & Manual fix \\
+OOM & RuntimeError & Reduce batch \\
+NaN in memory & \texttt{torch.isnan} & Not handled \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("infini")
+@ATTENTION\_REGISTRY.register("infini\_attention")
+class InfiniAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Infini-Attention \textbf{raises NotImplementedError} for cross-attention:
+
+\begin{lstlisting}
+if kwargs.get("encoder\_hidden\_states", None) is not None:
+    raise NotImplementedError(...)
+\end{lstlisting}
+
+This is a limitation for encoder-decoder models.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of infini.}
+\label{fig:arch_infini}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{Infini-Attention Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{compress\_dim} $d_c$ & 64 \\
+\texttt{local\_window} $W$ & 128 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{rank} & 32 \\
+$\beta$ init & -5.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, Precision, Recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Memory usage:} Per-layer memory matrix size
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_infini.py \
+    --models distilbert,roberta,gpt2 \
+    --compress\_dim 64 \
+    --local\_window 128 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 min.
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -172,7 +963,7 @@ DistilBERT & \textbf{Infini Attention} & \textbf{90.25\%} & -0.23\% & PASS & 0.9
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Infini Attention} & \textbf{56.54\%} & -18.57\% & PASS & 0.6855 & 0 & \textbf{0.93$\times$} & 406.5 MB & 6.9 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Infini Attention} & \textbf{51.26\%} & -9.52\% & PASS_LOW & 0.6763 & 0 & \textbf{0.98$\times$} & 580.0 MB & 8.7 & -- \\
+GPT-2 & \textbf{Infini Attention} & \textbf{51.26\%} & -9.52\% & PASS\_LOW & 0.6763 & 0 & \textbf{0.98$\times$} & 580.0 MB & 8.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -361,12 +1152,13 @@ GPT-2 & PASS & 51.26 & 32 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/infini_distilbert_loss_convergence.png}
+\includegraphics[width=0.85\linewidth]{figures/infini\_distilbert\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{infini}.}
 \label{fig:results_infini}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -485,7 +1277,7 @@ The \textbf{+48.5\%\%} parameter increase comes from:
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
 Memory & 128 KB\% \\
-Gate & <0.001\% \\
+Gate & \textless{}0.001\% \\
 LoRA & 0.85\% \\
 \bottomrule
 \end{tabular}
@@ -513,9 +1305,9 @@ complementary:
 \textbf{Failure mode} & \textbf{Symptom} & \textbf{Root cause} \\
 \midrule
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failure \\
-Overfitting & Train >> val acc & Memory too large \\
+Overfitting & Train \textgreater{}\textgreater{} val acc & Memory too large \\
 NaN & Loss = NaN & Memory scale too large \\
-Slow & >5$\times$ latency & Extra matmuls \\
+Slow & \textgreater{}5$\times$ latency & Extra matmuls \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -534,6 +1326,7 @@ Slow & >5$\times$ latency & Extra matmuls \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -575,7 +1368,7 @@ $\beta = -5$ preserves pretrained behavior at start. $\beta = 0$ gives
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Long sequence (L > 512)? --- Yes --- Use Infini-Attention
+Long sequence (L \textgreater{} 512)? --- Yes --- Use Infini-Attention
   | No
    
 Need to reduce model size? --- Yes --- Use AASVD or A3
@@ -660,6 +1453,7 @@ Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -684,8 +1478,8 @@ Only SST-2 is evaluated. Infini-Attention may behave differently on:
 Tested on models with $\le$124M parameters. Not tested on:
 
 \begin{itemize}
-\item >1B parameters
-\item Very deep models (>24 layers)
+\item \textgreater{}1B parameters
+\item Very deep models (\textgreater{}24 layers)
 \item Mixture-of-Experts
 
 \end{itemize}
@@ -757,6 +1551,7 @@ Research-grade implementation. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -807,7 +1602,7 @@ At longer sequences, the efficiency benefit dominates.
 \begin{itemize}
 \item Theoretical analysis
 \item Needle-in-haystack evaluation
-\item Scaling to >1B models
+\item Scaling to \textgreater{}1B models
 
 \end{itemize}
 \subsection{Closing Remarks}
@@ -835,14 +1630,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -867,49 +1663,49 @@ datasets & 1.0.0 \\
 \subsection{Running Infini-Attention}
 
 \begin{lstlisting}
-python run_all_4_infini.py \
+python run\_all\_4\_infini.py \
     --models distilbert,roberta,gpt2 \
-    --compress_dim 64 \
-    --local_window 128 \
-    --recovery_steps 50
+    --compress\_dim 64 \
+    --local\_window 128 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,infini \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_infini.py --models distilbert,roberta,gpt2
+python run\_all\_4\_infini.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (compress\_dim)}
 \begin{lstlisting}
 for dc in 32 64 128 256; do
-    python run_all_4_infini.py --compress_dim $dc --output_suffix dc$dc
+    python run\_all\_4\_infini.py --compress\_dim $dc --output_suffix dc$dc
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (window)}
 \begin{lstlisting}
 for w in 32 64 128 256; do
-    python run_all_4_infini.py --local_window $w --output_suffix w$w
+    python run\_all\_4\_infini.py --local\_window $w --output_suffix w$w
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 ($\beta$ init)}
 \begin{lstlisting}
-python run_all_4_infini.py --beta_init -10
-python run_all_4_infini.py --beta_init -5
-python run_all_4_infini.py --beta_init -2
-python run_all_4_infini.py --beta_init 0
+python run\_all\_4\_infini.py --beta\_init -10
+python run\_all\_4\_infini.py --beta\_init -5
+python run\_all\_4\_infini.py --beta\_init -2
+python run\_all\_4\_infini.py --beta\_init 0
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -918,7 +1714,7 @@ python run_all_4_infini.py --beta_init 0
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -958,6 +1754,7 @@ GPT-2 & 51.26\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1075,6 +1872,7 @@ GPT-2 & 51.26\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1093,7 +1891,7 @@ GPT-2 & 51.26\% & +48.5\%\% \\
 \end{itemize}
 \subsection{A.2 Gate Initialization Effect}
 
-\textbf{Claim.} At $\beta = -5$, memory contributes <1\%.
+\textbf{Claim.} At $\beta = -5$, memory contributes \textless{}1\%.
 
 \textbf{Proof.} $\sigma(-5) = \frac{1}{1 + e^5} \approx 0.0067$. If $\|M\|_F = O(0.001 \sqrt{d_c d_h})$, 
 then $\sigma(\beta) \|M\|_F = O(0.007 \cdot 0.001 \sqrt{d_c d_h})$. This is 
@@ -1142,110 +1940,111 @@ For $\sigma(\beta) \to 0$, this is $\|\text{local}\|_2$. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("infini")
+@ATTENTION\_REGISTRY.register("infini")
 class InfiniAttention(BaseAttention):
-    def __init__(self, config, rank=64, compress_dim=128,
-                 local_window=128, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, compress\_dim=128,
+                 local\_window=128, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         
         # Dimensions
         self.dim = 768
-        self.num_heads = 12
-        self.head_dim = 64
-        self.all_head_size = 768
-        self.compress_dim = 128
-        self.local_window = 128
+        self.num\_heads = 12
+        self.head\_dim = 64
+        self.all\_head\_size = 768
+        self.compress\_dim = 128
+        self.local\_window = 128
         
         # Projections with LoRA
-        self.q_proj = LoRALinear(768, 768, lora_rank=16)
-        self.k_proj = LoRALinear(768, 768, lora_rank=16)
-        self.v_proj = LoRALinear(768, 768, lora_rank=16)
-        self.out_proj = LoRALinear(768, 768, lora_rank=16)
+        self.q\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.k\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.v\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.out\_proj = LoRALinear(768, 768, lora\_rank=16)
         
         # Compressive memory
         self.memory = nn.Parameter(torch.randn(1, 12, 128, 64) * 0.001)
         self.beta = nn.Parameter(torch.tensor([-5.0]))
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
-    H, Dh = self.num_heads, self.head_dim
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
+    H, Dh = self.num\_heads, self.head\_dim
     
     # 1. Projections
-    q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, L, H, Dh).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, L, self.num\_kv\_heads, Dh).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, L, self.num\_kv\_heads, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Memory attention
-    mem = self.memory.expand(B, -1, -1, -1)  # (B, H, d_c, Dh)
-    mem_scores = torch.matmul(q.float(), mem.float().transpose(-2, -1)) / math.sqrt(Dh)
-    mem_attn = torch.softmax(mem_scores, dim=-1)
-    mem_out = torch.matmul(mem_attn, mem.float()).to(v.dtype)
+    mem = self.memory.expand(B, -1, -1, -1)  # (B, H, d\_c, Dh)
+    mem\_scores = torch.matmul(q.float(), mem.float().transpose(-2, -1)) / math.sqrt(Dh)
+    mem\_attn = torch.softmax(mem\_scores, dim=-1)
+    mem\_out = torch.matmul(mem\_attn, mem.float()).to(v.dtype)
     
     # 5. Local attention
     scale = 1.0 / math.sqrt(Dh)
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
     
     # Sliding window mask
-    if self.is_decoder or self.is_causal:
+    if self.is\_decoder or self.is\_causal:
         idx = torch.arange(L, device=q.device)
-        causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
-        window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() < self.local_window
-        window_mask = causal & window
-        scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        causal = idx.unsqueeze(1) \textgreater{}= idx.unsqueeze(0)
+        window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{} self.local\_window
+        window\_mask = causal & window
+        scores = scores.masked\_fill(~window\_mask.unsqueeze(0).unsqueeze(0), -1e4)
     
     # Padding mask
-    if attention_mask is not None:
-        if attention_mask.dim() == 2:
-            valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
-            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
-        elif attention_mask.dim() == 4:
-            scores = scores + attention_mask.clamp(min=-1e4)
+    if attention\_mask is not None:
+        if attention\_mask.dim() == 2:
+            valid\_mask = get\_token\_valid\_mask(attention\_mask, B, L, hidden\_states.device)
+            scores = scores.masked\_fill(~valid\_mask.unsqueeze(1).unsqueeze(2), -1e4)
+        elif attention\_mask.dim() == 4:
+            scores = scores + attention\_mask.clamp(min=-1e4)
     
-    attn_local = F.softmax(scores, dim=-1).to(v.dtype)
-    attn_local = torch.nan_to_num(attn_local, nan=0.0)
-    attn_local = self.dropout(attn_local)
+    attn\_local = F.softmax(scores, dim=-1).to(v.dtype)
+    attn\_local = torch.nan\_to\_num(attn\_local, nan=0.0)
+    attn\_local = self.dropout(attn\_local)
     
-    local_out = torch.matmul(attn_local, v)
+    local\_out = torch.matmul(attn\_local, v)
     
     # 6. Gated fusion
     beta = torch.sigmoid(self.beta)
-    combined = local_out + beta * mem_out
-    combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    combined = local\_out + beta * mem\_out
+    combined = combined.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # 7. Output projection
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return combined, None
-    out = self.out_proj(combined)
+    out = self.out\_proj(combined)
     return out, None
 \end{lstlisting}
 
 \subsection{B.3 Memory Initialization}
 
 \begin{lstlisting}
-self.memory = nn.Parameter(torch.randn(1, H, d_c, d_h) * 0.001)
+self.memory = nn.Parameter(torch.randn(1, H, d\_c, d\_h) * 0.001)
 \end{lstlisting}
 
 The scale factor \texttt{0.001} ensures the memory's initial output magnitude is 
@@ -1258,7 +2057,7 @@ negligible.
 self.beta = nn.Parameter(torch.tensor([-5.0]))
 \end{lstlisting}
 
-At $\beta = -5$: $\sigma(-5) \approx 0.0067$, so memory contributes <1\% 
+At $\beta = -5$: $\sigma(-5) \approx 0.0067$, so memory contributes \textless{}1\% 
 initially.
 
 \subsection{B.5 Sliding Window Mask}
@@ -1267,8 +2066,8 @@ For causal models:
 
 \begin{lstlisting}
 idx = torch.arange(L, device=q.device)
-causal = idx.unsqueeze(1) >= idx.unsqueeze(0)  # j <= i
-window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() < W
+causal = idx.unsqueeze(1) \textgreater{}= idx.unsqueeze(0)  # j \textless{}= i
+window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{} W
 mask = causal & window
 \end{lstlisting}
 
@@ -1300,6 +2099,7 @@ For RoBERTa, \texttt{is\_nested\_encoder = True}. Otherwise double projection.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1469,12 +2269,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
-    "final_beta": 0.05,
-    "final_sigma": 0.02
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
+    "final\_beta": 0.05,
+    "final\_sigma": 0.02
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1485,16 +2285,16 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_infini.py --models distilbert,roberta,gpt2
+python run\_all\_4\_infini.py --models distilbert,roberta,gpt2
 
 # Compression dim sweep
 for dc in 32 64 128 256; do
-    python run_all_4_infini.py --compress_dim $dc --output_suffix dc$dc
+    python run\_all\_4\_infini.py --compress\_dim $dc --output_suffix dc$dc
 done
 
 # Window sweep
 for w in 32 64 128 256; do
-    python run_all_4_infini.py --local_window $w --output_suffix w$w
+    python run\_all\_4\_infini.py --local\_window $w --output_suffix w$w
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1502,6 +2302,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1543,7 +2344,7 @@ done
 
 \textbf{Goal.} Use K memory matrices per head.
 
-\textbf{Result.} K$\times$ parameter increase, <0.5\% accuracy improvement.
+\textbf{Result.} K$\times$ parameter increase, \textless{}0.5\% accuracy improvement.
 
 \textbf{Conclusion.} Single memory is sufficient.
 
@@ -1565,7 +2366,7 @@ done
 
 \textbf{Goal.} Learn $\beta$ per head instead of per layer.
 
-\textbf{Result.} Marginal improvement (<0.2\%), 12$\times$ parameters.
+\textbf{Result.} Marginal improvement (\textless{}0.2\%), 12$\times$ parameters.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -1653,6 +2454,7 @@ Std & 0.1 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1758,3 +2560,4 @@ We encourage the community to weigh these trade-offs.
 
 ---
 \end{lstlisting}
+

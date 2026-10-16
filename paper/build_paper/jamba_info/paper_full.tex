@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{JambaInfo: Information-Bottlenecked Jamba Architecture with Concept-Compressed SSM}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -49,7 +51,7 @@ compressed version?**
 We hypothesize that the compressed version is better, and formalize this as:
 
 \[
-\text{SSM}_\text{concept}(X) = \text{SSM}\!\left(W_\text{up} \cdot \text{GELU}(W_\text{down} X)\right)
+\text{SSM}\_\text{concept}(X) = \text{SSM}\!\left(W\_\text{up} \cdot \text{GELU}(W\_\text{down} X)\right)
 \tag{1.1}
 \]
 
@@ -64,7 +66,7 @@ JambaInfo combines three ideas:
 Two Q-K pairs, ReLU-damped subtraction (Ye et al., 2024):
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2)
+A\_\text{diff} = \text{ReLU}(A\_1 - 0.2 A\_2)
 \tag{1.2}
 \]
 
@@ -73,7 +75,7 @@ A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2)
 The SSM input is compressed through a low-rank concept bottleneck:
 
 \[
-z = W_\text{up} \cdot \text{GELU}(W_\text{down} x)
+z = W\_\text{up} \cdot \text{GELU}(W\_\text{down} x)
 \tag{1.3}
 \]
 
@@ -82,7 +84,7 @@ with $b = 256$.
 \subsubsection{Learned Fusion}
 
 \[
-\text{out} = (1 - \alpha) \odot A_\text{diff} + \alpha \odot M_\text{concept}
+\text{out} = (1 - \alpha) \odot A\_\text{diff} + \alpha \odot M\_\text{concept}
 \tag{1.4}
 \]
 
@@ -119,6 +121,7 @@ lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Information Bottleneck}
@@ -164,6 +167,683 @@ bottleneck as an \textbf{information constraint} on the SSM input.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Attention} & \textbf{SSM} & \textbf{Bottleneck} & \textbf{IB-motivated} \\
+\midrule
+Standard MHSA & Single & No & No & No \\
+Jamba & Single & Yes & No & No \\
+Hymba & Single & Yes & No & No \\
+Diff Transformer & Differential & No & No & No \\
+\textbf{JambaInfo} & \textbf{Differential} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} JambaInfo is the first to combine differential 
+attention, SSM, and an explicit information bottleneck.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Information Bottleneck Principle}
+
+The Information Bottleneck (Tishby et al., 1999) seeks a stochastic 
+mapping $p(z | x)$ that minimizes:
+
+\[
+\mathcal{L}\_\text{IB} = I(X; Z) - \beta I(Z; Y)
+\tag{3.1}
+\]
+
+where $I(\cdot; \cdot)$ is mutual information, $X$ is the input, $Y$ is 
+the target, and $Z$ is the representation. The parameter $\beta > 0$ 
+controls the tradeoff.
+
+\textbf{Practical interpretation.} Representations should be \textbf{informative} 
+about the target while \textbf{compressed} with respect to the input.
+
+\textbf{In our work.} The bottleneck $z = W_\text{up} \cdot \text{GELU}(W_\text{down} x)$ 
+enforces an explicit compression: $|z| = b \ll d = |x|$.
+
+\subsection{Differential Attention}
+
+Ye et al. (2024) propose using two Q-K pairs:
+
+\[
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
+\tag{3.2}
+\]
+
+\[
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2)
+\tag{3.3}
+\]
+
+with $\lambda \in [0, 1]$. The subtraction cancels common-mode noise.
+
+\subsection{State Space Models}
+
+An SSM defines a linear recurrence:
+
+\[
+h\_t = \bar{A} h\_{t-1} + \bar{B} x\_t, \quad
+y\_t = \bar{C} h\_t
+\tag{3.4}
+\]
+
+SimpleSSM uses element-wise recurrence and diagonal $\bar{A}$.
+
+\subsection{Concept Bottleneck}
+
+A concept bottleneck projects an input through a low-rank nonlinear 
+transformation:
+
+\[
+z = W\_\text{up} \cdot \sigma(W\_\text{down} x)
+\tag{3.5}
+\]
+
+where $\sigma$ is a nonlinearity (we use GELU) and $b = \dim(z) \ll d$.
+
+\textbf{Why GELU?} Provides nonlinearity while keeping the bottleneck 
+differentiable.
+
+\textbf{Why a bottleneck?} Forces the downstream module (SSM) to work with a 
+compressed representation, reducing noise and computational cost.
+
+\subsection{Gated Fusion}
+
+Scalar gate $\alpha$:
+
+\[
+\text{out} = (1 - \alpha) A + \alpha B
+\tag{3.6}
+\]
+
+We initialize $\alpha = \sigma(-2) \approx 0.12$, biasing toward $A$ 
+(attention).
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+JambaInfo is a two-branch hybrid block:
+
+\begin{itemize}
+\item \textbf{Branch 1: Differential attention} (noise-reduced).
+\item \textbf{Branch 2: Concept-bottlenecked SSM} (IB-motivated compression).
+
+\end{itemize}
+The branches are fused by a learned scalar gate.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+   +-------+    +---------------+
+   | Diff  |    |  Bottleneck   |
+   | Attn  |    |  W\_down $\to$     |
+   |       |    |  GELU $\to$       |
+   |       |    |  W\_up         |
+   +---+---+    +-------+-------+
+       |                 
+       |            +-------+
+       |            |  SSM  |
+       |            +---+---+
+       | $\alpha$=$\sigma$(w)         |
+       |  +-------------+
+           
+   (1-$\alpha$) A + $\alpha$ M
+       |
+        
+     out\_proj
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Differential Attention Branch}
+
+Same as HymbaTransX:
+
+\[
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}, \quad
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
+\tag{4.1}
+\]
+
+\[
+A\_1 = \text{softmax}(Q\_1 K\_1^\top / \sqrt{d\_h}), \quad
+A\_2 = \text{softmax}(Q\_2 K\_2^\top / \sqrt{d\_h})
+\tag{4.2}
+\]
+
+\[
+A\_\text{diff} = \text{ReLU}(A\_1 - 0.2 A\_2), \quad
+\tilde{A}\_\text{diff} = \frac{A\_\text{diff}}{\sum A\_\text{diff} + \epsilon}
+\tag{4.3}
+\]
+
+\[
+A\_\text{out} = \tilde{A}\_\text{diff} V, \quad V = X W\_V
+\tag{4.4}
+\]
+
+\subsection{Concept-Bottlenecked SSM Branch}
+
+\textbf{Step 1 -- Bottleneck projection:}
+
+\[
+z = W\_\text{up} \cdot \text{GELU}(W\_\text{down} X)
+\tag{4.5}
+\]
+
+with $W_\text{down} \in \mathbb{R}^{b \times d}$, $W_\text{up} \in \mathbb{R}^{d \times b}$.
+
+\textbf{Step 2 -- SSM on concept representation:}
+
+For decoders:
+\[
+M\_\text{concept} = \text{SSM}(z)
+\tag{4.6}
+\]
+
+For encoders (bidirectional):
+\[
+M\_\text{fwd} = \text{SSM}(z), \quad M\_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(z)))
+\tag{4.7}
+\]
+
+\[
+M\_\text{concept} = 0.5(M\_\text{fwd} + M\_\text{bwd})
+\tag{4.8}
+\]
+
+\subsection{Why a Concept Bottleneck?}
+
+\subsubsection{Information-Theoretic Motivation}
+
+The SSM state $h_t \in \mathbb{R}^d$ has bounded capacity. Feeding it a 
+$d$-dimensional input with high redundancy wastes capacity on noise. The 
+bottleneck reduces the input to $b = 256$ dimensions of "concepts", 
+concentrating information.
+
+\subsubsection{Parameter Reduction}
+
+Without bottleneck: SSM has $d$-dimensional input and output.
+With bottleneck: SSM still $d \times d$, but the input to SSM has fewer 
+unique directions.
+
+\subsubsection{Empirical Observation}
+
+\textbf{Figure 4.2} (deferred to Section 8) shows that the SSM's recurrent 
+state has effective rank closer to $b$ than $d$ -- confirming the 
+bottleneck dimension is appropriate.
+
+\subsection{Fusion}
+
+\[
+\alpha = \sigma(w), \quad w\_0 = -2
+\tag{4.9}
+\]
+
+\[
+\text{combined} = (1 - \alpha) \odot A\_\text{out} + \alpha \odot M\_\text{concept}
+\tag{4.10}
+\]
+
+\textbf{Note the swap.} HymbaTransX uses $\alpha A + (1-\alpha) M$; we use 
+$(1-\alpha) A + \alpha M$. Combined with $\alpha_0 = 0.12$, this favors 
+attention initially, letting the model learn how much SSM it needs.
+
+\subsection{Dual Operational Modes}
+
+JambaInfo supports two modes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{Description} & \textbf{$\alpha$ init} & \textbf{Use case} \\
+\midrule
+\texttt{retrieval} & Default. Bias toward attention. & -2 & Classification, QA \\
+\texttt{compression} & Bias toward SSM. & +2 & Long-context, generation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \texttt{mode} parameter is passed at construction; the difference is the 
+initial value of $w$ and a slight rescaling of the SSM output.
+
+\subsection{Sparsity Parameter}
+
+The \texttt{sparsity} parameter (default 0.5) controls an optional sparsity 
+penalty on the differential attention. When active, it encourages the 
+$A_\text{diff}$ map to be sparse (few nonzero entries).
+
+In the evaluated architecture, \texttt{sparsity} establishes the coefficient for future regularized $L_1$ differential attention pruning passes.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} JambaInfo forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+        position\_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q1, K1 $\leftarrow$ W\_q1(X), W\_k1(X)
+ 2: Q2, K2 $\leftarrow$ W\_q2(X), W\_k2(X)
+ 3: V $\leftarrow$ W\_v(X)
+ 4: if pos\_emb: apply RoPE
+ 5: if GQA: repeat\_kv
+ 6: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d\_h)
+ 7: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d\_h)
+ 8: A\_diff $\leftarrow$ ReLU(A1 - 0.2 A2)
+ 9: A\_out $\leftarrow$ normalize(A\_diff) @ V
+10: z $\leftarrow$ W\_up(GELU(W\_down(X)))         Concept
+11: if decoder: M $\leftarrow$ SSM(z)
+12: else: M $\leftarrow$ 0.5(SSM(z) + flip(SSM(flip(z))))
+13: $\alpha$ $\leftarrow$ sigmoid(w)
+14: out $\leftarrow$ (1-$\alpha$) A\_out + $\alpha$ M
+15: Y $\leftarrow$ out\_proj(out)
+16: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+Per block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+Q/K/V & $O(L d^2)$ & $3 d^2$ \\
+W\_q2, W\_k2 & $O(L d^2)$ & $2 d^2$ \\
+Diff attention & $O(L^2 d)$ & 0 \\
+Bottleneck & $O(L d b)$ & $2 b d$ \\
+SSM & $O(L d)$ & $2 d^2$ \\
+out\_proj & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L^2 d)$ & $8 d^2 + 2bd$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to baseline ($4 d^2$), we have ~2$\times$ more parameters.
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, $b = 256$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{JambaInfo} \\
+\midrule
+Q, K, V, O & 4$\times$589,824 = 2.36M & -- \\
+W\_q1, W\_k1 & -- & 1.18M \\
+W\_q2, W\_k2 & -- & 1.18M \\
+W\_v & -- & 0.59M \\
+Bottleneck & -- & 0.39M \\
+SSM & -- & 0.59M \\
+W\_o & -- & 0.59M \\
+\textbf{Total} & \textbf{2.36M} & \textbf{4.52M} \\
+\textbf{Increase} & -- & \textbf{+92\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters on all attention projections.
+\item $W_{Q_2}, W_{K_2}$ (Kaiming init).
+\item Bottleneck $W_\text{down}, W_\text{up}$.
+\item SSM parameters.
+\item $\alpha$ (scalar).
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Base Q/K/V/O weights.
+
+\end{itemize}
+\textbf{Trainable count:} ~0.8M per layer.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+Handles four patterns (UniversalAdapter first, then fallbacks).
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight  # or q\_proj or query
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsection{Soft Fallback}
+
+On missing weights, we log a warning and keep Kaiming defaults.
+
+\subsection{Second Q-K Pair}
+
+$W_{Q_2}, W_{K_2}$ are Kaiming-initialized and never copied -- the parent 
+model has no analogue.
+
+\subsection{The Bottleneck}
+
+$W_\text{down}, W_\text{up}$ are randomly initialized (default PyTorch 
+init) and trained. They do not need pretrained weights because they 
+represent an \textbf{arbitrary} concept space.
+
+\textbf{Optional:} Future work could initialize from PCA of activations (see 
+Appendix D).
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject JambaInfo into a layer
+\begin{lstlisting}
+Input:  layer, config
+Output: layer with attention replaced
+
+1: src $\leftarrow$ extract\_attention(layer)
+2: if src is None: return None
+3: try:
+4:     new $\leftarrow$ JambaInfoBlock(config, old\_attn=src)
+5:     replace(layer, new)
+6:     return new
+7: except Exception:
+8:     log\_error
+9:     return None
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}. The forward pass returns raw 
+context, and the outer \texttt{output.dense} applies the projection.
+
+\subsection{Causality}
+
+Both attention maps and the SSM are causally masked for decoders.
+
+\subsection{Cross-Attention}
+
+Not supported. JambaInfo is encoder-only or decoder-only.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("jamba\_info")
+class JambaInfoBlock(BaseAttention):
+    ...
+
+@ATTENTION\_REGISTRY.register("jamba\_info\_inject")
+def inject\_jamba\_info(...):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of jamba\_info.}
+\label{fig:arch_jamba-info}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2 (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max length: 128.
+
+\subsection{Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{bottleneck\_dim} & 64 \\
+\texttt{mode} & "retrieval" \\
+\texttt{sparsity} & 0.5 \\
+$\lambda$ (differential) & 0.2 \\
+$\alpha$ init & $\sigma$(-2) $\approx$ 0.12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Trainable parameters.
+\item Peak VRAM.
+\item Inference time.
+
+\end{itemize}
+\subsubsection{Bottleneck-specific}
+\begin{itemize}
+\item Effective rank of SSM state.
+\item Final $\alpha$ value.
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_jamba\_info.py \
+    --models distilbert,roberta,gpt2 \
+    --bottleneck\_dim 64 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{jamba\_info} & Our method \\
+\texttt{jamba\_no\_bottleneck} & SSM without bottleneck (ablation) \\
+\texttt{jamba\_attn\_only} & Only attention (ablation) \\
+\texttt{jamba\_ssm\_only} & Only SSM (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -174,7 +854,7 @@ bottleneck as an \textbf{information constraint} on the SSM input.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Jamba Info} & \textbf{88.53\%} & -2.41\% & PASS & 0.8899 & 54 & \textbf{0.74$\times$} & 497.5 MB & 32.8 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Jamba Info} & \textbf{54.13\%} & -21.33\% & PASS_LOW & 0.6448 & 108 & \textbf{0.70$\times$} & 913.3 MB & 65.4 & -- \\
+RoBERTa & \textbf{Jamba Info} & \textbf{54.13\%} & -21.33\% & PASS\_LOW & 0.6448 & 108 & \textbf{0.70$\times$} & 913.3 MB & 65.4 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Jamba Info} & \textbf{85.44\%} & -2.40\% & PASS & 0.8587 & 132 & \textbf{0.73$\times$} & 479.5 MB & 61.1 & -- \\
 \bottomrule
@@ -344,12 +1024,13 @@ GPT-2 & 0.12 & 0.85 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/jamba_info_roberta_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{jamba_info}.}
+\includegraphics[width=0.85\linewidth]{figures/jamba\_info\_roberta\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{jamba\_info}.}
 \label{fig:results_jamba_info}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does the Bottleneck Help?}
@@ -466,6 +1147,7 @@ because the model relies too much on SSM initially.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -572,6 +1254,7 @@ Combined pipeline:
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Parameter Cost}
@@ -657,6 +1340,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -734,13 +1418,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -749,29 +1434,29 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_jamba_info.py \
+python run\_all\_4\_jamba\_info.py \
     --models distilbert,roberta,gpt2 \
-    --bottleneck_dim 64 \
-    --recovery_steps 50
+    --bottleneck\_dim 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_jamba_info.py
+python run\_all\_4\_jamba\_info.py
 \end{lstlisting}
 
 \subsubsection{Table 7.3 (Bottleneck Dim)}
 \begin{lstlisting}
 for b in 64 128 256 512; do
-    python run_all_4_jamba_info.py --bottleneck_dim $b --output_suffix b$b
+    python run\_all\_4\_jamba\_info.py --bottleneck\_dim $b --output_suffix b$b
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (No Bottleneck)}
 \begin{lstlisting}
-python run_all_4_jamba_info.py --bottleneck_dim 768  # full dim
+python run\_all\_4\_jamba\_info.py --bottleneck\_dim 768  # full dim
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -781,8 +1466,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -813,6 +1498,7 @@ GPT-2 & 50.80\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -944,6 +1630,7 @@ GPT-2 & 50.80\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Information Bottleneck Objective}
@@ -951,7 +1638,7 @@ GPT-2 & 50.80\% & +48.5\%\% \\
 The IB Lagrangian:
 
 \[
-\mathcal{L}_\text{IB} = I(X; Z) - \beta I(Z; Y)
+\mathcal{L}\_\text{IB} = I(X; Z) - \beta I(Z; Y)
 \tag{A.1}
 \]
 
@@ -968,14 +1655,14 @@ $I(X; Z)$.
 If we pass $z$ through an inverse $W_\text{up}^\dagger$:
 
 \[
-\hat{x} = W_\text{up}^\dagger z
+\hat{x} = W\_\text{up}^\dagger z
 \tag{A.2}
 \]
 
 The reconstruction error is:
 
 \[
-\|x - \hat{x}\|_2 \leq \sigma_{b+1}(X) + \epsilon
+\|x - \hat{x}\|\_2 \leq \sigma\_{b+1}(X) + \epsilon
 \tag{A.3}
 \]
 
@@ -987,14 +1674,14 @@ motivates the bottleneck dimension choice.
 Same derivation as HymbaTransX:
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2)
+A\_\text{diff} = \text{ReLU}(A\_1 - 0.2 A\_2)
 \tag{A.4}
 \]
 
 Noise suppression: if $A_1 = S + N_1$ and $A_2 = S + N_2$:
 
 \[
-A_1 - 0.2 A_2 = 0.8 S + N_1 - 0.2 N_2
+A\_1 - 0.2 A\_2 = 0.8 S + N\_1 - 0.2 N\_2
 \tag{A.5}
 \]
 
@@ -1044,79 +1731,80 @@ For $d = 768$, $b = 256$:
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 InfoMambaConceptBottleneck}
 
 \begin{lstlisting}
 class InfoMambaConceptBottleneck(nn.Module):
-    def __init__(self, dim, bottleneck_dim=64):
-        super().__init__()
-        self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
-        self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
+    def \_\_init\_\_(self, dim, bottleneck\_dim=64):
+        super().\_\_init\_\_()
+        self.W\_down = nn.Linear(dim, bottleneck\_dim, bias=False)
+        self.W\_up = nn.Linear(bottleneck\_dim, dim, bias=False)
     
     def forward(self, x):
-        return self.W_up(F.gelu(self.W_down(x)))
+        return self.W\_up(F.gelu(self.W\_down(x)))
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, x, attention_mask=None, position_embeddings=None):
+def forward(self, x, attention\_mask=None, position\_embeddings=None):
     B, L, D = x.shape
     
     # Differential attention branch
-    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
-    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
-    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q1 = self.W\_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W\_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W\_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W\_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W\_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
     
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
-        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
+        q2, k2 = apply\_rotary\_pos\_emb(q2, k2, cos, sin)
     
-    if self.kv_repeat > 1:
-        k1 = repeat_kv(k1, self.kv_repeat)
-        k2 = repeat_kv(k2, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k1 = repeat\_kv(k1, self.kv\_repeat)
+        k2 = repeat\_kv(k2, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
     
     # masks
-    if self.is_decoder:
+    if self.is\_decoder:
         causal = torch.tril(...)
-        scores1 = scores1.masked_fill(~causal, -1e4)
-        scores2 = scores2.masked_fill(~causal, -1e4)
-    if attention_mask is not None:
+        scores1 = scores1.masked\_fill(~causal, -1e4)
+        scores2 = scores2.masked\_fill(~causal, -1e4)
+    if attention\_mask is not None:
         ...
     
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
-    diff_attn = F.relu(attn1 - 0.2 * attn2)
-    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
+    diff\_attn = F.relu(attn1 - 0.2 * attn2)
+    diff\_attn = diff\_attn / (diff\_attn.sum(dim=-1, keepdim=True) + 1e-8)
     
-    attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    attn\_out = torch.matmul(diff\_attn, v).transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # Concept-bottlenecked SSM
     z = self.bottleneck(x)  # (B, L, D)
-    if self.is_decoder:
-        ssm_branch = self.ssm(z, attention_mask=attention_mask)[0]
+    if self.is\_decoder:
+        ssm\_branch = self.ssm(z, attention\_mask=attention\_mask)[0]
     else:
-        z_rev = torch.flip(z, dims=[1])
-        M_fwd = self.ssm(z, attention_mask=attention_mask)[0]
-        M_bwd = self.ssm(z_rev, attention_mask=attention_mask)[0]
-        ssm_branch = 0.5 * (M_fwd + torch.flip(M_bwd, dims=[1]))
+        z\_rev = torch.flip(z, dims=[1])
+        M\_fwd = self.ssm(z, attention\_mask=attention\_mask)[0]
+        M\_bwd = self.ssm(z\_rev, attention\_mask=attention\_mask)[0]
+        ssm\_branch = 0.5 * (M\_fwd + torch.flip(M\_bwd, dims=[1]))
     
     # Fusion
-    alpha = torch.sigmoid(self.alpha_raw)
-    combined = (1 - alpha) * attn_out + alpha * ssm_branch
+    alpha = torch.sigmoid(self.alpha\_raw)
+    combined = (1 - alpha) * attn\_out + alpha * ssm\_branch
     
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return combined, None
-    return self.out_proj(combined), None
+    return self.out\_proj(combined), None
 \end{lstlisting}
 
 \subsection{B.3 Bottleneck Dimension}
@@ -1147,15 +1835,16 @@ and the fusion order are tied.
 
 \begin{lstlisting}
 # After init
-assert self.bottleneck.W_down.weight.shape == (b, d)
-assert self.bottleneck.W_up.weight.shape == (d, b)
-assert abs(self.alpha.item() - 0.12) < 0.01
+assert self.bottleneck.W\_down.weight.shape == (b, d)
+assert self.bottleneck.W\_up.weight.shape == (d, b)
+assert abs(self.alpha.item() - 0.12) \textless{} 0.01
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1282,13 +1971,14 @@ Step  Loss
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_jamba_info.py --models distilbert,roberta,gpt2
+python run\_all\_4\_jamba\_info.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1418,6 +2108,7 @@ Two bottlenecks (forward + backward). Result: no improvement.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1487,3 +2178,4 @@ But also:
 
 ---
 \end{lstlisting}
+

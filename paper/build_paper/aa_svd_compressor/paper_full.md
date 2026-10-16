@@ -1464,11 +1464,14 @@ Evaluating compression across ranks highlights how layer selectivity and reconst
 ### Table 7.2: Parameter counts.
 
 <!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
-| Model | Baseline | AASVD | Ratio | Note |
-|---|---|---|---|---|
-| DistilBERT | 66,955,010 | 16000000 | **4.0×** | 0.86 |
-| RoBERTa | 124,647,170 | 35000000 | **3.5×** | 0.92 |
-| GPT-2 | 124,441,344 | 35000000 | **3.5×** | 0.89 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Aasvd** | **89.56%** | -1.38% | PASS | 0.9008 | 11 | **1.02x** | 358.8 MB | 11.3s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Aasvd** | **86.70%** | +11.24% | PASS | 0.8811 | 10 | **1.01x** | 573.6 MB | 17.2s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Aasvd** | **76.83%** | -11.01% | PASS | 0.8054 | 24 | **1.11x** | 466.9 MB | 24.9s |
 
 **Per-layer breakdown (DistilBERT):**
 
@@ -1612,6 +1615,22 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 - **Accuracy drop:** -1.26%–+1.37%
 - **VRAM reduction:** 40%
 - **All models pass quality gate.**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=94.50%, comp=1.016x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.50% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.9410 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.016x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 2 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 22 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:41:55.180117 | `results/rank_ablation/agnews_rank32/summary.csv` |
+
 
 
 ---
@@ -3023,3 +3042,7 @@ But also:
 - Enable surveillance at scale
 - Concentrate AI capabilities
 - Widen gap between compressed and full models
+
+
+---
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Adaptive SVD Attention: Energy-Thresholded Low-Rank Factorization with Residual Adapters for Multi-Architecture Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -44,7 +46,7 @@ values themselves to determine rank. Specifically, threshold **cumulative
 squared energy**:
 
 \[
-\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2}, \quad
+\mathcal{E}(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_{j=1}^{\min(d\_\text{in}, d\_\text{out})} \sigma\_j^2}, \quad
 r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{1.1}
 \]
@@ -81,8 +83,8 @@ per-projection factorizations $W_P \approx U_P V_P$ such that:
 
 \end{enumerate}
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{1.2}
 \]
 
@@ -132,6 +134,7 @@ practical usage. Section 10 lists limitations. Section 11 concludes.
 \subsection{Notation}
 
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -163,10 +166,10 @@ factorization, this becomes the A3 method (Fisher diagonal weighting).
 \textbf{SmoothQuant.} Xiao et al. (2023) migrate activation scale to weights for 
 quantization. Analogous to AASVD's covariance weighting for low-rank.
 
-\textbf{A3.} Uses Fisher diagonal $F_i = \mathbb{E}[x_i^2]$ to weight the SVD input 
+\textbf{A3.} Uses Fisher diagonal $F\_i = \mathbb{E}[x\_i^2]$ to weight the SVD input 
 space. Requires calibration. Adaptive SVD is calibration-free.
 
-\textbf{AASVD.} Uses full covariance $C_X = \mathbb{E}[x x^\top]$. Requires 
+\textbf{AASVD.} Uses full covariance $C\_X = \mathbb{E}[x x^\top]$. Requires 
 streaming EMA accumulation. Adaptive SVD is calibration-free.
 
 \textbf{Key distinction.} Adaptive SVD does \textbf{not} use activation statistics. Its 
@@ -174,7 +177,7 @@ rank criterion is intrinsic to the weight matrix.
 
 \subsection{Parameter-Efficient Fine-Tuning}
 
-\textbf{LoRA.} Hu et al. (2021) add trainable rank-$r_L$ updates $B A$ with $B = 0$. 
+\textbf{LoRA.} Hu et al. (2021) add trainable rank-$r\_L$ updates $B A$ with $B = 0$. 
 Adaptive SVD uses the same residual structure, integrated with a frozen SVD base.
 
 \textbf{AdaLoRA.} Zhang et al. (2023) adaptively allocate LoRA rank per layer based 
@@ -199,6 +202,1057 @@ SVD preserves head count but compresses per-head projection matrices.
 2024) reduce cache size at inference. Different target.
 
 \subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{Calib} & \textbf{Weighted} & \textbf{Rank} & \textbf{Per-layer rank} & \textbf{T5 bias} \\
+\midrule
+SVD fixed rank \& No \& No \& Fixed \& No \& No \\
+SDRM \& No \& No \& Budget \& No \& No \\
+A3 \& Yes \& Fisher diag \& Escalation \& Partial \& No \\
+AASVD \& Yes \& Full cov \& Fixed \& No \& No \\
+\textbf{Adaptive SVD} & \textbf{No} & \textbf{No} & \textbf{Energy} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Adaptive SVD is the only method that:
+\begin{enumerate}
+\item Requires no calibration data.
+\item Selects rank per-projection via an energy criterion.
+\item Preserves T5 relative attention bias.
+
+\end{enumerate}
+\subsection{Comparison Table}
+
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Singular Value Decomposition}
+
+For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+where $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ are 
+orthogonal, and $\Sigma = \mathrm{diag}(\sigma_1, \dots, \sigma_{\min(m,n)})$ 
+with $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD.} The best rank-$r$ approximation in Frobenius norm is:
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
+\tag{3.2}
+\]
+
+with $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$.
+
+\textbf{Symmetric factorization.} Distributing $\Sigma^{1/2}$ between factors:
+
+\[
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
+\tag{3.3}
+\]
+
+ensures $\|U_r\|_2 = \|V_r\|_2 = \sigma_1^{1/2}$, giving balanced magnitudes 
+and improved numerical stability for FP16 computation.
+
+\subsection{Cumulative Squared Energy}
+
+Define the cumulative squared energy at rank $r$:
+
+\[
+\mathcal{E}(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_{j=1}^{\min(m,n)} \sigma\_j^2}
+\tag{3.4}
+\]
+
+Properties:
+\begin{itemize}
+\item $\mathcal{E}(0) = 0$
+\item $\mathcal{E}$ is monotone increasing
+\item $\mathcal{E}(\min(m, n)) = 1$
+\item $\mathcal{E}(r)$ measures the fraction of $\|W\|_F^2$ captured by the top-$r$ directions
+
+\end{itemize}
+\textbf{Energy-thresholded rank.} Given $\tau \in (0, 1)$:
+
+\[
+r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
+\tag{3.5}
+\]
+
+At this rank:
+
+\[
+\|W - W\_{r^*}\|\_F^2 = (1 - \mathcal{E}(r^*)) \|W\|\_F^2 \leq (1 - \tau) \|W\|\_F^2
+\tag{3.6}
+\]
+
+so relative Frobenius error is $\leq \sqrt{1 - \tau}$.
+
+\subsection{Spectral Decay in Attention Weights}
+
+Attention projection matrices exhibit heterogeneous spectral decay:
+
+\begin{itemize}
+\item \textbf{Query projections:} Moderate decay. Effective rank ~40--80\% of full.
+\item \textbf{Key projections:} Slower decay (keys spread information across dimensions).
+\item \textbf{Value projections:} Faster decay (values have lower effective rank).
+\item \textbf{Output projections:} Moderate decay; depends on head-combining structure.
+
+\end{itemize}
+\textbf{Figure 3.1} shows singular value spectra for DistilBERT layer 0 vs layer 3. 
+The difference in decay rate justifies per-layer rank selection.
+
+\subsection{LoRA-Style Residual Adapters}
+
+LoRA (Hu et al., 2021) parameterizes a weight update as:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\tag{3.7}
+\]
+
+with $A \in \mathbb{R}^{r_L \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r_L}$. 
+The initialization $B = 0$ ensures $\Delta W = 0$ at step 0.
+
+\textbf{Applied to factorized layers.} The full forward:
+
+\[
+y = x (U V)^\top + \frac{\alpha}{r\_L} x (B A)^\top
+\tag{3.8}
+\]
+
+At initialization, $y = x (U V)^\top$, matching the frozen base.
+
+\subsection{T5 Relative Attention Bias}
+
+T5 (Raffel et al., 2020) adds a learnable bias to attention scores based on 
+the bucketed relative position of query and key:
+
+\[
+b(i, j) = \text{Embed}[\text{bucket}(j - i)]
+\tag{3.9}
+\]
+
+The bucket function is:
+
+\[
+\text{bucket}(d) = \begin{cases}
+d & \text{if } |d| \textless{} \text{max\_exact} \\
+\text{max\_exact} + \text{sign}(d) \cdot \lfloor \log(|d| / \text{max\_exact}) \cdot \text{scale} \rfloor & \text{otherwise}
+\end{cases}
+\tag{3.10}
+\]
+
+with $\text{max\_exact} = 8$, $\text{num\_buckets} = 32$. The bias is added 
+to attention scores before softmax. Adaptive SVD preserves this bias.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+Modern models (Qwen, LLaMA) use GQA where $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}, \quad H\_\text{repeat} = H / H\_{kv}
+\tag{3.11}
+\]
+
+The KV heads are repeated via \texttt{repeat\_kv} before attention. Adaptive SVD 
+preserves GQA structure.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \mathrm{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.12}
+\]
+
+Adaptive SVD applies RoPE after the factorized $Q, K$ projections.
+
+\subsection{Notation Summary}
+
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Adaptive SVD compresses each attention projection in four steps:
+
+\begin{enumerate}
+\item \textbf{Full SVD} ( 4.2): compute $U \Sigma V^\top$ in FP32.
+\item \textbf{Energy-thresholded rank} ( 4.3): find smallest $r$ with $\mathcal{E}(r) \geq \tau$.
+\item \textbf{Symmetric factorization} ( 4.4): set $U_r = U_{:, :r} \Sigma^{1/2}$,
+  $V_r = \Sigma^{1/2} V_{:r, :}^\top$.
+\item \textbf{Residual adapter} ( 4.5): attach zero-initialized $B A$ for recovery.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline. There is no calibration phase.
+
+\begin{lstlisting}
+    +------------------------------------------+
+    |  Pretrained attention module A           |
+    |  with projections W\_Q, W\_K, W\_V, W\_O     |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  For each projection P:                  |
+    |    Phase 1: SVD(W\_P) $\to$ U\_P  \_P V\_P^T     |
+    |    Phase 2: Find r\_P via $\tau$               |
+    |    Phase 3: Truncate + distribute  ^{1/2}|
+    |    Phase 4: Add zero-init BA adapter     |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  Compressed attention A' with:           |
+    |    - Frozen U\_P, V\_P for each P          |
+    |    - Trainable A\_P, B\_P for each P       |
+    +------------------------------------------+
+\end{lstlisting}
+
+\subsection{Phase 1: Full SVD}
+
+For each projection weight $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\text{in}^{(P)}}$:
+
+\[
+W\_P = U\_P \Sigma\_P V\_P^\top
+\tag{4.1}
+\]
+
+We compute this in \textbf{FP32} regardless of the model dtype. FP16 SVD can 
+produce NaN for ill-conditioned matrices.
+
+\textbf{Complexity.} $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$. 
+For $768 \times 768$, this is ~450M FLOPs, ~50 ms on CPU, ~5 ms on GPU.
+
+\subsection{Phase 2: Energy-Thresholded Rank}
+
+\subsubsection{Definition}
+
+Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, define:
+
+\[
+s\_i = \sigma\_i^2, \quad \mathcal{E}(r) = \frac{\sum\_{i=1}^{r} s\_i}{\sum\_{j=1}^{\min(d\_\text{in}, d\_\text{out})} s\_j}
+\tag{4.2}
+\]
+
+The rank is:
+
+\[
+r\_P = \min\{r : \mathcal{E}(r) \geq \tau\}
+\tag{4.3}
+\]
+
+\subsubsection{Implementation}
+
+\begin{lstlisting}
+def \_compute\_energy\_rank(self, S, max\_rank, min\_rank=16):
+    s\_squared = S ** 2
+    total\_energy = s\_squared.sum()
+    if total\_energy \textless{}= 1e-12:
+        return max(1, min(min\_rank, max\_rank))
+    
+    cum\_energy = torch.cumsum(s\_squared, dim=0) / total\_energy
+    idx = torch.where(cum\_energy \textgreater{}= self.energy\_threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) \textgreater{} 0 else max\_rank
+    return max(1, min(max(r, min\_rank), max\_rank))
+\end{lstlisting}
+
+\textbf{Complexity.} $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ via \texttt{cumsum}.
+
+\subsubsection{Minimum Rank Constraint}
+
+We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
+instability in very low-rank layers. This bounds $r_P$ from below, but for 
+$\tau = 0.92$ and typical attention weights, the natural rank is far above 
+$r_\text{min}$.
+
+\subsubsection{Maximum Rank Cap}
+
+We cap $r_P \leq \min(d_\text{in}, d_\text{out})$. In practice, $\tau < 1.0$ 
+ensures $r_P < \min(d_\text{in}, d_\text{out})$, but the cap protects against 
+edge cases.
+
+\subsection{Phase 3: Symmetric Factorization}
+
+\subsubsection{Factor Construction}
+
+Given $r_P$, set:
+
+\[
+U\_{P, r} = U\_{P, :, :r\_P} \Sigma\_{P, :r\_P, :r\_P}^{1/2}, \quad
+V\_{P, r} = \Sigma\_{P, :r\_P, :r\_P}^{1/2} V\_{P, :r\_P, :}^\top
+\tag{4.4}
+\]
+
+Then $U_{P, r} V_{P, r} = W_{P, r_P}$ (the truncated SVD).
+
+\subsubsection{Why Symmetric?}
+
+Three reasons:
+
+\begin{enumerate}
+\item \textbf{Numerical stability.} Both factors have magnitude $\sqrt{\sigma_\text{max}}$,
+  avoiding FP16 overflow.
+
+\item \textbf{Balanced gradient flow.} During recovery, adapters interact symmetrically
+  with both factors.
+
+\item \textbf{Orthogonality.} When singular values are distinct, columns of $U_{P, r}$
+  and rows of $V_{P, r}$ are orthogonal.
+
+\end{enumerate}
+\subsubsection{The Factorized Forward Pass}
+
+The compressed projection computes:
+
+\[
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + b\_P
+\tag{4.5}
+\]
+
+\textbf{Parameter count:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d_\text{in}^{(P)} d_\text{out}^{(P)}$ \\
+Adaptive SVD & $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Reduction factor:} $\frac{d_\text{in} d_\text{out}}{r_P (d_\text{in} + d_\text{out})}$.
+
+\subsection{Phase 4: Residual Adapter}
+
+\subsubsection{The Residual}
+
+The truncation residual is:
+
+\[
+\Delta W\_P = W\_P - U\_{P, r} V\_{P, r}
+\tag{4.6}
+\]
+
+Its Frobenius norm is $\sqrt{(1 - \mathcal{E}(r_P))} \cdot \|W_P\|_F \leq \sqrt{1 - \tau} \|W_P\|_F$. 
+At $\tau = 0.92$, this is ~28\% of $\|W_P\|_F$.
+
+\subsubsection{Adapter Parameterization}
+
+We approximate the residual with a rank-$r_L$ factor:
+
+\[
+\Delta W\_P \approx B\_P A\_P, \quad
+A\_P \in \mathbb{R}^{r\_L \times d\_\text{in}}, \quad
+B\_P \in \mathbb{R}^{d\_\text{out} \times r\_L}
+\tag{4.7}
+\]
+
+\subsubsection{Initialization}
+
+\[
+B\_P = 0, \quad A\_P \sim \mathcal{N}(0, 1/\sqrt{r\_L})
+\tag{4.8}
+\]
+
+The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
+
+\subsubsection{Full Forward Pass}
+
+\[
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + (x A\_P^\top) B\_P^\top + b\_P
+\tag{4.9}
+\]
+
+\textbf{Parameter overhead:} $r_L (d_\text{in} + d_\text{out})$ per projection.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} Adaptive SVD compression for one attention module
+\begin{lstlisting}
+Input:  pretrained attention A with projections P $\in$ {Q, K, V, O}
+        energy threshold $\tau$ $\in$ (0, 1)
+        residual rank r\_L
+        minimum rank r\_min
+Output: compressed attention A'
+
+1:  for P in {Q, K, V, O} do
+2:      W\_P $\leftarrow$ weight(A.P)                              Extract
+3:      U\_P,  \_P, V\_P^T $\leftarrow$ svd(W\_P)                     Full SVD in FP32
+4:      s $\leftarrow$  \_P^2
+5:      E $\leftarrow$ cumsum(s) / sum(s)                        Cumulative energy
+6:      idx $\leftarrow$ first index where E $\ge$ $\tau$
+7:      r\_P $\leftarrow$ max(idx + 1, r\_min)                     Enforce min rank
+8:
+9:       \_r^{1/2} $\leftarrow$ sqrt( \_P[:r\_P])
+10:     U\_r $\leftarrow$ U\_P[:, :r\_P] @ diag( \_r^{1/2})          Symmetric split
+11:     V\_r $\leftarrow$ diag( \_r^{1/2}) @ V\_P^T[:r\_P, :]
+12:
+13:     B\_P $\leftarrow$ zeros(d\_out, r\_L)                       Zero init
+14:     A\_P $\leftarrow$ kaiming\_uniform(r\_L, d\_in)
+15:
+16:     replace A.P with AdaptiveSVDLinear(U\_r, V\_r, A\_P, B\_P)
+17: end for
+18:
+19: freeze(U\_r, V\_r) for all P                        Base frozen
+20: unfreeze(A\_P, B\_P) for all P                      Adapters trainable
+21:
+22: return A'
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Phase} & \textbf{Time} \\
+\midrule
+SVD per projection & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
+Rank selection & $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ \\
+Factor truncation & $\mathcal{O}(r_P (d_\text{in} + d_\text{out}))$ \\
+Adapter init & $\mathcal{O}(r_L (d_\text{in} + d_\text{out}))$ \\
+\textbf{Per projection} & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
+\textbf{Per attention module} & $\mathcal{O}(4 \cdot d^3)$ for square $d \times d$ \\
+\textbf{Total ($N_l$ layers)} & $\mathcal{O}(4 N_l d^3)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($N_l = 6$, $d = 768$): ~30 seconds total on GPU.
+
+\subsubsection{Space Complexity}
+
+Peak memory per projection: $O(d^2)$ for the SVD. All covariances 
+and calibration states are avoided.
+
+\subsubsection{Compression Time Comparison}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Calibration} & \textbf{SVD} & \textbf{Total} \\
+\midrule
+A3 & ~10s & ~20s & ~30s \\
+AASVD & ~15s & ~20s & ~35s \\
+\textbf{Adaptive SVD} & \textbf{0s} & \textbf{~15s} & \textbf{~15s} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+For a square $d \times d$ projection:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d^2$ \\
+Adaptive SVD & $2 r_P d$ \\
+Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Reduction factor (with adapter):}
+
+\[
+\frac{d^2}{2 d (r\_P + r\_L)} = \frac{d}{2(r\_P + r\_L)}
+\tag{4.10}
+\]
+
+\textbf{Example.} $d = 768$, $r_P = 128$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
++ Adapter & 221,184 & 2.67$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Reconstruction Bound}
+
+\textbf{Proposition.} With energy threshold $\tau$:
+
+\[
+\frac{\|W\_P - U\_{P, r} V\_{P, r}\|\_F}{\|W\_P\|\_F} = \sqrt{1 - \mathcal{E}(r\_P)} \leq \sqrt{1 - \tau}
+\tag{4.11}
+\]
+
+\textbf{Proof.} $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2$ by 
+SVD truncation formula. Since $\mathcal{E}(r_P) \geq \tau$ by rank selection, 
+the bound follows. $\square$
+
+At $\tau = 0.92$, the maximum relative error is $\sqrt{0.08} \approx 0.283$.
+
+\subsubsection{Exactness at Full Rank}
+
+\textbf{Proposition.} If $r_P = \mathrm{rank}(W_P)$, then $U_{P, r} V_{P, r} = W_P$ exactly.
+
+\textbf{Proof.} Direct from SVD. $\square$
+
+\subsubsection{Initial Forward Pass Fidelity}
+
+\textbf{Proposition.} At initialization ($B_P = 0$):
+
+\[
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + b\_P = W\_{P, r\_P} x + b\_P
+\tag{4.12}
+\]
+
+\textbf{Proof.} Substitute $B_P = 0$ into (4.9), and note $U_{P, r} V_{P, r} = W_{P, r_P}$. 
+$\square$
+
+\textbf{Corollary.} The initial forward pass equals the truncation approximation, 
+not the pretrained model (unless $r_P = \text{rank}(W_P)$).
+
+\subsubsection{Rank Reduction Factor}
+
+The parameter ratio per projection is:
+
+\[
+\rho\_P = \frac{2 r\_P d}{d^2} = \frac{2 r\_P}{d} \quad \text{(for square } d \times d\text{)}
+\tag{4.13}
+\]
+
+At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\times$ reduction).
+
+\subsection{Hyperparameter Guidance}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} & \textbf{Range tested} \\
+\midrule
+$\tau$ & 0.92 & 0.85 -- 0.99 \\
+$r_L$ & 16 & 4 -- 64 \\
+$r_\text{min}$ & 16 & 8 -- 32 \\
+Recovery steps & 50 & 10 -- 200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Choosing $\tau$:}
+
+\begin{itemize}
+\item $\tau = 0.85$: aggressive, may lose accuracy
+\item $\tau = 0.92$: balanced (default)
+\item $\tau = 0.95$: conservative, less compression
+\item $\tau = 0.99$: near-lossless, minimal compression
+
+\end{itemize}
+\textbf{Choosing $r_L$:}
+
+\begin{itemize}
+\item $r_L = 8$: minimal adapter overhead
+\item $r_L = 16$: balanced (default)
+\item $r_L = 32$: more recovery capacity
+\item $r_L = 64$: rarely needed
+\end{itemize}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+Adaptive SVD supports the following attention variants:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No &  \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \& partial \\
+T5 & \texttt{T5Attention} \& No \& No \& No & \textbf{Yes} \& not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT (Flat)}
+
+Direct extraction:
+
+\begin{lstlisting}
+W\_Q = src.q\_lin.weight  # Linear(768, 768)
+W\_K = src.k\_lin.weight
+W\_V = src.v\_lin.weight
+W\_O = src.out\_lin.weight
+\end{lstlisting}
+
+All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is\_nested\_encoder = False}.
+
+\subsubsection{RoBERTa (Nested)}
+
+Extract from inner \texttt{BertSelfAttention}:
+
+\begin{lstlisting}
+W\_Q = src.self.query.weight
+W\_K = src.self.key.weight
+W\_V = src.self.value.weight
+# W\_O is not extracted -- outer BertSelfOutput.dense applies it
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}. During forward, the compressed \texttt{context} is 
+returned without applying \texttt{out\_proj}; the outer \texttt{BertSelfOutput.dense} 
+applies its own (unchanged) projection.
+
+\textbf{Consequence.} In RoBERTa, the output projection $W_O$ is \textbf{not compressed}, 
+only $W_Q, W_K, W_V$.
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+GPT-2 fuses Q, K, V into a single \texttt{c\_attn} Conv1D:
+
+\begin{lstlisting}
+fused = src.c\_attn.weight.T  # (3*768, 768) after transpose
+W\_Q, W\_K, W\_V = fused.chunk(3, dim=0)
+W\_O = src.c\_proj.weight.T
+\end{lstlisting}
+
+The transpose handles the HuggingFace Conv1D layout: it stores weights as 
+\texttt{(in\_features, out\_features)} instead of the standard \texttt{(out\_features, in\_features)}.
+
+\subsubsection{T5 (Relative Attention Bias)}
+
+T5 uses \texttt{relative\_attention\_bias} (an \texttt{nn.Embedding}) instead of learned 
+position embeddings:
+
+\begin{lstlisting}
+self.relative\_attention\_bias = src.relative\_attention\_bias
+self.has\_relative\_attention\_bias = True
+\end{lstlisting}
+
+The bias is preserved as a separate module and added to attention scores 
+in forward. The bucket function handles bidirectional (encoder) and causal 
+(decoder) modes.
+
+\subsubsection{Qwen3.5 (GQA + RoPE)}
+
+Qwen3.5 uses GQA with $H_{kv} < H$:
+
+\begin{lstlisting}
+W\_Q = src.q\_proj.weight  # (H * d\_h, d) = (2048, 1024)
+W\_K = src.k\_proj.weight  # (H\_kv * d\_h, d) = (512, 1024)
+W\_V = src.v\_proj.weight  # (512, 1024)
+W\_O = src.o\_proj.weight  # (1024, 2048)
+\end{lstlisting}
+
+RoPE is applied after projection:
+
+\begin{lstlisting}
+Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
+\end{lstlisting}
+
+\subsection{The `AdaptiveSVDLinear` Module}
+
+\begin{lstlisting}
+class AdaptiveSVDLinear(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, svd\_rank, residual\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.svd\_rank = min(svd\_rank, in\_features, out\_features)
+        self.residual\_rank = min(residual\_rank, in\_features, out\_features)
+        
+        # Frozen SVD base
+        self.U = nn.Parameter(
+            torch.empty(out\_features, self.svd\_rank),
+            requires\_grad=False
+        )
+        self.V = nn.Parameter(
+            torch.empty(self.svd\_rank, in\_features),
+            requires\_grad=False
+        )
+        
+        # Trainable residual
+        if self.residual\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(
+                torch.empty(out\_features, self.residual\_rank)
+            )
+            self.lora\_A = nn.Parameter(
+                torch.empty(self.residual\_rank, in\_features)
+            )
+        
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        
+        self.reset\_parameters()
+    
+    def forward(self, x):
+        Vx = F.linear(x, self.V)
+        out = F.linear(Vx, self.U)
+        if self.lora\_A is not None:
+            Ax = F.linear(x, self.lora\_A)
+            out = out + F.linear(Ax, self.lora\_B)
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+\end{lstlisting}
+
+\textbf{Parameter count:} $r_P(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out}) + d_\text{out}$.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Adaptive SVD into a full model
+\begin{lstlisting}
+Input:  model M, config c, hyperparameters $\tau$, r\_L
+Output: M with attention replaced
+
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ find\_attention( )                     Old attention
+3:      if src is None: continue
+4:      new $\leftarrow$ AdaptiveSVDAttention(c, $\tau$, r\_L, pretrained\_attn=src)
+5:      new.copy\_weights(src)                        SVD + adapter
+6:      replace\_attention( , new)
+7: end for
+8: return M
+\end{lstlisting}
+
+\textbf{Layer paths:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Layer path} & \textbf{Attention path} \\
+\midrule
+DistilBERT & \texttt{distilbert.transformer.layer[i]} & \texttt{.attention} \\
+RoBERTa & \texttt{roberta.encoder.layer[i]} & \texttt{.attention.self} \\
+GPT-2 & \texttt{transformer.h[i]} & \texttt{.attn} \\
+T5 & \texttt{encoder.block[i].layer[0]} & \texttt{.SelfAttention} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Handling Special Cases}
+
+\subsubsection{T5 Relative Attention Bias}
+
+Forward:
+
+\begin{lstlisting}
+position\_bias = kwargs.get("position\_bias", None)
+if position\_bias is None and self.has\_relative\_attention\_bias:
+    position\_bias = self.compute\_bias(N\_q, N\_k, device=hidden\_states.device)
+\end{lstlisting}
+
+The \texttt{compute\_bias} function uses \texttt{\_relative\_position\_bucket} to map relative 
+positions to buckets, then looks up the bias embedding.
+
+\subsubsection{GQA Expansion}
+
+\begin{lstlisting}
+if self.kv\_repeat \textgreater{} 1:
+    K = repeat\_kv(K, self.kv\_repeat)
+    V = repeat\_kv(V, self.kv\_repeat)
+\end{lstlisting}
+
+\subsubsection{RoPE}
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
+\end{lstlisting}
+
+\subsubsection{Causal Masking}
+
+\begin{lstlisting}
+if is\_causal:
+    causal\_tril = torch.tril(torch.ones((N\_q, N\_k), device=...))
+    scores = scores.masked\_fill(~causal\_tril.unsqueeze(0).unsqueeze(0), -10000.0)
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("adaptive\_svd\_attn")
+@ATTENTION\_REGISTRY.register("adaptive\_svd")
+@ATTENTION\_REGISTRY.register("adaptive\_svd\_attention")
+class AdaptiveSVDAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises \& Return None \\
+Shape mismatch \& Assertion \& Skip layer \\
+Near-zero Frobenius \& Check \textless{} 1e-4 \& Skip layer \\
+NaN in SVD & \texttt{torch.isnan} \& Fallback \\
+T5 bias mismatch \& Embedding shape \& Skip \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Numerical Precision}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Precision} \\
+\midrule
+SVD \& FP32 \\
+Factor storage \& Model dtype \\
+Forward \& Model dtype \\
+Adapter init \& FP32 then cast \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Compatibility}
+
+\subsubsection{LoRA Wrappers}
+
+If the source module is a \texttt{LoRALinear} wrapper, Adaptive SVD extracts the 
+inner \texttt{base\_layer} for SVD and preserves the outer LoRA parameters:
+
+\begin{lstlisting}
+target\_mod = getattr(module, "base\_layer", module)
+\end{lstlisting}
+
+\subsubsection{Encoder-Decoder}
+
+For T5, the same \texttt{AdaptiveSVDAttention} is used in both encoder and decoder 
+blocks. The decoder side has \texttt{is\_decoder = True}, which enables causal masking.
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \& Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Majority baseline:} 50.92\%. \textbf{Sequence length:} 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+\texttt{energy\_threshold} $\tau$ & 0.92 \& Cumulative energy cutoff \\
+\texttt{svd\_rank} (cap) & 288 \& Maximum rank (rarely hit) \\
+\texttt{residual\_rank} $r_L$ & 16 \& LoRA adapter rank \\
+\texttt{min\_rank} & 16 \& Minimum rank floor \\
+\texttt{trainable\_svd} \& False \& Base frozen \\
+\texttt{target\_attention\_only} \& True \& Only attention projections \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Calibration}
+
+\textbf{None required.} Adaptive SVD selects rank from the weight spectrum alone. 
+No forward passes, no activation statistics.
+
+\subsection{Recovery Fine-Tuning}
+
+After compression, adapters are trained:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer \& AdamW \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+LR schedule \& Constant \\
+Warmup & 0 steps \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision \& FP16 \\
+Trainable params \& Only $A_P, B_P$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trainable tensor count:} 96 (2 per projection $\times$ 4 per 
+layer $\times$ $N_l$).
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy
+\item F1 (binary, macro)
+\item Precision, Recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters (before/after)
+\item Compression ratio
+\item Peak VRAM
+\item Inference time (median of 20 runs)
+\item Tokens/second
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Compressed layer count
+\item Fallback layer count (if any)
+\item Per-projection rank
+\item Reconstruction error at rank $r_P$
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+56\% = majority + 3 SE. SE is $\sqrt{p(1-p)/N} \approx 1.69\%$ at $N = 872$.
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU \& NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+Transformers & 4.44.0 \\
+OS \& Windows / Linux \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_adaptive\_svd.py \
+    --models distilbert,roberta,gpt2 \
+    --energy\_threshold 0.92 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\textbf{Expected runtime:} ~15 minutes on RTX 4070.
+
+\subsection{Seeds}
+
+All experiments use seed 42. No multi-seed runs due to compute budget.
+
+\subsection{Baselines}
+
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
 
 \begin{table*}[t]
 \centering
@@ -472,6 +1526,7 @@ calibration-based methods.
 \item \textbf{No calibration required}
 \end{itemize}
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -510,10 +1565,10 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 \toprule
 \textbf{Rank bucket} & \textbf{Count} & \textbf{Notable layers} \\
 \midrule
-< 32 & 8 \& V (all layers) \\
+\textless{} 32 & 8 \& V (all layers) \\
 32--64 & 6 \& O, V (later) \\
 64--128 & 8 \& Q, K \\
-> 128 & 2 \& Q, K (middle) \\
+\textgreater{} 128 & 2 \& Q, K (middle) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -681,6 +1736,7 @@ No failures observed in this configuration.
 \item \textbf{Faster than A3/AASVD} by 5$\times$ on compression time.
 \end{enumerate}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -726,7 +1782,7 @@ adapters, the drop is only \textbf{2.7\%}. The adapter overhead is
 \begin{itemize}
 \item \textbf{Latency-critical} (two matmuls vs one)
 \item \textbf{Very tight VRAM} (adapter overhead)
-\item \textbf{Very large models} (>1B; SVD time dominates)
+\item \textbf{Very large models} (\textgreater{}1B; SVD time dominates)
 \item \textbf{In-domain accuracy matters most} (A3/AASVD may be better)
 
 \end{itemize}
@@ -833,6 +1889,7 @@ tasks without re-compression.
 \subsubsection{Environmental}
 Total compute: ~10 GPU-hours, ~12.4 kg CO$_2$eq.
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -843,15 +1900,15 @@ Only \textbf{SST-2} is evaluated. Adaptive SVD may behave differently on:
 \item Generation tasks (summarization, translation)
 \item Multi-class classification (MNLI, AG News)
 \item Token-level tasks (NER, POS)
-\item Long-context tasks (>512 tokens)
+\item Long-context tasks (\textgreater{}512 tokens)
 
 \end{itemize}
 \subsection{Model Coverage}
 
 We test on three models (66.9M--124.6M params). Not tested:
 \begin{itemize}
-\item Large models (>1B)
-\item Deep models (>24 layers)
+\item Large models (\textgreater{}1B)
+\item Deep models (\textgreater{}24 layers)
 \item Mixture-of-Experts
 \item Vision transformers
 \item Multimodal transformers
@@ -945,6 +2002,7 @@ Research-grade:
 
 Compression is dual-use. See Appendix E.
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1021,14 +2079,15 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 
 None.
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 pip install -r requirements.txt
@@ -1057,11 +2116,11 @@ pandas & 2.2.2 \\
 \subsubsection{Full Benchmark}
 
 \begin{lstlisting}
-python run_all_4_adaptive_svd.py \
+python run\_all\_4\_adaptive\_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold 0.92 \
-    --residual_rank 16 \
-    --recovery_steps 50
+    --energy\_threshold 0.92 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \textbf{Expected runtime:} ~15 minutes on RTX 4070.
@@ -1069,27 +2128,27 @@ python run_all_4_adaptive_svd.py \
 \subsubsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_adaptive_svd/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
-    --modules full,adaptive_svd \
+    --output\_dir results/unified\_adaptive\_svd/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
+    --modules full,adaptive\_svd \
     --rank 288 \
-    --residual_rank 16 \
-    --energy_threshold 0.92 \
-    --recovery_steps 50
+    --residual\_rank 16 \
+    --energy\_threshold 0.92 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-adaptive_svd",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-adaptive\_svd",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -1100,15 +2159,15 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1 (Main)}
 
 \begin{lstlisting}
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
-# $\to$ results/unified_adaptive_svd/{model}/summary.csv
+python run\_all\_4\_adaptive\_svd.py --models distilbert,roberta,gpt2
+# $\to$ results/unified\_adaptive\_svd/{model}/summary.csv
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Energy Threshold)}
 
 \begin{lstlisting}
 for tau in 0.85 0.90 0.92 0.95 0.99; do
-    python run_all_4_adaptive_svd.py --energy_threshold $tau --output_suffix tau_$tau
+    python run\_all\_4\_adaptive\_svd.py --energy\_threshold $tau --output_suffix tau_$tau
 done
 \end{lstlisting}
 
@@ -1116,7 +2175,7 @@ done
 
 \begin{lstlisting}
 for rl in 0 4 8 16 32 64; do
-    python run_all_4_adaptive_svd.py --residual_rank $rl --output_suffix rl_$rl
+    python run\_all\_4\_adaptive\_svd.py --residual\_rank $rl --output_suffix rl_$rl
 done
 \end{lstlisting}
 
@@ -1124,7 +2183,7 @@ done
 
 \begin{lstlisting}
 for steps in 10 25 50 100 200; do
-    python run_all_4_adaptive_svd.py --recovery_steps $steps --output_suffix steps_$steps
+    python run\_all\_4\_adaptive\_svd.py --recovery\_steps $steps --output_suffix steps_$steps
 done
 \end{lstlisting}
 
@@ -1135,8 +2194,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 \end{lstlisting}
@@ -1190,7 +2249,7 @@ Before submitting, verify:
 
 \begin{lstlisting}
 python -c "
-from framework.attentions.adaptive_svd_attn import AdaptiveSVDAttention
+from framework.attentions.adaptive\_svd\_attn import AdaptiveSVDAttention
 print('Import OK')
 "
 \end{lstlisting}
@@ -1198,11 +2257,12 @@ print('Import OK')
 Run one model to verify:
 
 \begin{lstlisting}
-python run_all_4_adaptive_svd.py --models distilbert
+python run\_all\_4\_adaptive\_svd.py --models distilbert
 \end{lstlisting}
 
 Expected: DistilBERT passes quality gate ($\ge$56\%).
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1399,6 +2459,7 @@ Expected: DistilBERT passes quality gate ($\ge$56\%).
 }
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1417,7 +2478,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \textbf{Proof.} By the Eckart--Young theorem:
 
 \[
-\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2
+\|W - W\_r\|\_F^2 = \sum\_{i \textgreater{} r} \sigma\_i^2 = (1 - \mathcal{E}(r)) \|W\|\_F^2
 \tag{A.2}
 \]
 
@@ -1430,14 +2491,14 @@ iff $\mathcal{E}(r) \geq \tau$. The minimum such $r$ is $r^*(\tau)$. $\square$
 Then:
 
 \[
-U_r V_r = U_{:, :r} \Sigma V_{:r, :}^\top = W_r
+U\_r V\_r = U\_{:, :r} \Sigma V\_{:r, :}^\top = W\_r
 \tag{A.3}
 \]
 
 \textbf{Proof.} Direct matrix multiplication:
 
 \[
-U_r V_r = U_{:, :r} \Sigma^{1/2} \cdot \Sigma^{1/2} V_{:r, :}^\top = U_{:, :r} \Sigma V_{:r, :}^\top \qquad \square
+U\_r V\_r = U\_{:, :r} \Sigma^{1/2} \cdot \Sigma^{1/2} V\_{:r, :}^\top = U\_{:, :r} \Sigma V\_{:r, :}^\top \qquad \square
 \]
 
 \subsection{A.3 Factor Magnitude Balance}
@@ -1448,7 +2509,7 @@ the largest singular value.
 \textbf{Proof.} For symmetric SVD:
 
 \[
-U_r = U_{:, :r} \Sigma^{1/2} \Rightarrow U_r^\top U_r = \Sigma^{1/2} U_{:, :r}^\top U_{:, :r} \Sigma^{1/2} = \Sigma
+U\_r = U\_{:, :r} \Sigma^{1/2} \Rightarrow U\_r^\top U\_r = \Sigma^{1/2} U\_{:, :r}^\top U\_{:, :r} \Sigma^{1/2} = \Sigma
 \tag{A.4}
 \]
 
@@ -1463,7 +2524,7 @@ This balanced magnitude is crucial for FP16 stability.
 \textbf{Claim.} With $B = 0$:
 
 \[
-\text{Proj}_P(x) = (x V_r^\top) U_r^\top + (x A^\top) \cdot 0 + b = W_r x + b
+\text{Proj}\_P(x) = (x V\_r^\top) U\_r^\top + (x A^\top) \cdot 0 + b = W\_r x + b
 \tag{A.5}
 \]
 
@@ -1494,14 +2555,14 @@ For a square $d \times d$ projection:
 \]
 
 \[
-\text{Compressed params} = r(d + d) + r_L(d + d) + d = 2d(r + r_L) + d
+\text{Compressed params} = r(d + d) + r\_L(d + d) + d = 2d(r + r\_L) + d
 \tag{A.7}
 \]
 
 Reduction ratio:
 
 \[
-\rho = \frac{d^2}{2d(r + r_L) + d} \approx \frac{d}{2(r + r_L)}
+\rho = \frac{d^2}{2d(r + r\_L) + d} \approx \frac{d}{2(r + r\_L)}
 \tag{A.8}
 \]
 
@@ -1517,7 +2578,7 @@ At $d = 768$, $r = 128$, $r_L = 16$:
 For truncated SVD at rank $r^*$:
 
 \[
-\frac{\|W - W_{r^*}\|_F}{\|W\|_F} = \sqrt{1 - \mathcal{E}(r^*)} \leq \sqrt{1 - \tau}
+\frac{\|W - W\_{r^*}\|\_F}{\|W\|\_F} = \sqrt{1 - \mathcal{E}(r^*)} \leq \sqrt{1 - \tau}
 \tag{A.10}
 \]
 
@@ -1558,6 +2619,7 @@ between reconstruction error (bounded above) and task accuracy is
 empirical. In practice, task accuracy drops correlate strongly with 
 reconstruction error at $\tau \in [0.90, 0.95]$.
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1567,29 +2629,29 @@ reconstruction error at $\tau \in [0.90, 0.95]$.
 class AdaptiveSVDLinear(nn.Module):
     """Linear layer as SVD base + residual adapter."""
     
-    def __init__(self, in_features, out_features, svd_rank, residual_rank=16, ...):
-        super().__init__()
-        self.svd_rank = min(svd_rank, in_features, out_features)
-        self.residual_rank = min(residual_rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, svd\_rank, residual\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.svd\_rank = min(svd\_rank, in\_features, out\_features)
+        self.residual\_rank = min(residual\_rank, in\_features, out\_features)
         
         # Frozen SVD base
-        self.U = nn.Parameter(torch.empty(out_features, self.svd_rank), requires_grad=False)
-        self.V = nn.Parameter(torch.empty(self.svd_rank, in_features), requires_grad=False)
+        self.U = nn.Parameter(torch.empty(out\_features, self.svd\_rank), requires\_grad=False)
+        self.V = nn.Parameter(torch.empty(self.svd\_rank, in\_features), requires\_grad=False)
         
         # Trainable residual
-        if self.residual_rank > 0:
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.residual_rank))
-            self.lora_A = nn.Parameter(torch.empty(self.residual_rank, in_features))
+        if self.residual\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, self.residual\_rank))
+            self.lora\_A = nn.Parameter(torch.empty(self.residual\_rank, in\_features))
         else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            self.register\_parameter("lora\_A", None)
+            self.register\_parameter("lora\_B", None)
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         else:
-            self.register_parameter("bias", None)
+            self.register\_parameter("bias", None)
         
-        self.reset_parameters()
+        self.reset\_parameters()
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
@@ -1598,12 +2660,12 @@ class AdaptiveSVDLinear(nn.Module):
 def forward(self, x):
     # SVD base
     Vx = F.linear(x, self.V)      # (B, L, rank)
-    out = F.linear(Vx, self.U)     # (B, L, out_features)
+    out = F.linear(Vx, self.U)     # (B, L, out\_features)
     
     # Residual adapter
-    if self.lora_A is not None and self.lora_B is not None:
-        Ax = F.linear(x, self.lora_A)      # (B, L, residual_rank)
-        out = out + F.linear(Ax, self.lora_B)
+    if self.lora\_A is not None and self.lora\_B is not None:
+        Ax = F.linear(x, self.lora\_A)      # (B, L, residual\_rank)
+        out = out + F.linear(Ax, self.lora\_B)
     
     # Bias
     if self.bias is not None:
@@ -1615,81 +2677,81 @@ def forward(self, x):
 \subsection{B.3 Energy-Thresholded Rank Selection}
 
 \begin{lstlisting}
-def _compute_energy_rank(self, S, max_rank, min_rank=16):
+def \_compute\_energy\_rank(self, S, max\_rank, min\_rank=16):
     """
-    Find smallest rank r with cumulative energy >= $\tau$.
+    Find smallest rank r with cumulative energy \textgreater{}= $\tau$.
     
     Args:
         S: Singular values (descending), 1D tensor
-        max_rank: Upper bound on rank
-        min_rank: Lower bound on rank
+        max\_rank: Upper bound on rank
+        min\_rank: Lower bound on rank
     
     Returns:
-        Rank r $\in$ [min_rank, max_rank]
+        Rank r $\in$ [min\_rank, max\_rank]
     """
-    s_squared = S ** 2
-    total_energy = s_squared.sum()
+    s\_squared = S ** 2
+    total\_energy = s\_squared.sum()
     
-    if total_energy <= 1e-12:
-        return max(1, min(min_rank, max_rank))
+    if total\_energy \textless{}= 1e-12:
+        return max(1, min(min\_rank, max\_rank))
     
-    cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
-    idx = torch.where(cum_energy >= self.energy_threshold)[0]
-    r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
-    return max(1, min(max(r, min_rank), max_rank))
+    cum\_energy = torch.cumsum(s\_squared, dim=0) / total\_energy
+    idx = torch.where(cum\_energy \textgreater{}= self.energy\_threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) \textgreater{} 0 else max\_rank
+    return max(1, min(max(r, min\_rank), max\_rank))
 \end{lstlisting}
 
 \subsection{B.4 SVD Initialization}
 
 \begin{lstlisting}
-def _init_svd_part(self, adap_linear, W_data, bias_data):
-    with torch.no_grad():
-        W = W_data.float()  # FP32 for SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+def \_init\_svd\_part(self, adap\_linear, W\_data, bias\_data):
+    with torch.no\_grad():
+        W = W\_data.float()  # FP32 for SVD
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
-        max_r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
-        r = self._compute_energy_rank(S, max_rank=max_r)
+        max\_r = min(adap\_linear.svd\_rank, U.size(1), Vt.size(0))
+        r = self.\_compute\_energy\_rank(S, max\_rank=max\_r)
         
         # Symmetric factor distribution
-        sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-            dtype=adap_linear.U.dtype,
-            device=adap_linear.U.device
+        sqrt\_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U\_r = (U[:, :r] * sqrt\_s.unsqueeze(0)).to(
+            dtype=adap\_linear.U.dtype,
+            device=adap\_linear.U.device
         )
-        V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-            dtype=adap_linear.V.dtype,
-            device=adap_linear.V.device
+        V\_r = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(
+            dtype=adap\_linear.V.dtype,
+            device=adap\_linear.V.device
         )
         
         # Set factors
-        adap_linear.set_svd_factors(U_r, V_r)
+        adap\_linear.set\_svd\_factors(U\_r, V\_r)
         
         # Copy bias
-        if adap_linear.bias is not None and bias_data is not None:
-            adap_linear.bias.data.copy_(bias_data)
+        if adap\_linear.bias is not None and bias\_data is not None:
+            adap\_linear.bias.data.copy\_(bias\_data)
 \end{lstlisting}
 
 \subsection{B.5 Adapter Initialization}
 
 \begin{lstlisting}
-def reset_parameters(self):
-    with torch.no_grad():
-        # Orthogonal init for U, V (used only if trainable_svd=True)
+def reset\_parameters(self):
+    with torch.no\_grad():
+        # Orthogonal init for U, V (used only if trainable\_svd=True)
         for param in (self.U, self.V):
             if param.dtype in (torch.float16, torch.bfloat16):
-                tmp = torch.empty_like(param, dtype=torch.float32, device="cpu")
-                nn.init.orthogonal_(tmp)
-                param.copy_(tmp.to(dtype=param.dtype, device=param.device))
+                tmp = torch.empty\_like(param, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal\_(tmp)
+                param.copy\_(tmp.to(dtype=param.dtype, device=param.device))
             else:
-                nn.init.orthogonal_(param)
+                nn.init.orthogonal\_(param)
         
         # LoRA: A random, B zero
-        if self.lora_A is not None and self.lora_B is not None:
-            nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_A)
+        if self.lora\_A is not None and self.lora\_B is not None:
+            nn.init.kaiming\_uniform\_(self.lora\_B, a=math.sqrt(5))
+            nn.init.zeros\_(self.lora\_A)
         
         if self.bias is not None:
-            nn.init.zeros_(self.bias)
+            nn.init.zeros\_(self.bias)
 \end{lstlisting}
 
 \textbf{Note.} This implementation uses $B$ random and $A$ zero (opposite of LoRA 
@@ -1698,7 +2760,7 @@ convention but equivalent).
 \subsection{B.6 Weight Extraction (Multi-Architecture)}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {}
     
     for proj in ["q", "k", "v", "o"]:
@@ -1706,117 +2768,117 @@ def copy_weights(self, src):
         
         # Try UniversalAdapter first
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         except Exception:
             pass
         
         # Manual fallbacks
         if w is None:
-            # GPT-2 Fused c_attn
-            if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
-                fused_w = src.c_attn.weight.T  # (3D, D)
-                fused_b = getattr(src.c_attn, "bias", None)
-                split = fused_w.size(0) // 3
+            # GPT-2 Fused c\_attn
+            if hasattr(src, "c\_attn") and proj in ["q", "k", "v"]:
+                fused\_w = src.c\_attn.weight.T  # (3D, D)
+                fused\_b = getattr(src.c\_attn, "bias", None)
+                split = fused\_w.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
-                w = fused_w[idx*split:(idx+1)*split, :]
-                b = fused_b[idx*split:(idx+1)*split] if fused_b is not None else None
-            elif hasattr(src, "c_proj") and proj == "o":
-                w = src.c_proj.weight.T
-                b = getattr(src.c_proj, "bias", None)
+                w = fused\_w[idx*split:(idx+1)*split, :]
+                b = fused\_b[idx*split:(idx+1)*split] if fused\_b is not None else None
+            elif hasattr(src, "c\_proj") and proj == "o":
+                w = src.c\_proj.weight.T
+                b = getattr(src.c\_proj, "bias", None)
             # RoBERTa/BERT nested
             elif hasattr(src, "self") and hasattr(src.self, "query"):
-                name_map = {"q": "query", "k": "key", "v": "value"}
-                if proj in name_map:
-                    mod = getattr(src.self, name_map[proj])
+                name\_map = {"q": "query", "k": "key", "v": "value"}
+                if proj in name\_map:
+                    mod = getattr(src.self, name\_map[proj])
                     w = mod.weight
                     b = getattr(mod, "bias", None)
             # DistilBERT flat
-            elif hasattr(src, "q_lin") and proj == "q":
-                w = src.q_lin.weight
-                b = getattr(src.q_lin, "bias", None)
+            elif hasattr(src, "q\_lin") and proj == "q":
+                w = src.q\_lin.weight
+                b = getattr(src.q\_lin, "bias", None)
             # ... more cases
         
         extracted[proj] = (w, b)
     
     # Detect nested encoder
-    is_nested = (
+    is\_nested = (
         hasattr(src, "self") and hasattr(src, "output") and
         hasattr(src.self, "query")
     )
-    self.is_nested_encoder = is_nested
+    self.is\_nested\_encoder = is\_nested
     
     # Initialize SVD for each projection
-    for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+    for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out\_proj)]:
         w, b = extracted[proj]
         if w is not None:
-            self._init_svd_part(target, w, b)
+            self.\_init\_svd\_part(target, w, b)
             # Freeze base, unfreeze adapter
-            target.U.requires_grad = False
-            target.V.requires_grad = False
+            target.U.requires\_grad = False
+            target.V.requires\_grad = False
             if target.bias is not None:
-                target.bias.requires_grad = False
-            if target.lora_A is not None:
-                target.lora_A.requires_grad = True
-            if target.lora_B is not None:
-                target.lora_B.requires_grad = True
+                target.bias.requires\_grad = False
+            if target.lora\_A is not None:
+                target.lora\_A.requires\_grad = True
+            if target.lora\_B is not None:
+                target.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 \subsection{B.7 T5 Relative Attention Bias}
 
 \begin{lstlisting}
-def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
-    relative_buckets = 0
+def \_relative\_position\_bucket(self, relative\_position, bidirectional=True, num\_buckets=32, max\_distance=128):
+    relative\_buckets = 0
     if bidirectional:
-        num_buckets //= 2
-        relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
-        relative_position = torch.abs(relative_position)
+        num\_buckets //= 2
+        relative\_buckets += (relative\_position \textgreater{} 0).to(torch.long) * num\_buckets
+        relative\_position = torch.abs(relative\_position)
     else:
-        relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+        relative\_position = -torch.min(relative\_position, torch.zeros\_like(relative\_position))
     
-    max_exact = num_buckets // 2
-    is_small = relative_position < max_exact
+    max\_exact = num\_buckets // 2
+    is\_small = relative\_position \textless{} max\_exact
     
-    relative_position_if_large = max_exact + (
-        torch.log(relative_position.float() / max_exact)
-        / math.log(max_distance / max_exact)
-        * (num_buckets - max_exact)
+    relative\_position\_if\_large = max\_exact + (
+        torch.log(relative\_position.float() / max\_exact)
+        / math.log(max\_distance / max\_exact)
+        * (num\_buckets - max\_exact)
     ).to(torch.long)
     
-    relative_position_if_large = torch.min(
-        relative_position_if_large,
-        torch.full_like(relative_position_if_large, num_buckets - 1)
+    relative\_position\_if\_large = torch.min(
+        relative\_position\_if\_large,
+        torch.full\_like(relative\_position\_if\_large, num\_buckets - 1)
     )
     
-    relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
-    return relative_buckets
+    relative\_buckets += torch.where(is\_small, relative\_position, relative\_position\_if\_large)
+    return relative\_buckets
 \end{lstlisting}
 
 \subsection{B.8 Handling RoPE}
 
 \begin{lstlisting}
-def apply_rotary(self, Q, K, cos, sin):
-    def _rotate_half(x):
+def apply\_rotary(self, Q, K, cos, sin):
+    def \_rotate\_half(x):
         return torch.cat((-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]), dim=-1)
     
     if cos.dim() == 3:
         cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
-    while cos.dim() < Q.dim():
+    while cos.dim() \textless{} Q.dim():
         cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
     if cos.shape[-2] != Q.shape[-2]:
         cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
     
-    rotary_dim = cos.shape[-1]
-    if rotary_dim <= Q.shape[-1]:
-        q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
-        k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
-        K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+    rotary\_dim = cos.shape[-1]
+    if rotary\_dim \textless{}= Q.shape[-1]:
+        q\_rot, q\_pass = Q[..., :rotary\_dim], Q[..., rotary\_dim:]
+        k\_rot, k\_pass = K[..., :rotary\_dim], K[..., rotary\_dim:]
+        q\_rot = (q\_rot * cos.to(q\_rot.dtype)) + (\_rotate\_half(q\_rot) * sin.to(q\_rot.dtype))
+        k\_rot = (k\_rot * cos.to(k\_rot.dtype)) + (\_rotate\_half(k\_rot) * sin.to(k\_rot.dtype))
+        Q = torch.cat([q\_rot, q\_pass], dim=-1) if q\_pass.numel() \textgreater{} 0 else q\_rot
+        K = torch.cat([k\_rot, k\_pass], dim=-1) if k\_pass.numel() \textgreater{} 0 else k\_rot
     else:
-        cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
-        Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
-        K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
+        cos\_cut, sin\_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+        Q = (Q * cos\_cut.to(Q.dtype)) + (\_rotate\_half(Q) * sin\_cut.to(Q.dtype))
+        K = (K * cos\_cut.to(K.dtype)) + (\_rotate\_half(K) * sin\_cut.to(K.dtype))
     
     return Q, K
 \end{lstlisting}
@@ -1852,17 +2914,17 @@ hidden states directly is wrong.
 After injection, verify:
 
 \begin{lstlisting}
-from framework.attentions.adaptive_svd_attn import AdaptiveSVDAttention
+from framework.attentions.adaptive\_svd\_attn import AdaptiveSVDAttention
 
 # Check attention class
-for name, mod in model.named_modules():
-    if "attention" in name.lower() and name.count(".") <= 5:
-        print(name, type(mod).__name__)
+for name, mod in model.named\_modules():
+    if "attention" in name.lower() and name.count(".") \textless{}= 5:
+        print(name, type(mod).\_\_name\_\_)
 
 # Check factors
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if isinstance(mod, AdaptiveSVDLinear):
-        print(f"{name}: U={mod.U.shape}, V={mod.V.shape}, lora_A={mod.lora_A.shape}")
+        print(f"{name}: U={mod.U.shape}, V={mod.V.shape}, lora\_A={mod.lora\_A.shape}")
 \end{lstlisting}
 
 \subsection{B.11 Complete Source Code}
@@ -1870,7 +2932,7 @@ for name, mod in model.named_modules():
 The full source is at:
 
 \begin{lstlisting}
-framework/attentions/adaptive_svd_attn.py
+framework/attentions/adaptive\_svd\_attn.py
 \end{lstlisting}
 
 Key entry points:
@@ -1880,6 +2942,7 @@ Key entry points:
 \item \texttt{inject\_adaptive\_svd()} -- injection hook
 \end{itemize}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -2085,17 +3148,17 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 22000000,
+    "params\_before": 66955010,
+    "params\_after": 22000000,
     "ratio": 3.0,
-    "accuracy_pct": 88.0,
-    "energy_threshold": 0.92,
-    "residual_rank": 16,
-    "min_rank_obs": 64,
-    "max_rank_obs": 150,
-    "layer_ranks": {
-      "layer_0_q": 128,
-      "layer_0_k": 128,
+    "accuracy\_pct": 88.0,
+    "energy\_threshold": 0.92,
+    "residual\_rank": 16,
+    "min\_rank\_obs": 64,
+    "max\_rank\_obs": 150,
+    "layer\_ranks": {
+      "layer\_0\_q": 128,
+      "layer\_0\_k": 128,
       "...": "..."
     }
   },
@@ -2108,19 +3171,20 @@ Step  Loss
 
 \begin{lstlisting}
 # Main
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
+python run\_all\_4\_adaptive\_svd.py --models distilbert,roberta,gpt2
 
 # Energy threshold sweep
 for tau in 0.85 0.90 0.92 0.95 0.99; do
-    python run_all_4_adaptive_svd.py --energy_threshold $tau --output_suffix tau_$tau
+    python run\_all\_4\_adaptive\_svd.py --energy\_threshold $tau --output_suffix tau_$tau
 done
 
 # Residual rank sweep
 for rl in 0 4 8 16 32 64; do
-    python run_all_4_adaptive_svd.py --residual_rank $rl --output_suffix rl_$rl
+    python run\_all\_4\_adaptive\_svd.py --residual\_rank $rl --output_suffix rl_$rl
 done
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -2347,6 +3411,7 @@ Based on our negative results:
 \item \textbf{Multi-task calibration:} Does rank transfer across tasks?
 \end{enumerate}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2495,3 +3560,4 @@ This work does not involve human subjects. No IRB approval was required.
 All experimental results (positive and negative) are reported in Sections 
 7--8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
 documented in Section 6 and Appendix B.
+

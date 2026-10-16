@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{RPC: Random Projection Compressed Attention for Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -27,14 +29,14 @@ for $N$ points. This property is widely used in nearest-neighbor search
 RPC first projects $Q_i$ and $K_j$ into a smaller subspace:
 
 \[
-\tilde{Q}_i = Q_i \Omega, \qquad \tilde{K}_j = K_j \Omega
+\tilde{Q}\_i = Q\_i \Omega, \qquad \tilde{K}\_j = K\_j \Omega
 \tag{1.1}
 \]
 
 then computes the score in the projected space:
 
 \[
-s_{ij} = \frac{\tilde{Q}_i \tilde{K}_j^\top}{\sqrt{r}}
+s\_{ij} = \frac{\tilde{Q}\_i \tilde{K}\_j^\top}{\sqrt{r}}
 \tag{1.2}
 \]
 
@@ -107,6 +109,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -162,6 +165,688 @@ Dao et al. (2022) avoids materializing the attention matrix but does not
 reduce FLOPs. RPC reduces FLOPs directly.
 
 \subsection{Distinction from Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{Approach} & \textbf{Params} & \textbf{Memory} \\
+\midrule
+NHA & Hybrid local + RFF global & +LoRA & Same \\
+AASVD & Low-rank factorization & \textbf{ 50\%} & Less \\
+EAT & Token pruning & +LoRA & Less \\
+OHA & Compressed global branch & +compress+gate+LoRA & Same \\
+\textbf{RPC} & \textbf{Q/K sketching} & \textbf{+LoRA} & \textbf{Same} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} RPC is the only module that reduces attention FLOPs 
+\textbf{without reducing the score matrix size}. It trades inner-product 
+precision for compute.
+
+\subsection{Position of Our Work}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+S = Q K^\top, \qquad
+P = \text{softmax}\!\left(\frac{S}{\sqrt{d\_h}}\right), \qquad
+\text{out} = P V
+\tag{3.1}
+\]
+
+with $Q, K, V$ projected from $X$. The score matrix $S$ has shape 
+$B \times H \times L \times L$ and requires $\mathcal{O}(L^2 d_h)$ FLOPs.
+
+\subsection{Johnson--Lindenstrauss Lemma}
+
+\textbf{Lemma (JL, 1984).} For any $0 < \epsilon < 1$ and any set of $N$ points 
+$\{x_i\}_{i=1}^N \subset \mathbb{R}^d$, there exists a linear map 
+$\Omega : \mathbb{R}^d \to \mathbb{R}^r$ with 
+$r = \mathcal{O}(\log N / \epsilon^2)$ such that:
+
+\[
+(1 - \epsilon) \|x\_i - x\_j\|\_2^2 \leq \|\Omega x\_i - \Omega x\_j\|\_2^2 \leq (1 + \epsilon) \|x\_i - x\_j\|\_2^2
+\tag{3.2}
+\]
+
+\textbf{Gaussian construction.} A common choice is $\Omega$ with i.i.d. 
+$\mathcal{N}(0, 1/r)$ entries. Then:
+
+\[
+\mathbb{E}[\|\Omega x\|\_2^2] = \|x\|\_2^2
+\tag{3.3}
+\]
+
+and inner products are preserved:
+
+\[
+\mathbb{E}[(x\_i \Omega)(x\_j \Omega)^\top] = x\_i x\_j^\top
+\tag{3.4}
+\]
+
+\subsection{Sketching and Inner Products}
+
+By the JL lemma, if $\Omega$ is a Gaussian matrix with variance $1/r$, then:
+
+\[
+|\tilde{Q}\_i \tilde{K}\_j^\top - Q\_i K\_j^\top| \leq \epsilon \|Q\_i\|\_2 \|K\_j\|\_2
+\tag{3.5}
+\]
+
+with probability $1 - \delta$ for $r \geq \mathcal{O}(\log(1/\delta) / \epsilon^2)$.
+
+\textbf{In RPC.} We use $r = 32$ (much smaller than $d_h = 64$) and scale 
+$\Omega$ by $d_h^{-1/2}$. The result approximates $Q_i K_j^\top$ with 
+controllable error.
+
+\subsection{Scale Factor}
+
+Standard attention scales by $1/\sqrt{d_h}$ to prevent softmax saturation. 
+RPC scales by $1/\sqrt{r}$:
+
+\[
+s\_{ij} = \frac{\tilde{Q}\_i \tilde{K}\_j^\top}{\sqrt{r}}
+\tag{3.6}
+\]
+
+\textbf{Rationale.} The sketched $\tilde{Q}_i$ has variance $\|Q_i\|_2^2$ 
+(matched to $Q_i$), and similarly for $\tilde{K}_j$. If the sketch preserves 
+inner products, then $\tilde{Q}_i \tilde{K}_j^\top$ has the same scale as 
+$Q_i K_j^\top$. We divide by $\sqrt{d_h}$ to match attention, but the code 
+uses $\sqrt{r}$ -- a subtle choice.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+RPC replaces the standard attention score with a sketched version:
+
+\begin{enumerate}
+\item \textbf{Project} $Q, K$ to a lower-dimensional subspace using a fixed random
+  matrix $\Omega$.
+\item \textbf{Compute} scores in the projected space.
+\item \textbf{Apply} softmax and multiply by $V$ (unprojected).
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    +----------------+---------------------------+
+                     |
+        +------------+------------+
+                                   
+    +----------+             +----------+
+    | Q, K, V  |             | $\Omega$ $\in$ R^   |
+    | proj     |             | {d\_h$\times$r}  |
+    +----+-----+             +----+-----+
+         |                        |
+                                   
+    +--------------------------------------+
+    |  Sketch: Q  = Q$\Omega$, K  = K$\Omega$              |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Score: Q  K ^T / $\sqrt{}$r                   |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Softmax + @ V                        |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Output projection                    |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{Random Projection Matrix}
+
+\subsubsection{Construction}
+
+For each head $h$, RPC samples:
+
+\[
+\Omega\_h \in \mathbb{R}^{d\_h \times r}, \qquad
+(\Omega\_h)\_{ij} \sim \mathcal{N}\!\left(0, \frac{1}{d\_h}\right)
+\tag{4.1}
+\]
+
+This is stored as a \textbf{buffer} (not a parameter):
+
+\begin{lstlisting}
+self.register\_buffer(
+    "proj",
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
+)
+\end{lstlisting}
+
+\subsubsection{Why Fixed?}
+
+The random projection is \textbf{fixed} (not trained) for three reasons:
+
+\begin{enumerate}
+\item \textbf{JL guarantee:} Only random matrices have the JL property. Training
+  could destroy it.
+\item \textbf{No parameter cost:} Buffers are not parameters, so they don't increase
+  model size in the usual sense.
+\item \textbf{Reproducibility:} Fixed projection makes results reproducible across
+  training runs.
+
+\end{enumerate}
+\subsubsection{Head-Wise vs Shared}
+
+RPC uses \textbf{head-wise} projections $\Omega_h$, so each head learns (implicitly) 
+its own subspace. This is different from using a single $\Omega$ shared 
+across heads.
+
+\subsection{Forward Pass}
+
+\subsubsection{Standard Attention}
+
+\[
+S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d\_h}}, \qquad
+P = \text{softmax}(S), \qquad
+\text{out} = P V
+\tag{4.2}
+\]
+
+\subsubsection{RPC Attention}
+
+\[
+\tilde{Q}\_i = Q\_i \Omega\_h, \qquad
+\tilde{K}\_j = K\_j \Omega\_h
+\tag{4.3}
+\]
+
+\[
+S\_{ij}^{RPC} = \frac{\tilde{Q}\_i \tilde{K}\_j^\top}{\sqrt{r}}, \qquad
+P^{RPC} = \text{softmax}(S^{RPC}), \qquad
+\text{out} = P^{RPC} V
+\tag{4.4}
+\]
+
+\textbf{Note.} $V$ is not sketched; only $Q$ and $K$.
+
+\subsubsection{Causality}
+
+For decoders, the causal mask is applied in the sketched space:
+
+\[
+S^{RPC} = S^{RPC} + M\_{causal}
+\tag{4.5}
+\]
+
+where $M_{ij} = -\infty$ for $j > i$.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Standard} & \textbf{RPC} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d^2)$ \\
+Sketch Q, K & -- & $\mathcal{O}(L d_h r H)$ \\
+Score & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 r H)$ \\
+Softmax & $\mathcal{O}(L^2 H)$ & $\mathcal{O}(L^2 H)$ \\
+@ V & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 d_h H)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 r H + L d_h r H)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Speedup} for $L \gg d_h$:
+
+\[
+\frac{\text{Standard}}{\text{RPC}} \approx \frac{d\_h}{r}
+\tag{4.6}
+\]
+
+For $d_h = 64, r = 32$: theoretical \textbf{2$\times$ speedup}.
+
+For $d_h = 64, r = 16$: theoretical \textbf{4$\times$ speedup}.
+
+\textbf{Memory.} RPC \textbf{does not reduce} memory; $S^{RPC}$ is still $L \times L$.
+
+\subsection{Parameter Analysis}
+
+RPC adds:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+LoRA Q & $r_L(d + H d_h)$ \\
+LoRA K & $r_L(d + H_{kv} d_h)$ \\
+LoRA V & $r_L(d + H_{kv} d_h)$ \\
+LoRA O & $r_L(H d_h + d)$ \\
+Random proj & \textbf{0} (buffer, not parameter) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r_L = 16$, $N_\ell = 6$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+LoRA (4 projections) & 98,304 & 589,824 \\
+Proj buffer & 0 & 0 \\
+\textbf{Total} & \textbf{98,304} & \textbf{589,824} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{+48.5\%\%} parameter increase on DistilBERT.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} RPC forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, $\Omega$ (fixed)
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)            (B, H, L, d\_h)
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+6:
+7:  # Sketch
+8:  Q  $\leftarrow$ einsum("bhld,hdr-\textgreater{}bhlr", Q, $\Omega$)
+9:  K  $\leftarrow$ einsum("bhld,hdr-\textgreater{}bhlr", K, $\Omega$)
+10:
+11: # Score
+12: S $\leftarrow$ Q  K ^T / $\sqrt{}$r                    (B, H, L, L)
+13: if causal: S $\leftarrow$ S + causal\_mask
+14: if mask:   S $\leftarrow$ S + pad\_mask
+15:
+16: # Attend
+17: P $\leftarrow$ softmax(S)
+18: out $\leftarrow$ P V                          (B, H, L, d\_h)
+19: out $\leftarrow$ concat\_heads(out)
+20: Y $\leftarrow$ W\_O out + LoRA\_O(out)
+21: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{JL Error Bound}
+
+\textbf{Claim.} For $r \geq 8 \log(L) / \epsilon^2$, with probability $1 - L^{-2}$:
+
+\[
+|S^{RPC}\_{ij} - S\_{ij}| \leq \epsilon \|Q\_i\|\_2 \|K\_j\|\_2 / \sqrt{r}
+\tag{4.7}
+\]
+
+\textbf{Proof sketch.} Direct consequence of JL applied to the concatenated 
+vector $[Q_i; K_j]$. Full derivation in Appendix A.1. $\square$
+
+\subsubsection{Softmax Stability}
+
+\textbf{Claim.} The sketched scores $S^{RPC}$ have bounded variance:
+
+\[
+\text{Var}[S^{RPC}\_{ij}] \approx \frac{1}{r} \|Q\_i\|\_2^2 \|K\_j\|\_2^2
+\tag{4.8}
+\]
+
+\textbf{Proof.} Each entry $\tilde{Q}_{i,k}$ has variance $\|Q_i\|_2^2 / d_h \cdot d_h = \|Q_i\|_2^2$... 
+full derivation in Appendix A.2. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} RPC preserves causality for decoders.
+
+\textbf{Proof.} The causal mask is applied after sketching. Since sketching is 
+position-independent, it does not affect the causal structure. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adaptive Rank}
+
+\begin{lstlisting}
+num\_layers = config.num\_hidden\_layers
+if num\_layers \textgreater{} 12:
+    self.rank = max(self.rank, 128)
+elif num\_layers \textgreater{} 6:
+    self.rank = max(self.rank, 64)
+self.rank = max(1, min(self.rank, self.head\_dim))
+\end{lstlisting}
+
+The rank is capped at \texttt{head\_dim} because projecting beyond the head 
+dimension is not a compression.
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = s.query.weight
+extracted["k"] = s.key.weight
+extracted["v"] = s.value.weight
+extracted["o"] = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsection{Random Projection Buffer}
+
+\begin{lstlisting}
+self.register\_buffer(
+    "proj",
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
+)
+\end{lstlisting}
+
+\textbf{Key insight.} Buffers are:
+\begin{itemize}
+\item Not counted in \texttt{numel()} of \texttt{parameters()}.
+\item Saved with the model (state\_dict).
+\item Not updated by optimizers.
+
+\end{itemize}
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True} means RPC returns the raw 
+context without applying its own \texttt{out\_proj}. The outer \texttt{attention.output.dense} 
+applies the actual output projection.
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    out = context
+else:
+    out = self.out\_proj(context)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject\_rpc(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = RPCAttention(config=model\_config, pretrained\_attn=src, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises & Injection fails \\
+Small Frobenius norm & Explicit check & Raises RuntimeError \\
+Nested encoder mis-set & Logits differ & Manual fix \\
+OOM & RuntimeError & Reduce batch \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} RPC's \texttt{copy\_weights} uses \texttt{raise RuntimeError}, and 
+\texttt{inject\_rpc} also raises:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject\_rpc failed: \%s", e)
+    raise RuntimeError(f"Injection failed")
+\end{lstlisting}
+
+This is \textbf{stricter} than NHA/EAT but similar to ASVD and OHA.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("rpc")
+@ATTENTION\_REGISTRY.register("rpc\_attention")
+class RPCAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality}
+
+\textbf{Verification.} Gradient of output at position $i$ w.r.t. input at 
+position $j > i$ is zero.
+
+\subsection{Cross-Attention}
+
+RPC's forward accepts \texttt{encoder\_hidden\_states} as an argument but does not 
+use it. Cross-attention is effectively unsupported.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of rpc.}
+\label{fig:arch_rpc}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{RPC Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{rank} (sketch dim) & 32 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, precision, recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Sketch:} Rank, theoretical FLOPs speedup
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_rpc.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
 
 \begin{table*}[t]
 \centering
@@ -338,12 +1023,13 @@ GPT-2 & PASS & 57.34 & 32 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/rpc_distilbert_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/rpc\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{rpc}.}
 \label{fig:results_rpc}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -353,7 +1039,7 @@ GPT-2 & PASS & 57.34 & 32 \\
 For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
 
 \[
-\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx 0.015
+\frac{|\tilde{Q}\_i \tilde{K}\_j^\top - Q\_i K\_j^\top|}{|Q\_i K\_j^\top|} \approx 0.015
 \]
 
 \textbf{Observation.} At $r = 16$, the distortion reaches 32, 
@@ -404,21 +1090,21 @@ overlap, while AASVD and EAT diverge.
 RPC helps in the regime:
 
 \[
-L^2 d_h > L d_h r + L^2 r + \text{overhead}
+L^2 d\_h \textgreater{} L d\_h r + L^2 r + \text{overhead}
 \tag{8.1}
 \]
 
 Rearranging:
 
 \[
-L (d_h - r) > d_h r / L + \text{overhead} / L
+L (d\_h - r) \textgreater{} d\_h r / L + \text{overhead} / L
 \tag{8.2}
 \]
 
 For $d_h = 64$, $r = 32$, overhead is small at large $L$:
 
 \[
-L > \text{small} \Rightarrow L > 512
+L \textgreater{} \text{small} \Rightarrow L \textgreater{} 512
 \]
 
 So RPC helps at \textbf{long sequence lengths} ($L > 512$).
@@ -502,7 +1188,7 @@ This is \textbf{safer} than silent fallback but \textbf{less flexible} than A3/A
 \begin{enumerate}
 \item \textbf{RPC is not a compressor.}
 \item \textbf{RPC does not reduce memory.}
-\item \textbf{RPC helps only at long sequences (L > 512).}
+\item \textbf{RPC helps only at long sequences (L \textgreater{} 512).}
 \item \textbf{Theoretical speedup $\ne$ actual speedup.}
 \item \textbf{\texttt{raise} prevents silent failure.}
 \end{enumerate}
@@ -511,6 +1197,7 @@ This is \textbf{safer} than silent fallback but \textbf{less flexible} than A3/A
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -551,7 +1238,7 @@ RPC does not reduce parameters. LoRA adds ~1\%.
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Long sequence (L > 512)? --- Yes --- Use RPC
+Long sequence (L \textgreater{} 512)? --- Yes --- Use RPC
   | No
    
 Memory-constrained? --- Yes --- Use AASVD or EAT
@@ -639,6 +1326,7 @@ Time & ~15 s & ~8 s & 1.9$\times$ faster \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -670,7 +1358,7 @@ Only SST-2 is evaluated.
 
 \subsection{Model Coverage}
 
-Tested on $\le$124M parameter models. Not tested on >1B models.
+Tested on $\le$124M parameter models. Not tested on \textgreater{}1B models.
 
 \subsection{Hardware}
 
@@ -714,6 +1402,7 @@ Research-grade implementation. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -792,14 +1481,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -824,39 +1514,39 @@ datasets & 1.0.0 \\
 \subsection{Running RPC}
 
 \begin{lstlisting}
-python run_all_4_rpc.py \
+python run\_all\_4\_rpc.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,rpc \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_rpc.py --models distilbert,roberta,gpt2
+python run\_all\_4\_rpc.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (rank)}
 \begin{lstlisting}
 for r in 8 16 32 64; do
-    python run_all_4_rpc.py --rank $r --output_suffix r$r
+    python run\_all\_4\_rpc.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (LoRA rank)}
 \begin{lstlisting}
 for rl in 0 8 16 32; do
-    python run_all_4_rpc.py --lora_rank $rl --output_suffix lora$rl
+    python run\_all\_4\_rpc.py --lora\_rank $rl --output_suffix lora$rl
 done
 \end{lstlisting}
 
@@ -866,7 +1556,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -907,6 +1597,7 @@ GPT-2 & 57.34\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1049,6 +1740,7 @@ GPT-2 & 57.34\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1065,26 +1757,26 @@ $\mathcal{N}(0, 1/d_h)$ entries, and for any vectors $Q, K \in \mathbb{R}^{d_h}$
 \textbf{Proof.} Let $\Omega_{ij}$ be the entries. Then:
 
 \[
-(Q\Omega)_j = \sum_i Q_i \Omega_{ij}
+(Q\Omega)\_j = \sum\_i Q\_i \Omega\_{ij}
 \]
 
 So:
 
 \[
-(Q\Omega)(K\Omega)^\top = \sum_j \left(\sum_i Q_i \Omega_{ij}\right) \left(\sum_{i'} K_{i'} \Omega_{i'j}\right)
-= \sum_{i, i'} Q_i K_{i'} \sum_j \Omega_{ij} \Omega_{i'j}
+(Q\Omega)(K\Omega)^\top = \sum\_j \left(\sum\_i Q\_i \Omega\_{ij}\right) \left(\sum\_{i'} K\_{i'} \Omega\_{i'j}\right)
+= \sum\_{i, i'} Q\_i K\_{i'} \sum\_j \Omega\_{ij} \Omega\_{i'j}
 \]
 
 Taking expectations:
 
 \[
-\mathbb{E}[\Omega_{ij} \Omega_{i'j}] = \frac{1}{d_h} \delta_{ii'}
+\mathbb{E}[\Omega\_{ij} \Omega\_{i'j}] = \frac{1}{d\_h} \delta\_{ii'}
 \]
 
 So:
 
 \[
-\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum_{i, i'} Q_i K_{i'} \frac{1}{d_h} \delta_{ii'} \cdot r = \frac{r}{d_h} Q K^\top
+\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum\_{i, i'} Q\_i K\_{i'} \frac{1}{d\_h} \delta\_{ii'} \cdot r = \frac{r}{d\_h} Q K^\top
 \]
 
 \textbf{Correction.} With scaling $1/d_h$, we get $\frac{r}{d_h} Q K^\top$, not $Q K^\top$. To get the correct scale, entries should have variance $1/r$. Let me redo:
@@ -1092,11 +1784,11 @@ So:
 With $\text{Var}[\Omega_{ij}] = 1/r$:
 
 \[
-\mathbb{E}[\Omega_{ij} \Omega_{i'j}] = \frac{1}{r} \delta_{ii'}
+\mathbb{E}[\Omega\_{ij} \Omega\_{i'j}] = \frac{1}{r} \delta\_{ii'}
 \]
 
 \[
-\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum_{i, i'} Q_i K_{i'} \frac{1}{r} \delta_{ii'} \cdot r = Q K^\top \qquad \square
+\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum\_{i, i'} Q\_i K\_{i'} \frac{1}{r} \delta\_{ii'} \cdot r = Q K^\top \qquad \square
 \]
 
 So the correct variance is $1/r$, not $1/d_h$. The code uses $(d_h)^{-1/2}$ for the standard deviation, giving variance $1/d_h$. This means the RPC scores are scaled by $r/d_h$, which is then compensated by the $1/\sqrt{r}$ scale.
@@ -1106,7 +1798,7 @@ So the correct variance is $1/r$, not $1/d_h$. The code uses $(d_h)^{-1/2}$ for 
 \textbf{Claim.} For $Q, K \in \mathbb{R}^{d_h}$ and $\Omega$ with variance $1/d_h$:
 
 \[
-\text{Var}[(Q\Omega)(K\Omega)^\top] = \frac{1}{d_h} \left(\|Q\|_2^2 \|K\|_2^2 + (Q \cdot K)^2\right)
+\text{Var}[(Q\Omega)(K\Omega)^\top] = \frac{1}{d\_h} \left(\|Q\|\_2^2 \|K\|\_2^2 + (Q \cdot K)^2\right)
 \tag{A.2}
 \]
 
@@ -1146,84 +1838,85 @@ For $L \gg d_h$, the speedup is $d_h / r$. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("rpc")
+@ATTENTION\_REGISTRY.register("rpc")
 class RPCAttention(BaseAttention):
-    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         self.dim = 768
-        self.num_heads = 12
-        self.head_dim = 64
-        self.rank = min(rank, self.head_dim)
+        self.num\_heads = 12
+        self.head\_dim = 64
+        self.rank = min(rank, self.head\_dim)
         
         # Projections with LoRA
-        self.W_q = LoRALinear(768, 768, lora_rank=16)
-        self.W_k = LoRALinear(768, 768, lora_rank=16)
-        self.W_v = LoRALinear(768, 768, lora_rank=16)
-        self.out_proj = LoRALinear(768, 768, lora_rank=16)
+        self.W\_q = LoRALinear(768, 768, lora\_rank=16)
+        self.W\_k = LoRALinear(768, 768, lora\_rank=16)
+        self.W\_v = LoRALinear(768, 768, lora\_rank=16)
+        self.out\_proj = LoRALinear(768, 768, lora\_rank=16)
         
         # Random projection buffer (NOT a parameter)
-        self.register_buffer(
+        self.register\_buffer(
             "proj",
-            torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+            torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
         )
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
     
     # 1. Project
-    q = self.W_q(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
-    k = self.W_k(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
-    v = self.W_v(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
+    q = self.W\_q(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
+    k = self.W\_k(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
+    v = self.W\_v(hidden\_states).view(B, L, H, d\_h).permute(0, 2, 1, 3)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, *position\_embeddings)
     
     # 3. GQA
-    if H != H_kv:
-        k = repeat_kv(k, H // H_kv)
-        v = repeat_kv(v, H // H_kv)
+    if H != H\_kv:
+        k = repeat\_kv(k, H // H\_kv)
+        v = repeat\_kv(v, H // H\_kv)
     
     # 4. Sketch
     proj = self.proj.to(dtype=q.dtype, device=q.device)
-    q_sk = torch.einsum("bhld,hdr->bhlr", q, proj)
-    k_sk = torch.einsum("bhld,hdr->bhlr", k, proj)
+    q\_sk = torch.einsum("bhld,hdr-\textgreater{}bhlr", q, proj)
+    k\_sk = torch.einsum("bhld,hdr-\textgreater{}bhlr", k, proj)
     
     # 5. Score
     scale = 1.0 / math.sqrt(self.rank)
-    scores = torch.matmul(q_sk.float(), k_sk.float().transpose(-2, -1)) * scale
+    scores = torch.matmul(q\_sk.float(), k\_sk.float().transpose(-2, -1)) * scale
     
     # 6. Masks
-    if self.is_decoder:
-        causal_mask = torch.triu(torch.full((L, L), -1e4), diagonal=1)
-        scores = scores + causal_mask
+    if self.is\_decoder:
+        causal\_mask = torch.triu(torch.full((L, L), -1e4), diagonal=1)
+        scores = scores + causal\_mask
     
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 7. Attend
-    probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+    probs = F.softmax(scores, dim=-1).to(hidden\_states.dtype)
     context = torch.matmul(probs, v)
-    context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all\_head\_size)
     
     # 8. Output
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         out = context
     else:
-        out = self.out_proj(context)
+        out = self.out\_proj(context)
     
     return out, None
 \end{lstlisting}
@@ -1231,9 +1924,9 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 \subsection{B.3 The Projection Buffer}
 
 \begin{lstlisting}
-self.register_buffer(
+self.register\_buffer(
     "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
 )
 \end{lstlisting}
 
@@ -1247,10 +1940,10 @@ self.register_buffer(
 \subsection{B.4 The `raise` on Failure}
 
 \begin{lstlisting}
-if missing_after:
+if missing\_after:
     raise RuntimeError(
-        f"RPCAttention copy_weights failed: missing mandatory projections "
-        f"{missing_after} from {src.__class__.__name__}."
+        f"RPCAttention copy\_weights failed: missing mandatory projections "
+        f"{missing\_after} from {src.\_\_class\_\_.\_\_name\_\_}."
     )
 \end{lstlisting}
 
@@ -1258,7 +1951,7 @@ And:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_rpc failed: %s", e)
+    logger.error("inject\_rpc failed: \%s", e)
     raise RuntimeError(f"Injection failed")
 \end{lstlisting}
 
@@ -1301,6 +1994,7 @@ For reproducibility, set \texttt{torch.manual\_seed()} before initialization.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1447,12 +2141,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
-    "sketch_rank": 32,
-    "score_correlation": 0.96
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
+    "sketch\_rank": 32,
+    "score\_correlation": 0.96
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1463,11 +2157,11 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_rpc.py --models distilbert,roberta,gpt2
+python run\_all\_4\_rpc.py --models distilbert,roberta,gpt2
 
 # Rank sweep
 for r in 8 16 32 64; do
-    python run_all_4_rpc.py --rank $r --output_suffix r$r
+    python run\_all\_4\_rpc.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1475,6 +2169,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1617,6 +2312,7 @@ The random seed for \texttt{proj} initialization affects results. We use seed
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1709,3 +2405,4 @@ that combines RPC's principled approach with AASVD-style compression.
 
 ---
 \end{lstlisting}
+

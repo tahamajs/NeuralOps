@@ -1,0 +1,3 @@
+# Appendix B. Implementation Details & Code Mapping
+
+Detailed mappings of `hybrid_attention` to PyTorch layers, autograd functions, and Triton kernels.

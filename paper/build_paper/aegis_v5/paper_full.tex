@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -74,7 +76,7 @@ Each projection $W$ is decomposed via SVD, and the rank $r$ is chosen to
 capture a target \textbf{energy} fraction:
 
 \[
-r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
+r^* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2} \geq \eta \right\}
 \]
 
 where $\eta = 0.95$ by default.
@@ -85,7 +87,7 @@ The SVD factors $(U_r, V_r)$ are frozen; LoRA adapters provide trainable
 capacity:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \]
 
 \subsubsection{Per-Head Adaptive Gating}
@@ -93,7 +95,7 @@ capacity:
 The local and global outputs are combined with a learnable per-head gate:
 
 \[
-\text{Out} = \sigma(g_h) \cdot \text{Out}_\text{local} + (1 - \sigma(g_h)) \cdot \text{Out}_\text{global}
+\text{Out} = \sigma(g\_h) \cdot \text{Out}\_\text{local} + (1 - \sigma(g\_h)) \cdot \text{Out}\_\text{global}
 \]
 
 Gate bias is initialized to $+2.0$, giving $\sigma(2.0) \approx 0.88$ 
@@ -133,6 +135,7 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Sparse and Local Attention}
@@ -190,6 +193,908 @@ recovery.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Local} & \textbf{Global} & \textbf{Split-head} & \textbf{SVD} \\
+\midrule
+NHA &  &  &  &  \\
+LEKAv3 &  & (landmarks) &  &  \\
+Linformer &  & (projection) &  &  \\
+\textbf{AEGIS-V5} &  & (RFF) & \textbf{ } & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} AEGIS-V5 is the first hybrid attention to (i) split 
+heads into mechanism-specific groups, (ii) use energy-based SVD for 
+projection compression, and (iii) apply LoRA on the frozen factors.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Standard Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\]
+
+Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
+
+\subsection{Sliding Window Attention}
+
+Local window attention restricts each query to a window of size $W$ around 
+it:
+
+\[
+\text{Attn}\_\text{local}(q\_i, K, V) = \sum\_{j : |i - j| \leq W/2} \alpha\_{ij} v\_j
+\]
+
+Complexity: $\mathcal{O}(L \cdot W \cdot d_h)$.
+
+For decoders, the causal variant restricts to $j \leq i$:
+
+\[
+\text{Attn}\_\text{local, causal}(q\_i, K, V) = \sum\_{j : i - W/2 \leq j \leq i} \alpha\_{ij} v\_j
+\]
+
+\subsection{Kernel Linear Attention}
+
+Kernel attention factorizes the softmax kernel:
+
+\[
+e^{q \cdot k} \approx \phi(q)^\top \phi(k)
+\]
+
+The output becomes:
+
+\[
+\text{Out}\_\text{kernel}(q\_i, K, V) = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\]
+
+Complexity: $\mathcal{O}(L \cdot F \cdot d_h)$ where $F$ is the feature 
+dimension.
+
+\subsubsection{Random Fourier Features}
+
+For RFF:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(W\_\text{rff} x\right)
+\]
+
+where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
+
+\subsubsection{Zero-Sum Keys}
+
+Zero-sum keys (Katharopoulos et al., 2020) subtract the mean:
+
+\[
+\tilde{K} = K - \bar{K}
+\]
+
+This improves the approximation for positive-definite kernels.
+
+\subsubsection{Causal Kernel Attention}
+
+For decoders, the cumulative sum formulation:
+
+\[
+S\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top, \quad
+Z\_i = \sum\_{j \leq i} \phi(k\_j)
+\]
+
+\[
+\text{Out}\_i = \frac{\phi(q\_i)^\top S\_i}{\phi(q\_i)^\top Z\_i}
+\]
+
+\subsection{Singular Value Decomposition}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\]
+
+Truncated at rank $r$:
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
+\]
+
+\subsection{Energy-Based Rank Selection}
+
+The \textbf{energy fraction} captured by rank $r$:
+
+\[
+\text{Energy}(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
+\]
+
+We select $r^* = \min \{ r : \text{Energy}(r) \geq \eta \}$.
+
+For $\eta = 0.95$: $r^*$ captures 95\% of the weight energy.
+
+\subsection{LoRA}
+
+LoRA parameterizes weight updates:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A, \quad B \in \mathbb{R}^{d \times r\_L}, \quad A \in \mathbb{R}^{r\_L \times k}
+\]
+
+with $B = 0$ at initialization.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+Modern models (Qwen, LLaMA) use $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}
+\]
+
+Expanded to $H$ via \texttt{repeat\_kv}.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE rotates $Q, K$:
+
+\[
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
+\]
+
+\subsection{Softpick (Fixed)}
+
+The original AEGIS used a ReLU-based softpick:
+
+\[
+\text{softpick}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
+\]
+
+where $m = \max_j x_j$. \textbf{Problem:} When $m \leq 0$ (all-masked rows), 
+this returns all zeros, causing attention collapse.
+
+AEGIS-V5 replaces this with a stable softmax:
+
+\[
+\text{softpick}(x)\_i = \frac{e^{x\_i / T}}{\sum\_j e^{x\_j / T}}
+\]
+
+which is always numerically stable.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+AEGIS-V5 has three main stages:
+
+\begin{enumerate}
+\item \textbf{SVD-factorized projections} ( 4.2): each $Q/K/V/O$ projection is
+  decomposed with energy-based rank selection and frozen.
+\item \textbf{Split-head attention} ( 4.3): heads partitioned into local and global.
+\item \textbf{Adaptive gating} ( 4.4): per-head gate fuses local and global.
+
+\end{enumerate}
+\begin{lstlisting}
+        Input X
+           |
+            
+    +------------------+
+    | SVD Q/K/V/O      |  (frozen, energy-ranked)
+    | + LoRA adapters  |  (trainable)
+    +--------+---------+
+             |
+    +--------+---------+
+                        
+ +----------+    +-----------+
+ | Local    |    | Global    |
+ | Window   |    | RFF       |
+ | (2H/3)   |    | (H/3)     |
+ +----+-----+    +-----+-----+
+      |                |
+      +-------+--------+
+               
+      +---------------+
+      | Per-head      |
+      | Gating $\sigma$(g)   |
+      +-------+-------+
+              |
+               
+         Output
+\end{lstlisting}
+
+\subsection{SVD-Factorized Projections}
+
+\subsubsection{Decomposition}
+
+Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\begin{enumerate}
+\item Compute the SVD:
+  \[
+W = U \Sigma V^\top
+\]
+\item Select energy-based rank:
+  \[
+r^* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2} \geq \eta \right\}
+\]
+\item Factor into $W \approx U_r V_r$ where:
+  \[
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+  V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
+\]
+
+\end{enumerate}
+\subsubsection{Parameter Reduction}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d_\text{out} \cdot d_\text{in}$ \\
+SVD at rank $r$ & $r(d_\text{out} + d_\text{in})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$ and $r = 384$ (energy 0.95):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+SVD r=384 & 589,824 & \textbf{1.00$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation.} At $r = 384 = d/2$, SVD parameters equal original. 
+For meaningful compression, we need $r < d/2$.
+
+\subsubsection{LoRA on Frozen Factors}
+
+We freeze $(U_r, V_r)$ and add LoRA adapters:
+
+\[
+y = U\_r V\_r x + \frac{\alpha}{r\_L} B A x
+\]
+
+Only $A, B$ are trained.
+
+\textbf{Note.} AEGIS-V5 uses a \texttt{FactorisedLinear} that applies SVD as a \textbf{stacked} 
+composition (\texttt{down} then \texttt{up}), not a reconstruction. This is critical for 
+correctness.
+
+\subsection{Split-Head Attention}
+
+\subsubsection{Head Partition}
+
+We split $H$ heads:
+
+\[
+H\_\text{local} = \lceil 2H/3 \rceil, \quad
+H\_\text{global} = H - H\_\text{local}
+\]
+
+For $H = 12$:
+\begin{itemize}
+\item $H_\text{local} = 8$
+\item $H_\text{global} = 4$
+
+\end{itemize}
+\subsubsection{Local Branch}
+
+Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
+
+\[
+\text{Out}\_\text{local}[i] = \text{softpick}\!\left(\frac{q\_i K\_\text{local}^\top}{\sqrt{d\_h}}\right) \cdot V\_\text{local}
+\]
+
+with a window mask $|i - j| \leq W/2$.
+
+\subsubsection{Global Branch}
+
+Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
+
+\[
+\text{Out}\_\text{global}[i] = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\]
+
+with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
+
+\subsubsection{Concatenation}
+
+The outputs are concatenated:
+
+\[
+\text{Out} = \text{Concat}(\text{Out}\_\text{local}, \text{Out}\_\text{global}) \in \mathbb{R}^{B \times H \times L \times d\_h}
+\]
+
+\subsection{Adaptive Gating}
+
+\subsubsection{Per-Head Gate}
+
+Each head has a learnable scalar $g_h$:
+
+\[
+\text{Out}\_\text{fused}[i] = \sigma(g\_h + 2.0) \cdot \text{Out}\_\text{local}[i] + (1 - \sigma(g\_h + 2.0)) \cdot \text{Out}\_\text{global}[i]
+\]
+
+where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
+
+\subsubsection{Why Bias 2.0?}
+
+At initialization, we want the model to prioritize local attention (known 
+to be safe). As training progresses, the gate can shift toward global.
+
+\subsection{Decoder Fallback}
+
+For decoder models, the local+global split \textbf{does not preserve causality}:
+
+\begin{itemize}
+\item Local branch: causal window is fine.
+\item Global branch: prefix scan preserves causality.
+
+\end{itemize}
+\textbf{But:} For very short sequences ($N < W$), the local branch covers the 
+whole sequence, making the split redundant. We fall back to standard dense 
+causal attention:
+
+\[
+\text{if } \text{is\_decoder} : \text{standard causal softmax}
+\]
+
+This preserves correctness at the cost of quadratic complexity for decoders.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} AEGIS-V5 forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, is\_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ SVD\_Q(X); K $\leftarrow$ SVD\_K(X); V $\leftarrow$ SVD\_V(X)
+2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
+3:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+4:  if is\_decoder:
+5:      # Fallback to standard causal attention
+6:      scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+7:      scores $\leftarrow$ mask\_causal(scores)
+8:      out $\leftarrow$ softmax(scores) @ V
+9:  else:
+10:     # Split-head hybrid attention
+11:     Q\_local $\leftarrow$ Q[:, :H\_local]; K\_local $\leftarrow$ K[:, :H\_local]; V\_local $\leftarrow$ V[:, :H\_local]
+12:     Q\_global $\leftarrow$ Q[:, H\_local:]; K\_global $\leftarrow$ K[:, H\_local:]; V\_global $\leftarrow$ V[:, H\_local:]
+13:     Out\_local $\leftarrow$ local\_window(Q\_local, K\_local, V\_local, W)
+14:     Out\_global $\leftarrow$ kernel\_linear(Q\_global, K\_global, V\_global,  )
+15:     # Per-head gate
+16:     g $\leftarrow$ $\sigma$(blend\_logits + 2.0)
+17:     Out $\leftarrow$ g   Out\_local + (1 - g)   Out\_global
+18: Y $\leftarrow$ SVD\_O(Out)
+19: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Encoder}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Complexity} \\
+\midrule
+SVD projections & $\mathcal{O}(L r (d + d_h))$ \\
+Local attention & $\mathcal{O}(L W d_h \cdot H_\text{local})$ \\
+Kernel attention & $\mathcal{O}(L F d_h \cdot H_\text{global})$ \\
+Output projection & $\mathcal{O}(L r d)$ \\
+\textbf{Total} & $\mathcal{O}(L(W H_\text{local} + F H_\text{global}) d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For fixed $W, F, H_\text{local}, H_\text{global}$: linear in $L$.
+
+\subsubsection{Decoder}
+
+Quadratic fallback: $\mathcal{O}(L^2 d_h)$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} \\
+\midrule
+Q/K/V/O (SVD) & $4 d^2$ & $4 r(d + d_h)$ \& depends on $r$ \\
+LoRA adapters & 0 & $4 r_L (d + d_h)$ & +small \\
+RFF proj & 0 & $H_\text{global} \cdot d_h \cdot F$ & +medium \\
+blend\_logits & 0 & $H$ & +negligible \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} Whether AEGIS-V5 reduces parameters depends entirely on $r$.
+
+For $d = 768$, $r = 384$ (energy 0.95 default):
+\begin{itemize}
+\item SVD: no compression (ratio 1.00$\times$)
+\item LoRA: +98,304
+\item RFF: $4 \cdot 64 \cdot 128 = 32,768$
+\item \textbf{Net: +131,072 params per layer}
+
+\end{itemize}
+For $d = 768$, $r = 128$:
+\begin{itemize}
+\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$\times$ compression}
+\item LoRA: +98,304
+\item RFF: +32,768
+\item \textbf{Net: -262,144 params per layer}
+
+\end{itemize}
+\textbf{We are explicit:} The parameter effect depends on the SVD rank.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{SVD Approximation Error}
+
+If $W = U\Sigma V^\top$, then:
+
+\[
+\|W - U\_r \Sigma\_r V\_r^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
+\]
+
+The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
+
+\subsubsection{Kernel Approximation}
+
+Standard RFF bound (Rahimi \& Recht, 2007):
+
+\[
+\sup\_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
+\]
+
+with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, the fallback preserves causality.
+
+\textbf{Proof.} Fallback uses standard causal softmax with triangular mask. $\square$
+
+\textbf{Claim.} For encoders, the split-head design preserves non-causality 
+(no masking needed).
+
+\textbf{Proof.} Local window covers $|i - j| \leq W/2$; kernel attention covers 
+all $j$. Both are bidirectional by design. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+AEGIS-V5 copies base weights via \texttt{copy\_weights}, handling four patterns:
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+weight = old\_attn.c\_attn.weight.data
+if weight.shape[1] == 3 * self.hidden\_size:
+    weight = weight.t()
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    q\_w = old\_attn.self.query.weight
+    k\_w = old\_attn.self.key.weight
+    v\_w = old\_attn.self.value.weight
+    o\_w = old\_attn.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen GQA}
+
+\begin{lstlisting}
+q\_w = old\_attn.q\_proj.weight
+k\_w = old\_attn.k\_proj.weight  # (H\_kv   d\_h, d)
+v\_w = old\_attn.v\_proj.weight
+o\_w = old\_attn.o\_proj.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+q\_w = old\_attn.q\_lin.weight
+k\_w = old\_attn.k\_lin.weight
+v\_w = old\_attn.v\_lin.weight
+o\_w = old\_attn.out\_lin.weight
+\end{lstlisting}
+
+\subsection{Robustness Improvements}
+
+Compared to AEGIS V4, V5 makes three robustness changes:
+
+\subsubsection{copy\_weights No Longer Raises}
+
+In V4, exceptions in \texttt{copy\_weights} aborted the entire attention replacement. 
+V5 logs a warning and continues to fallback paths:
+
+\begin{lstlisting}
+try:
+    w, b = UniversalAdapter.get\_weight\_bias(old\_attn, proj)
+except Exception as e:
+    logger.debug(f"UniversalAdapter failed for {proj}: {e}")
+    continue
+\end{lstlisting}
+
+\subsubsection{Frobenius Check No Longer Raises}
+
+Near-zero norms trigger a warning, not an abort:
+
+\begin{lstlisting}
+if norm \textless{} 1e-4:
+    logger.warning(f"Weight for {proj\_key} has near-zero norm; continuing")
+\end{lstlisting}
+
+\subsubsection{inject\_aegis\_v5 Returns None on Failure}
+
+\begin{lstlisting}
+try:
+    new\_attn.copy\_weights(src\_attn)
+except Exception as e:
+    logger.error(f"inject\_aegis\_v5: copy\_weights failed: {e}")
+    return None
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}:
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    return out, None
+return self.out\_proj(out), None
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} applies the output projection.
+
+\subsection{Decoder Fallback}
+
+For decoder models, we use standard causal attention (no split-head):
+
+\begin{lstlisting}
+if N \textless{} self.cfg.local\_window or self.is\_decoder:
+    # Standard causal softmax
+    scores = Q @ K^T / $\sqrt{}$d\_h
+    scores = mask\_causal(scores)
+    attn = softpick(scores)
+    out = attn @ V
+    return out, None
+\end{lstlisting}
+
+This preserves causality at the cost of quadratic complexity.
+
+\subsection{Softpick Fix}
+
+The original AEGIS used a ReLU-based softpick that returned all zeros when 
+$\max(x) \leq 0$ (e.g., on fully-masked rows). This caused silent attention 
+collapse. V5 replaces it with a stable softmax:
+
+\begin{lstlisting}
+def softpick(x, dim=-1, temperature=1.0):
+    x\_f = x.float()
+    if temperature \textless{}= 0 or temperature == 1.0:
+        return F.softmax(x\_f, dim=dim).to(x.dtype)
+    return F.softmax(x\_f / temperature, dim=dim).to(x.dtype)
+\end{lstlisting}
+
+This fix alone likely prevented several collapse cases.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject AEGIS-V5 into a model
+\begin{lstlisting}
+Input:  model M, config
+Output: M with attention replaced or unchanged on failure
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     cfg $\leftarrow$ AegisConfigV5(...)
+4:     new $\leftarrow$ AegisAttention(model\_config, aegis\_cfg=cfg)
+5:     try:
+6:         new.copy\_weights(src)
+7:     except:
+8:         logger.error(...)
+9:         continue  # Skip this layer, do not crash
+10:    replace( , new)
+11: end for
+12: return M
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+UniversalAdapter throws \& try/except \& Continue to next pattern \\
+Missing Q/K/V & \texttt{missing} non-empty \& Log warning, random init \\
+Near-zero norm \& Frobenius check \& Log warning, continue \\
+copy\_weights fails \& try/except \& Skip layer, return None \\
+NaN in scores & \texttt{nan\_to\_num} \& Set to 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("aegis\_v5\_module")
+@ATTENTION\_REGISTRY.register("AegisAttention")
+@ATTENTION\_REGISTRY.register("aegis\_v5")
+class AegisAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery}
+
+Base weights are frozen; LoRA adapters train. Additionally trainable:
+\begin{itemize}
+\item \texttt{rff\_proj}: the RFF projection matrix
+\item \texttt{blend\_logits}: per-head gate logits
+
+\end{itemize}
+For $d = 768$, $H = 12$, $F = 128$:
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of aegis\_v5.}
+\label{fig:arch_aegis-v5}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max sequence length: 128.
+
+\subsection{AEGIS-V5 Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} & \textbf{Notes} \\
+\midrule
+\texttt{svd\_energy} ($\eta$) & 0.95 \& SVD rank selection \\
+\texttt{min\_rank} & 4 \& Floor for SVD rank \\
+\texttt{max\_rank} & 384 \& Ceiling for SVD rank \\
+\texttt{num\_local\_heads} & 8 \& Local attention heads \\
+\texttt{num\_global\_heads} & 4 \& Global attention heads \\
+\texttt{local\_window} ($W$) & 64 \& Sliding window \\
+\texttt{rff\_features} ($F$) & 128 \& RFF dimension \\
+\texttt{gate\_init\_bias} & 1.8 \& Prior for local (overridden to 2.0) \\
+\texttt{softpick\_temperature} & 1.0 \& Attention temperature \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical:} With \texttt{max\_rank = 384} and \texttt{svd\_energy = 0.95}, the effective 
+SVD rank is often 384, which equals $d/2$ -- \textbf{no parameter reduction}.
+
+For actual compression, set \texttt{max\_rank = 128} or lower.
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+\texttt{recovery\_steps} & 50 \\
+\texttt{batch\_size} & 8 \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+Optimizer \& AdamW \\
+Precision \& FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters
+\item Peak VRAM
+\item Inference time
+\item Effective compute
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU \& RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_aegis\_v5.py \
+    --models distilbert,roberta,gpt2 \
+    --svd\_energy 0.95 \
+    --max\_rank 128 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} \& Standard attention \\
+\texttt{aegis\_v5} \& Our method \\
+\texttt{aegis\_v4} \& Prior version (broken softpick) \\
+\texttt{aegis\_v5\_no\_split} \& No head split (all local) \\
+\texttt{aegis\_v5\_no\_svd} \& No SVD factorization \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -200,9 +1105,9 @@ recovery.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Aegis V5 Module} & \textbf{80.96\%} & -9.98\% & PASS & 0.8379 & 24 & \textbf{0.99$\times$} & 208.3 MB & 25.0 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Aegis V5 Module} & \textbf{50.92\%} & +0.00\% & PASS_LOW & 0.6748 & 48 & \textbf{0.94$\times$} & 385.2 MB & 49.1 & -- \\
+RoBERTa & \textbf{Aegis V5 Module} & \textbf{50.92\%} & +0.00\% & PASS\_LOW & 0.6748 & 48 & \textbf{0.94$\times$} & 385.2 MB & 49.1 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Aegis V5 Module} & \textbf{47.48\%} & -2.06\% & PASS_LOW & 0.3811 & 48 & \textbf{0.99$\times$} & 334.6 MB & 35.4 & -- \\
+GPT-2 & \textbf{Aegis V5 Module} & \textbf{47.48\%} & -2.06\% & PASS\_LOW & 0.3811 & 48 & \textbf{0.99$\times$} & 334.6 MB & 35.4 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -422,12 +1327,13 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/aegis_v5_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{aegis_v5}.}
+\includegraphics[width=0.85\linewidth]{figures/aegis\_v5\_roberta\_loss\_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{aegis\_v5}.}
 \label{fig:results_aegis_v5}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does AEGIS-V5 Work?}
@@ -478,7 +1384,7 @@ matrices have slowly decaying singular values.
 \textbf{Key finding.} With default \texttt{max\_rank=384} and \texttt{d=768}:
 
 \[
-r(d + d_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
+r(d + d\_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
 \]
 
 \textbf{SVD provides no compression} when $r = d/2$.
@@ -524,9 +1430,9 @@ The original AEGIS softpick:
 def softpick(x, dim, temperature):
     m = x.max(dim=dim, keepdim=True).values
     z = x - m
-    exp_z = torch.exp((z / temperature).clamp(min=-50, max=50))
-    exp_neg_m = torch.exp(((-m) / temperature).clamp(min=-50, max=50))
-    p = F.relu(exp_z - exp_neg_m)  # $\leftarrow$ can be all zeros
+    exp\_z = torch.exp((z / temperature).clamp(min=-50, max=50))
+    exp\_neg\_m = torch.exp(((-m) / temperature).clamp(min=-50, max=50))
+    p = F.relu(exp\_z - exp\_neg\_m)  # $\leftarrow$ can be all zeros
     s = p.sum(dim=dim, keepdim=True)
     return p / s.clamp(min=1e-8)
 \end{lstlisting}
@@ -538,8 +1444,8 @@ V5 uses stable softmax:
 
 \begin{lstlisting}
 def softpick(x, dim, temperature):
-    x_f = x.float()
-    return F.softmax(x_f / temperature, dim=dim)
+    x\_f = x.float()
+    return F.softmax(x\_f / temperature, dim=dim)
 \end{lstlisting}
 
 \subsection{Failure Modes}
@@ -565,13 +1471,14 @@ Low acc \& None \& N/A \\
 \item \textbf{SVD does not help} at default \texttt{max\_rank=384}.
 \item \textbf{Softpick fix prevents collapse.}
 \item \textbf{Decoder fallback is essential} for causality.
-\item \textbf{For real compression, use \texttt{max\_rank < d/2}.}
+\item \textbf{For real compression, use \texttt{max\_rank \textless{} d/2}.}
 \end{enumerate}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -615,7 +1522,7 @@ LEKAv3) attempt to preserve both.
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Model is encoder? --- Yes --- Use AEGIS-V5 (with tuned max_rank)
+Model is encoder? --- Yes --- Use AEGIS-V5 (with tuned max\_rank)
   | No
    
 Accept quadratic fallback? --- Yes --- Use AEGIS-V5
@@ -685,6 +1592,7 @@ V6 &  \& Fixed &  & +fusion \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Parameter Effect is Conditional}
@@ -725,7 +1633,7 @@ Only SST-2 evaluated. Behavior on:
 \midrule
 $\le$124M \& Yes \\
 1B--10B \& No \\
->10B \& No \\
+\textgreater{}10B \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -742,7 +1650,7 @@ work better for different models.
 \subsection{Softpick Temperature}
 
 The \texttt{softpick\_temperature} is set to 1.0 (i.e., standard softmax). 
-Temperature < 1 (sparsification) was not systematically tested.
+Temperature \textless{} 1 (sparsification) was not systematically tested.
 
 \subsection{Head Split Ratio}
 
@@ -778,6 +1686,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -853,13 +1762,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -868,43 +1778,43 @@ pip install -r requirements.txt
 \subsection{Running AEGIS-V5}
 
 \begin{lstlisting}
-python run_all_4_aegis_v5.py \
+python run\_all\_4\_aegis\_v5.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy 0.95 \
-    --max_rank 384 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --svd\_energy 0.95 \
+    --max\_rank 384 \
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,aegis_v5 \
-    --svd_energy 0.95 \
-    --max_rank 384
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,aegis\_v5 \
+    --svd\_energy 0.95 \
+    --max\_rank 384
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_aegis_v5.py
+python run\_all\_4\_aegis\_v5.py
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Rank Ablation)}
 \begin{lstlisting}
 for r in 32 64 128 256 384; do
-    python run_all_4_aegis_v5.py --max_rank $r --output_suffix r$r
+    python run\_all\_4\_aegis\_v5.py --max\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Head Split)}
 \begin{lstlisting}
-python run_all_4_aegis_v5.py --num_local_heads 12 --num_global_heads 0 --output_suffix alllocal
-python run_all_4_aegis_v5.py --num_local_heads 8 --num_global_heads 4 --output_suffix default
-python run_all_4_aegis_v5.py --num_local_heads 0 --num_global_heads 12 --output_suffix allglobal
+python run\_all\_4\_aegis\_v5.py --num\_local\_heads 12 --num\_global\_heads 0 --output\_suffix alllocal
+python run\_all\_4\_aegis\_v5.py --num\_local\_heads 8 --num\_global\_heads 4 --output\_suffix default
+python run\_all\_4\_aegis\_v5.py --num\_local\_heads 0 --num\_global\_heads 12 --output\_suffix allglobal
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -913,7 +1823,7 @@ python run_all_4_aegis_v5.py --num_local_heads 0 --num_global_heads 12 --output_
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -944,6 +1854,7 @@ GPT-2 & 69.50\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1101,6 +2012,7 @@ GPT-2 & 69.50\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Energy-Based Rank Selection}
@@ -1109,7 +2021,7 @@ For a weight matrix $W$ with SVD $W = U \Sigma V^\top$, the energy captured
 by rank $r$ is:
 
 \[
-E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_{i} \sigma_i^2}
+E(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_{i} \sigma\_i^2}
 \]
 
 We select $r^* = \min \{ r : E(r) \geq \eta \}$.
@@ -1117,13 +2029,13 @@ We select $r^* = \min \{ r : E(r) \geq \eta \}$.
 \textbf{Claim.} The Frobenius error after rank-$r^*$ truncation is bounded by:
 
 \[
-\|W - W_{r^*}\|_F \leq \sqrt{1 - \eta} \cdot \|W\|_F
+\|W - W\_{r^*}\|\_F \leq \sqrt{1 - \eta} \cdot \|W\|\_F
 \]
 
 \textbf{Proof.} By definition of $E(r^*)$:
 
 \[
-\sum_{i > r^*} \sigma_i^2 = (1 - E(r^*)) \|W\|_F^2 \leq (1 - \eta) \|W\|_F^2
+\sum\_{i \textgreater{} r^*} \sigma\_i^2 = (1 - E(r^*)) \|W\|\_F^2 \leq (1 - \eta) \|W\|\_F^2
 \]
 
 Taking square roots gives (A.2). $\square$
@@ -1134,7 +2046,7 @@ For an encoder with $H_\text{local}$ local heads and $H_\text{global}$
 global heads:
 
 \[
-\text{FLOPs} = B \cdot L \cdot d_h \cdot (H_\text{local} \cdot W + H_\text{global} \cdot F)
+\text{FLOPs} = B \cdot L \cdot d\_h \cdot (H\_\text{local} \cdot W + H\_\text{global} \cdot F)
 \]
 
 For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
@@ -1144,13 +2056,13 @@ For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 For query at position $i$, the window mask is:
 
 \[
-\text{mask}_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
+\text{mask}\_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
 \]
 
 Causal variant:
 
 \[
-\text{mask}_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
+\text{mask}\_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
 \]
 
 \subsection{A.4 Kernel Linear Attention}
@@ -1158,19 +2070,19 @@ Causal variant:
 RFF feature map:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} x)
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W\_\text{rff} x)
 \]
 
 Attention output:
 
 \[
-\text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 \textbf{Zero-sum keys.} Subtract mean:
 
 \[
-\tilde{k}_j = k_j - \bar{k}
+\tilde{k}\_j = k\_j - \bar{k}
 \]
 
 Then $\phi(\tilde{k}_j)$ is centered around 1.
@@ -1180,7 +2092,7 @@ Then $\phi(\tilde{k}_j)$ is centered around 1.
 The V5 stable softmax:
 
 \[
-\text{softpick}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}
+\text{softpick}(x)\_i = \frac{e^{x\_i}}{\sum\_j e^{x\_j}}
 \]
 
 This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
@@ -1188,7 +2100,7 @@ This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
 The V4 (broken) version:
 
 \[
-\text{softpick}_\text{V4}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
+\text{softpick}\_\text{V4}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
 \]
 
 \textbf{Failure case.} If $m < 0$, then $e^{-m/T} > 1$, and 
@@ -1209,42 +2121,43 @@ $j \leq i$. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 FactorisedLinear}
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features_or_weight, out_features_or_bias=None, ...):
-        super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, in\_features\_or\_weight, out\_features\_or\_bias=None, ...):
+        super().\_\_init\_\_()
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))
         ...
     
-    def decompose_from_weight(self, weight, bias=None, energy=None):
-        with torch.no_grad():
+    def decompose\_from\_weight(self, weight, bias=None, energy=None):
+        with torch.no\_grad():
             W = weight.float()
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
             # Energy-based rank
-            target_energy = energy if energy is not None else self.energy
+            target\_energy = energy if energy is not None else self.energy
             cum = torch.cumsum(S**2, dim=0) / ((S**2).sum() + 1e-5)
-            calc_rank = int((cum < target_energy).sum().item()) + 1
-            r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+            calc\_rank = int((cum \textless{} target\_energy).sum().item()) + 1
+            r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
             
             # Store factors
             A = U[:, :r] * S[:r].unsqueeze(0)
             B = Vt[:r, :]
-            self.down.weight.data.zero_()
-            self.up.weight.data.zero_()
+            self.down.weight.data.zero\_()
+            self.up.weight.data.zero\_()
             self.down.weight.data[:r, :] = B
             self.up.weight.data[:, :r] = A
-            self.freeze_base_weights()
+            self.freeze\_base\_weights()
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 Softpick Fix}
@@ -1252,68 +2165,68 @@ class FactorisedLinear(nn.Module):
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
     """Stable softmax with temperature. Replaces broken ReLU-based softpick."""
-    x_f = x.float()
-    if temperature <= 0 or temperature == 1.0:
-        return F.softmax(x_f, dim=dim).to(x.dtype)
-    return F.softmax(x_f / temperature, dim=dim).to(x.dtype)
+    x\_f = x.float()
+    if temperature \textless{}= 0 or temperature == 1.0:
+        return F.softmax(x\_f, dim=dim).to(x.dtype)
+    return F.softmax(x\_f / temperature, dim=dim).to(x.dtype)
 \end{lstlisting}
 
 \subsection{B.3 Local Window Attention}
 
 \begin{lstlisting}
-def local_window_attention(Q, K, V, window, softpick_temperature=1.0, 
-                          token_valid=None, is_decoder=False):
+def local\_window\_attention(Q, K, V, window, softpick\_temperature=1.0, 
+                          token\_valid=None, is\_decoder=False):
     B, H, N, D = Q.shape
-    idx_q = torch.arange(N).unsqueeze(1)
-    idx_k = torch.arange(N).unsqueeze(0)
-    dist = (idx_q - idx_k).abs()
-    mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
-    if is_decoder and N > 1:
-        causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
+    idx\_q = torch.arange(N).unsqueeze(1)
+    idx\_k = torch.arange(N).unsqueeze(0)
+    dist = (idx\_q - idx\_k).abs()
+    mask = (dist \textless{}= window // 2).unsqueeze(0).unsqueeze(0)
+    if is\_decoder and N \textgreater{} 1:
+        causal = (idx\_k \textless{}= idx\_q).unsqueeze(0).unsqueeze(0)
         mask = mask \& causal
     
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
-    scores = scores.masked_fill(~mask, -10000.0)
-    if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
-    attn = softpick(scores, dim=-1, temperature=softpick_temperature)
+    scores = scores.masked\_fill(~mask, -10000.0)
+    if token\_valid is not None:
+        scores = scores.masked\_fill(~token\_valid.unsqueeze(1).unsqueeze(2), -10000.0)
+    attn = softpick(scores, dim=-1, temperature=softpick\_temperature)
     return torch.matmul(attn, V)
 \end{lstlisting}
 
 \subsection{B.4 Kernel Linear Attention}
 
 \begin{lstlisting}
-def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=True, 
-                            max_clamp=11.0, is_causal=False):
+def kernel\_linear\_attention(Q, K, V, rff\_proj, use\_zero\_sum=True, 
+                            max\_clamp=11.0, is\_causal=False):
     B, H, N, D = Q.shape
-    F_dim = rff_proj.size(-1)
+    F\_dim = rff\_proj.size(-1)
     
-    Q_f, K_f, V_f = Q.float(), K.float(), V.float()
-    if use_zero_sum:
-        K_f = K_f - K_f.mean(dim=2, keepdim=True)
+    Q\_f, K\_f, V\_f = Q.float(), K.float(), V.float()
+    if use\_zero\_sum:
+        K\_f = K\_f - K\_f.mean(dim=2, keepdim=True)
     
-    Q_norm = F.normalize(Q_f, p=2, dim=-1)
-    K_norm = F.normalize(K_f, p=2, dim=-1)
+    Q\_norm = F.normalize(Q\_f, p=2, dim=-1)
+    K\_norm = F.normalize(K\_f, p=2, dim=-1)
     
-    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj.float()).clamp(max=max_clamp)
-    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj.float()).clamp(max=max_clamp)
-    Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-    K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+    Q\_proj = torch.einsum("bhnd,hdf-\textgreater{}bhnf", Q\_norm, rff\_proj.float()).clamp(max=max\_clamp)
+    K\_proj = torch.einsum("bhnd,hdf-\textgreater{}bhnf", K\_norm, rff\_proj.float()).clamp(max=max\_clamp)
+    Q\_feat = torch.exp(Q\_proj) / math.sqrt(F\_dim)
+    K\_feat = torch.exp(K\_proj) / math.sqrt(F\_dim)
     
-    if is_causal:
-        kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V_f)
-        KV_cum = torch.cumsum(kv_outer, dim=2)
-        z_cum = torch.cumsum(K_feat, dim=2)
-        num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
-        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
+    if is\_causal:
+        kv\_outer = torch.einsum("bhnf,bhnd-\textgreater{}bhnfd", K\_feat, V\_f)
+        KV\_cum = torch.cumsum(kv\_outer, dim=2)
+        z\_cum = torch.cumsum(K\_feat, dim=2)
+        num = torch.einsum("bhnf,bhnfd-\textgreater{}bhnd", Q\_feat, KV\_cum)
+        denom = torch.einsum("bhnf,bhnf-\textgreater{}bhn", Q\_feat, z\_cum).unsqueeze(-1).clamp(min=1e-5)
         ctx = num / denom
     else:
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
-        K_sum = K_feat.sum(dim=2)
-        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
+        KV = torch.einsum("bhnf,bhnd-\textgreater{}bhfd", K\_feat, V\_f)
+        K\_sum = K\_feat.sum(dim=2)
+        denom = torch.einsum("bhnf,bhf-\textgreater{}bhn", Q\_feat, K\_sum).unsqueeze(-1)
+        ctx = torch.einsum("bhnf,bhfd-\textgreater{}bhnd", Q\_feat, KV) / (denom + 1e-5)
     
-    return torch.nan_to_num(ctx, nan=0.0).to(Q.dtype)
+    return torch.nan\_to\_num(ctx, nan=0.0).to(Q.dtype)
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1325,7 +2238,7 @@ The V4 formula is broken. Always use stable softmax.
 \subsubsection{B.5.2 Energy Rank = Full Rank}
 
 With \texttt{max\_rank=384} and \texttt{d=768}, SVD gives no compression. Use 
-\texttt{max\_rank < d/2}.
+\texttt{max\_rank \textless{} d/2}.
 
 \subsubsection{B.5.3 Decoder Fallback}
 
@@ -1344,6 +2257,7 @@ RFF features can overflow FP16. Compute in FP32 and clamp.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1448,13 +2362,14 @@ Step  Loss
 \subsection{C.7 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
+python run\_all\_4\_aegis\_v5.py --svd\_energy 0.95 --max\_rank 128
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1481,7 +2396,7 @@ python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
 
 \textbf{Result.} No parameter reduction.
 
-\textbf{Conclusion.} Use \texttt{max\_rank < d/2}.
+\textbf{Conclusion.} Use \texttt{max\_rank \textless{} d/2}.
 
 \subsubsection{D.1.4 No Decoder Fallback}
 
@@ -1557,8 +2472,8 @@ Sweet spot: 2.0.
 
 \begin{enumerate}
 \item \textbf{Stable softmax is essential.}
-\item \textbf{Warning + fallback > abort.}
-\item \textbf{\texttt{max\_rank < d/2} for real compression.}
+\item \textbf{Warning + fallback \textgreater{} abort.}
+\item \textbf{\texttt{max\_rank \textless{} d/2} for real compression.}
 \item \textbf{Decoder fallback matters.}
 \item \textbf{Split-head helps.}
 \end{enumerate}
@@ -1567,6 +2482,7 @@ Sweet spot: 2.0.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1626,3 +2542,4 @@ Drafted with LLM assistance. Content reviewed by authors.
 
 ---
 \end{lstlisting}
+

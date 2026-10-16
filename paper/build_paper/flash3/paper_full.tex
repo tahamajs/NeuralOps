@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{FlashAttention-3 Wrapper: Hardware-Optimized Exact Attention with Graceful SDPA Fallback}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -10,7 +12,7 @@
 Attention dominates the compute and memory cost of transformer inference:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -125,6 +127,7 @@ usage. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Attention Kernel Optimization}
@@ -147,6 +150,715 @@ FlashAttention-2 (if available). It's our fallback.
 superseded by SDPA.
 
 \subsection{Exact vs Approximate Attention}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Exact?} & \textbf{Complexity} & \textbf{Memory} \\
+\midrule
+Naive & Yes & $O(L^2 d)$ & $O(L^2)$ \\
+FlashAttention & Yes & $O(L^2 d)$ & $O(L)$ \\
+SDPA (memory-efficient) & Yes & $O(L^2 d)$ & $O(L)$ \\
+Performer & No & $O(L m d)$ & $O(L m)$ \\
+Longformer & No (sparse) & $O(L W d)$ & $O(L W)$ \\
+ClusterFormer & Approx. & $O(L K d)$ & $O(L K)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+FlashAttention is \textbf{exact} -- the output is mathematically identical to 
+the naive implementation. Only the memory layout and compute order change.
+
+\subsection{Hardware-Aware Transformer Optimization}
+
+\textbf{vLLM.} Kwon et al. (2023) provide PagedAttention for efficient 
+KV-cache management. Complementary to FlashAttention.
+
+\textbf{TensorRT.} NVIDIA's inference optimizer. Uses many of the same 
+techniques as FlashAttention.
+
+\textbf{DeepSpeed.} Microsoft's training framework. Includes memory-efficient 
+attention.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Raw FlashAttention} & \textbf{Our Wrapper} \\
+\midrule
+Install effort & Manual & Automatic \\
+Fallback & None & SDPA \\
+Architecture support & Manual & Multi-arch \\
+Weight transfer & Manual & Automatic \\
+LoRA adapters & Manual & Built-in \\
+GQA, RoPE & Partial & Full \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Our wrapper is \textbf{not} a novel attention algorithm. It's a **production 
+integration layer** that makes FlashAttention-3 usable in a research 
+framework with pretrained models.
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Standard Attention}
+
+For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.1}
+\]
+
+\textbf{Naive implementation.} Materialize $QK^\top \in \mathbb{R}^{L \times L}$, 
+apply softmax, multiply by $V$. Memory: $\mathcal{O}(L^2)$.
+
+\subsection{FlashAttention Tiling}
+
+FlashAttention partitions $Q, K, V$ into blocks:
+
+\[
+Q = [Q\_1, Q\_2, \dots, Q\_T], \quad K = [K\_1, \dots, K\_T], \quad V = [V\_1, \dots, V\_T]
+\tag{3.2}
+\]
+
+For each $Q$-block, iterate over $K, V$-blocks, computing partial attention 
+in shared memory. Uses \textbf{online softmax} to avoid materializing the full 
+attention matrix:
+
+\[
+m\_i^{(t)} = \max(m\_i^{(t-1)}, \max\_j (Q\_i K\_j^\top / \sqrt{d\_h}))
+\tag{3.3}
+\]
+
+\[
+\ell\_i^{(t)} = e^{m\_i^{(t-1)} - m\_i^{(t)}} \ell\_i^{(t-1)} + \sum\_j e^{Q\_i K\_j^\top / \sqrt{d\_h} - m\_i^{(t)}}
+\tag{3.4}
+\]
+
+\[
+O\_i^{(t)} = \text{diag}(e^{m\_i^{(t-1)} - m\_i^{(t)}}) O\_i^{(t-1)} + \sum\_j e^{Q\_i K\_j^\top / \sqrt{d\_h} - m\_i^{(t)}} V\_j
+\tag{3.5}
+\]
+
+The final output is $O_i = O_i^{(T)} / \ell_i^{(T)}$.
+
+\textbf{Memory.} $\mathcal{O}(B \cdot L \cdot d_h)$ for the output plus 
+$\mathcal{O}(B^2)$ for the block buffers. Total: $\mathcal{O}(L)$.
+
+\subsection{FlashAttention-3 Improvements}
+
+Over FlashAttention-2, v3 adds:
+
+\begin{enumerate}
+\item \textbf{TMA (Tensor Memory Accelerator).} Asynchronous bulk memory copies
+  from HBM to shared memory, freeing the SM for computation.
+\item \textbf{Warp specialization.} Producer-consumer model where some warps handle
+  memory while others compute.
+\item \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
+
+\end{enumerate}
+\textbf{Result.} ~2$\times$ throughput over v2 on H100.
+
+\subsection{PyTorch SDPA}
+
+\texttt{F.scaled\_dot\_product\_attention} auto-selects one of three backends:
+
+\begin{itemize}
+\item \textbf{Math path:} naive implementation.
+\item \textbf{Memory-efficient path (xFormers-style):} tiled computation similar
+  to FlashAttention-1.
+\item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash\_attn} library.
+
+\end{itemize}
+The wrapper dispatches to SDPA when FlashAttention-3 is unavailable.
+
+\subsection{GQA and Repeat\_KV}
+
+For GQA, $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times H\_{kv} \times L \times d\_h}
+\tag{3.6}
+\]
+
+Before attention, repeat each KV head $H/H_{kv}$ times:
+
+\[
+\text{repeat\_kv}(K, n) = K[:, :, \text{None}, :, :].\text{expand}(B, H\_{kv}, n, L, d\_h).\text{reshape}(B, H, L, d\_h)
+\tag{3.7}
+\]
+
+\subsection{Rotary Position Embeddings}
+
+RoPE rotates $Q, K$ by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.8}
+\]
+
+Partial RoPE rotates only the first \texttt{rotary\_dim} coordinates.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes a weight update as $BA$ with $B = 0$.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+The wrapper \texttt{FlashAttention3} replaces a pretrained attention module and 
+provides three execution paths:
+
+\begin{enumerate}
+\item \textbf{FlashAttention-3 kernel} (Hopper + library installed).
+\item \textbf{PyTorch SDPA} (any CUDA GPU).
+\item \textbf{Head mask + SDPA} (for head pruning experiments).
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the dispatch logic.
+
+\begin{lstlisting}
+    +----------------------------------+
+    |  Input X                          |
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Q/K/V projection (frozen + LoRA)|
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Apply RoPE (if applicable)       |
+    |  Apply GQA repeat\_kv (if needed)  |
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Is FA3 available AND CUDA?       |
+    +------+-----------------+----------+
+           | Yes             | No
+                              
+    +-------------+   +-----------------+
+    | flash\_attn  |   | SDPA fallback   |
+    | \_func call  |   | (F.scaled\_...)  |
+    +------+------+   +--------+--------+
+           |                   |
+           +---------+---------+
+                      
+              +-------------+
+              | out\_proj    |
+              | (frozen+LoRA)|
+              +------+------+
+                     |
+                      
+                    Y
+\end{lstlisting}
+
+\subsection{Phase 1: Weight Extraction}
+
+For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
+
+\begin{itemize}
+\item \textbf{DistilBERT:} \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
+\item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
+\item \textbf{GPT-2:} Split \texttt{c\_attn.weight.T}; \texttt{c\_proj.weight.T} for \texttt{o}.
+\item \textbf{Qwen:} \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
+
+\end{itemize}
+Frobenius norms verified $\geq 10^{-4}$.
+
+\subsection{Phase 2: Frozen Base + LoRA}
+
+Each projection becomes a \texttt{LoRALinear}:
+
+\[
+\text{Proj}\_P(X) = X W\_P^\top + \frac{\alpha}{r\_L} (X A\_P^\top) B\_P^\top + b\_P
+\tag{4.1}
+\]
+
+\begin{itemize}
+\item $W_P$: frozen (copied from source).
+\item $(A_P, B_P)$: LoRA factors, $B = 0$ at init.
+
+\end{itemize}
+\textbf{Step-0 preservation.} With $B = 0$, the initial output equals the base 
+output.
+
+\subsection{Phase 3: Position and Head Expansion}
+
+\subsubsection{RoPE}
+
+Applied after projection:
+
+\[
+Q, K \leftarrow \text{RoPE}(Q, K, \text{cos}, \text{sin})
+\tag{4.2}
+\]
+
+Supports partial RoPE (rotary\_dim \textless{} head\_dim) via coordinate slicing.
+
+\subsubsection{GQA}
+
+If $H_{kv} < H$:
+
+\[
+K \leftarrow \text{repeat\_kv}(K, H/H\_{kv}), \quad
+V \leftarrow \text{repeat\_kv}(V, H/H\_{kv})
+\tag{4.3}
+\]
+
+\subsection{Phase 4: Attention Kernel Dispatch}
+
+\subsubsection{Path A: FlashAttention-3}
+
+If \texttt{FLASH\_ATTN\_AVAILABLE} and \texttt{hidden\_states.is\_cuda}:
+
+\begin{lstlisting}
+q\_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d\_h)
+k\_fa = k.transpose(1, 2).contiguous()
+v\_fa = v.transpose(1, 2).contiguous()
+
+if use\_fp8 and hasattr(torch, "float8\_e4m3fn"):
+    q\_fa = q\_fa.to(torch.float8\_e4m3fn)
+    k\_fa = k\_fa.to(torch.float8\_e4m3fn)
+    v\_fa = v\_fa.to(torch.float8\_e4m3fn)
+
+out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
+\end{lstlisting}
+
+\textbf{FP8.} If \texttt{use\_fp8=True} and Hopper, casts Q/K/V to FP8.
+
+\subsubsection{Path B: SDPA Fallback}
+
+If FlashAttention-3 fails or is unavailable:
+
+\begin{lstlisting}
+if causal\_flag and attn\_mask is None:
+    out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v, is\_causal=True)
+else:
+    out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v, attn\_mask=attn\_mask)
+\end{lstlisting}
+
+\textbf{Advantage.} SDPA is always available on PyTorch 2.0+ with CUDA.
+
+\subsection{Phase 5: Output Projection}
+
+\[
+Y = \text{Attn}(Q, K, V) W\_O^\top + b\_O
+\tag{4.4}
+\]
+
+\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\_proj} is not applied; the outer 
+\texttt{BertSelfOutput.dense} performs it.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} FlashAttention-3 wrapper forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
+Output: Y, None
+
+1:  Q $\leftarrow$ LoRALinear\_Q(X)
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
+4:
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V, H/H\_kv)
+7:
+8:  causal\_flag $\leftarrow$ is\_decoder AND not cross\_attention AND L == kv\_len
+9:
+10: if FA3\_AVAILABLE and is\_cuda:
+11:     try:
+12:         if use\_fp8 and fp8\_supported:
+13:             Q, K, V $\leftarrow$ cast\_to\_fp8(Q, K, V)
+14:         Y\_ctx $\leftarrow$ flash\_attn\_func(Q, K, V, causal=causal\_flag)
+15:     except:
+16:         Y\_ctx $\leftarrow$ None
+17: else:
+18:     Y\_ctx $\leftarrow$ None
+19:
+20: if Y\_ctx is None:                                  Fallback
+21:     attn\_mask $\leftarrow$ build\_mask(attention\_mask, causal\_flag)
+22:     Y\_ctx $\leftarrow$ SDPA(Q, K, V, attn\_mask)
+23:
+24: Y\_ctx $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+25: if nested: Y $\leftarrow$ Y\_ctx
+26: else: Y $\leftarrow$ LoRALinear\_O(Y\_ctx)
+27:
+28: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+FA3 & $\mathcal{O}(L^2 d_h)$ + HBM savings & $\mathcal{O}(L d_h)$ \\
+SDPA (mem-efficient) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L d_h)$ \\
+SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Wrapper} \\
+\midrule
+Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
+LoRA ($r_L$) & 0 & $8 r_L d$ \\
+\textbf{Total per layer} & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d=768$, $r_L=16$): \textbf{+589,824 params} across 6 layers.
+
+\textbf{Wrapper increases parameter count by ~66.4M\%.}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Exactness}
+
+\textbf{Claim.} FlashAttention produces the same output as naive attention up to 
+floating-point precision.
+
+\textbf{Proof.} FlashAttention uses online softmax, which is mathematically 
+equivalent to standard softmax:
+
+\[
+\text{softmax}(s)\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}} = \frac{e^{s\_i - m}}{\sum\_j e^{s\_j - m}}
+\tag{4.5}
+\]
+
+for any shift $m$. The online variant updates $m$ incrementally and rescales 
+previous accumulations, giving the same final result. $\square$
+
+\subsubsection{FP8 Accuracy Loss}
+
+\textbf{Claim.} FP8 attention introduces small numerical error.
+
+\textbf{Analysis.} FP8 e4m3 has 3 mantissa bits (~6\% precision). Casting Q, K, V 
+to FP8 introduces error $\epsilon \sim 0.06$ per element, which can propagate 
+through softmax. Empirically, we observe a small accuracy drop (see Section 8).
+
+\subsection{Hyperparameter Guidance}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
+\midrule
+DistilBERT & Flat & No & No & No & No \\
+RoBERTa & Nested & Yes & No & No & No \\
+GPT-2 & Causal & No & No & No & No \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & No \\
+T5 & Enc-Dec & No & No & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight  # Only for reference
+is\_nested\_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+\begin{lstlisting}
+w = src.c\_attn.weight.T  # (2304, 768)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+\begin{lstlisting}
+q\_w = src.q\_proj.weight
+k\_w = src.k\_proj.weight
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
+num\_kv\_heads = config.num\_key\_value\_heads
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    final\_out = out  # Skip out\_proj
+else:
+    final\_out = self.out\_proj(out)
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} applies its projection.
+
+\subsection{Partial RoPE}
+
+For Qwen3.5 with rotary\_dim \textless{} head\_dim:
+
+\begin{lstlisting}
+q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+q\_rot = (q\_rot * cos) + (rotate\_half(q\_rot) * sin)
+q = torch.cat([q\_rot, q\_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{Causality}
+
+\begin{lstlisting}
+causal\_flag = bool(self.is\_decoder and not is\_cross\_attention and L == kv\_len)
+\end{lstlisting}
+
+\begin{itemize}
+\item If decoder self-attention with L == kv\_len: apply causal.
+\item Cross-attention: no causal mask.
+\item Encoder self-attention: no causal mask.
+
+\end{itemize}
+\subsection{Cross-Attention}
+
+For encoder-decoder models:
+
+\begin{lstlisting}
+kv\_input = encoder\_hidden\_states
+# No causal masking
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("flash3")
+@ATTENTION\_REGISTRY.register("flash\_attention3")
+class FlashAttention3(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+FA3 not installed & ImportError & SDPA fallback \\
+FA3 kernel fails & try/except & SDPA fallback \\
+FP8 unsupported & hasattr check & FP16 \\
+Missing weights & Frobenius check & Warning + skip \\
+Shape mismatch & Reshape attempt & Broadcast fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dispatch Logic}
+
+\begin{lstlisting}
+if FLASH\_ATTN\_AVAILABLE and hidden\_states.is\_cuda:
+    try:
+        out = flash\_attn\_func(q, k, v, causal=causal\_flag)
+    except Exception:
+        out = None
+else:
+    out = None
+
+if out is None:
+    out = F.scaled\_dot\_product\_attention(q, k, v, ...)
+\end{lstlisting}
+
+\subsection{Numerical Precision}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of flash3.}
+\label{fig:arch_flash3}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
+
+\subsection{Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{use\_fp8} & True \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{dropout} & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+FlashAttention & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} On RTX 4070 (Ada Lovelace), FlashAttention-3 is not available 
+(requires Hopper). Our wrapper uses SDPA fallback for all experiments.
+
+\subsection{Metrics}
+
+\begin{itemize}
+\item Accuracy, F1
+\item Peak VRAM
+\item Inference time
+\item Parameter count
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_flash3.py \
+    --models distilbert,roberta,gpt2 \
+    --use\_fp8 True \
+    --lora\_rank 8 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
 
 \begin{table*}[t]
 \centering
@@ -288,12 +1000,13 @@ full & 90.71\% & 0 & Baseline \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/flash3_distilbert_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/flash3\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{flash3}.}
 \label{fig:results_flash3}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Exactness Verification}
@@ -306,14 +1019,14 @@ q = torch.randn(2, 8, 128, 64)
 k = torch.randn(2, 8, 128, 64)
 v = torch.randn(2, 8, 128, 64)
 
-out_sdpa = F.scaled_dot_product_attention(q, k, v)
-out_naive = torch.softmax(q @ k.T / 8.0, dim=-1) @ v
+out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v)
+out\_naive = torch.softmax(q @ k.T / 8.0, dim=-1) @ v
 
-diff = (out_sdpa - out_naive).abs().max().item()
+diff = (out\_sdpa - out\_naive).abs().max().item()
 print(f"Max diff: {diff:.6e}")
 \end{lstlisting}
 
-\textbf{Result:} \texttt{diff < 1e-5} on all test inputs. Both paths are exact.
+\textbf{Result:} \texttt{diff \textless{} 1e-5} on all test inputs. Both paths are exact.
 
 \subsection{Path Dispatch Analysis}
 
@@ -339,14 +1052,14 @@ CPU & No & No & Math (slow) \\
 FP8 e4m3 has 3 mantissa bits. Casting Q, K, V introduces:
 
 \[
-\epsilon_{\text{rel}} \approx 2^{-3} = 0.125
+\epsilon\_{\text{rel}} \approx 2^{-3} = 0.125
 \]
 
 \textbf{Simulation.} On RTX 4070 (no FP8 tensor cores), we simulate FP8 by 
 casting to FP8 then back to FP16:
 
 \begin{lstlisting}
-q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
+q\_fp8 = q.to(torch.float8\_e4m3fn).to(torch.float16)
 \end{lstlisting}
 
 Accuracy drop: 86.4\%\%.
@@ -425,6 +1138,7 @@ Accuracy identical. Wrapper adds LoRA flexibility.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -541,6 +1255,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Hardware Requirement for FA3 Kernel}
@@ -598,6 +1313,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -671,13 +1387,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -695,17 +1412,17 @@ pip install flash-attn --no-build-isolation
 \subsection{Running the Wrapper}
 
 \begin{lstlisting}
-python run_all_4_flash3.py \
+python run\_all\_4\_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 True \
-    --recovery_steps 50
+    --use\_fp8 True \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Verifying Path Selection}
 
 \begin{lstlisting}
-from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
-print("FlashAttention available:", FLASH_ATTN_AVAILABLE)
+from framework.attentions.flash\_attention3 import FLASH\_ATTN\_AVAILABLE
+print("FlashAttention available:", FLASH\_ATTN\_AVAILABLE)
 \end{lstlisting}
 
 Expected: \texttt{True} on H100, \texttt{False} otherwise.
@@ -714,11 +1431,11 @@ Expected: \texttt{True} on H100, \texttt{False} otherwise.
 
 \begin{lstlisting}
 # Main
-python run_all_4_flash3.py --models distilbert,roberta,gpt2
+python run\_all\_4\_flash3.py --models distilbert,roberta,gpt2
 
 # LoRA rank sweep
 for r in 0 4 8 16 32; do
-    python run_all_4_flash3.py --lora_rank $r --output_suffix r$r
+    python run\_all\_4\_flash3.py --lora\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -728,8 +1445,8 @@ done
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -768,6 +1485,7 @@ GPT-2 & 82.00\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -881,6 +1599,7 @@ GPT-2 & 82.00\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Online Softmax Derivation}
@@ -890,14 +1609,14 @@ GPT-2 & 82.00\% $\pm$ 1\% \\
 \textbf{Proof.} Let $s \in \mathbb{R}^L$ be scores. Standard softmax:
 
 \[
-\text{softmax}(s)_i = \frac{e^{s_i}}{\sum_j e^{s_j}}
+\text{softmax}(s)\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}}
 \tag{A.1}
 \]
 
 For numerical stability, subtract $\max_j s_j$:
 
 \[
-\text{softmax}(s)_i = \frac{e^{s_i - m}}{\sum_j e^{s_j - m}}, \quad m = \max_j s_j
+\text{softmax}(s)\_i = \frac{e^{s\_i - m}}{\sum\_j e^{s\_j - m}}, \quad m = \max\_j s\_j
 \tag{A.2}
 \]
 
@@ -916,12 +1635,12 @@ m^{(t)} = \max(m^{(t-1)}, \max(s^{(t)}))
 \]
 
 \[
-\ell^{(t)} = e^{m^{(t-1)} - m^{(t)}} \ell^{(t-1)} + \sum_j e^{s_j^{(t)} - m^{(t)}}
+\ell^{(t)} = e^{m^{(t-1)} - m^{(t)}} \ell^{(t-1)} + \sum\_j e^{s\_j^{(t)} - m^{(t)}}
 \tag{A.4}
 \]
 
 \[
-O^{(t)} = e^{m^{(t-1)} - m^{(t)}} O^{(t-1)} + \sum_j e^{s_j^{(t)} - m^{(t)}} v_j
+O^{(t)} = e^{m^{(t-1)} - m^{(t)}} O^{(t-1)} + \sum\_j e^{s\_j^{(t)} - m^{(t)}} v\_j
 \tag{A.5}
 \]
 
@@ -940,14 +1659,14 @@ accesses reduced by factor $B$, giving effective speedup.
 For FP8 e4m3:
 
 \[
-\epsilon_{\text{rel}} = \frac{2^{-3}}{2} = \frac{1}{16} = 0.0625
+\epsilon\_{\text{rel}} = \frac{2^{-3}}{2} = \frac{1}{16} = 0.0625
 \tag{A.6}
 \]
 
 \textbf{Propagation.} If $Q, K, V$ are quantized:
 
 \[
-\tilde{Q} = Q(1 + \epsilon_Q), \quad |\epsilon_Q| \leq 0.0625
+\tilde{Q} = Q(1 + \epsilon\_Q), \quad |\epsilon\_Q| \leq 0.0625
 \tag{A.7}
 \]
 
@@ -966,7 +1685,7 @@ $j = i$, a triangular mask is applied.
 For GQA with $H_{kv} < H$:
 
 \[
-\text{repeat\_kv}(K, n)_{b, h, i, d} = K_{b, h \bmod H_{kv}, i, d}
+\text{repeat\_kv}(K, n)\_{b, h, i, d} = K\_{b, h \bmod H\_{kv}, i, d}
 \tag{A.8}
 \]
 
@@ -977,7 +1696,7 @@ where $n = H / H_{kv}$. This gives $H$ heads from $H_{kv}$.
 For head\_dim = 256 and rotary\_dim = 64:
 
 \[
-\tilde{Q}_i = [\text{RoPE}(Q_{i, :64}), \ Q_{i, 64:}]
+\tilde{Q}\_i = [\text{RoPE}(Q\_{i, :64}), \ Q\_{i, 64:}]
 \tag{A.9}
 \]
 
@@ -987,104 +1706,105 @@ Only the first 64 coordinates are rotated.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Module Structure}
 
 \begin{lstlisting}
 class FlashAttention3(BaseAttention):
-    def __init__(self, config, rank=None, use_fp8=False, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=None, use\_fp8=False, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         # Resolve dims
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.num_kv_heads = ...
-        self.head_dim = ...
-        self.kv_repeat = ...
-        self.use_fp8 = use_fp8
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = ...
+        self.head\_dim = ...
+        self.kv\_repeat = ...
+        self.use\_fp8 = use\_fp8
         
         # LoRA projections
-        self.q_proj = LoRALinear(...)
-        self.k_proj = LoRALinear(...)
-        self.v_proj = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.q\_proj = LoRALinear(...)
+        self.k\_proj = LoRALinear(...)
+        self.v\_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
         # Copy weights
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Dispatch Logic}
 
 \begin{lstlisting}
-if FLASH_ATTN_AVAILABLE and hidden_states.is_cuda:
+if FLASH\_ATTN\_AVAILABLE and hidden\_states.is\_cuda:
     try:
-        q_fa = q.transpose(1, 2).contiguous()
-        k_fa = k.transpose(1, 2).contiguous()
-        v_fa = v.transpose(1, 2).contiguous()
+        q\_fa = q.transpose(1, 2).contiguous()
+        k\_fa = k.transpose(1, 2).contiguous()
+        v\_fa = v.transpose(1, 2).contiguous()
         
-        if self.use_fp8 and hasattr(torch, "float8_e4m3fn"):
-            q_fa = q_fa.to(torch.float8_e4m3fn)
-            k_fa = k_fa.to(torch.float8_e4m3fn)
-            v_fa = v_fa.to(torch.float8_e4m3fn)
+        if self.use\_fp8 and hasattr(torch, "float8\_e4m3fn"):
+            q\_fa = q\_fa.to(torch.float8\_e4m3fn)
+            k\_fa = k\_fa.to(torch.float8\_e4m3fn)
+            v\_fa = v\_fa.to(torch.float8\_e4m3fn)
         
-        out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
-        out = out.contiguous().view(B, L, self.all_head_size)
+        out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
+        out = out.contiguous().view(B, L, self.all\_head\_size)
     except Exception:
         out = None
 else:
     out = None
 
 if out is None:
-    out = self._sdpa_fallback(q, k, v, attn_mask, causal_flag)
+    out = self.\_sdpa\_fallback(q, k, v, attn\_mask, causal\_flag)
 \end{lstlisting}
 
 \subsection{B.3 SDPA Fallback}
 
 \begin{lstlisting}
-def _sdpa_fallback(self, q, k, v, attn_mask, causal):
-    if causal and attn_mask is None:
-        return F.scaled_dot_product_attention(q, k, v, is_causal=True)
+def \_sdpa\_fallback(self, q, k, v, attn\_mask, causal):
+    if causal and attn\_mask is None:
+        return F.scaled\_dot\_product\_attention(q, k, v, is\_causal=True)
     else:
         if causal:
-            causal_m = torch.triu(torch.full((q.shape[-2], k.shape[-2]), float("-inf")), diagonal=1)
-            attn_mask = causal_m.unsqueeze(0).unsqueeze(0) if attn_mask is None else attn_mask + causal_m
-        return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
+            causal\_m = torch.triu(torch.full((q.shape[-2], k.shape[-2]), float("-inf")), diagonal=1)
+            attn\_mask = causal\_m.unsqueeze(0).unsqueeze(0) if attn\_mask is None else attn\_mask + causal\_m
+        return F.scaled\_dot\_product\_attention(q, k, v, attn\_mask=attn\_mask)
 \end{lstlisting}
 
 \subsection{B.4 Multi-Architecture Weight Extraction}
 
 \subsubsection{GPT-2 Conv1D}
 \begin{lstlisting}
-fused = src.c_attn.weight.T
-q_w, k_w, v_w = fused.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
+fused = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = fused.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
-is_nested = True
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
+is\_nested = True
 \end{lstlisting}
 
 \subsubsection{DistilBERT Flat}
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{Qwen GQA}
 \begin{lstlisting}
-q_w = src.q_proj.weight
-k_w = src.k_proj.weight
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
-num_kv_heads = config.num_key_value_heads
+q\_w = src.q\_proj.weight
+k\_w = src.k\_proj.weight
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
+num\_kv\_heads = config.num\_key\_value\_heads
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1092,16 +1812,16 @@ num_kv_heads = config.num_key_value_heads
 \subsubsection{B.5.1 Forgetting import fallback}
 \begin{lstlisting}
 try:
-    from flash_attn import flash_attn_func
-    FLASH_ATTN_AVAILABLE = True
+    from flash\_attn import flash\_attn\_func
+    FLASH\_ATTN\_AVAILABLE = True
 except ImportError:
-    FLASH_ATTN_AVAILABLE = False
+    FLASH\_ATTN\_AVAILABLE = False
 \end{lstlisting}
 
 \subsubsection{B.5.2 Wrong contiguity}
 FlashAttention requires contiguous tensors in \texttt{(B, L, H, d\_h)} layout:
 \begin{lstlisting}
-q_fa = q.transpose(1, 2).contiguous()
+q\_fa = q.transpose(1, 2).contiguous()
 \end{lstlisting}
 
 \subsubsection{B.5.3 FP8 without Hopper}
@@ -1113,19 +1833,20 @@ For RoBERTa: \texttt{is\_nested\_encoder = True} skips \texttt{out\_proj}.
 \subsection{B.6 Verification}
 
 \begin{lstlisting}
-from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
-print(FLASH_ATTN_AVAILABLE)  # False on RTX 4070
+from framework.attentions.flash\_attention3 import FLASH\_ATTN\_AVAILABLE
+print(FLASH\_ATTN\_AVAILABLE)  # False on RTX 4070
 
 # Exactness test
-out_sdpa = F.scaled_dot_product_attention(q, k, v)
-out_naive = torch.softmax(q @ k.T / 8.0, -1) @ v
-print((out_sdpa - out_naive).abs().max())  # < 1e-5
+out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v)
+out\_naive = torch.softmax(q @ k.T / 8.0, -1) @ v
+print((out\_sdpa - out\_naive).abs().max())  # \textless{} 1e-5
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT -- Complete Metrics}
@@ -1225,11 +1946,11 @@ All below 1e-5 threshold.
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": D_PARAMS_FULL,
-    "accuracy_pct": 86.4,
-    "path_used": "SDPA",
-    "flash_attn_available": Yes
+    "params\_before": 66955010,
+    "params\_after": D\_PARAMS\_FULL,
+    "accuracy\_pct": 86.4,
+    "path\_used": "SDPA",
+    "flash\_attn\_available": Yes
   }
 }
 \end{lstlisting}
@@ -1238,6 +1959,7 @@ All below 1e-5 threshold.
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Failed Attempts}
@@ -1318,6 +2040,7 @@ Std & 0.85 & 32 & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1378,9 +2101,10 @@ No human subjects.
 
 ---
 
-##   `build.py`   `apply_vars.py`
+##   `build.py`   `apply\_vars.py`
 
 (                     --        )
 
 ---
 \end{lstlisting}
+

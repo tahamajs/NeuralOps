@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{SVD-Mamba: SVD-Factorized Selective State Space Attention for Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -19,8 +21,8 @@ to inner product. Its cost is $\mathcal{O}(L^2)$ in sequence length.
 $h_t \in \mathbb{R}^{d \times N}$ that is updated recurrently:
 
 \[
-h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t, \qquad
-y_t = C_t h_t + D x_t
+h\_t = \bar{A}\_t h\_{t-1} + \bar{B}\_t x\_t, \qquad
+y\_t = C\_t h\_t + D x\_t
 \tag{1.1}
 \]
 
@@ -39,7 +41,7 @@ sequence length but have bounded state and cannot perform exact retrieval.
 Additionally, all projection matrices are stored in \textbf{SVD-factorized form}:
 
 \[
-W = U \Sigma V^\top, \qquad U \in \mathbb{R}^{d_\text{out} \times r}, \quad \Sigma \in \mathbb{R}^r
+W = U \Sigma V^\top, \qquad U \in \mathbb{R}^{d\_\text{out} \times r}, \quad \Sigma \in \mathbb{R}^r
 \tag{1.2}
 \]
 
@@ -84,8 +86,8 @@ SVD-Mamba replaces MHSA with a three-path block:
 The two main paths are fused via a \textbf{gating module}:
 
 \[
-\gamma = \sigma(W_g X), \qquad
-Y = \gamma \odot Y_\text{SSM} + (1 - \gamma) \odot Y_\text{attn}
+\gamma = \sigma(W\_g X), \qquad
+Y = \gamma \odot Y\_\text{SSM} + (1 - \gamma) \odot Y\_\text{attn}
 \tag{1.3}
 \]
 
@@ -124,6 +126,7 @@ provides guidance. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -186,6 +189,923 @@ uses LoRA for recovery after replacing attention.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Prior work} & \textbf{SVD-Mamba} \\
+\midrule
+\textbf{Attention + SSM} & Block-level interleaving & \textbf{Within-block fusion} \\
+\textbf{Projection storage} & Dense & \textbf{SVD-factorized} \\
+\textbf{Gate init} & N/A & \textbf{$-7$ (SSM silent)} \\
+\textbf{Multi-architecture} & Usually single family & Four families \\
+\textbf{Parameter effect} & Varies & \textbf{Increases} (net) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Prior hybrid models (Jamba, Zamba, Hymba) either 
+interleave at the block level or require architectural changes. SVD-Mamba 
+is a \textbf{drop-in replacement} for MHSA that works on pretrained transformers.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
+\tag{3.2}
+\]
+
+\[
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
+\tag{3.3}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(L^2 d)$.
+
+\subsection{Selective State Space Models (Mamba)}
+
+\subsubsection{Continuous SSM}
+
+A continuous SSM is defined by:
+
+\[
+h'(t) = A h(t) + B x(t), \qquad
+y(t) = C h(t) + D x(t)
+\tag{3.4}
+\]
+
+with state $h \in \mathbb{R}^N$, input $x \in \mathbb{R}$, output $y \in \mathbb{R}$.
+
+\subsubsection{Discretization}
+
+Using zero-order hold with step size $\Delta$:
+
+\[
+\bar{A} = \exp(\Delta A), \qquad
+\bar{B} = (\Delta A)^{-1} (\exp(\Delta A) - I) \cdot \Delta B
+\tag{3.5}
+\]
+
+For diagonal $A$, this simplifies to:
+
+\[
+\bar{A}\_t = \exp(\Delta\_t A), \qquad
+\bar{B}\_t = \Delta\_t B\_t
+\tag{3.6}
+\]
+
+\subsubsection{Selective SSM (Mamba)}
+
+The \textbf{selective} aspect is that $\Delta_t, B_t, C_t$ are functions of the 
+input:
+
+\[
+\Delta\_t = \text{softplus}(W\_\Delta x\_t + b\_\Delta), \qquad
+B\_t = W\_B x\_t, \qquad
+C\_t = W\_C x\_t
+\tag{3.7}
+\]
+
+This makes the SSM \textbf{content-dependent}, enabling input-based selection 
+of what to remember.
+
+\subsubsection{Recurrence}
+
+The SSM updates:
+
+\[
+h\_t = \bar{A}\_t h\_{t-1} + \bar{B}\_t x\_t, \qquad
+y\_t = C\_t h\_t + D x\_t
+\tag{3.8}
+\]
+
+\textbf{Parallel scan.} With diagonal $A$, the recurrence can be computed with 
+a parallel prefix scan, achieving $\mathcal{O}(\log L)$ depth.
+
+\subsection{Chunked Associative Scan}
+
+For long sequences, a chunked scan is used. For chunk size $C$:
+
+\[
+h\_{c, i} = \bar{A}\_{c, i} h\_{c, i-1} + \bar{B}\_{c, i} x\_{c, i}
+\tag{3.9}
+\]
+
+Within a chunk, intra-chunk scan is used. Between chunks, the state is 
+carried:
+
+\[
+h\_{c+1, 0} = h\_{c, C}
+\tag{3.10}
+\]
+
+SVD-Mamba uses chunk size 64.
+
+\subsection{SVD Factorization}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\tag{3.11}
+\]
+
+Truncating to rank $r$:
+
+\[
+W \approx U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
+\tag{3.12}
+\]
+
+Parameter count: $r(m + n + 1)$ vs $mn$.
+
+\subsection{Gated Fusion}
+
+Two paths $Y_a, Y_b$ fused by:
+
+\[
+Y = \sigma(W\_g X) \odot Y\_a + (1 - \sigma(W\_g X)) \odot Y\_b
+\tag{3.13}
+\]
+
+\textbf{Initialization.} Bias $b_g = -7$ gives $\sigma(-7) \approx 0.0009$, so 
+$Y \approx Y_b$ at start.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+SVD-Mamba replaces MHSA with a three-path block:
+
+\begin{enumerate}
+\item \textbf{Attention path} (SVD-factorized projections).
+\item \textbf{SSM path} (selective state space with chunked scan).
+\item \textbf{Global mixing path} (low-rank global aggregation).
+
+\end{enumerate}
+Fused by a gated combiner.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +-----------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                          |
+    +----------------+------------------------------+
+                     |
+        +------------+----------------+
+                                       
+    +--------+  +----------+    +----------+
+    | Attn   |  | SSM      |    | Global   |
+    | path   |  | branch   |    | mixing   |
+    | (SVD)  |  | (Mamba)  |    | (SVD)    |
+    +----+---+  +-----+----+    +-----+----+
+         |            |               |
+         |                            |
+         |      +----------+          |
+         |      | + Global |          |
+         |      +-----+----+          |
+         |            |               |
+         |                            |
+         |      +----------+          |
+         |      | out\_proj |          |
+         |      +-----+----+          |
+         |            |               |
+         +------------+---------------+
+                       
+              +---------------+
+              | $\gamma$   SSM +     |
+              | (1-$\gamma$)   Attn  |
+              +-------+-------+
+                       
+                    Output
+\end{lstlisting}
+
+\subsection{SVD-Factorized Linear}
+
+Each projection is stored as:
+
+\[
+W = U \Sigma V^\top, \qquad
+U \in \mathbb{R}^{d\_\text{out} \times r}, \; \Sigma \in \mathbb{R}^r, \;
+V \in \mathbb{R}^{d\_\text{in} \times r}
+\tag{4.1}
+\]
+
+The forward pass is:
+
+\[
+y = ((x V) \odot \Sigma) U^\top + b
+\tag{4.2}
+\]
+
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out} + 1)$ vs $d_\text{in} d_\text{out}$.
+
+\textbf{LoRA recovery.} A residual LoRA path is added:
+
+\[
+y = ((x V) \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
+\tag{4.3}
+\]
+
+where $s = \alpha / r_L$ and only $A, B$ are trained.
+
+\subsection{Attention Path}
+
+Standard MHSA with SVD-factorized projections:
+
+\[
+Q = \text{SVDLinear}\_Q(X), \quad
+K = \text{SVDLinear}\_K(X), \quad
+V\_a = \text{SVDLinear}\_V(X)
+\tag{4.4}
+\]
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_{a,h}
+\tag{4.5}
+\]
+
+\[
+Y\_\text{attn} = \text{SVDLinear}\_O(\text{Concat}(\text{head}\_1, \dots, \text{head}\_H))
+\tag{4.6}
+\]
+
+\textbf{Causality.} For decoders, a triangular mask is applied to the score 
+matrix.
+
+\subsection{SSM Path}
+
+\subsubsection{Input Projection}
+
+The hidden states are projected to a gated 2$\times$inner dimension:
+
+\[
+{[}x; z] = \text{SVDLinear}\_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d\_\text{inner}}
+\tag{4.7}
+\]
+
+where $d_\text{inner} = \text{expand} \cdot d$.
+
+\subsubsection{Causal Convolution}
+
+A depthwise 1D convolution is applied:
+
+\[
+x\_\text{conv} = \text{SiLU}(\text{Conv1d}(x))
+\tag{4.8}
+\]
+
+with kernel size $d_\text{conv}$ and no padding (causal).
+
+\subsubsection{Selective Parameters}
+
+The SSM parameters are computed:
+
+\[
+{[}\Delta; B; C] = \text{SVDLinear}\_{x}(x\_\text{conv})
+\tag{4.9}
+\]
+
+\[
+\Delta = \text{softplus}(\text{SVDLinear}\_{\Delta}([\Delta; B; C]) + b\_\Delta)
+\tag{4.10}
+\]
+
+\subsubsection{Discretization}
+
+With diagonal $A = -\exp(A_\text{log})$:
+
+\[
+\bar{A}\_t = \exp(\Delta\_t A), \qquad
+\bar{B}\_t = \Delta\_t B\_t
+\tag{4.11}
+\]
+
+\subsubsection{Chunked Scan}
+
+For chunk size $C = 64$:
+
+Within a chunk, compute:
+
+\[
+\lambda\_{c, i} = \sum\_{j=1}^i \log \bar{A}\_{c, j}
+\tag{4.12}
+\]
+
+Then:
+
+\[
+h\_{c, i}^\text{intra} = e^{\lambda\_{c, i}} \sum\_{j=1}^i e^{-\lambda\_{c, j}} \bar{B}\_{c, j} x\_{c, j}
+\tag{4.13}
+\]
+
+Plus inter-chunk state:
+
+\[
+h\_{c, i} = h\_{c, i}^\text{intra} + e^{\lambda\_{c, i}} h\_{c-1, C}
+\tag{4.14}
+\]
+
+\subsubsection{Output with Denominator}
+
+The output is:
+
+\[
+y\_t = \frac{C\_t \cdot h\_t}{\max(|C\_t| \cdot |h\_t^\text{denom}|, 10^{-4})} + D x\_t
+\tag{4.15}
+\]
+
+where $h_t^\text{denom}$ tracks $\sum |\bar{B}_j| x_j$.
+
+\subsubsection{Gating}
+
+\[
+Y\_\text{SSM} = y \odot \text{SiLU}(z)
+\tag{4.16}
+\]
+
+\subsection{Global SVD Mixing}
+
+A low-rank global aggregation:
+
+\[
+\text{global}\_\text{scores} = X V\_g \in \mathbb{R}^{B \times L \times r\_g}
+\tag{4.17}
+\]
+
+\[
+Y\_\text{global} = \text{SVDLinear}\_\text{global}(\text{global}\_\text{scores})
+\tag{4.18}
+\]
+
+Added to $Y_\text{SSM}$:
+
+\[
+Y\_\text{SSM}^\text{final} = Y\_\text{SSM} + Y\_\text{global}
+\tag{4.19}
+\]
+
+\subsection{Gated Fusion}
+
+The two main paths are fused:
+
+\[
+\gamma = \sigma(W\_g X)
+\tag{4.20}
+\]
+
+\[
+Y = \gamma \odot Y\_\text{SSM}^\text{final} + (1 - \gamma) \odot Y\_\text{attn}
+\tag{4.21}
+\]
+
+\textbf{Initialization.} The gating bias is $b_g = -7$, so:
+
+\[
+\sigma(-7) \approx 9 \times 10^{-4}
+\tag{4.22}
+\]
+
+The SSM is silent at start; the model behaves like the pretrained attention.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} SVD-Mamba forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: # Attention path
+ 2: Q $\leftarrow$ SVDLinear\_Q(X); K $\leftarrow$ SVDLinear\_K(X); V\_a $\leftarrow$ SVDLinear\_V(X)
+ 3: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 4: if GQA:  K, V\_a $\leftarrow$ repeat\_kv(K, V\_a)
+ 5: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 6: scores $\leftarrow$ scores + causal\_mask + pad\_mask
+ 7: Y\_attn $\leftarrow$ SVDLinear\_O(softmax(scores) V\_a)
+ 8:
+ 9: # SSM path
+10: [x; z] $\leftarrow$ SVDLinear\_in(X)
+11: x\_conv $\leftarrow$ SiLU(Conv1d(x))
+12: [$\Delta$; B; C] $\leftarrow$ SVDLinear\_x(x\_conv)
+13: $\Delta$ $\leftarrow$ softplus(SVDLinear\_$\Delta$([$\Delta$; B; C]) + b\_$\Delta$)
+14:   $\leftarrow$ exp($\Delta$ A)
+15: for c in chunks:
+16:     h\_c $\leftarrow$ scan( , B , x\_conv) within chunk
+17:     h\_c $\leftarrow$ h\_c + carry\_over
+18:     y\_c $\leftarrow$ (C h\_c) / (|C| |h\_denom|)\_clamp
+19: Y\_ssm $\leftarrow$ y   SiLU(z)
+20: Y\_ssm $\leftarrow$ Y\_ssm + global\_mix(X)
+21: Y\_ssm $\leftarrow$ SVDLinear\_out(Y\_ssm)
+22:
+23: # Fusion
+24: $\gamma$ $\leftarrow$ $\sigma$(W\_g X)
+25: Y $\leftarrow$ $\gamma$   Y\_ssm + (1 - $\gamma$)   Y\_attn
+26: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+SSM (scan) & $\mathcal{O}(L d_\text{inner} d_\text{state})$ & $\mathcal{O}(L d_\text{inner} d_\text{state})$ \\
+Global mixing & $\mathcal{O}(L d r_g)$ & $\mathcal{O}(L r_g)$ \\
+Fusion & $\mathcal{O}(L d)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d + L d_\text{inner} d_\text{state})$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $L \gg d$, the SSM cost dominates the linear part, and attention 
+dominates the quadratic part.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Formula} \\
+\midrule
+SVD projections & $r(d_\text{in} + d_\text{out} + 1)$ each \\
+SSM in\_proj & $r_\text{in}(d + 2 d_\text{inner} + 1)$ \\
+SSM x\_proj & $r_x(d_\text{inner} + d_\text{dt} + 2 d_\text{state} + 1)$ \\
+SSM dt\_proj & $r_\text{dt}(d_\text{dt} + d_\text{inner} + 1)$ \\
+SSM out\_proj & $r_\text{out}(d_\text{inner} + d + 1)$ \\
+Conv1d & $d_\text{inner} d_\text{conv}$ \\
+A\_log, D, dt\_bias & $d_\text{state} + 2 d_\text{inner}$ \\
+Global V & $d r_g$ \\
+Global out & $r_g(d_\text{inner} + r_g + 1)$ \\
+Gating & $d^2 + d$ \\
+LoRA (per projection) & $r_L(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d = 768$, $d_\text{state} = 16$, $d_\text{conv} = 4$, 
+$d_\text{inner} = 768$, $r = 192$, $r_L = 16$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Q/K/V/O projections & ~600K & ~3.6M \\
+SSM branch & ~4M & ~24M \\
+Global mixing & ~50K & ~300K \\
+Gating & ~590K & ~3.5M \\
+LoRA & ~100K & ~600K \\
+\textbf{Total} & \textbf{~5.3M} & \textbf{~32M} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Net change:} baseline has ~1.77M per layer (Q/K/V/O). SVD-Mamba has 
+~5.3M. \textbf{~3$\times$ parameter increase.}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Gate Silence at Init}
+
+\textbf{Claim.} With $b_g = -7$, the SSM contributes \textless{} 0.1\% to the output at 
+initialization.
+
+\textbf{Proof.} $\sigma(-7) = \frac{1}{1 + e^7} \approx 9.1 \times 10^{-4}$. $\square$
+
+\subsubsection{Chunked Scan Equivalence}
+
+\textbf{Claim.} The chunked scan is mathematically equivalent to the sequential 
+recurrence.
+
+\textbf{Proof.} Within a chunk, the intra-chunk scan computes $h_{c,i}$ assuming 
+$h_{c,0} = 0$. The inter-chunk term adds $e^{\lambda_{c,i}} h_{c-1, C}$. 
+Summing gives the full recurrence. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} SVD-Mamba preserves causality.
+
+\textbf{Proof.} The SSM is causal by construction (recurrence). The convolution 
+is causal (no padding on the right). The attention mask is causal. Therefore 
+the output at position $i$ depends only on inputs $1..i$. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = s.query.weight
+extracted["k"] = s.key.weight
+extracted["v"] = s.value.weight
+extracted["o"] = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{Qwen}
+
+Direct extraction from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}.
+
+\subsection{Hybrid Initialization}
+
+SVD-Mamba's \texttt{copy\_weights} does three things:
+
+\begin{enumerate}
+\item \textbf{Attention path:} Factorize $W_Q, W_K, W_V, W_O$ into SVD factors
+  for the attention projections.
+\item \textbf{SSM input projection:} Build a concatenated $[V; Q]$ weight to
+  initialize \texttt{in\_proj}.
+\item \textbf{Output projection:} Copy the attention out projection to \texttt{attn\_out\_proj}.
+
+\end{enumerate}
+\textbf{The SSM branch is NOT initialized from the attention weights.} It starts 
+with random weights, but its contribution is silenced by the gate.
+
+\subsection{The Gating Module}
+
+\begin{lstlisting}
+self.gating = nn.Linear(self.d\_model, self.d\_model)
+nn.init.zeros\_(self.gating.weight)
+nn.init.constant\_(self.gating.bias, -7.0)
+\end{lstlisting}
+
+\textbf{Why bias $-7$?} The gating controls the SSM path:
+
+\begin{itemize}
+\item $\sigma(-7) \approx 0.0009$ $\to$ SSM contributes \textless{}0.1\% at start.
+\item The model starts as pure attention.
+\item During recovery, the gate can shift toward SSM.
+
+\end{itemize}
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True} means SVD-Mamba returns the 
+raw output. The outer \texttt{attention.output.dense} applies the actual output 
+projection.
+
+But note: SVD-Mamba's forward sets \texttt{is\_nested\_encoder = True} in the 
+constructor if the source has the right structure, and the forward 
+returns \texttt{Y} directly. There's no explicit bypass code -- the output 
+shape is already \texttt{[B, L, d]}.
+
+\subsection{Injection}
+
+The injection hook handles:
+
+\begin{itemize}
+\item Whole-model traversal
+\item Single layer replacement
+\item Double-injection guard
+\item Qwen DeltaNet skip
+
+\end{itemize}
+\begin{lstlisting}
+def inject\_svd\_mamba(layer=None, model=None, ...):
+    target = layer or model
+    
+    # Whole model
+    if isinstance(target, nn.Module) and has\_transformer\_layers(target):
+        for lyr in layers:
+            inject\_svd\_mamba(layer=lyr, ...)
+        return target
+    
+    # Single layer
+    src = find\_attention(target)
+    new\_module = SVDMamba(d\_model=..., pretrained\_attn=src)
+    replace\_attention(target, new\_module)
+    return new\_module
+\end{lstlisting}
+
+\subsection{The Chunked SSM Scan}
+
+The forward uses a Python loop over chunks:
+
+\begin{lstlisting}
+chunk\_size = 64
+num\_chunks = (seqlen + chunk\_size - 1) // chunk\_size
+h\_running = zeros(...)
+h\_den\_running = zeros(...)
+y\_chunks = []
+
+for c in range(num\_chunks):
+    s\_idx = c * chunk\_size
+    e\_idx = min(seqlen, s\_idx + chunk\_size)
+    
+    u\_c = u[:, s\_idx:e\_idx]
+    log\_a\_c = log\_alpha[:, s\_idx:e\_idx]
+    lambda\_c = cumsum(log\_a\_c, dim=1).clamp(min=-25, max=0)
+    
+    decay\_c = exp(lambda\_c)
+    decay\_inv\_c = exp(-lambda\_c).clamp(max=1e10)
+    
+    h\_intra = decay\_c * cumsum(decay\_inv\_c * u\_c, dim=1)
+    h\_inter = decay\_c * h\_running.unsqueeze(1)
+    h\_chunk = (h\_intra + h\_inter).clamp(min=-1e4, max=1e4)
+    
+    # ... denominator ...
+    y\_chunks.append(...)
+    h\_running = h\_chunk[:, -1]
+\end{lstlisting}
+
+\textbf{Python loop overhead} is significant: for $L = 128$, 2 iterations; for 
+$L = 1024$, 16 iterations. Each iteration has $\sim 10$ kernel launches.
+
+\subsection{Numerical Stability}
+
+Several clamps prevent overflow:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Clamp} \\
+\midrule
+\texttt{log\_alpha} cumsum & $[-25, 0]$ \\
+\texttt{h\_chunk} & $[-10^4, 10^4]$ \\
+\texttt{h\_den\_chunk} & $[0, 10^4]$ \\
+\texttt{decay\_inv} & $\leq 10^{10}$ \\
+\texttt{denom} & $\geq 10^{-4}$ \\
+\texttt{A\_log} & $[-20, 10]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("svd\_mamba")
+@ATTENTION\_REGISTRY.register("SVD-Mamba")
+@ATTENTION\_REGISTRY.register("svd-mamba")
+@ATTENTION\_REGISTRY.register("SVD\_Mamba")
+class SVDMamba(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises & Injection aborts \\
+Small Frobenius norm & Explicit check & Raises RuntimeError \\
+NaN in scan & \texttt{torch.nan\_to\_num} & Fallback \\
+OOM & RuntimeError & Reduce batch \\
+Cross-attention & Returns input & No-op \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Attention}
+
+If \texttt{encoder\_hidden\_states} is provided, SVD-Mamba returns 
+\texttt{(hidden\_states, None)} -- a pass-through. This means cross-attention is 
+effectively unsupported.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of svd\_mamba.}
+\label{fig:arch_svd-mamba}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{SVD-Mamba Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{d\_state} & Optimal \\
+\texttt{d\_conv} & 15 steps \\
+\texttt{expand} & 2 \\
+\texttt{dt\_rank} & 32 \\
+\texttt{global\_rank} & 32 \\
+\texttt{rank} (SVD) & 32 \\
+\texttt{lora\_rank} & 8 \\
+Gate bias & -7.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, precision, recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Gate:} Mean $\gamma$ before and after recovery
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_svd\_mamba.py \
+    --models distilbert,roberta,gpt2 \
+    --d\_state Optimal \
+    --d\_conv 15 steps \
+    --global\_rank 32 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -196,9 +1116,9 @@ uses LoRA for recovery after replacing attention.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Svd Mamba} & \textbf{90.02\%} & -0.92\% & PASS & 0.9034 & 54 & \textbf{0.90$\times$} & 811.8 MB & 39.2 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Svd Mamba} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 60 & \textbf{0.92$\times$} & 674.0 MB & 361.9 & -- \\
+RoBERTa & \textbf{Svd Mamba} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 60 & \textbf{0.92$\times$} & 674.0 MB & 361.9 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Svd Mamba} & \textbf{50.23\%} & -10.55\% & PASS_LOW & 0.5553 & 60 & \textbf{0.97$\times$} & 883.1 MB & 555.0 & -- \\
+GPT-2 & \textbf{Svd Mamba} & \textbf{50.23\%} & -10.55\% & PASS\_LOW & 0.5553 & 60 & \textbf{0.97$\times$} & 883.1 MB & 555.0 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -408,12 +1328,13 @@ GPT-2 & PASS & 50.23 & 32 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/svd_mamba_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_mamba}.}
+\includegraphics[width=0.85\linewidth]{figures/svd\_mamba\_distilbert\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd\_mamba}.}
 \label{fig:results_svd_mamba}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -577,7 +1498,7 @@ LoRA & 0 & 2.3 s ms \\
 \midrule
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failed \\
 NaN in SSM & Loss = NaN & Overflow in scan \\
-Slower than baseline & >3$\times$ latency & Extra paths \\
+Slower than baseline & \textgreater{}3$\times$ latency & Extra paths \\
 Parameter bloat & +66.4M\% & SSM + gating \\
 \bottomrule
 \end{tabular}
@@ -591,7 +1512,7 @@ exception and returns \texttt{None}:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
+    logger.error("inject\_svd\_mamba failed at layer \%d: \%s", layer\_idx, e)
     return None
 \end{lstlisting}
 
@@ -611,6 +1532,7 @@ This means \textbf{silent failure is possible} if injection partially succeeds.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -717,6 +1639,7 @@ Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -797,6 +1720,7 @@ Research-grade implementation. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -845,7 +1769,7 @@ GPT-2 & -29.13\% & +48.5\%\% & 2.1$\times$ \\
 \begin{itemize}
 \item Pretrain the SSM branch
 \item Theoretical analysis
-\item Scaling to >1B models
+\item Scaling to \textgreater{}1B models
 
 \end{itemize}
 \subsection{Closing Remarks}
@@ -873,14 +1797,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -905,41 +1830,41 @@ datasets & 1.0.0 \\
 \subsection{Running SVD-Mamba}
 
 \begin{lstlisting}
-python run_all_4_svd_mamba.py \
+python run\_all\_4\_svd\_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state Optimal \
-    --d_conv 15 steps \
-    --global_rank 32 \
-    --recovery_steps 50
+    --d\_state Optimal \
+    --d\_conv 15 steps \
+    --global\_rank 32 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,svd_mamba \
-    --recovery_steps 50
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,svd\_mamba \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_svd_mamba.py --models distilbert,roberta,gpt2
+python run\_all\_4\_svd\_mamba.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (d\_state)}
 \begin{lstlisting}
 for ds in 8 16 32 64; do
-    python run_all_4_svd_mamba.py --d_state $ds --output_suffix ds$ds
+    python run\_all\_4\_svd\_mamba.py --d\_state $ds --output_suffix ds$ds
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (gate bias)}
 \begin{lstlisting}
 for gb in -10 -7 -5 0; do
-    python run_all_4_svd_mamba.py --gate_bias $gb --output_suffix gb$gb
+    python run\_all\_4\_svd\_mamba.py --gate\_bias $gb --output_suffix gb$gb
 done
 \end{lstlisting}
 
@@ -949,7 +1874,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -990,6 +1915,7 @@ GPT-2 & 50.23\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1108,6 +2034,7 @@ GPT-2 & 50.23\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1125,7 +2052,7 @@ is $\bar{A} = e^{\Delta A}$, $\bar{B} = \Delta B$ for diagonal $A$.
 \textbf{Proof.} For constant input $x$ over interval $\Delta$:
 
 \[
-h(t + \Delta) = e^{A \Delta} h(t) + \int_0^\Delta e^{A(\Delta - s)} B x \, ds
+h(t + \Delta) = e^{A \Delta} h(t) + \int\_0^\Delta e^{A(\Delta - s)} B x \, ds
 \]
 
 \[
@@ -1144,7 +2071,7 @@ recurrence.
 Then within a chunk:
 
 \[
-h_{c, i} = e^{\lambda_{c, i}} \sum_{j \leq i} e^{-\lambda_{c, j}} \bar{B}_{c, j} x_{c, j} + e^{\lambda_{c, i}} h_{c-1, C}
+h\_{c, i} = e^{\lambda\_{c, i}} \sum\_{j \leq i} e^{-\lambda\_{c, j}} \bar{B}\_{c, j} x\_{c, j} + e^{\lambda\_{c, i}} h\_{c-1, C}
 \]
 
 The first term is the intra-chunk contribution; the second is the carry-over. 
@@ -1158,7 +2085,7 @@ By induction on chunks, the total equals the full sequential recurrence. $\squar
 fused output is:
 
 \[
-Y = \sigma(-7) Y_\text{SSM} + (1 - \sigma(-7)) Y_\text{attn} \approx 0.999 Y_\text{attn} + 0.0009 Y_\text{SSM}
+Y = \sigma(-7) Y\_\text{SSM} + (1 - \sigma(-7)) Y\_\text{attn} \approx 0.999 Y\_\text{attn} + 0.0009 Y\_\text{SSM}
 \]
 
 If $\|Y_\text{SSM}\| \sim \|Y_\text{attn}\|$, the SSM contributes ~0.09\%. $\square$
@@ -1168,7 +2095,7 @@ If $\|Y_\text{SSM}\| \sim \|Y_\text{attn}\|$, the SSM contributes ~0.09\%. $\squ
 \textbf{Claim.} SVD-Mamba's total parameter change is:
 
 \[
-\Delta P = P_\text{SSM} + P_\text{gate} + P_\text{global} + P_\text{LoRA} - P_\text{SVD saved}
+\Delta P = P\_\text{SSM} + P\_\text{gate} + P\_\text{global} + P\_\text{LoRA} - P\_\text{SVD saved}
 \tag{A.2}
 \]
 
@@ -1203,111 +2130,112 @@ Therefore output at position $i$ depends only on inputs $1..i$. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The SVDMamba Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("svd_mamba")
+@ATTENTION\_REGISTRY.register("svd\_mamba")
 class SVDMamba(BaseAttention):
-    def __init__(self, config, rank=None, d_model=768, d_state=16,
-                 d_conv=4, expand=1, global_rank=8, lora_rank=16, ...):
-        super().__init__(config, rank)
-        self.d_model = d_model
-        self.d_state = d_state
-        self.d_conv = d_conv
-        self.inner_dim = expand * d_model
+    def \_\_init\_\_(self, config, rank=None, d\_model=768, d\_state=16,
+                 d\_conv=4, expand=1, global\_rank=8, lora\_rank=16, ...):
+        super().\_\_init\_\_(config, rank)
+        self.d\_model = d\_model
+        self.d\_state = d\_state
+        self.d\_conv = d\_conv
+        self.inner\_dim = expand * d\_model
         
         # Attention path
-        self.q_proj = SVDLinear(d_model, all_head_size, ...)
-        self.k_proj = SVDLinear(d_model, kv_head_size, ...)
-        self.v_proj = SVDLinear(d_model, kv_head_size, ...)
-        self.attn_out_proj = SVDLinear(all_head_size, d_model, ...)
+        self.q\_proj = SVDLinear(d\_model, all\_head\_size, ...)
+        self.k\_proj = SVDLinear(d\_model, kv\_head\_size, ...)
+        self.v\_proj = SVDLinear(d\_model, kv\_head\_size, ...)
+        self.attn\_out\_proj = SVDLinear(all\_head\_size, d\_model, ...)
         
         # SSM path
-        self.in_proj = SVDLinear(d_model, 2 * inner_dim, ...)
-        self.out_proj = SVDLinear(inner_dim, d_model, ...)
-        self.x_proj = SVDLinear(inner_dim, dt_rank + 2 * d_state, ...)
-        self.dt_proj = SVDLinear(dt_rank, inner_dim, ...)
-        self.conv1d = nn.Conv1d(inner_dim, inner_dim, kernel_size=d_conv, groups=inner_dim)
-        self.A_log = nn.Parameter(...)
-        self.D = nn.Parameter(torch.ones(inner_dim))
-        self.dt_bias = nn.Parameter(torch.zeros(inner_dim))
+        self.in\_proj = SVDLinear(d\_model, 2 * inner\_dim, ...)
+        self.out\_proj = SVDLinear(inner\_dim, d\_model, ...)
+        self.x\_proj = SVDLinear(inner\_dim, dt\_rank + 2 * d\_state, ...)
+        self.dt\_proj = SVDLinear(dt\_rank, inner\_dim, ...)
+        self.conv1d = nn.Conv1d(inner\_dim, inner\_dim, kernel\_size=d\_conv, groups=inner\_dim)
+        self.A\_log = nn.Parameter(...)
+        self.D = nn.Parameter(torch.ones(inner\_dim))
+        self.dt\_bias = nn.Parameter(torch.zeros(inner\_dim))
         
         # Global SVD mixing
-        self.global_V = nn.Parameter(torch.randn(d_model, global_rank) * 0.02)
-        self.global_out = SVDLinear(global_rank, inner_dim, ...)
+        self.global\_V = nn.Parameter(torch.randn(d\_model, global\_rank) * 0.02)
+        self.global\_out = SVDLinear(global\_rank, inner\_dim, ...)
         
         # Gating (init to silence SSM)
-        self.gating = nn.Linear(d_model, d_model)
-        nn.init.zeros_(self.gating.weight)
-        nn.init.constant_(self.gating.bias, -7.0)
+        self.gating = nn.Linear(d\_model, d\_model)
+        nn.init.zeros\_(self.gating.weight)
+        nn.init.constant\_(self.gating.bias, -7.0)
 \end{lstlisting}
 
 \subsection{B.2 The SVDLinear Module}
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=None, lora_rank=16, ...):
-        super().__init__()
-        self.U = nn.Parameter(torch.randn(out_features, rank) * 0.02)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=None, lora\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.U = nn.Parameter(torch.randn(out\_features, rank) * 0.02)
         self.S = nn.Parameter(torch.ones(rank))
-        self.V = nn.Parameter(torch.randn(in_features, rank) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.V = nn.Parameter(torch.randn(in\_features, rank) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out\_features))
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
     def forward(self, x):
         out = ((x @ self.V) * self.S) @ self.U.t() + self.bias
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.3 The SSM Forward}
 
 \begin{lstlisting}
-def ssm_forward(self, x):
-    # x: [B, L, inner_dim]
-    x_t = x.transpose(1, 2)
-    x_pad = F.pad(x_t, (self.d_conv - 1, 0))
-    x_conv = self.conv1d(x_pad)[..., :seqlen].transpose(1, 2)
-    x_conv = F.silu(x_conv)
+def ssm\_forward(self, x):
+    # x: [B, L, inner\_dim]
+    x\_t = x.transpose(1, 2)
+    x\_pad = F.pad(x\_t, (self.d\_conv - 1, 0))
+    x\_conv = self.conv1d(x\_pad)[..., :seqlen].transpose(1, 2)
+    x\_conv = F.silu(x\_conv)
     
-    x_proj = self.x_proj(x_conv)
-    delta = F.softplus(self.dt_proj(x_proj[:, :, :dt_rank]) + self.dt_bias)
+    x\_proj = self.x\_proj(x\_conv)
+    delta = F.softplus(self.dt\_proj(x\_proj[:, :, :dt\_rank]) + self.dt\_bias)
     delta = delta.clamp(min=1e-3, max=0.1)
-    B_ssm = x_proj[:, :, dt_rank:dt_rank+d_state]
-    C_ssm = x_proj[:, :, dt_rank+d_state:]
+    B\_ssm = x\_proj[:, :, dt\_rank:dt\_rank+d\_state]
+    C\_ssm = x\_proj[:, :, dt\_rank+d\_state:]
     
-    A = -torch.exp(self.A_log.clamp(min=-20, max=10))
+    A = -torch.exp(self.A\_log.clamp(min=-20, max=10))
     
     # Chunked scan
-    h_running = zeros(B, inner_dim, d_state)
-    y_chunks = []
+    h\_running = zeros(B, inner\_dim, d\_state)
+    y\_chunks = []
     for c in chunks:
         # ... intra-chunk scan + inter-chunk carry
-        y_chunks.append(y_c)
-    y = cat(y_chunks, dim=1)
-    y = y + self.D * x_conv
+        y\_chunks.append(y\_c)
+    y = cat(y\_chunks, dim=1)
+    y = y + self.D * x\_conv
     return y * F.silu(z)
 \end{lstlisting}
 
 \subsection{B.4 The Gating Module}
 
 \begin{lstlisting}
-self.gating = nn.Linear(self.d_model, self.d_model)
-nn.init.zeros_(self.gating.weight)
-nn.init.constant_(self.gating.bias, -7.0)
+self.gating = nn.Linear(self.d\_model, self.d\_model)
+nn.init.zeros\_(self.gating.weight)
+nn.init.constant\_(self.gating.bias, -7.0)
 \end{lstlisting}
 
 The gate is per-token, per-channel:
 \begin{lstlisting}
-gamma = torch.sigmoid(self.gating(hidden_states))
-Y = gamma * ssm_proj + (1.0 - gamma) * attn_out
+gamma = torch.sigmoid(self.gating(hidden\_states))
+Y = gamma * ssm\_proj + (1.0 - gamma) * attn\_out
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1338,6 +2266,7 @@ compression. If $r = \min$, no compression.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1503,11 +2432,11 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
-    "final_gate": 0.94
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
+    "final\_gate": 0.94
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1518,16 +2447,16 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_svd_mamba.py --models distilbert,roberta,gpt2
+python run\_all\_4\_svd\_mamba.py --models distilbert,roberta,gpt2
 
-# d_state sweep
+# d\_state sweep
 for ds in 8 16 32 64; do
-    python run_all_4_svd_mamba.py --d_state $ds --output_suffix ds$ds
+    python run\_all\_4\_svd\_mamba.py --d\_state $ds --output_suffix ds$ds
 done
 
 # Gate bias sweep
 for gb in -10 -7 -5 0; do
-    python run_all_4_svd_mamba.py --gate_bias $gb --output_suffix gb$gb
+    python run\_all\_4\_svd\_mamba.py --gate\_bias $gb --output_suffix gb$gb
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1535,6 +2464,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1687,6 +2617,7 @@ Std & 0.1 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1786,3 +2717,4 @@ We encourage future work to carefully evaluate the trade-offs.
 
 ---
 \end{lstlisting}
+

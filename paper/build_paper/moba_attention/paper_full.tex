@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Mamba-Inspired Gated State-Space Attention: A Drop-In Replacement for Multi-Head Attention}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -79,14 +81,14 @@ The output splits into:
 For each dimension $i$, we learn a decay $\gamma_i \in (0, 1)$ via:
 
 \[
-\gamma_i = \sigma(-\exp(A_{\log, i}))
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
 \tag{1.2}
 \]
 
 The pairwise weight between positions $j$ and $i$ ($j \leq i$):
 
 \[
-w_{ij}^{(d)} = \frac{\exp(\text{dist}_{ij} \cdot \log \gamma_d)}{\sum_{j'} \exp(\text{dist}_{ij'} \cdot \log \gamma_d)}
+w\_{ij}^{(d)} = \frac{\exp(\text{dist}\_{ij} \cdot \log \gamma\_d)}{\sum\_{j'} \exp(\text{dist}\_{ij'} \cdot \log \gamma\_d)}
 \tag{1.3}
 \]
 
@@ -95,7 +97,7 @@ where $\text{dist}_{ij} = \max(0, j - i)$ for causal mode.
 \subsubsection{Gated Fusion}
 
 \[
-\text{Out} = \text{SiLU}(p_1^\text{decayed}) \odot p_2
+\text{Out} = \text{SiLU}(p\_1^\text{decayed}) \odot p\_2
 \tag{1.4}
 \]
 
@@ -141,6 +143,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{State-Space Models}
@@ -156,7 +159,7 @@ diagonal plus low-rank A matrices, achieving $\mathcal{O}(L)$ complexity.
 \textbf{Mamba} (Gu \& Dao, 2023) introduced \textbf{input-dependent} state transitions:
 
 \[
-h_t = \bar{A}(x_t) h_{t-1} + \bar{B}(x_t) x_t
+h\_t = \bar{A}(x\_t) h\_{t-1} + \bar{B}(x\_t) x\_t
 \tag{2.1}
 \]
 
@@ -187,6 +190,985 @@ $W_Q, W_K, W_V, W_O$ in the SSM structure.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Reuses pretrained?} & \textbf{Causal} & \textbf{Bidirectional} \\
+\midrule
+Mamba & $\mathcal{O}(L)$ & No & Yes & Yes (Bi-Mamba) \\
+Hyena & $\mathcal{O}(L \log L)$ & No & Yes & Yes \\
+RWKV & $\mathcal{O}(L)$ & No & Yes & No \\
+\textbf{Ours} & \textbf{$\mathcal{O}(L^2 D)$} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We reuse pretrained attention weights in an SSM-inspired 
+formulation, trading complexity for compatibility with pretrained transformers.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{State-Space Models}
+
+A continuous-time SSM is defined by:
+
+\[
+\begin{aligned}
+h'(t) &= A h(t) + B x(t) \\
+y(t) &= C h(t) + D x(t)
+\end{aligned}
+\tag{3.1}
+\]
+
+where $A \in \mathbb{R}^{d_h \times d_h}$ is the state transition matrix, 
+$B, C$ are input/output matrices, and $D$ is a skip connection.
+
+Discretized with step size $\Delta$:
+
+\[
+\bar{A} = \exp(\Delta A), \quad \bar{B} = (\Delta A)^{-1} (\exp(\Delta A) - I) \Delta B
+\tag{3.2}
+\]
+
+The recurrence:
+
+\[
+h\_t = \bar{A} h\_{t-1} + \bar{B} x\_t, \quad y\_t = C h\_t
+\tag{3.3}
+\]
+
+\subsection{Mamba's Selective Mechanism}
+
+Mamba makes $\Delta, B, C$ input-dependent:
+
+\[
+\Delta\_t = \text{softplus}(W\_\Delta x\_t), \quad B\_t = W\_B x\_t, \quad C\_t = W\_C x\_t
+\tag{3.4}
+\]
+
+This lets the SSM decide when to update state based on input content.
+
+\subsection{Diagonal SSM Approximation}
+
+For efficiency, Mamba uses a \textbf{diagonal} A matrix:
+
+\[
+A = \text{diag}(a\_1, \dots, a\_{d\_h}), \quad a\_i \textless{} 0
+\tag{3.5}
+\]
+
+The discrete decay per dimension:
+
+\[
+\bar{A}\_i = \exp(\Delta\_i a\_i) \in (0, 1)
+\tag{3.6}
+\]
+
+\subsection{Our Decay Parameterization}
+
+We parameterize the decay as:
+
+\[
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
+\tag{3.7}
+\]
+
+where $A_{\log, i}$ is a learnable parameter. This gives:
+
+\begin{itemize}
+\item $\gamma_i \in (0, 1)$
+\item $\gamma_i \to 1$ when $A_{\log, i} \to -\infty$ (no forgetting)
+\item $\gamma_i \to 0$ when $A_{\log, i} \to +\infty$ (rapid forgetting)
+
+\end{itemize}
+\subsection{Causal Decay Weights}
+
+For a causal model, we compute:
+
+\[
+\text{dist}\_{ij} = \max(0, j - i), \quad
+\log w\_{ij} = \text{dist}\_{ij} \cdot \log \gamma\_i
+\tag{3.8}
+\]
+
+After softmax over $j$:
+
+\[
+w\_{ij} = \frac{\exp(\text{dist}\_{ij} \log \gamma\_i)}{\sum\_{j'} \exp(\text{dist}\_{ij'} \log \gamma\_i)}
+\tag{3.9}
+\]
+
+\textbf{Properties:}
+\begin{itemize}
+\item $w_{ii}$ is largest (position $i$ contributes most to itself)
+\item $w_{ij}$ decays with distance $|i - j|$ for $j < i$
+\item The decay rate is learned per dimension
+
+\end{itemize}
+\subsection{Bidirectional Decay}
+
+For encoders, we combine forward and backward:
+
+\[
+w\_{ij}^\text{fwd} = \text{softmax}\_j(\text{dist}\_{ij}^\text{fwd} \log \gamma\_i)
+\tag{3.10}
+\]
+
+\[
+w\_{ij}^\text{bwd} = \text{softmax}\_j(\text{dist}\_{ij}^\text{bwd} \log \gamma\_i)
+\tag{3.11}
+\]
+
+\[
+\text{Out} = 0.5 \cdot (w^\text{fwd} p\_1 + w^\text{bwd} p\_1)
+\tag{3.12}
+\]
+
+\subsection{Gating Mechanism}
+
+We use the SiLU (Swish) activation:
+
+\[
+\text{SiLU}(x) = x \cdot \sigma(x)
+\tag{3.13}
+\]
+
+Gated fusion:
+
+\[
+\text{Out} = \text{SiLU}(p\_1) \odot p\_2
+\tag{3.14}
+\]
+
+\subsection{Preservation Gate}
+
+A learnable scalar $\alpha$:
+
+\[
+\alpha = \sigma(g)
+\tag{3.15}
+\]
+
+with $g$ initialized to 2.0, so $\alpha \approx 0.88$.
+
+Final output:
+
+\[
+\text{Final} = \alpha \cdot \text{Out} + (1 - \alpha) \cdot X
+\tag{3.16}
+\]
+
+\subsection{Complexity Note}
+
+\textbf{Important.} Despite the SSM-inspired formulation, the implementation 
+materializes:
+
+\[
+\text{weights} \in \mathbb{R}^{L \times L \times D}
+\tag{3.17}
+\]
+
+This is $\mathcal{O}(L^2 D)$ memory, \textbf{not} $\mathcal{O}(L)$. We discuss 
+this limitation in Section 10.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+For GQA models, $H_{kv} < H$. Our implementation reuses K/V weights but 
+does not require separate KV heads because the SSM operates on the full 
+hidden dimension.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE is applied to the input before the SSM projection.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+Mamba-Inspired Gated SSM Attention replaces standard attention with a 
+\textbf{two-branch gated state-space formulation}:
+
+\begin{lstlisting}
+        Input X
+           |
+            
+    +----------------------+
+    | in\_proj: d $\to$ 2d      |
+    |   first d = p1       |  $\leftarrow$ SSM branch
+    |   second d = p2      |  $\leftarrow$ Gate branch
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Learned decay        |
+    |   $\gamma$\_i = $\sigma$(-exp(A\_i)) |
+    |   softmax over dist  |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | p1' = decay(p1)      |
+    | out = SiLU(p1') * p2 |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | out\_proj: d $\to$ d      |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Preservation gate    |
+    | $\alpha$ out + (1-$\alpha$) X      |
+    +-------+--------------+
+            |
+        Output
+\end{lstlisting}
+
+\subsection{Two-Branch In-Projection}
+
+Instead of standard Q, K, V projections, we use:
+
+\[
+[p\_1; p\_2] = W\_\text{in} X + b\_\text{in}
+\tag{4.1}
+\]
+
+where $W_\text{in} \in \mathbb{R}^{d \times 2d}$ and $p_1, p_2 \in \mathbb{R}^{B \times L \times d}$.
+
+\textbf{Weight reuse.}
+
+\begin{itemize}
+\item $p_1$ branch: copied from $W_V$ (or $W_Q$ if V unavailable)
+\item $p_2$ branch: copied from $W_Q$ (or $W_K$ if Q unavailable)
+
+\end{itemize}
+This gives:
+
+\[
+W\_\text{in} = \begin{pmatrix} W\_V \\ W\_Q \end{pmatrix}
+\tag{4.2}
+\]
+
+\subsubsection{Padding for Different Head Counts}
+
+If $d_\text{out}$ of the source projection is smaller than $d$, we \textbf{repeat}:
+
+\begin{lstlisting}
+if w\_main.shape[0] \textless{} D and D \% w\_main.shape[0] == 0:
+    rep = D // w\_main.shape[0]
+    w\_main = w\_main.repeat(rep, 1)
+\end{lstlisting}
+
+\subsection{Learned Decay}
+
+\subsubsection{Decay Parameterization}
+
+For each dimension $i \in \{1, \dots, d\}$:
+
+\[
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
+\tag{4.3}
+\]
+
+We initialize $A_{\log, i} = \log(i)$ (from \texttt{torch.log(arange(1, D+1))}), so:
+
+\[
+\gamma\_i = \sigma(-i)
+\tag{4.4}
+\]
+
+For small $i$, $\gamma_i \approx \sigma(-1) \approx 0.27$; for large $i$, 
+$\gamma_i \to 0$.
+
+\subsubsection{Causality}
+
+For decoders, we define:
+
+\[
+\text{dist}\_{ij} = \begin{cases} j - i & j \geq i \\ 0 & j \textless{} i \end{cases}
+\tag{4.5}
+\]
+
+\textbf{Wait, this is reversed.} Let me re-read the code:
+
+\begin{lstlisting}
+dist = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)  # [L, L]
+# pos.unsqueeze(1) is i, pos.unsqueeze(0) is j
+# dist[i, j] = max(0, i - j)
+\end{lstlisting}
+
+So $\text{dist}_{ij} = \max(0, i - j)$ -- the distance from position $j$ to 
+position $i$ \textbf{for $j \leq i$}.
+
+The log weights:
+
+\[
+\log w\_{ij}^{(d)} = \text{dist}\_{ij} \cdot \log \gamma\_d
+\tag{4.6}
+\]
+
+Then softmax over $j$ (dim=1):
+
+\[
+w\_{ij}^{(d)} = \frac{\exp(\log w\_{ij}^{(d)})}{\sum\_{j'} \exp(\log w\_{ij'}^{(d)})}
+\tag{4.7}
+\]
+
+\textbf{Interpretation.} For query at position $i$, key at position $j$:
+
+\begin{itemize}
+\item If $j = i$: $\text{dist}_{ij} = 0$, so $\log w = 0$, giving $w = 1/Z$
+  (highest after normalization).
+\item If $j = i - 1$: $\text{dist}_{ij} = 1$, so $\log w = \log \gamma_d$.
+\item If $j \to 0$: $\text{dist}_{ij} = i$, so $\log w = i \log \gamma_d$
+  (smallest).
+
+\end{itemize}
+\textbf{Effect.} Recent keys get more weight; older keys get exponentially 
+decayed weight. This emulates SSM's "forget gate".
+
+\subsubsection{Causal Mask}
+
+The causal mask sets entries with $j > i$ to $-\infty$:
+
+\begin{lstlisting}
+causal\_mask = torch.tril(torch.ones(L, L))
+log\_weights = log\_weights.masked\_fill(~causal\_mask, float("-inf"))
+\end{lstlisting}
+
+\subsection{Bidirectional Mode}
+
+For encoders, we compute forward and backward distances:
+
+\[
+\text{dist}^\text{fwd}\_{ij} = \max(0, i - j), \quad
+\text{dist}^\text{bwd}\_{ij} = \max(0, j - i)
+\tag{4.8}
+\]
+
+Both are masked appropriately:
+
+\begin{itemize}
+\item Forward: $j \leq i$ (lower triangular)
+\item Backward: $j \geq i$ (upper triangular)
+
+\end{itemize}
+Then:
+
+\[
+\text{Out} = 0.5 \cdot (w^\text{fwd} p\_1 + w^\text{bwd} p\_1)
+\tag{4.9}
+\]
+
+\subsection{Gated Fusion}
+
+\[
+\text{Out}\_\text{SSM} = \text{SiLU}(p\_1^\text{decayed}) \odot p\_2
+\tag{4.10}
+\]
+
+where SiLU is:
+
+\[
+\text{SiLU}(x) = x \cdot \sigma(x)
+\tag{4.11}
+\]
+
+\subsection{Output Projection}
+
+Standard LoRALinear:
+
+\[
+\text{Out} = W\_O \cdot \text{Out}\_\text{SSM} + b\_O
+\tag{4.12}
+\]
+
+with $W_O$ copied from the pretrained output projection.
+
+\subsection{Preservation Gate}
+
+A learnable scalar $g$ initialized to 2.0:
+
+\[
+\alpha = \sigma(g) \approx 0.88
+\tag{4.13}
+\]
+
+Final output:
+
+\[
+\text{Final} = \alpha \cdot \text{Out} + (1 - \alpha) \cdot X
+\tag{4.14}
+\]
+
+\textbf{Why this helps.} At the start of training, the SSM output may be noisy. 
+The preservation gate keeps the residual input as a fallback. As training 
+progresses, $\alpha$ can shift toward 1.0 if the SSM output improves.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Mamba-Inspired Gated SSM Attention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, is\_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: X $\leftarrow$ RoPE(X) if position\_embeddings provided
+ 2: proj $\leftarrow$ in\_proj(X)                          [B, L, 2d]
+ 3: p1, p2 $\leftarrow$ chunk(proj, 2, dim=-1)            Two branches
+ 4: $\gamma$ $\leftarrow$ $\sigma$(-exp(A\_log[:d]))                      [d]
+ 5: if is\_decoder and L \textgreater{} 1:
+ 6:     dist $\leftarrow$ max(0, i - j)                    [L, L]
+ 7:     log\_w $\leftarrow$ dist   log $\gamma$                    [L, L, d]
+ 8:     log\_w $\leftarrow$ mask\_causal(log\_w)
+ 9:     w $\leftarrow$ softmax(log\_w, dim=1)               [L, L, d]
+10:     p1 $\leftarrow$ einsum("ijd,bjd-\textgreater{}bid", w, p1)
+11:     gated $\leftarrow$ SiLU(p1) * p2
+12: elif L \textgreater{} 1:
+13:     # Bidirectional
+14:     dist\_fwd $\leftarrow$ max(0, i - j); dist\_bwd $\leftarrow$ max(0, j - i)
+15:     w\_fwd $\leftarrow$ softmax(dist\_fwd   log $\gamma$, dim=1)
+16:     w\_bwd $\leftarrow$ softmax(dist\_bwd   log $\gamma$, dim=1)
+17:     p1\_mix $\leftarrow$ 0.5 * (w\_fwd @ p1 + w\_bwd @ p1)
+18:     gated $\leftarrow$ SiLU(p1\_mix) * p2
+19: else:
+20:     gated $\leftarrow$ SiLU(p1) * p2
+21: Out $\leftarrow$ out\_proj(gated)                         d $\to$ d
+22: Out $\leftarrow$ mask\_padding(Out, attention\_mask)
+23: $\alpha$ $\leftarrow$ $\sigma$(pres\_gate)
+24: Final $\leftarrow$ $\alpha$ * Out + (1 - $\alpha$) * X
+25: return Final
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+in\_proj & $\mathcal{O}(L d^2)$ \\
+Decay weights & $\mathcal{O}(L^2 d)$ \\
+Softmax & $\mathcal{O}(L^2 d)$ \\
+Weighted sum & $\mathcal{O}(L^2 d)$ \\
+out\_proj & $\mathcal{O}(L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total:} $\mathcal{O}(L^2 d + L d^2)$.
+
+For $L \gg d$: \textbf{$\mathcal{O}(L^2 d)$} -- quadratic in $L$.
+
+\subsubsection{Memory Complexity}
+
+The weight tensor is $[L, L, d]$, so:
+
+\[
+\text{Memory} = \mathcal{O}(L^2 d)
+\tag{4.15}
+\]
+
+\textbf{This is NOT O(L).}
+
+\subsubsection{Comparison with True Mamba}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{True Mamba} & \textbf{Our Implementation} \\
+\midrule
+Time & $\mathcal{O}(L)$ & $\mathcal{O}(L^2 d)$ \\
+Memory & $\mathcal{O}(L d)$ & $\mathcal{O}(L^2 d)$ \\
+Selective & Input-dependent & Learned per-dim \\
+Scan & Parallel scan & Softmax over distance \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The docstring claim of "O(L)" is incorrect.}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+in\_proj & $2 d^2$ \\
+out\_proj & $d^2$ \\
+A\_log & $d$ \\
+pres\_gate & 1 \\
+LoRA (both proj) & $r_L (2d + d) \cdot 2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+in\_proj & 1,179,648 \\
+out\_proj & 589,824 \\
+A\_log & 768 \\
+pres\_gate & 1 \\
+LoRA & ~66K \\
+\textbf{Total} & \textbf{~1.84M} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+vs baseline attention ($4 d^2 = 2.36M$):
+
+\textbf{Reduction: ~22\%} at $r_L = 16$.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Decay Interpretation}
+
+The learned decay $\gamma_i$ controls the SSM's "forget rate" per dimension:
+
+\begin{itemize}
+\item $\gamma_i \approx 1$: no forgetting $\to$ attends to all history
+\item $\gamma_i \approx 0$: rapid forgetting $\to$ attends only to recent
+
+\end{itemize}
+The init $A_{\log, i} = \log(i)$ gives $\gamma_i = \sigma(-i)$, so higher 
+dimensions forget faster.
+
+\subsubsection{Softmax Over Distance}
+
+The softmax over distance is equivalent to a \textbf{geometric decay prior}:
+
+\[
+w\_{ij} \propto \gamma\_i^{|i - j|}
+\tag{4.16}
+\]
+
+This is the discrete analog of the SSM's exponential decay.
+
+\subsubsection{Preservation Gate}
+
+\textbf{Claim.} The preservation gate ensures the initial forward pass approximates 
+the identity transformation.
+
+\textbf{Proof.} At init, $\alpha = \sigma(2.0) \approx 0.88$. So the output is 
+$0.88 \cdot \text{Out}_\text{SSM} + 0.12 \cdot X$. If the SSM output is 
+approximately zero (as $B = 0$ for LoRA), the output is $\approx 0.12 X$. 
+$\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, causality is preserved.
+
+\textbf{Proof.} The causal mask sets $w_{ij} = 0$ for $j > i$ (upper triangular 
+to $-\infty$ in log-space). After softmax, $w_{ij} = 0$ for $j > i$. So 
+output at $i$ depends only on inputs $j \leq i$. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.data
+if c\_w.shape[0] \textless{} c\_w.shape[1]:  # Conv1D stores (in, out)
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src, "output"):
+    is\_nested\_encoder = True
+    q\_w = src.self.query.weight
+    k\_w = src.self.key.weight
+    v\_w = src.self.value.weight
+    o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen GQA}
+
+\begin{lstlisting}
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsection{Weight Reuse Strategy}
+
+\subsubsection{in\_proj Weight Layout}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Branch} & \textbf{Source} & \textbf{Rationale} \\
+\midrule
+$p_1$ (first d) & $W_V$ & SSM input \\
+$p_2$ (second d) & $W_Q$ & Gating signal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Padding/Repeating}
+
+If source weight has $d_\text{out} < d$ (e.g., GQA K/V), we repeat:
+
+\begin{lstlisting}
+if w\_main.shape[0] \textless{} D and D \% w\_main.shape[0] == 0:
+    rep = D // w\_main.shape[0]
+    w\_main = w\_main.repeat(rep, 1)
+\end{lstlisting}
+
+\subsubsection{out\_proj Weight Layout}
+
+Direct copy from $W_O$.
+
+\subsubsection{Nested Encoder Output}
+
+For nested encoders, \texttt{out\_proj} is set to identity:
+
+\begin{lstlisting}
+elif self.is\_nested\_encoder:
+    nn.init.eye\_(self.out\_proj.weight)
+    if self.out\_proj.bias is not None:
+        nn.init.zeros\_(self.out\_proj.bias)
+\end{lstlisting}
+
+\subsection{The A\_log Parameter}
+
+\begin{lstlisting}
+self.A\_log = nn.Parameter(torch.log(torch.arange(1, self.d\_model + 1, dtype=torch.float32)))
+\end{lstlisting}
+
+\textbf{Init.} $A_{\log, i} = \log(i)$, so $\gamma_i = \sigma(-i)$.
+
+\textbf{Interpretation.} Higher dimensions have larger $A_{\log}$ $\to$ smaller $\gamma$ 
+$\to$ faster forgetting.
+
+\subsection{The Preservation Gate}
+
+\begin{lstlisting}
+self.pres\_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+At init, $\alpha = \sigma(2.0) \approx 0.88$. During training, the model can 
+shift $\alpha$ toward 0 (rely on residual) or 1 (rely on SSM output).
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Mamba-Inspired SSM Attention
+\begin{lstlisting}
+Input:  model M, config
+Output: M with attention replaced
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ Mamba(d\_model, old\_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{Skip Logic}
+
+The injection hook skips:
+
+\begin{itemize}
+\item Layers already injected (\texttt{isinstance(src, Mamba)})
+\item Qwen3.5 hybrid DeltaNet/LinearAttention layers
+
+\end{itemize}
+\begin{lstlisting}
+if "DeltaNet" in c\_name or "LinearAttention" in c\_name:
+    return None
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+UniversalAdapter throws & try/except & \textbf{Raise RuntimeError} \\
+Missing Q/K/V & \texttt{missing\_after} non-empty & \textbf{Raise RuntimeError} \\
+Near-zero norm & Frobenius check & \textbf{Raise RuntimeError} \\
+Injection fail & Exception & Log error, return None \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} \texttt{copy\_weights} raises exceptions (does not gracefully degrade). 
+The injection hook catches them and returns None.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("mamba")
+class Mamba(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery}
+
+Base weights are frozen; LoRA adapters on \texttt{in\_proj} and \texttt{out\_proj} are 
+trainable. Additionally:
+
+\begin{itemize}
+\item \texttt{A\_log}: trainable (decay parameter)
+\item \texttt{pres\_gate}: trainable (preservation scalar)
+
+\end{itemize}
+Trainable parameter count per layer (d = 768, r\_L = 16):
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of moba.}
+\label{fig:arch_moba}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max sequence length: 128.
+
+\subsection{Mamba-Inspired SSM Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{A\_log} init & $\log(1), \log(2), \ldots, \log(d)$ \\
+\texttt{pres\_gate} init & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters
+\item Peak VRAM
+\item Inference time
+
+\end{itemize}
+\subsubsection{Complexity}
+\begin{itemize}
+\item Memory scaling with $L$
+\item Time scaling with $L$
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_mamba.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{mamba} & Our method \\
+\texttt{mamba\_no\_pres} & Without preservation gate (ablation) \\
+\texttt{mamba\_no\_decay} & Without learned decay (ablation) \\
+\texttt{mamba\_linear\_decay} & Fixed linear decay (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -199,7 +1181,7 @@ DistilBERT & \textbf{Moba} & \textbf{73.62\%} & -16.86\% & PASS & 0.7516 & 0 & \
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Moba} & \textbf{84.17\%} & +9.06\% & PASS & 0.8583 & 0 & \textbf{0.94$\times$} & 379.1 MB & 10.6 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Moba} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 569.5 MB & 13.5 & -- \\
+GPT-2 & \textbf{Moba} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 569.5 MB & 13.5 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -376,12 +1358,13 @@ nasc & 90.71\% & 64.56\% & 78.44\% \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/moba_roberta_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/moba\_roberta\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{moba}.}
 \label{fig:results_moba}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does Mamba SSM Work?}
@@ -455,11 +1438,11 @@ Memory & $\mathcal{O}(L)$ & $\mathcal{O}(L^2 d)$ \\
 Verified via gradient check:
 
 \begin{lstlisting}
-X = torch.randn(1, 128, d, requires_grad=True)
+X = torch.randn(1, 128, d, requires\_grad=True)
 Y = model(X)
 loss = Y[0, 100].sum()
 loss.backward()
-assert X.grad[0, 101:].abs().max() < 1e-6
+assert X.grad[0, 101:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 Passes on all decoder models.
@@ -514,6 +1497,7 @@ Nested flag bug & RoBERTa (potential) & detection order \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -632,6 +1616,7 @@ RWKV & $\mathcal{O}(L)$ & No & -- \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Quadratic Complexity}
@@ -666,7 +1651,7 @@ tasks unknown.
 \midrule
 $\le$124M & Yes \\
 1B--10B & No \\
->10B & No \\
+\textgreater{}10B & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -717,6 +1702,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -799,13 +1785,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -814,39 +1801,39 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_mamba.py \
+python run\_all\_4\_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,mamba \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_mamba.py
+python run\_all\_4\_mamba.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Preservation gate ablation)}
 \begin{lstlisting}
-python run_all_4_mamba.py --pres_gate_init 0.0 --output_suffix g0
-python run_all_4_mamba.py --pres_gate_init 2.0 --output_suffix g2
-python run_all_4_mamba.py --pres_gate_init 4.0 --output_suffix g4
+python run\_all\_4\_mamba.py --pres\_gate\_init 0.0 --output\_suffix g0
+python run\_all\_4\_mamba.py --pres\_gate\_init 2.0 --output\_suffix g2
+python run\_all\_4\_mamba.py --pres\_gate\_init 4.0 --output\_suffix g4
 \end{lstlisting}
 
 \subsubsection{Table 7.8 (Scaling)}
 \begin{lstlisting}
 for L in 64 128 256 512; do
-    python run_all_4_mamba.py --max_seq_len $L --output_suffix L$L
+    python run\_all\_4\_mamba.py --max\_seq\_len $L --output_suffix L$L
 done
 \end{lstlisting}
 
@@ -856,7 +1843,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -887,6 +1874,7 @@ GPT-2 & 50.92\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1015,12 +2003,13 @@ GPT-2 & 50.92\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Decay Parameterization}
 
 \[
-\gamma_i = \sigma(-\exp(A_{\log, i}))
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
 \tag{A.1}
 \]
 
@@ -1035,12 +2024,12 @@ Since $\sigma(z) \in (0, 1)$:
 For query $i$ and key $j$, define:
 
 \[
-d_{ij} = \max(0, i - j)
+d\_{ij} = \max(0, i - j)
 \tag{A.2}
 \]
 
 \[
-\ell_{ij}^{(d)} = d_{ij} \cdot \log \gamma_d
+\ell\_{ij}^{(d)} = d\_{ij} \cdot \log \gamma\_d
 \tag{A.3}
 \]
 
@@ -1048,7 +2037,7 @@ For $j \leq i$: $d_{ij} = i - j \geq 0$. Since $\log \gamma_d < 0$
 (for $\gamma_d < 1$):
 
 \[
-\ell_{ij}^{(d)} = (i - j) \log \gamma_d \leq 0
+\ell\_{ij}^{(d)} = (i - j) \log \gamma\_d \leq 0
 \tag{A.4}
 \]
 
@@ -1060,7 +2049,7 @@ For $j > i$: we mask with $-\infty$ (causal).
 \subsection{A.3 Softmax Over Distance}
 
 \[
-w_{ij}^{(d)} = \frac{\exp(\ell_{ij}^{(d)})}{\sum_{j'} \exp(\ell_{ij'}^{(d)})}
+w\_{ij}^{(d)} = \frac{\exp(\ell\_{ij}^{(d)})}{\sum\_{j'} \exp(\ell\_{ij'}^{(d)})}
 \tag{A.5}
 \]
 
@@ -1076,7 +2065,7 @@ This is a geometric decay over distance.
 For encoders, we compute both directions:
 
 \[
-\text{Out} = 0.5 \cdot (W^\text{fwd} P_1 + W^\text{bwd} P_1)
+\text{Out} = 0.5 \cdot (W^\text{fwd} P\_1 + W^\text{bwd} P\_1)
 \tag{A.6}
 \]
 
@@ -1106,7 +2095,7 @@ At init $g = 2.0$:
 \subsection{A.6 Gated Fusion}
 
 \[
-\text{Out} = \text{SiLU}(p_1) \odot p_2
+\text{Out} = \text{SiLU}(p\_1) \odot p\_2
 \tag{A.10}
 \]
 
@@ -1135,7 +2124,7 @@ $j \leq i$.
 \textbf{Proof.} The causal mask sets $w_{ij} = 0$ for $j > i$. So:
 
 \[
-\text{Out}_i = \sum_{j \leq i} w_{ij} \cdot p_1[j]
+\text{Out}\_i = \sum\_{j \leq i} w\_{ij} \cdot p\_1[j]
 \tag{A.12}
 \]
 
@@ -1145,73 +2134,74 @@ Only inputs $j \leq i$ contribute. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Core Forward}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, L, D = hidden\_states.shape
     
     # 1. RoPE
-    if position_embeddings is not None:
+    if position\_embeddings is not None:
         # apply rotary
         ...
     
     # 2. Two-branch in-projection
-    proj = self.in_proj(hidden_states)
+    proj = self.in\_proj(hidden\_states)
     p1, p2 = proj.chunk(2, dim=-1)
     
     # 3. Decay
-    decay = torch.sigmoid(-torch.exp(self.A_log[:D].clamp(max=5.0)))
+    decay = torch.sigmoid(-torch.exp(self.A\_log[:D].clamp(max=5.0)))
     pos = torch.arange(L)
     
-    if self.is_decoder and L > 1:
+    if self.is\_decoder and L \textgreater{} 1:
         dist = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)
-        log_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
-        log_weights = dist.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)
-        causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool)).unsqueeze(-1)
-        log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
-        weights = torch.softmax(log_weights, dim=1).to(p1.dtype)
-        p1_causal = torch.einsum("ijd,bjd->bid", weights, p1)
-        gated = F.silu(p1_causal) * p2
-    elif L > 1:
+        log\_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
+        log\_weights = dist.unsqueeze(-1) * log\_gamma.unsqueeze(0).unsqueeze(0)
+        causal\_mask = torch.tril(torch.ones(L, L, dtype=torch.bool)).unsqueeze(-1)
+        log\_weights = log\_weights.masked\_fill(~causal\_mask, float("-inf"))
+        weights = torch.softmax(log\_weights, dim=1).to(p1.dtype)
+        p1\_causal = torch.einsum("ijd,bjd-\textgreater{}bid", weights, p1)
+        gated = F.silu(p1\_causal) * p2
+    elif L \textgreater{} 1:
         # bidirectional
         ...
     else:
         gated = F.silu(p1) * p2
     
     # 4. Output projection
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         out = gated
     else:
-        out = self.out_proj(gated)
+        out = self.out\_proj(gated)
     
     # 5. Preservation gate
-    alpha = torch.sigmoid(self.pres_gate)
-    out = alpha * out + (1.0 - alpha) * hidden_states
+    alpha = torch.sigmoid(self.pres\_gate)
+    out = alpha * out + (1.0 - alpha) * hidden\_states
     return out, None
 \end{lstlisting}
 
 \subsection{B.2 Weight Transfer}
 
 \begin{lstlisting}
-# in_proj branch 1 (SSM input): from V
-w_main = w_v if w_v is not None else w_q
-if w_main.shape[0] < D and D % w_main.shape[0] == 0:
-    rep = D // w_main.shape[0]
-    w_main = w_main.repeat(rep, 1)
-self.in_proj.weight.data[:D, :D].copy_(w_main[:D, :D])
+# in\_proj branch 1 (SSM input): from V
+w\_main = w\_v if w\_v is not None else w\_q
+if w\_main.shape[0] \textless{} D and D \% w\_main.shape[0] == 0:
+    rep = D // w\_main.shape[0]
+    w\_main = w\_main.repeat(rep, 1)
+self.in\_proj.weight.data[:D, :D].copy\_(w\_main[:D, :D])
 
-# in_proj branch 2 (gate): from Q
-w_gate = w_q if w_q is not None else w_k
-if w_gate.shape[0] < D and D % w_gate.shape[0] == 0:
-    rep = D // w_gate.shape[0]
-    w_gate = w_gate.repeat(rep, 1)
-self.in_proj.weight.data[D:2*D, :D].copy_(w_gate[:D, :D])
+# in\_proj branch 2 (gate): from Q
+w\_gate = w\_q if w\_q is not None else w\_k
+if w\_gate.shape[0] \textless{} D and D \% w\_gate.shape[0] == 0:
+    rep = D // w\_gate.shape[0]
+    w\_gate = w\_gate.repeat(rep, 1)
+self.in\_proj.weight.data[D:2*D, :D].copy\_(w\_gate[:D, :D])
 
-# out_proj: from O
-self.out_proj.weight.data.copy_(w_o[:D, :D])
+# out\_proj: from O
+self.out\_proj.weight.data.copy\_(w\_o[:D, :D])
 \end{lstlisting}
 
 \subsection{B.3 Common Pitfalls}
@@ -1241,6 +2231,7 @@ Check \texttt{self.query} \textbf{before} class-name heuristics.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1377,13 +2368,14 @@ Step  Loss
 \subsection{C.9 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_mamba.py --recovery_steps 50
+python run\_all\_4\_mamba.py --recovery\_steps 50
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1494,6 +2486,7 @@ Init 2.0 is near-optimal.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1559,3 +2552,4 @@ complexity.
 
 ---
 \end{lstlisting}
+

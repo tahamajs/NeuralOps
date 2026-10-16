@@ -1,0 +1,3 @@
+# Appendix B. Implementation Details & Code Mapping
+
+Detailed mappings of `split_head_hybrid` to PyTorch layers, autograd functions, and Triton kernels.

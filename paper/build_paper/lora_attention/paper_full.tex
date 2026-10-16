@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{LoRA Attention: Production-Hardened Parameter-Efficient Attention Fine-Tuning Across Four Transformer Architectures}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -19,8 +21,8 @@ LoRA (Hu et al., 2021) reduces this dramatically by freezing the base model
 and training only rank-$r_L$ adapters:
 
 \[
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad
-B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A, \quad
+B \in \mathbb{R}^{d \times r\_L}, \quad A \in \mathbb{R}^{r\_L \times k}
 \tag{1.1}
 \]
 
@@ -39,7 +41,7 @@ $\{W_Q, W_K, W_V, W_O\}$, we seek a parameter-efficient adaptation mechanism
 $\mathcal{A}'$ such that:
 
 \[
-\text{Params}_\text{trainable}(\mathcal{A}') \ll \text{Params}(\mathcal{M})
+\text{Params}\_\text{trainable}(\mathcal{A}') \ll \text{Params}(\mathcal{M})
 \tag{1.2}
 \]
 
@@ -96,6 +98,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Parameter-Efficient Fine-Tuning}
@@ -151,6 +154,888 @@ projections with multi-architecture weight transfer.
 
 \subsection{Multi-Architecture Support}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Framework} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Qwen} \\
+\midrule
+HuggingFace PEFT &  &  &  &  \\
+PEFT-LoRA (custom) & Partial & Partial & Partial & Partial \\
+\textbf{LoRA Attention} &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Standard LoRA} & \textbf{LoRA Attention} \\
+\midrule
+Target & FFN & Attention \\
+Architectures & 1-2 & \textbf{4} \\
+Mergeable &  &  \\
+Compression-compatible & No & \textbf{Yes} \\
+Safe nested detection & Varies &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} LoRA Attention is designed as a \textbf{recovery mechanism} 
+for compression pipelines, with verified compatibility across four model 
+families.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Attention Projections}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+with $W_Q \in \mathbb{R}^{d \times H d_h}$ and $W_K, W_V \in \mathbb{R}^{d \times H_{kv} d_h}$.
+
+The output projection:
+
+\[
+\text{Out} = \text{Attn}(Q, K, V) \cdot W\_O, \quad W\_O \in \mathbb{R}^{H d\_h \times d}
+\tag{3.2}
+\]
+
+Total attention parameters: $4 d^2$ for standard MHA.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes weight updates as:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\tag{3.3}
+\]
+
+with $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \times d_\text{in}}$.
+
+\textbf{Initialization.} $A \sim \mathcal{N}(0, \sigma^2)$, $B = 0$. So 
+$\Delta W = 0$ at step 0.
+
+\textbf{Forward.} For input $x$:
+
+\[
+y = W\_\text{frozen} x + \frac{\alpha}{r\_L} B A x
+\tag{3.4}
+\]
+
+\textbf{Mergeability.} After training, we can compute:
+
+\[
+W\_\text{merged} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
+\tag{3.5}
+\]
+
+and discard $A, B$, giving zero inference overhead.
+
+\subsection{Trainable Parameter Count}
+
+For each attention projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\[
+\text{Trainable}\_\text{LoRA} = r\_L (d\_\text{out} + d\_\text{in})
+\tag{3.6}
+\]
+
+For $d = 768$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Projection} & \textbf{Frozen} & \textbf{Trainable (LoRA)} \\
+\midrule
+$W_Q$ & 589,824 & $16 \cdot 1536 = 24,576$ \\
+$W_K$ & 589,824 & 24,576 \\
+$W_V$ & 589,824 & 24,576 \\
+$W_O$ & 589,824 & 24,576 \\
+\textbf{Total} & 2,359,296 & \textbf{98,304} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Reduction:} ~24$\times$ fewer trainable parameters.
+
+\subsection{Memory Savings}
+
+Full fine-tuning requires:
+\begin{itemize}
+\item Gradients: \texttt{params $\times$ 2 bytes} (FP16)
+\item AdamW state: \texttt{params $\times$ 8 bytes} (two FP32 moments)
+\item Total: \texttt{params $\times$ 10 bytes}
+
+\end{itemize}
+For DistilBERT attention (14.2M params):
+\begin{itemize}
+\item Full FT: ~142 MB of optimizer state per layer
+\item LoRA FT: ~1 MB
+
+\end{itemize}
+\textbf{Total reduction: ~100$\times$}
+
+\subsection{Multi-Architecture Weight Formats}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_attn.weight.shape = (d, 3d)  # (in, out) -- must transpose
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+layer.attention.self.query.weight  # Linear (out, in)
+layer.attention.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen GQA}
+
+\begin{lstlisting}
+q\_proj.weight.shape = (H d\_h, d)
+k\_proj.weight.shape = (H\_kv d\_h, d)  # smaller
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q\_lin.weight.shape = (d, d)  # standard Linear
+\end{lstlisting}
+
+\subsection{Nested vs Flat Encoders}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Structure} & \textbf{Output projection} \\
+\midrule
+DistilBERT & Flat & \texttt{out\_lin} inside attention \\
+RoBERTa & Nested & \texttt{output.dense} outside attention \\
+GPT-2 & Flat & \texttt{c\_proj} inside attention \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} For nested encoders, the LoRA module must \textbf{not} apply 
+\texttt{out\_proj} -- the outer layer handles it.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}
+\tag{3.7}
+\]
+
+Expanded via \texttt{repeat\_kv} before attention.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+\[
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
+\tag{3.8}
+\]
+
+Applied to $Q, K$ after projection.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+LoRA Attention replaces each of the four attention projections with a 
+\textbf{LoRALinear} module:
+
+\[
+y = \underbrace{W\_\text{frozen} x}\_{\text{frozen, copied from pretrained}} + 
+    \underbrace{\frac{\alpha}{r\_L} B A x}\_{\text{trainable LoRA}}
+\tag{4.1}
+\]
+
+\textbf{Figure 4.1} shows the pipeline. The base weight is copied from the 
+pretrained attention via \texttt{copy\_weights}, and LoRA adapters are initialized 
+to zero ($B = 0$), so the initial forward pass exactly matches the baseline.
+
+\begin{lstlisting}
+        Input X
+           |
+            
+    +----------------------+
+    | Base W (frozen)      |
+    | + LoRA (trainable)   |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Q, K, V projections  |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | RoPE (if applicable) |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | GQA repeat (if app.) |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Scaled dot-product   |
+    | attention            |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Output projection    |
+    | + LoRA               |
+    +-------+--------------+
+            |
+        Output
+\end{lstlisting}
+
+\subsection{LoRALinear Module}
+
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True, 
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
+            # A: Kaiming, B: zeros
+            nn.init.kaiming\_uniform\_(self.lora\_A)
+            nn.init.zeros\_(self.lora\_B)
+        
+        if freeze\_base:
+            self.weight.requires\_grad = False
+            if self.bias is not None:
+                self.bias.requires\_grad = False
+        self.lora\_rank = lora\_rank
+        self.lora\_alpha = lora\_alpha
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
+    
+    def forward(self, x):
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
+\end{lstlisting}
+
+\textbf{Note.} We add a trainable \texttt{output\_scale} scalar initialized to 1.0. This 
+allows the model to globally re-scale the attention output if needed.
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts base weights from the pretrained attention and 
+copies them into the LoRALinear modules. It handles four patterns:
+
+\subsubsection{Pattern 1: GPT-2 Conv1D}
+
+\begin{lstlisting}
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
+        weight = weight.t()
+    q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+    extracted["q"] = (q\_w, ...)
+    extracted["k"] = (k\_w, ...)
+    extracted["v"] = (v\_w, ...)
+\end{lstlisting}
+
+\subsubsection{Pattern 2: RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self"):
+    s = src.self
+    extracted["q"] = (s.query.weight, ...)
+    extracted["k"] = (s.key.weight, ...)
+    extracted["v"] = (s.value.weight, ...)
+if hasattr(src, "output") and hasattr(src.output, "dense"):
+    extracted["o"] = (src.output.dense.weight, ...)
+\end{lstlisting}
+
+\subsubsection{Pattern 3: Named Projections}
+
+\begin{lstlisting}
+named\_map = {
+    "q": ["q\_proj", "q\_lin", "query"],
+    "k": ["k\_proj", "k\_lin", "key"],
+    "v": ["v\_proj", "v\_lin", "value"],
+    "o": ["o\_proj", "out\_proj", "out\_lin", "dense"],
+}
+\end{lstlisting}
+
+\subsubsection{Pattern 4: UniversalAdapter Fallback}
+
+\begin{lstlisting}
+for proj in ["q", "k", "v", "o"]:
+    try:
+        w, b = UniversalAdapter.get\_weight\_bias(src, proj)
+        if w is not None:
+            extracted[proj] = (w, b)
+    except Exception:
+        pass
+\end{lstlisting}
+
+\subsection{Nested Detection}
+
+The critical detection logic:
+
+\begin{lstlisting}
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out\_proj = any(hasattr(src, attr) for attr in 
+                   ("dense", "out\_proj", "c\_proj", "out\_lin", "o\_proj", ...))
+
+is\_nested = False
+if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+    is\_nested = True
+elif (cls\_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
+      or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)) and not has\_out\_proj:
+    is\_nested = True
+self.is\_nested\_encoder = bool(is\_nested)
+\end{lstlisting}
+
+\textbf{Rule:}
+\begin{itemize}
+\item If \texttt{self.query} exists $\to$ nested (RoBERTa).
+\item If class name is \texttt{BertSelfAttention}/\texttt{RobertaSelfAttention} $\to$ nested.
+\item If class name ends with "SelfAttention" \textbf{AND} lacks any output projection $\to$ nested.
+\item Otherwise $\to$ flat.
+
+\end{itemize}
+\subsection{Forward Pass}
+
+\textbf{Algorithm 1:} LoRA Attention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ q\_proj(X)                         base + LoRA
+ 2: K $\leftarrow$ k\_proj(X)                         base + LoRA
+ 3: V $\leftarrow$ v\_proj(X)                         base + LoRA
+ 4: Reshape to (B, H, L, d\_h)
+ 5: if RoPE: Q, K $\leftarrow$ apply\_rotary(Q, K)
+ 6: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 7: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 8: if causal: mask(scores, tril)
+ 9: if padding: mask(scores, valid)
+10: attn $\leftarrow$ softmax(scores)
+11: Context $\leftarrow$ attn V
+12: Context $\leftarrow$ reshape(B, L, H d\_h)
+13: if is\_nested\_encoder:
+14:     return Context    outer layer applies out\_proj
+15: Y $\leftarrow$ out\_proj(Context)
+16: return Y
+\end{lstlisting}
+
+\subsection{Parameter Analysis}
+
+Per attention layer (excluding base weights):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+\texttt{lora\_A\_q} & $r_L \cdot d$ \\
+\texttt{lora\_B\_q} & $H d_h \cdot r_L$ \\
+\texttt{lora\_A\_k} & $r_L \cdot d$ \\
+\texttt{lora\_B\_k} & $H_{kv} d_h \cdot r_L$ \\
+\texttt{lora\_A\_v} & $r_L \cdot d$ \\
+\texttt{lora\_B\_v} & $H_{kv} d_h \cdot r_L$ \\
+\texttt{lora\_A\_o} & $r_L \cdot H d_h$ \\
+\texttt{lora\_B\_o} & $d \cdot r_L$ \\
+\texttt{output\_scale} & 1 \\
+\textbf{Total} & $r_L (2d + 2 H d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $d_h = 64$, $H = 12$, $r_L = 16$:
+
+\[
+\text{Trainable}\_\text{LoRA} = 16 \cdot (2 \cdot 768 + 2 \cdot 768) = 49,152
+\tag{4.2}
+\]
+
+Per layer: ~49K trainable, compared to 2.36M frozen parameters.
+
+\subsection{Mergeability}
+
+After training, we can merge LoRA into the base weight:
+
+\[
+W\_\text{merged} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
+\tag{4.3}
+\]
+
+Then:
+
+\[
+y = W\_\text{merged} x + b
+\tag{4.4}
+\]
+
+\textbf{Zero inference overhead} -- the merged model is identical in structure to 
+the original.
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Training Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Full FT} & \textbf{LoRA Attention} \\
+\midrule
+Forward & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2 d_h)$ \\
+Backward (base) & $\mathcal{O}(L^2 d_h)$ & 0 \\
+Backward (LoRA) & -- & $\mathcal{O}(L^2 d_h \cdot r_L/d)$ \\
+Optimizer step & $\mathcal{O}(d^2)$ & $\mathcal{O}(r_L d)$ \\
+Memory (per param) & 10 bytes & 10 bytes (only adapters) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Inference Complexity}
+
+After merging: \textbf{identical to baseline}.
+
+Before merging: adds $\mathcal{O}(L \cdot r_L \cdot d)$ per projection.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Zero Initialization}
+
+\textbf{Claim.} At initialization, LoRA Attention is exactly equivalent to the 
+pretrained attention.
+
+\textbf{Proof.} $B = 0$, so $\Delta W = 0$. Thus $W_\text{eff} = W_\text{frozen}$. $\square$
+
+\subsubsection{Mergeability Preserves Expressivity}
+
+\textbf{Claim.} Any parameter set achievable by the LoRA branch is achievable 
+by the merged weight.
+
+\textbf{Proof.} $W_\text{merged} = W_\text{frozen} + BA$. Trivially achievable. $\square$
+
+\subsubsection{Nested Encoder Correctness}
+
+\textbf{Claim.} For nested encoders, skipping the output projection yields 
+correct attention output.
+
+\textbf{Proof.} The nested outer layer applies $W_O$. Our module returning raw 
+context matches the original architecture's flow. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer Details}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
+        weight = weight.t()
+    q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+\end{lstlisting}
+
+The Conv1D stores weights as \texttt{(in, out)}, opposite to \texttt{nn.Linear}. We 
+transpose before chunking.
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self"):
+    s = src.self
+    extracted["q"] = (s.query.weight, ...)
+    extracted["k"] = (s.key.weight, ...)
+    extracted["v"] = (s.value.weight, ...)
+
+if hasattr(src, "output") and hasattr(src.output, "dense"):
+    extracted["o"] = (src.output.dense.weight, ...)
+\end{lstlisting}
+
+\subsubsection{Qwen GQA}
+
+\begin{lstlisting}
+named\_map = {
+    "q": ["q\_proj"],
+    "k": ["k\_proj"],  # (H\_kv d\_h, d)
+    "v": ["v\_proj"],
+    "o": ["o\_proj"],
+}
+\end{lstlisting}
+
+The K, V projections are smaller in GQA ($H_{kv} < H$).
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+named\_map = {
+    "q": ["q\_lin"],
+    "k": ["k\_lin"],
+    "v": ["v\_lin"],
+    "o": ["out\_lin"],
+}
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For nested encoders:
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    output = context  # Outer layer applies output projection
+else:
+    output = self.out\_proj(context)
+\end{lstlisting}
+
+\subsection{LoRA on Nested Output}
+
+For nested encoders, \texttt{out\_proj} is set to identity:
+
+\begin{lstlisting}
+elif proj\_key == "o" and self.is\_nested\_encoder:
+    min\_d = min(target.weight.shape[0], target.weight.shape[1])
+    target.weight.data.zero\_()
+    target.weight.data[:min\_d, :min\_d].fill\_diagonal\_(1.0)
+    if target.bias is not None:
+        target.bias.data.zero\_()
+\end{lstlisting}
+
+This ensures the LoRA branch on \texttt{out\_proj} starts from identity, and the 
+outer layer's projection dominates.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject LoRA Attention
+\begin{lstlisting}
+Input:  model M, r\_L, alpha
+Output: M with attention replaced by LoRA modules
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ LoRAAttention(cfg, r\_L, alpha, pretrained\_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing} non-empty & \textbf{Raise RuntimeError} \\
+Near-zero norm & Frobenius check & \textbf{Raise RuntimeError} \\
+copy\_weights fails & Exception & \textbf{Raise RuntimeError} \\
+Injection fail & Exception & \textbf{Raise RuntimeError} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Unlike other modules in this suite, LoRA Attention **does not 
+gracefully degrade\textbf{ -- it fails hard. This is intentional because }silent 
+failure would corrupt the base weights**.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("lora\_attn")
+@ATTENTION\_REGISTRY.register("lora\_attention")
+class LoRAAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with Compression}
+
+LoRA Attention can be applied on top of any compressed attention:
+
+\begin{lstlisting}
+# 1. Compress with SVD
+compressed\_attn = SVDLinear(original\_attn, rank=64)
+
+# 2. Wrap with LoRA
+lora\_attn = LoRALinear(compressed\_attn)
+
+# 3. Fine-tune LoRA only
+for p in compressed\_attn.parameters():
+    p.requires\_grad = False
+for p in lora\_attn.parameters():
+    p.requires\_grad = True
+\end{lstlisting}
+
+This pattern enables \textbf{post-compression recovery} for SVD/pruning/quantization 
+methods.
+
+\subsection{Merge Procedure}
+
+\begin{lstlisting}
+def merge\_lora(model):
+    """Merge LoRA adapters into base weights for zero inference overhead."""
+    for name, module in model.named\_modules():
+        if isinstance(module, LoRALinear):
+            with torch.no\_grad():
+                delta = (module.lora\_B @ module.lora\_A) * module.lora\_scaling
+                module.weight.data += delta
+                # Delete LoRA params
+                module.lora\_A = None
+                module.lora\_B = None
+                module.lora\_rank = 0
+\end{lstlisting}
+
+After merging, \texttt{model} has no LoRA parameters, only the merged weights.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of lora\_attention.}
+\label{fig:arch_lora-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max sequence length: 128.
+
+\subsection{LoRA Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{output\_scale} init & 1.0 \\
+Base weights & Frozen \\
+Dropout & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
+Steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Trainable parameters
+\item Training memory
+\item Training time
+\item Inference time (before/after merge)
+
+\end{itemize}
+\subsubsection{Comparison}
+\begin{itemize}
+\item Full fine-tuning (baseline)
+\item LoRA on FFN only (ablation)
+\item LoRA on Q/V only (ablation)
+\item LoRA on all four projections (ours)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_lora\_attention.py \
+    --models distilbert,roberta,gpt2 \
+    --lora\_rank 8 \
+    --lora\_alpha 16 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention, no LoRA \\
+\texttt{lora\_attention} & Our method (LoRA on all four) \\
+\texttt{lora\_qv} & LoRA only on Q, V \\
+\texttt{lora\_ffn} & LoRA only on FFN \\
+\texttt{full\_ft} & Full fine-tuning (compute-expensive) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -163,7 +1048,7 @@ DistilBERT & \textbf{Lora Attention} & \textbf{89.91\%} & -0.57\% & PASS & 0.903
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Lora Attention} & \textbf{58.03\%} & -17.08\% & PASS & 0.6856 & 0 & \textbf{0.93$\times$} & 390.9 MB & 6.3 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Lora Attention} & \textbf{51.26\%} & -9.52\% & PASS_LOW & 0.6763 & 0 & \textbf{0.98$\times$} & 580.0 MB & 7.1 & -- \\
+GPT-2 & \textbf{Lora Attention} & \textbf{51.26\%} & -9.52\% & PASS\_LOW & 0.6763 & 0 & \textbf{0.98$\times$} & 580.0 MB & 7.1 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -368,12 +1253,13 @@ Pruning (50\%) & 0.85 & 0.85 & +32\% \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/lora_attention_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lora_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/lora\_attention\_dissection\_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lora\_attention}.}
 \label{fig:results_lora_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why LoRA on Attention Works}
@@ -445,17 +1331,17 @@ We verify merge by comparing forward passes:
 
 \begin{lstlisting}
 # Before merge
-out_before = model(x)
+out\_before = model(x)
 
 # Merge
-merge_lora(model)
+merge\_lora(model)
 
 # After merge
-out_after = model(x)
+out\_after = model(x)
 
-diff = (out_before - out_after).abs().max()
+diff = (out\_before - out\_after).abs().max()
 print(f"Max diff: {diff.item()}")
-# Expected: < 1e-4 (numerical precision)
+# Expected: \textless{} 1e-4 (numerical precision)
 \end{lstlisting}
 
 All models pass this test.
@@ -519,6 +1405,7 @@ Slow convergence & Extremely low LR & Hyperparameter & Increase LR \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -626,11 +1513,11 @@ Multiple LoRA adapters can be stored and swapped:
 
 \begin{lstlisting}
 # Load task A
-model.load_lora("task_a.pt")
+model.load\_lora("task\_a.pt")
 # Inference...
 
 # Swap to task B
-model.load_lora("task_b.pt")
+model.load\_lora("task\_b.pt")
 # Inference...
 \end{lstlisting}
 
@@ -664,6 +1551,7 @@ Each adapter is only ~84.5 MB.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{No Parameter Reduction}
@@ -686,7 +1574,7 @@ Only SST-2 evaluated. Behavior on generation tasks unknown.
 \midrule
 $\le$124M & Yes \\
 1B--10B & No \\
->10B & No \\
+\textgreater{}10B & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -750,6 +1638,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -825,13 +1714,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -840,64 +1730,64 @@ pip install -r requirements.txt
 \subsection{Running LoRA Attention}
 
 \begin{lstlisting}
-python run_all_4_lora_attention.py \
+python run\_all\_4\_lora\_attention.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank 8 \
-    --lora_alpha 16 \
-    --recovery_steps 50
+    --lora\_rank 8 \
+    --lora\_alpha 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,lora_attention \
-    --lora_rank 8 \
-    --recovery_steps 50
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,lora\_attention \
+    --lora\_rank 8 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_lora_attention.py
+python run\_all\_4\_lora\_attention.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Which projections)}
 \begin{lstlisting}
 # Q only
-python run_all_4_lora_attention.py --targets q
+python run\_all\_4\_lora\_attention.py --targets q
 
 # Q,V
-python run_all_4_lora_attention.py --targets q,v
+python run\_all\_4\_lora\_attention.py --targets q,v
 
 # All
-python run_all_4_lora_attention.py --targets q,k,v,o
+python run\_all\_4\_lora\_attention.py --targets q,k,v,o
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Rank ablation)}
 \begin{lstlisting}
 for r in 4 8 16 32 64; do
-    python run_all_4_lora_attention.py --lora_rank $r --output_suffix r$r
+    python run\_all\_4\_lora\_attention.py --lora\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsection{Merge Test}
 
 \begin{lstlisting}
-from framework.attentions.lora_attention import merge_lora
+from framework.attentions.lora\_attention import merge\_lora
 
 # Before merge
-out_before = model(x)
+out\_before = model(x)
 
 # Merge
-merge_lora(model)
+merge\_lora(model)
 
 # After merge
-out_after = model(x)
-diff = (out_before - out_after).abs().max()
-assert diff < 1e-4
+out\_after = model(x)
+diff = (out\_before - out\_after).abs().max()
+assert diff \textless{} 1e-4
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -906,7 +1796,7 @@ assert diff < 1e-4
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -937,6 +1827,7 @@ GPT-2 & 51.26\% $\pm$ 1\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1054,6 +1945,7 @@ GPT-2 & 51.26\% $\pm$ 1\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 LoRA Decomposition}
@@ -1061,7 +1953,7 @@ GPT-2 & 51.26\% $\pm$ 1\% & 0.85 \\
 For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \[
-W = W_0 + \Delta W, \quad \Delta W = \frac{\alpha}{r_L} B A
+W = W\_0 + \Delta W, \quad \Delta W = \frac{\alpha}{r\_L} B A
 \tag{A.1}
 \]
 
@@ -1081,7 +1973,7 @@ At initialization:
 \end{itemize}
 Then:
 \[
-\Delta W = \frac{\alpha}{r_L} \cdot 0 \cdot A = 0
+\Delta W = \frac{\alpha}{r\_L} \cdot 0 \cdot A = 0
 \tag{A.2}
 \]
 
@@ -1095,7 +1987,7 @@ LoRA parameters: $r_L \cdot d_\text{in} + d_\text{out} \cdot r_L = r_L (d_\text{
 
 \textbf{Reduction ratio:}
 \[
-\frac{d_\text{out} \cdot d_\text{in}}{r_L (d_\text{in} + d_\text{out})}
+\frac{d\_\text{out} \cdot d\_\text{in}}{r\_L (d\_\text{in} + d\_\text{out})}
 \tag{A.3}
 \]
 
@@ -1110,7 +2002,7 @@ For $d_\text{out} = d_\text{in} = 768$, $r_L = 16$:
 For all four projections (with $H_{kv} = H$):
 
 \[
-\text{Trainable}_\text{LoRA} = r_L (2d + 2 H d_h)
+\text{Trainable}\_\text{LoRA} = r\_L (2d + 2 H d\_h)
 \tag{A.5}
 \]
 
@@ -1124,13 +2016,13 @@ For $d = 768$, $H = 12$, $d_h = 64$:
 
 After training, define:
 \[
-W_\text{merged} = W_0 + \frac{\alpha}{r_L} B A
+W\_\text{merged} = W\_0 + \frac{\alpha}{r\_L} B A
 \tag{A.7}
 \]
 
 Then:
 \[
-y = W_\text{merged} x = W_0 x + \frac{\alpha}{r_L} B A x
+y = W\_\text{merged} x = W\_0 x + \frac{\alpha}{r\_L} B A x
 \tag{A.8}
 \]
 
@@ -1159,7 +2051,7 @@ LoRA requires:
 LoRA can represent any $\Delta W$ of rank $\leq r_L$:
 
 \[
-\text{rank}(\Delta W) = \text{rank}(BA) \leq \min(r_L, \text{rank}(B), \text{rank}(A)) \leq r_L
+\text{rank}(\Delta W) = \text{rank}(BA) \leq \min(r\_L, \text{rank}(B), \text{rank}(A)) \leq r\_L
 \tag{A.9}
 \]
 
@@ -1182,79 +2074,80 @@ matches the original flow. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 LoRALinear Module}
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
-        super().__init__()
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True,
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
         else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            self.register\_parameter("lora\_A", None)
+            self.register\_parameter("lora\_B", None)
         
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
     
-    def reset_parameters(self):
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    def reset\_parameters(self):
+        nn.init.kaiming\_uniform\_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
+            fan\_in, \_ = nn.init.\_calculate\_fan\_in\_and\_fan\_out(self.weight)
+            bound = 1 / math.sqrt(fan\_in) if fan\_in \textgreater{} 0 else 0
+            nn.init.uniform\_(self.bias, -bound, bound)
         
-        if self.lora_rank > 0:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+        if self.lora\_rank \textgreater{} 0:
+            nn.init.kaiming\_uniform\_(self.lora\_A, a=math.sqrt(5))
+            nn.init.zeros\_(self.lora\_B)
     
-    def freeze_base_weights(self):
-        self.weight.requires_grad = False
+    def freeze\_base\_weights(self):
+        self.weight.requires\_grad = False
         if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            self.lora_A.requires_grad = True
-            self.lora_B.requires_grad = True
+            self.bias.requires\_grad = False
+        if self.lora\_rank \textgreater{} 0:
+            self.lora\_A.requires\_grad = True
+            self.lora\_B.requires\_grad = True
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 Weight Extraction}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
     
     # 1. UniversalAdapter
     for proj in ["q", "k", "v", "o"]:
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
             if w is not None:
                 extracted[proj] = (w, b)
         except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+            print(f'copy\_weights failed: {e}')
+            raise RuntimeError(f"copy\_weights failed: {e}")
     
     # 2. GPT-2 Conv1D
-    if hasattr(src, "c_attn") and (extracted["q"][0] is None or ...):
-        weight = src.c_attn.weight.data
-        if weight.shape[1] == 3 * self.hidden_size:
+    if hasattr(src, "c\_attn") and (extracted["q"][0] is None or ...):
+        weight = src.c\_attn.weight.data
+        if weight.shape[1] == 3 * self.hidden\_size:
             weight = weight.t()
-        q_w, k_w, v_w = weight.chunk(3, dim=0)
-        extracted["q"] = (q_w, ...)
+        q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+        extracted["q"] = (q\_w, ...)
         ...
     
     # 3. RoBERTa nested
@@ -1264,11 +2157,11 @@ def copy_weights(self, src):
         ...
     
     # 4. Named projections
-    named_map = {"q": ["q_proj", "q_lin", "query"], ...}
+    named\_map = {"q": ["q\_proj", "q\_lin", "query"], ...}
     
     # Nested detection
     if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-        self.is_nested_encoder = True
+        self.is\_nested\_encoder = True
     ...
 \end{lstlisting}
 
@@ -1300,6 +2193,7 @@ in FP32.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1422,13 +2316,14 @@ SVD r=64 & 0.85 & 0.85 & 32 \\
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_lora_attention.py --lora_rank 16 --lora_alpha 32
+python run\_all\_4\_lora\_attention.py --lora\_rank 16 --lora\_alpha 32
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1527,7 +2422,7 @@ Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
 \subsection{D.4 Lessons Learned}
 
 \begin{enumerate}
-\item \textbf{Attention LoRA > FFN LoRA.}
+\item \textbf{Attention LoRA \textgreater{} FFN LoRA.}
 \item \textbf{All four projections matter.}
 \item \textbf{Zero-init B is essential.}
 \item \textbf{Rank 16 is a good default.}
@@ -1538,6 +2433,7 @@ Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1603,3 +2499,4 @@ Drafted with LLM assistance. Content reviewed by authors.
 
 ---
 \end{lstlisting}
+

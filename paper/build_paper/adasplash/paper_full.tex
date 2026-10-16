@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{AdaSplash: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations and Local Sliding-Window Masking}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -12,7 +14,7 @@ The softmax attention function (Vaswani et al., 2017) is the fundamental
 primitive of transformer architecture:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -45,7 +47,7 @@ Peters et al. (2019) introduce \textbf{$\alpha$-entmax}, a family of activation 
 parameterized by $\alpha \in [1, 2]$:
 
 \[
-\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
 \tag{1.2}
 \]
 
@@ -160,6 +162,7 @@ limitations. Section 11 concludes.
 \subsection{Notation}
 
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -219,6 +222,1032 @@ Orthogonal extension.
 components. Compatible with AdaSplash.
 
 \subsection{Efficient Attention Mechanisms}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Sparse?} & \textbf{Sinks?} \\
+\midrule
+Softmax attention \& Dense & $\mathcal{O}(L^2)$ \& No \& No \\
+Longformer \& Local & $\mathcal{O}(L W)$ \& No \& No \\
+BigBird \& Local + random & $\mathcal{O}(L W)$ \& No \& No \\
+Sparsemax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+Entmax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+StreamingLLM \& Sink + window & $\mathcal{O}(L W)$ \& No \& Yes \\
+\textbf{AdaSplash} & \textbf{Sink + window + entmax} & \textbf{$\mathcal{O}(L W)$} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+AdaSplash is unique in combining:
+\begin{enumerate}
+\item \textbf{$\alpha$-entmax sparsity} at the activation level (not mask level).
+\item \textbf{Local splash radius} with sink preservation.
+\item \textbf{Multi-architecture support} including GQA and RoPE.
+\item \textbf{Frozen base + LoRA} for parameter-efficient adaptation.
+
+\end{enumerate}
+The closest prior work is the \textbf{combination} of Longformer (local window) 
+with $\alpha$-entmax (sparsity). To our knowledge, no published work evaluates this 
+specific combination on small pretrained models with LoRA recovery.
+
+\subsection{Important Distinction}
+
+Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
+\begin{itemize}
+\item Does \textbf{not} reduce parameter count.
+\item Does \textbf{not} compress weights.
+\item \textbf{Increases} parameter count by ~0.88\% via LoRA.
+
+\end{itemize}
+Its value is in \textbf{sparsity} and \textbf{interpretability}, not size.
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Standard Softmax Attention}
+
+For query-key scores $s = Q K^\top / \sqrt{d_h}$, softmax produces:
+
+\[
+p\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}}, \quad p\_i \textgreater{} 0, \quad \sum\_i p\_i = 1
+\tag{3.1}
+\]
+
+Two properties matter here:
+
+\begin{enumerate}
+\item \textbf{Strict positivity.} Every $p_i > 0$; no exact zeros.
+\item \textbf{Max-entropy solution.} Softmax solves:
+
+\end{enumerate}
+\[
+\text{softmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H(p)
+\tag{3.2}
+\]
+
+where $H$ is Shannon entropy. The entropy regularization spreads mass 
+uniformly.
+
+\subsection{The $\alpha$-Entmax Family}
+
+Replacing Shannon entropy with \textbf{Tsallis entropy} $H_\alpha^T$:
+
+\[
+H\_\alpha^T(p) = \begin{cases}
+\frac{1}{\alpha (\alpha - 1)} \sum\_i (p\_i - p\_i^\alpha) & \alpha \neq 1 \\
+-\sum\_i p\_i \log p\_i & \alpha = 1
+\end{cases}
+\tag{3.3}
+\]
+
+gives the $\alpha$-entmax family:
+
+\[
+\text{$\alpha$-entmax}(s) = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
+\tag{3.4}
+\]
+
+\textbf{Closed form.} For $\alpha > 1$:
+
+\[
+\text{$\alpha$-entmax}(s)\_i = \max\!\left(0, (\alpha - 1) s\_i - \tau\right)^{1/(\alpha - 1)}
+\tag{3.5}
+\]
+
+where $\tau$ is chosen so that $\sum_i p_i = 1$.
+
+\textbf{Support.} The value $\tau$ determines the \textbf{support} of the output:
+
+\[
+S = \{i : (\alpha - 1) s\_i \textgreater{} \tau\}
+\tag{3.6}
+\]
+
+For $\alpha = 1.5$: $p_i \propto \max(0, 0.5 s_i - \tau)^2$.
+
+\subsection{Bisection for $\tau$}
+
+Solving for $\tau$ is a one-dimensional root-finding problem:
+
+\[
+f(\tau) = \sum\_i \max(0, (\alpha - 1) s\_i - \tau)^{1/(\alpha - 1)} - 1 = 0
+\tag{3.7}
+\]
+
+$f$ is monotone decreasing in $\tau$: at $\tau = -\infty$, $f = +\infty$; 
+at $\tau = +\infty$, $f = -1$. Bisection converges in $\log_2(1/\epsilon)$ 
+iterations. Our implementation uses 25 iterations, giving precision 
+$\sim 10^{-7}$.
+
+\textbf{Initial bounds.}
+
+\begin{itemize}
+\item $\tau_\text{hi} = 0$ (a natural upper bound since scores are typically
+  shifted so max = 0).
+\item $\tau_\text{lo} = \min_i (\alpha - 1) s_i - 1$ (a lower bound below which
+  all weights are positive).
+
+\end{itemize}
+\subsection{Numerical Stability}
+
+\textbf{Score shifting.} To avoid overflow in $(\alpha - 1) s_i$, we shift scores 
+by subtracting $\max_i s_i$. This preserves the argmax but bounds the 
+exponent.
+
+\textbf{Fallback.} If the support is empty (all weights zero), the output would be 
+ill-defined. We fall back to softmax on the same masked scores.
+
+\subsection{Attention Sinks}
+
+\textbf{Definition.} Xiao et al. (2024) define attention sinks as tokens that 
+receive high attention regardless of query content. In pretrained transformers, 
+the first few tokens act as sinks because:
+
+\begin{enumerate}
+\item Positional embeddings for position 0 are unique.
+\item Token 0 is often \texttt{[CLS]} or \texttt{\textless{}s\textgreater{}}, a natural aggregator.
+
+\end{enumerate}
+\textbf{Empirical observation.} Removing sink tokens causes measurable accuracy 
+degradation. Preserving them (first 4 in our implementation) maintains 
+stability.
+
+\subsection{Local Splash Radius}
+
+For causal decoders, we restrict attention to:
+
+\[
+\text{mask}(i, j) = \begin{cases}
+1 & \text{if } 0 \leq i - j \leq W \\
+1 & \text{if } j \textless{} S \\
+0 & \text{otherwise}
+\end{cases}
+\tag{3.8}
+\]
+
+where $W$ is the splash radius (default 32) and $S = 4$ is the sink count. 
+Non-causal (bidirectional) models use the full attention (no windowing).
+
+\subsection{LoRA Adapters}
+
+LoRA (Hu et al., 2021) parameterizes a weight update:
+
+\[
+W\_\text{effective} = W\_\text{frozen} + B A
+\tag{3.9}
+\]
+
+with $A \in \mathbb{R}^{r_L \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r_L}$, 
+$B = 0$ at initialization.
+
+\textbf{In AdaSplash.} LoRA is added to each attention projection. The 
+initial forward pass equals the pretrained model (since $B = 0$).
+
+\subsection{Notation Summary}
+
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+AdaSplash replaces the attention mechanism of a pretrained transformer with 
+four modifications:
+
+\begin{enumerate}
+\item \textbf{$\alpha$-Entmax normalization} ( 4.2) replaces softmax.
+\item \textbf{Local splash masking} ( 4.3) restricts attention to a sliding window
+  plus sink tokens.
+\item \textbf{Frozen base weights + LoRA} ( 4.4) preserves pretrained representations
+  while providing trainable capacity.
+\item \textbf{Multi-architecture weight transfer} ( 4.5) enables drop-in replacement.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +------------------------------------------+
+    |  Pretrained attention A with Q, K, V, O  |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  AdaSplash attention A':                 |
+    |    1. Project with frozen base + LoRA    |
+    |    2. Apply splash mask                  |
+    |    3. Apply $\alpha$-entmax                     |
+    |    4. Compute context, apply out\_proj    |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  Compressed attention with:              |
+    |    - Frozen base weights (exact copy)    |
+    |    - Trainable LoRA adapters (rank r\_L)  |
+    |    - $\alpha$-entmax sparse activations         |
+    |    - Local splash window                 |
+    +------------------------------------------+
+\end{lstlisting}
+
+\subsection{Phase 1: $\alpha$-Entmax Normalization}
+
+\subsubsection{Problem Statement}
+
+Given scores $s \in \mathbb{R}^{L}$, compute:
+
+\[
+p\_i = \max(0, (\alpha - 1) s\_i - \tau)^{1/(\alpha - 1)}
+\tag{4.1}
+\]
+
+with $\tau$ chosen so that $\sum_i p_i = 1$.
+
+\subsubsection{Bisection Algorithm}
+
+\textbf{Algorithm 1:} $\alpha$-Entmax via bisection
+\begin{lstlisting}
+Input: scores s $\in$ R^{B$\times$H$\times$L\_q$\times$L\_k}, $\alpha$, valid\_mask, n\_iter
+Output: p $\in$ R^{B$\times$H$\times$L\_q$\times$L\_k} with sum\_i p\_i = 1
+
+1:  if |$\alpha$ - 1| \textless{} $\epsilon$:                          Softmax case
+2:      return softmax(s, masked)
+3:
+4:  s\_masked $\leftarrow$ mask\_invalid(s, -10000)
+5:  s\_shift $\leftarrow$ s\_masked - max(s\_masked)
+6:  scaled $\leftarrow$ s\_shift * ($\alpha$ - 1)
+7:
+8:  $\tau$\_lo $\leftarrow$ min(scaled) - 1
+9:  $\tau$\_hi $\leftarrow$ 0
+10:
+11: for \_ in range(n\_iter):
+12:     $\tau$ $\leftarrow$ ($\tau$\_lo + $\tau$\_hi) / 2
+13:     p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
+14:     p $\leftarrow$ mask\_invalid(p, 0)
+15:     sum\_p $\leftarrow$ sum(p)
+16:     if sum\_p \textgreater{} 1:
+17:         $\tau$\_lo $\leftarrow$ $\tau$
+18:     else:
+19:         $\tau$\_hi $\leftarrow$ $\tau$
+20:
+21: $\tau$ $\leftarrow$ ($\tau$\_lo + $\tau$\_hi) / 2
+22: p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
+23: p $\leftarrow$ mask\_invalid(p, 0)
+24: p $\leftarrow$ p / sum(p)                            Normalize
+25:
+26: if sum(p) \textless{} $\epsilon$:                             Support empty
+27:     p $\leftarrow$ softmax(s\_masked)                   Fallback
+28:
+29: return p
+\end{lstlisting}
+
+\textbf{Convergence.} Bisection on $[\tau_\text{lo}, \tau_\text{hi}]$ converges 
+to precision $(\tau_\text{hi} - \tau_\text{lo}) / 2^{n_\text{iter}}$. With 
+25 iterations and initial range $O(1)$, precision is $O(10^{-7})$.
+
+\textbf{Numerical stability.}
+
+\begin{enumerate}
+\item \textbf{Shift scores.} Subtract $\max_i s_i$ to bound $(\alpha - 1) s_i$.
+\item \textbf{Mask invalid keys.} Set to $-10000$ before the algorithm.
+\item \textbf{Softmax fallback.} If the support is empty (all p\_i = 0), fall back
+  to softmax.
+
+\end{enumerate}
+\subsubsection{Complexity}
+
+\begin{itemize}
+\item \textbf{Time:} $O(n_\text{iter} \cdot L^2)$ for sequence length $L$.
+\item \textbf{Memory:} $O(L^2)$ for the attention matrix.
+
+\end{itemize}
+For $L = 128$ and $n_\text{iter} = 25$: ~$4 \times 10^5$ operations per head, 
+comparable to 25 softmaxes.
+
+\subsubsection{Sparsity Pattern}
+
+For $\alpha = 1.5$, the support size depends on the score distribution:
+
+\begin{itemize}
+\item \textbf{Uniform scores:} ~50\% sparsity (barely sparse).
+\item \textbf{Peaked scores:} ~80\% sparsity.
+\item \textbf{Real attention scores:} ~40\% sparsity empirically.
+
+\end{itemize}
+\textbf{Figure 4.2} shows sparsity vs $\alpha$ for a typical attention layer.
+
+\subsection{Phase 2: Local Splash Masking}
+
+\subsubsection{Splash Mask Definition}
+
+For causal decoders, we restrict attention to a local window of radius $W$ 
+plus the first $S$ sink tokens:
+
+\[
+\text{splash}(i, j) = \begin{cases}
+1 & \text{if } 0 \leq i - j \leq W \\
+1 & \text{if } j \textless{} S \\
+0 & \text{otherwise}
+\end{cases}
+\tag{4.2}
+\]
+
+Keys outside the splash mask are set to $-10000$ before entmax.
+
+\subsubsection{Non-Causal Models}
+
+For bidirectional encoders (DistilBERT, RoBERTa), we \textbf{do not} apply 
+splash masking. The full attention is used with $\alpha$-entmax. This preserves 
+global context.
+
+\textbf{Rationale.} Splash masking is a \textbf{decoder-specific} technique for 
+long-context inference. On short sequences (L $\le$ 128), the window radius 
+$W = 32$ would restrict attention unnecessarily for encoders.
+
+\subsubsection{Interaction with Attention Sinks}
+
+The sink tokens ($j < S$, default $S = 4$) are always preserved, even outside 
+the splash window. This maintains the stability property discovered by 
+Xiao et al. (2024).
+
+\subsection{Phase 3: Frozen Base Weights + LoRA}
+
+\subsubsection{Base Weight Transfer}
+
+For each projection $P \in \{Q, K, V, O\}$, we copy $W_P$ from the pretrained 
+attention module. The exact copy procedure depends on the architecture:
+
+\begin{itemize}
+\item \textbf{DistilBERT:} Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
+\item \textbf{RoBERTa:} Copy from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; leave
+  \texttt{out\_proj} identity (outer \texttt{output.dense} applies it).
+\item \textbf{GPT-2:} Split fused \texttt{c\_attn.weight} (transposed) into Q, K, V; copy
+  \texttt{c\_proj.weight}.
+\item \textbf{Qwen:} Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
+
+\end{itemize}
+\subsubsection{Freezing Base}
+
+After copying, base weights are frozen (\texttt{requires\_grad = False}). Biases are 
+also frozen if present.
+
+\subsubsection{LoRA Adapters}
+
+For each projection, we add a rank-$r_L$ adapter:
+
+\[
+\Delta W\_P = B\_P A\_P, \quad A\_P \in \mathbb{R}^{r\_L \times d\_\text{in}}, \quad B\_P \in \mathbb{R}^{d\_\text{out} \times r\_L}
+\tag{4.3}
+\]
+
+with initialization:
+
+\[
+A\_P \sim \mathcal{N}(0, \sigma^2), \quad B\_P = 0
+\tag{4.4}
+\]
+
+At initialization, $\Delta W_P = 0$, so the forward pass matches the 
+pretrained model exactly.
+
+\subsubsection{Forward Pass}
+
+\[
+\text{Proj}\_P(x) = x W\_P^\top + x (B\_P A\_P)^\top + b\_P
+\tag{4.5}
+\]
+
+\[
+\text{Proj}\_P(x) = x W\_P^\top + (x A\_P^\top) B\_P^\top + b\_P
+\tag{4.6}
+\]
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d_\text{in} d_\text{out}$ \\
+AdaSplash base (frozen) & $d_\text{in} d_\text{out}$ (same) \\
+AdaSplash + LoRA & $d_\text{in} d_\text{out} + r_L (d_\text{in} + d_\text{out})$ \\
+\textbf{Parameter change} & \textbf{+$r_L (d_\text{in} + d_\text{out})$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$: each projection adds $16 \times 1536 = 24{,}576$ 
+parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
+
+\textbf{AdaSplash is not a compression method.}
+
+\subsection{Phase 4: Multi-Architecture Weight Transfer}
+
+\subsubsection{Architecture Detection}
+
+\begin{lstlisting}
+# Nested encoder detection
+is\_nested = (
+    hasattr(src, "self") and hasattr(src, "output") and
+    hasattr(src.self, "query")
+)
+\end{lstlisting}
+
+For nested encoders, we extract $Q, K, V$ from \texttt{src.self} and set 
+\texttt{out\_proj} to identity (the outer \texttt{output.dense} applies the projection).
+
+\subsubsection{Frobenius Validation}
+
+After copying, we verify:
+
+\[
+\|W\_P\|\_F \textgreater{} 10^{-4} \quad \forall P \in \{Q, K, V\}
+\tag{4.7}
+\]
+
+If a projection has near-zero norm, we raise an error and skip injection.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 2:} AdaSplash forward pass
+\begin{lstlisting}
+Input:  hidden\_states X $\in$ R^{B$\times$L$\times$d}
+        attention\_mask, position\_embeddings
+        hyperparameters $\alpha$, W, S, r\_L
+Output: output Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q^T + (X A\_Q^T) B\_Q^T
+ 2: K $\leftarrow$ X W\_K^T + (X A\_K^T) B\_K^T
+ 3: V $\leftarrow$ X W\_V^T + (X A\_V^T) B\_V^T
+ 4:
+ 5: if position\_embeddings: (Q, K) $\leftarrow$ apply\_rotary(Q, K, cos, sin)
+ 6: if H\_kv \textless{} H: K, V $\leftarrow$ repeat\_kv(K, V)
+ 7:
+ 8: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d\_h
+ 9: S $\leftarrow$ apply\_attention\_mask(S, mask)
+10:
+11: if is\_decoder:
+12:     causal\_mask $\leftarrow$ tril(ones(L, L))
+13:     splash\_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j \textless{} S)
+14:     S $\leftarrow$ S.masked\_fill(~(causal \& splash), -10000)
+15:
+16: A $\leftarrow$ $\alpha$\_entmax(S, $\alpha$)
+17: A $\leftarrow$ dropout(A)
+18:
+19: C $\leftarrow$ A @ V
+20: C $\leftarrow$ C.view(B, L, H   d\_h)
+21:
+22: if is\_nested: Y $\leftarrow$ C
+23: else:        Y $\leftarrow$ C W\_O^T + (C A\_O^T) B\_O^T + b\_O
+24:
+25: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Phase} & \textbf{Time} \\
+\midrule
+Q/K/V projection & $O(L d^2)$ \\
+Attention scores & $O(L^2 d_h)$ \\
+$\alpha$-entmax & $O(n_\text{iter} L^2)$ \\
+Context & $O(L^2 d_h)$ \\
+Output projection & $O(L d^2)$ \\
+\textbf{Total} & $O(L^2 d_h + n_\text{iter} L^2 + L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Compared to softmax:} AdaSplash adds $n_\text{iter} \times L^2$ operations 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25$\times$ 
+slower attention.
+
+\textbf{For causal decoders with splash masking,} the mask restricts nonzero 
+entries to $\sim W \cdot L$, reducing effective attention cost. In practice, 
+this is not leveraged by PyTorch dense matmul.
+
+\subsubsection{Space Complexity}
+
+\textbf{Attention matrix:} $O(L^2)$ -- same as softmax attention.
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Parameters} \\
+\midrule
+Original & $4 d^2$ per layer \\
+AdaSplash + LoRA($r_L$) & $4 d^2 + 4 r_L (d + d)$ \\
+\textbf{Change} & \textbf{+$8 r_L d$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$: +98,304 params per layer. Across 6 layers 
+(DistilBERT): +589,824 params.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{$\alpha$-Entmax Support Sparsity}
+
+\textbf{Claim.} For $\alpha > 1$, the support of $\alpha$-entmax output has size at most 
+$L - k$ where $k$ is the number of scores below the threshold $\tau^*$.
+
+\textbf{Proof.} Any score $s_i$ with $(\alpha - 1) s_i < \tau^*$ yields $p_i = 0$. 
+The support is exactly $S = \{i : (\alpha - 1) s_i \geq \tau^*\}$. $\square$
+
+\subsubsection{Entmax vs Softmax on Peaked Distributions}
+
+\textbf{Claim.} For scores with high variance, $\alpha$-entmax with $\alpha = 1.5$ 
+produces sparser outputs than softmax.
+
+\textbf{Proof sketch.} The Tsallis entropy with $\alpha > 1$ penalizes spread 
+more than Shannon entropy. When score variance is high, the argmax pushes 
+mass to the top scores. $\square$
+
+\subsubsection{Attention Sink Preservation}
+
+\textbf{Claim.} Masking first $S$ tokens as sinks does not break causality.
+
+\textbf{Proof.} Sink tokens have $j < S \leq i$ for all queries $i \geq S$. 
+For $i < S$, causality is enforced by the lower triangular mask. $\square$
+
+\subsubsection{Approximation Error}
+
+We provide no bound on downstream accuracy loss. The approximation error is 
+determined by $\alpha$, $W$, and the interaction with LoRA recovery.
+
+\subsection{Hyperparameter Guidance}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
+\midrule
+$\alpha$ & 1.5 \& Higher = sparser (up to 2.0 = sparsemax) \\
+$W$ (splash radius) & 32 \& Higher = more context, less sparsity \\
+$S$ (sink count) & 4 \& Higher = more global context \\
+$r_L$ (LoRA rank) & 16 \& Higher = more recovery capacity \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Choosing $\alpha$:}
+
+\begin{itemize}
+\item $\alpha = 1.0$: softmax (no sparsity, baseline)
+\item $\alpha = 1.2$: mild sparsity
+\item $\alpha = 1.5$: balanced (default)
+\item $\alpha = 1.8$: sparse, may destabilize
+\item $\alpha = 2.0$: sparsemax, sparse but non-smooth
+
+\end{itemize}
+\textbf{Choosing $W$:}
+
+\begin{itemize}
+\item $W = 16$: very local (encoder-only)
+\item $W = 32$: balanced (default)
+\item $W = 64$: broader context
+\item $W = L$: no windowing (baseline attention)
+
+\end{itemize}
+\textbf{Note:} Splash masking is only applied to causal decoders. Encoders use 
+full attention.
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+AdaSplash supports the following attention variants:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No &  \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \& partial \\
+T5 & \texttt{T5Attention} \& No \& No \& No \& Yes \& not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT (Flat)}
+
+Direct extraction:
+
+\begin{lstlisting}
+W\_Q = src.q\_lin.weight  # Linear(768, 768)
+W\_K = src.k\_lin.weight
+W\_V = src.v\_lin.weight
+W\_O = src.out\_lin.weight
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}. All four projections compressed.
+
+\subsubsection{RoBERTa (Nested)}
+
+Extract from \texttt{self}:
+
+\begin{lstlisting}
+W\_Q = src.self.query.weight
+W\_K = src.self.key.weight
+W\_V = src.self.value.weight
+# W\_O is not extracted -- outer output.dense applies it
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}. During forward, \texttt{context} is returned without 
+\texttt{out\_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+Split the fused \texttt{c\_attn} weight:
+
+\begin{lstlisting}
+fused = src.c\_attn.weight.T  # (2304, 768)
+W\_Q, W\_K, W\_V = fused.chunk(3, dim=0)
+W\_O = src.c\_proj.weight.T
+\end{lstlisting}
+
+Handles the HuggingFace Conv1D layout \texttt{(in, out)}.
+
+\subsubsection{Qwen3.5 (GQA + RoPE)}
+
+Direct extraction with GQA awareness:
+
+\begin{lstlisting}
+W\_Q = src.q\_proj.weight  # (H * d\_h, d)
+W\_K = src.k\_proj.weight  # (H\_kv * d\_h, d)
+W\_V = src.v\_proj.weight
+W\_O = src.o\_proj.weight
+\end{lstlisting}
+
+RoPE applied after projection via \texttt{position\_embeddings}.
+
+\subsection{The `AdaSplashLinear` Module}
+
+\begin{lstlisting}
+class AdaSplashLinear(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, lora\_rank=16, bias=True):
+        super().\_\_init\_\_()
+        self.lora\_rank = min(lora\_rank, in\_features, out\_features)
+        
+        # Frozen base weight
+        self.weight = nn.Parameter(
+            torch.empty(out\_features, in\_features),
+            requires\_grad=False
+        )
+        
+        if bias:
+            self.bias = nn.Parameter(
+                torch.empty(out\_features),
+                requires\_grad=False
+            )
+        
+        # Trainable LoRA
+        if self.lora\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(
+                torch.empty(out\_features, self.lora\_rank)
+            )
+            self.lora\_A = nn.Parameter(
+                torch.empty(self.lora\_rank, in\_features)
+            )
+        
+        self.reset\_parameters()
+    
+    def forward(self, x):
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora\_A is not None:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B)
+        return out
+\end{lstlisting}
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 3:} Inject AdaSplash into a model
+\begin{lstlisting}
+Input:  model M, config c, hyperparameters $\alpha$, W, r\_L
+Output: M with attention replaced
+
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ find\_attention( )
+3:      if src is None: continue
+4:      new $\leftarrow$ AdaSplashAttention(c, $\alpha$, W, r\_L, pretrained\_attn=src)
+5:      new.copy\_weights(src)
+6:      replace\_attention( , new)
+7: end for
+8: return M
+\end{lstlisting}
+
+\subsection{Handling Special Cases}
+
+\subsubsection{Attention Sinks}
+
+For causal decoders, we preserve the first $S = 4$ tokens regardless of 
+splash mask:
+
+\begin{lstlisting}
+splash\_local = ((dist \textgreater{}= 0) & (dist \textless{}= W)) | (k\_idx \textless{} 4)
+\end{lstlisting}
+
+\subsubsection{GQA Expansion}
+
+\begin{lstlisting}
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
+\end{lstlisting}
+
+\subsubsection{RoPE}
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q, k = apply\_rotary\_emb(q, k, cos, sin)
+\end{lstlisting}
+
+\subsubsection{Causal Masking}
+
+\begin{lstlisting}
+if is\_decoder:
+    causal\_tril = torch.tril(torch.ones((L\_q, L\_k), device=device))
+    logits = logits.masked\_fill(~causal\_tril, -10000)
+\end{lstlisting}
+
+\subsubsection{Combined Masking}
+
+The causal mask and splash mask are combined:
+
+\begin{lstlisting}
+if is\_decoder and W \textgreater{} 0:
+    dist = q\_idx - k\_idx
+    splash = ((dist \textgreater{}= 0) & (dist \textless{}= W)) | (k\_idx \textless{} 4)
+    causal\_and\_splash = splash  # already includes causality via dist \textgreater{}= 0
+    logits = logits.masked\_fill(~causal\_and\_splash, -10000)
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("adasplash")
+@ATTENTION\_REGISTRY.register("adasplash\_attention")
+class AdaSplashAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises \& Return None \\
+Shape mismatch \& Assertion in \texttt{copy\_weights} \& Skip layer \\
+Near-zero Frobenius \& Check \textless{} 1e-4 \& Raise \\
+Entmax support empty & \texttt{sum(p) \textless{} 1e-7} \& Softmax fallback \\
+NaN in scores & \texttt{torch.isnan} \& Mask to -10000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Numerical Precision}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Precision} \\
+\midrule
+Scores \& Model dtype \\
+Entmax bisection \& FP32 internally \\
+Attention output \& Model dtype \\
+Base weights \& Model dtype \\
+LoRA \& Model dtype \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Compatibility}
+
+\subsubsection{Encoder-Decoder Models}
+
+For T5, the same class handles encoder (bidirectional, no splash) and decoder 
+(causal, splash). The \texttt{is\_decoder} flag switches behavior.
+
+\subsubsection{LoRA Wrappers}
+
+If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\_layer} and 
+preserves the outer LoRA.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/adasplash\_attention\_architecture.png}
+\caption{Architectural schematic of adasplash.}
+\label{fig:arch_adasplash}
+\end{figure}
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \& Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{AdaSplash Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+$\alpha$ (entmax) & 1.5 \& Sparsity parameter \\
+$W$ (splash radius) & 32 \& Window size \\
+$S$ (sink count) & 4 \& Fixed \\
+$n_\text{iter}$ (bisection) & 25 \& Fixed \\
+$r_L$ (LoRA rank) & 16 \& Adapter rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer \& AdamW \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision \& FP16 \\
+Trainable params \& LoRA only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trainable tensor count:} 2 tensors per projection $\times$ 4 projections $\times$ $N_l$ 
+layers = 8$N_l$ tensors.
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy
+\item F1 (binary, macro)
+\item Precision, Recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters (before/after)
+\item Peak VRAM
+\item Inference time (median of 20 runs)
+\item Attention sparsity (\% zero weights)
+
+\end{itemize}
+\subsubsection{Interpretability}
+\begin{itemize}
+\item Attention entropy
+\item Effective support size
+\item Sink token mass
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU \& NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+Transformers & 4.44.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_adasplash.py \
+    --models distilbert,roberta,gpt2 \
+    --alpha 1.5 \
+    --splash\_radius 32 \
+    --lora\_rank 16 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+Runtime: ~20 minutes.
+
+\subsection{Seeds}
+
+All experiments with seed 42.
+
+\subsection{Baselines}
+
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
 
 \begin{table*}[t]
 \centering
@@ -473,12 +1502,13 @@ GPT-2 & 128 & 76 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/adasplash_distilbert_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/adasplash\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{adasplash}.}
 \label{fig:results_adasplash}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -672,8 +1702,8 @@ If all scores for a query are near-uniform (low variance), entmax's bisection
 may produce an empty support. Our softmax fallback handles this:
 
 \begin{lstlisting}
-if sum(p) < 1e-7:
-    p = softmax(s_masked)
+if sum(p) \textless{} 1e-7:
+    p = softmax(s\_masked)
 \end{lstlisting}
 
 \subsubsection{Numerical Issues}
@@ -698,6 +1728,7 @@ No systematic failures observed.
 \item \textbf{Parameter count increases} due to LoRA -- this is not compression.
 \end{enumerate}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -841,6 +1872,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~12.4 kg CO$_2$eq.
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -878,8 +1910,8 @@ is unknown.
 
 Three models tested (66.9M--124.6M). Not tested:
 \begin{itemize}
-\item Large models (>1B)
-\item Deep models (>24 layers)
+\item Large models (\textgreater{}1B)
+\item Deep models (\textgreater{}24 layers)
 \item MoE
 \item Vision
 
@@ -936,6 +1968,7 @@ Research-grade:
 
 Compression is dual-use. See Appendix E.
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1013,14 +2046,15 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 
 None.
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1046,12 +2080,12 @@ numpy & 1.26.4 \\
 \subsection{Running AdaSplash}
 
 \begin{lstlisting}
-python run_all_4_adasplash.py \
+python run\_all\_4\_adasplash.py \
     --models distilbert,roberta,gpt2 \
     --alpha 1.5 \
-    --splash_radius 32 \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --splash\_radius 32 \
+    --lora\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \textbf{Runtime:} ~20 minutes.
@@ -1059,11 +2093,11 @@ python run_all_4_adasplash.py \
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-adasplash",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-adasplash",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -1072,20 +2106,20 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run\_all\_4\_adasplash.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.5 ($\alpha$ ablation)}
 \begin{lstlisting}
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run\_all\_4\_adasplash.py --alpha $alpha --output_suffix a$alpha
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Splash radius)}
 \begin{lstlisting}
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run\_all\_4\_adasplash.py --splash\_radius $W --output_suffix W$W
 done
 \end{lstlisting}
 
@@ -1096,8 +2130,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -1132,6 +2166,7 @@ GPT-2 & 78.78\% $\pm$ 1\% \\
 \item Entmax bisection: 25 iterations
 \end{itemize}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1293,6 +2328,7 @@ GPT-2 & 78.78\% $\pm$ 1\% \\
 }
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1301,7 +2337,7 @@ GPT-2 & 78.78\% $\pm$ 1\% \\
 \textbf{Problem.} Solve:
 
 \[
-p^* = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+p^* = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
 \tag{A.1}
 \]
 
@@ -1310,28 +2346,28 @@ where $H_\alpha^T(p) = \frac{1}{\alpha(\alpha-1)} \sum_i (p_i - p_i^\alpha)$.
 \textbf{Lagrangian.}
 
 \[
-\mathcal{L}(p, \tau) = \langle p, s \rangle + \frac{1}{\alpha(\alpha-1)} \sum_i (p_i - p_i^\alpha) - \tau \left(\sum_i p_i - 1\right)
+\mathcal{L}(p, \tau) = \langle p, s \rangle + \frac{1}{\alpha(\alpha-1)} \sum\_i (p\_i - p\_i^\alpha) - \tau \left(\sum\_i p\_i - 1\right)
 \tag{A.2}
 \]
 
 \textbf{Stationarity.} $\partial \mathcal{L} / \partial p_i = 0$:
 
 \[
-s_i + \frac{1 - \alpha p_i^{\alpha-1}}{\alpha(\alpha-1)} - \tau = 0
+s\_i + \frac{1 - \alpha p\_i^{\alpha-1}}{\alpha(\alpha-1)} - \tau = 0
 \tag{A.3}
 \]
 
 Rearranging:
 
 \[
-p_i^{\alpha - 1} = (\alpha - 1) s_i - \tau + \frac{1}{\alpha}
+p\_i^{\alpha - 1} = (\alpha - 1) s\_i - \tau + \frac{1}{\alpha}
 \tag{A.4}
 \]
 
 Let $\tilde\tau = \tau - 1/\alpha$. Then:
 
 \[
-p_i = \max\left(0, (\alpha - 1) s_i - \tilde\tau\right)^{1/(\alpha - 1)}
+p\_i = \max\left(0, (\alpha - 1) s\_i - \tilde\tau\right)^{1/(\alpha - 1)}
 \tag{A.5}
 \]
 
@@ -1350,7 +2386,7 @@ iterations, precision is $O(2^{-25}) = O(10^{-7.5})$. $\square$
 
 \textbf{Claim.} At convergence, the support of $\alpha$-entmax is:
 \[
-S = \{i : (\alpha - 1) s_i > \tau^*\}
+S = \{i : (\alpha - 1) s\_i \textgreater{} \tau^*\}
 \]
 
 \textbf{Proof.} Direct from the closed form: $p_i > 0$ iff $(\alpha - 1) s_i > \tau^*$. $\square$
@@ -1384,7 +2420,7 @@ For square $d \times d$ projection:
 \]
 
 \[
-\text{AdaSplash params} = d^2 + r_L (d + d) = d^2 + 2 r_L d
+\text{AdaSplash params} = d^2 + r\_L (d + d) = d^2 + 2 r\_L d
 \tag{A.7}
 \]
 
@@ -1421,6 +2457,7 @@ distribution.
 $-\infty$ ensures that masked entries receive zero weight in the output. 
 Row-wise independence preserves row-specific causality. $\square$
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1428,190 +2465,190 @@ Row-wise independence preserves row-specific causality. $\square$
 
 \begin{lstlisting}
 class AdaSplashLinear(nn.Module):
-    def __init__(self, in_features, out_features, lora_rank=16, bias=True):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = min(lora_rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, lora\_rank=16, bias=True):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.lora\_rank = min(lora\_rank, in\_features, out\_features)
         
         # Frozen base
         self.weight = nn.Parameter(
-            torch.empty(out_features, in_features),
-            requires_grad=False
+            torch.empty(out\_features, in\_features),
+            requires\_grad=False
         )
         if bias:
             self.bias = nn.Parameter(
-                torch.empty(out_features),
-                requires_grad=False
+                torch.empty(out\_features),
+                requires\_grad=False
             )
         
         # Trainable LoRA
-        if self.lora_rank > 0:
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank))
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features))
+        if self.lora\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, self.lora\_rank))
+            self.lora\_A = nn.Parameter(torch.empty(self.lora\_rank, in\_features))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_A is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        if self.lora\_A is not None:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B)
         return out
 \end{lstlisting}
 
 \subsection{B.2 Entmax Bisection}
 
 \begin{lstlisting}
-def entmax_bisect(scores, alpha=1.5, valid_mask=None, dim=-1, n_iter=25):
+def entmax\_bisect(scores, alpha=1.5, valid\_mask=None, dim=-1, n\_iter=25):
     device = scores.device
     dtype = scores.dtype
-    neg_inf_val = torch.tensor(-10000.0, device=device, dtype=dtype)
+    neg\_inf\_val = torch.tensor(-10000.0, device=device, dtype=dtype)
     
     # Ensure finite
-    scores = torch.where(torch.isfinite(scores), scores, neg_inf_val)
+    scores = torch.where(torch.isfinite(scores), scores, neg\_inf\_val)
     
     # Softmax fallback for alpha = 1
-    if abs(alpha - 1.0) < 1e-4:
-        if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask, -10000.0)
-        sf = torch.nan_to_num(F.softmax(scores.float(), dim=dim), nan=0.0).to(dtype)
-        if valid_mask is not None:
-            sf = sf.masked_fill(~valid_mask, 0.0)
-        sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
-        return (sf / sf_denom).to(dtype)
+    if abs(alpha - 1.0) \textless{} 1e-4:
+        if valid\_mask is not None:
+            scores = scores.masked\_fill(~valid\_mask, -10000.0)
+        sf = torch.nan\_to\_num(F.softmax(scores.float(), dim=dim), nan=0.0).to(dtype)
+        if valid\_mask is not None:
+            sf = sf.masked\_fill(~valid\_mask, 0.0)
+        sf\_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+        return (sf / sf\_denom).to(dtype)
     
-    alpha_minus_1 = max(1e-4, alpha - 1.0)
-    inv_alpha_minus_1 = 1.0 / alpha_minus_1
+    alpha\_minus\_1 = max(1e-4, alpha - 1.0)
+    inv\_alpha\_minus\_1 = 1.0 / alpha\_minus\_1
     
     # Mask invalid keys
-    if valid_mask is not None:
-        scores_valid = scores.masked_fill(~valid_mask, -10000.0)
+    if valid\_mask is not None:
+        scores\_valid = scores.masked\_fill(~valid\_mask, -10000.0)
     else:
-        scores_valid = scores
+        scores\_valid = scores
     
     # Shift scores
-    max_scores = scores_valid.amax(dim=dim, keepdim=True)
-    max_scores = torch.where(max_scores < -5000.0, torch.zeros_like(max_scores), max_scores)
-    scores_shift = scores_valid - max_scores
-    scaled = scores_shift * alpha_minus_1
+    max\_scores = scores\_valid.amax(dim=dim, keepdim=True)
+    max\_scores = torch.where(max\_scores \textless{} -5000.0, torch.zeros\_like(max\_scores), max\_scores)
+    scores\_shift = scores\_valid - max\_scores
+    scaled = scores\_shift * alpha\_minus\_1
     
     # Initial bounds
-    if valid_mask is not None:
-        scaled_for_min = scaled.masked_fill(~valid_mask, 10000.0)
-        tau_lo = scaled_for_min.amin(dim=dim, keepdim=True) - 1.0
-        tau_lo = torch.where(tau_lo > 5000.0, torch.zeros_like(tau_lo) - 1.0, tau_lo)
+    if valid\_mask is not None:
+        scaled\_for\_min = scaled.masked\_fill(~valid\_mask, 10000.0)
+        tau\_lo = scaled\_for\_min.amin(dim=dim, keepdim=True) - 1.0
+        tau\_lo = torch.where(tau\_lo \textgreater{} 5000.0, torch.zeros\_like(tau\_lo) - 1.0, tau\_lo)
     else:
-        tau_lo = scaled.amin(dim=dim, keepdim=True) - 1.0
-    tau_hi = torch.zeros_like(tau_lo)
+        tau\_lo = scaled.amin(dim=dim, keepdim=True) - 1.0
+    tau\_hi = torch.zeros\_like(tau\_lo)
     
     # Bisection
-    for _ in range(n_iter):
-        tau = (tau_lo + tau_hi) / 2.0
-        p = torch.clamp(scaled - tau, min=0.0) ** inv_alpha_minus_1
-        if valid_mask is not None:
-            p = p.masked_fill(~valid_mask, 0.0)
-        sum_p = p.sum(dim=dim, keepdim=True)
-        mask = sum_p > 1.0
-        tau_lo = torch.where(mask, tau, tau_lo)
-        tau_hi = torch.where(mask, tau_hi, tau)
+    for \_ in range(n\_iter):
+        tau = (tau\_lo + tau\_hi) / 2.0
+        p = torch.clamp(scaled - tau, min=0.0) ** inv\_alpha\_minus\_1
+        if valid\_mask is not None:
+            p = p.masked\_fill(~valid\_mask, 0.0)
+        sum\_p = p.sum(dim=dim, keepdim=True)
+        mask = sum\_p \textgreater{} 1.0
+        tau\_lo = torch.where(mask, tau, tau\_lo)
+        tau\_hi = torch.where(mask, tau\_hi, tau)
     
     # Final
-    tau = (tau_lo + tau_hi) / 2.0
-    p = torch.clamp(scaled - tau, min=0.0) ** inv_alpha_minus_1
-    if valid_mask is not None:
-        p = p.masked_fill(~valid_mask, 0.0)
+    tau = (tau\_lo + tau\_hi) / 2.0
+    p = torch.clamp(scaled - tau, min=0.0) ** inv\_alpha\_minus\_1
+    if valid\_mask is not None:
+        p = p.masked\_fill(~valid\_mask, 0.0)
     
     denom = p.sum(dim=dim, keepdim=True)
     
     # Softmax fallback
-    scores_for_sm = scores.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores
-    sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(dtype)
-    if valid_mask is not None:
-        sf = sf.masked_fill(~valid_mask, 0.0)
-    sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
-    sf = sf / sf_denom
+    scores\_for\_sm = scores.masked\_fill(~valid\_mask, -10000.0) if valid\_mask is not None else scores
+    sf = torch.nan\_to\_num(F.softmax(scores\_for\_sm.float(), dim=dim), nan=0.0).to(dtype)
+    if valid\_mask is not None:
+        sf = sf.masked\_fill(~valid\_mask, 0.0)
+    sf\_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+    sf = sf / sf\_denom
     
-    is_empty = (denom < 1e-7) | torch.isnan(denom)
-    p_normalized = torch.nan_to_num(p / denom.clamp(min=1e-9), nan=0.0)
-    p = torch.where(is_empty, sf, p_normalized)
-    return torch.nan_to_num(p, nan=0.0)
+    is\_empty = (denom \textless{} 1e-7) | torch.isnan(denom)
+    p\_normalized = torch.nan\_to\_num(p / denom.clamp(min=1e-9), nan=0.0)
+    p = torch.where(is\_empty, sf, p\_normalized)
+    return torch.nan\_to\_num(p, nan=0.0)
 \end{lstlisting}
 
 \subsection{B.3 Splash Mask Construction}
 
 \begin{lstlisting}
-if is_decoder and splash_radius > 0 and not is_cross_attention and L_k > splash_radius:
-    q_idx = torch.arange(L_q, device=device).unsqueeze(1)
-    k_idx = torch.arange(L_k, device=device).unsqueeze(0)
-    dist = q_idx - k_idx
-    splash_local = ((dist >= 0) & (dist <= splash_radius)) | (k_idx < 4)
-    splash_mask_4d = splash_local.unsqueeze(0).unsqueeze(0)
-    logits = logits.masked_fill(~splash_mask_4d, -10000.0)
+if is\_decoder and splash\_radius \textgreater{} 0 and not is\_cross\_attention and L\_k \textgreater{} splash\_radius:
+    q\_idx = torch.arange(L\_q, device=device).unsqueeze(1)
+    k\_idx = torch.arange(L\_k, device=device).unsqueeze(0)
+    dist = q\_idx - k\_idx
+    splash\_local = ((dist \textgreater{}= 0) & (dist \textless{}= splash\_radius)) | (k\_idx \textless{} 4)
+    splash\_mask\_4d = splash\_local.unsqueeze(0).unsqueeze(0)
+    logits = logits.masked\_fill(~splash\_mask\_4d, -10000.0)
 \end{lstlisting}
 
 \subsection{B.4 Weight Extraction}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     from framework.core.adapters import UniversalAdapter
     
-    extracted_weights = {}
+    extracted\_weights = {}
     
     for proj in ["q", "k", "v", "o"]:
         w, b = None, None
         
         # Try UniversalAdapter
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         except Exception:
             pass
         
         # Fallbacks
         if w is None:
             if proj == "o":
-                # Check RoBERTa/BERT outer, GPT-2 c_proj, DistilBERT out_lin
+                # Check RoBERTa/BERT outer, GPT-2 c\_proj, DistilBERT out\_lin
                 if hasattr(src, "output") and hasattr(src.output, "dense"):
                     w = src.output.dense.weight
                     b = getattr(src.output.dense, "bias", None)
-                elif hasattr(src, "c_proj"):
-                    w = src.c_proj.weight.T
-                    b = getattr(src.c_proj, "bias", None)
-                elif hasattr(src, "out_lin"):
-                    w = src.out_lin.weight
-                    b = getattr(src.out_lin, "bias", None)
-            elif proj in ["q", "k", "v"] and hasattr(src, "c_attn"):
-                fused = src.c_attn.weight.T
+                elif hasattr(src, "c\_proj"):
+                    w = src.c\_proj.weight.T
+                    b = getattr(src.c\_proj, "bias", None)
+                elif hasattr(src, "out\_lin"):
+                    w = src.out\_lin.weight
+                    b = getattr(src.out\_lin, "bias", None)
+            elif proj in ["q", "k", "v"] and hasattr(src, "c\_attn"):
+                fused = src.c\_attn.weight.T
                 split = fused.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
                 w = fused[idx*split:(idx+1)*split]
-                b = src.c_attn.bias[idx*split:(idx+1)*split] if src.c_attn.bias is not None else None
+                b = src.c\_attn.bias[idx*split:(idx+1)*split] if src.c\_attn.bias is not None else None
             elif hasattr(src, "self") and hasattr(src.self, "query"):
                 s = src.self
-                name_map = {"q": "query", "k": "key", "v": "value"}
-                w = getattr(s, name_map[proj]).weight
-                b = getattr(getattr(s, name_map[proj]), "bias", None)
+                name\_map = {"q": "query", "k": "key", "v": "value"}
+                w = getattr(s, name\_map[proj]).weight
+                b = getattr(getattr(s, name\_map[proj]), "bias", None)
             # ... more cases
         
-        extracted_weights[proj] = (w, b)
+        extracted\_weights[proj] = (w, b)
     
     # Copy into target projections
-    for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
-        w, b = extracted_weights[proj]
+    for proj, target in [("q", self.q\_proj), ("k", self.k\_proj), ("v", self.v\_proj), ("o", self.out\_proj)]:
+        w, b = extracted\_weights[proj]
         if w is not None:
-            with torch.no_grad():
-                target.weight.data.copy_(w)
+            with torch.no\_grad():
+                target.weight.data.copy\_(w)
                 if b is not None and target.bias is not None:
-                    target.bias.data.copy_(b)
+                    target.bias.data.copy\_(b)
                 # Freeze base, init LoRA
-                target.weight.requires_grad = False
+                target.weight.requires\_grad = False
                 if target.bias is not None:
-                    target.bias.requires_grad = False
-                if target.lora_A is not None:
-                    nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
-                    target.lora_A.requires_grad = True
-                if target.lora_B is not None:
-                    nn.init.zeros_(target.lora_B)
-                    target.lora_B.requires_grad = True
+                    target.bias.requires\_grad = False
+                if target.lora\_A is not None:
+                    nn.init.kaiming\_uniform\_(target.lora\_A, a=math.sqrt(5))
+                    target.lora\_A.requires\_grad = True
+                if target.lora\_B is not None:
+                    nn.init.zeros\_(target.lora\_B)
+                    target.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1639,20 +2676,21 @@ Preserving first 4 tokens is not optional -- accuracy drops without it.
 \subsection{B.6 Diagnostics}
 
 \begin{lstlisting}
-from framework.attentions.adasplash import AdaSplashAttention, entmax_bisect
+from framework.attentions.adasplash import AdaSplashAttention, entmax\_bisect
 
 # Test entmax
 scores = torch.randn(2, 4, 8, 8)
-p = entmax_bisect(scores, alpha=1.5)
+p = entmax\_bisect(scores, alpha=1.5)
 sparsity = (p == 0).float().mean()
-print(f"Sparsity: {sparsity:.2%}")
+print(f"Sparsity: {sparsity:.2\%}")
 
 # Check attention
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if isinstance(mod, AdaSplashAttention):
-        print(name, mod.alpha, mod.splash_radius)
+        print(name, mod.alpha, mod.splash\_radius)
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1844,14 +2882,14 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 67549448,
-    "parameter_change": "0.89%",
-    "accuracy_pct": 90.25,
-    "sparsity_pct": 42,
+    "params\_before": 66955010,
+    "params\_after": 67549448,
+    "parameter\_change": "0.89\%",
+    "accuracy\_pct": 90.25,
+    "sparsity\_pct": 42,
     "alpha": 1.5,
-    "splash_radius": 32,
-    "lora_rank": 16
+    "splash\_radius": 32,
+    "lora\_rank": 16
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1862,19 +2900,20 @@ Step  Loss
 
 \begin{lstlisting}
 # Main
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run\_all\_4\_adasplash.py --models distilbert,roberta,gpt2
 
 # Alpha sweep
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run\_all\_4\_adasplash.py --alpha $alpha --output_suffix a$alpha
 done
 
 # Splash radius sweep
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run\_all\_4\_adasplash.py --splash\_radius $W --output_suffix W$W
 done
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -2069,6 +3108,7 @@ Hybrid softmax+entmax \& Stability \& No improvement \\
 \item \textbf{Other tasks:} Generation, QA, NLI?
 \end{enumerate}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2181,3 +3221,4 @@ production method.
 \subsection{E.11 Institutional Review}
 
 No human subjects. No IRB required.
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{MinimalNOVA: Energy-Adaptive SVD Factorization for Efficient Transformer Attention}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -19,7 +21,7 @@ Standard multi-head self-attention (MHSA) stores four dense matrices per
 layer:
 
 \[
-W_Q, W_K, W_V, W_O \in \mathbb{R}^{d \times d}
+W\_Q, W\_K, W\_V, W\_O \in \mathbb{R}^{d \times d}
 \tag{1.1}
 \]
 
@@ -151,6 +153,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -207,6 +210,1032 @@ MinimalNOVA supports GQA via \texttt{repeat\_kv} at attention time.
 
 \subsection{Model Compression}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} \\
+\midrule
+DistilBERT & Distillation & 1.6$\times$ & Yes (from scratch) \\
+TinyBERT & Distillation & 7$\times$ & Yes \\
+SparseGPT & Pruning & 2-4$\times$ & No \\
+Wanda & Pruning & 2$\times$ & No \\
+AWQ & Quantization & 4$\times$ & No \\
+GPTQ & Quantization & 4$\times$ & No \\
+A3 & Low-rank + diagonal & 5$\times$ & LoRA \\
+AASVD & Low-rank + full cov & 5$\times$ & LoRA \\
+\textbf{MinimalNOVA} & \textbf{Low-rank + energy-adaptive} & \textbf{50\%$\times$} & \textbf{LoRA} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+MinimalNOVA differs from prior work in three ways:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{MinimalNOVA} \\
+\midrule
+\textbf{Rank selection} & Fixed or learned & Energy-adaptive \\
+\textbf{Weighting} & Unweighted or activation-weighted & Unweighted (spectral) \\
+\textbf{Architectures} & Usually single family & Four families \\
+\textbf{Nested encoder} & Often broken & Explicit bypass \\
+\textbf{Conv1D (GPT-2)} & Often broken & Explicit transpose \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike activation-aware methods (A3, AASVD), MinimalNOVA 
+does not require calibration data. Rank is chosen purely from the weight 
+spectrum, making it \textbf{training-free} and applicable to models where 
+calibration data is unavailable.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Truncated SVD}
+
+For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+where $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ are 
+orthogonal, and $\Sigma$ is diagonal with non-negative entries 
+$\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD} keeps the top-$r$ singular values:
+
+\[
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
+\tag{3.2}
+\]
+
+\textbf{Optimality.} By Eckart--Young, $W_r$ minimizes $\|W - W_r\|_F$ over all 
+rank-$r$ matrices. The error is:
+
+\[
+\|W - W\_r\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
+\tag{3.3}
+\]
+
+\textbf{Symmetric factorization.} We distribute $\Sigma^{1/2}$ between the two 
+factors:
+
+\[
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
+\tag{3.4}
+\]
+
+so that $W_r = U_r V_r$ with balanced magnitudes.
+
+\subsection{Spectral Energy}
+
+Define the \textbf{cumulative spectral energy} of $W$:
+
+\[
+E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_{i=1}^{\min(m, n)} \sigma\_i^2}
+\tag{3.5}
+\]
+
+$E(r)$ is monotonically increasing from $E(0) = 0$ to $E(\min(m, n)) = 1$.
+
+\textbf{Effective rank.} Given threshold $\eta$, the energy-adaptive rank is:
+
+\[
+r\_\text{eff}(\eta) = \min\{r : E(r) \geq \eta\}
+\tag{3.6}
+\]
+
+For rapidly-decaying spectra (e.g., power-law $\sigma_i \propto i^{-2}$), 
+$r_\text{eff}$ is small. For uniform spectra, $r_\text{eff}$ approaches 
+$\min(m, n)$.
+
+\textbf{Empirical observations.} Transformer weight matrices typically have 
+\textbf{power-law or exponential spectral decay}. Empirically, energy thresholds 
+of $\eta \in [0.90, 0.99]$ capture the bulk of the spectrum at moderate rank.
+
+\subsection{Multi-Head Self-Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$, MHSA computes:
+
+\[
+\begin{aligned}
+Q &= X W\_Q, \quad K = X W\_K, \quad V = X W\_V \\
+\text{head}\_h &= \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h \\
+\text{MHSA}(X) &= \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
+\end{aligned}
+\tag{3.7}
+\]
+
+MinimalNOVA factorizes each of $W_Q, W_K, W_V, W_O$.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+Modern models use $H_{kv} < H$ KV heads:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
+\tag{3.8}
+\]
+
+The KV heads are repeated $H/H_{kv}$ times before attention. MinimalNOVA 
+supports GQA by factorizing the KV projections at their natural 
+$H_{kv} d_h$ output dimension, then applying \texttt{repeat\_kv} during forward.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.9}
+\]
+
+MinimalNOVA applies RoPE \textbf{after} projection, preserving the rotational 
+structure.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) parameterizes:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\tag{3.10}
+\]
+
+with $A \in \mathbb{R}^{r_L \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r_L}$, 
+$B = 0$ at initialization. In MinimalNOVA:
+
+\[
+y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
+\tag{3.11}
+\]
+
+\subsection{Nested Encoder Structure}
+
+In BERT-style models (RoBERTa, BERT), attention is \textbf{nested} inside 
+\texttt{BertAttention}:
+
+\begin{lstlisting}
+BertAttention
++-- self       (BertSelfAttention)
+|   +-- query  (Linear)
+|   +-- key    (Linear)
+|   +-- value  (Linear)
++-- output     (BertSelfOutput)
+    +-- dense  (Linear)   # $\leftarrow$ output projection
+\end{lstlisting}
+
+The output projection is \textbf{outside} the inner attention module. When 
+replacing the inner attention, the outer \texttt{output.dense} must still apply. 
+MinimalNOVA handles this via the \texttt{is\_nested\_encoder} flag.
+
+\subsection{Conv1D in GPT-2}
+
+GPT-2 uses HuggingFace's \texttt{Conv1D} (not \texttt{nn.Conv1d}), which stores weights 
+as \texttt{(in\_features, out\_features)}:
+
+\begin{lstlisting}
+class Conv1D(nn.Module):
+    def \_\_init\_\_(self, nf, nx):
+        self.weight = nn.Parameter(torch.empty(nx, nf))  # (in, out)
+\end{lstlisting}
+
+This is \textbf{transposed} relative to \texttt{nn.Linear}. MinimalNOVA detects Conv1D 
+via \texttt{hasattr(module, "nf")} and transposes weights before SVD.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+MinimalNOVA replaces the four attention projections of each transformer layer 
+with \textbf{SVD-factorized linear modules}:
+
+\[
+W \to (U, V), \qquad
+y = (x V^\top) U^\top + \text{LoRA}(x) + b
+\tag{4.1}
+\]
+
+The factorization is done independently per projection. Rank is chosen 
+adaptively per layer based on spectral energy.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+       +------------------------------------------+
+       |  Input weight W $\in$ R^{d\_out $\times$ d\_in}       |
+       +----------------+-------------------------+
+                        |
+                         
+       +------------------------------------------+
+       |  Compute SVD: W = U $\Sigma$ V^T                |
+       +----------------+-------------------------+
+                        |
+                         
+       +------------------------------------------+
+       |  Compute cumulative energy E(r)          |
+       |  r\_eff = min(r\_max, argmin E(r) $\ge$  )     |
+       +----------------+-------------------------+
+                        |
+                         
+       +------------------------------------------+
+       |  Truncate to r\_eff, symmetrize $\Sigma$         |
+       |  U\_r = U[:, :r]   $\sqrt{}$$\Sigma$\_r                   |
+       |  V\_r = $\sqrt{}$$\Sigma$\_r   V[:r, :]^T                 |
+       +----------------+-------------------------+
+                        |
+                         
+       +------------------------------------------+
+       |  Replace Linear with FactorisedLinear    |
+       |  Freeze U, V; add trainable LoRA         |
+       +------------------------------------------+
+\end{lstlisting}
+
+\subsection{The `FactorisedLinear` Module}
+
+\subsubsection{Forward Pass}
+
+The module computes:
+
+\[
+y = \text{up}(\text{down}(x)) + \text{LoRA}(x) + b
+\tag{4.2}
+\]
+
+where:
+
+\begin{itemize}
+\item \texttt{down: nn.Linear(d\_in, r)} -- down-projection, weights $V_r \in \mathbb{R}^{r \times d_\text{in}}$
+\item \texttt{up: nn.Linear(r, d\_out)} -- up-projection, weights $U_r \in \mathbb{R}^{d_\text{out} \times r}$
+\item \texttt{LoRA(x) = (x A^\top) B^\top \cdot s} -- optional adapter
+
+\end{itemize}
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
+\texttt{FactorisedLinear} at rank $r$ & $r(d_\text{in} + d_\text{out})$ \\
+\texttt{FactorisedLinear} + LoRA($r_L$) & $r(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example} for a $768 \times 768$ attention projection:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+r=64 & 98,304 & \textbf{6.00$\times$} \\
+r=128 & 196,608 & 3.00$\times$ \\
+r=64 + LoRA r=16 & 122,880 & 4.80$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Energy-Adaptive Rank Selection}
+
+\subsubsection{Algorithm}
+
+Given weight $W$ and hyperparameters $r_\text{max}$ (cap) and $\eta$ (energy):
+
+\begin{enumerate}
+\item Compute SVD: $W = U \Sigma V^\top$.
+\item Compute cumulative energy: $E(r) = \sum_{i \leq r} \sigma_i^2 / \sum_i \sigma_i^2$.
+\item Find the smallest $r$ with $E(r) \geq \eta$:
+  $$
+  r\_\text{energy} = \left|\left\{i : E(i) < \eta\right\}\right| + 1
+  \tag{4.3}
+  $$
+\item Cap the rank:
+  $$
+  r\_\text{eff} = \min(r\_\text{max}, r\_\text{energy}, \min(d\_\text{in}, d\_\text{out}))
+  \tag{4.4}
+  $$
+
+\end{enumerate}
+\subsubsection{Why Energy?}
+
+The energy criterion captures \textbf{how concentrated the spectrum is}. 
+Consider two extreme cases:
+
+\begin{itemize}
+\item \textbf{Rank-1 matrix} ($\sigma_1 > 0$, $\sigma_{i>1} = 0$): $r_\text{energy} = 1$
+  for any $\eta > 0$. Very compressible.
+\item \textbf{Identity matrix} ($\sigma_i = 1$ for all $i$): $E(r) = r/d$, so
+  $r_\text{energy} = \lceil \eta d \rceil$. Less compressible.
+
+\end{itemize}
+Real transformer weights lie between these extremes, with power-law or 
+exponential decay. The energy criterion adapts to each matrix's specific 
+spectrum.
+
+\subsubsection{Comparison to Fixed Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Criterion} & \textbf{Pros} & \textbf{Cons} \\
+\midrule
+Fixed rank & Simple & Ignores heterogeneity \\
+Energy & Adaptive & No calibration \\
+Fisher-weighted & Activation-aware & Needs data \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+MinimalNOVA uses energy, which is \textbf{training-free} and requires no 
+calibration data.
+
+\subsection{Weight Factorization}
+
+\subsubsection{Symmetric Distribution}
+
+We distribute $\Sigma^{1/2}$ between the two factors:
+
+\[
+U\_r = U\_{:, :r} \cdot \Sigma\_{:r, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :r}^{1/2} \cdot V\_{:r, :}^\top
+\tag{4.5}
+\]
+
+This gives $W_r = U_r V_r$ with balanced factor magnitudes, which improves 
+training stability.
+
+\subsubsection{Storage in Linear Modules}
+
+The framework stores $V_r$ in \texttt{down.weight} and $U_r$ in \texttt{up.weight}:
+
+\begin{lstlisting}
+self.down.weight.data[:r, :] = V\_r       # (r, d\_in)
+self.up.weight.data[:, :r] = U\_r         # (d\_out, r)
+\end{lstlisting}
+
+For $r < \text{target rank}$, the remaining rows/columns are zero.
+
+\subsection{Weight Transfer from Pretrained Attention}
+
+MinimalNOVA extracts $W_Q, W_K, W_V, W_O$ from the pretrained attention 
+module. This is nontrivial because different architectures store them 
+differently.
+
+\subsubsection{Extraction Path (per architecture)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{$W_Q$} & \textbf{$W_K$} & \textbf{$W_V$} & \textbf{$W_O$} \\
+\midrule
+DistilBERT & \texttt{q\_lin} & \texttt{k\_lin} & \texttt{v\_lin} & \texttt{out\_lin} \\
+RoBERTa & \texttt{self.query} & \texttt{self.key} & \texttt{self.value} & \texttt{output.dense} \\
+GPT-2 & \texttt{c\_attn[:d]} & \texttt{c\_attn[d:2d]} & \texttt{c\_attn[2d:]} & \texttt{c\_proj} \\
+Qwen3.5 & \texttt{q\_proj} & \texttt{k\_proj} & \texttt{v\_proj} & \texttt{o\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{GPT-2 Fused c\_attn}
+
+GPT-2 fuses $Q, K, V$ into one \texttt{c\_attn}:
+
+\[
+W\_{c\_attn} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
+\tag{4.6}
+\]
+
+(Conv1D stores this transposed.) MinimalNOVA splits:
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()   # (3d, d)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+The output projection $W_O$ is at \texttt{attention.output.dense}, \textbf{outside} the 
+inner attention:
+
+\begin{lstlisting}
+# Extract Q, K, V from inner self-attention
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+
+# Extract W\_O from outer layer
+w\_o = src.output.dense.weight
+\end{lstlisting}
+
+When replacing the inner attention, the outer \texttt{output.dense} remains in 
+the model and applies the output projection \textbf{after} our module returns. 
+So we set \texttt{is\_nested\_encoder = True} and skip \texttt{out\_proj} in the forward 
+pass.
+
+\subsubsection{GQA (Qwen)}
+
+For GQA, $H_{kv} < H$. The K and V projections have smaller output 
+dimensions:
+
+\[
+W\_K \in \mathbb{R}^{H\_{kv} d\_h \times d}, \quad
+W\_V \in \mathbb{R}^{H\_{kv} d\_h \times d}
+\tag{4.7}
+\]
+
+MinimalNOVA factorizes each at its natural dimension. During forward, 
+\texttt{repeat\_kv} expands K and V to match H query heads.
+
+\subsection{Validation and Fallback}
+
+\subsubsection{Frobenius Validation}
+
+After factorization, MinimalNOVA does not explicitly validate (unlike A3). 
+Instead, it relies on \textbf{weight copy verification}:
+
+\begin{lstlisting}
+for proj in ["q", "k", "v"]:
+    w = extracted[proj][0]
+    if w is not None:
+        norm = torch.linalg.norm(w.float())
+        if norm \textless{} 1e-4:
+            raise RuntimeError(f"Near-zero Frobenius norm on {proj}")
+\end{lstlisting}
+
+This catches catastrophic extraction failures but does not bound the 
+\textbf{factorization error}. This is a limitation ( 10.7).
+
+\subsubsection{Fallback}
+
+If \texttt{copy\_weights} raises, \texttt{inject\_minimal\_nova} catches and returns \texttt{None}. 
+The original attention is preserved.
+
+\subsection{LoRA Recovery}
+
+After factorization, base weights are frozen:
+
+\begin{lstlisting}
+def freeze\_base\_weights(self):
+    self.down.weight.requires\_grad = False
+    self.up.weight.requires\_grad = False
+    if self.up.bias is not None:
+        self.up.bias.requires\_grad = False
+    if self.lora\_rank \textgreater{} 0:
+        self.lora\_A.requires\_grad = True
+        self.lora\_B.requires\_grad = True
+\end{lstlisting}
+
+Only \texttt{lora\_A} and \texttt{lora\_B} are trained. LoRA $B$ is initialized to zero, so:
+
+\[
+y\_{\text{init}} = (x V^\top) U^\top + b
+\tag{4.8}
+\]
+
+which equals the SVD approximation.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} MinimalNOVA injection
+\begin{lstlisting}
+Input:  model M, rank\_cap r\_max, energy  
+Output: model M' with factorized attention
+
+1:  for layer   in transformer\_layers(M) do
+2:      src $\leftarrow$ get\_attention( )
+3:      extract Q, K, V, O from src  (architecture-dependent)
+4:
+5:      for (W, target) in [(Q, q\_proj), (K, k\_proj), (V, v\_proj), (O, out\_proj)] do
+6:          U, $\Sigma$, V $\leftarrow$ svd(W)
+7:          E(r) $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
+8:          r\_eff $\leftarrow$ min(r\_max, |{i: E(i) \textless{}  }| + 1)
+9:          U\_r $\leftarrow$ U[:, :r]   $\sqrt{}$$\Sigma$[:r]
+10:         V\_r $\leftarrow$ $\sqrt{}$$\Sigma$[:r]   V[:r, :]
+11:         target.down.weight[:r\_eff, :] $\leftarrow$ V\_r
+12:         target.up.weight[:, :r\_eff] $\leftarrow$ U\_r
+13:     end for
+14:
+15:     freeze\_all\_base\_factors( )
+16:     replace\_attention( , new)
+17: end for
+18: return M'
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Weight extraction & $\mathcal{O}(N_l d^2)$ & $\mathcal{O}(d^2)$ \\
+SVD per projection & $\mathcal{O}(d^3)$ & $\mathcal{O}(d^2)$ \\
+Truncation & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
+Total & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($N_l = 6$, $d = 768$): ~10 seconds on RTX 4070.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Optimality per Rank}
+
+Given rank $r$, the truncated SVD is optimal in Frobenius norm by Eckart--Young.
+
+\subsubsection{Energy Criterion}
+
+\textbf{Proposition.} The energy-adaptive rank satisfies:
+
+\[
+\frac{\|W - U\_r V\_r\|\_F^2}{\|W\|\_F^2} = 1 - E(r)
+\tag{4.9}
+\]
+
+\textbf{Proof.} $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = \|W\|_F^2 - \sum_{i \leq r} \sigma_i^2$. 
+Dividing by $\|W\|_F^2$ gives (4.9). $\square$
+
+This means: choosing $r$ with $E(r) \geq \eta$ guarantees relative 
+reconstruction error $\leq \sqrt{1 - \eta}$.
+
+For $\eta = 0.95$: error $\leq \sqrt{0.05} \approx 0.224$.
+For $\eta = 0.99$: error $\leq \sqrt{0.01} = 0.10$.
+
+\subsubsection{Why Symmetric Distribution Helps}
+
+Distributing $\Sigma^{1/2}$ symmetrically ensures:
+\begin{itemize}
+\item Both factors have unit spectral norm (up to constants)
+\item Gradient magnitudes are balanced during LoRA training
+\item Numerical stability in FP16 (no factor dominates)
+
+\end{itemize}
+\subsection{Summary}
+
+MinimalNOVA:
+\begin{enumerate}
+\item Factorizes each attention projection $W \to (U, V)$.
+\item Selects rank via spectral energy $\eta$.
+\item Uses LoRA for recovery.
+\item Handles four attention architectures.
+\item Achieves \textbf{real parameter reduction} of $d^2 / (2rd)$ per projection.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Attention} & \textbf{Nested?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & Flat & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Nested & Yes & No \\
+GPT-2 & 12 & 768 & 12 & 12 & Causal & No & Yes \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & GQA+RoPE & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+All four are \texttt{nn.Linear}. \textbf{Direct factorization}, no special handling.
+
+\texttt{is\_nested\_encoder = False} because \texttt{out\_lin} is inside the attention 
+module and must be applied by MinimalNOVA.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query  (Linear 768 $\to$ 768)
+|   +-- key    (Linear 768 $\to$ 768)
+|   +-- value  (Linear 768 $\to$ 768)
++-- output
+    +-- dense  (Linear 768 $\to$ 768)   # $\leftarrow$ output projection OUTSIDE
+\end{lstlisting}
+
+\textbf{Critical:} \texttt{output.dense} sits \textbf{outside} \texttt{self}. When MinimalNOVA 
+replaces \texttt{self}, the outer \texttt{output.dense} must still apply.
+
+\texttt{is\_nested\_encoder = True} because:
+\begin{itemize}
+\item MinimalNOVA returns the attention \textbf{context} (before output projection).
+\item The outer \texttt{output.dense} applies the projection.
+
+\end{itemize}
+If we incorrectly set \texttt{is\_nested\_encoder = False}, \texttt{output.dense} is applied 
+\textbf{twice}, causing scale collapse.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c\_attn  (Conv1D 768 $\to$ 2304)   # $\leftarrow$ FUSED Q, K, V
++-- c\_proj  (Conv1D 768 $\to$ 768)    # $\leftarrow$ output projection
+\end{lstlisting}
+
+\textbf{Two challenges:}
+
+\begin{enumerate}
+\item \textbf{Fused c\_attn.} Q, K, V are stored in one matrix. We split it:
+\end{enumerate}
+\begin{lstlisting}
+   w = src.c\_attn.weight.data.clone()
+   if "Conv1D" in type(src.c\_attn).\_\_name\_\_:
+       w = w.t()   # (in, out) $\to$ (out, in)
+   q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\begin{enumerate}
+\item \textbf{Conv1D orientation.} HuggingFace's \texttt{Conv1D} stores weights as
+  \texttt{(in, out)}, opposite to \texttt{nn.Linear}. We detect this via:
+\end{enumerate}
+\begin{lstlisting}
+   is\_conv1d = hasattr(module, "nf") or "Conv1D" in type(module).\_\_name\_\_
+   if is\_conv1d:
+       w = w.t()
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False} because \texttt{c\_proj} is applied by our module.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)   # H * d\_h = 8 * 256
++-- k\_proj  (Linear 1024 $\to$ 512)    # H\_kv * d\_h = 2 * 256
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+\textbf{GQA handling:} $H_{kv} = 2 < H = 8$. K and V projections are narrower. 
+MinimalNOVA factorizes each at its natural dimension. During forward:
+
+\begin{lstlisting}
+if self.num\_kv\_heads \textless{} self.num\_heads:
+    K = repeat\_kv(K, self.kv\_repeat)   # (B, 2, N, 256) $\to$ (B, 8, N, 256)
+    V = repeat\_kv(V, self.kv\_repeat)
+\end{lstlisting}
+
+\textbf{RoPE handling:} Qwen applies RoPE after projection. MinimalNOVA preserves 
+this via \texttt{position\_embeddings} argument:
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False} because \texttt{o\_proj} is inside the attention.
+
+\subsection{The Nested Encoder Bypass}
+
+When \texttt{is\_nested\_encoder = True}:
+
+\begin{lstlisting}
+def forward(self, ...):
+    ...
+    context = torch.matmul(attn\_weights, V)
+    context = context.transpose(1, 2).contiguous().view(B, N, self.all\_head\_size)
+    
+    if self.is\_nested\_encoder:
+        return context, attn\_weights   # $\leftarrow$ Raw context, no out\_proj
+    else:
+        output = self.out\_proj(context)
+        return output, attn\_weights
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} then applies the projection.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject MinimalNOVA into a full model
+\begin{lstlisting}
+Input:  model M, rank\_cap r\_max, energy  
+Output: M' with all attention blocks factorized
+
+1:  layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2:  # Pre-test on first layer
+3:  test\_src $\leftarrow$ get\_attention(layer\_list[0])
+4:  test\_module $\leftarrow$ MinimalNOVA(cfg)
+5:  try: test\_module.copy\_weights(test\_src)
+6:  except: return None   # abort
+7:
+8:  # Inject each layer
+9:  count $\leftarrow$ 0
+10: for (idx, layer) in enumerate(layer\_list) do
+11:     res $\leftarrow$ inject\_single(layer, idx, r\_max,  )
+12:     if res is not None:
+13:         count += 1
+14: end for
+15:
+16: return M' if count \textgreater{} 0 else None
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V weights & \texttt{copy\_weights} raises & Abort \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
+Shape mismatch & \texttt{\_orient} handles & Warn and pad \\
+Double injection & Class name check & Skip \\
+Cross-attention & Not supported & Raise \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("minimal\_nova")
+class MinimalNOVAAttention(BaseAttention):
+    ...
+
+@ATTENTION\_REGISTRY.register("minimal\_nova\_inject")
+@ATTENTION\_REGISTRY.register("inject\_minimal\_nova")
+def inject\_minimal\_nova(...):
+    ...
+\end{lstlisting}
+
+\subsection{Compatibility with LoRA Recovery Pipeline}
+
+MinimalNOVA integrates cleanly with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item \textbf{Inject} MinimalNOVA $\to$ factorized attention with frozen base.
+\item \textbf{LoRA adapters} are inside each \texttt{FactorisedLinear} (trainable).
+\item \textbf{Recovery fine-tuning} trains only LoRA parameters.
+\item \textbf{Evaluation} uses the fine-tuned model.
+
+\end{enumerate}
+The framework's \texttt{get\_recovery\_params} finds \texttt{lora\_A}, \texttt{lora\_B} parameters 
+automatically via the naming convention.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of minimal\_nova.}
+\label{fig:arch_minimal-nova}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal Conv1D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 (50.2\%) & 33,542 \\
+Validation & 872 & 444 (50.9\%) & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: \textbf{50.92\%}. Sequence length: 128 tokens.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+$r_\text{max}$ & 32 & Rank cap \\
+$\eta$ (energy) & 45.2 & Spectral energy threshold \\
+\texttt{dropout} & 0.1 & Standard \\
+\texttt{lora\_rank} & 8 & Recovery adapter \\
+\texttt{lora\_alpha} & 16 & Scaling = alpha / rank \\
+\texttt{target\_attention\_only} & True & Only attention projections \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+
+\begin{itemize}
+\item Accuracy
+\item F1 (binary, macro)
+\item Precision, Recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+
+\begin{itemize}
+\item Total parameters (before / after)
+\item Compression ratio: baseline / compressed
+\item Peak inference VRAM (MB)
+\item Inference time (median of 20 runs, batch 8, seq 128)
+
+\end{itemize}
+\subsubsection{Compression}
+
+\begin{itemize}
+\item Effective rank per layer
+\item Reconstruction error (Frobenius)
+\item Compressed layers (count)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+56\% = majority baseline + 3 SE ($\text{SE} \approx 1.69\%$).
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+OS & Windows \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_minimal\_nova.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --energy 45.2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 minutes.
+
+\subsection{Seeds}
+
+All experiments use seed 42. Single-seed due to compute budget.
+
+\subsection{Baselines}
+
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed pretrained model.
+\item \textbf{\texttt{minimal\_nova}:} Our method.
+\item \textbf{Ablations:} \texttt{minimal\_nova\_no\_lora}, \texttt{minimal\_nova\_fixed\_rank}.
+\item \textbf{Companion methods:} \texttt{a3}, \texttt{aasvd}, \texttt{sdrm}, \texttt{svd\_linear}.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -217,7 +1246,7 @@ MinimalNOVA supports GQA via \texttt{repeat\_kv} at attention time.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Minimal Nova} & \textbf{88.30\%} & -2.64\% & PASS & 0.8886 & 30 & \textbf{1.15$\times$} & 284.6 MB & 15.1 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Minimal Nova} & \textbf{53.78\%} & -21.68\% & PASS_LOW & 0.6874 & 60 & \textbf{1.09$\times$} & 580.0 MB & 26.3 & -- \\
+RoBERTa & \textbf{Minimal Nova} & \textbf{53.78\%} & -21.68\% & PASS\_LOW & 0.6874 & 60 & \textbf{1.09$\times$} & 580.0 MB & 26.3 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Minimal Nova} & \textbf{67.55\%} & -20.29\% & PASS & 0.7541 & 84 & \textbf{1.17$\times$} & 319.1 MB & 73.2 & -- \\
 \bottomrule
@@ -476,12 +1505,13 @@ GPT-2 & 0.85 s & 84.5 s & \textbf{0.85 s} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/minimal_nova_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_nova}.}
+\includegraphics[width=0.85\linewidth]{figures/minimal\_nova\_gpt2\_loss\_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal\_nova}.}
 \label{fig:results_minimal_nova}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -689,6 +1719,7 @@ Nested encoder & Buggy & Buggy & Correct \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -730,8 +1761,8 @@ MinimalNOVA correctly handles:
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Extremely small models} (<10M params)
-\item \textbf{Extremely large models} (>10B params)
+\item \textbf{Extremely small models} (\textless{}10M params)
+\item \textbf{Extremely large models} (\textgreater{}10B params)
 \item \textbf{Latency-critical inference} on CPU
 
 \end{itemize}
@@ -843,6 +1874,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -866,8 +1898,8 @@ Only SST-2 is evaluated. MinimalNOVA may behave differently on:
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B params & Not tested \\
+\textgreater{}24 layers & Not tested \\
 MoE & Not tested \\
 \bottomrule
 \end{tabular}
@@ -893,7 +1925,7 @@ compression, but require calibration. This is a deliberate trade-off.
 Unlike A3, MinimalNOVA does \textbf{not} enforce a Frobenius error threshold 
 per layer. It relies on:
 \begin{itemize}
-\item Weight extraction checks (norm > 1e-4)
+\item Weight extraction checks (norm \textgreater{} 1e-4)
 \item Empirical accuracy after recovery
 
 \end{itemize}
@@ -962,6 +1994,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1039,14 +2072,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1072,13 +2106,13 @@ numpy & 1.0.0 \\
 \subsection{Running MinimalNOVA}
 
 \begin{lstlisting}
-python run_all_4_minimal_nova.py \
+python run\_all\_4\_minimal\_nova.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
     --energy 45.2 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes.
@@ -1086,16 +2120,16 @@ python run_all_4_minimal_nova.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_minimal_nova/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
-    --modules full,minimal_nova \
+    --output\_dir results/unified\_minimal\_nova/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
+    --modules full,minimal\_nova \
     --rank 32 \
     --energy 45.2 \
-    --lora_rank 8
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -1103,14 +2137,14 @@ python Codes/framework/run_quality_sweep.py \
 \subsubsection{Table 7.1 (Main)}
 
 \begin{lstlisting}
-python run_all_4_minimal_nova.py --models distilbert,roberta,gpt2
+python run\_all\_4\_minimal\_nova.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Rank cap ablation)}
 
 \begin{lstlisting}
 for r in 32 64 128 192 384; do
-    python run_all_4_minimal_nova.py --rank $r --output_suffix r$r
+    python run\_all\_4\_minimal\_nova.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -1118,7 +2152,7 @@ done
 
 \begin{lstlisting}
 for eta in 0.90 0.95 0.99; do
-    python run_all_4_minimal_nova.py --energy $eta --output_suffix e$eta
+    python run\_all\_4\_minimal\_nova.py --energy $eta --output_suffix e$eta
 done
 \end{lstlisting}
 
@@ -1126,7 +2160,7 @@ done
 
 \begin{lstlisting}
 for lr in 4 8 16 32; do
-    python run_all_4_minimal_nova.py --lora_rank $lr --output_suffix lr$lr
+    python run\_all\_4\_minimal\_nova.py --lora\_rank $lr --output_suffix lr$lr
 done
 \end{lstlisting}
 
@@ -1137,8 +2171,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1161,11 +2195,11 @@ GPT-2 & 79.36\% $\pm$ 1\% & 2.1$\times$ \\
 \subsection{Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-minimal_nova",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-minimal\_nova",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1192,6 +2226,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1338,6 +2373,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1346,7 +2382,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \textbf{Theorem.} For any $W \in \mathbb{R}^{m \times n}$ and any $r \leq \min(m, n)$:
 
 \[
-W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r^* = \arg\min\_{\text{rank}(W\_r) \leq r} \|W - W\_r\|\_F = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{A.1}
 \]
 
@@ -1361,7 +2397,7 @@ The optimal solution is given by SVD truncation. $\square$
 rank such that $E(r_\text{eff}) \geq \eta$. Then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{A.2}
 \]
 
@@ -1369,14 +2405,14 @@ rank such that $E(r_\text{eff}) \geq \eta$. Then:
 Dividing by $\|W\|_F^2$:
 
 \[
-\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = 1 - E(r)
+\frac{\|W - W\_r\|\_F^2}{\|W\|\_F^2} = 1 - E(r)
 \tag{A.3}
 \]
 
 Since $E(r_\text{eff}) \geq \eta$:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F^2}{\|W\|_F^2} \leq 1 - \eta
+\frac{\|W - W\_{r\_\text{eff}}\|\_F^2}{\|W\|\_F^2} \leq 1 - \eta
 \tag{A.4}
 \]
 
@@ -1409,7 +2445,7 @@ Original \texttt{Linear} & $d_\text{in} \cdot d_\text{out}$ \\
 \textbf{Compression ratio:}
 
 \[
-\rho = \frac{d_\text{in} \cdot d_\text{out}}{r(d_\text{in} + d_\text{out})}
+\rho = \frac{d\_\text{in} \cdot d\_\text{out}}{r(d\_\text{in} + d\_\text{out})}
 \tag{A.5}
 \]
 
@@ -1433,7 +2469,7 @@ For GQA with $H_{kv} < H$ query heads:
 Factorized parameter count:
 
 \[
-|W_Q|_F + |W_K|_F + |W_V|_F = r(d + H d_h) + r(d + H_{kv} d_h) + r(d + H_{kv} d_h)
+|W\_Q|\_F + |W\_K|\_F + |W\_V|\_F = r(d + H d\_h) + r(d + H\_{kv} d\_h) + r(d + H\_{kv} d\_h)
 \tag{A.7}
 \]
 
@@ -1460,9 +2496,9 @@ This is the rank-$r_\text{eff}$ approximation of the original projection. $\squa
 \textbf{Proof.} The causal mask is applied after computing scores:
 
 \begin{lstlisting}
-if self.is_decoder and N > 1:
-    causal_mask = torch.triu(...)
-    scores = scores + causal_mask
+if self.is\_decoder and N \textgreater{} 1:
+    causal\_mask = torch.triu(...)
+    scores = scores + causal\_mask
 \end{lstlisting}
 
 Positions $j > i$ are set to $-\infty$ before softmax, so attention at 
@@ -1473,6 +2509,7 @@ attention implementation. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1480,104 +2517,104 @@ attention implementation. $\square$
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=64, bias=True,
+                 energy=0.95, lora\_rank=16, lora\_alpha=32.0, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, in\_features, out\_features)
         self.energy = energy
-        self.lora_rank = lora_rank
-        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+        self.lora\_rank = lora\_rank
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
         
-        self.down = nn.Linear(in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_features, bias=bias)
+        self.down = nn.Linear(in\_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out\_features, bias=bias)
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.randn(lora\_rank, in\_features) * 0.01)
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 The `decompose\_from\_weight` Method}
 
 \begin{lstlisting}
-def decompose_from_weight(self, weight, bias=None, energy=None):
-    with torch.no_grad():
+def decompose\_from\_weight(self, weight, bias=None, energy=None):
+    with torch.no\_grad():
         W = weight.float()
         
         # Handle KV dimension matching for GQA
-        if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
-            rep = self.out_features // W.shape[0]
+        if W.shape[0] \textless{} self.out\_features and self.out\_features \% W.shape[0] == 0:
+            rep = self.out\_features // W.shape[0]
             W = W.repeat(rep, 1)
-        elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
-            rep = W.shape[0] // self.out_features
-            W = W.view(self.out_features, rep, -1).mean(dim=1)
+        elif W.shape[0] \textgreater{} self.out\_features and W.shape[0] \% self.out\_features == 0:
+            rep = W.shape[0] // self.out\_features
+            W = W.view(self.out\_features, rep, -1).mean(dim=1)
         
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Energy-based rank selection
-        target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
-        calc_rank = int((cum_energy < target_energy).sum().item()) + 1
-        r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+        target\_energy = energy if energy is not None else self.energy
+        total\_energy = (S ** 2).sum()
+        cum\_energy = torch.cumsum(S ** 2, dim=0) / (total\_energy + 1e-12)
+        calc\_rank = int((cum\_energy \textless{} target\_energy).sum().item()) + 1
+        r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
         r = max(1, r)
         
         # Symmetric factorization
-        sqrt_s = torch.sqrt(S[:r])
-        A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
-        B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+        sqrt\_s = torch.sqrt(S[:r])
+        A = (U[:, :r] * sqrt\_s).to(self.up.weight.dtype)
+        B = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
         
         # Store
-        self.up.weight.data.zero_()
-        self.down.weight.data.zero_()
+        self.up.weight.data.zero\_()
+        self.down.weight.data.zero\_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
         
-        self.freeze_base_weights()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 The Main Injection Loop}
 
 \begin{lstlisting}
-def inject_minimal_nova(layer=None, model=None, ...):
+def inject\_minimal\_nova(layer=None, model=None, ...):
     target = layer if layer is not None else model
     
     # Whole model traversal
     if hasattr(target, "distilbert"):
-        layer_list = target.distilbert.transformer.layer
+        layer\_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta"):
-        layer_list = target.roberta.encoder.layer
+        layer\_list = target.roberta.encoder.layer
     elif hasattr(target, "transformer"):
-        layer_list = target.transformer.h
+        layer\_list = target.transformer.h
     # ...
     
-    if layer_list is not None:
+    if layer\_list is not None:
         # Pre-test on first layer
-        test_src = layer_list[0].attention
-        test_module = MinimalNOVAAttention(config=cfg)
-        test_module.copy_weights(test_src)
+        test\_src = layer\_list[0].attention
+        test\_module = MinimalNOVAAttention(config=cfg)
+        test\_module.copy\_weights(test\_src)
         
         # Inject all layers
-        for idx, lyr in enumerate(layer_list):
-            inject_minimal_nova(layer=lyr, ...)
+        for idx, lyr in enumerate(layer\_list):
+            inject\_minimal\_nova(layer=lyr, ...)
         return target
     
     # Single layer injection
-    src_attn = get_attention(target)
-    new_attn = MinimalNOVAAttention(config=cfg)
-    new_attn.copy_weights(src_attn)
-    replace_attention(target, new_attn)
-    return new_attn
+    src\_attn = get\_attention(target)
+    new\_attn = MinimalNOVAAttention(config=cfg)
+    new\_attn.copy\_weights(src\_attn)
+    replace\_attention(target, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 \subsection{B.4 The `copy\_weights` Method}
@@ -1585,20 +2622,20 @@ def inject_minimal_nova(layer=None, model=None, ...):
 Handles four architecture families:
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
     
     # 1. UniversalAdapter
     for proj in ["q", "k", "v", "o"]:
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
             if w is not None:
                 extracted[proj] = (w, b)
         except Exception as e:
             logger.debug(f"UA failed for {proj}: {e}")
     
-    # 2. GPT-2 fused c_attn
-    if hasattr(src, "c_attn") and extracted["q"][0] is None:
+    # 2. GPT-2 fused c\_attn
+    if hasattr(src, "c\_attn") and extracted["q"][0] is None:
         # ... split logic
     
     # 3. RoBERTa nested
@@ -1606,56 +2643,56 @@ def copy_weights(self, src):
         # ... extract from self.query, self.key, self.value
     
     # 4. Modern decoders (Qwen, DistilBERT)
-    for proj, names in named_map.items():
-        # ... extract from q_proj, q_lin, query
+    for proj, names in named\_map.items():
+        # ... extract from q\_proj, q\_lin, query
     
     # Detect nested encoder
-    is_nested = ...
-    self.is_nested_encoder = is_nested
+    is\_nested = ...
+    self.is\_nested\_encoder = is\_nested
     
     # Factorize each projection
-    for proj_key, target in [("q", self.q_proj), ...]:
-        w, b = extracted[proj_key]
+    for proj\_key, target in [("q", self.q\_proj), ...]:
+        w, b = extracted[proj\_key]
         if w is not None:
-            target.decompose_from_weight(w, b, self.energy)
-        elif proj_key == "o" and self.is_nested_encoder:
+            target.decompose\_from\_weight(w, b, self.energy)
+        elif proj\_key == "o" and self.is\_nested\_encoder:
             eye = torch.eye(...)
-            target.decompose_from_weight(eye, None, self.energy)
+            target.decompose\_from\_weight(eye, None, self.energy)
 \end{lstlisting}
 
 \subsection{B.5 Handling GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    c_attn_mod = src.c_attn
-    base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-    weight = base_c.weight.data.clone()
+if hasattr(src, "c\_attn"):
+    c\_attn\_mod = src.c\_attn
+    base\_c = getattr(c\_attn\_mod, "base\_layer", c\_attn\_mod)
+    weight = base\_c.weight.data.clone()
     
     # Conv1D stores (in, out)
-    is_conv1d = (
-        "Conv1D" in type(c_attn_mod).__name__
-        or "Conv1D" in type(base_c).__name__
-        or hasattr(c_attn_mod, "nf")
-        or hasattr(base_c, "nf")
+    is\_conv1d = (
+        "Conv1D" in type(c\_attn\_mod).\_\_name\_\_
+        or "Conv1D" in type(base\_c).\_\_name\_\_
+        or hasattr(c\_attn\_mod, "nf")
+        or hasattr(base\_c, "nf")
     )
-    if is_conv1d:
+    if is\_conv1d:
         weight = weight.t()   # (out, in)
     
-    split_size = weight.shape[0] // 3
-    q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    split\_size = weight.shape[0] // 3
+    q\_w = weight[:split\_size, :]
+    k\_w = weight[split\_size:2*split\_size, :]
+    v\_w = weight[2*split\_size:, :]
 \end{lstlisting}
 
 \subsection{B.6 Nested Encoder Bypass}
 
 \begin{lstlisting}
 # In forward:
-if self.is_nested_encoder:
-    return context, attn_weights   # No out_proj
+if self.is\_nested\_encoder:
+    return context, attn\_weights   # No out\_proj
 else:
-    output = self.out_proj(context)
-    return output, attn_weights
+    output = self.out\_proj(context)
+    return output, attn\_weights
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -1664,10 +2701,10 @@ else:
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight    # shape (in, out) -- wrong orientation
+w = src.c\_attn.weight    # shape (in, out) -- wrong orientation
 
 # RIGHT
-if is_conv1d:
+if is\_conv1d:
     w = w.t()    # (out, in)
 \end{lstlisting}
 
@@ -1675,17 +2712,17 @@ if is_conv1d:
 
 \begin{lstlisting}
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice $\to$ collapse
+self.is\_nested\_encoder = False   # out\_proj applied twice $\to$ collapse
 
 # RIGHT
-self.is_nested_encoder = True
+self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.7.3 Missing Near-Zero Check}
 
 \begin{lstlisting}
-w_norm = torch.linalg.norm(w.float())
-if w_norm < 1e-4:
+w\_norm = torch.linalg.norm(w.float())
+if w\_norm \textless{} 1e-4:
     raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 
@@ -1693,16 +2730,17 @@ if w_norm < 1e-4:
 
 \begin{lstlisting}
 # WRONG
-self.lora_B = nn.Parameter(torch.randn(...))
+self.lora\_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
+self.lora\_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1917,13 +2955,13 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
     "ratio": 50\%,
-    "accuracy_pct": 86.4,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "compressed_layers": 2.0x,
-    "avg_rank": 32
+    "compressed\_layers": 2.0x,
+    "avg\_rank": 32
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1934,6 +2972,7 @@ Step  Loss
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -2040,7 +3079,7 @@ We tested factorizing bias as well. Result: negligible parameter savings.
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
 Orthogonal init for U/V & Slow convergence & No change \\
-LayerNorm recalibration & Distribution shift & <0.3\% gain \\
+LayerNorm recalibration & Distribution shift & \textless{}0.3\% gain \\
 Weight tying between Q/K & Parameter sharing & Accuracy drop \\
 Adaptive $\beta$ in LoRA & Training stability & No change \\
 \bottomrule
@@ -2079,6 +3118,7 @@ Adaptive $\beta$ in LoRA & Training stability & No change \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2166,3 +3206,4 @@ But also:
 
 ---
 \end{lstlisting}
+

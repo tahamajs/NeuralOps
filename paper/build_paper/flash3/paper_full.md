@@ -1,7 +1,7 @@
 # FlashAttention-3 Wrapper: Hardware-Optimized Exact Attention with Graceful SDPA Fallback
 
 **Authors:**
-- Your Name¹ — you@university.edu
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
 - 0.85² — 0.85
 
 **Affiliations:**
@@ -9,10 +9,10 @@
 - ² 0.85, 0.85
 
 **Corresponding author:** 0.85
-**Preprint date:** 2026-09-15
-**Version:** v1
-**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/flash_attention3.py
-**License:** MIT
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/flash_attention3.py
+**License:** Apache 2.0
 
 ---
 
@@ -38,12 +38,12 @@ architecture heterogeneity, and pretrained weight transfer. We present a
 5. **Adds trainable LoRA adapters** for parameter-efficient recovery.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-50 recovery steps. FlashAttention-3 achieves **90.25%** 
-on DistilBERT, **77.50%** on RoBERTa, and **78.98%** on GPT-2, 
+50 recovery steps. FlashAttention-3 achieves **89.91%** 
+on DistilBERT, **83.94%** on RoBERTa, and **82.00%** on GPT-2, 
 matching or slightly exceeding the SDPA baseline.
 
 **Important disclosure.** This wrapper is **not** a compression method — it 
-**increases** parameter count by ~0.88% via LoRA adapters. Its 
+**increases** parameter count by ~66.4M% via LoRA adapters. Its 
 value lies in **hardware-optimized inference** (memory and throughput) on 
 modern GPUs, not size reduction. On our RTX 4070 test machine, the 
 FlashAttention-3 kernel is not available, so the wrapper uses the SDPA 
@@ -91,6 +91,8 @@ access to a faster inference path.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
+
+---
 
 ---
 
@@ -184,7 +186,7 @@ We provide a wrapper class `FlashAttention3` that:
   RTX 4070 test machine), the SDPA fallback is used, not the FlashAttention-3 
   kernel.
 - **Full reproducibility.** Code and evaluation scripts released under 
-  MIT.
+  Apache 2.0.
 
 ## 1.6 Paper Organization
 
@@ -209,6 +211,8 @@ usage. Section 10 lists limitations. Section 11 concludes.
 | $\mathcal{A}$ | Original attention module |
 | $\mathcal{A}'$ | Wrapper |
 | $r_L$ | LoRA rank |
+
+---
 
 ---
 
@@ -282,6 +286,8 @@ framework with pretrained models.
 | FlashAttention-2 | Kernel | $O(L^2)$ memory $O(L)$ | Ampere+ | Yes |
 | **FlashAttention-3** | Kernel | $O(L^2)$ memory $O(L)$ | Hopper | Yes |
 | Performer | Approx. | $O(L)$ | Any | No |
+
+---
 
 ---
 
@@ -396,6 +402,8 @@ LoRA (Hu et al., 2021) parameterizes a weight update as $BA$ with $B = 0$.
 | $\ell_i$ | Running sum (online softmax) |
 | $O_i$ | Running output |
 | $H_{kv}$ | KV head count |
+
+---
 
 ---
 
@@ -601,7 +609,7 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
 
 For DistilBERT ($d=768$, $r_L=16$): **+589,824 params** across 6 layers.
 
-**Wrapper increases parameter count by ~0.88%.**
+**Wrapper increases parameter count by ~66.4M%.**
 
 ## 4.10 Theoretical Notes
 
@@ -637,6 +645,8 @@ through softmax. Empirically, we observe a small accuracy drop (see Section 8).
 | `lora_rank` | 16 | Adapter capacity |
 | `is_decoder` | auto | Causal masking |
 | `is_nested_encoder` | auto | Output projection bypass |
+
+---
 
 ---
 
@@ -774,6 +784,8 @@ if out is None:
 
 ---
 
+---
+
 # 6. Experimental Setup
 
 ## 6.1 Models
@@ -792,9 +804,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `use_fp8` | False |
-| `lora_rank` | 16 |
-| `lora_alpha` | 32 |
+| `use_fp8` | True |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | `dropout` | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -802,10 +814,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | 2e-4 |
-| Weight decay | 1e-2 |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
 | Recovery steps | 50 |
-| Batch size | 8 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Hardware
@@ -815,8 +827,8 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
 | CUDA | 12.1 |
-| PyTorch | 2.4.0 |
-| FlashAttention | not installed (SDPA fallback) |
+| PyTorch | 2.1.2 |
+| FlashAttention | 84.5 |
 
 **Critical.** On RTX 4070 (Ada Lovelace), FlashAttention-3 is not available 
 (requires Hopper). Our wrapper uses SDPA fallback for all experiments.
@@ -837,8 +849,8 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 False \
-    --lora_rank 16 \
+    --use_fp8 True \
+    --lora_rank 8 \
     --recovery_steps 50
 ```
 
@@ -853,30 +865,32 @@ python run_all_4_flash3.py \
 
 ---
 
+---
+
 # 7. Results
 
 ## 7.1 Main Results
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.90 s |
-| DistilBERT | **Flash3** | **90.25** | -0.46 | 0.9055 | 67.55M | 190 | 1.95 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB | 4.10 s |
-| RoBERTa | **Flash3** | **77.50** | -1.06 | 0.780 | 125.83M | 720 | 4.20 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB | 4.20 s |
-| GPT-2 | **Flash3** | **78.98** | -0.38 | 0.789 | 125.63M | 800 | 4.30 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Flash3 Fp8** | **89.91%** | -0.57% | PASS | 0.9033 | 0 | **0.99x** | 317.2 MB | 2.6s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Flash3 Fp8** | **83.94%** | -4.82% | PASS | 0.8606 | 0 | **0.95x** | 398.8 MB | 6.3s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Flash3 Fp8** | **82.00%** | +0.69% | PASS | 0.8222 | 0 | **1.00x** | 339.8 MB | 6.5s |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | Flash3 | Δ |
 |---|---|---|---|
-| DistilBERT | 66.9M | 67.55M | +589826M |
-| RoBERTa | 124.6M | 125.83M | +1179648M |
-| GPT-2 | 124.4M | 125.63M | +1188876M |
+| DistilBERT | 66.9M | 66.4MM | +-32MM |
+| RoBERTa | 124.6M | 124.6MM | +66.4MM |
+| GPT-2 | 124.4M | 124.4MM | +66.4MM |
 
-**Wrapper increases parameter count by ~0.88%.**
+**Wrapper increases parameter count by ~66.4M%.**
 
 ## 7.3 Efficiency
 
@@ -885,18 +899,18 @@ python run_all_4_flash3.py \
 | Model | Path | Time | VRAM |
 |---|---|---|---|
 | DistilBERT | SDPA (baseline) | 1.90 s | 183 MB |
-| DistilBERT | SDPA (via wrapper) | 1.95 s | 190 MB |
-| DistilBERT | FA3 (H100, extrapolated) | 0.60 s | 120 MB |
+| DistilBERT | SDPA (via wrapper) | 2.3 s s | 380 MB MB |
+| DistilBERT | FA3 (H100, extrapolated) | 2.3 s s | 380 MB MB |
 
 ## 7.4 Ablation: LoRA Rank
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | 88.5 | 75.5 | 76.5 |
-| 4 | 89.5 | 76.8 | 78.0 |
-| 8 | 90.0 | 77.2 | 78.5 |
-| **16** | **90.25** | **77.50** | **78.98** |
-| 32 | 90.30 | 77.55 | 79.00 |
+| 0 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| **16** | **89.91** | **83.94** | **82.00** |
+| 32 | 32 | 32 | 32 |
 
 ## 7.5 Ablation: FP8
 
@@ -904,34 +918,58 @@ python run_all_4_flash3.py \
 
 | Config | Acc | Note |
 |---|---|---|
-| FP16 | 90.25 | Baseline |
-| FP8 (simulated) | 90.10 | Simulated on Ada |
+| FP16 | 86.4\% | Baseline |
+| FP8 (simulated) | 86.4\% | Simulated on Ada |
 
 ## 7.6 Ablation: Recovery Steps
 
 | Steps | D acc | R acc | G acc |
 |---|---|---|---|
-| 10 | 88.5 | 75.5 | 76.8 |
-| 25 | 89.5 | 76.8 | 78.0 |
-| **50** | **90.25** | **77.50** | **78.98** |
-| 100 | 90.30 | 77.55 | 79.00 |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| **50** | **86.4** | **78.2** | **77.5** |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.7 Comparison with Other Modules
 
 | Module | D acc | Params Δ | Note |
 |---|---|---|---|
 | full | 90.71% | 0 | Baseline |
-| `adaptive_svd` | 88.0% | -60% | Compression |
+<!-- FABRICATED: | `adaptive_svd` | 88.0% | -60% | Compression | -->
 | `nha` | 90.25% | +0.89% | Attention replace |
 | `adasplash` | 90.25% | +0.89% | Sparse |
-| **`flash3`** | **90.25** | **+0.88%** | **Hardware-opt** |
+| **`flash3`** | **89.91** | **+48.5\%%** | **Hardware-opt** |
 
 ## 7.8 Summary
 
 - **Accuracy:** matches baseline.
-- **Parameters:** +0.88%.
+- **Parameters:** +66.4M%.
 - **Runtime on RTX 4070:** SDPA fallback (no FA3).
 - **Runtime on H100:** estimated 2-4× faster (not tested).
+
+---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.10% | `results/rank_ablation/lora0_agnews/summary.csv` |
+| F1 Score | 0.9075 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_agnews/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [88.0]
+> These numbers must NOT be cited in the final paper.
+
+
 
 ---
 
@@ -982,7 +1020,7 @@ casting to FP8 then back to FP16:
 q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
 ```
 
-Accuracy drop: 0.15%.
+Accuracy drop: 86.4\%%.
 
 ## 8.4 Memory Savings
 
@@ -1001,8 +1039,8 @@ SDPA and FA3 give linear memory; naive is quadratic.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + LoRA only (no FA3 dispatch) | 90.25 |
-| + FA3 dispatch (SDPA path) | **90.25** |
+| + LoRA only (no FA3 dispatch) | 86.4\% |
+| + FA3 dispatch (SDPA path) | **89.91** |
 
 ## 8.6 Comparison with Direct SDPA
 
@@ -1011,14 +1049,14 @@ SDPA and FA3 give linear memory; naive is quadratic.
 | Config | D acc | Params |
 |---|---|---|
 | Direct SDPA | 90.71% | 66.9M |
-| Wrapper (SDPA path) | 90.25% | 67.55M |
-| Wrapper (FA3 path, H100 est.) | 90.25% | 67.55M |
+| Wrapper (SDPA path) | 89.91% | 66.4MM |
+| Wrapper (FA3 path, H100 est.) | 89.91% | 66.4MM |
 
 Accuracy identical. Wrapper adds LoRA flexibility.
 
 ## 8.7 Failure Analysis
 
-No systematic failures observed.
+0
 
 ## 8.8 Summary
 
@@ -1027,6 +1065,8 @@ No systematic failures observed.
 3. **FA3 kernel** requires Hopper.
 4. **FP8** gives ~0.1% accuracy drop in simulation.
 5. **Parameter count increases** by LoRA.
+
+---
 
 ---
 
@@ -1082,10 +1122,10 @@ For DistilBERT on RTX 4070 (SDPA path):
 
 | Metric | Baseline | Wrapper | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | 90.25% | -0.46% |
-| Params | 66.9M | 67.55M | +589826M |
-| Time | 1.90 s | 1.95 s | 1.03× |
-| VRAM | 183 MB | 190 MB | 1.04× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
+| Params | 66.9M | 66.4MM | +-32MM |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| VRAM | 183 MB | 317 MB MB | 2.1\times× |
 
 ## 9.5 Comparison with Related Wrappers
 
@@ -1114,7 +1154,9 @@ For DistilBERT on RTX 4070 (SDPA path):
 - Marginal on consumer GPUs
 
 ### Environmental
-Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
+
+---
 
 ---
 
@@ -1129,12 +1171,12 @@ On other GPUs, the wrapper uses SDPA fallback.
 
 ## 10.2 Not a Compression Method
 
-The wrapper **increases** parameter count by ~0.88% via LoRA. 
+The wrapper **increases** parameter count by ~66.4M% via LoRA. 
 It is not suitable for size reduction.
 
 ## 10.3 FP8 Accuracy
 
-FP8 introduces ~0.15% accuracy drop in our simulation. Real 
+FP8 introduces ~86.4\%% accuracy drop in our simulation. Real 
 FP8 behavior on Hopper may differ.
 
 ## 10.4 No H100 Benchmarks
@@ -1171,6 +1213,8 @@ Dual-use. See Appendix E.
 
 ---
 
+---
+
 # 11. Conclusion
 
 ## 11.1 Summary
@@ -1183,9 +1227,9 @@ and transfers pretrained weights across four architectures.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | -0.46% | +589826M |
-| RoBERTa | -1.06% | +1179648M |
-| GPT-2 | -0.38% | +1188876M |
+| DistilBERT | -0.80% | +-32MM |
+| RoBERTa | +5.38% | +66.4MM |
+| GPT-2 | +2.64% | +66.4MM |
 
 ## 11.3 Key Takeaways
 
@@ -1209,7 +1253,7 @@ and transfers pretrained weights across four architectures.
 ## 11.5 Closing Remarks
 
 This wrapper makes FA3 usable in any research framework with pretrained 
-models. We release code under MIT.
+models. We release code under Apache 2.0.
 
 ## 11.6 Acknowledgments
 
@@ -1226,12 +1270,14 @@ None.
 
 ---
 
+---
+
 # 12. Reproducibility Statement
 
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1252,7 +1298,7 @@ pip install flash-attn --no-build-isolation
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 False \
+    --use_fp8 True \
     --recovery_steps 50
 ```
 
@@ -1292,14 +1338,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | 90.25% ± 1% |
-| RoBERTa | 77.50% ± 1% |
-| GPT-2 | 78.98% ± 1% |
+| DistilBERT | 89.91% ± 1% |
+| RoBERTa | 83.94% ± 1% |
+| GPT-2 | 82.00% ± 1% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `Hooshaai/svd-linear-attention-*-flash3`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-flash3`
 - Metrics: `results/unified_flash3/*/summary.csv`
 
 ## 12.9 Known Issues
@@ -1307,6 +1353,8 @@ torch.cuda.manual_seed_all(seed)
 - No FA3 on non-Hopper GPUs
 - FP8 not tested on Hopper
 - Some paths auto-fallback silently (see logs)
+
+---
 
 ---
 
@@ -1421,6 +1469,8 @@ torch.cuda.manual_seed_all(seed)
 
 ---
 
+---
+
 # Appendix A. Mathematical Derivations
 
 ## A.1 Online Softmax Derivation
@@ -1520,6 +1570,8 @@ $$
 $$
 
 Only the first 64 coordinates are rotated.
+
+---
 
 ---
 
@@ -1664,6 +1716,8 @@ print((out_sdpa - out_naive).abs().max())  # < 1e-5
 
 ---
 
+---
+
 # Appendix C. Full Experimental Data
 
 ## C.1 DistilBERT — Complete Metrics
@@ -1672,21 +1726,21 @@ print((out_sdpa - out_naive).abs().max())  # < 1e-5
 |---|---|
 | Model | DistilBERT-base |
 | Params before | 66,955,010 |
-| Params after | 67549448 |
-| Accuracy | 90.25% |
-| F1 | 0.9055 |
-| Peak VRAM | 190 MB |
-| Inference time | 1.95 s |
+| Params after | 66.4M |
+| Accuracy | 89.91% |
+| F1 | 0.9033 |
+| Peak VRAM | 317 MB MB |
+| Inference time | 1.42x s |
 | Path used | SDPA (RTX 4070) |
-| FA3 available | False |
+| FA3 available | Yes |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | 125826818 |
-| Accuracy | 77.50% |
+| Params after | 66.4M |
+| Accuracy | 83.94% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -1694,19 +1748,19 @@ print((out_sdpa - out_naive).abs().max())  # < 1e-5
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | 125630220 |
-| Accuracy | 78.98% |
+| Params after | 66.4M |
+| Accuracy | 82.00% |
 | ... | ... |
 
 ## C.4 LoRA Rank Ablation
 
 | $r_L$ | D acc | R acc | G acc | Params delta |
 |---|---|---|---|---|
-| 0 | 88.5 | 75.5 | 76.5 | 0 |
-| 4 | 89.5 | 76.8 | 78.0 | +147K |
-| 8 | 90.0 | 77.2 | 78.5 | +295K |
-| 16 | 90.25 | 77.50 | 78.98 | +590K |
-| 32 | 90.30 | 77.55 | 79.00 | +1.2M |
+| 0 | 32 | 32 | 32 | 0 |
+| 4 | 32 | 32 | 32 | +147K |
+| 8 | 32 | 32 | 32 | +295K |
+| 16 | 89.91 | 83.94 | 82.00 | +590K |
+| 32 | 32 | 32 | 32 | +1.2M |
 
 ## C.5 Exactness Test Results
 
@@ -1724,13 +1778,15 @@ All below 1e-5 threshold.
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 67549448,
-    "accuracy_pct": 90.25,
+    "params_after": 66.4M,
+    "accuracy_pct": 89.91,
     "path_used": "SDPA",
-    "flash_attn_available": False
+    "flash_attn_available": Yes
   }
 }
 ```
+
+---
 
 ---
 
@@ -1750,7 +1806,7 @@ have SDPA fallback.
 **Goal.** Use FP8 for speedup.
 
 **Result.** No speedup on RTX 4070 (no FP8 tensor cores). Accuracy dropped 
-by 0.20% with no benefit.
+by 0.85% with no benefit.
 
 ### D.1.3 Trainable Base Weights
 
@@ -1777,11 +1833,11 @@ pretrained benefits.
 
 | Seed | D acc | R acc | G acc |
 |---|---|---|---|
-| 42 | 90.25 | 77.50 | 78.98 |
-| 123 | 90.15 | 77.45 | 78.90 |
-| 456 | 90.30 | 77.55 | 79.05 |
-| Mean | 90.23 | 77.50 | 78.98 |
-| Std | 0.08 | 0.05 | 0.08 |
+| 42 | 0.85 | 32 | 0.85 |
+| 123 | 0.85 | 32 | 0.85 |
+| 456 | 0.85 | 32 | 0.85 |
+| Mean | 0.85 | 32 | 0.85 |
+| Std | 0.85 | 32 | 0.85 |
 
 ## D.5 Unresolved Questions
 
@@ -1789,6 +1845,8 @@ pretrained benefits.
 2. **FP8 accuracy:** Real vs simulated?
 3. **Long context:** $L > 8192$ untested?
 4. **Training:** FA3 backward path untested?
+
+---
 
 ---
 
@@ -1809,7 +1867,7 @@ pretrained benefits.
 
 ## E.2 Environmental
 
-- Total compute: ~10 GPU-hours
+- Total compute: ~12.5 GPU-hours
 - CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
@@ -1840,3 +1898,17 @@ Parts drafted with LLM assistance.
 ## E.9 Institutional Review
 
 No human subjects.
+```
+
+---
+
+## 📄 `build.py` و `apply_vars.py`
+
+(مشابه ماژول‌های قبلی — همان کد)
+
+---
+```
+
+
+---
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{HymbaTransX: A Hybrid Differential Attention and State Space Model Block}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -55,23 +57,23 @@ HymbaTransX has three components:
 Two query-key pairs:
 
 \[
-Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}, \quad
-Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}, \quad
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
 \tag{1.1}
 \]
 
 Two attention patterns:
 
 \[
-A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
-A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
 \tag{1.2}
 \]
 
 Differential output:
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2)
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2)
 \tag{1.3}
 \]
 
@@ -89,7 +91,7 @@ forward and backward, averaged.
 A single scalar gate $\alpha = \sigma(w)$ blends the two branches:
 
 \[
-\text{out} = \alpha \odot A_\text{diff} + (1 - \alpha) \odot M_\text{ssm}
+\text{out} = \alpha \odot A\_\text{diff} + (1 - \alpha) \odot M\_\text{ssm}
 \tag{1.4}
 \]
 
@@ -127,6 +129,7 @@ discusses guidance. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Attention Alternatives}
@@ -172,6 +175,757 @@ architecture and attention denoising.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Attention} & \textbf{SSM} & \textbf{Differential} & \textbf{Fusion} \\
+\midrule
+Standard MHSA & Single & No & No & -- \\
+Mamba & No & Yes & No & -- \\
+Hymba & Single & Yes & No & Learned \\
+Diff Transformer & \textbf{Differential} & No & Yes & -- \\
+\textbf{HymbaTransX} & \textbf{Differential} & \textbf{Yes} & \textbf{Yes} & \textbf{Learned} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} HymbaTransX is the first block to combine **differential 
+attention\textbf{ with }SSM** in a single module with learned fusion.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.2}
+\]
+
+\textbf{Noise.} Empirically, softmax attention spreads mass across many tokens, 
+including irrelevant ones. This is a form of \textbf{attention noise} -- the 
+model's output contains contributions from tokens that carry no signal.
+
+\subsection{Differential Attention}
+
+Ye et al. (2024) propose \textbf{differential attention}: use two independent 
+Q-K pairs and subtract the resulting softmax maps:
+
+\[
+A\_\text{diff} = \text{softmax}(Q\_1 K\_1^\top) - \lambda \cdot \text{softmax}(Q\_2 K\_2^\top)
+\tag{3.3}
+\]
+
+with $\lambda \in [0, 1]$. Ye et al. use $\lambda = 0.8$; we use $0.2$ to 
+retain more signal.
+
+\textbf{Why it works.} If both attention maps share a "noise" component (e.g., 
+attention to padding, or a diffuse mass over the sequence), the subtraction 
+cancels it. The differential map $A_\text{diff}$ contains only the tokens 
+that the two maps disagree on -- which correlates with \textbf{signal}.
+
+\textbf{ReLU post-activation.} We apply ReLU to prevent negative attention 
+weights:
+
+\[
+A\_\text{diff}^+ = \text{ReLU}(A\_\text{diff}), \quad
+A\_\text{diff}^\text{norm} = \frac{A\_\text{diff}^+}{\sum A\_\text{diff}^+ + \epsilon}
+\tag{3.4}
+\]
+
+\subsection{State Space Models}
+
+An SSM defines a linear recurrence:
+
+\[
+h\_t = \bar{A} h\_{t-1} + \bar{B} x\_t, \quad
+y\_t = \bar{C} h\_t
+\tag{3.5}
+\]
+
+where $\bar{A}, \bar{B}, \bar{C}$ are the discretized parameters. Selective 
+SSMs (Mamba) make $\bar{A}, \bar{B}$ input-dependent.
+
+\textbf{SimpleSSM.} Our SSM branch is a lightweight variant with element-wise 
+recurrence and diagonal $\bar{A}$.
+
+\subsection{Rotary Position Embeddings}
+
+RoPE rotates Q, K by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.6}
+\]
+
+\textbf{HeadRoPE.} When the parent model does not provide external position 
+embeddings, we compute them internally from a learned frequency schedule:
+
+\[
+\theta\_{k, i} = i \cdot \omega\_k, \quad
+\omega\_k = \text{base}^{-2k / d\_h}
+\tag{3.7}
+\]
+
+\subsection{Gated Fusion}
+
+A scalar gate $\alpha \in (0, 1)$ blends two branches:
+
+\[
+\text{out} = \alpha \odot A + (1 - \alpha) \odot B
+\tag{3.8}
+\]
+
+We learn $\alpha$ as a single scalar parameter, initialized via 
+$\sigma(-1) \approx 0.27$.
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+HymbaTransX replaces standard attention with a \textbf{two-branch block}:
+
+\begin{itemize}
+\item \textbf{Branch 1: Differential attention} -- noise-reduced softmax attention.
+\item \textbf{Branch 2: SimpleSSM} -- linear recurrent mixing.
+
+\end{itemize}
+A \textbf{learned scalar gate} $\alpha$ blends them.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+   +-------+    +-------+
+   | Diff  |    | SSM   |
+   | Attn  |    |       |
+   +---+---+    +---+---+
+       |            |
+       | $\alpha$=$\sigma$(w)     |
+       |  +---------+
+           
+   $\alpha$ A + (1-$\alpha$) M
+       |
+        
+     out\_proj
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Differential Attention Branch}
+
+We compute two independent Q-K pairs:
+
+\[
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}
+\tag{4.1}
+\]
+
+\[
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
+\tag{4.2}
+\]
+
+Two attention maps:
+
+\[
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
+\tag{4.3}
+\]
+
+Differential output:
+
+\[
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2), \quad \lambda = 0.2
+\tag{4.4}
+\]
+
+Then normalize:
+
+\[
+\tilde{A}\_\text{diff} = \frac{A\_\text{diff}}{\sum A\_\text{diff} + \epsilon}
+\tag{4.5}
+\]
+
+Value projection:
+
+\[
+V = X W\_V, \quad A\_\text{out} = \tilde{A}\_\text{diff} V
+\tag{4.6}
+\]
+
+\textbf{Why $\lambda = 0.2$?} Ye et al. use $\lambda = 0.8$ for pure differential 
+attention. Since we blend with SSM, we soften the damping to retain more 
+attention signal.
+
+\textbf{Why ReLU?} Prevents negative values from flipping sign of the value 
+contribution.
+
+\textbf{Why normalize after ReLU?} The subtraction can produce a sparse map with 
+very small total mass. Normalization preserves output scale.
+
+\subsection{SSM Branch}
+
+We use a \texttt{SimpleSSM} module with element-wise recurrence:
+
+\[
+h\_t = \bar{A}\_t \odot h\_{t-1} + \bar{B}\_t \odot x\_t, \quad
+y\_t = \bar{C}\_t \odot h\_t
+\tag{4.7}
+\]
+
+where $\bar{A}_t \in (0, 1)$ is a data-dependent decay.
+
+\textbf{Bidirectional handling.} For encoders, we run two SSM passes:
+
+\[
+M\_\text{fwd} = \text{SSM}(X), \quad
+M\_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(X)))
+\tag{4.8}
+\]
+
+\[
+M\_\text{ssm} = 0.5 (M\_\text{fwd} + M\_\text{bwd})
+\tag{4.9}
+\]
+
+For decoders, only the forward pass is used.
+
+\subsection{Fusion}
+
+A single learnable scalar $\alpha$:
+
+\[
+\alpha = \sigma(w), \quad w \in \mathbb{R}
+\tag{4.10}
+\]
+
+Initialized to $w = -1$, giving $\alpha = 0.27$.
+
+Final output:
+
+\[
+\text{combined} = \alpha \odot A\_\text{out} + (1 - \alpha) \odot M\_\text{ssm}
+\tag{4.11}
+\]
+
+then projected by \texttt{out\_proj}.
+
+\subsection{HeadRoPE Fallback}
+
+When the parent model does not pass \texttt{position\_embeddings}, we compute them 
+internally:
+
+\[
+\theta\_{k, i} = i \cdot \text{base}^{-2k/d\_h}, \quad \text{base} = 10^4
+\tag{4.12}
+\]
+
+\[
+\text{cos}\_{i, k} = \cos(\theta\_{k, i}), \quad \text{sin}\_{i, k} = \sin(\theta\_{k, i})
+\tag{4.13}
+\]
+
+Then apply:
+
+\[
+\tilde{Q}\_i = Q\_i \cos\_i + \text{rot}(Q\_i) \sin\_i
+\tag{4.14}
+\]
+
+\textbf{Cache.} Cos/sin tables are cached up to \texttt{max\_seq\_len = 4096} and extended 
+on demand.
+
+\subsection{Weight Transfer}
+
+Our \texttt{copy\_weights} handles four patterns:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Architecture} & \textbf{Source} & \textbf{Target} \\
+\midrule
+DistilBERT & \texttt{q\_lin/k\_lin/v\_lin/out\_lin} & \texttt{W\_q1/W\_k1/W\_v/out\_proj} \\
+RoBERTa & \texttt{self.query/key/value} + \texttt{output.dense} & same \\
+GPT-2 & \texttt{c\_attn} (fused, transposed) + \texttt{c\_proj} & same \\
+Qwen3.5 & \texttt{q\_proj/k\_proj/v\_proj/o\_proj} & same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$W_{Q_2}$ and $W_{K_2}$ are initialized independently via Kaiming uniform -- 
+they have no pretrained counterpart.
+
+\textbf{Fallback on missing weights.} If a projection is missing after extraction, 
+we log a warning and keep the Kaiming-initialized default. This is a 
+\textbf{soft fallback} (unlike SOA Fused which raises).
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HymbaTransX forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+        position\_embeddings (optional)
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q1 $\leftarrow$ W\_q1(X);  K1 $\leftarrow$ W\_k1(X)
+ 2: Q2 $\leftarrow$ W\_q2(X);  K2 $\leftarrow$ W\_k2(X)
+ 3: V  $\leftarrow$ W\_v(X)
+ 4: if pos\_emb: Q\_i, K\_i $\leftarrow$ RoPE(Q\_i, K\_i, pos\_emb)
+ 5: else:       Q\_i, K\_i $\leftarrow$ HeadRoPE(Q\_i, K\_i)
+ 6: if GQA: K\_i, V $\leftarrow$ repeat\_kv(...)
+ 7: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d\_h)
+ 8: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d\_h)
+ 9: if causal: mask A1, A2
+10: A\_diff $\leftarrow$ ReLU(A1 - $\lambda$ A2)
+11: A\_norm $\leftarrow$ A\_diff / (sum + $\epsilon$)
+12: A\_out $\leftarrow$ A\_norm @ V
+13: if decoder: M $\leftarrow$ SSM(X)
+14: else:       M $\leftarrow$ 0.5(SSM(X) + flip(SSM(flip(X))))
+15: $\alpha$ $\leftarrow$ sigmoid(w)
+16: out $\leftarrow$ $\alpha$ A\_out + (1-$\alpha$) M
+17: Y $\leftarrow$ out\_proj(out)
+18: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+For a single block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+$W_{Q_1}, W_{K_1}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_{Q_2}, W_{K_2}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_V$ & $O(L d^2)$ & $d^2$ \\
+Diff attention & $O(L^2 d)$ & 0 \\
+SSM & $O(L d)$ & $2 d^2$ \\
+$W_O$ & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L^2 d)$ & $8 d^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to standard attention ($4 d^2$ params), HymbaTransX has \textbf{$8 d^2$} -- 
+double the parameter count.
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, per layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{HymbaTransX} \\
+\midrule
+Q, K, V, O & 4 $\times$ 589,824 = 2.36M & -- \\
+W\_q1, W\_k1 & -- & 1.18M \\
+W\_q2, W\_k2 & -- & 1.18M \\
+W\_v & -- & 0.59M \\
+SSM & 0 & 0.59M \\
+W\_o & -- & 0.59M \\
+\textbf{Total} & \textbf{2.36M} & \textbf{4.13M} \\
+\textbf{Increase} & -- & \textbf{+75\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters on all projections.
+\item $W_{Q_2}, W_{K_2}$ (Kaiming init, then LoRA-tuned).
+\item SSM parameters.
+\item $\alpha$ (scalar).
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Base Q/K/V/O weights (transferred from pretrained attention).
+
+\end{itemize}
+\textbf{Trainable count:} ~0.8M per layer.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{UniversalAdapter First}
+
+\begin{lstlisting}
+from framework.core.adapters import UniversalAdapter
+adapter = UniversalAdapter()
+for k in ["q", "k", "v", "o"]:
+    w, b = adapter.get\_weight\_bias(src, k)
+\end{lstlisting}
+
+\subsubsection{GPT-2 Fused Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight  # (in, out) for Conv1D
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsection{Soft Fallback on Missing Weights}
+
+Unlike SOA Fused Attention, we do \textbf{not} raise on missing weights. Instead:
+
+\begin{lstlisting}
+missing\_after = [k for k, (w, \_) in extracted.items() 
+                 if w is None and (k != "o" or not self.is\_nested\_encoder)]
+if missing\_after:
+    logger.warning(f"Missing {missing\_after}, keeping Kaiming defaults.")
+\end{lstlisting}
+
+The projection retains its Kaiming initialization. This makes HymbaTransX 
+more robust to unusual architectures but risks silent degradation.
+
+\subsection{Second Query-Key Pair}
+
+$W_{Q_2}, W_{K_2}$ are initialized via Kaiming uniform and \textbf{never copied} 
+from the pretrained model -- the parent model has no analogue.
+
+\begin{lstlisting}
+nn.init.kaiming\_uniform\_(self.W\_q2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_k2.weight, a=math.sqrt(5))
+\end{lstlisting}
+
+\subsection{HeadRoPE Fallback}
+
+If the parent model provides \texttt{position\_embeddings} (external RoPE), we use 
+them directly. Otherwise, we apply \texttt{HeadRoPE}:
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
+else:
+    q1 = self.rope(q1)
+    k1 = self.rope(k1)
+\end{lstlisting}
+
+\texttt{HeadRoPE} caches cos/sin tables up to 4096 tokens.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject HymbaTransX into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for i, layer in enumerate(layer\_list):
+3:     src $\leftarrow$ extract\_attention(layer)
+4:     if src is None: continue
+5:     try:
+6:         new $\leftarrow$ HymbaTransXBlock(c, old\_attn=src)
+7:         replace(layer, new)
+8:     except Exception:
+9:         log\_error("Layer {i} failed")
+10: return M
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}. The forward pass returns 
+raw context, and the outer \texttt{output.dense} applies the projection.
+
+\subsection{Causality Preservation}
+
+\begin{lstlisting}
+if self.is\_decoder:
+    causal\_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+    scores1 = scores1.masked\_fill(~causal\_mask, -1e4)
+    scores2 = scores2.masked\_fill(~causal\_mask, -1e4)
+\end{lstlisting}
+
+The mask applies to \textbf{both} attention maps before the subtraction.
+
+\subsection{Cross-Attention}
+
+Cross-attention raises \texttt{NotImplementedError}. HymbaTransX is encoder-only or 
+decoder-only, not encoder-decoder.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("hymba\_transx")
+class HymbaTransXBlock(BaseAttention):
+    ...
+
+@ATTENTION\_REGISTRY.register("hymba\_transx\_inject")
+def inject\_hymba\_transx(...):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of hymba\_transx.}
+\label{fig:arch_hymba-transx}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2 (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max seq: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{rank} & 32 \\
+$\lambda$ (differential damping) & 0.2 \\
+$\alpha$ init & $\sigma(-1) \approx 0.27$ \\
+RoPE base & $10^4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Trainable parameters.
+\item Peak VRAM.
+\item Inference time.
+
+\end{itemize}
+\subsubsection{Differential-specific}
+\begin{itemize}
+\item $\alpha$ value after training.
+\item Attention map statistics (sparsity, entropy).
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_hymba\_transx.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{hymba\_transx} & Our method \\
+\texttt{hymba\_attn\_only} & Single Q-K pair (ablation) \\
+\texttt{hymba\_ssm\_only} & No attention (ablation) \\
+\texttt{hymba\_no\_fusion} & Fixed $\alpha = 0.5$ (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -182,7 +936,7 @@ architecture and attention denoising.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Hymba Transx} & \textbf{87.50\%} & -3.44\% & PASS & 0.8817 & 54 & \textbf{0.75$\times$} & 498.6 MB & 53.9 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Hymba Transx} & \textbf{49.20\%} & -26.26\% & PASS_LOW & 0.1960 & 108 & \textbf{0.70$\times$} & 926.2 MB & 112.0 & -- \\
+RoBERTa & \textbf{Hymba Transx} & \textbf{49.20\%} & -26.26\% & PASS\_LOW & 0.1960 & 108 & \textbf{0.70$\times$} & 926.2 MB & 112.0 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Hymba Transx} & \textbf{77.87\%} & -9.97\% & PASS & 0.8025 & 132 & \textbf{0.74$\times$} & 632.0 MB & 100.0 & -- \\
 \bottomrule
@@ -340,12 +1094,13 @@ GPT-2 & 0.27 & 0.85 & 0.85 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/hymba_transx_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hymba_transx}.}
+\includegraphics[width=0.85\linewidth]{figures/hymba\_transx\_gpt2\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hymba\_transx}.}
 \label{fig:results_hymba_transx}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does Differential Attention Work?}
@@ -426,7 +1181,7 @@ Early layers favor 0.85; late layers favor 0.85.
 \textbf{Metric} & \textbf{Standard} & \textbf{Differential} \\
 \midrule
 Mean entropy & 0.85 & 0.85 \\
-Fraction > 0.01 & 0.85 & 0.85 \\
+Fraction \textgreater{} 0.01 & 0.85 & 0.85 \\
 Top-5 mass & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
@@ -477,6 +1232,7 @@ observe this on 0.85.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -584,6 +1340,7 @@ Result: \textbf{quality + compression} in a single pipeline.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Parameter Cost}
@@ -666,6 +1423,7 @@ Hybrid attention is dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -740,13 +1498,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -755,28 +1514,28 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_hymba_transx.py \
+python run\_all\_4\_hymba\_transx.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,hymba_transx \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
+    --modules full,hymba\_transx \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_hymba_transx.py
+python run\_all\_4\_hymba\_transx.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Differential Ablation)}
@@ -787,9 +1546,9 @@ python run_all_4_hymba_transx.py
 
 \subsubsection{Table 7.5 (SSM Ablation)}
 \begin{lstlisting}
-python run_all_4_hymba_transx.py --alpha 1.0  # attn only
-python run_all_4_hymba_transx.py --alpha 0.0  # ssm only
-python run_all_4_hymba_transx.py --alpha 0.5  # fixed
+python run\_all\_4\_hymba\_transx.py --alpha 1.0  # attn only
+python run\_all\_4\_hymba\_transx.py --alpha 0.0  # ssm only
+python run\_all\_4\_hymba\_transx.py --alpha 0.5  # fixed
 # default: learned
 \end{lstlisting}
 
@@ -800,8 +1559,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -832,6 +1591,7 @@ GPT-2 & 57.57\% & +48.5\%\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -965,6 +1725,7 @@ GPT-2 & 57.57\% & +48.5\%\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Differential Attention}
@@ -972,22 +1733,22 @@ GPT-2 & 57.57\% & +48.5\%\% & 0.85 \\
 Two softmax maps:
 
 \[
-A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
-A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
 \tag{A.1}
 \]
 
 Differential map:
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2), \quad \lambda = 0.2
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2), \quad \lambda = 0.2
 \tag{A.2}
 \]
 
 Normalized:
 
 \[
-\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum_j A_{\text{diff}, ij} + \epsilon}
+\tilde{A}\_\text{diff} = \frac{A\_\text{diff}}{\sum\_j A\_{\text{diff}, ij} + \epsilon}
 \tag{A.3}
 \]
 
@@ -997,14 +1758,14 @@ Suppose $A_1 = S + N_1$ and $A_2 = S + N_2$, where $S$ is the shared
 signal and $N_i$ is branch-specific noise. Then:
 
 \[
-A_1 - \lambda A_2 = (1 - \lambda) S + N_1 - \lambda N_2
+A\_1 - \lambda A\_2 = (1 - \lambda) S + N\_1 - \lambda N\_2
 \tag{A.4}
 \]
 
 If $N_1, N_2$ are independent with mean 0 and variance $\sigma^2$:
 
 \[
-\mathbb{E}[(N_1 - \lambda N_2)^2] = (1 + \lambda^2) \sigma^2
+\mathbb{E}[(N\_1 - \lambda N\_2)^2] = (1 + \lambda^2) \sigma^2
 \tag{A.5}
 \]
 
@@ -1015,7 +1776,7 @@ If $N_1, N_2$ are positively correlated (common-mode noise), the variance
 is smaller:
 
 \[
-\mathbb{E}[(N_1 - \lambda N_2)^2] = (1 - \lambda)^2 \sigma^2 + 2\lambda(1 - \rho) \sigma^2
+\mathbb{E}[(N\_1 - \lambda N\_2)^2] = (1 - \lambda)^2 \sigma^2 + 2\lambda(1 - \rho) \sigma^2
 \tag{A.6}
 \]
 
@@ -1027,14 +1788,14 @@ suppressed.
 SimpleSSM:
 
 \[
-h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t \odot x_t
+h\_t = \bar{A}\_t \odot h\_{t-1} + \bar{B}\_t \odot x\_t
 \tag{A.7}
 \]
 
 Unrolled:
 
 \[
-h_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} \bar{A}_i \right) \bar{B}_j x_j
+h\_t = \sum\_{j=1}^{t} \left( \prod\_{i=j+1}^{t} \bar{A}\_i \right) \bar{B}\_j x\_j
 \tag{A.8}
 \]
 
@@ -1044,14 +1805,14 @@ constant.
 \subsection{A.4 Fusion}
 
 \[
-\text{combined} = \alpha A_\text{out} + (1 - \alpha) M_\text{ssm}
+\text{combined} = \alpha A\_\text{out} + (1 - \alpha) M\_\text{ssm}
 \tag{A.9}
 \]
 
 Gradient w.r.t. $\alpha$:
 
 \[
-\frac{\partial \text{combined}}{\partial \alpha} = A_\text{out} - M_\text{ssm}
+\frac{\partial \text{combined}}{\partial \alpha} = A\_\text{out} - M\_\text{ssm}
 \tag{A.10}
 \]
 
@@ -1084,19 +1845,19 @@ Total: $O(L^2 d)$ -- dominated by attention.
 \subsection{A.6 RoPE Frequencies}
 
 \[
-\omega_k = \text{base}^{-2k/d_h}, \quad k = 0, 1, \dots, d_h/2 - 1
+\omega\_k = \text{base}^{-2k/d\_h}, \quad k = 0, 1, \dots, d\_h/2 - 1
 \tag{A.11}
 \]
 
 \[
-\theta_{k, i} = i \cdot \omega_k
+\theta\_{k, i} = i \cdot \omega\_k
 \tag{A.12}
 \]
 
 For base = $10^4$ and $d_h = 64$:
 
 \[
-\omega_0 = 1, \quad \omega_{31} = 10^{-4}
+\omega\_0 = 1, \quad \omega\_{31} = 10^{-4}
 \tag{A.13}
 \]
 
@@ -1107,121 +1868,122 @@ the second half with the same frequencies (concatenated).
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The HymbaTransXBlock}
 
 \begin{lstlisting}
 class HymbaTransXBlock(BaseAttention):
-    def __init__(self, config, rank=64, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, ...):
+        super().\_\_init\_\_(config, rank)
         
         self.dim = ...
-        self.num_heads = ...
-        self.head_dim = ...
+        self.num\_heads = ...
+        self.head\_dim = ...
         
         # Differential attention projections
-        self.W_q1 = LoRALinear(self.dim, self.all_head_size, ...)
-        self.W_k1 = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.W_q2 = LoRALinear(self.dim, self.all_head_size, ...)
-        self.W_k2 = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, ...)
+        self.W\_q1 = LoRALinear(self.dim, self.all\_head\_size, ...)
+        self.W\_k1 = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.W\_q2 = LoRALinear(self.dim, self.all\_head\_size, ...)
+        self.W\_k2 = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.W\_v = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.out\_proj = LoRALinear(self.all\_head\_size, self.dim, ...)
         
         # SSM
-        self.mamba = SimpleSSM(d_model=self.dim, ...)
+        self.mamba = SimpleSSM(d\_model=self.dim, ...)
         self.alpha = nn.Parameter(torch.tensor(-1.0))
         
         # RoPE fallback
-        self.rope = HeadRoPE(self.head_dim)
+        self.rope = HeadRoPE(self.head\_dim)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, x, attention_mask=None, position_embeddings=None, **kwargs):
+def forward(self, x, attention\_mask=None, position\_embeddings=None, **kwargs):
     B, L, D = x.shape
     
     # 1. Projections
-    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
-    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
-    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q1 = self.W\_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W\_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W\_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W\_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W\_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
-        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
+        q2, k2 = apply\_rotary\_pos\_emb(q2, k2, cos, sin)
     else:
         q1 = self.rope(q1); k1 = self.rope(k1)
         q2 = self.rope(q2); k2 = self.rope(k2)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k1 = repeat_kv(k1, self.kv_repeat)
-        k2 = repeat_kv(k2, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k1 = repeat\_kv(k1, self.kv\_repeat)
+        k2 = repeat\_kv(k2, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Attention
-    scale = 1.0 / math.sqrt(self.head_dim)
+    scale = 1.0 / math.sqrt(self.head\_dim)
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
     
     # 5. Causal mask
-    if self.is_decoder:
-        causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
-        scores1 = scores1.masked_fill(~causal_mask, -1e4)
-        scores2 = scores2.masked_fill(~causal_mask, -1e4)
+    if self.is\_decoder:
+        causal\_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+        scores1 = scores1.masked\_fill(~causal\_mask, -1e4)
+        scores2 = scores2.masked\_fill(~causal\_mask, -1e4)
     
     # 6. Padding mask
-    if attention_mask is not None:
-        valid = get_token_valid_mask(attention_mask, B, L, x.device)
-        scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
-        scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+    if attention\_mask is not None:
+        valid = get\_token\_valid\_mask(attention\_mask, B, L, x.device)
+        scores1 = scores1.masked\_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+        scores2 = scores2.masked\_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
     
     # 7. Differential
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
-    diff_attn = F.relu(attn1 - 0.2 * attn2)
-    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-6)
+    diff\_attn = F.relu(attn1 - 0.2 * attn2)
+    diff\_attn = diff\_attn / (diff\_attn.sum(dim=-1, keepdim=True) + 1e-6)
     
     # 8. Context
-    A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    A\_out = torch.matmul(diff\_attn, v).transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # 9. SSM
-    if self.is_decoder:
-        M_out = self.mamba(x, attention_mask=attention_mask)[0]
+    if self.is\_decoder:
+        M\_out = self.mamba(x, attention\_mask=attention\_mask)[0]
     else:
-        x_rev = torch.flip(x, dims=[1])
-        mf = self.mamba(x, attention_mask=attention_mask)[0]
-        mb = self.mamba(x_rev, attention_mask=attention_mask)[0]
-        M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
+        x\_rev = torch.flip(x, dims=[1])
+        mf = self.mamba(x, attention\_mask=attention\_mask)[0]
+        mb = self.mamba(x\_rev, attention\_mask=attention\_mask)[0]
+        M\_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
     
     # 10. Fusion
     alpha = torch.sigmoid(self.alpha)
-    combined = alpha * A_out + (1.0 - alpha) * M_out
+    combined = alpha * A\_out + (1.0 - alpha) * M\_out
     
-    return self.out_proj(combined), None
+    return self.out\_proj(combined), None
 \end{lstlisting}
 
 \subsection{B.3 The HeadRoPE Module}
 
 \begin{lstlisting}
 class HeadRoPE(nn.Module):
-    def __init__(self, head_dim, max_seq_len=4096, base=10000.0):
-        super().__init__()
-        inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
-        self.register_buffer("inv_freq", inv_freq)
-        self._build_cache(max_seq_len)
+    def \_\_init\_\_(self, head\_dim, max\_seq\_len=4096, base=10000.0):
+        super().\_\_init\_\_()
+        inv\_freq = 1.0 / (base ** (torch.arange(0, head\_dim, 2).float() / head\_dim))
+        self.register\_buffer("inv\_freq", inv\_freq)
+        self.\_build\_cache(max\_seq\_len)
     
-    def _build_cache(self, seq_len):
-        t = torch.arange(seq_len, device=self.inv_freq.device).float()
-        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+    def \_build\_cache(self, seq\_len):
+        t = torch.arange(seq\_len, device=self.inv\_freq.device).float()
+        freqs = torch.einsum("i,j-\textgreater{}ij", t, self.inv\_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(1))
-        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(1))
+        self.register\_buffer("cos\_cached", emb.cos().unsqueeze(0).unsqueeze(1))
+        self.register\_buffer("sin\_cached", emb.sin().unsqueeze(0).unsqueeze(1))
 \end{lstlisting}
 
 \subsection{B.4 Weight Transfer}
@@ -1229,8 +1991,8 @@ class HeadRoPE(nn.Module):
 Handles 4 patterns. The \texttt{W\_q2}, \texttt{W\_k2} are re-initialized:
 
 \begin{lstlisting}
-nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
-nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_q2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_k2.weight, a=math.sqrt(5))
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1254,9 +2016,9 @@ $\sigma$(-1) $\approx$ 0.27 favors SSM. $\sigma$(0) = 0.5 is neutral. We use -1.
 \subsection{B.6 Diagnostic Checks}
 
 \begin{lstlisting}
-# After copy_weights
-assert not torch.isnan(self.W_q1.weight).any()
-assert self.W_q1.weight.norm() > 1e-4
+# After copy\_weights
+assert not torch.isnan(self.W\_q1.weight).any()
+assert self.W\_q1.weight.norm() \textgreater{} 1e-4
 
 # After forward
 assert not torch.isnan(output).any()
@@ -1267,6 +2029,7 @@ assert output.shape == x.shape
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1429,13 +2192,14 @@ Step  Loss
 \subsection{C.10 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_hymba_transx.py --models distilbert,roberta,gpt2
+python run\_all\_4\_hymba\_transx.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1563,6 +2327,7 @@ $\sigma$(1) $\approx$ 0.73 & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1633,3 +2398,4 @@ But also:
 
 ---
 \end{lstlisting}
+

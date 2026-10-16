@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{GoldFinch-AHN: Adaptive Hybrid Network with Sliding-Window Attention and Learnable Preservation Gate}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -55,9 +57,9 @@ Two implementation details must be disclosed before the methodology:
 
 \begin{lstlisting}
 class GatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model, use_spectral_norm=False):
-        super().__init__()
-        self.net = nn.Linear(d_model, d_model)
+    def \_\_init\_\_(self, d\_model, use\_spectral\_norm=False):
+        super().\_\_init\_\_()
+        self.net = nn.Linear(d\_model, d\_model)
 
     def forward(self, x):
         return self.net(x)
@@ -99,6 +101,811 @@ concludes.
 
 \subsection{Notation}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$X$ & Input hidden states & 1.1 \\
+$g$ & Mixing gate & 1.1 \\
+$\alpha$ & Preservation coefficient & 1.2 \\
+$W$ & Window size & 3.2 \\
+$d$ & Hidden size & 3.1 \\
+$H$ & Number of heads & 3.1 \\
+$r$ & LoRA rank & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+
+
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Hybrid Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sliding-window + global tokens. 
+Longformer's window is fixed; ours is token-adaptive via a gate.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global. 
+Theoretically universal.
+
+\textbf{Hybrid Transformer} (Zhu et al., 2021). Local attention + low-rank 
+global. Similar in spirit.
+
+\textbf{Our approach.} Sliding-window + linear projection + preservation gate.
+
+\subsection{Sliding-Window Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). The canonical sliding-window 
+implementation.
+
+\textbf{Mistral} (Jiang et al., 2023). Uses sliding window for efficiency.
+
+\textbf{Our approach.} Sliding-window with an input-dependent gate.
+
+\subsection{Residual and Preservation}
+
+\textbf{LayerScale} (Touvron et al., 2021). Multiplies residual branch by small 
+learnable scalar.
+
+\textbf{ReZero} (Bachlechner et al., 2021). Zero-initialized residual branch 
+with learnable scalar. Ensures identity at initialization.
+
+\textbf{Our approach.} Preservation gate blends output with input via learnable 
+$\alpha = \sigma(2.0) \approx 0.88$. Similar to ReZero but with a 
+non-zero initialization.
+
+\subsection{Linear Attention and State-Space}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Linear attention.
+
+\textbf{Gated DeltaNet} (Yang et al., 2024). Delta-rule recurrent.
+
+\textbf{Note.} Our long-memory branch is a \textbf{linear projection}, not a recurrent 
+mechanism. See Section 1.3.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Local attention} & Sliding window & Sliding window \\
+\textbf{Long memory} & Recurrent & \textbf{Linear projection} \\
+\textbf{Mixing} & Fixed or gate & Input-dependent gate \\
+\textbf{Preservation} & LayerScale, ReZero & Preservation gate \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} GoldFinch-AHN is \textbf{conservative}: the preservation 
+gate keeps the block close to identity. This reduces risk but also reduces 
+potential gains.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Local} & \textbf{Long} & \textbf{Gate} & \textbf{Preserve} \\
+\midrule
+Longformer & Window & Global tokens & Fixed & No \\
+BigBird & Window & Random + global & Fixed & No \\
+ReZero & N/A & N/A & N/A & Yes \\
+LayerScale & N/A & N/A & N/A & Yes \\
+\textbf{GoldFinch-AHN} & \textbf{Window} & \textbf{Linear} & \textbf{Input} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Multi-Head Attention}
+
+Standard attention:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
+\tag{3.1}
+\]
+
+\subsection{Sliding-Window Attention}
+
+A sliding-window mask restricts attention to nearby tokens:
+
+\[
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\tag{3.2}
+\]
+
+Then:
+
+\[
+\text{Attn}\_\text{window}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}} + \log M\right)V
+\tag{3.3}
+\]
+
+\textbf{Complexity.} $\mathcal{O}(L W)$ time, $\mathcal{O}(L W)$ memory. Linear 
+in $L$ for fixed $W$.
+
+\subsection{Gating}
+
+An input-dependent gate:
+
+\[
+g\_t = \sigma(W\_g x\_t + b\_g)
+\tag{3.4}
+\]
+
+where $W_g \in \mathbb{R}^{d \times k}$ and $k$ is the gate dimension. 
+The gate can be per-token, per-head, or scalar.
+
+\textbf{Initialization.} Bias $b_g$ controls the initial gate value. Common choices:
+\begin{itemize}
+\item $b_g = 0$: $\sigma(0) = 0.5$ (equal mixture)
+\item $b_g = 2$: $\sigma(2) \approx 0.88$ (favor first branch)
+\item $b_g = -2$: $\sigma(-2) \approx 0.12$ (favor second branch)
+
+\end{itemize}
+\subsection{Preservation Gate (Residual with Learnable Coefficient)}
+
+A preservation gate blends the block output with the block input:
+
+\[
+Y = \alpha \cdot F(X) + (1 - \alpha) \cdot X
+\tag{3.5}
+\]
+
+where $\alpha = \sigma(W_\alpha)$ is learnable.
+
+\textbf{Special cases:}
+\begin{itemize}
+\item $\alpha = 1$: pure residual (standard transformer)
+\item $\alpha = 0$: pure identity (block ignored)
+\item $\alpha = 0.5$: half residual
+
+\end{itemize}
+\textbf{ReZero} (Bachlechner et al., 2021). Uses $\alpha = 0$ at initialization, 
+i.e., identity at start. Our choice of $\alpha = \sigma(2) \approx 0.88$ is 
+different: we start with residual-dominant but not identity.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021):
+
+\[
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha\_L}{r} BA
+\tag{3.6}
+\]
+
+with $B = 0$ at initialization.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Hidden size \\
+$H$ & Number of heads \\
+$W$ & Window size \\
+$g$ & Mixing gate \\
+$\alpha$ & Preservation coefficient \\
+$r$ & LoRA rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+
+
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+GoldFinch-AHN has the following structure:
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +------+       +------+      +-----------+
+    |  Q   |       |  K   |      |  Linear   |
+    | proj |       | proj |      |  (delta)  |
+    +--+---+       +--+---+      +-----+-----+
+       |              |                |
+                                        
+   +----------------------+      +-----------+
+   | Sliding-window       |      | long\_out  |
+   | attention            |      +-----+-----+
+   +--------+-------------+            |
+            | short\_out                |
+            |                          |
+       +----+--------------------------+----+
+       |                                    |
+       |  gate(x) $\to$ per-token mixing        |
+       |  fused = g * short + (1-g) * long  |
+       +--------+---------------------------+
+                |
+                 
+       +------------------+
+       | out\_proj         |
+       +--------+---------+
+                |
+                 
+       +------------------+
+       | Preservation     |
+       | gate: $\alpha$ out +    |
+       | (1-$\alpha$) x          |
+       +--------+---------+
+                |
+                 
+              Output
+\end{lstlisting}
+
+\subsection{Sliding-Window Attention}
+
+We compute standard scaled dot-product attention with a band mask:
+
+\[
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d}}
+\tag{4.1}
+\]
+
+Apply window mask:
+
+\[
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W \\ 0 & \text{otherwise} \end{cases}
+\tag{4.2}
+\]
+
+For causal decoders:
+
+\[
+M\_{ij} = \begin{cases} 1 & 0 \leq i - j \leq W \\ 0 & \text{otherwise} \end{cases}
+\tag{4.3}
+\]
+
+Then:
+
+\[
+\text{short}\_i = \sum\_j \text{softmax}\_j(\text{scores}\_{ij} + \log M\_{ij}) v\_j
+\tag{4.4}
+\]
+
+\subsection{Long-Memory Branch (Linear Projection)}
+
+\textbf{Important.} The code refers to this as \texttt{GatedDeltaNetLayer} but 
+implements:
+
+\begin{lstlisting}
+long\_out = self.delta\_mem(x)  # = Linear(x)
+\end{lstlisting}
+
+There is no recurrence, no gating, no state. It is a single linear 
+projection $W_m \in \mathbb{R}^{d \times d}$. Its role in the architecture 
+is:
+
+\[
+\text{long}\_t = W\_m x\_t + b\_m
+\tag{4.5}
+\]
+
+\textbf{Interpretation.} The long-memory branch is a per-token learned 
+transformation. It cannot capture long-range dependencies because it 
+processes each token independently.
+
+\subsection{Input-Dependent Gate}
+
+The gate:
+
+\[
+g\_t = \sigma(W\_g x\_t + b\_g) \in \mathbb{R}^H
+\tag{4.6}
+\]
+
+with $W_g \in \mathbb{R}^{d \times H}$ and $b_g \in \mathbb{R}^H$.
+
+\textbf{Mean over heads:} In forward, the gate is reduced to a scalar per token:
+
+\[
+g'\_t = \frac{1}{H} \sum\_{h=1}^H g\_{t,h}
+\tag{4.7}
+\]
+
+\textbf{Fusion:}
+
+\[
+\text{fused}\_t = g'\_t \cdot \text{short}\_t + (1 - g'\_t) \cdot \text{long}\_t
+\tag{4.8}
+\]
+
+\subsection{Output Projection and Preservation Gate}
+
+Output projection:
+
+\[
+\text{out} = W\_O \cdot \text{fused} + b\_O
+\tag{4.9}
+\]
+
+Then the preservation gate:
+
+\[
+\alpha = \sigma(w\_\alpha) \approx 0.88 \text{ at init}
+\tag{4.10}
+\]
+
+\[
+Y = \alpha \cdot \text{out} + (1 - \alpha) \cdot x
+\tag{4.11}
+\]
+
+\textbf{Interpretation.} The preservation gate blends the block output with the 
+input. At $\alpha = 0.88$, the block contributes 88\% of the variance and 
+the input contributes 12\%. This keeps the model close to its pretrained 
+behavior.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{GoldFinch} \\
+\midrule
+Q/K/V/O projections & $4 d^2$ & $4 d^2 + \text{LoRA}$ \\
+Gate $W_g$ & 0 & $d H + H$ \\
+Long-memory $W_m$ & 0 & $d^2 + d$ \\
+Preservation $\alpha$ & 0 & 1 \\
+Output scale & 0 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (DistilBERT, $d = 768$, $H = 12$):}
+\begin{itemize}
+\item Gate: $768 \times 12 + 12 = 9{,}228$
+\item Long-memory: $768^2 + 768 = 590{,}592$
+\item LoRA per projection: $2 \times 16 \times 768 = 24{,}576$ $\times$ 4 = 98,304
+\item \textbf{Total per layer: ~698,124}
+
+\end{itemize}
+\textbf{$\Delta$\% per layer (DistilBERT): ~29.6\% of a layer's params.}
+\textbf{$\Delta$\% total (DistilBERT): ~5-6\%.}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+Sliding window & $\mathcal{O}(LWd)$ & $\mathcal{O}(LW)$ \\
+Long-memory (Linear) & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+Gate & $\mathcal{O}(LdH)$ & $\mathcal{O}(LH)$ \\
+Output proj & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+\textbf{Total} & $\mathcal{O}(Ld^2 + LWd)$ & $\mathcal{O}(LW)$ \\
+\textbf{Baseline MHSA} & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $W \ll L$: GoldFinch is $\mathcal{O}(L d^2)$ -- linear in $L$.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} GoldFinch-AHN forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, W (window)
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+4:
+5: # Sliding-window attention
+6: scores $\leftarrow$ Q K^T / sqrt(d)
+7: M $\leftarrow$ band\_mask(L, W, causal=is\_decoder)
+8: scores $\leftarrow$ scores + log(M)
+9: attn $\leftarrow$ softmax(scores)
+10: short $\leftarrow$ attn @ V
+11:
+12: # Long-memory branch (LINEAR PROJECTION)
+13: long $\leftarrow$ Linear\_m(X)
+14:
+15: # Input-dependent gate (mean over heads)
+16: gate $\leftarrow$ mean(sigmoid(W\_g X + b\_g))
+17: fused $\leftarrow$ gate * short + (1 - gate) * long
+18:
+19: out $\leftarrow$ out\_proj(fused)
+20: $\alpha$ $\leftarrow$ sigmoid(output\_gate)     init $\approx$ 0.88
+21: Y $\leftarrow$ $\alpha$ * out + (1 - $\alpha$) * X
+22: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Sliding-Window Complexity}
+
+For fixed $W$ and sequence length $L$:
+
+\[
+T\_\text{window} = \mathcal{O}(L W d)
+\tag{4.12}
+\]
+
+This is \textbf{linear} in $L$, matching linear attention complexity.
+
+\subsubsection{The Long-Memory Branch Contributes Almost Nothing}
+
+Since the long-memory branch is $W_m x_t$ (per-token), it cannot encode 
+sequence-level information. Its only role is to add a per-token 
+transformation that the gate can blend in.
+
+\textbf{Effect.} With gate $g \approx 0.86$, the long-memory contribution is 
+$\sim 14\%$ of fused. Given that $W_m$ is randomly initialized and only 
+LoRA-trained, this contribution is small.
+
+\subsubsection{Preservation Gate at Initialization}
+
+At initialization:
+\begin{itemize}
+\item $\alpha = \sigma(2.0) \approx 0.88$
+\item $Y = 0.88 \cdot \text{out} + 0.12 \cdot x$
+
+\end{itemize}
+Since \texttt{out} depends on randomly-initialized $W_m$ (but not on $W_Q, W_K, W_V$ 
+which are pretrained), the output has a mix of pretrained + random.
+
+\textbf{LoRA recovery} must align the gate + long-memory + output scale to 
+produce useful output.
+
+
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight.data
+k\_w = src.k\_lin.weight.data
+v\_w = src.v\_lin.weight.data
+o\_w = src.out\_lin.weight.data
+\end{lstlisting}
+
+\subsection{Gate Initialization}
+
+\begin{lstlisting}
+self.gate = nn.Linear(self.dim, self.num\_heads)
+self.gate.bias.data.fill\_(gate\_init\_bias)  # default 1.8
+\end{lstlisting}
+
+With \texttt{gate\_init\_bias = 1.8}: $\sigma(1.8) \approx 0.86$. The gate initially 
+favors the short (sliding-window) branch.
+
+\subsection{Preservation Gate Initialization}
+
+\begin{lstlisting}
+self.output\_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+At initialization: $\alpha = \sigma(2.0) \approx 0.88$.
+
+\subsection{RoPE Extraction}
+
+For Qwen:
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
+elif self.rotary\_emb is not None:
+    try:
+        cos, sin = rotary\_module(q, seq\_len=L)
+    except Exception:
+        try:
+            cos, sin = rotary\_module(q, pos\_ids)
+        except Exception:
+            cos, sin = None, None
+\end{lstlisting}
+
+\subsection{GQA Support}
+
+\begin{lstlisting}
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject GoldFinch-AHN
+\begin{lstlisting}
+1: new $\leftarrow$ GoldFinchAHNBlock(config, old=old\_attn)
+2: if copy\_weights fails: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
+5: elif   has .attention:
+6:      .attention $\leftarrow$ new
+7: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+8: elif   has .attn:  .attn $\leftarrow$ new
+9: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{The `GatedDeltaNetLayer` is a Linear Projection}
+
+The name is misleading. The class does not implement a recurrent mechanism.
+
+\subsubsection{`output\_scale` Redundancy}
+
+\texttt{LoRALinear} has \texttt{self.output\_scale = nn.Parameter(torch.ones(1))} applied 
+at the end of \texttt{forward}. Additionally, \texttt{GoldFinchAHNBlock} has its own 
+\texttt{self.output\_scale}. \textbf{Double scaling} can occur.
+
+\subsubsection{Gate Mean Over Heads}
+
+The gate is computed per-head but then \textbf{mean-pooled}:
+
+\begin{lstlisting}
+gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)
+\end{lstlisting}
+
+This destroys per-head differentiation. The resulting \texttt{gate} has shape 
+\texttt{(B, L, 1)} -- a single scalar per token, applied uniformly across all heads.
+
+\subsubsection{Preservation Gate Means High Residual}
+
+With $\alpha \approx 0.88$, only ~12\% of the block's output reaches the 
+next layer. This makes the block \textbf{conservative}.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("goldfinch\_ahn")
+@ATTENTION\_REGISTRY.register("goldfinch")
+class GoldFinchAHNBlock(BaseAttention):
+    ...
+\end{lstlisting}
+
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of goldfinch\_ahn.}
+\label{fig:arch_goldfinch-ahn}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{window\_size} & 128 (default 64) \\
+\texttt{gate\_init\_bias} & 0.0 (default 1.8) \\
+\texttt{output\_gate} init & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params
+\item Peak VRAM
+\item Per-step time
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_goldfinch\_ahn.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --window\_size 128
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+\subsection{Ablations}
+
+\begin{itemize}
+\item Window size
+\item Gate init bias
+\item Preservation gate init
+\item Removing long-memory branch
+
+\end{itemize}
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{goldfinch\_ahn} -- our method
+\item Prior modules: \texttt{cosformer}, \texttt{nha}, \texttt{a3}
+
+\end{itemize}
+
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -111,7 +918,7 @@ DistilBERT & \textbf{Goldfinch Ahn} & \textbf{90.83\%} & -0.11\% & PASS & 0.9101
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Goldfinch Ahn} & \textbf{71.90\%} & -3.56\% & PASS & 0.7717 & 48 & \textbf{0.89$\times$} & 684.8 MB & 27.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Goldfinch Ahn} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 595.8 MB & 31.9 & -- \\
+GPT-2 & \textbf{Goldfinch Ahn} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 595.8 MB & 31.9 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -313,12 +1120,13 @@ nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/goldfinch_ahn_roberta_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{goldfinch_ahn}.}
+\includegraphics[width=0.85\linewidth]{figures/goldfinch\_ahn\_roberta\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{goldfinch\_ahn}.}
 \label{fig:results_goldfinch_ahn}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -327,7 +1135,7 @@ nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
 \textbf{Test.} We removed the long-memory branch and replaced it with zero:
 
 \begin{lstlisting}
-long_out = torch.zeros_like(x)
+long\_out = torch.zeros\_like(x)
 \end{lstlisting}
 
 \textbf{Result:}
@@ -391,7 +1199,7 @@ eliminates head specialization in the gating mechanism.
 
 \begin{lstlisting}
 gate = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)  # (B, H, L, 1)
-fused = gate * short_out.view(B, H, L, d) + (1 - gate) * long_out.view(B, H, L, d)
+fused = gate * short\_out.view(B, H, L, d) + (1 - gate) * long\_out.view(B, H, L, d)
 \end{lstlisting}
 
 We did not implement this variant, but it is a natural extension.
@@ -516,6 +1324,7 @@ Cosformer & 0.85\% & 2.3 s$\times$ & Linear state \\
 \end{enumerate}
 
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -646,6 +1455,7 @@ latency.**
 
 
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -716,6 +1526,7 @@ The window size is a hyperparameter. Optimal value depends on task.
 \end{itemize}
 
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -806,14 +1617,15 @@ None.
 
 
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -822,20 +1634,20 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_goldfinch_ahn.py \
+python run\_all\_4\_goldfinch\_ahn.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --window_size 128
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --window\_size 128
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch_ahn",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch\_ahn",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -845,14 +1657,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_goldfinch_ahn.py --models distilbert,roberta,gpt2
+python run\_all\_4\_goldfinch\_ahn.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Window Ablation}
 
 \begin{lstlisting}
 for W in 16 32 64 128; do
-    python run_all_4_goldfinch_ahn.py --window_size $W --output_suffix w$W
+    python run\_all\_4\_goldfinch\_ahn.py --window\_size $W --output_suffix w$W
 done
 \end{lstlisting}
 
@@ -860,7 +1672,7 @@ done
 
 \begin{lstlisting}
 for b in 0.0 1.0 1.8 3.0; do
-    python run_all_4_goldfinch_ahn.py --gate_init_bias $b --output_suffix b$b
+    python run\_all\_4\_goldfinch\_ahn.py --gate\_init\_bias $b --output_suffix b$b
 done
 \end{lstlisting}
 
@@ -868,7 +1680,7 @@ done
 
 \begin{lstlisting}
 for g in 0.0 1.0 2.0 5.0; do
-    python run_all_4_goldfinch_ahn.py --output_gate_init $g --output_suffix ag$g
+    python run\_all\_4\_goldfinch\_ahn.py --output\_gate\_init $g --output_suffix ag$g
 done
 \end{lstlisting}
 
@@ -876,8 +1688,8 @@ done
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -906,7 +1718,7 @@ L = 16
 W = 4
 idx = torch.arange(L)
 dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
-M = dist <= W
+M = dist \textless{}= W
 # Check band structure
 assert M[0, 0] == True
 assert M[0, W+1] == False
@@ -918,15 +1730,15 @@ assert M[0, W+1] == False
 import torch
 alpha = torch.sigmoid(torch.tensor(2.0))
 # alpha $\approx$ 0.88
-assert 0.85 < alpha.item() < 0.90
+assert 0.85 \textless{} alpha.item() \textless{} 0.90
 \end{lstlisting}
 
 \subsubsection{Verify Gate Mean}
 
 \begin{lstlisting}
 x = torch.randn(2, 8, 768)
-gate_raw = torch.sigmoid(torch.nn.Linear(768, 12)(x))  # (2, 8, 12)
-gate = gate_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
+gate\_raw = torch.sigmoid(torch.nn.Linear(768, 12)(x))  # (2, 8, 12)
+gate = gate\_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
 # Confirm scalar per token
 assert gate.shape == (2, 8, 1)
 \end{lstlisting}
@@ -949,6 +1761,7 @@ assert gate.shape == (2, 8, 1)
 \end{itemize}
 
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1090,6 +1903,7 @@ assert gate.shape == (2, 8, 1)
 
 
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1098,7 +1912,7 @@ assert gate.shape == (2, 8, 1)
 For position $i$ and key position $j$:
 
 \[
-M_{ij} = \mathbf{1}\left[|i - j| \leq W\right] \cdot \mathbf{1}\left[\text{valid}_j\right]
+M\_{ij} = \mathbf{1}\left[|i - j| \leq W\right] \cdot \mathbf{1}\left[\text{valid}\_j\right]
 \tag{A.1}
 \]
 
@@ -1107,7 +1921,7 @@ where $\text{valid}_j \in \{0, 1\}$ is the padding mask.
 \subsection{A.2 Fusion Formula}
 
 \[
-\text{fused}_t = g_t \cdot \text{short}_t + (1 - g_t) \cdot \text{long}_t
+\text{fused}\_t = g\_t \cdot \text{short}\_t + (1 - g\_t) \cdot \text{long}\_t
 \tag{A.2}
 \]
 
@@ -1142,7 +1956,7 @@ which is fully identity at init.
 The "GatedDeltaNetLayer" computes:
 
 \[
-\text{long}_t = W_m x_t + b_m
+\text{long}\_t = W\_m x\_t + b\_m
 \tag{A.4}
 \]
 
@@ -1211,6 +2025,7 @@ For $L = 128$, $d = 768$: GoldFinch ~ $5 \cdot 128 \cdot 768^2 \approx
 
 
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1218,11 +2033,11 @@ For $L = 128$, $d = 768$: GoldFinch ~ $5 \cdot 128 \cdot 768^2 \approx
 
 \begin{lstlisting}
 class GatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model: int, use_spectral_norm: bool = False) -> None:
-        super().__init__()
-        self.net = nn.Linear(d_model, d_model)
+    def \_\_init\_\_(self, d\_model: int, use\_spectral\_norm: bool = False) -\textgreater{} None:
+        super().\_\_init\_\_()
+        self.net = nn.Linear(d\_model, d\_model)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -\textgreater{} torch.Tensor:
         return self.net(x)
 \end{lstlisting}
 
@@ -1233,12 +2048,12 @@ gating, no delta rule, no recurrence.
 
 \begin{lstlisting}
 class RealGatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model):
-        super().__init__()
-        self.W_k = nn.Linear(d_model, d_model, bias=False)
-        self.W_v = nn.Linear(d_model, d_model, bias=False)
-        self.W_q = nn.Linear(d_model, d_model, bias=False)
-        self.beta_proj = nn.Linear(d_model, 1)
+    def \_\_init\_\_(self, d\_model):
+        super().\_\_init\_\_()
+        self.W\_k = nn.Linear(d\_model, d\_model, bias=False)
+        self.W\_v = nn.Linear(d\_model, d\_model, bias=False)
+        self.W\_q = nn.Linear(d\_model, d\_model, bias=False)
+        self.beta\_proj = nn.Linear(d\_model, 1)
         # ...
 
     def forward(self, x):
@@ -1249,8 +2064,8 @@ class RealGatedDeltaNetLayer(nn.Module):
 \subsection{B.2 The Gate and Mean-Pooling}
 
 \begin{lstlisting}
-self.gate = nn.Linear(self.dim, self.num_heads)
-self.gate.bias.data.fill_(gate_init_bias)  # default 1.8
+self.gate = nn.Linear(self.dim, self.num\_heads)
+self.gate.bias.data.fill\_(gate\_init\_bias)  # default 1.8
 # ...
 gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)  # (B, L, 1)
 \end{lstlisting}
@@ -1263,20 +2078,20 @@ same gate value.
 \begin{lstlisting}
 gate = torch.sigmoid(self.gate(x))  # (B, L, H)
 gate = gate.transpose(1, 2).unsqueeze(-1)  # (B, H, L, 1)
-short_per_head = short_out.view(B, H, L, self.head_dim)
-long_per_head = long_out.view(B, H, L, self.head_dim)
-fused = gate * short_per_head + (1 - gate) * long_per_head
+short\_per\_head = short\_out.view(B, H, L, self.head\_dim)
+long\_per\_head = long\_out.view(B, H, L, self.head\_dim)
+fused = gate * short\_per\_head + (1 - gate) * long\_per\_head
 \end{lstlisting}
 
 \subsection{B.3 The Preservation Gate}
 
 \begin{lstlisting}
-self.output_scale = nn.Parameter(torch.ones(1))
-self.output_gate = nn.Parameter(torch.tensor(2.0))
+self.output\_scale = nn.Parameter(torch.ones(1))
+self.output\_gate = nn.Parameter(torch.tensor(2.0))
 # ...
-out = self.out_proj(fused)
-out = out * self.output_scale
-alpha = torch.sigmoid(self.output_gate)
+out = self.out\_proj(fused)
+out = out * self.output\_scale
+alpha = torch.sigmoid(self.output\_gate)
 out = alpha * out + (1.0 - alpha) * x
 \end{lstlisting}
 
@@ -1288,7 +2103,7 @@ This creates \textbf{double scaling}.
 Standard four-architecture handling:
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
+if hasattr(src, "c\_attn"):
     # GPT-2 fused Conv1D
     ...
 elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -1328,8 +2143,8 @@ present in the pretrained model. On \texttt{load\_state\_dict}, it defaults to 1
 
 \begin{lstlisting}
 x = torch.randn(2, 8, 768)
-gate_raw = torch.sigmoid(model.gate(x))  # (2, 8, 12)
-gate = gate_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
+gate\_raw = torch.sigmoid(model.gate(x))  # (2, 8, 12)
+gate = gate\_raw.mean(dim=-1, keepdim=True)  # (2, 8, 1)
 print(f"Gate mean: {gate.mean().item():.4f}")
 # At init, should be $\approx$ 0.86
 \end{lstlisting}
@@ -1337,7 +2152,7 @@ print(f"Gate mean: {gate.mean().item():.4f}")
 \subsubsection{Check Preservation Gate}
 
 \begin{lstlisting}
-alpha = torch.sigmoid(model.output_gate)
+alpha = torch.sigmoid(model.output\_gate)
 print(f"$\alpha$ = {alpha.item():.4f}")
 # At init: $\approx$ 0.88
 \end{lstlisting}
@@ -1345,14 +2160,14 @@ print(f"$\alpha$ = {alpha.item():.4f}")
 \subsubsection{Check Long-Memory Norm}
 
 \begin{lstlisting}
-long_out = model.delta_mem(x)
-print(f"long_out norm: {long_out.norm().item():.4f}")
+long\_out = model.delta\_mem(x)
+print(f"long\_out norm: {long\_out.norm().item():.4f}")
 \end{lstlisting}
 
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("goldfinch_ahn")
+@ATTENTION\_REGISTRY.register("goldfinch\_ahn")
 class GoldFinchAHNBlock(BaseAttention):
     ...
 \end{lstlisting}
@@ -1363,6 +2178,7 @@ Standard pattern with whole-model and single-layer traversal.
 
 
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1504,15 +2320,16 @@ Without long-memory & 0.85\% \\
 \subsection{C.9 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_goldfinch_ahn.py --models distilbert,roberta,gpt2
+python run\_all\_4\_goldfinch\_ahn.py --models distilbert,roberta,gpt2
 
 for W in 16 32 64 128; do
-    python run_all_4_goldfinch_ahn.py --window_size $W --output_suffix w$W
+    python run\_all\_4\_goldfinch\_ahn.py --window\_size $W --output_suffix w$W
 done
 \end{lstlisting}
 
 
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1643,6 +2460,7 @@ Increase gate init bias & No change \\
 \end{enumerate}
 
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1694,9 +2512,10 @@ for honesty about implementation gaps.
 
 ---
 
-##   `build.py` and `apply_vars.py`
+##   `build.py` and `apply\_vars.py`
 
 Same as previous templates.
 
 ---
 \end{lstlisting}
+

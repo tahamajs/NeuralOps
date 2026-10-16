@@ -1,0 +1,3 @@
+# Appendix B. Implementation Details & Code Mapping
+
+Detailed mappings of `svd_linear_inject` to PyTorch layers, autograd functions, and Triton kernels.

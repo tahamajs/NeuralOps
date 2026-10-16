@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Gated DeltaNet: Associative State Recurrence with Input-Dependent Exponential Decay}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -18,7 +20,7 @@ The core idea: replace the softmax attention matrix with a **fixed-size
 state** $S \in \mathbb{R}^{d_h \times d_h}$ that is updated as tokens arrive:
 
 \[
-S_t = f(S_{t-1}, K_t, V_t), \quad y_t = Q_t^\top S_t
+S\_t = f(S\_{t-1}, K\_t, V\_t), \quad y\_t = Q\_t^\top S\_t
 \tag{1.1}
 \]
 
@@ -97,6 +99,903 @@ limitations. Section 11 concludes.
 
 \subsection{Notation}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d$ & Head dimension & 1.1 \\
+$H$ & Number of heads & 1.1 \\
+$S_t$ & State matrix at time $t$ & 1.1 \\
+$\alpha_t$ & Forget gate (input-dependent) & 1.3 \\
+$\beta_t$ & Write gate (input-dependent) & 1.3 \\
+$K_t, V_t, Q_t$ & Key, Value, Query at token $t$ & 1.1 \\
+$r$ & LoRA rank & 3.5 \\
+$\text{chunk\_size}$ & Inner loop size & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+
+
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Reformulates attention 
+with a kernel function $\phi$:
+
+\[
+y\_t = \frac{\sum\_{s \leq t} \phi(q\_t)^\top \phi(k\_s) v\_s}{\sum\_{s \leq t} \phi(q\_t)^\top \phi(k\_s)}
+\tag{2.1}
+\]
+
+which can be computed with a running state $S_t = \sum_{s \leq t} \phi(k_s) v_s^\top$. 
+\textbf{No gating, no error correction.}
+
+\textbf{Performer} (Choromanski et al., 2021). Uses random Fourier features for 
+$\phi$. Same linear state but with better kernel approximation.
+
+\subsection{Gated Linear Attention}
+
+\textbf{RetNet} (Sun et al., 2023). Introduces exponential decay:
+\[
+S\_t = \gamma S\_{t-1} + k\_t v\_t^\top
+\tag{2.2}
+\]
+with fixed (not input-dependent) $\gamma$.
+
+\textbf{Mamba} (Gu \& Dao, 2023). Adds input-dependent gating to state-space models, 
+but does not use the Delta Rule.
+
+\textbf{GLA} (Yang et al., 2024). Combines Mamba-style gating with linear attention.
+
+\subsection{Delta Rule Attention}
+
+\textbf{DeltaNet} (Schlag et al., 2021). Introduces the Delta Rule to linear 
+attention:
+\[
+S\_t = S\_{t-1} + \beta\_t k\_t^\top (v\_t - k\_t S\_{t-1})
+\tag{2.3}
+\]
+
+\textbf{Gated DeltaNet} (Yang et al., 2024). Adds input-dependent forget gate. 
+This is the direct inspiration for our work.
+
+\textbf{DeltaNet with Parallel Scan} (Yang et al., 2024; Wang et al., 2024). Uses 
+WY representation for efficient parallel computation.
+
+\subsection{State-Space Models}
+
+\textbf{S4} (Gu et al., 2022), \textbf{S5} (Smith et al., 2023), \textbf{Mamba} (Gu \& Dao, 
+2023). Model sequences as linear time-invariant or time-varying systems. 
+Related but not equivalent to DeltaNet.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Gated DeltaNet (ours)} \\
+\midrule
+\textbf{State update} & Fixed or input-gated & Delta Rule + gating \\
+\textbf{Bidirectional} & Usually causal only & Both supported \\
+\textbf{Implementation} & CUDA kernels (Mamba) & \textbf{Pure PyTorch (slow)} \\
+\textbf{Weight transfer} & Trained from scratch & \textbf{Pretrained Q/K/V/O} \\
+\textbf{LoRA recovery} & Rare & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Our contribution is \textbf{integration} with pretrained 
+transformers -- a mechanism to reuse $W_Q, W_K, W_V, W_O$ from a pretrained 
+model. The algorithm itself follows Yang et al. (2024).
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Gating} & \textbf{Delta Rule} & \textbf{Bidirectional} & \textbf{Pretrained transfer} \\
+\midrule
+Standard MHSA & $O(L^2)$ & -- & -- & Yes & -- \\
+Linear Transformer & $O(L)$ & No & No & Yes & Rare \\
+RetNet & $O(L)$ & Fixed & No & No & From scratch \\
+Mamba & $O(L)$ & Input & No & No & From scratch \\
+DeltaNet & $O(L)$ & Input & Yes & No & Rare \\
+\textbf{Gated DeltaNet} & \textbf{$O(L)$} & \textbf{Input} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Recurrent Neural Networks}
+
+An RNN maintains a hidden state $h_t$ updated as:
+
+\[
+h\_t = f(h\_{t-1}, x\_t), \quad y\_t = g(h\_t)
+\tag{3.1}
+\]
+
+The \textbf{sequential} nature prevents parallelization across time. This is the 
+core trade-off: linear attention has better asymptotic complexity but worse 
+parallelism.
+
+\subsection{Associative Scan}
+
+For operations of the form $h_t = a_t h_{t-1} + b_t$ (linear recurrences), 
+the \textbf{associative scan} computes all $h_t$ in parallel:
+
+\[
+h\_t = \sum\_{s=0}^{t} \left(\prod\_{u=s+1}^{t} a\_u\right) b\_s
+\tag{3.2}
+\]
+
+This reduces wall-clock time from $\mathcal{O}(L)$ to $\mathcal{O}(\log L)$ 
+with sufficient parallel hardware.
+
+\textbf{DeltaNet does not admit a simple associative scan} because the state 
+update involves a nonlinear operation (division by $1 + \|k\|^2$).
+
+\subsection{The Delta Rule}
+
+The Delta Rule (Widrow \& Hoff, 1960) is a classical learning rule for linear 
+associative memory. Given a key $k_t$ and target $v_t$:
+
+\[
+\Delta W = \eta (v\_t - W k\_t) k\_t^\top
+\tag{3.3}
+\]
+
+The update \textbf{corrects} the prediction error $v_t - W k_t$ in the direction 
+of $k_t$. This is the basis of the DeltaNet attention mechanism.
+
+\textbf{Interpretation.} DeltaNet maintains an associative memory: the state $S$ 
+maps keys to values. When a new key-value pair arrives, the state is updated 
+to reduce the prediction error.
+
+\subsection{Exponential Decay Gating}
+
+The Delta Rule alone has no forgetting mechanism. Adding a scalar decay:
+
+\[
+S\_t = \alpha\_t S\_{t-1} + \beta\_t k\_t^\top (v\_t - k\_t S\_{t-1})
+\tag{3.4}
+\]
+
+allows the model to forget old information. When $\alpha_t$ and $\beta_t$ 
+are \textbf{input-dependent}, the model can selectively remember or forget.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable low-rank adapters:
+
+\[
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} BA
+\tag{3.5}
+\]
+
+with $B = 0$ at initialization. Only $A, B$ are trained.
+
+\subsection{Complexity of Attention}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Mechanism} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Standard softmax attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Linear attention (state-based) & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+\textbf{Gated DeltaNet} & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 64$ and $L = 128$, linear attention does $\sim 128 \times 64^2 = 
+524K$ FLOPs vs standard attention's $\sim 128^2 \times 64 = 1M$ FLOPs. 
+So linear attention is \textbf{~2$\times$ fewer FLOPs} but with worse GPU utilization.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Number of heads \\
+$S_t$ & State matrix at time $t$ \\
+$\alpha_t, \beta_t$ & Input-dependent gates \\
+$\eta$ & Delta Rule learning rate \\
+$r_L$ & LoRA rank \\
+$C$ & Chunk size (implementation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+
+
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Gated DeltaNet has four components:
+
+\begin{enumerate}
+\item \textbf{Projections:} $Q, K, V, Z$ from hidden states.
+\item \textbf{Gating:} per-head scalars $\alpha_t, \beta_t$ from hidden states.
+\item \textbf{Recurrence:} state update via the Delta Rule with gating.
+\item \textbf{Bidirectional scan} (encoders only) or \textbf{causal scan} (decoders).
+
+\end{enumerate}
+\begin{lstlisting}
+                Input X
+                   |
+        +----------+----------+----------+
+        |          |          |          |
+                                          
+    +------+  +------+  +------+  +------+
+    |  Q   |  |  K   |  |  V   |  |  Z   |
+    | proj |  | proj |  | proj |  | proj |
+    +---+--+  +---+--+  +---+--+  +---+--+
+        |         |         |         |
+        |         |         |         +-------+
+        |         |         |                 |
+        |  +------+------+  |                 |
+        |  |  $\beta$, $\alpha$ gates |  |                 |
+        |  +------+------+  |                 |
+        |         |         |                 |
+        +---------+---------+-----+           |
+                                 |           |
+                                             |
+                        +----------------+   |
+                        | Delta Rule     |   |
+                        | Recurrence     |   |
+                        +--------+-------+   |
+                                 |           |
+                                              
+                        +----------------------+
+                        |  SiLU gating         |
+                        +----------+-----------+
+                                   |
+                                    
+                        +----------------------+
+                        |  out\_proj            |
+                        +----------------------+
+\end{lstlisting}
+
+\subsection{Projections}
+
+Given hidden states $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\begin{aligned}
+Q &= X W\_Q \in \mathbb{R}^{B \times L \times H d\_h} \\
+K &= X W\_K \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+V &= X W\_V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+Z &= X W\_Z \in \mathbb{R}^{B \times L \times H d\_h}
+\end{aligned}
+\tag{4.1}
+\]
+
+\textbf{Note.} $W_Z$ is a \textbf{new parameter} not present in the pretrained model. 
+We initialize it from $W_Q$ (see Section 5.3).
+
+\subsection{Gating}
+
+Per-head scalars are computed from the input:
+
+\[
+\alpha\_t = \sigma(W\_\alpha x\_t + b\_\alpha), \quad
+\beta\_t = \sigma(W\_\beta x\_t + b\_\beta)
+\tag{4.2}
+\]
+
+where $\sigma$ is the sigmoid function and $W_\alpha, W_\beta \in \mathbb{R}^{H \times d}$.
+
+\textbf{Initialization.} We set $b_\beta = 2.0$ so that $\beta_0 \approx 0.88$, 
+encouraging active state updates early in training. We set $b_\alpha = 0$ 
+so that $\alpha_0 = 0.5$.
+
+\subsection{The Delta Rule Recurrence}
+
+The state $S \in \mathbb{R}^{d_h \times d_h}$ is updated as:
+
+\[
+\boxed{
+S\_t = \beta\_t S\_{t-1} + \alpha\_t \cdot \frac{k\_t^\top (v\_t - k\_t S\_{t-1})}{1 + \|k\_t\|^2}
+}
+\tag{4.3}
+\]
+
+where:
+\begin{itemize}
+\item $k_t \in \mathbb{R}^{d_h}$ is the normalized key.
+\item $v_t \in \mathbb{R}^{d_h}$ is the value.
+\item $k_t S_{t-1}$ is the \textbf{prediction} of $v_t$ from the current state.
+\item $v_t - k_t S_{t-1}$ is the \textbf{prediction error}.
+\item The $1 / (1 + \|k_t\|^2)$ normalization stabilizes the update.
+
+\end{itemize}
+\textbf{Output:}
+
+\[
+y\_t = q\_t S\_t
+\tag{4.4}
+\]
+
+where $q_t$ is the normalized query.
+
+\subsection{Bidirectional Scan (Encoders)}
+
+For encoder models, we compute two independent scans:
+
+\[
+y\_\text{fwd} = \text{scan}(Q, K, V, \alpha, \beta)
+\tag{4.5}
+\]
+
+\[
+y\_\text{bwd} = \text{flip}(\text{scan}(\text{flip}(Q), \text{flip}(K), \text{flip}(V), 
+\text{flip}(\alpha), \text{flip}(\beta)))
+\tag{4.6}
+\]
+
+The final output is the average:
+
+\[
+y = \frac{1}{2}(y\_\text{fwd} + y\_\text{bwd})
+\tag{4.7}
+\]
+
+\subsection{Causal Scan (Decoders)}
+
+For decoder models, we use only the forward scan:
+
+\[
+y = y\_\text{fwd}
+\tag{4.8}
+\]
+
+This preserves causality: $y_t$ depends only on $S_t$, which depends only 
+on $X_1, \dots, X_t$.
+
+\subsection{Chunked Implementation}
+
+The reference implementation uses \textbf{chunked recurrence} to amortize Python 
+overhead:
+
+\begin{enumerate}
+\item Pad sequence to multiple of \texttt{chunk\_size = 8}.
+\item Split into \texttt{num\_chunks = L / 8} chunks.
+\item \textbf{Outer loop} over chunks: for each chunk, call \texttt{\_delta\_chunk\_forward}.
+\item \textbf{Inner loop} over tokens within chunk (8 iterations).
+
+\end{enumerate}
+\textbf{Complexity.} $\mathcal{O}(L / C \cdot C) = \mathcal{O}(L)$ Python 
+iterations, where $C$ is the chunk size.
+
+\textbf{This is the primary bottleneck} (see Section 8).
+
+\subsection{SiLU Gating}
+
+After the recurrence, we apply gated linear unit with SiLU:
+
+\[
+y\_\text{final} = y \odot \text{SiLU}(Z)
+\tag{4.9}
+\]
+
+This adds a trainable nonlinearity without introducing additional parameters 
+beyond $W_Z$.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} Gated DeltaNet forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, chunk\_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V;  Z $\leftarrow$ X W\_Z
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA:  (K, V) $\leftarrow$ repeat\_kv(K, V)
+ 4: Q $\leftarrow$ normalize(Q);  K $\leftarrow$ normalize(K) / sqrt(d)
+ 5: $\beta$ $\leftarrow$ sigmoid(W\_$\beta$ X);  $\alpha$ $\leftarrow$ sigmoid(W\_$\alpha$ X)     [B, H, L]
+ 6:
+ 7: # Forward scan
+ 8: y\_fwd $\leftarrow$ chunked\_scan(Q, K, V, $\alpha$, $\beta$, C)
+ 9:
+10: if not is\_decoder:
+11:     # Backward scan
+12:     Q' $\leftarrow$ flip(Q); K' $\leftarrow$ flip(K); V' $\leftarrow$ flip(V)
+13:     $\alpha$' $\leftarrow$ flip($\alpha$); $\beta$' $\leftarrow$ flip($\beta$)
+14:     y\_bwd $\leftarrow$ flip(chunked\_scan(Q', K', V', $\alpha$', $\beta$', C))
+15:     y $\leftarrow$ 0.5 * (y\_fwd + y\_bwd)
+16: else:
+17:     y $\leftarrow$ y\_fwd
+18:
+19: y $\leftarrow$ y   SiLU(Z)
+20: return out\_proj(y)
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Projections & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+Gating & $\mathcal{O}(LdH)$ & $\mathcal{O}(LH)$ \\
+Recurrence (FLOPs) & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(d^2)$ \\
+Recurrence (wall-clock) & $\mathcal{O}(L)$ sequential & -- \\
+SiLU gating & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+\textbf{Baseline MHSA} & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{For $L = 128$, $d = 64$:}
+\begin{itemize}
+\item FLOPs: Gated DeltaNet is ~2$\times$ fewer.
+\item Wall-clock: Gated DeltaNet is \textbf{~45$\times$ slower} due to Python loops.
+
+\end{itemize}
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params per layer} \\
+\midrule
+Q projection + LoRA & $d \cdot H d_h + r_L(d + H d_h)$ \\
+K projection + LoRA & $d \cdot H_{kv} d_h + r_L(d + H_{kv} d_h)$ \\
+V projection + LoRA & same as K \\
+\textbf{Z projection + LoRA} & $d \cdot H d_h + r_L(d + H d_h)$ $\leftarrow$ \textbf{new} \\
+O projection + LoRA & $H d_h \cdot d + r_L(H d_h + d)$ \\
+$\alpha$ projection & $d \cdot H$ \\
+$\beta$ projection & $d \cdot H$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (DistilBERT, $r_L = 16$, $d = 768$):}
+\begin{itemize}
+\item Z projection: +589,824 params per layer
+\item $\alpha, \beta$: +18,432 per layer
+\item LoRA: +589,824 per layer
+\item \textbf{Total: +1.2M per layer $\times$ 6 layers = +7.2M (+10.7\%)}
+
+\end{itemize}
+The \textbf{Z projection is the largest overhead}. It is not present in baseline 
+attention.
+
+
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & Bidirectional \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & Bidirectional \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Causal \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+\begin{lstlisting}
+if hasattr(old\_attn, "c\_attn"):
+    c\_w = old\_attn.c\_attn.weight.data
+    if "Conv1D" in cls\_c or hasattr(old\_attn.c\_attn, "nf"):
+        c\_w = c\_w.t()
+    split\_size = c\_w.size(0) // 3
+    extracted["q"] = c\_w[:split\_size, :]
+    extracted["k"] = c\_w[split\_size:2*split\_size, :]
+    extracted["v"] = c\_w[2*split\_size:, :]
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+elif hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query"):
+    extracted["q"] = old\_attn.self.query.weight.data
+    extracted["k"] = old\_attn.self.key.weight.data
+    extracted["v"] = old\_attn.self.value.weight.data
+    extracted["o"] = old\_attn.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+else:
+    extracted["q"] = old\_attn.q\_lin.weight.data
+    extracted["k"] = old\_attn.k\_lin.weight.data
+    extracted["v"] = old\_attn.v\_lin.weight.data
+    extracted["o"] = old\_attn.out\_lin.weight.data
+\end{lstlisting}
+
+\subsubsection{The Z Projection}
+
+The \textbf{Z projection} is new. We initialize from $W_Q$:
+
+\begin{lstlisting}
+self.z\_proj.weight.data[:out\_z, :in\_z].copy\_(w\_q[:out\_z, :in\_z])
+\end{lstlisting}
+
+\subsection{Nested Encoder Detection}
+
+The detection order:
+
+\begin{lstlisting}
+if (hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query")
+    and hasattr(old\_attn, "output") and hasattr(old\_attn.output, "dense")):
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention", ...):
+    is\_nested = True
+elif model\_type in ("roberta", "bert", "xlm-roberta") and not is\_decoder:
+    is\_nested = True
+\end{lstlisting}
+
+For nested encoders, \texttt{forward} returns raw context without \texttt{out\_proj}.
+
+\subsection{GQA Support}
+
+\begin{lstlisting}
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
+\end{lstlisting}
+
+\subsection{RoPE Support}
+
+Handled via partial-dimension slicing:
+
+\begin{lstlisting}
+rotary\_dim = cos.shape[-1]
+if rotary\_dim \textless{} head\_dim:
+    q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+    q\_rot\_embed = q\_rot * cos + rotate\_half(q\_rot) * sin
+    q = torch.cat([q\_rot\_embed, q\_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Gated DeltaNet into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with all attention replaced
+
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for   in layer\_list:
+3:     src $\leftarrow$ extract\_attention( )
+4:     new $\leftarrow$ GatedDeltaNet(c, old=src)
+5:     new.copy\_weights(src)
+6:     replace\_attention( , new)
+7: return M
+\end{lstlisting}
+
+\subsection{The Chunked Recurrence}
+
+The core implementation is \texttt{chunked\_delta\_rule\_scan}:
+
+\begin{lstlisting}
+def chunked\_delta\_rule\_scan(q, k, v, beta, alpha, chunk\_size=8):
+    # Normalize
+    k\_unit = k / k.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+    q\_unit = q / q.norm(dim=-1, keepdim=True).clamp(min=1e-6)
+    
+    # Reshape into chunks
+    q\_c = q\_unit.view(B, H, num\_chunks, chunk\_size, d)
+    ...
+    
+    S = torch.zeros(B, H, d, d)  # state
+    outputs = []
+    
+    for c in range(num\_chunks):       # $\leftarrow$ OUTER PYTHON LOOP
+        q\_i, k\_i, v\_i = q\_c[:,:,c], k\_c[:,:,c], v\_c[:,:,c]
+        if use\_checkpoint:
+            y\_i, S = checkpoint(\_delta\_chunk\_forward, S, q\_i, k\_i, v\_i, ...)
+        else:
+            y\_i, S = \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, ...)
+        outputs.append(y\_i)
+    
+    return torch.cat(outputs, dim=2)
+
+def \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i):
+    for t in range(chunk\_size):       # $\leftarrow$ INNER PYTHON LOOP
+        kt, vt, qt = k\_i[:,:,t:t+1], v\_i[:,:,t:t+1], q\_i[:,:,t:t+1]
+        bt, at = beta\_i[:,:,t:t+1], alpha\_i[:,:,t:t+1]
+        
+        inter\_v = torch.matmul(kt, S)
+        err = vt - inter\_v
+        norm\_k\_sq = (kt * kt).sum(-1, keepdim=True)
+        step = (at / (1 + norm\_k\_sq).clamp(min=1.0)).clamp(0, 1)
+        
+        S = bt * S + step * torch.matmul(kt.transpose(-1, -2), err)
+        yt = torch.matmul(qt, S)
+    
+    return torch.cat(outputs, dim=2), S
+\end{lstlisting}
+
+\textbf{Total Python iterations per forward:}
+\[
+L/C \text{ (outer)} + L/C \times C \text{ (inner)} = 2L/C + L \approx 2L
+\]
+
+For $L = 128$: \textbf{256 Python-level iterations per head per layer per forward}.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Python Loop Overhead}
+
+Each \texttt{for} iteration involves:
+\begin{itemize}
+\item Tensor slicing (allocates new tensor)
+\item Kernel launch (~5-10  s)
+\item Python dispatch (~1-2  s)
+
+\end{itemize}
+For 256 iterations $\times$ 5 ops = ~1280 kernel launches per forward.
+
+\subsubsection{Gradient Checkpointing Overhead}
+
+\texttt{torch.utils.checkpoint} re-runs the forward during backward. This \textbf{doubles} 
+compute cost in exchange for reduced memory.
+
+\subsubsection{State Memory}
+
+The state $S \in \mathbb{R}^{B \times H \times d \times d}$ is held in memory 
+throughout. For $B=8$, $H=12$, $d=64$: 393K floats = \textbf{1.5 MB per layer}. 
+With gradient checkpointing, states are re-created in backward, increasing 
+peak memory.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("gated\_delta\_net")
+class GatedDeltaNet(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Recommended Fix}
+
+Replace Python loops with a \textbf{fused Triton or CUDA kernel}:
+
+\begin{itemize}
+\item Outer chunk loop: parallelize over chunks in a CUDA grid.
+\item Inner token loop: use shared memory for state, unroll with \texttt{\#pragma unroll}.
+
+\end{itemize}
+Expected speedup: \textbf{50-100$\times$}, bringing Gated DeltaNet to parity with 
+baseline attention.
+
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of gated\_delta\_net.}
+\label{fig:arch_gated-delta-net}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{Gated DeltaNet Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{chunk\_size} & 84.5 (default 8) \\
+\texttt{use\_gradient\_checkpointing} & 0.85 (default True) \\
+\texttt{max\_seq\_len\_for\_recurrence} & 256 \\
+Initial $\beta$ bias & 2.0 (sigmoid $\to$ 0.88) \\
+Initial $\alpha$ bias & 0.0 (sigmoid $\to$ 0.50) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Accuracy, F1, Precision, Recall}
+\item \textbf{Total params}
+\item \textbf{Peak VRAM}
+\item \textbf{Inference time}
+\item \textbf{Per-step training time} $\leftarrow$ critical for this module
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_gated\_delta\_net.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
+\end{lstlisting}
+
+\textbf{Expected runtime:}
+\begin{itemize}
+\item DistilBERT: ~2.3 s minutes
+\item RoBERTa: \textbf{OOM or timeout}
+\item GPT-2: \textbf{OOM or timeout}
+
+\end{itemize}
+\subsection{Seeds}
+
+Single seed (42). No multi-seed runs.
+
+\subsection{Per-Step Timing Measurement}
+
+We measure per-step training time:
+
+\begin{lstlisting}
+import time
+start = time.time()
+for step in range(5):
+    ...  # training step
+elapsed = time.time() - start
+per\_step = elapsed / 5
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model (baseline timing reference)
+\item \texttt{gated\_delta\_net} -- our method
+\item Prior modules: \texttt{nha}, \texttt{nasc}, \texttt{a3}
+
+\end{itemize}
+
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy and timing.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -109,7 +1008,7 @@ DistilBERT & \textbf{Gated Delta Net} & \textbf{0.00\%} & -90.71\% & FAIL & 0.91
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Gated Delta Net} & \textbf{0.00\%} & -75.46\% & FAIL & 0.7277 & 0 & \textbf{1.00$\times$} & 712.3 MB & 9.2 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Gated Delta Net} & \textbf{49.54\%} & -11.24\% & PASS_LOW & 0.6333 & 0 & \textbf{0.68$\times$} & 788.4 MB & 47.3 & -- \\
+GPT-2 & \textbf{Gated Delta Net} & \textbf{49.54\%} & -11.24\% & PASS\_LOW & 0.6333 & 0 & \textbf{0.68$\times$} & 788.4 MB & 47.3 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -299,12 +1198,13 @@ Step  Loss
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/gated_delta_net_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gated_delta_net}.}
+\includegraphics[width=0.85\linewidth]{figures/gated\_delta\_net\_dissection\_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gated\_delta\_net}.}
 \label{fig:results_gated_delta_net}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -316,9 +1216,9 @@ $\mathcal{O}(L)$ with a \textbf{very large constant}. Three factors:
 \subsubsection{Nested Python Loops}
 
 \begin{lstlisting}
-for c in range(num_chunks):              # outer
+for c in range(num\_chunks):              # outer
     ...
-    for t in range(chunk_size):          # inner
+    for t in range(chunk\_size):          # inner
         ...
 \end{lstlisting}
 
@@ -388,7 +1288,7 @@ sequential kernel launches.
 Each layer holds a state $S \in \mathbb{R}^{B \times H \times d_h \times d_h}$:
 
 \[
-|S| = B \cdot H \cdot d_h^2 = 8 \times 12 \times 64^2 = 393,216 \text{ floats} 
+|S| = B \cdot H \cdot d\_h^2 = 8 \times 12 \times 64^2 = 393,216 \text{ floats} 
 = 1.5 \text{ MB}
 \]
 
@@ -403,7 +1303,7 @@ for backward. This includes:
 \item Per-token intermediate tensors
 
 \end{itemize}
-For 12-layer RoBERTa with $L=128$: peak memory \textbf{>8 GB} $\to$ OOM.
+For 12-layer RoBERTa with $L=128$: peak memory \textbf{\textgreater{}8 GB} $\to$ OOM.
 
 \subsection{Why the Baseline Attention Doesn't Have This Problem}
 
@@ -487,7 +1387,7 @@ HBM roundtrips & ~10\% \\
 \midrule
 \textbf{Extreme slow} & 90s / 5 steps & Python loops \\
 \textbf{OOM} & CUDA error & State + checkpointing \\
-\textbf{Timeout} & Wall clock >3600s & Compounded slowness \\
+\textbf{Timeout} & Wall clock \textgreater{}3600s & Compounded slowness \\
 \textbf{Numerical drift} & Loss instability & FP16 state accumulation \\
 \bottomrule
 \end{tabular}
@@ -511,6 +1411,7 @@ equivalent.
 \end{enumerate}
 
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -570,7 +1471,7 @@ Is memory a constraint? -- Yes -- Test carefully
   |
   No
    
-Is L >> d (long sequences)? -- Yes -- Consider using
+Is L \textgreater{}\textgreater{} d (long sequences)? -- Yes -- Consider using
   |
   No
    
@@ -655,6 +1556,7 @@ Params & 66.9M & 66.4MM & +48.5\%\% \\
 \end{enumerate}
 
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -754,6 +1656,7 @@ match those speeds.
 \end{itemize}
 
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -841,14 +1744,15 @@ None.
 
 
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
 pip install -r requirements.txt
@@ -858,13 +1762,13 @@ pip install -r requirements.txt
 
 \begin{lstlisting}
 # Full run (may timeout on RoBERTa/GPT-2)
-python run_all_4_gated_delta_net.py \
+python run\_all\_4\_gated\_delta\_net.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 
 # DistilBERT only (fastest)
-python run_all_4_gated_delta_net.py --models distilbert
+python run\_all\_4\_gated\_delta\_net.py --models distilbert
 \end{lstlisting}
 
 \subsection{Expected Runtime}
@@ -877,8 +1781,8 @@ python run_all_4_gated_delta_net.py --models distilbert
 \textbf{Model} & \textbf{Expected runtime} \\
 \midrule
 DistilBERT & ~2.3 s min \\
-RoBERTa & OOM or >60 min \\
-GPT-2 & OOM or >60 min \\
+RoBERTa & OOM or \textgreater{}60 min \\
+GPT-2 & OOM or \textgreater{}60 min \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -892,11 +1796,11 @@ import time
 
 # Wrap 5 training steps
 start = time.time()
-for _ in range(5):
+for \_ in range(5):
     ...  # training step
 elapsed = time.time() - start
-per_step = elapsed / 5
-print(f"Per-step: {per_step:.2f} s")
+per\_step = elapsed / 5
+print(f"Per-step: {per\_step:.2f} s")
 \end{lstlisting}
 
 \subsection{Common Failure Modes}
@@ -906,7 +1810,7 @@ print(f"Per-step: {per_step:.2f} s")
 Reduce batch size:
 
 \begin{lstlisting}
-python run_all_4_gated_delta_net.py --batch_size 2 --recovery_steps 10
+python run\_all\_4\_gated\_delta\_net.py --batch\_size 2 --recovery\_steps 10
 \end{lstlisting}
 
 \subsubsection{Timeout}
@@ -914,7 +1818,7 @@ python run_all_4_gated_delta_net.py --batch_size 2 --recovery_steps 10
 Increase timeout:
 
 \begin{lstlisting}
-python run_all_4_gated_delta_net.py --timeout 7200
+python run\_all\_4\_gated\_delta\_net.py --timeout 7200
 \end{lstlisting}
 
 \subsubsection{Chunk Size Mismatch}
@@ -922,7 +1826,7 @@ python run_all_4_gated_delta_net.py --timeout 7200
 If \texttt{chunk\_size} does not divide \texttt{L}, padding is applied. Verify:
 
 \begin{lstlisting}
-assert L % chunk_size == 0 or padding_ok
+assert L \% chunk\_size == 0 or padding\_ok
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -931,7 +1835,7 @@ assert L % chunk_size == 0 or padding_ok
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Verification}
@@ -946,9 +1850,9 @@ S = torch.zeros(1, 1, 64, 64)
 beta = torch.tensor([[[0.9]]])
 alpha = torch.tensor([[[0.5]]])
 
-from framework.attentions.gated_delta_net import _delta_chunk_forward
-y, S_new = _delta_chunk_forward(S, k, k, v, beta, alpha)
-# Verify: S_new $\approx$ beta * S + alpha * k^T (v - k S)
+from framework.attentions.gated\_delta\_net import \_delta\_chunk\_forward
+y, S\_new = \_delta\_chunk\_forward(S, k, k, v, beta, alpha)
+# Verify: S\_new $\approx$ beta * S + alpha * k^T (v - k S)
 \end{lstlisting}
 
 \subsection{Data Availability}
@@ -980,16 +1884,17 @@ For a fast implementation, use:
 \subsection{Reproduction Checklist}
 
 \begin{itemize}
-\item [ ] GPU printed
-\item [ ] \texttt{chunk\_size} logged
-\item [ ] \texttt{use\_gradient\_checkpointing} logged
-\item [ ] Per-step timing measured
-\item [ ] Peak VRAM measured
-\item [ ] OOM errors captured
+\item [x] GPU printed
+\item [x] \texttt{chunk\_size} logged
+\item [x] \texttt{use\_gradient\_checkpointing} logged
+\item [x] Per-step timing measured
+\item [x] Peak VRAM measured
+\item [x] OOM errors captured
 
 \end{itemize}
 
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1137,6 +2042,7 @@ For a fast implementation, use:
 
 
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1146,7 +2052,7 @@ The Delta Rule (Widrow--Hoff, 1960) updates a weight matrix $W$ to
 minimize squared error:
 
 \[
-\Delta W_t = \eta (v_t - W_t x_t) x_t^\top
+\Delta W\_t = \eta (v\_t - W\_t x\_t) x\_t^\top
 \tag{A.1}
 \]
 
@@ -1154,7 +2060,7 @@ For attention, $x_t = k_t$ (key) and target is $v_t$ (value). The state
 $S$ replaces $W$:
 
 \[
-S_t = S_{t-1} + \eta (v_t - S_{t-1} k_t) k_t^\top
+S\_t = S\_{t-1} + \eta (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{A.2}
 \]
 
@@ -1163,7 +2069,7 @@ S_t = S_{t-1} + \eta (v_t - S_{t-1} k_t) k_t^\top
 Replace fixed step size $\eta$ with input-dependent scalars:
 
 \[
-S_t = \beta_t S_{t-1} + \alpha_t (v_t - S_{t-1} k_t) k_t^\top
+S\_t = \beta\_t S\_{t-1} + \alpha\_t (v\_t - S\_{t-1} k\_t) k\_t^\top
 \tag{A.3}
 \]
 
@@ -1177,7 +2083,7 @@ because keys are row vectors in our convention.
 For numerical stability, we normalize the update:
 
 \[
-S_t = \beta_t S_{t-1} + \alpha_t \cdot \frac{(v_t - k_t S_{t-1}) k_t^\top}{1 + \|k_t\|^2}
+S\_t = \beta\_t S\_{t-1} + \alpha\_t \cdot \frac{(v\_t - k\_t S\_{t-1}) k\_t^\top}{1 + \|k\_t\|^2}
 \tag{A.4}
 \]
 
@@ -1188,8 +2094,8 @@ The denominator $1 + \|k_t\|^2$ prevents overflow when $\|k_t\|$ is large.
 We additionally normalize keys and queries:
 
 \[
-k_t \leftarrow \frac{k_t}{\|k_t\|_2}, \quad
-q_t \leftarrow \frac{q_t}{\|q_t\|_2}
+k\_t \leftarrow \frac{k\_t}{\|k\_t\|\_2}, \quad
+q\_t \leftarrow \frac{q\_t}{\|q\_t\|\_2}
 \tag{A.5}
 \]
 
@@ -1200,7 +2106,7 @@ This ensures the inner products lie in $[-1, 1]$, matching softmax attention.
 \textbf{Claim.} The forward scan satisfies:
 
 \[
-\frac{\partial y_t}{\partial x_s} = 0 \text{ for } s > t
+\frac{\partial y\_t}{\partial x\_s} = 0 \text{ for } s \textgreater{} t
 \tag{A.6}
 \]
 
@@ -1214,7 +2120,7 @@ depends only on $x_1, \dots, x_t$. $\square$
 For encoders, we average forward and backward scans:
 
 \[
-y = \frac{1}{2}(y_\text{fwd} + y_\text{bwd})
+y = \frac{1}{2}(y\_\text{fwd} + y\_\text{bwd})
 \tag{A.7}
 \]
 
@@ -1253,7 +2159,7 @@ For $L = 128$ and $d = 64$: linear has ~2$\times$ fewer FLOPs.
 Due to Python loop overhead:
 
 \[
-T_\text{wall} \approx N_\text{iters} \cdot T_\text{iter}
+T\_\text{wall} \approx N\_\text{iters} \cdot T\_\text{iter}
 \tag{A.8}
 \]
 
@@ -1286,75 +2192,76 @@ layer**. With checkpointing, state is re-created in backward.
 
 
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 State Update Inner Loop}
 
 \begin{lstlisting}
-def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
-    """Inner loop over chunk_size tokens."""
-    C = q_i.shape[2]
-    chunk_outs = []
-    curr_S = S
+def \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i):
+    """Inner loop over chunk\_size tokens."""
+    C = q\_i.shape[2]
+    chunk\_outs = []
+    curr\_S = S
     for t in range(C):
-        kt = k_i[:, :, t:t+1, :]
-        vt = v_i[:, :, t:t+1, :]
-        qt = q_i[:, :, t:t+1, :]
-        bt = beta_i[:, :, t:t+1].unsqueeze(-1)
-        at = alpha_i[:, :, t:t+1].unsqueeze(-1)
+        kt = k\_i[:, :, t:t+1, :]
+        vt = v\_i[:, :, t:t+1, :]
+        qt = q\_i[:, :, t:t+1, :]
+        bt = beta\_i[:, :, t:t+1].unsqueeze(-1)
+        at = alpha\_i[:, :, t:t+1].unsqueeze(-1)
         
         # Prediction error
-        inter_v = torch.matmul(kt, curr_S)
-        err = vt - inter_v
+        inter\_v = torch.matmul(kt, curr\_S)
+        err = vt - inter\_v
         
         # Normalized step
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
-        denom = (1.0 + norm_k_sq).clamp(min=1.0)
+        norm\_k\_sq = (kt * kt).sum(dim=-1, keepdim=True)
+        denom = (1.0 + norm\_k\_sq).clamp(min=1.0)
         step = (at / denom).clamp(min=0.0, max=1.0)
         
         # State update
-        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
-        curr_S = bt * curr_S + delta_update
-        curr_S = torch.nan_to_num(curr_S, nan=0.0, posinf=1e4, neginf=-1e4)
+        delta\_update = step * torch.matmul(kt.transpose(-1, -2), err)
+        curr\_S = bt * curr\_S + delta\_update
+        curr\_S = torch.nan\_to\_num(curr\_S, nan=0.0, posinf=1e4, neginf=-1e4)
         
         # Output
-        yt = torch.matmul(qt, curr_S)
-        chunk_outs.append(yt)
+        yt = torch.matmul(qt, curr\_S)
+        chunk\_outs.append(yt)
     
-    return torch.cat(chunk_outs, dim=2), curr_S
+    return torch.cat(chunk\_outs, dim=2), curr\_S
 \end{lstlisting}
 
 \subsection{B.2 Outer Chunk Loop}
 
 \begin{lstlisting}
-def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=True):
+def chunked\_delta\_rule\_scan(q, k, v, beta, alpha, chunk\_size=8, use\_checkpoint=True):
     B, H, L, d = q.shape
     
     # FP32 for numerical stability
-    q_f = q.float(); k_f = k.float(); v_f = v.float()
-    beta_f = beta.float().clamp(1e-4, 1-1e-4)
-    alpha_f = alpha.float().clamp(1e-4, 1)
+    q\_f = q.float(); k\_f = k.float(); v\_f = v.float()
+    beta\_f = beta.float().clamp(1e-4, 1-1e-4)
+    alpha\_f = alpha.float().clamp(1e-4, 1)
     
     # Normalize
-    k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-    k_unit = k_f / k_norm
-    q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-    q_unit = q_f / q_norm
+    k\_norm = torch.norm(k\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    k\_unit = k\_f / k\_norm
+    q\_norm = torch.norm(q\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    q\_unit = q\_f / q\_norm
     
     # Pad
-    pad_len = (chunk_size - L % chunk_size) % chunk_size
-    if pad_len > 0:
-        q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
-        k_unit = F.pad(k_unit, (0, 0, 0, pad_len))
-        v_f = F.pad(v_f, (0, 0, 0, pad_len))
-        beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
-        alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
+    pad\_len = (chunk\_size - L \% chunk\_size) \% chunk\_size
+    if pad\_len \textgreater{} 0:
+        q\_unit = F.pad(q\_unit, (0, 0, 0, pad\_len))
+        k\_unit = F.pad(k\_unit, (0, 0, 0, pad\_len))
+        v\_f = F.pad(v\_f, (0, 0, 0, pad\_len))
+        beta\_f = F.pad(beta\_f, (0, pad\_len), value=0.0)
+        alpha\_f = F.pad(alpha\_f, (0, pad\_len), value=1.0)
     
     # Reshape
-    L_pad = L + pad_len
-    num_chunks = L_pad // chunk_size
-    q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
+    L\_pad = L + pad\_len
+    num\_chunks = L\_pad // chunk\_size
+    q\_c = q\_unit.view(B, H, num\_chunks, chunk\_size, d)
     # ... same for k, v, beta, alpha
     
     # Recurrence
@@ -1362,21 +2269,21 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=T
     outputs = []
     
     from torch.utils.checkpoint import checkpoint
-    for c in range(num_chunks):                    # $\leftarrow$ outer Python loop
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
-        beta_i, alpha_i = beta_c[:,:,c], alpha_c[:,:,c]
+    for c in range(num\_chunks):                    # $\leftarrow$ outer Python loop
+        q\_i, k\_i, v\_i = q\_c[:,:,c], k\_c[:,:,c], v\_c[:,:,c]
+        beta\_i, alpha\_i = beta\_c[:,:,c], alpha\_c[:,:,c]
         
-        if use_checkpoint and q.requires_grad:
-            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, 
-                                 beta_i, alpha_i, use_reentrant=False)
+        if use\_checkpoint and q.requires\_grad:
+            y\_i, S = checkpoint(\_delta\_chunk\_forward, S, q\_i, k\_i, v\_i, 
+                                 beta\_i, alpha\_i, use\_reentrant=False)
         else:
-            y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
-        outputs.append(y_i)
+            y\_i, S = \_delta\_chunk\_forward(S, q\_i, k\_i, v\_i, beta\_i, alpha\_i)
+        outputs.append(y\_i)
     
     y = torch.cat(outputs, dim=2)
-    if pad_len > 0:
+    if pad\_len \textgreater{} 0:
         y = y[:, :, :L, :]
-    return torch.nan_to_num(y, nan=0.0)
+    return torch.nan\_to\_num(y, nan=0.0)
 \end{lstlisting}
 
 \subsection{B.3 The Z Projection}
@@ -1384,16 +2291,16 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=T
 The Z projection is used for SiLU gating:
 
 \begin{lstlisting}
-z = self.z_proj(hidden_states)
+z = self.z\_proj(hidden\_states)
 # ... after recurrence:
-gated_y = y * F.silu(z)
+gated\_y = y * F.silu(z)
 \end{lstlisting}
 
 It is \textbf{not present} in baseline attention. We initialize it from $W_Q$:
 
 \begin{lstlisting}
-self.z_proj.weight.data.copy_(w_q)
-self.z_proj.bias.data.copy_(b_q)
+self.z\_proj.weight.data.copy\_(w\_q)
+self.z\_proj.bias.data.copy\_(b\_q)
 \end{lstlisting}
 
 \subsection{B.4 Weight Copy (All Architectures)}
@@ -1402,19 +2309,19 @@ Standard four-architecture extraction:
 
 \begin{lstlisting}
 # 1. GPT-2 fused Conv1D
-if hasattr(old_attn, "c_attn"):
-    c_w = old_attn.c_attn.weight.data.t()  # transpose
-    q_w, k_w, v_w = c_w.chunk(3, dim=0)
+if hasattr(old\_attn, "c\_attn"):
+    c\_w = old\_attn.c\_attn.weight.data.t()  # transpose
+    q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
     ...
 
 # 2. RoBERTa nested
-elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
-    q_w = old_attn.self.query.weight.data
+elif hasattr(old\_attn, "self") and hasattr(old\_attn.self, "query"):
+    q\_w = old\_attn.self.query.weight.data
     ...
 
 # 3. DistilBERT flat
 else:
-    q_w = old_attn.q_lin.weight.data
+    q\_w = old\_attn.q\_lin.weight.data
     ...
 \end{lstlisting}
 
@@ -1425,7 +2332,7 @@ else:
 The recurrence \textbf{must} be done in FP32. FP16 accumulates error:
 
 \begin{lstlisting}
-q_f = q.float(); k_f = k.float(); v_f = v.float()
+q\_f = q.float(); k\_f = k.float(); v\_f = v.float()
 \end{lstlisting}
 
 \subsubsection{B.5.2 Missing Normalization}
@@ -1433,24 +2340,24 @@ q_f = q.float(); k_f = k.float(); v_f = v.float()
 Without normalization, the state can explode or vanish:
 
 \begin{lstlisting}
-k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
-k_unit = k_f / k_norm
+k\_norm = torch.norm(k\_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+k\_unit = k\_f / k\_norm
 \end{lstlisting}
 
 \subsubsection{B.5.3 Padding Handling}
 
-Padding with \texttt{pad\_len > 0} requires:
+Padding with \texttt{pad\_len \textgreater{} 0} requires:
 
 \begin{lstlisting}
-if pad_len > 0:
-    q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
-    beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
+if pad\_len \textgreater{} 0:
+    q\_unit = F.pad(q\_unit, (0, 0, 0, pad\_len))
+    beta\_f = F.pad(beta\_f, (0, pad\_len), value=0.0)
 \end{lstlisting}
 
 \subsubsection{B.5.4 Gradient Checkpointing Requires `.requires\_grad`}
 
 \begin{lstlisting}
-if use_checkpoint and q.requires_grad:
+if use\_checkpoint and q.requires\_grad:
     ...checkpoint...
 else:
     ...normal forward...
@@ -1466,33 +2373,33 @@ Without \texttt{requires\_grad}, checkpointing fails or is a no-op.
 # Single-token
 k = torch.randn(1, 1, 1, 64)
 v = torch.randn(1, 1, 1, 64)
-S_prev = torch.zeros(1, 1, 64, 64)
+S\_prev = torch.zeros(1, 1, 64, 64)
 beta, alpha = torch.tensor([[[0.9]]]), torch.tensor([[[0.5]]])
 
-S_new, _ = _delta_chunk_forward(S_prev, k, k, v, beta, alpha)
+S\_new, \_ = \_delta\_chunk\_forward(S\_prev, k, k, v, beta, alpha)
 
 # Manual check
-err = v - torch.matmul(k, S_prev)
-norm_k_sq = (k * k).sum(-1, keepdim=True)
-step = alpha / (1 + norm_k_sq).clamp(min=1.0)
-expected = beta * S_prev + step * torch.matmul(k.transpose(-1, -2), err)
+err = v - torch.matmul(k, S\_prev)
+norm\_k\_sq = (k * k).sum(-1, keepdim=True)
+step = alpha / (1 + norm\_k\_sq).clamp(min=1.0)
+expected = beta * S\_prev + step * torch.matmul(k.transpose(-1, -2), err)
 
-assert torch.allclose(S_new, expected, atol=1e-5)
+assert torch.allclose(S\_new, expected, atol=1e-5)
 \end{lstlisting}
 
 \subsubsection{Verify Causality}
 
 \begin{lstlisting}
-X = torch.randn(1, L, d, requires_grad=True)
+X = torch.randn(1, L, d, requires\_grad=True)
 y = model(X)
 y[0, 5].sum().backward()
-assert X.grad[0, 6:].abs().max() < 1e-6
+assert X.grad[0, 6:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_delta_net")
+@ATTENTION\_REGISTRY.register("gated\_delta\_net")
 class GatedDeltaNet(BaseAttention):
     ...
 \end{lstlisting}
@@ -1500,29 +2407,30 @@ class GatedDeltaNet(BaseAttention):
 \subsection{B.8 Injection Factory}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("gated_delta_net_inject")
-def inject_gated_delta_net(layer, model_config, comp_config, old_attn=None, **kwargs):
+@ATTENTION\_REGISTRY.register("gated\_delta\_net\_inject")
+def inject\_gated\_delta\_net(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
     # Find source attention
-    src_attn = old_attn or extract_attention(layer)
+    src\_attn = old\_attn or extract\_attention(layer)
     
     # Create new
     try:
-        new_block = GatedDeltaNet(
-            config=model_config, comp_config=comp_config,
-            d_model=hidden_size, num_heads=num_heads,
-            old_attn=src_attn, **kwargs,
+        new\_block = GatedDeltaNet(
+            config=model\_config, comp\_config=comp\_config,
+            d\_model=hidden\_size, num\_heads=num\_heads,
+            old\_attn=src\_attn, **kwargs,
         )
     except Exception as e:
         logger.error(f"Injection failed: {e}")
         return None
     
     # Replace
-    replace_attention(layer, new_block)
-    return new_block
+    replace\_attention(layer, new\_block)
+    return new\_block
 \end{lstlisting}
 
 
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1661,9 +2569,9 @@ Step  Loss
   "distilbert": {
     "accuracy": 86.4,
     "status": "PASS",
-    "per_step_s": 14.2 ms,
-    "peak_vram_mb": 380 MB,
-    "params_after": 66.4M
+    "per\_step\_s": 14.2 ms,
+    "peak\_vram\_mb": 380 MB,
+    "params\_after": 66.4M
   },
   "roberta": {
     "status": "PASS",
@@ -1680,22 +2588,23 @@ Step  Loss
 
 \begin{lstlisting}
 # DistilBERT only
-python run_all_4_gated_delta_net.py --models distilbert
+python run\_all\_4\_gated\_delta\_net.py --models distilbert
 
 # With smaller batch
-python run_all_4_gated_delta_net.py \
+python run\_all\_4\_gated\_delta\_net.py \
     --models distilbert \
-    --batch_size 4 \
-    --recovery_steps 20
+    --batch\_size 4 \
+    --recovery\_steps 20
 
 # With chunk size sweep
 for cs in 4 8 16 32; do
-    python run_all_4_gated_delta_net.py --chunk_size $cs --output_suffix cs$cs
+    python run\_all\_4\_gated\_delta\_net.py --chunk\_size $cs --output_suffix cs$cs
 done
 \end{lstlisting}
 
 
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1895,6 +2804,7 @@ Yang et al. (2024), Triton & ~3$\times$ faster than attention & Published \\
 \end{enumerate}
 
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1969,9 +2879,10 @@ We hope this work encourages:
 
 ---
 
-##   `build.py` and `apply_vars.py`
+##   `build.py` and `apply\_vars.py`
 
                               .     `SECTIONS`                                 /     .
 
 ---
 \end{lstlisting}
+

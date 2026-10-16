@@ -1,0 +1,11 @@
+% Section 02_related
+\noindent
+\section{2. Related Work and Theoretical Foundations
+
+Efficient transformers have evolved along two primary trajectories: architectural restructuring (linear attention, state space models) and post-training parameter compression (low-rank factorization, structured pruning, quantization).
+
+##\section{Efficient Attention Mechanisms
+Standard attention (Vaswani et al., 2017) relies on the softmax dot-product Softmax(QK^T / sqrt(d))V. Linear attention formulations (Katharopoulos et al., 2020) decompose the attention matrix via kernel feature maps phi(Q)(phi(K)^T V), achieving linear O(Td^2) complexity. Recent developments such as Cosformer (Qin et al., 2022) and Gated Linear Attention (Yang et al., 2023) introduce localized reweighting to overcome token-mixing collapse.
+
+##\section{Matrix Factorization and Model Compression
+Singular Value Decomposition (Eckart & Young, 1936) forms the classical backbone for weight approximation. Recent advances such as ASVD and SVD-LLM (Wang et al., 2024) introduce activation awareness to weight singular values according to input channel importance, mitigating compounding error across deep Transformer layers.

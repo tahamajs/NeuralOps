@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{PHANTOM: Parameter-Hashed Attention with Token-wise Orthogonal Mapping}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -137,6 +139,7 @@ concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -178,6 +181,1109 @@ differentiable through sign operations.
 
 \subsubsection{Comparisons}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Pattern} & \textbf{Adaptive} & \textbf{Complexity} \\
+\midrule
+Longformer & Sliding window + global & No & $\mathcal{O}(L \sqrt{L})$ \\
+BigBird & Window + random + global & No & $\mathcal{O}(L)$ \\
+Reformer & LSH buckets & Yes & $\mathcal{O}(L \log L)$ \\
+Routing & k-means clusters & Yes & $\mathcal{O}(L \log L)$ \\
+\textbf{PHANTOM} & Multi-round angular LSH & Yes & $\mathcal{O}(L \cdot B)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Attention Activations}
+
+\subsubsection{Softmax}
+
+Standard softmax has two limitations: (i) it never reaches exactly zero, so 
+far-tail positions receive non-negligible weight; (ii) it is sensitive to 
+outliers.
+
+\subsubsection{Sparsemax}
+
+Martins \& Astudillo (2016) propose sparsemax, which projects onto the simplex 
+and produces sparse attention. However, sparsemax has no closed-form for 
+batched computation.
+
+\subsubsection{Softpick}
+
+Lu et al. (2024) propose softpick: $\text{ReLU}(e^{(x_i - m)} - e^{-m})$ 
+where $m = \max_j x_j$. This is sparse and has closed form. We use a 
+\textbf{rectified} variant with a softmax fallback when the denominator is zero.
+
+\subsection{Post-Training Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Retrain?} & \textbf{Compression} & \textbf{Attention?} \\
+\midrule
+SVD (Eckart-Young) & Low-rank & No & Ratio $r$ & No \\
+A3 & Fisher-weighted SVD & LoRA & Ratio $r$ & No \\
+AASVD & Covariance-weighted SVD & LoRA & Ratio $r$ & No \\
+SparseGPT & Pruning & No & 50\% & No \\
+\textbf{PHANTOM} & CUR + LSH & LoRA & Ratio $r$ & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} PHANTOM is the only method in this list that compresses 
+both \textbf{projections} (via CUR) \textbf{and attention} (via LSH).
+
+\subsection{Position of Our Work}
+
+PHANTOM is unique in combining:
+\begin{enumerate}
+\item \textbf{CUR decomposition} for interpretable low-rank projections.
+\item \textbf{Multi-round LSH} for content-adaptive sparse attention.
+\item \textbf{Rectified softpick} for stable sparse attention.
+
+\end{enumerate}
+Prior work addresses each of these individually, but no prior method combines 
+all three.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{The CUR Decomposition}
+
+For a matrix $W \in \mathbb{R}^{m \times n}$ and target rank $r$, CUR selects:
+
+\[
+W \approx C \cdot U^+ \cdot R
+\tag{3.1}
+\]
+
+where:
+\begin{itemize}
+\item $C \in \mathbb{R}^{m \times r}$ contains $r$ columns of $W$.
+\item $R \in \mathbb{R}^{r \times n}$ contains $r$ rows of $W$.
+\item $U \in \mathbb{R}^{r \times r}$ is the intersection matrix $W[\text{rows}, \text{cols}]$.
+\item $U^+$ is the Moore--Penrose pseudoinverse.
+
+\end{itemize}
+\textbf{Error bound.} Drineas et al. (2008) prove that if columns and rows are 
+sampled with probability proportional to leverage scores, then:
+
+\[
+\|W - C U^+ R\|\_F \leq (1 + \epsilon) \|W - W\_r\|\_F
+\tag{3.2}
+\]
+
+with probability $1 - \delta$ for sample size 
+$r = \mathcal{O}(r^* / \epsilon^2 \log(1/\delta))$.
+
+\subsection{Leverage Scores}
+
+For a matrix $W = U \Sigma V^\top$ with rank $r^*$, the \textbf{column leverage score} 
+of column $j$ is:
+
+\[
+\pi\_j = \sum\_{k=1}^{r^*} (V\_{j, k})^2
+\tag{3.3}
+\]
+
+and the \textbf{row leverage score} of row $i$ is:
+
+\[
+\rho\_i = \sum\_{k=1}^{r^*} (U\_{i, k})^2
+\tag{3.4}
+\]
+
+Leverage scores satisfy $\sum_j \pi_j = r^\textit{$ and $\sum_i \rho_i = r^}$. The 
+scores measure how important each row/column is for the low-rank structure 
+of $W$.
+
+\textbf{Deterministic top-$r$ selection.} Instead of sampling, PHANTOM selects 
+the $r$ rows/columns with highest leverage. This is deterministic and gives 
+the best rank-$r$ CUR approximation in practice.
+
+\subsection{Angular LSH}
+
+Angular LSH (Charikar, 2002) hashes vectors based on their direction. For a 
+random projection $a \sim \mathcal{N}(0, I_d)$, define:
+
+\[
+h\_a(x) = \text{sign}(a^\top x) \in \{-1, +1\}
+\tag{3.5}
+\]
+
+For $k$ independent projections $a_1, \dots, a_k$, the $k$-bit hash is:
+
+\[
+H(x) = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}[h\_{a\_i}(x) = +1]
+\tag{3.6}
+\]
+
+\textbf{Collision probability.} For two vectors $x, y$ with angle $\theta$ between 
+them:
+
+\[
+\Pr[H(x) = H(y)] = 1 - \frac{\theta}{\pi}
+\tag{3.7}
+\]
+
+so vectors with small angles collide with high probability.
+
+\textbf{Multi-round LSH.} A single LSH round has high variance. PHANTOM applies 
+$R_\ell$ independent rounds, each with a fresh projection matrix, and 
+averages the resulting attention outputs:
+
+\[
+\text{Output} = \frac{1}{R\_\ell} \sum\_{r=1}^{R\_\ell} \text{Attn}\_{\text{LSH}}^{(r)}(Q, K, V)
+\tag{3.8}
+\]
+
+\subsection{Softpick Activation}
+
+Softpick (Lu et al., 2024) generalizes softmax by subtracting a fixed baseline:
+
+\[
+\text{softpick}(x\_i) = \text{ReLU}\!\left(e^{(x\_i - m)/\tau\_s} - e^{-m/\tau\_s}\right)
+\tag{3.9}
+\]
+
+where $m = \max_j x_j$ and $\tau_s$ is a temperature. Positions with 
+$x_i \ll m$ are truncated to zero, producing sparse attention.
+
+\textbf{Normalization.} The unnormalized weights are normalized:
+
+\[
+\hat{p}\_i = \frac{\text{softpick}(x\_i)}{\sum\_j \text{softpick}(x\_j) + \epsilon}
+\tag{3.10}
+\]
+
+\textbf{Numerical issue.} If $m < 0$ (all attention scores negative, e.g., from 
+masking), then $e^{-m/\tau_s} \geq 1$ and the ReLU may zero out the entire 
+row. PHANTOM adds a softmax fallback:
+
+\[
+p\_i = \begin{cases} \hat{p}\_i & \text{if } \sum\_j \text{softpick}(x\_j) \textgreater{} 10^{-5} \\ \text{softmax}(x\_i / \tau\_s) & \text{otherwise} \end{cases}
+\tag{3.11}
+\]
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable low-rank adapters to frozen base weights:
+
+\[
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
+\tag{3.12}
+\]
+
+PHANTOM uses LoRA on top of the CUR-factorized projections for recovery 
+fine-tuning.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+PHANTOM replaces standard transformer attention with a two-stage compression:
+
+\begin{enumerate}
+\item \textbf{Projection compression} ( 4.2): replace each $W \in \{W_Q, W_K, W_V, W_O\}$
+  with a CUR factorized layer $C U^+ R$.
+\item \textbf{Sparse attention} ( 4.3): compute attention via multi-round angular LSH
+  with rectified softpick.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +--------------------------------------------------+
+   |  Input: hidden\_states $\in$ R^{B$\times$L$\times$d}                |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 1: CUR Projections                        |
+   |  Q = CUR\_Q(hidden\_states)                        |
+   |  K = CUR\_K(hidden\_states)                        |
+   |  V = CUR\_V(hidden\_states)                        |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 2: Multi-Round LSH Attention              |
+   |  For round r in 1..R:                            |
+   |    hash\_Q, hash\_K $\leftarrow$ random proj + sign           |
+   |    match $\leftarrow$ (hash\_Q == hash\_K)                    |
+   |    attn\_r $\leftarrow$ softpick(scores   match)             |
+   |  Output = mean(attn\_r   V)                       |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 3: Output Projection (CUR\_O)              |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Output: y $\in$ R^{B$\times$L$\times$d}                           |
+   +--------------------------------------------------+
+\end{lstlisting}
+
+\subsection{Phase 1: CUR Projection Compression}
+
+\subsubsection{The Factorized Layer}
+
+Each projection $W$ is replaced by a two-layer factorization:
+
+\[
+y = U\_\text{up} \cdot (D\_\text{down} \cdot x) + b
+\tag{4.1}
+\]
+
+where:
+\begin{itemize}
+\item $D_\text{down} \in \mathbb{R}^{r \times d_\text{in}}$ is the down projection.
+\item $U_\text{up} \in \mathbb{R}^{d_\text{out} \times r}$ is the up projection.
+
+\end{itemize}
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$ vs $d_\text{in} d_\text{out}$ 
+for the original.
+
+For $d_\text{in} = d_\text{out} = 768$ and $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.0$\times$ \\
+PHANTOM (r=16) & 24,576 & \textbf{24$\times$} \\
+PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Leverage-Score Selection}
+
+Given a weight matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, 
+we compute its SVD:
+
+\[
+W = U \Sigma V^\top
+\tag{4.2}
+\]
+
+\textbf{Column leverage} (importance of each input dimension):
+
+\[
+\pi\_j = \sum\_{k=1}^{\min(m, n)} (V\_{j, k})^2
+\tag{4.3}
+\]
+
+\textbf{Row leverage} (importance of each output dimension):
+
+\[
+\rho\_i = \sum\_{k=1}^{\min(m, n)} (U\_{i, k})^2
+\tag{4.4}
+\]
+
+We normalize both to sum to 1:
+
+\[
+\tilde{\pi}\_j = \frac{\pi\_j}{\sum\_{j'} \pi\_{j'}}, \qquad
+\tilde{\rho}\_i = \frac{\rho\_i}{\sum\_{i'} \rho\_{i'}}
+\tag{4.5}
+\]
+
+Then select the top-$r$ columns and rows:
+
+\[
+\mathcal{J} = \text{top}\_r(\tilde{\pi}), \qquad
+\mathcal{I} = \text{top}\_r(\tilde{\rho})
+\tag{4.6}
+\]
+
+\subsubsection{CUR Reconstruction}
+
+Define:
+
+\[
+C = W[:, \mathcal{J}] \in \mathbb{R}^{d\_\text{out} \times r}
+\tag{4.7}
+\]
+
+\[
+R = W[\mathcal{I}, :] \in \mathbb{R}^{r \times d\_\text{in}}
+\tag{4.8}
+\]
+
+\[
+W\_\text{intersection} = W[\mathcal{I}, \mathcal{J}] \in \mathbb{R}^{r \times r}
+\tag{4.9}
+\]
+
+The reconstruction is:
+
+\[
+W\_\text{CUR} = C \cdot W\_\text{intersection}^+ \cdot R
+\tag{4.10}
+\]
+
+\subsubsection{Factor Assignment}
+
+We assign the CUR factors to the down/up projections as follows:
+
+\[
+D\_\text{down} = R \in \mathbb{R}^{r \times d\_\text{in}}
+\tag{4.11}
+\]
+
+\[
+U\_\text{up} = C \cdot W\_\text{intersection}^+ \in \mathbb{R}^{d\_\text{out} \times r}
+\tag{4.12}
+\]
+
+The factorized layer computes:
+
+\[
+y = U\_\text{up} \cdot (D\_\text{down} \cdot x) + b
+\tag{4.13}
+\]
+
+\subsubsection{Fallback}
+
+If SVD or pseudoinverse fails (e.g., ill-conditioned matrix), we fall back 
+to Kaiming initialization. This rarely occurs but ensures robustness.
+
+\subsection{Phase 2: Multi-Round LSH Attention}
+
+\subsubsection{Angular LSH Construction}
+
+For each of $R_\ell$ rounds:
+
+\begin{enumerate}
+\item Sample a random projection matrix $A^{(r)} \in \mathbb{R}^{d_h \times k}$.
+\item Normalize each column of $A^{(r)}$ to unit norm.
+\item Compute hash codes:
+  $$
+  h\_Q^{(r)} = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}\left[\left(Q\_\text{norm} \cdot A^{(r)}\right)\_i > 0\right]
+  \tag{4.14}
+  $$
+  $$
+  h\_K^{(r)} = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}\left[\left(K\_\text{norm} \cdot A^{(r)}\right)\_i > 0\right]
+  \tag{4.15}
+  $$
+  where $Q_\text{norm}, K_\text{norm}$ are L2-normalized query/key matrices.
+
+\item Compute the boolean match matrix:
+  $$
+  M^{(r)}\_{ij} = \mathbb{1}[h\_{Q,i}^{(r)} = h\_{K,j}^{(r)}]
+  \tag{4.16}
+  $$
+
+\item Always add the diagonal (self-attention):
+  $$
+  M^{(r)} \leftarrow M^{(r)} \lor I
+  \tag{4.17}
+  $$
+
+\end{enumerate}
+\subsubsection{Masking}
+
+For padding and causality:
+
+\[
+M^{(r)}\_{ij} \leftarrow M^{(r)}\_{ij} \land \text{valid}\_j \land (\neg \text{causal}\_{ij})
+\tag{4.18}
+\]
+
+where $\text{causal}_{ij} = \mathbb{1}[i < j]$.
+
+\subsubsection{Attention Computation}
+
+For each round, compute the attention scores:
+
+\[
+S^{(r)}\_{ij} = \frac{Q\_i \cdot K\_j^\top}{\sqrt{d\_h}}
+\tag{4.19}
+\]
+
+Then mask and apply softpick:
+
+\[
+S^{(r)}\_{ij} \leftarrow S^{(r)}\_{ij} + (M^{(r)}\_{ij} - 1) \cdot \infty
+\tag{4.20}
+\]
+
+\[
+\alpha^{(r)} = \text{softpick}(S^{(r)}, \tau\_s)
+\tag{4.21}
+\]
+
+Apply dropout (if training) and compute the round's output:
+
+\[
+O^{(r)} = \alpha^{(r)} \cdot V
+\tag{4.22}
+\]
+
+\subsubsection{Round Averaging}
+
+The final attention output is the mean over rounds:
+
+\[
+O = \frac{1}{R\_\ell} \sum\_{r=1}^{R\_\ell} O^{(r)}
+\tag{4.23}
+\]
+
+\subsubsection{Choice of Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Rationale} \\
+\midrule
+$R_\ell$ (rounds) & 4 & Balances variance vs compute \\
+$k$ (bits) & 4 & 16 buckets per round \\
+$\tau_s$ & 1.0 & Standard softpick temperature \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With $k = 4$ bits, the number of buckets per round is $2^4 = 16$. The average 
+bucket size is roughly $L / 16$, so sparse attention cost is 
+$\mathcal{O}(L^2 / 16)$ -- a 16$\times$ reduction.
+
+\subsection{Rectified Softpick}
+
+We define softpick with a fallback to softmax:
+
+\[
+\text{softpick}\_i(x) = \text{ReLU}\!\left(e^{(x\_i - m)/\tau\_s} - e^{-m/\tau\_s}\right)
+\tag{4.24}
+\]
+
+where $m = \max_j x_j$. The output is normalized:
+
+\[
+\hat{p}\_i = \frac{\text{softpick}\_i(x)}{\sum\_j \text{softpick}\_j(x) + \epsilon}
+\tag{4.25}
+\]
+
+\textbf{Fallback.} If $\sum_j \text{softpick}_j(x) < 10^{-5}$ (all weights zero), 
+we substitute:
+
+\[
+p\_i = \text{softmax}(x\_i / \tau\_s)
+\tag{4.26}
+\]
+
+This handles the case where all attention scores are highly negative (from 
+masking), which would otherwise produce a zero row.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} PHANTOM forward pass
+\begin{lstlisting}
+Input:  hidden\_states $\in$ R^{B$\times$L$\times$d}, mask
+Output: y $\in$ R^{B$\times$L$\times$d}
+
+1:  # Phase 1: CUR projections
+2:  Q $\leftarrow$ CUR\_q(hidden\_states)
+3:  K $\leftarrow$ CUR\_k(hidden\_states)
+4:  V $\leftarrow$ CUR\_v(hidden\_states)
+5:  reshape Q, K, V into heads
+6:
+7:  # Phase 2: Multi-round LSH attention
+8:  accum $\leftarrow$ 0
+9:  for r in 1..R\_  do
+10:     A $\leftarrow$ random\_projection(d\_h, k)
+11:     h\_Q $\leftarrow$ lsh\_hash(Q, A)
+12:     h\_K $\leftarrow$ lsh\_hash(K, A)
+13:     M $\leftarrow$ (h\_Q == h\_K)   I
+14:     M $\leftarrow$ M   valid   ( causal)
+15:     S $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+16:     S $\leftarrow$ mask(S, M)
+17:     $\alpha$ $\leftarrow$ softpick(S, $\tau$\_s)
+18:     accum $\leftarrow$ accum + $\alpha$ V
+19: end for
+20: context $\leftarrow$ accum / R\_ 
+21:
+22: # Phase 3: Output projection
+23: y $\leftarrow$ CUR\_o(context)
+24: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Parameter Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+$W_Q$ & $d \cdot d_h H$ & $r(d + d_h H)$ \\
+$W_K$ & $d \cdot d_h H_{kv}$ & $r(d + d_h H_{kv})$ \\
+$W_V$ & $d \cdot d_h H_{kv}$ & $r(d + d_h H_{kv})$ \\
+$W_O$ & $d_h H \cdot d$ & $r(d_h H + d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $H = 12$, $d_h = 64$, $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+$W_Q$ & 589,824 & 24,576 \\
+$W_K$ & 589,824 & 24,576 \\
+$W_V$ & 589,824 & 24,576 \\
+$W_O$ & 589,824 & 24,576 \\
+\textbf{Total per layer} & 2,359,296 & \textbf{98,304} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{24$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d r)$ \\
+Attention & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(R_\ell L B d_h)$ \\
+Output proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L r d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+where $B \approx L / 2^k$ is the average bucket size.
+
+For $L = 128$, $k = 4$, $B \approx 8$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+Attention & 128  = 16,384 ops & 4 $\times$ 128 $\times$ 8 = 4,096 ops \\
+\textbf{Speedup} & -- & \textbf{4$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Memory Complexity}
+
+Attention matrix memory reduces from $\mathcal{O}(B H L^2)$ to 
+$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$\times$ reduction.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{CUR Approximation Bound}
+
+\textbf{Proposition.} If rows and columns are selected by highest leverage score, then:
+
+\[
+\|W - C U^+ R\|\_F \leq \|W - W\_r\|\_F + \epsilon
+\tag{4.27}
+\]
+
+where $\epsilon$ depends on the leverage score distribution.
+
+\textbf{Proof sketch.} This follows from the deterministic leverage-score CUR bound 
+in Drineas et al. (2008) and the observation that top-$r$ selection is at least 
+as good as probabilistic sampling with the same expected sample size. $\square$
+
+\subsubsection{LSH Collision Probability}
+
+For two unit vectors $q, k$ with angle $\theta$:
+
+\[
+\Pr[h^{(r)}(q) = h^{(r)}(k)] = 1 - \frac{\theta}{\pi}
+\tag{4.28}
+\]
+
+Averaging over $R_\ell$ independent rounds reduces the variance of the 
+attention estimate by factor $R_\ell$.
+
+\subsubsection{Softpick Sparsity}
+
+At temperature $\tau_s$, the fraction of non-zero entries in softpick is 
+approximately:
+
+\[
+\text{sparsity} \approx \frac{\#\{i : x\_i \textgreater{} m - \tau\_s \log(2)\}}{L}
+\tag{4.29}
+\]
+
+For typical attention distributions with peaked scores, this is 5-15\%.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Projections} & \textbf{Attention} & \textbf{Conv1D?} & \textbf{Nested?} \\
+\midrule
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & Flat MHA & No & No \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & Nested & No & Yes \\
+GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & Causal Conv1D & Yes & No \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & GQA + RoPE & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{DistilBERT (Flat)}
+
+Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}. Each weight is 
+factorized via CUR.
+
+\begin{lstlisting}
+target.q\_proj.copy\_cur(src.q\_lin.weight, src.q\_lin.bias)
+target.k\_proj.copy\_cur(src.k\_lin.weight, src.k\_lin.bias)
+target.v\_proj.copy\_cur(src.v\_lin.weight, src.v\_lin.bias)
+target.out\_proj.copy\_cur(src.out\_lin.weight, src.out\_lin.bias)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+Extract from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}, \texttt{output.dense}.
+
+\begin{lstlisting}
+target.q\_proj.copy\_cur(src.self.query.weight, src.self.query.bias)
+target.k\_proj.copy\_cur(src.self.key.weight, src.self.key.bias)
+target.v\_proj.copy\_cur(src.self.value.weight, src.self.value.bias)
+# out\_proj is bypassed via is\_nested\_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+GPT-2 fuses Q, K, V into \texttt{c\_attn}:
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()  # Conv1D stores (in, out) $\to$ transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+target.q\_proj.copy\_cur(q\_w, q\_bias)
+target.k\_proj.copy\_cur(k\_w, k\_bias)
+target.v\_proj.copy\_cur(v\_w, v\_bias)
+target.out\_proj.copy\_cur(src.c\_proj.weight.t(), src.c\_proj.bias)
+\end{lstlisting}
+
+\subsubsection{Qwen3.5 (GQA)}
+
+Direct copy with GQA-preserving shapes.
+
+\subsection{Handling Nested Encoders}
+
+RoBERTa's attention sits inside \texttt{BertAttention}:
+
+\begin{lstlisting}
+class BertAttention:
+    self: BertSelfAttention      # query, key, value
+    output: BertSelfOutput       # dense (output projection)
+\end{lstlisting}
+
+PHANTOM replaces \texttt{attention.self} and sets \texttt{is\_nested\_encoder = True}. The 
+forward pass returns raw context without applying \texttt{out\_proj}, letting the 
+outer \texttt{BertSelfOutput.dense} handle the projection.
+
+\subsection{Handling GQA}
+
+For GQA models ($H_{kv} < H$):
+
+\begin{lstlisting}
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    K = repeat\_kv(K, repeats)
+    V = repeat\_kv(V, repeats)
+\end{lstlisting}
+
+Applied after projection, before attention.
+
+\subsection{Handling RoPE}
+
+For models with RoPE (Qwen, LLaMA):
+
+\begin{lstlisting}
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
+\end{lstlisting}
+
+Applied after projection, before GQA expansion.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject PHANTOM into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M' with attention replaced
+
+1:  for layer   in transformer\_layers(M):
+2:      src $\leftarrow$ extract\_attention( )
+3:      if src is None: continue
+4:      new $\leftarrow$ PHANTOMAttention(c, old=src)
+5:      new.copy\_weights(src)
+6:      replace\_attention( , new)
+7:  end for
+8:  return M'
+\end{lstlisting}
+
+\subsection{The `FactorisedLinear\_CUR` Module}
+
+\begin{lstlisting}
+class FactorisedLinear\_CUR(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, cur\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.down = nn.Linear(in\_features, cur\_rank, bias=False)
+        self.up = nn.Linear(cur\_rank, out\_features, bias=bias)
+        # Optional LoRA
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+    
+    def copy\_cur(self, weight, bias):
+        # 1. SVD
+        U, S, Vt = torch.linalg.svd(weight)
+        # 2. Leverage scores
+        col\_lev = (Vt ** 2).sum(dim=0)
+        row\_lev = (U ** 2).sum(dim=1)
+        # 3. Top-r selection
+        col\_idx = torch.topk(col\_lev, k=rank).indices
+        row\_idx = torch.topk(row\_lev, k=rank).indices
+        # 4. CUR factors
+        C = weight[:, col\_idx]
+        R = weight[row\_idx, :]
+        W\_int = weight[row\_idx][:, col\_idx]
+        # 5. Assign
+        self.down.weight.data = R
+        self.up.weight.data = C @ torch.linalg.pinv(W\_int)
+    
+    def forward(self, x):
+        out = self.up(self.down(x))
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
+\end{lstlisting}
+
+\subsection{LSH Attention Module}
+
+\begin{lstlisting}
+def lsh\_attention(Q, K, V, rounds=4, bucket\_size=4, softpick\_temp=1.0, ...):
+    B, H, N, D = Q.shape
+    scale = D ** -0.5
+    n\_bits = min(bucket\_size, 8)
+    bit\_shifts = torch.tensor([2**i for i in range(n\_bits)])
+    
+    Q\_norm = F.normalize(Q, p=2, dim=-1)
+    K\_norm = F.normalize(K, p=2, dim=-1)
+    
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    # ... masking ...
+    
+    accum = torch.zeros\_like(V)
+    for \_ in range(rounds):
+        proj = F.normalize(torch.randn(D, n\_bits), p=2, dim=0)
+        hq = (Q\_norm @ proj \textgreater{} 0).float() @ bit\_shifts
+        hk = (K\_norm @ proj \textgreater{} 0).float() @ bit\_shifts
+        match = (hq.unsqueeze(-1) == hk.unsqueeze(-2)) | eye
+        scores\_r = scores.masked\_fill(~match, -1e4)
+        alpha = softpick(scores\_r, dim=-1, temperature=softpick\_temp)
+        accum += alpha @ V
+    
+    return accum / rounds
+\end{lstlisting}
+
+\subsection{Fallback and Error Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+SVD failure & Exception & Kaiming init \\
+Pseudoinverse failure & NaN/Inf & Kaiming init \\
+Missing weights & \texttt{copy\_weights} raises & Skip layer \\
+Shape mismatch & Assertion & Skip layer \\
+Frobenius norm \textless{} 1e-4 & Check after copy & Raise error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("phantom")
+@ATTENTION\_REGISTRY.register("phantom\_module")
+class PHANTOMAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality Verification}
+
+For decoder models, we verify that the output at position $i$ depends only on 
+inputs $\leq i$ via gradient check:
+
+\begin{lstlisting}
+X = torch.randn(1, N, d, requires\_grad=True)
+Y = model(X)
+Y[0, i].sum().backward()
+assert X.grad[0, i+1:].abs().max() \textless{} 1e-6
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of phantom.}
+\label{fig:arch_phantom}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & 800M & GQA + RoPE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+CUR rank $r$ & 32 \\
+LSH rounds $R_\ell$ & 4 \\
+LSH bucket size $k$ & 4 \\
+Softpick enabled & True \\
+Softpick temperature $\tau_s$ & 1.0 \\
+Dropout & 0.1 \\
+\texttt{max\_error} $\tau$ & 0.024 \\
+\texttt{fallback\_to\_original} & True \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy
+\item F1 (binary, macro)
+\item Precision, Recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters (before / after)
+\item Compression ratio
+\item Peak inference VRAM
+\item Inference time (median of 20 runs)
+\item \textbf{Average bucket size} (from LSH statistics)
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Compressed layers count
+\item Fallback layers count
+\item Average reconstruction error
+\item Average bucket size
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_phantom.py \
+    --models distilbert,roberta,gpt2 \
+    --cur\_rank 32 \
+    --lsh\_rounds 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 min.
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Uncompressed \\
+\texttt{phantom} & Our method \\
+\texttt{phantom\_no\_lsh} & Dense attention + CUR projections \\
+\texttt{phantom\_no\_cur} & LSH attention + dense projections \\
+\texttt{phantom\_no\_softpick} & Softmax instead of softpick \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+All experiments use seed 42. No multi-seed due to compute budget.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -188,9 +1294,9 @@ differentiable through sign operations.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Phantom} & \textbf{72.59\%} & -17.89\% & PASS & 0.7668 & 0 & \textbf{1.23$\times$} & 327.9 MB & 15.6 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Phantom} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 374.8 MB & 28.5 & -- \\
+RoBERTa & \textbf{Phantom} & \textbf{50.92\%} & -24.19\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 374.8 MB & 28.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Phantom} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 500.9 MB & 30.8 & -- \\
+GPT-2 & \textbf{Phantom} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 500.9 MB & 30.8 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -448,12 +1554,13 @@ GPT-2 & 0.85 s & 0.85 s & \textbf{0.85 s} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/phantom_distilbert_loss_convergence.png}
+\includegraphics[width=0.85\linewidth]{figures/phantom\_distilbert\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{phantom}.}
 \label{fig:results_phantom}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -555,7 +1662,7 @@ CUR + LSH & 0.85 & 0.85 \\
 1-4 & 0.85\% \\
 5-16 & 0.85\% \\
 17-64 & 0.85\% \\
->64 & 0.85\% \\
+\textgreater{}64 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -651,7 +1758,7 @@ attention at small $L$.
 \item \textbf{CUR beats uniform SVD} at low rank.
 \item \textbf{4 LSH rounds} is optimal.
 \item \textbf{Softpick adds sparsity} without hurting accuracy.
-\item \textbf{Component interactions} matter (CUR + LSH > sum of parts).
+\item \textbf{Component interactions} matter (CUR + LSH \textgreater{} sum of parts).
 \item \textbf{Batch size 4} required for 12-layer models.
 \end{enumerate}
 \begin{lstlisting}
@@ -659,6 +1766,7 @@ attention at small $L$.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -695,16 +1803,16 @@ dominant signal.
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 32$): LSH overhead dominates
 \item \textbf{Latency-critical} applications: 4 rounds = 4$\times$ attention compute
-\item \textbf{Very small models} (<10M): overhead too large
+\item \textbf{Very small models} (\textless{}10M): overhead too large
 
 \end{itemize}
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Target sequence length > 256? --- Yes --- Use PHANTOM
+Target sequence length \textgreater{} 256? --- Yes --- Use PHANTOM
   | No
    
-Attention sparsity high (>90%)? --- Yes --- Use PHANTOM
+Attention sparsity high (\textgreater{}90\%)? --- Yes --- Use PHANTOM
   | No
    
 Storage reduction critical? --- Yes --- Use PHANTOM (CUR only)
@@ -803,6 +1911,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -811,7 +1920,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 Only SST-2 (classification) is evaluated. PHANTOM may behave differently on:
 \begin{itemize}
 \item Generation tasks (summarization, translation)
-\item Long-context tasks (>512 tokens)
+\item Long-context tasks (\textgreater{}512 tokens)
 \item Retrieval (dense passage)
 \item Multi-class classification
 
@@ -826,8 +1935,8 @@ Only SST-2 (classification) is evaluated. PHANTOM may behave differently on:
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B params & Not tested \\
+\textgreater{}24 layers & Not tested \\
 MoE & Not tested \\
 \bottomrule
 \end{tabular}
@@ -898,6 +2007,7 @@ Compression is dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -975,14 +2085,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1008,13 +2119,13 @@ numpy & 1.0.0 \\
 \subsection{Running PHANTOM}
 
 \begin{lstlisting}
-python run_all_4_phantom.py \
+python run\_all\_4\_phantom.py \
     --models distilbert,roberta,gpt2 \
-    --cur_rank 32 \
-    --lsh_rounds 4 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --cur\_rank 32 \
+    --lsh\_rounds 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes on RTX 4070.
@@ -1022,16 +2133,16 @@ python run_all_4_phantom.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_phantom/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --output\_dir results/unified\_phantom/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,phantom \
-    --cur_rank 32 \
-    --lsh_rounds 4 \
-    --lora_rank 8
+    --cur\_rank 32 \
+    --lsh\_rounds 4 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -1039,14 +2150,14 @@ python Codes/framework/run_quality_sweep.py \
 \subsubsection{Table 7.1 (Main)}
 
 \begin{lstlisting}
-python run_all_4_phantom.py --models distilbert,roberta,gpt2
+python run\_all\_4\_phantom.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (CUR rank)}
 
 \begin{lstlisting}
 for r in 8 16 32 64; do
-    python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
+    python run\_all\_4\_phantom.py --cur\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -1054,7 +2165,7 @@ done
 
 \begin{lstlisting}
 for rounds in 1 2 4 8; do
-    python run_all_4_phantom.py --lsh_rounds $rounds --output_suffix lsh$rounds
+    python run\_all\_4\_phantom.py --lsh\_rounds $rounds --output_suffix lsh$rounds
 done
 \end{lstlisting}
 
@@ -1062,7 +2173,7 @@ done
 
 \begin{lstlisting}
 for bits in 2 3 4 6; do
-    python run_all_4_phantom.py --lsh_bucket_size $bits --output_suffix k$bits
+    python run\_all\_4\_phantom.py --lsh\_bucket\_size $bits --output_suffix k$bits
 done
 \end{lstlisting}
 
@@ -1073,8 +2184,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1114,6 +2225,7 @@ GPT-2 & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1276,6 +2388,7 @@ GPT-2 & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1286,7 +2399,7 @@ rank $r^*$. Sample $r$ columns with probability proportional to leverage
 scores $\pi_j$ and $r$ rows with probability proportional to $\rho_i$. Then:
 
 \[
-\|W - C U^+ R\|_F \leq (1 + \epsilon) \|W - W_{r^*}\|_F
+\|W - C U^+ R\|\_F \leq (1 + \epsilon) \|W - W\_{r^*}\|\_F
 \tag{A.1}
 \]
 
@@ -1301,12 +2414,12 @@ leverage distributions (Papailiopoulos et al., 2014).
 Given SVD $W = U \Sigma V^\top$:
 
 \[
-\pi_j = \sum_{k=1}^{\min(m, n)} V_{j, k}^2 = \|V_{j, :}\|_2^2
+\pi\_j = \sum\_{k=1}^{\min(m, n)} V\_{j, k}^2 = \|V\_{j, :}\|\_2^2
 \tag{A.2}
 \]
 
 \[
-\rho_i = \sum_{k=1}^{\min(m, n)} U_{i, k}^2 = \|U_{i, :}\|_2^2
+\rho\_i = \sum\_{k=1}^{\min(m, n)} U\_{i, k}^2 = \|U\_{i, :}\|\_2^2
 \tag{A.3}
 \]
 
@@ -1318,7 +2431,7 @@ Given SVD $W = U \Sigma V^\top$:
 angle $\theta = \arccos(x^\top y)$:
 
 \[
-\Pr_{a \sim \mathcal{N}(0, I)}[\text{sign}(a^\top x) = \text{sign}(a^\top y)] = 1 - \frac{\theta}{\pi}
+\Pr\_{a \sim \mathcal{N}(0, I)}[\text{sign}(a^\top x) = \text{sign}(a^\top y)] = 1 - \frac{\theta}{\pi}
 \tag{A.4}
 \]
 
@@ -1338,7 +2451,7 @@ $\square$
 For a score vector $x \in \mathbb{R}^L$ with maximum $m$, softpick gives:
 
 \[
-\text{softpick}_i = \text{ReLU}(e^{(x_i - m)/\tau} - e^{-m/\tau})
+\text{softpick}\_i = \text{ReLU}(e^{(x\_i - m)/\tau} - e^{-m/\tau})
 \tag{A.5}
 \]
 
@@ -1346,7 +2459,7 @@ This is non-zero iff $x_i > m - \tau \log(2)$. The fraction of non-zero
 entries is:
 
 \[
-\text{sparsity} = \frac{1}{L} \#\{i : x_i > m - \tau \log 2\}
+\text{sparsity} = \frac{1}{L} \#\{i : x\_i \textgreater{} m - \tau \log 2\}
 \tag{A.6}
 \]
 
@@ -1357,7 +2470,7 @@ For peaked distributions (typical of trained attention), this is 5-15\%.
 When $\sum_j \text{softpick}_j < \epsilon$, we substitute softmax:
 
 \[
-p_i = \frac{e^{x_i / \tau}}{\sum_j e^{x_j / \tau}}
+p\_i = \frac{e^{x\_i / \tau}}{\sum\_j e^{x\_j / \tau}}
 \tag{A.7}
 \]
 
@@ -1371,7 +2484,7 @@ For $R$ independent rounds with individual outputs $O^{(r)}$, the average
 is:
 
 \[
-O = \frac{1}{R} \sum_{r=1}^{R} O^{(r)}
+O = \frac{1}{R} \sum\_{r=1}^{R} O^{(r)}
 \tag{A.8}
 \]
 
@@ -1389,94 +2502,95 @@ So multi-round averaging reduces variance linearly with $R$.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The `FactorisedLinear\_CUR` Module}
 
 \begin{lstlisting}
-class FactorisedLinear_CUR(nn.Module):
-    def __init__(self, in_features, out_features, cur_rank=16, ...):
-        super().__init__()
-        self.down = nn.Linear(in_features, cur_rank, bias=False)
-        self.up = nn.Linear(cur_rank, out_features, bias=True)
+class FactorisedLinear\_CUR(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, cur\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.down = nn.Linear(in\_features, cur\_rank, bias=False)
+        self.up = nn.Linear(cur\_rank, out\_features, bias=True)
         # LoRA (optional)
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.output_scale = nn.Parameter(torch.ones(1))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+        self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 The `copy\_cur` Method}
 
 \begin{lstlisting}
-def copy_cur(self, weight, bias):
-    with torch.no_grad():
+def copy\_cur(self, weight, bias):
+    with torch.no\_grad():
         W = weight.float()
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         # Leverage
-        col_lev = (Vt ** 2).sum(dim=0)
-        row_lev = (U ** 2).sum(dim=1)
+        col\_lev = (Vt ** 2).sum(dim=0)
+        row\_lev = (U ** 2).sum(dim=1)
         # Top-r selection
-        rank = min(self.cur_rank, W.shape[0], W.shape[1])
-        col_idx = torch.topk(col_lev, k=rank).indices
-        row_idx = torch.topk(row_lev, k=rank).indices
+        rank = min(self.cur\_rank, W.shape[0], W.shape[1])
+        col\_idx = torch.topk(col\_lev, k=rank).indices
+        row\_idx = torch.topk(row\_lev, k=rank).indices
         # CUR factors
-        C = W[:, col_idx]
-        R = W[row_idx, :]
-        W_int = W[row_idx][:, col_idx]
-        U_int_pinv = torch.linalg.pinv(W_int)
+        C = W[:, col\_idx]
+        R = W[row\_idx, :]
+        W\_int = W[row\_idx][:, col\_idx]
+        U\_int\_pinv = torch.linalg.pinv(W\_int)
         # Assign
-        self.down.weight.data.zero_()
-        self.down.weight.data[:rank].copy_(R)
-        self.up.weight.data.zero_()
-        self.up.weight.data[:, :rank].copy_(C @ U_int_pinv)
+        self.down.weight.data.zero\_()
+        self.down.weight.data[:rank].copy\_(R)
+        self.up.weight.data.zero\_()
+        self.up.weight.data[:, :rank].copy\_(C @ U\_int\_pinv)
         if bias is not None:
-            self.up.bias.data.copy_(bias)
-    if self.freeze_base:
-        self.freeze_base_weights()
+            self.up.bias.data.copy\_(bias)
+    if self.freeze\_base:
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 LSH Attention}
 
 \begin{lstlisting}
-def lsh_attention(Q, K, V, rounds, bucket_size, softpick_temp, ...):
+def lsh\_attention(Q, K, V, rounds, bucket\_size, softpick\_temp, ...):
     B, H, N, D = Q.shape
     scale = D ** -0.5
-    n_bits = max(1, min(bucket_size, 8))
-    bit_shifts = torch.tensor([2**i for i in range(n_bits)], device=Q.device)
+    n\_bits = max(1, min(bucket\_size, 8))
+    bit\_shifts = torch.tensor([2**i for i in range(n\_bits)], device=Q.device)
     
-    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
-    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
+    Q\_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+    K\_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
     
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     # mask padding
-    if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e4)
+    if token\_valid is not None:
+        scores = scores.masked\_fill(~token\_valid.unsqueeze(1).unsqueeze(2), -1e4)
     # causal
-    if is_causal:
+    if is\_causal:
         causal = torch.triu(torch.ones(N, N, device=Q.device, dtype=torch.bool), diagonal=1)
-        scores = scores.masked_fill(causal.unsqueeze(0).unsqueeze(0), -1e4)
+        scores = scores.masked\_fill(causal.unsqueeze(0).unsqueeze(0), -1e4)
     
-    accum = torch.zeros_like(V)
-    for _ in range(rounds):
-        proj = F.normalize(torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype), p=2, dim=0)
-        hq = (torch.matmul(Q_norm, proj) > 0).float() @ bit_shifts
-        hk = (torch.matmul(K_norm, proj) > 0).float() @ bit_shifts
+    accum = torch.zeros\_like(V)
+    for \_ in range(rounds):
+        proj = F.normalize(torch.randn(D, n\_bits, device=Q.device, dtype=Q.dtype), p=2, dim=0)
+        hq = (torch.matmul(Q\_norm, proj) \textgreater{} 0).float() @ bit\_shifts
+        hk = (torch.matmul(K\_norm, proj) \textgreater{} 0).float() @ bit\_shifts
         match = (hq.unsqueeze(-1) == hk.unsqueeze(-2))
         eye = torch.eye(N, device=Q.device, dtype=torch.bool)
         match = match | eye
-        if is_causal:
+        if is\_causal:
             match = (match & ~causal.unsqueeze(0).unsqueeze(0)) | eye
-        scores_r = scores.masked_fill(~match, -1e4)
-        attn = softpick(scores_r, dim=-1, temperature=softpick_temp).to(Q.dtype)
+        scores\_r = scores.masked\_fill(~match, -1e4)
+        attn = softpick(scores\_r, dim=-1, temperature=softpick\_temp).to(Q.dtype)
         if dropout is not None:
             attn = dropout(attn)
         accum += torch.matmul(attn, V)
@@ -1493,27 +2607,27 @@ def softpick(x, dim=-1, temperature=1.0):
     m = x.max(dim=dim, keepdim=True).values
     temp = max(temperature, 1e-4)
     e = torch.exp((x - m) / temp)
-    m_scaled = torch.clamp(-m / temp, max=80.0)
-    denom = e - torch.exp(m_scaled)
+    m\_scaled = torch.clamp(-m / temp, max=80.0)
+    denom = e - torch.exp(m\_scaled)
     p = F.relu(denom)
-    p_sum = p.sum(dim=dim, keepdim=True)
+    p\_sum = p.sum(dim=dim, keepdim=True)
     fallback = F.softmax(x / temp, dim=dim)
-    res = torch.where(p_sum > 1e-5, p / torch.clamp(p_sum, min=1e-5), fallback)
+    res = torch.where(p\_sum \textgreater{} 1e-5, p / torch.clamp(p\_sum, min=1e-5), fallback)
     return res.to(orig)
 \end{lstlisting}
 
 \subsection{B.5 Handling Conv1D (GPT-2)}
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(module, "nf"):
-    c_w = c_w.t()  # (in, out) $\to$ (out, in)
+if "conv1d" in cls\_name or hasattr(module, "nf"):
+    c\_w = c\_w.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 \subsection{B.6 Handling Nested Encoder (RoBERTa)}
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
     # Extract from src.self.query, key, value
     # Do NOT extract output.dense
 \end{lstlisting}
@@ -1521,10 +2635,10 @@ if hasattr(src, "self") and hasattr(src, "output"):
 \subsection{B.7 Handling GQA}
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    K = repeat_kv(K, repeats)
-    V = repeat_kv(V, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    K = repeat\_kv(K, repeats)
+    V = repeat\_kv(V, repeats)
 \end{lstlisting}
 
 \subsection{B.8 Common Pitfalls}
@@ -1534,7 +2648,7 @@ if self.num_heads != self.num_kv_heads:
 LSH requires normalized vectors for angular hashing:
 
 \begin{lstlisting}
-Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+Q\_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
 \end{lstlisting}
 
 \subsubsection{B.8.2 Wrong Bit Shifts}
@@ -1542,7 +2656,7 @@ Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
 Bits must be weighted by powers of 2:
 
 \begin{lstlisting}
-bit_shifts = torch.tensor([2**i for i in range(n_bits)])
+bit\_shifts = torch.tensor([2**i for i in range(n\_bits)])
 \end{lstlisting}
 
 \subsubsection{B.8.3 No Diagonal Mask}
@@ -1567,9 +2681,9 @@ match = match & ~causal.unsqueeze(0).unsqueeze(0)
 To verify injection:
 
 \begin{lstlisting}
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if "attention" in name and "self" in name:
-        print(name, type(mod).__name__)
+        print(name, type(mod).\_\_name\_\_)
         break
 \end{lstlisting}
 
@@ -1579,6 +2693,7 @@ Expected output: \texttt{PHANTOMAttention}.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1679,7 +2794,7 @@ Accuracy & 50.92\% \\
 1-4 & 0.85 & 0.85\% \\
 5-16 & 0.85 & 0.85\% \\
 17-64 & 0.85 & 0.85\% \\
->64 & 0.85 & 0.85\% \\
+\textgreater{}64 & 0.85 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1776,14 +2891,14 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
     "ratio": 50\%,
-    "accuracy_pct": 86.4,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "compressed_layers": 2.0x,
-    "avg_bucket_size": 64,
-    "compression_time_s": 66.4M
+    "compressed\_layers": 2.0x,
+    "avg\_bucket\_size": 64,
+    "compression\_time\_s": 66.4M
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1794,11 +2909,11 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_phantom.py --models distilbert,roberta,gpt2
+python run\_all\_4\_phantom.py --models distilbert,roberta,gpt2
 
 # Rank sweep
 for r in 8 16 32 64; do
-    python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
+    python run\_all\_4\_phantom.py --cur\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1806,6 +2921,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1815,15 +2931,15 @@ done
 
 \textbf{Goal.} Replace random projections with learnable ones.
 
-\textbf{Result.} Accuracy improvement <0.3\%, training instability.
+\textbf{Result.} Accuracy improvement \textless{}0.3\%, training instability.
 
 \textbf{Conclusion.} Random projections are sufficient.
 
-\subsubsection{D.1.2 Larger LSH Bits (>8)}
+\subsubsection{D.1.2 Larger LSH Bits (\textgreater{}8)}
 
 \textbf{Goal.} Finer buckets for more precise matching.
 
-\textbf{Result.} Most buckets had <2 tokens; attention too sparse.
+\textbf{Result.} Most buckets had \textless{}2 tokens; attention too sparse.
 
 \textbf{Conclusion.} 4-6 bits is optimal.
 
@@ -1931,7 +3047,7 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ s
 Larger \texttt{n\_bits} & Precision & Sparse attention \\
 Multi-scale LSH & Bucket size variance & No improvement \\
 Per-layer $\tau$\_s & Non-stationarity & No improvement \\
-LayerNorm recalibration & Shift & <0.2\% improvement \\
+LayerNorm recalibration & Shift & \textless{}0.2\% improvement \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1977,6 +3093,7 @@ LayerNorm recalibration & Shift & <0.2\% improvement \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2069,3 +3186,4 @@ But also:
 
 ---
 \end{lstlisting}
+

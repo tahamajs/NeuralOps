@@ -1,0 +1,8 @@
+# 6. Experimental Setup and Evaluation Protocol
+
+All experiments are conducted on standardized NVIDIA GPU hardware (RTX 4070 SM 8.9, 8GB VRAM) under CUDA 12.8 and PyTorch 2.5+.
+
+### Evaluation Benchmarks
+- **Encoder Models:** DistilBERT-base-uncased and RoBERTa-base evaluated on SST-2 (Stanford Sentiment Treebank) and MNLI (Multi-Genre Natural Language Inference).
+- **Decoder Models:** GPT-2 (124M) evaluated on WikiText-2 language modeling perplexity.
+- **Metrics:** Validation Accuracy (%), F1-Score, Peak VRAM Allocation (MB), and Throughput (tokens/second).

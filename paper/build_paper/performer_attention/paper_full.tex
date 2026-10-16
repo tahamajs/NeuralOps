@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+) for Pretrained Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -14,7 +16,7 @@ infeasible in memory. Linear attention approximates softmax by reordering
 the computation:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(Q\_i, K, V) = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{1.1}
 \]
 
@@ -65,7 +67,7 @@ But the code:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
     raise RuntimeError(f"Injection failed")  # $\leftarrow$ raises!
 \end{lstlisting}
 
@@ -76,13 +78,13 @@ in production.
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, ...):
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, ...):
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         ...
-        return out * self.output_scale
+        return out * self.output\_scale
 \end{lstlisting}
 
 This parameter is not present in the baseline checkpoint. On reload, it 
@@ -116,6 +118,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -155,6 +158,715 @@ reduction.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Method} & FAVOR+ (published) & Port to pretrained \\
+\textbf{Weight transfer} & Rare & Exact, four architectures \\
+\textbf{Causal scan} & Yes & Yes (chunk=64) \\
+\textbf{Numerical stability} & Standard & Max-subtraction + norm-sub \\
+\textbf{Bug disclosure} & Rare & Two discrepancies documented \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike the original Performer paper (which trains from 
+scratch), we focus on \textbf{weight-preserving port} to pretrained models. This 
+requires careful handling of the feature map and the prefix scan.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Softmax Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
+\tag{3.1}
+\]
+
+\textbf{Cost:} $\mathcal{O}(L^2 d)$.
+
+\subsection{Kernel Trick}
+
+Reformulate softmax as a kernel:
+
+\[
+\text{softmax}(q\_i^\top k\_j / \sqrt{d}) = \frac{\exp(q\_i^\top k\_j / \sqrt{d})}{\sum\_j \exp(q\_i^\top k\_j / \sqrt{d})}
+\tag{3.2}
+\]
+
+Approximate $\exp(q^\top k) \approx \phi(q)^\top \phi(k)$:
+
+\[
+\text{Attn}\_i \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
+\tag{3.3}
+\]
+
+\subsection{Random Fourier Features (RFF)}
+
+For a shift-invariant kernel $k(x, y) = k(x - y)$:
+
+\[
+k(x - y) = \int p(\omega) e^{i \omega^\top (x - y)} d\omega
+\tag{3.4}
+\]
+
+Sample $\omega_1, \dots, \omega_F$ from $p(\omega)$:
+
+\[
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} e^{i \omega\_i^\top (x - y)}
+\tag{3.5}
+\]
+
+\textbf{Real form:}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega\_1^\top x), \dots, \cos(\omega\_F^\top x), \sin(\omega\_1^\top x), \dots, \sin(\omega\_F^\top x)]
+\tag{3.6}
+\]
+
+\subsection{FAVOR+ Feature Map}
+
+Choromanski et al. (2021) propose the \textbf{positive} version:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(\omega^\top x - \frac{\|x\|^2}{2}\right)
+\tag{3.7}
+\]
+
+where $\omega$ is \textbf{orthogonal} (rows are orthonormal), which reduces the 
+variance of the estimator.
+
+\textbf{Why positive?} Softmax weights are always positive. Standard RFF can 
+produce negative estimates, which break the positivity invariant.
+
+\subsection{Numerical Stability}
+
+For large $\|x\|$, $\exp(\omega^\top x - \|x\|^2/2)$ can overflow. The 
+standard trick:
+
+\[
+\phi(x) = \exp\!\left(\omega^\top x - \max(\omega^\top x) - \frac{\|x\|^2}{2}\right)
+\tag{3.8}
+\]
+
+The max-subtraction removes the largest value, keeping the exponent 
+bounded.
+
+\subsection{GQA and RoPE}
+
+\textbf{GQA:} $H_{kv} < H$. Handled via \texttt{repeat\_kv}.
+
+\textbf{RoPE:} Rotary position embeddings. Orthogonal to the kernel 
+approximation.
+
+\subsection{LoRA}
+
+Standard (Hu et al., 2021).
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+Performer replaces standard softmax attention with FAVOR+ linear attention:
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +------+       +------+      +------+
+    |  Q   |       |  K   |      |  V   |
+    +--+---+       +--+---+      +--+---+
+       |              |              |
+                                     |
+   +-----------------------+         |
+   | Feature map  ( )      |         |
+   | (FAVOR+)              |         |
+   +---------+-------------+         |
+             |                       |
+                                     |
+   +-----------------------+         |
+   | Linear attention      | --------+
+   | (associative or causal)|
+   +---------+-------------+
+             |
+              
+        Output Y
+\end{lstlisting}
+
+\subsection{The Feature Map}
+
+\subsubsection{Orthogonal Random Matrix}
+
+We build $\omega \in \mathbb{R}^{F \times d}$ in blocks of $d$ rows:
+
+\begin{lstlisting}
+def \_build\_orthogonal\_matrix(d, m):
+    blocks = []
+    remaining = m
+    while remaining \textgreater{} 0:
+        block\_size = min(d, remaining)
+        g = torch.randn(d, block\_size)
+        q, \_ = torch.linalg.qr(g)
+        blocks.append(q)
+        remaining -= block\_size
+    W = torch.cat(blocks, dim=1) * math.sqrt(d)
+    return W.t().contiguous()
+\end{lstlisting}
+
+Each block is orthonormal. The scaling $\sqrt{d}$ normalizes the variance.
+
+\subsubsection{FAVOR+ Feature Map}
+
+\begin{lstlisting}
+def \_feature\_map(self, x):
+    proj = torch.matmul(x, self.omega.t())
+    diag\_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    max\_proj = proj.amax(dim=-1, keepdim=True).detach()
+    diff = torch.clamp(proj - max\_proj - diag\_sq, min=-30.0, max=10.0)
+    phi = torch.exp(diff) + self.eps
+    phi = phi / (math.sqrt(self.num\_features) + self.eps)
+    return phi
+\end{lstlisting}
+
+\textbf{Three stabilizations:}
+\begin{enumerate}
+\item \textbf{Max-subtraction:} \texttt{proj - max\_proj} keeps the exponent bounded.
+\item \textbf{Clamp:} \texttt{[-30, 10]} prevents extreme values.
+\item \textbf{Epsilon:} \texttt{+eps} ensures positivity.
+
+\end{enumerate}
+\subsection{Bidirectional Path (Encoders)}
+
+For non-causal attention:
+
+\[
+KV = \phi(K)^\top V, \quad Z = \sum\_j \phi(K\_j)
+\tag{4.1}
+\]
+
+\[
+O\_i = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z + \epsilon}
+\tag{4.2}
+\]
+
+\textbf{Masking.} We mask both K and Q features:
+
+\begin{lstlisting}
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+Q\_feat = self.\_feature\_map(Q) * mask\_expanded
+\end{lstlisting}
+
+Masking Q prevents padding tokens from contributing to the output.
+
+\subsection{Causal Path (Decoders)}
+
+For causal attention, we use a \textbf{chunked prefix scan} with \texttt{chunk\_size = 64}:
+
+For each chunk:
+
+\begin{enumerate}
+\item \textbf{Intra-chunk:} Compute causal attention within the chunk:
+
+\end{enumerate}
+\[
+\text{intra}\_i = \sum\_{j \leq i, j \in \text{chunk}} \phi(q\_i)^\top \phi(k\_j) v\_j
+\tag{4.3}
+\]
+
+\begin{enumerate}
+\item \textbf{Inter-chunk:} Use running state $S, z$:
+
+\end{enumerate}
+\[
+\text{inter}\_i = \phi(q\_i)^\top S
+\tag{4.4}
+\]
+
+\begin{enumerate}
+\item \textbf{Output:}
+
+\end{enumerate}
+\[
+O\_i = \frac{\text{intra}\_i + \text{inter}\_i}{\text{intra-den}\_i + \text{inter-den}\_i + \epsilon}
+\tag{4.5}
+\]
+
+\begin{enumerate}
+\item \textbf{State update:}
+
+\end{enumerate}
+\[
+S \mathrel{+}= \phi(K\_c)^\top V\_c, \quad z \mathrel{+}= \sum\_j \phi(K\_{c,j})
+\tag{4.6}
+\]
+
+\subsection{Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Bidirectional & $\mathcal{O}(L F d)$ & $\mathcal{O}(F d)$ \\
+Causal (chunked) & $\mathcal{O}(L F d)$ & $\mathcal{O}(F d)$ \\
+Baseline softmax & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Linear in $L$.}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O projections & $4 d^2$ \\
+$\omega$ (frozen) & $F \times d$ \\
+LoRA & $4 \cdot 2 r_L d$ \\
+\texttt{output\_scale} & $4$ (one per LoRA) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Non-LoRA addition:} $F \times d$. For $d = 64$, $F = 64$: 4,096 params.
+
+\subsection{Two Code/Code-Doc Discrepancies}
+
+\subsubsection{`inject\_performer` Raises Instead of Returning None}
+
+Docstring says: \texttt{Safe injection returning None on failure}.
+
+Code:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
+    raise RuntimeError(f"Injection failed")  # $\leftarrow$ raises
+\end{lstlisting}
+
+\textbf{Impact.} In production, this crashes the pipeline rather than skipping 
+gracefully. Same bug as NASC.
+
+\subsubsection{`LoRALinear.output\_scale` is New}
+
+\begin{lstlisting}
+self.output\_scale = nn.Parameter(torch.ones(1))
+# ...
+return out * self.output\_scale
+\end{lstlisting}
+
+This parameter is not in the baseline checkpoint. On \texttt{load\_state\_dict}, it 
+shows as \texttt{missing\_key}. Defaults to 1.0 (harmless), but its presence breaks 
+\texttt{strict=True} loading.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} PerformerAttention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+ 2: Q $\leftarrow$ Q * d^{-0.25};  K $\leftarrow$ K * d^{-0.25}
+ 3: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 4: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+ 5:
+ 6: Q\_feat $\leftarrow$  (Q)
+ 7: K\_feat $\leftarrow$  (K)
+ 8:
+ 9: if is\_decoder:
+10:     # Chunked prefix scan
+11:     for c in range(num\_chunks):
+12:         intra $\leftarrow$ causal\_attention(Q\_feat\_c, K\_feat\_c, V\_c)
+13:         inter $\leftarrow$ Q\_feat\_c @ S
+14:         S += K\_feat\_c^T @ V\_c
+15:         z += sum(K\_feat\_c)
+16:     O $\leftarrow$ (intra + inter) / (den + $\epsilon$)
+17: else:
+18:     # Associative accumulation
+19:     KV $\leftarrow$ K\_feat^T @ V
+20:     Z $\leftarrow$ sum(K\_feat)
+21:     O $\leftarrow$ (Q\_feat @ KV) / (Q\_feat @ Z^T + $\epsilon$)
+22:
+23: Y $\leftarrow$ out\_proj(O)
+24: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{FAVOR+ Approximation Bound}
+
+Choromanski et al. (2021) prove that FAVOR+ achieves:
+
+\[
+\|\text{Attn}\_{\text{FAVOR+}} - \text{Attn}\_{\text{softmax}}\|\_\infty \leq \mathcal{O}\!\left(\frac{1}{\sqrt{F}}\right)
+\tag{4.7}
+\]
+
+with high probability.
+
+\subsubsection{Why Positive Features?}
+
+Softmax weights are non-negative. Standard RFF can produce negative 
+weights, breaking the invariant. FAVOR+ uses only positive features.
+
+\subsubsection{Causality Preserved}
+
+The chunked scan preserves strict causality: intra-chunk uses causal mask, 
+inter-chunk uses only previously-processed state.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
+\midrule
+DistilBERT & No & No & No & Bidirectional \\
+RoBERTa & Yes & No & No & Bidirectional \\
+GPT-2 & No & No & No & Causal \\
+Qwen3.5 & No & Yes & Yes & Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+Standard four-architecture copy.
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight.data
+# ...
+\end{lstlisting}
+
+\subsection{Feature Map and Masking}
+
+\textbf{Encoder path} masks both K and Q:
+
+\begin{lstlisting}
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+Q\_feat = self.\_feature\_map(Q) * mask\_expanded  # $\leftarrow$ Important
+\end{lstlisting}
+
+Masking Q ensures that padding queries do not contribute to the output.
+
+\textbf{Decoder path} only masks K:
+
+\begin{lstlisting}
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+# Q\_feat is not masked
+\end{lstlisting}
+
+Because causal attention already limits the influence of future tokens.
+
+\subsection{Causal Chunked Scan}
+
+\begin{lstlisting}
+chunk\_size = min(64, N)
+num\_chunks = (N + chunk\_size - 1) // chunk\_size
+\end{lstlisting}
+
+For $N = 128$: 2 chunks.
+
+\textbf{Intra-chunk attention:}
+
+\begin{lstlisting}
+causal\_mask = torch.tril(torch.ones(L, L, ...))
+intra\_attn = torch.matmul(q\_c, k\_c.transpose(-1, -2)) * causal\_mask
+\end{lstlisting}
+
+\textbf{Inter-chunk via running state:}
+
+\begin{lstlisting}
+inter\_num = torch.matmul(q\_c, S)
+S = S + torch.matmul(k\_c.transpose(-1, -2), v\_c)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject Performer
+\begin{lstlisting}
+1: src $\leftarrow$ extract\_attention( )
+2: new $\leftarrow$ PerformerAttention(config, old=src)
+3: if copy\_weights fails: raise (BUG -- should return None)
+4: install new in  .attention.self (or .attn, .self\_attn)
+5: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Injection Raises}
+
+The docstring claims \texttt{returning None on failure} but the code raises. 
+Wrap the call in \texttt{try/except} if you need None-return behavior.
+
+\subsubsection{`output\_scale` Redundancy}
+
+Each \texttt{LoRALinear} has its own \texttt{output\_scale}. If you wrap Performer in 
+another module that also scales, double-scaling can occur.
+
+\subsubsection{Cross-Attention Bypass}
+
+\begin{lstlisting}
+if encoder\_hidden\_states is not None:
+    return hidden\_states, None
+\end{lstlisting}
+
+Cross-attention is \textbf{not supported}. The module returns the input 
+unchanged.
+
+\subsubsection{The `omega` Buffer is Persistent}
+
+\begin{lstlisting}
+self.register\_buffer("omega", omega, persistent=True)
+\end{lstlisting}
+
+Good -- the RFF projection is saved and reloaded.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("performer")
+@ATTENTION\_REGISTRY.register("performer\_attention")
+class PerformerAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Integration with LoRA Recovery}
+
+Standard pipeline:
+\begin{enumerate}
+\item Load pretrained model.
+\item Inject Performer via \texttt{inject\_performer}.
+\item Freeze base weights, keep LoRA trainable.
+\item Run 50 recovery steps.
+\item Evaluate.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of performer\_attention.}
+\label{fig:arch_performer-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013).
+
+Sequence length truncated to 128.
+
+\subsection{Performer Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{kernel\_type} & Gaussian (\texttt{favor\_plus}) \\
+\texttt{num\_features} & 64 (default 64) \\
+\texttt{eps} & $10^{-6}$ \\
+\texttt{dropout} & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params
+\item Peak VRAM
+\item Inference time
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_performer.py \
+    --models distilbert,roberta,gpt2 \
+    --num\_features 64 \
+    --kernel\_type Gaussian \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+\subsection{Ablations}
+
+\begin{itemize}
+\item \texttt{num\_features}: 32, 64, 128, 256
+\item \texttt{kernel\_type}: \texttt{favor\_plus}, \texttt{elu}, \texttt{relu}
+\item LoRA rank: 4, 8, 16, 32
+
+\end{itemize}
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{performer} -- our method
+\item Prior modules: \texttt{cosformer}, \texttt{orion}, \texttt{a3}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -167,7 +879,7 @@ DistilBERT & \textbf{Performer} & \textbf{74.08\%} & -16.86\% & PASS & 0.7396 & 
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Performer} & \textbf{60.32\%} & -15.14\% & PASS & 0.5948 & 0 & \textbf{0.94$\times$} & 658.2 MB & 10.1 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Performer} & \textbf{50.80\%} & -7.11\% & PASS_LOW & 0.6738 & 0 & \textbf{0.99$\times$} & 568.8 MB & 13.7 & -- \\
+GPT-2 & \textbf{Performer} & \textbf{50.80\%} & -7.11\% & PASS\_LOW & 0.6738 & 0 & \textbf{0.99$\times$} & 568.8 MB & 13.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -337,12 +1049,13 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/performer_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{performer_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/performer\_roberta\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{performer\_attention}.}
 \label{fig:results_performer_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -447,7 +1160,7 @@ Code: \texttt{raise RuntimeError(f"Injection failed")}.
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction failed: %s", e)
+    logger.warning("PerformerAttention construction failed: \%s", e)
     return None
 \end{lstlisting}
 
@@ -456,7 +1169,7 @@ except Exception as e:
 \texttt{LoRALinear.forward}:
 
 \begin{lstlisting}
-return out * self.output_scale
+return out * self.output\_scale
 \end{lstlisting}
 
 \textbf{Impact.}
@@ -518,6 +1231,7 @@ Empirical & 0.85\% & 50.92\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -563,7 +1277,7 @@ the code or fix the docstring.**
 Start
   |
    
-Is L > 1024? -- No -- FlashAttention-2 is likely better
+Is L \textgreater{} 1024? -- No -- FlashAttention-2 is likely better
   |
   Yes
    
@@ -649,6 +1363,7 @@ is a solid linear attention baseline.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -714,6 +1429,7 @@ For $N = 128$, chunk=64: 2 iterations. Acceptable.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -795,14 +1511,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -811,19 +1528,19 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_performer.py \
+python run\_all\_4\_performer.py \
     --models distilbert,roberta,gpt2 \
-    --num_features 64 \
-    --recovery_steps 50
+    --num\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-performer",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-performer",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -833,31 +1550,31 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_performer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_performer.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Feature Ablation}
 
 \begin{lstlisting}
 for F in 32 64 128 256; do
-    python run_all_4_performer.py --num_features $F --output_suffix f$F
+    python run\_all\_4\_performer.py --num\_features $F --output_suffix f$F
 done
 \end{lstlisting}
 
 \subsubsection{Kernel Type Ablation}
 
 \begin{lstlisting}
-python run_all_4_performer.py --kernel_type favor_plus --output_suffix favor
-python run_all_4_performer.py --kernel_type elu --output_suffix elu
-python run_all_4_performer.py --kernel_type relu --output_suffix relu
+python run\_all\_4\_performer.py --kernel\_type favor\_plus --output\_suffix favor
+python run\_all\_4\_performer.py --kernel\_type elu --output\_suffix elu
+python run\_all\_4\_performer.py --kernel\_type relu --output\_suffix relu
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -881,24 +1598,24 @@ GPT-2 & 77.5\% $\pm$ 2\% & PASS \\
 \subsubsection{Verify Feature Positivity}
 
 \begin{lstlisting}
-Q_feat = model._feature_map(Q)
-assert (Q_feat >= 0).all(), "Feature map produced negative values!"
+Q\_feat = model.\_feature\_map(Q)
+assert (Q\_feat \textgreater{}= 0).all(), "Feature map produced negative values!"
 \end{lstlisting}
 
 \subsubsection{Verify Omega Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
+sd = model.state\_dict()
 assert any('omega' in k for k in sd), "omega NOT persisted!"
 \end{lstlisting}
 
 \subsubsection{Verify Causal Path}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -921,6 +1638,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1090,13 +1808,14 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Kernel Approximation}
 
 \[
-\text{softmax}(q^\top k / \sqrt{d}) \approx \frac{\phi(q)^\top \phi(k)}{\sum_j \phi(q)^\top \phi(k_j)}
+\text{softmax}(q^\top k / \sqrt{d}) \approx \frac{\phi(q)^\top \phi(k)}{\sum\_j \phi(q)^\top \phi(k\_j)}
 \tag{A.1}
 \]
 
@@ -1112,7 +1831,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 \textbf{Proof of unbiasedness:} For $\omega \sim \mathcal{N}(0, I)$:
 
 \[
-\mathbb{E}_\omega[\phi(q)^\top \phi(k)] = \exp(q^\top k)
+\mathbb{E}\_\omega[\phi(q)^\top \phi(k)] = \exp(q^\top k)
 \tag{A.3}
 \]
 
@@ -1125,7 +1844,7 @@ $B_i^\top B_i = I$.
 \textbf{Why orthogonal?} Reduces variance of the estimator:
 
 \[
-\text{Var}[\phi(q)^\top \phi(k)]_{\text{orthogonal}} < \text{Var}[\phi(q)^\top \phi(k)]_{\text{i.i.d.}}
+\text{Var}[\phi(q)^\top \phi(k)]\_{\text{orthogonal}} \textless{} \text{Var}[\phi(q)^\top \phi(k)]\_{\text{i.i.d.}}
 \tag{A.4}
 \]
 
@@ -1149,12 +1868,12 @@ the FP16 range.
 For chunk $c$, start position $s_c$:
 
 \[
-\text{intra}_i = \sum_{j \in \text{chunk}_c, j \leq i} \phi(q_i)^\top \phi(k_j) v_j
+\text{intra}\_i = \sum\_{j \in \text{chunk}\_c, j \leq i} \phi(q\_i)^\top \phi(k\_j) v\_j
 \tag{A.6}
 \]
 
 \[
-\text{inter}_i = \phi(q_i)^\top S_{c-1}
+\text{inter}\_i = \phi(q\_i)^\top S\_{c-1}
 \tag{A.7}
 \]
 
@@ -1187,7 +1906,7 @@ Linear in $L$.
 Choromanski et al. (2021) bound:
 
 \[
-\left|\text{Attn}_{\text{FAVOR+}} - \text{Attn}_{\text{softmax}}\right| \leq C \cdot \frac{\|V\|_\infty \cdot e^{\|\omega\|}}{\sqrt{F}}
+\left|\text{Attn}\_{\text{FAVOR+}} - \text{Attn}\_{\text{softmax}}\right| \leq C \cdot \frac{\|V\|\_\infty \cdot e^{\|\omega\|}}{\sqrt{F}}
 \tag{A.8}
 \]
 
@@ -1197,21 +1916,22 @@ For $F = 64$: error $\sim 0.125 \cdot \|V\|_\infty \cdot e^{\|\omega\|}$.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Orthogonal Matrix Construction}
 
 \begin{lstlisting}
-def _build_orthogonal_matrix(self, d, m):
+def \_build\_orthogonal\_matrix(self, d, m):
     blocks = []
     remaining = m
-    while remaining > 0:
-        block_size = min(d, remaining)
-        g = torch.randn(d, block_size)
-        q, _ = torch.linalg.qr(g)
+    while remaining \textgreater{} 0:
+        block\_size = min(d, remaining)
+        g = torch.randn(d, block\_size)
+        q, \_ = torch.linalg.qr(g)
         blocks.append(q)
-        remaining -= block_size
+        remaining -= block\_size
     W = torch.cat(blocks, dim=1) * math.sqrt(d)
     return W.t().contiguous()
 \end{lstlisting}
@@ -1221,13 +1941,13 @@ def _build_orthogonal_matrix(self, d, m):
 \subsection{B.2 Feature Map}
 
 \begin{lstlisting}
-def _feature_map(self, x):
+def \_feature\_map(self, x):
     proj = torch.matmul(x, self.omega.to(dtype=x.dtype).t())
-    diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
-    max_proj = proj.amax(dim=-1, keepdim=True).detach()
-    diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
+    diag\_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    max\_proj = proj.amax(dim=-1, keepdim=True).detach()
+    diff = torch.clamp(proj - max\_proj - diag\_sq, min=-30.0, max=10.0)
     phi = torch.exp(diff) + self.eps
-    phi = phi / (math.sqrt(self.num_features) + self.eps)
+    phi = phi / (math.sqrt(self.num\_features) + self.eps)
     return phi
 \end{lstlisting}
 
@@ -1241,14 +1961,14 @@ def _feature_map(self, x):
 \subsection{B.3 Causal Chunked Scan}
 
 \begin{lstlisting}
-if self.is_decoder:
-    M = Q_feat.shape[-1]
-    chunk_size = min(64, N)
-    num_chunks = (N + chunk_size - 1) // chunk_size
+if self.is\_decoder:
+    M = Q\_feat.shape[-1]
+    chunk\_size = min(64, N)
+    num\_chunks = (N + chunk\_size - 1) // chunk\_size
     S = torch.zeros(B, H, M, d, dtype=torch.float32)
     z = torch.zeros(B, H, M, dtype=torch.float32)
     
-    for c in range(num_chunks):
+    for c in range(num\_chunks):
         # ... intra, inter, update S, z
 \end{lstlisting}
 
@@ -1258,9 +1978,9 @@ For $N = 128$: 2 iterations.
 
 \begin{lstlisting}
 try:
-    new_attn = PerformerAttention(...)
+    new\_attn = PerformerAttention(...)
 except Exception as e:
-    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
     raise RuntimeError(f"Injection failed")  # $\leftarrow$ BUG
 \end{lstlisting}
 
@@ -1268,7 +1988,7 @@ except Exception as e:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction failed: %s", e)
+    logger.warning("PerformerAttention construction failed: \%s", e)
     return None
 \end{lstlisting}
 
@@ -1276,15 +1996,15 @@ except Exception as e:
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, ...):
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, ...):
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \textbf{Should be removed} -- no theoretical justification.
@@ -1292,8 +2012,8 @@ class LoRALinear(nn.Module):
 \subsection{B.6 Cross-Attention Bypass}
 
 \begin{lstlisting}
-if encoder_hidden_states is not None:
-    return hidden_states, None
+if encoder\_hidden\_states is not None:
+    return hidden\_states, None
 \end{lstlisting}
 
 Returns input unchanged.
@@ -1302,7 +2022,7 @@ Returns input unchanged.
 
 \subsubsection{B.7.1 Feature Map Overflows Without Stabilization}
 
-Without max-subtraction: \texttt{exp($\omega$^T x)} overflows for \texttt{||x|| > 5}.
+Without max-subtraction: \texttt{exp($\omega$^T x)} overflows for \texttt{||x|| \textgreater{} 5}.
 
 \subsubsection{B.7.2 Injection Raises}
 
@@ -1321,31 +2041,31 @@ No warning when cross-attention is requested.
 \subsubsection{Verify Feature Positivity}
 
 \begin{lstlisting}
-Q_feat = model._feature_map(Q)
-assert (Q_feat >= 0).all()
+Q\_feat = model.\_feature\_map(Q)
+assert (Q\_feat \textgreater{}= 0).all()
 \end{lstlisting}
 
 \subsubsection{Verify Omega Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
+sd = model.state\_dict()
 assert any('omega' in k for k in sd)
 \end{lstlisting}
 
 \subsubsection{Verify Causal}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{B.9 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("performer")
-@ATTENTION_REGISTRY.register("performer_attention")
+@ATTENTION\_REGISTRY.register("performer")
+@ATTENTION\_REGISTRY.register("performer\_attention")
 class PerformerAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -1354,6 +2074,7 @@ class PerformerAttention(BaseAttention):
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1456,10 +2177,10 @@ Params (after) & 124.4M \\
 \subsection{C.7 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_performer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_performer.py --models distilbert,roberta,gpt2
 
 for F in 32 64 128 256; do
-    python run_all_4_performer.py --num_features $F --output_suffix f$F
+    python run\_all\_4\_performer.py --num\_features $F --output_suffix f$F
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1467,6 +2188,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1556,6 +2278,7 @@ Remove orthogonal init & Slightly worse \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1606,3 +2329,4 @@ code-docstring discrepancies to help downstream users.
 
 ---
 \end{lstlisting}
+

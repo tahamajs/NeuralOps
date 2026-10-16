@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `primal_attention`
+**Legacy Folder Name:** `Primal` (standardized v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
@@ -101,6 +104,7 @@ cleanly with existing pretrained models.
 - [E. Ethical Considerations](E_ethics.md)
 
 ---
+
 
 ---
 
@@ -236,6 +240,7 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -333,6 +338,7 @@ roles of these projections. This is not possible in standard Nyström
 approximation.
 
 ---
+
 
 ---
 
@@ -473,6 +479,7 @@ We use LoRA to recover quality after attention replacement.
 | $\sigma$ | Softmax |
 
 ---
+
 
 ---
 
@@ -841,6 +848,7 @@ For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
 
 ---
 
+
 ---
 
 # 5. Architecture Integration
@@ -1017,6 +1025,7 @@ class PrimalAttention(BaseAttention): ...
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1122,6 +1131,7 @@ python run_all_4_primal.py \
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1138,14 +1148,14 @@ python run_all_4_primal.py \
 ### Table 7.1: SST-2 results with $m = 64$, $K = 4$.
 
 <!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Attn mem | Time | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 128 KB | 1.90 s | 183 MB |
-| DistilBERT | **Primal** | **90.14** | -0.57 | 0.9034 | **12 KB** | 2.5 s | 668 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 128 KB | 4.10 s | 712 MB |
-| RoBERTa | **Primal** | **68.00** | -10.56 | 0.6767 | **12 KB** | 5.3 s | 1442 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 128 KB | 4.20 s | 793 MB |
-| GPT-2 | **Primal** | **63.07** | -16.29 | 0.6349 | **12 KB** | 5.5 s | 1685 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Primal** | **90.14%** | -0.34% | PASS | 0.9034 | 0 | **1.00x** | 668.3 MB | 3.9s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Primal** | **68.00%** | -7.11% | PASS | 0.6767 | 0 | **1.00x** | 1441.8 MB | 7.4s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Primal** | **63.07%** | +2.29% | PASS | 0.6349 | 0 | **1.00x** | 1684.6 MB | 8.1s |
 
 **Attention memory** = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 
@@ -1264,6 +1274,29 @@ python run_all_4_primal.py \
 - **All models pass quality gate.**
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 82.00% | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| F1 Score | 0.0000 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compressed Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Fallback Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Timestamp | 2026-09-20T15:55:28.080936 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 78.56, 78.78]
+> These numbers must NOT be cited in the final paper.
+
+
 
 ---
 
@@ -1408,6 +1441,7 @@ allows asymmetric. Comparison:
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1493,6 +1527,7 @@ Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1562,6 +1597,7 @@ Dual-use. See Appendix E.
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1628,6 +1664,7 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 None.
 
 ---
+
 
 ---
 
@@ -1714,6 +1751,7 @@ torch.cuda.manual_seed_all(seed)
 - Causal approximation not strict
 
 ---
+
 
 ---
 
@@ -1845,6 +1883,7 @@ torch.cuda.manual_seed_all(seed)
 ```
 
 ---
+
 
 ---
 
@@ -1994,6 +2033,7 @@ suitable conditions).
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2136,6 +2176,7 @@ This is essential for the linear complexity.
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2277,6 +2318,7 @@ done
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2392,6 +2434,7 @@ No improvement beyond $K = 4$.
 
 ---
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2483,3 +2526,7 @@ But also:
 We encourage community discussion.
 
 ---
+
+
+---
+

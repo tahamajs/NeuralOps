@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{MoE-DeltaKV-Paged: A Hybrid Block-Sparse Attention with Differentiable Temporal Delta Compression}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -43,7 +45,7 @@ mechanism $\mathcal{A}'$ that:
 
 \[
 \mathcal{A}' \approx \mathcal{A}, \qquad
-\text{FLOPs}(\mathcal{A}') < \mathcal{O}(L^2)
+\text{FLOPs}(\mathcal{A}') \textless{} \mathcal{O}(L^2)
 \tag{1.1}
 \]
 
@@ -70,7 +72,7 @@ $\text{page\_size}$. Each query page $i$ computes a router logit against
 each key page $j$:
 
 \[
-\ell_{ij} = \frac{(W_\text{rg} \bar{q}_i) \cdot \bar{k}_j}{\sqrt{d_h}}
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
 \tag{1.2}
 \]
 
@@ -83,7 +85,7 @@ Given keys $K \in \mathbb{R}^{B \times H \times N \times d_h}$, we compute
 temporal deltas:
 
 \[
-\Delta K_t = K_t - K_{t-1}, \quad t = 1, \dots, N-1
+\Delta K\_t = K\_t - K\_{t-1}, \quad t = 1, \dots, N-1
 \tag{1.3}
 \]
 
@@ -91,7 +93,7 @@ The deltas are compressed via SVD to rank $r$, quantized to 4-bit, and
 reconstructed:
 
 \[
-\hat{K}_t = K_0 + \sum_{\tau=1}^t \widehat{\Delta K}_\tau
+\hat{K}\_t = K\_0 + \sum\_{\tau=1}^t \widehat{\Delta K}\_\tau
 \tag{1.4}
 \]
 
@@ -100,7 +102,7 @@ reconstructed:
 We use the Straight-Through Estimator (STE) for 4-bit uniform quantization:
 
 \[
-\text{STE}(x) = x + (Q_{4\text{bit}}(x) - x).\text{detach}()
+\text{STE}(x) = x + (Q\_{4\text{bit}}(x) - x).\text{detach}()
 \tag{1.5}
 \]
 
@@ -111,7 +113,7 @@ Forward: uses $Q_{4\text{bit}}(x)$. Backward: gradient flows through $x$.
 The router logit for page 0 is boosted by a large constant:
 
 \[
-\ell_{i, 0} \leftarrow \ell_{i, 0} + 10^4
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
 \tag{1.6}
 \]
 
@@ -122,7 +124,7 @@ This ensures page 0 is always selected by top-$k$.
 An auxiliary loss encourages uniform page selection:
 
 \[
-\mathcal{L}_\text{aux} = \text{num\_pages} \cdot \sum_{j} \rho_j \cdot \pi_j
+\mathcal{L}\_\text{aux} = \text{num\_pages} \cdot \sum\_{j} \rho\_j \cdot \pi\_j
 \tag{1.7}
 \]
 
@@ -157,6 +159,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Sparse and Block Attention}
@@ -205,6 +208,917 @@ sizes. \textbf{QAT} (Jacob et al., 2018) simulates quantization during training.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Routing} & \textbf{Delta} & \textbf{Quant} & \textbf{Paged} \\
+\midrule
+MoBA &  &  &  &  \\
+Delta-KV &  &  & Partial &  \\
+Switch &  &  &  &  \\
+\textbf{Ours} & \textbf{ } & \textbf{ } & \textbf{4-bit} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} MoE-DeltaKV-Paged is the first module to combine all 
+four techniques in a single attention layer.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Standard Multi-Head Attention}
+
+For input $X \in \mathbb{R}^{B \times N \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.2}
+\]
+
+Complexity: $\mathcal{O}(N^2 d_h)$.
+
+\subsection{Mixture-of-Block Attention (MoBA)}
+
+MoBA partitions the sequence into $N_p = \lceil N / P \rceil$ pages of 
+size $P$. For each query page $i$, a router selects the top-$k_\text{exp}$ 
+key pages:
+
+\[
+\mathcal{S}\_i = \text{TopK}(\{\ell\_{ij}\}\_j, k\_\text{exp})
+\tag{3.3}
+\]
+
+Attention is computed only over the selected pages:
+
+\[
+\text{Out}\_i = \text{softmax}\!\left(\frac{Q\_i K\_{\mathcal{S}\_i}^\top}{\sqrt{d\_h}}\right) V\_{\mathcal{S}\_i}
+\tag{3.4}
+\]
+
+Complexity: $\mathcal{O}(N_p \cdot k_\text{exp} \cdot P^2 d_h)$.
+
+\subsection{The MoBA Router}
+
+The router logit between query page $i$ and key page $j$:
+
+\[
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
+\tag{3.5}
+\]
+
+where:
+
+\[
+\bar{q}\_i = \frac{1}{P} \sum\_{t \in \text{page}\_i} q\_t, \quad
+\bar{k}\_j = \frac{1}{P} \sum\_{t \in \text{page}\_j} k\_t
+\tag{3.6}
+\]
+
+$W_\text{rg} \in \mathbb{R}^{d_h \times d_h}$ is a learnable routing matrix, 
+initialized to identity.
+
+\subsection{Delta-KV Compression}
+
+Given consecutive key vectors $k_t, k_{t-1}$, the temporal delta is:
+
+\[
+\Delta k\_t = k\_t - k\_{t-1}
+\tag{3.7}
+\]
+
+For smooth sequences (natural language often is), $\|\Delta k_t\| \ll \|k_t\|$.
+
+\textbf{Compression.} Reshape deltas to $\Delta \in \mathbb{R}^{(B H (N-1)) \times d_h}$, 
+then compute SVD:
+
+\[
+\Delta \approx U\_r \Sigma\_r V\_r^\top
+\tag{3.8}
+\]
+
+Reconstruct:
+
+\[
+\hat{\Delta} = U\_r \Sigma\_r V\_r^\top
+\tag{3.9}
+\]
+
+Then reconstruct $K$:
+
+\[
+\hat{k}\_t = k\_0 + \sum\_{\tau=1}^t \hat{\Delta}\_\tau
+\tag{3.10}
+\]
+
+\subsection{Straight-Through Estimator (STE)}
+
+For differentiable quantization:
+
+\[
+\text{STE}(x) = x + (Q(x) - x).\text{detach}()
+\tag{3.11}
+\]
+
+\textbf{Forward:} $Q(x)$ (quantized).
+\textbf{Backward:} $\nabla \text{STE}(x) = \nabla x$ (identity).
+
+\subsection{4-Bit Uniform Quantization}
+
+Given $x$, compute min/max per row:
+
+\[
+x\_\text{min} = \min(x), \quad x\_\text{max} = \max(x)
+\tag{3.12}
+\]
+
+Scale:
+
+\[
+s = \frac{x\_\text{max} - x\_\text{min}}{15}
+\tag{3.13}
+\]
+
+Quantize:
+
+\[
+x\_q = \text{round}\!\left(\frac{x - x\_\text{min}}{s}\right) \in \{0, 1, \dots, 15\}
+\tag{3.14}
+\]
+
+Dequantize:
+
+\[
+\hat{x} = x\_q \cdot s + x\_\text{min}
+\tag{3.15}
+\]
+
+\subsection{Load Balancing Loss}
+
+For MoE routers, a common auxiliary loss:
+
+\[
+\mathcal{L}\_\text{aux} = N\_p \cdot \sum\_{j=1}^{N\_p} \rho\_j \cdot \pi\_j
+\tag{3.16}
+\]
+
+where:
+
+\begin{itemize}
+\item $\rho_j$ = fraction of queries that selected page $j$
+\item $\pi_j$ = mean router probability for page $j$
+
+\end{itemize}
+\textbf{Effect.} Encourages uniform page selection, preventing router collapse.
+
+\subsection{CLS Token Preservation}
+
+In classification models (BERT family), the \texttt{[CLS]} token at position 0 
+aggregates sequence information. We ensure page 0 is always selected:
+
+\[
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
+\tag{3.17}
+\]
+
+This boost is large enough that page 0 always appears in the top-$k$.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+For $H_{kv} < H$, K/V are shared across query heads. Our implementation 
+expands via \texttt{repeat\_kv} before attention.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+Applied to $Q, K$ after projection, before delta compression.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+MoE-DeltaKV-Paged has four stages:
+
+\begin{enumerate}
+\item \textbf{Projection + RoPE} ( 4.2): standard Q/K/V projection with optional RoPE.
+\item \textbf{Delta-KV compression} ( 4.3): temporal deltas $\to$ SVD $\to$ 4-bit quantization $\to$ reconstruction.
+\item \textbf{Paged attention with MoBA routing} ( 4.4): top-$k$ page selection per query page.
+\item \textbf{Gated fusion + output projection} ( 4.5): mixture weights $\times$ page contexts + output.
+
+\end{enumerate}
+\begin{lstlisting}
+        Input X
+           |
+            
+    +----------------------+
+    | Q/K/V projection     |
+    | + RoPE               |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Delta-KV compression |
+    |   $\Delta$K = K - shift(K)  |
+    |   SVD $\to$ 4-bit quant  |
+    |   cumsum reconstruct |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Page partition       |
+    |   P tokens per page  |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | MoBA Router          |
+    |    \_ij = q \_i   k \_j    |
+    |   TopK pages         |
+    |   Page-0 boost       |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Block attention      |
+    |   over selected pages|
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Gated fusion         |
+    |   $\Sigma$ g\_j   out\_j      |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | out\_proj             |
+    +-------+--------------+
+            |
+        Output
+\end{lstlisting}
+
+\subsection{Projection + RoPE}
+
+Standard LoRALinear projections:
+
+\begin{lstlisting}
+q = self.query(hidden\_states)
+k = self.key(hidden\_states)
+v = self.value(hidden\_states)
+\end{lstlisting}
+
+Reshape to $[B, H, N, d_h]$ and apply RoPE if \texttt{position\_embeddings} is provided.
+
+\subsection{Delta-KV Compression}
+
+\subsubsection{Delta Computation}
+
+\begin{lstlisting}
+delta\_K = K[:, :, 1:, :] - K[:, :, :-1, :]  # [B, H, N-1, d]
+delta\_V = V[:, :, 1:, :] - V[:, :, :-1, :]
+\end{lstlisting}
+
+\subsubsection{Low-Rank SVD + 4-bit Quantization}
+
+\begin{lstlisting}
+def low\_rank\_svd\_quantize(delta, rank):
+    B, H, N, d = delta.shape
+    delta\_flat = delta.reshape(-1, d)
+    
+    U, S, Vh = torch.linalg.svd(delta\_flat.float(), full\_matrices=False)
+    U, S, Vh = U[:, :rank], S[:rank], Vh[:rank, :]
+    
+    delta\_approx = ((U * S.unsqueeze(0)) @ Vh).to(delta.dtype)
+    delta\_approx = delta\_approx.reshape(B, H, N, d)
+    
+    return ste\_quantize\_4bit(delta\_approx)
+\end{lstlisting}
+
+\textbf{Why SVD first?} Temporal deltas have low-rank structure (natural language is 
+smooth), so truncating to rank $r$ removes noise without losing signal. The 
+4-bit quantization then simulates low-precision storage.
+
+\subsubsection{Reconstruction}
+
+\begin{lstlisting}
+K\_hat[:, :, 0] = K[:, :, 0]
+K\_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta\_K\_hat, dim=2)
+\end{lstlisting}
+
+\subsubsection{Caveat: This is Simulation}
+
+The output $K_\text{hat}$ has the \textbf{same shape} as $K$. No memory is 
+saved. The delta + SVD + quantization pipeline is a **training-time 
+regularization** that makes the model robust to future real compression.
+
+\subsection{MoBA Router}
+
+\subsubsection{Page Partition}
+
+Partition $q, k_\text{hat}, v_\text{hat}$ into $N_p = \lceil N / P \rceil$ 
+pages of size $P$ (padding with zeros if needed):
+
+\begin{lstlisting}
+num\_pages = (N + P - 1) // P
+pad\_len = num\_pages * P - N
+q\_padded = F.pad(q, (0, 0, 0, pad\_len))
+k\_padded = F.pad(k\_hat, (0, 0, 0, pad\_len))
+\end{lstlisting}
+
+\subsubsection{Page-Mean Projections}
+
+\begin{lstlisting}
+q\_bar = (q\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True)
+k\_bar = (k\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True)
+\end{lstlisting}
+
+\subsubsection{Router Logits}
+
+\[
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
+\tag{4.1}
+\]
+
+$W_\text{rg}$ is initialized to identity.
+
+\subsubsection{Causal Masking}
+
+For decoders:
+
+\[
+\ell\_{ij} \leftarrow -\infty \quad \text{if } j \textgreater{} i
+\tag{4.2}
+\]
+
+\subsubsection{CLS Boost}
+
+\[
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
+\tag{4.3}
+\]
+
+\subsubsection{Top-K Selection}
+
+\begin{lstlisting}
+k\_experts = min(self.k\_experts, num\_pages)
+\_, topk\_indices = torch.topk(router\_logits\_biased, k\_experts, dim=-1)
+topk\_logits = torch.gather(router\_logits, -1, topk\_indices)
+g\_j = F.softmax(topk\_logits, dim=-1)
+\end{lstlisting}
+
+\subsection{Block Attention}
+
+\subsubsection{Gather Selected Pages}
+
+\begin{lstlisting}
+expanded\_indices = topk\_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, P, d)
+k\_blocks\_exp = k\_blocks.unsqueeze(2).expand(-1, -1, num\_pages, -1, -1, -1)
+k\_gathered = torch.gather(k\_blocks\_exp, dim=3, index=expanded\_indices)
+\end{lstlisting}
+
+\subsubsection{Attention Per Expert}
+
+\begin{lstlisting}
+attn\_scores = torch.matmul(q\_expanded, k\_gathered.transpose(-1, -2)) / math.sqrt(d)
+attn\_scores = attn\_scores.masked\_fill(~k\_valid.unsqueeze(-2), -10000.0)
+attn\_probs = F.softmax(attn\_scores, dim=-1)
+context\_per\_expert = torch.matmul(attn\_probs, v\_gathered)
+\end{lstlisting}
+
+\subsubsection{Gated Fusion}
+
+\begin{lstlisting}
+g\_j\_exp = g\_j.unsqueeze(-1).unsqueeze(-1)
+context = (context\_per\_expert * g\_j\_exp).sum(dim=3)
+\end{lstlisting}
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} MoE-DeltaKV-Paged forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask, position\_embeddings
+Output: Y $\in$ R^{B$\times$N$\times$d}
+
+ 1: Q $\leftarrow$ query(X); K $\leftarrow$ key(X); V $\leftarrow$ value(X)
+ 2: if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
+ 3: (K\_hat, V\_hat) $\leftarrow$ simulate\_paged\_delta\_kv(K, V, rank)    Delta-KV
+ 4: Partition into N\_p pages of size P
+ 5: Compute q\_bar, k\_bar (page means)
+ 6:   $\leftarrow$ (W\_rg q\_bar)   k\_bar^T / $\sqrt{}$d\_h                      Router
+ 7: if causal:   $\leftarrow$ mask\_triu( )
+ 8:  [:, :, :, 0] += 1e4                                     CLS boost
+ 9: topk\_idx $\leftarrow$ TopK( , k\_experts)
+10: g $\leftarrow$ softmax(gather( , topk\_idx))
+11: Gather K, V from selected pages
+12: scores $\leftarrow$ q @ k\_gathered^T / $\sqrt{}$d\_h
+13: attn $\leftarrow$ softmax(scores)
+14: context $\leftarrow$ $\Sigma$ g\_j   (attn @ v\_j)                          Gated fusion
+15: Y $\leftarrow$ out\_proj(context)
+16: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Per-Query-Page Complexity}
+
+For query page $i$:
+\begin{itemize}
+\item Router: $\mathcal{O}(N_p \cdot d_h)$
+\item Attention over selected pages: $\mathcal{O}(k_\text{exp} \cdot P^2 \cdot d_h)$
+
+\end{itemize}
+Total: $\mathcal{O}(N_p \cdot k_\text{exp} \cdot P^2 \cdot d_h)$.
+
+\textbf{Compare to standard attention:} $\mathcal{O}(N^2 d_h) = \mathcal{O}(N_p^2 P^2 d_h)$.
+
+\textbf{Speedup:} $\frac{N_p^2 P^2}{N_p \cdot k_\text{exp} \cdot P^2} = \frac{N_p}{k_\text{exp}}$.
+
+For $N_p \gg k_\text{exp}$: substantial speedup.
+
+\subsubsection{Memory}
+
+Router logits: $\mathcal{O}(N_p^2)$.
+
+Gathered K/V: $\mathcal{O}(N_p \cdot k_\text{exp} \cdot P \cdot d_h)$.
+
+\subsubsection{Delta-KV Cost}
+
+The Delta-KV step adds:
+\begin{itemize}
+\item Delta computation: $\mathcal{O}(N d_h)$
+\item SVD: $\mathcal{O}(\min((BH(N-1)) d_h^2, (BH(N-1))^2 d_h))$
+\item Quantization: $\mathcal{O}(N d_h)$
+
+\end{itemize}
+SVD dominates for large $N$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+query & $d^2$ (frozen) \\
+key & $d^2$ (frozen) \\
+value & $d^2$ (frozen) \\
+out\_proj & $d^2$ (frozen) \\
+$W_\text{rg}$ & $d_h^2$ (trainable) \\
+LoRA (4 proj) & $4 r_L (d + d_h)$ \\
+\textbf{Total trainable} & $d_h^2 + 4 r_L (d + d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $d_h = 64$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+$W_\text{rg}$ & 4,096 \\
+LoRA & ~98K \\
+\textbf{Total} & \textbf{~102K} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Delta Sparsity}
+
+\textbf{Claim.} Natural language exhibits temporal smoothness: 
+$\|\Delta k_t\| \ll \|k_t\|$.
+
+\textbf{Evidence.} See Section 8.5 (empirical).
+
+\subsubsection{STE Correctness}
+
+\textbf{Claim.} STE preserves gradient flow through quantization.
+
+\textbf{Proof.} $\frac{\partial \text{STE}(x)}{\partial x} = 1$ by construction 
+(the detach stops gradient on the correction term). $\square$
+
+\subsubsection{CLS Preservation}
+
+\textbf{Claim.} With the $+10^4$ boost, page 0 is always in the top-$k$.
+
+\textbf{Proof.} For any $k \geq 1$ and any logits $\ell_{ij}$ with $|\ell| < 10^3$, 
+the boosted $\ell_{i, 0} > 10^3$ exceeds all others. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, causality is preserved.
+
+\textbf{Proof.} Router logits mask $j > i$ to $-\infty$; page-level causal mask 
+enforces block-causality. Within a page, no mask is needed because a page 
+contains consecutive tokens. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Bidirectional?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & Yes & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts weights via five tiers:
+
+\subsubsection{Tier 1: UniversalAdapter}
+
+\begin{lstlisting}
+for proj in ["q", "k", "v", "o"]:
+    try:
+        w, b = UniversalAdapter.get\_weight\_bias(pretrained\_attn, proj)
+        if w is not None:
+            extracted[proj] = (w, b)
+    except Exception:
+        pass
+\end{lstlisting}
+
+\subsubsection{Tier 2: GPT-2 Conv1D}
+
+\begin{lstlisting}
+weight = pretrained\_attn.c\_attn.weight.data
+if weight.shape[1] == 3 * hidden\_size:
+    weight = weight.t()
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{Tier 3: RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(pretrained\_attn, "self"):
+    s = pretrained\_attn.self
+    extracted["q"] = (s.query.weight, ...)
+    extracted["k"] = (s.key.weight, ...)
+    extracted["v"] = (s.value.weight, ...)
+\end{lstlisting}
+
+\subsubsection{Tier 4: Named Projections}
+
+\begin{lstlisting}
+named\_map = {
+    "q": ["q\_proj", "q\_lin", "query"],
+    "k": ["k\_proj", "k\_lin", "key"],
+    "v": ["v\_proj", "v\_lin", "value"],
+    "o": ["o\_proj", "out\_proj", "out\_lin", "dense"],
+}
+\end{lstlisting}
+
+\subsubsection{Tier 5: Repetition for GQA}
+
+If source weight has smaller $d_\text{out}$ (GQA), we repeat:
+
+\begin{lstlisting}
+if w.shape[0] \textless{} self.all\_head\_size and self.all\_head\_size \% w.shape[0] == 0:
+    rep = self.all\_head\_size // w.shape[0]
+    w = w.repeat(rep, 1)
+\end{lstlisting}
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+is\_nested = False
+if hasattr(pretrained\_attn, "self") and hasattr(getattr(pretrained\_attn, "self"), "query"):
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention") and not has\_out\_proj:
+    is\_nested = True
+\end{lstlisting}
+
+\subsection{The Router $W_\text{rg}$}
+
+\begin{lstlisting}
+self.W\_rg = nn.Linear(self.head\_dim, self.head\_dim, bias=False)
+nn.init.eye\_(self.W\_rg.weight)
+\end{lstlisting}
+
+Initialized to identity, so the router starts as the dot product of page-mean 
+queries and keys.
+
+\subsection{Load Balancing Loss}
+
+Stored as a buffer (not a parameter):
+
+\begin{lstlisting}
+self.register\_buffer("aux\_loss", torch.tensor(0.0), persistent=False)
+\end{lstlisting}
+
+Updated during forward:
+
+\begin{lstlisting}
+router\_probs = F.softmax(router\_logits, dim=-1)
+expert\_mask = F.one\_hot(topk\_indices, num\_classes=num\_pages).float()
+density = expert\_mask.sum(dim=-2).mean(dim=(0, 1, 2))
+prob\_mean = router\_probs.mean(dim=(0, 1, 2))
+self.aux\_loss = float(num\_pages) * torch.sum(density * prob\_mean)
+\end{lstlisting}
+
+\textbf{Usage.} The training loop should add \texttt{aux\_loss * $\lambda$} to the classification 
+loss. Typical \texttt{$\lambda$ = 0.01}.
+
+\subsection{The `is\_causal` Flag}
+
+\begin{lstlisting}
+self.is\_causal = bool(
+    getattr(config, "is\_causal", False)
+    or getattr(config, "is\_decoder", False)
+    or any(model\_type.startswith(p) for p in ("gpt", "qwen", "llama", ...))
+)
+\end{lstlisting}
+
+For causal models:
+\begin{itemize}
+\item Router logits are masked (upper-triangular).
+\item Full attention path is used when \texttt{num\_pages \textless{}= 2}.
+
+\end{itemize}
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject MoE-DeltaKV-Paged
+\begin{lstlisting}
+Input:  model M, config
+Output: M with attention replaced
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     try:
+4:         new $\leftarrow$ MoEDeltaKVPagedAttention(config, pretrained\_attn=src)
+5:         replace( , new)
+6:     except Exception as e:
+7:         raise RuntimeError(...)    HARD FAIL
+8: end for
+\end{lstlisting}
+
+\textbf{Note.} Current implementation raises on failure. In production, change 
+to \texttt{logger.error(...); continue}.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing} non-empty & \textbf{Raise} \\
+Near-zero norm & Frobenius check & \textbf{Raise} \\
+Injection fail & Exception & \textbf{Raise} \\
+OOM & CUDA error & Abort \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("moe\_deltakv\_paged", supports\_causal=True, supports\_gqa=True)
+class MoEDeltaKVPagedAttention(nn.Module):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with Recovery}
+
+Base weights are frozen; LoRA adapters and $W_\text{rg}$ are trainable.
+
+Per-layer trainable:
+\begin{itemize}
+\item LoRA on query, key, value, out\_proj: $4 r_L (d + d_h)$
+\item $W_\text{rg}$: $d_h^2$
+
+\end{itemize}
+For $d = 768$, $d_h = 64$, $r_L = 16$: ~102K per layer.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of moe\_deltakv\_paged.}
+\label{fig:arch_moe-deltakv-paged}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Causal} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M & No \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{MoE-DeltaKV-Paged Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} & \textbf{Notes} \\
+\midrule
+\texttt{page\_size} & 64 & tokens per page \\
+\texttt{k\_experts} & 4 & top-k pages per query \\
+\texttt{svd\_rank} & 16 & delta compression rank \\
+\texttt{lora\_rank} & 16 & LoRA rank \\
+\texttt{lora\_alpha} & 32 & LoRA scaling \\
+\texttt{W\_rg} init & identity & router weight \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+Aux loss weight & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters
+\item Trainable parameters
+\item Peak VRAM
+\item Inference time
+\item Number of selected pages (mean)
+
+\end{itemize}
+\subsubsection{Router Analysis}
+\begin{itemize}
+\item Page selection distribution
+\item Aux loss value
+\item Page-0 selection rate
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_moe\_deltakv\_paged.py \
+    --models distilbert,roberta,gpt2 \
+    --page\_size 64 \
+    --k\_experts 4 \
+    --svd\_rank 16 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{moe\_deltakv\_paged} & Our method \\
+\texttt{moba\_only} & MoBA without Delta-KV \\
+\texttt{delta\_kv\_only} & Delta-KV without MoBA \\
+\texttt{no\_aux\_loss} & Without load balancing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -217,7 +1131,7 @@ DistilBERT & \textbf{Moe Deltakv Paged} & \textbf{86.35\%} & -4.59\% & PASS & 0.
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Moe Deltakv Paged} & \textbf{61.70\%} & -13.76\% & PASS & 0.6528 & 0 & \textbf{0.95$\times$} & 649.5 MB & 19.1 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Moe Deltakv Paged} & \textbf{51.61\%} & -36.23\% & PASS_LOW & 0.6393 & 24 & \textbf{1.01$\times$} & 327.8 MB & 29.1 & -- \\
+GPT-2 & \textbf{Moe Deltakv Paged} & \textbf{51.61\%} & -36.23\% & PASS\_LOW & 0.6393 & 24 & \textbf{1.01$\times$} & 327.8 MB & 29.1 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -411,12 +1325,13 @@ GPT-2 & MoE-DeltaKV & 2.3 s s & 0.85 & 557 MB MB \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/moe_deltakv_paged_roberta_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{moe_deltakv_paged}.}
+\includegraphics[width=0.85\linewidth]{figures/moe\_deltakv\_paged\_roberta\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{moe\_deltakv\_paged}.}
 \label{fig:results_moe_deltakv_paged}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does MoE-DeltaKV-Paged Work?}
@@ -510,11 +1425,11 @@ enable future real compression, not a deployment-ready compression method.
 Verified via gradient check:
 
 \begin{lstlisting}
-X = torch.randn(1, 128, d, requires_grad=True)
+X = torch.randn(1, 128, d, requires\_grad=True)
 Y = model(X)
 loss = Y[0, 100].sum()
 loss.backward()
-assert X.grad[0, 101:].abs().max() < 1e-6
+assert X.grad[0, 101:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 Passes on GPT-2.
@@ -551,6 +1466,7 @@ CLS dropped & Any & Forgot page-0 boost \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -665,6 +1581,7 @@ KVQuant &  &  &  &  \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Delta-KV is Simulation Only}
@@ -748,6 +1665,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -823,13 +1741,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -838,42 +1757,42 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_moe_deltakv_paged.py \
+python run\_all\_4\_moe\_deltakv\_paged.py \
     --models distilbert,roberta,gpt2 \
-    --page_size 64 \
-    --k_experts 4 \
-    --svd_rank 16 \
-    --recovery_steps 50
+    --page\_size 64 \
+    --k\_experts 4 \
+    --svd\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,moe_deltakv_paged \
-    --page_size 64 \
-    --k_experts 4
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,moe\_deltakv\_paged \
+    --page\_size 64 \
+    --k\_experts 4
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_moe_deltakv_paged.py
+python run\_all\_4\_moe\_deltakv\_paged.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (k\_experts ablation)}
 \begin{lstlisting}
 for k in 1 2 4 8; do
-    python run_all_4_moe_deltakv_paged.py --k_experts $k --output_suffix k$k
+    python run\_all\_4\_moe\_deltakv\_paged.py --k\_experts $k --output_suffix k$k
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (rank ablation)}
 \begin{lstlisting}
 for r in 4 8 16 32 64; do
-    python run_all_4_moe_deltakv_paged.py --svd_rank $r --output_suffix r$r
+    python run\_all\_4\_moe\_deltakv\_paged.py --svd\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -883,7 +1802,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -914,6 +1833,7 @@ GPT-2 & 50.92\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1057,6 +1977,7 @@ GPT-2 & 50.92\% $\pm$ 1\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 STE Quantization}
@@ -1064,7 +1985,7 @@ GPT-2 & 50.92\% $\pm$ 1\% \\
 For input $x$:
 
 \[
-Q(x) = \text{round}\!\left(\frac{x - x_\text{min}}{s}\right) \cdot s + x_\text{min}
+Q(x) = \text{round}\!\left(\frac{x - x\_\text{min}}{s}\right) \cdot s + x\_\text{min}
 \tag{A.1}
 \]
 
@@ -1087,35 +2008,35 @@ STE backward:
 Deltas:
 
 \[
-\Delta k_t = k_t - k_{t-1}, \quad t \geq 1
+\Delta k\_t = k\_t - k\_{t-1}, \quad t \geq 1
 \tag{A.4}
 \]
 
 SVD:
 
 \[
-\Delta \approx U_r \Sigma_r V_r^\top
+\Delta \approx U\_r \Sigma\_r V\_r^\top
 \tag{A.5}
 \]
 
 Reconstruction:
 
 \[
-\hat{k}_t = k_0 + \sum_{\tau=1}^t (U_r \Sigma_r V_r^\top)_\tau
+\hat{k}\_t = k\_0 + \sum\_{\tau=1}^t (U\_r \Sigma\_r V\_r^\top)\_\tau
 \tag{A.6}
 \]
 
 \textbf{Error bound:}
 
 \[
-\|\Delta - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|\Delta - U\_r \Sigma\_r V\_r^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.7}
 \]
 
 \subsection{A.3 Router Logits}
 
 \[
-\ell_{ij} = \frac{(W_\text{rg} \bar{q}_i) \cdot \bar{k}_j}{\sqrt{d_h}}
+\ell\_{ij} = \frac{(W\_\text{rg} \bar{q}\_i) \cdot \bar{k}\_j}{\sqrt{d\_h}}
 \tag{A.8}
 \]
 
@@ -1124,14 +2045,14 @@ where $\bar{q}_i, \bar{k}_j$ are page means.
 \subsection{A.4 Top-K Selection}
 
 \[
-\mathcal{S}_i = \text{TopK}(\ell_{i, :}, k_\text{exp})
+\mathcal{S}\_i = \text{TopK}(\ell\_{i, :}, k\_\text{exp})
 \tag{A.9}
 \]
 
 \subsection{A.5 Gated Attention}
 
 \[
-\text{Out}_i = \sum_{j \in \mathcal{S}_i} g_{ij} \cdot \text{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}}\right) V_j
+\text{Out}\_i = \sum\_{j \in \mathcal{S}\_i} g\_{ij} \cdot \text{softmax}\!\left(\frac{Q\_i K\_j^\top}{\sqrt{d\_h}}\right) V\_j
 \tag{A.10}
 \]
 
@@ -1140,26 +2061,26 @@ where $g_{ij} = \text{softmax}_j(\ell_{i, j})$.
 \subsection{A.6 Load Balancing Loss}
 
 \[
-\mathcal{L}_\text{aux} = N_p \cdot \sum_{j=1}^{N_p} \rho_j \cdot \pi_j
+\mathcal{L}\_\text{aux} = N\_p \cdot \sum\_{j=1}^{N\_p} \rho\_j \cdot \pi\_j
 \tag{A.11}
 \]
 
 where:
 
 \[
-\rho_j = \frac{1}{N_p} \sum_{i=1}^{N_p} \mathbb{1}[j \in \mathcal{S}_i]
+\rho\_j = \frac{1}{N\_p} \sum\_{i=1}^{N\_p} \mathbb{1}[j \in \mathcal{S}\_i]
 \tag{A.12}
 \]
 
 \[
-\pi_j = \frac{1}{N_p} \sum_{i=1}^{N_p} \text{softmax}(\ell_{i, :})_j
+\pi\_j = \frac{1}{N\_p} \sum\_{i=1}^{N\_p} \text{softmax}(\ell\_{i, :})\_j
 \tag{A.13}
 \]
 
 \subsection{A.7 CLS Boost}
 
 \[
-\ell_{i, 0} \leftarrow \ell_{i, 0} + 10^4
+\ell\_{i, 0} \leftarrow \ell\_{i, 0} + 10^4
 \tag{A.14}
 \]
 
@@ -1179,7 +2100,7 @@ Per query page:
 Total:
 
 \[
-\mathcal{O}(N_p (N_p + k_\text{exp} P^2) d_h)
+\mathcal{O}(N\_p (N\_p + k\_\text{exp} P^2) d\_h)
 \tag{A.15}
 \]
 
@@ -1196,65 +2117,66 @@ Page-level causal mask enforces that page $j$ is only attended by page $i' \geq 
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 STE Quantization}
 
 \begin{lstlisting}
-def ste_quantize_4bit(x):
+def ste\_quantize\_4bit(x):
     if x.numel() == 0:
         return x
-    x_min = x.min(dim=-1, keepdim=True)[0]
-    x_max = x.max(dim=-1, keepdim=True)[0]
-    scale = torch.clamp((x_max - x_min) / 15.0, min=1e-5)
-    x_q_int = torch.clamp(torch.round((x - x_min) / scale), 0, 15)
-    x_q = x_q_int * scale + x_min
-    return x + (x_q - x).detach()  # STE
+    x\_min = x.min(dim=-1, keepdim=True)[0]
+    x\_max = x.max(dim=-1, keepdim=True)[0]
+    scale = torch.clamp((x\_max - x\_min) / 15.0, min=1e-5)
+    x\_q\_int = torch.clamp(torch.round((x - x\_min) / scale), 0, 15)
+    x\_q = x\_q\_int * scale + x\_min
+    return x + (x\_q - x).detach()  # STE
 \end{lstlisting}
 
 \subsection{B.2 Delta-KV}
 
 \begin{lstlisting}
-def simulate_paged_delta_kv(K, V, rank):
+def simulate\_paged\_delta\_kv(K, V, rank):
     B, H, N, d = K.shape
-    if N <= 1:
+    if N \textless{}= 1:
         return K, V
     
-    K_hat = torch.zeros_like(K)
-    V_hat = torch.zeros_like(V)
-    K_hat[:, :, 0] = K[:, :, 0]
-    V_hat[:, :, 0] = V[:, :, 0]
+    K\_hat = torch.zeros\_like(K)
+    V\_hat = torch.zeros\_like(V)
+    K\_hat[:, :, 0] = K[:, :, 0]
+    V\_hat[:, :, 0] = V[:, :, 0]
     
-    delta_K = K[:, :, 1:] - K[:, :, :-1]
-    delta_V = V[:, :, 1:] - V[:, :, :-1]
+    delta\_K = K[:, :, 1:] - K[:, :, :-1]
+    delta\_V = V[:, :, 1:] - V[:, :, :-1]
     
-    delta_K_hat = low_rank_svd_quantize(delta_K, rank)
-    delta_V_hat = low_rank_svd_quantize(delta_V, rank)
+    delta\_K\_hat = low\_rank\_svd\_quantize(delta\_K, rank)
+    delta\_V\_hat = low\_rank\_svd\_quantize(delta\_V, rank)
     
-    K_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta_K_hat, dim=2)
-    V_hat[:, :, 1:] = V[:, :, 0:1] + torch.cumsum(delta_V_hat, dim=2)
+    K\_hat[:, :, 1:] = K[:, :, 0:1] + torch.cumsum(delta\_K\_hat, dim=2)
+    V\_hat[:, :, 1:] = V[:, :, 0:1] + torch.cumsum(delta\_V\_hat, dim=2)
     
-    return K_hat, V_hat
+    return K\_hat, V\_hat
 \end{lstlisting}
 
 \subsection{B.3 Router}
 
 \begin{lstlisting}
 # Page means
-q_bar = (q_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
-k_bar = (k_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
+q\_bar = (q\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True).clamp(min=1)
+k\_bar = (k\_blocks * valid\_b.unsqueeze(-1)).sum(dim=3) / valid\_b.sum(dim=3, keepdim=True).clamp(min=1)
 
 # Router logits
-router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2)) / math.sqrt(d)
+router\_logits = torch.matmul(self.W\_rg(q\_bar), k\_bar.transpose(-1, -2)) / math.sqrt(d)
 
 # CLS boost
-router_logits_biased = router_logits.clone()
-router_logits_biased[:, :, :, 0] += 1e4
+router\_logits\_biased = router\_logits.clone()
+router\_logits\_biased[:, :, :, 0] += 1e4
 
 # Top-K
-_, topk_indices = torch.topk(router_logits_biased, k_experts, dim=-1)
-topk_logits = torch.gather(router_logits, -1, topk_indices)
-g_j = F.softmax(topk_logits, dim=-1)
+\_, topk\_indices = torch.topk(router\_logits\_biased, k\_experts, dim=-1)
+topk\_logits = torch.gather(router\_logits, -1, topk\_indices)
+g\_j = F.softmax(topk\_logits, dim=-1)
 \end{lstlisting}
 
 \subsection{B.4 Common Pitfalls}
@@ -1285,6 +2207,7 @@ Use $10^4$, not $10^2$. Small boosts may not guarantee top-k.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1411,13 +2334,14 @@ Step  Loss
 \subsection{C.8 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_moe_deltakv_paged.py --page_size 64 --k_experts 4
+python run\_all\_4\_moe\_deltakv\_paged.py --page\_size 64 --k\_experts 4
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1530,6 +2454,7 @@ Rank 16 is sweet spot.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1595,3 +2520,4 @@ expect memory savings from this module alone.
 
 ---
 \end{lstlisting}
+

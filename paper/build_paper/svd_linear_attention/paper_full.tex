@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{SVD-Linear Attention: Factorized Low-Rank Linear Attention with Exponential Decay Gating}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -46,7 +48,7 @@ SVD-Linear Attention replaces MHSA with a kernelized linear attention whose
 projection matrices are factorized:
 
 \[
-Q = \text{SVDLinear}_Q(X), \quad K = \text{SVDLinear}_K(X), \quad V = \text{SVDLinear}_V(X)
+Q = \text{SVDLinear}\_Q(X), \quad K = \text{SVDLinear}\_K(X), \quad V = \text{SVDLinear}\_V(X)
 \tag{1.1}
 \]
 
@@ -61,7 +63,7 @@ where $\phi(x) = \text{ELU}(x) + 1$ is a positive feature map. This admits
 the \textbf{prefix-sum identity}:
 
 \[
-(\phi(K)^\top V)_t = \sum_{j \leq t} \phi(K_j) V_j^\top
+(\phi(K)^\top V)\_t = \sum\_{j \leq t} \phi(K\_j) V\_j^\top
 \tag{1.3}
 \]
 
@@ -70,8 +72,8 @@ which can be computed with a single \texttt{torch.cumsum} in $\mathcal{O}(N)$.
 For decoders, we additionally apply an \textbf{input-dependent exponential decay}:
 
 \[
-S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top, \qquad
-\lambda_t = \exp(-\text{softplus}(W_g x_t)) \in (0, 1)
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top, \qquad
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t)) \in (0, 1)
 \tag{1.4}
 \]
 
@@ -114,6 +116,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -125,7 +128,7 @@ Katharopoulos et al. (2020) show that softmax attention can be linearized
 by replacing $\text{softmax}(Q K^\top)$ with $\phi(Q) \phi(K)^\top$:
 
 \[
-\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_{j \leq t} \phi(K_j) V_j^\top}{\phi(Q_t) \sum_{j \leq t} \phi(K_j)}
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j)}
 \tag{2.1}
 \]
 
@@ -138,7 +141,7 @@ Choromanski et al. (2021) use orthogonal random features to approximate
 the softmax kernel:
 
 \[
-\exp(q \cdot k) \approx \phi_{\text{PORF}}(q)^\top \phi_{\text{PORF}}(k)
+\exp(q \cdot k) \approx \phi\_{\text{PORF}}(q)^\top \phi\_{\text{PORF}}(k)
 \tag{2.2}
 \]
 
@@ -202,6 +205,842 @@ We use pure PyTorch for portability.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Prior work} & \textbf{SVD-Linear Attention} \\
+\midrule
+\textbf{Attention} & Softmax or linear & Linear + decay \\
+\textbf{Projections} & Dense & SVD-factorized \\
+\textbf{Decay} & Fixed or input-dep & \textbf{Input-dependent + log-init} \\
+\textbf{Streaming} & Some support & \textbf{\texttt{step\_recurrent}} \\
+\textbf{Multi-architecture} & Usually one family & Four families \\
+\textbf{Parameter effect} & Varies & \textbf{Reduces} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Companion Modules}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Softmax Attention}
+
+For $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.1}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(N^2 d_h)$ in time, $\mathcal{O}(N^2)$ in memory.
+
+\subsection{Kernelized Linear Attention}
+
+Replace the softmax kernel with a \textbf{positive feature map}:
+
+\[
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_{j \leq t} \phi(K\_j)}
+\tag{3.2}
+\]
+
+with $\phi(x) = \text{ELU}(x) + 1 \in \mathbb{R}_{>0}^{d_h}$.
+
+\textbf{Associative form.} Define $S_t = \sum_{j \leq t} \phi(K_j) V_j^\top$ and 
+$Z_t = \sum_{j \leq t} \phi(K_j)$. Then:
+
+\[
+\text{Attn}\_t = \phi(Q\_t) S\_t / (\phi(Q\_t) Z\_t)
+\tag{3.3}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(N d_h^2)$ -- linear in $N$.
+
+\subsection{Exponential Decay Gating}
+
+Add a per-position retention factor:
+
+\[
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top
+\tag{3.4}
+\]
+
+with $\lambda_t \in (0, 1]$ computed from the input:
+
+\[
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t + b\_g))
+\tag{3.5}
+\]
+
+\textbf{Interpretation.} $\lambda_t$ controls how much of the past is retained. 
+When $\lambda_t \approx 1$, the memory is preserved; when $\lambda_t \approx 0$, 
+the memory is reset.
+
+\textbf{Initialization.} We initialize $b_g$ so that the initial decay times 
+$\tau = -\log \lambda$ are log-spaced between 1 and 1024 tokens across heads.
+
+\subsection{Chunked Parallel Scan}
+
+The recurrence $S_t = \lambda_t S_{t-1} + u_t$ can be computed sequentially 
+in $\mathcal{O}(N)$. For parallelism, we \textbf{chunk} the sequence:
+
+Within a chunk of size $C$:
+
+\[
+S\_{c, i}^{\text{intra}} = e^{\lambda\_{c, i}} \sum\_{j \leq i} e^{-\lambda\_{c, j}} u\_{c, j}
+\tag{3.6}
+\]
+
+where $\lambda_{c, i} = \sum_{j \leq i} \log \lambda_{c, j}$.
+
+Between chunks:
+
+\[
+S\_{c, i} = S\_{c, i}^{\text{intra}} + e^{\lambda\_{c, i}} S\_{c-1, C}
+\tag{3.7}
+\]
+
+This gives $\mathcal{O}(N)$ complexity with $\mathcal{O}(\log C)$ parallel 
+depth within each chunk.
+
+\subsection{SVD Factorization}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W \approx U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
+\tag{3.8}
+\]
+
+Parameter count: $r(m + n + 1)$ vs $mn$. For $m = n = 768$, $r = 32$: 
+$\sim$8	imes$ reduction.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+SVD-Linear Attention replaces MHSA with a kernelized linear attention 
+whose projections are SVD-factorized.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    +----------------+---------------------------+
+                     |
+        +------------+------------+
+                                   
+    +---------------+      +---------------+
+    | SVDLinear Q,K,V|      | decay\_gate    |
+    | (factorized)  |      | (x $\to$ $\lambda$)       |
+    +-------+-------+      +-------+-------+
+            |                      |
+                                    
+    +---------------+      +---------------+
+    |  (Q),  (K)    |      | Chunked scan  |
+    | feature map   |      | S\_t, Z\_t      |
+    +-------+-------+      +-------+-------+
+            |                      |
+            +----------+-----------+
+                        
+              +---------------+
+              |  (Q) S /  (Q) Z|
+              +-------+-------+
+                       
+              +---------------+
+              | out\_proj (SVD)|
+              +---------------+
+\end{lstlisting}
+
+\subsection{SVD-Factorized Projections}
+
+Each projection is stored as $U V^\top$ where $U \in \mathbb{R}^{d_\text{out} \times r}$ 
+and $V \in \mathbb{R}^{r \times d_\text{in}}$. The forward computes:
+
+\[
+y = (x V^\top) U^\top + b + \text{LoRA}(x)
+\tag{4.1}
+\]
+
+where LoRA provides a trainable residual:
+
+\[
+\text{LoRA}(x) = (x A^\top) B^\top \cdot s
+\tag{4.2}
+\]
+
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$ vs $d_\text{in} d_\text{out}$. 
+For $768 \times 768$, $r = 32$: \textbf{~11$\times$ reduction}.
+
+\textbf{Initialization.} $U$ and $V$ are initialized orthogonally.
+
+\textbf{LoRA.} $A$ is Kaiming-uniform, $B = 0$.
+
+\subsection{Kernelized Linear Attention}
+
+\subsubsection{Feature Map}
+
+\[
+\phi(x) = \text{ELU}(x) + 1
+\tag{4.3}
+\]
+
+which is strictly positive, ensuring the denominator $\phi(Q_t) Z_t > 0$.
+
+\subsubsection{Bidirectional (Encoder) Mode}
+
+For a non-causal encoder:
+
+\[
+S = \phi(K)^\top V, \qquad
+Z = \sum\_j \phi(K\_j)
+\tag{4.4}
+\]
+
+\[
+\text{Out}\_t = \frac{\phi(Q\_t) S}{\phi(Q\_t) Z + \epsilon}
+\tag{4.5}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(N d_h^2)$.
+
+\subsubsection{Causal (Decoder) Mode with Chunked Scan}
+
+For a causal decoder with decay gating, we use a chunked scan (chunk size $C = 64$).
+
+\textbf{Within chunk $c$:}
+
+\[
+\log \gamma\_{c, i} = \sum\_{j \leq i} \log \lambda\_{c, j}
+\tag{4.6}
+\]
+
+\[
+S\_{c, i}^{\text{intra}} = e^{\log \gamma\_{c, i}} \sum\_{j \leq i} e^{-\log \gamma\_{c, j}} \phi(K\_{c, j}) V\_{c, j}^\top
+\tag{4.7}
+\]
+
+\textbf{Inter-chunk:}
+
+\[
+S\_{c, i} = S\_{c, i}^{\text{intra}} + e^{\log \gamma\_{c, i}} S\_{c-1, C}
+\tag{4.8}
+\]
+
+\textbf{Output:}
+
+\[
+\text{Out}\_{c, i} = \frac{\phi(Q\_{c, i}) S\_{c, i}}{\phi(Q\_{c, i}) Z\_{c, i} + \epsilon}
+\tag{4.9}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(N \cdot C \cdot d_h)$ for the intra-chunk matrix, 
+$\mathcal{O}(N d_h^2)$ for the state updates.
+
+\subsection{Exponential Decay Gate}
+
+\subsubsection{Decay Computation}
+
+\[
+\lambda\_t = \exp(-\text{softplus}(W\_g x\_t + b\_g))
+\tag{4.10}
+\]
+
+For channel-wise decay:
+
+\[
+\lambda\_{t, h, k} = \exp(-\text{softplus}(W\_g x\_t)\_{h, k} + b\_{g, h, k})
+\tag{4.11}
+\]
+
+\subsubsection{Initialization Strategy}
+
+We want the initial decay times $\tau_{h} = -\log \lambda_h$ to be log-spaced:
+
+\[
+\tau\_h = \exp\!\left(\text{linspace}(\log 1, \log 1024, H)\right) \quad \text{for } h = 1, \dots, H
+\tag{4.12}
+\]
+
+Since $\lambda = e^{-\tau}$ and $\lambda = e^{-\text{softplus}(b)}$, we set:
+
+\[
+b\_{g, h} = -\log \tau\_h = \text{softplus}^{-1}(\log \tau\_h)
+\tag{4.13}
+\]
+
+In practice, we approximate $\text{softplus}(b) \approx \log(1 + e^b) \approx \log \tau_h$ for large $\tau_h$, so:
+
+\[
+b\_{g, h} \approx \log(\log \tau\_h)
+\tag{4.14}
+\]
+
+The code uses \texttt{bias\_target = -torch.log(decay\_times)} which is the 
+\textbf{exact} target for the \textbf{unbounded} log-decay, not the softplus-bounded one. The actual decay is:
+
+\[
+\lambda = e^{-\text{softplus}(W\_g x + b\_g)}
+\]
+
+so the effective initial decay is \textbf{not exactly} the target. We do not 
+correct for this.
+
+\subsubsection{Padding Handling}
+
+For padding tokens, we force $\lambda_t = 1$:
+
+\[
+\lambda\_t = \begin{cases} 1 & \text{if } x\_t \text{ is padding} \\ \lambda\_t & \text{otherwise} \end{cases}
+\tag{4.15}
+\]
+
+This ensures that padding does not artificially decay the memory state.
+
+\subsection{Streaming Inference}
+
+The \texttt{step\_recurrent} method processes one token at a time:
+
+\[
+S\_t = \lambda\_t S\_{t-1} + \phi(K\_t) V\_t^\top, \qquad
+\text{Out}\_t = \frac{\phi(Q\_t) S\_t}{\phi(Q\_t) Z\_t + \epsilon}
+\tag{4.16}
+\]
+
+\textbf{Complexity:} $\mathcal{O}(d_h^2)$ per step.
+
+This is equivalent to the batch chunked scan when tokens are processed in 
+order, but reduces memory from $\mathcal{O}(N d_h^2)$ to $\mathcal{O}(d_h^2)$.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} SVD-Linear Attention batch forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask
+Output: Y $\in$ R^{B$\times$N$\times$d}
+
+ 1: Q $\leftarrow$ SVDLinear\_Q(X); K $\leftarrow$ SVDLinear\_K(X); V $\leftarrow$ SVDLinear\_V(X)
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+ 4:  \_Q $\leftarrow$ ELU(Q) + 1;  \_K $\leftarrow$ ELU(K) + 1
+ 5: apply padding mask to  \_K
+ 6: $\lambda$ $\leftarrow$ exp(-softplus(decay\_gate(X)))
+ 7: force $\lambda$=1 on padding
+ 8:
+ 9: # Chunked scan
+10: for c in chunks of size C=64:
+11:     compute intra-chunk scan
+12:     add inter-chunk carry
+13:     compute output for chunk c
+14:     update running state
+15:
+16: Y $\leftarrow$ SVDLinear\_O(concat(outputs))
+17: return Y
+\end{lstlisting}
+
+\textbf{Algorithm 2:} \texttt{step\_recurrent} (streaming)
+\begin{lstlisting}
+Input:  x\_t $\in$ R^{B$\times$d}, past\_state (S, Z)
+Output: y\_t $\in$ R^{B$\times$d}, new\_state
+
+1: q $\leftarrow$ SVDLinear\_Q(x\_t); k $\leftarrow$ SVDLinear\_K(x\_t); v $\leftarrow$ SVDLinear\_V(x\_t)
+2:  \_q $\leftarrow$ ELU(q) + 1;  \_k $\leftarrow$ ELU(k) + 1
+3: $\lambda$ $\leftarrow$ exp(-softplus(decay\_gate(x\_t)))
+4: S $\leftarrow$ $\lambda$   S +  \_k^T v
+5: Z $\leftarrow$ $\lambda$   Z +  \_k^T
+6: num $\leftarrow$  \_q S
+7: den $\leftarrow$  \_q Z + $\epsilon$
+8: context $\leftarrow$ num / den
+9: y\_t $\leftarrow$ SVDLinear\_O(context)
+10: return y\_t, (S, Z)
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Softmax (baseline) & $\mathcal{O}(N^2 d_h)$ & $\mathcal{O}(N^2)$ \\
+SVD-Linear (bidirectional) & $\mathcal{O}(N d_h^2)$ & $\mathcal{O}(d_h^2)$ \\
+SVD-Linear (chunked causal) & $\mathcal{O}(N C d_h + N d_h^2)$ & $\mathcal{O}(C d_h^2)$ \\
+SVD-Linear (step\_recurrent) & $\mathcal{O}(d_h^2)$ per step & $\mathcal{O}(d_h^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $N = 512$, $d_h = 64$, $C = 64$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Mode} & \textbf{Time} \\
+\midrule
+Softmax & 512  $\times$ 64 $\approx$ 1.7 $\times$ 10 \\
+SVD-Linear & 512 $\times$ 64 $\times$ 64 $\approx$ 2 $\times$ 10 \\
+\textbf{Speedup} & \textbf{~8$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Q, K, V, O projections (SVD) & $4 \times r(d_\text{in} + d_\text{out})$ \\
+LoRA adapters & $4 \times r_L(d_\text{in} + d_\text{out})$ \\
+Decay gate & $d \times H + H$ \\
+\textbf{Total} & see below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r = 32$, $r_L = 16$, $N_\ell = 6$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Q/K/V/O SVD & 4 $\times$ 49,216 = 196,864 & 1,181,184 \\
+LoRA & 4 $\times$ 24,576 = 98,304 & 589,824 \\
+Decay gate & 9,228 & 55,368 \\
+\textbf{Total} & \textbf{304,396} & \textbf{1,826,376} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Baseline per layer: 2,359,296. \textbf{Reduction: ~50\%$\times$}.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Linear Attention Approximation}
+
+\textbf{Claim.} The linear attention with $\phi(x) = \text{ELU}(x) + 1$ approximates 
+softmax attention but does not equal it.
+
+\textbf{Proof.} Linear attention is exact for $\phi(x) = e^x$, which is 
+numerically unstable. For ELU+1, the approximation quality depends on the 
+distribution of Q, K. In practice it gives similar top-$k$ attention patterns. $\square$
+
+\subsubsection{Causality with Decay}
+
+\textbf{Claim.} SVD-Linear Attention preserves causality.
+
+\textbf{Proof.} The chunked scan is causal: chunk $c$ can only attend to chunks 
+$1..c$ and intra-chunk positions $1..i$. The step-recurrent mode is causal 
+by construction. $\square$
+
+\subsubsection{Streaming Equivalence}
+
+\textbf{Claim.} \texttt{step\_recurrent} produces the same output as batch chunked scan.
+
+\textbf{Proof.} Both compute the same recurrence $S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top$. 
+The batch version uses a parallel scan; the streaming version is sequential. 
+The results are mathematically identical. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = s.query.weight
+extracted["k"] = s.key.weight
+extracted["v"] = s.value.weight
+extracted["o"] = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = q\_w
+extracted["k"] = k\_w
+extracted["v"] = v\_w
+extracted["o"] = src.c\_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_proj.weight
+extracted["k"] = src.k\_proj.weight
+extracted["v"] = src.v\_proj.weight
+extracted["o"] = src.o\_proj.weight
+\end{lstlisting}
+
+\subsection{GQA Adaptation}
+
+For Qwen-style models where $H_{kv} < H$, the extracted K/V weights are 
+adapted:
+
+\begin{lstlisting}
+def \_adapt\_to\_kv\_size(weight, bias):
+    if weight.shape[0] == self.kv\_head\_size:
+        return weight, bias
+    if weight.shape[0] \textgreater{} self.kv\_head\_size and weight.shape[0] \% self.kv\_head\_size == 0:
+        rep = weight.shape[0] // self.kv\_head\_size
+        weight = weight.reshape(self.num\_kv\_heads, rep, -1).mean(dim=1)
+        if bias is not None:
+            bias = bias.reshape(self.num\_kv\_heads, rep, -1).mean(dim=1).reshape(-1)
+    elif weight.shape[0] \textless{} self.kv\_head\_size and self.kv\_head\_size \% weight.shape[0] == 0:
+        rep = self.kv\_head\_size // weight.shape[0]
+        weight = weight.repeat(rep, 1)
+        if bias is not None:
+            bias = bias.repeat(rep)
+    return weight, bias
+\end{lstlisting}
+
+\subsection{SVD Factorization}
+
+Each projection is factorized via:
+
+\begin{lstlisting}
+def \_factorize\_and\_set(self, target\_linear, weight, bias=None):
+    U, S, Vt = torch.linalg.svd(weight.float(), full\_matrices=False)
+    r = min(target\_linear.rank, U.size(1), Vt.size(0))
+    sqrt\_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
+    U\_r = U[:, :r] * sqrt\_S.unsqueeze(0)
+    V\_r = sqrt\_S.unsqueeze(1) * Vt[:r, :]
+    target\_linear.set\_low\_rank\_factors(U\_r, V\_r)
+    if bias is not None:
+        target\_linear.bias.data.copy\_(bias)
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
+\begin{itemize}
+\item The output projection is skipped (applied externally).
+\item The forward returns the raw context.
+
+\end{itemize}
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    output = context
+else:
+    output = self.out\_proj(context)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject\_svd\_linear\_attention(layer, model\_config=None, old\_attn=None, **kwargs):
+    target = layer
+    cfg = model\_config or target.config
+    
+    # Nested encoder detection
+    is\_nested = hasattr(target, "attention") and hasattr(target.attention, "self")
+    if is\_nested and target.attention is old\_attn:
+        old\_attn = target.attention.self
+    
+    new\_attn = SVDLinearAttention(config=cfg, old\_attn=old\_attn, **kwargs)
+    new\_attn.is\_nested\_encoder = is\_nested
+    
+    if is\_nested:
+        target.attention.self = new\_attn
+    elif hasattr(target, "attention"):
+        target.attention = new\_attn
+    elif hasattr(target, "self\_attn"):
+        target.self\_attn = new\_attn
+    elif hasattr(target, "attn"):
+        target.attn = new\_attn
+    
+    return new\_attn
+\end{lstlisting}
+
+\subsection{The `step\_recurrent` API}
+
+For streaming inference:
+
+\begin{lstlisting}
+def step\_recurrent(self, x\_t, past\_state=None):
+    """Process one token.
+    
+    Args:
+        x\_t: [B, d] or [B, 1, d]
+        past\_state: (S, Z) from previous step, or None for first step
+    
+    Returns:
+        out\_t: [B, 1, d]
+        new\_state: (S, Z)
+    """
+    # 1. Project, apply feature map
+    # 2. Compute decay $\lambda$\_t
+    # 3. Update S, Z
+    # 4. Compute output
+    # 5. Apply out\_proj
+    return out\_t, (S\_t, Z\_t)
+\end{lstlisting}
+
+\textbf{Usage example:}
+
+\begin{lstlisting}
+state = None
+for token in sequence:
+    out, state = attention.step\_recurrent(token.unsqueeze(0), state)
+    # out is the attention output for this token
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises & Injection aborts \\
+Small Frobenius norm & Explicit check & Raises RuntimeError \\
+GQA shape mismatch & Explicit reshape & Adapts \\
+OOM & RuntimeError & Reduce batch \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("svd\_linear\_attn")
+@ATTENTION\_REGISTRY.register("svd\_linear\_attention")
+@ATTENTION\_REGISTRY.register("svd\_linear")
+class SVDLinearAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality}
+
+\textbf{Verification.} Gradient of output at position $i$ w.r.t. input at 
+position $j > i$ is zero for the causal mode.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpg}
+\caption{High-level architectural diagram of svd\_linear\_attention.}
+\label{fig:arch_svd-linear-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{SVD-Linear Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{mode} & standard (exact or linear) \\
+\texttt{rank} (SVD) & 32 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{use\_decay\_gating} & 0.85 \\
+\texttt{decay\_activation} & softplus \\
+\texttt{decay\_channel\_wise} & 0.85 \\
+\texttt{chunk\_size} & 64 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, precision, recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Compression:} Parameter count vs baseline
+\item \textbf{Decay:} Final $\lambda$ distribution
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_svd\_linear\_attention.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --mode standard \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -212,7 +1051,7 @@ We use pure PyTorch for portability.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Svd Linear} & \textbf{86.58\%} & -3.90\% & PASS & 0.8765 & 24 & \textbf{1.15$\times$} & 294.4 MB & 23.0 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Svd Linear} & \textbf{54.01\%} & -21.10\% & PASS_LOW & 0.6889 & 48 & \textbf{1.09$\times$} & 339.3 MB & 34.5 & -- \\
+RoBERTa & \textbf{Svd Linear} & \textbf{54.01\%} & -21.10\% & PASS\_LOW & 0.6889 & 48 & \textbf{1.09$\times$} & 339.3 MB & 34.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Svd Linear} & \textbf{57.22\%} & -3.56\% & PASS & 0.6804 & 48 & \textbf{1.16$\times$} & 496.1 MB & 35.4 & -- \\
 \bottomrule
@@ -441,12 +1280,13 @@ GPT-2 & PASS & 77.5 & 32 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/svd_linear_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_linear_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/svd\_linear\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd\_linear\_attention}.}
 \label{fig:results_svd_linear_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -633,6 +1473,7 @@ $x > -1$. This ensures the denominator is positive.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -777,6 +1618,7 @@ errors. FP16 for the output is safe.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -793,7 +1635,7 @@ tested.
 
 \subsection{Model Coverage}
 
-Tested on $\le$124M parameter models. Not tested on >1B models.
+Tested on $\le$124M parameter models. Not tested on \textgreater{}1B models.
 
 \subsection{Hardware}
 
@@ -856,6 +1698,7 @@ Research-grade implementation. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -933,14 +1776,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -965,31 +1809,31 @@ datasets & 1.0.0 \\
 \subsection{Running SVD-Linear}
 
 \begin{lstlisting}
-python run_all_4_svd_linear_attention.py \
+python run\_all\_4\_svd\_linear\_attention.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
     --mode standard \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_svd_linear_attention.py --models distilbert,roberta,gpt2
+python run\_all\_4\_svd\_linear\_attention.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (rank)}
 \begin{lstlisting}
 for r in 8 16 32 64 128; do
-    python run_all_4_svd_linear_attention.py --rank $r --output_suffix r$r
+    python run\_all\_4\_svd\_linear\_attention.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (decay)}
 \begin{lstlisting}
-python run_all_4_svd_linear_attention.py --use_decay_gating false --output_suffix nodecay
-python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffix decay
+python run\_all\_4\_svd\_linear\_attention.py --use\_decay\_gating false --output\_suffix nodecay
+python run\_all\_4\_svd\_linear\_attention.py --use\_decay\_gating true  --output\_suffix decay
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -998,7 +1842,7 @@ python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffi
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1029,16 +1873,16 @@ GPT-2 & 77.5\% & 2.1$\times$ \\
 \subsection{Streaming Example}
 
 \begin{lstlisting}
-from framework.attentions.svd_linear_attention import SVDLinearAttention
+from framework.attentions.svd\_linear\_attention import SVDLinearAttention
 
 # Initialize attention
-attn = SVDLinearAttention(config, old_attn=src)
+attn = SVDLinearAttention(config, old\_attn=src)
 attn.eval()
 
 # Streaming inference
 state = None
 for token in sequence:
-    out, state = attn.step_recurrent(token, state)
+    out, state = attn.step\_recurrent(token, state)
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -1054,6 +1898,7 @@ for token in sequence:
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1174,6 +2019,7 @@ for token in sequence:
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1182,14 +2028,14 @@ for token in sequence:
 \textbf{Claim.} Kernelized linear attention is exact for any feature map $\phi$:
 
 \[
-\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_j \phi(K_j) V_j^\top}{\phi(Q_t) \sum_j \phi(K_j)}
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_j \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_j \phi(K\_j)}
 \tag{A.1}
 \]
 
 \textbf{Proof.} Expand:
 
 \[
-\text{softmax}(Q_t K^\top) V \approx \frac{\phi(Q_t) \phi(K)^\top V}{\phi(Q_t) \phi(K)^\top \mathbf{1}}
+\text{softmax}(Q\_t K^\top) V \approx \frac{\phi(Q\_t) \phi(K)^\top V}{\phi(Q\_t) \phi(K)^\top \mathbf{1}}
 \]
 
 The numerator is $\phi(Q_t) (\phi(K)^\top V)$ where the product 
@@ -1205,14 +2051,14 @@ recovers the sequential recurrence.
 \textbf{Proof.} Define $\log \gamma_i = \sum_{j \leq i} \log \lambda_j$. Then:
 
 \[
-S_i = e^{\log \gamma_i} \sum_{j \leq i} e^{-\log \gamma_j} \phi(K_j) V_j^\top
+S\_i = e^{\log \gamma\_i} \sum\_{j \leq i} e^{-\log \gamma\_j} \phi(K\_j) V\_j^\top
 \tag{A.2}
 \]
 
 For a chunk $c$ starting at position $s_c$:
 
 \[
-S_{c, i} = \underbrace{e^{\log \gamma_{c, i}} \sum_{j=s_c}^{s_c+i} e^{-\log \gamma_{c, j}} \phi(K_j) V_j^\top}_{\text{intra}} + \underbrace{e^{\log \gamma_{c, i}} S_{c-1, C}}_{\text{inter}}
+S\_{c, i} = \underbrace{e^{\log \gamma\_{c, i}} \sum\_{j=s\_c}^{s\_c+i} e^{-\log \gamma\_{c, j}} \phi(K\_j) V\_j^\top}\_{\text{intra}} + \underbrace{e^{\log \gamma\_{c, i}} S\_{c-1, C}}\_{\text{inter}}
 \tag{A.3}
 \]
 
@@ -1256,7 +2102,7 @@ $\mathcal{O}(N C d_h + N d_h^2)$ for chunked causal.
 \textbf{Claim.} SVD-Linear's per-layer parameters are:
 
 \[
-P = r(d_\text{in}^Q + d_\text{out}^Q) + r(d_\text{in}^K + d_\text{out}^K) + r(d_\text{in}^V + d_\text{out}^V) + r(d_\text{in}^O + d_\text{out}^O) + 2 d_h r_L
+P = r(d\_\text{in}^Q + d\_\text{out}^Q) + r(d\_\text{in}^K + d\_\text{out}^K) + r(d\_\text{in}^V + d\_\text{out}^V) + r(d\_\text{in}^O + d\_\text{out}^O) + 2 d\_h r\_L
 \]
 
 \textbf{Proof.} Direct sum. For DistilBERT with $d = 768$, $r = 32$:
@@ -1298,14 +2144,14 @@ the target decay time $\tau_h$.
 \textbf{Proof.} The actual decay is:
 
 \[
-\lambda_h = e^{-\text{softplus}(b_h)} = \frac{1}{1 + e^{b_h}}
+\lambda\_h = e^{-\text{softplus}(b\_h)} = \frac{1}{1 + e^{b\_h}}
 \tag{A.4}
 \]
 
 Setting $b_h = -\log \tau_h$:
 
 \[
-\lambda_h = \frac{1}{1 + 1/\tau_h} = \frac{\tau_h}{1 + \tau_h}
+\lambda\_h = \frac{1}{1 + 1/\tau\_h} = \frac{\tau\_h}{1 + \tau\_h}
 \tag{A.5}
 \]
 
@@ -1324,6 +2170,7 @@ and to 1 (long memory) for large $\tau_h$. The heads are therefore
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1331,37 +2178,37 @@ and to 1 (long memory) for large $\tau_h$. The heads are therefore
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank, lora_rank=16, ...):
-        super().__init__()
-        self.V = nn.Parameter(torch.empty(rank, in_features))
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, lora\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
     
     def forward(self, x):
         Vx = F.linear(x, self.V)
         out = F.linear(Vx, self.U, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 The Decay Gate}
 
 \begin{lstlisting}
-def _init_decay_gate(self):
-    with torch.no_grad():
-        nn.init.kaiming_uniform_(self.decay_gate.weight, a=math.sqrt(5))
-        if self.decay_channel_wise:
-            decay_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num_heads))
-            decay_times = decay_times.repeat_interleave(self.head_dim)
+def \_init\_decay\_gate(self):
+    with torch.no\_grad():
+        nn.init.kaiming\_uniform\_(self.decay\_gate.weight, a=math.sqrt(5))
+        if self.decay\_channel\_wise:
+            decay\_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num\_heads))
+            decay\_times = decay\_times.repeat\_interleave(self.head\_dim)
         else:
-            decay_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num_heads))
-        bias_target = -torch.log(decay_times)
-        self.decay_gate.bias.copy_(bias_target)
+            decay\_times = torch.exp(torch.linspace(math.log(1.0), math.log(1024.0), self.num\_heads))
+        bias\_target = -torch.log(decay\_times)
+        self.decay\_gate.bias.copy\_(bias\_target)
 \end{lstlisting}
 
 \textbf{Note.} As shown in Appendix A.6, this initialization is \textbf{inverted}. 
@@ -1371,122 +2218,122 @@ ranges from 1.001 to 2. Heads converge during training.
 \subsection{B.3 The Chunked Scan}
 
 \begin{lstlisting}
-def _forward_decay_gated_linear_kernel(self, q, k, v, hidden_states, mask=None, past_state=None):
-    B, H, N, D_k = q.shape
-    D_v = v.shape[-1]
+def \_forward\_decay\_gated\_linear\_kernel(self, q, k, v, hidden\_states, mask=None, past\_state=None):
+    B, H, N, D\_k = q.shape
+    D\_v = v.shape[-1]
     
-    phi_q = F.elu(q.float()) + 1.0
-    phi_k = F.elu(k.float()) + 1.0
-    v_f = v.float()
+    phi\_q = F.elu(q.float()) + 1.0
+    phi\_k = F.elu(k.float()) + 1.0
+    v\_f = v.float()
     
     if mask is not None:
-        phi_k = phi_k * mask_expanded
+        phi\_k = phi\_k * mask\_expanded
     
     # Decay
-    decay_logits = self.decay_gate(hidden_states)
-    if self.decay_channel_wise:
-        decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
-        lambda_decay = compute_exponential_decay(decay_logits).unsqueeze(-1)
+    decay\_logits = self.decay\_gate(hidden\_states)
+    if self.decay\_channel\_wise:
+        decay\_logits = decay\_logits.view(B, N, H, D\_k).permute(0, 2, 1, 3)
+        lambda\_decay = compute\_exponential\_decay(decay\_logits).unsqueeze(-1)
     else:
-        decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
-        lambda_decay = compute_exponential_decay(decay_logits)
+        decay\_logits = decay\_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+        lambda\_decay = compute\_exponential\_decay(decay\_logits)
     
     # Force padding to have $\lambda$=1
     if mask is not None:
-        lambda_decay = torch.where(mask_decay > 0, lambda_decay, torch.ones_like(lambda_decay))
+        lambda\_decay = torch.where(mask\_decay \textgreater{} 0, lambda\_decay, torch.ones\_like(lambda\_decay))
     
     # Chunked scan
-    chunk_size = 64
-    num_chunks = (N + chunk_size - 1) // chunk_size
-    S_chunk = torch.zeros(B, H, D_k, D_v, dtype=torch.float32)
-    Z_chunk = torch.zeros(B, H, D_k, 1, dtype=torch.float32)
+    chunk\_size = 64
+    num\_chunks = (N + chunk\_size - 1) // chunk\_size
+    S\_chunk = torch.zeros(B, H, D\_k, D\_v, dtype=torch.float32)
+    Z\_chunk = torch.zeros(B, H, D\_k, 1, dtype=torch.float32)
     outputs = []
     
-    for c in range(num_chunks):
-        s, e = c * chunk_size, min(N, (c+1) * chunk_size)
-        qc, kc, vc = phi_q[:,:,s:e], phi_k[:,:,s:e], v_f[:,:,s:e]
-        lam_c = lambda_decay[:,:,s:e]
+    for c in range(num\_chunks):
+        s, e = c * chunk\_size, min(N, (c+1) * chunk\_size)
+        qc, kc, vc = phi\_q[:,:,s:e], phi\_k[:,:,s:e], v\_f[:,:,s:e]
+        lam\_c = lambda\_decay[:,:,s:e]
         Lc = e - s
         
         # Intra-chunk
-        log_lam = torch.log(lam_c.clamp(min=1e-6))
-        log_gamma = torch.cumsum(log_lam, dim=-1)
-        log_M = log_gamma.unsqueeze(-1) - log_gamma.unsqueeze(-2)
-        M_intra = torch.exp(log_M.clamp(max=0.0)) * causal_tril
-        aff = torch.matmul(qc, kc.transpose(-1, -2)) * M_intra
-        num_intra = torch.matmul(aff, vc)
-        den_intra = aff.sum(dim=-1, keepdim=True)
+        log\_lam = torch.log(lam\_c.clamp(min=1e-6))
+        log\_gamma = torch.cumsum(log\_lam, dim=-1)
+        log\_M = log\_gamma.unsqueeze(-1) - log\_gamma.unsqueeze(-2)
+        M\_intra = torch.exp(log\_M.clamp(max=0.0)) * causal\_tril
+        aff = torch.matmul(qc, kc.transpose(-1, -2)) * M\_intra
+        num\_intra = torch.matmul(aff, vc)
+        den\_intra = aff.sum(dim=-1, keepdim=True)
         
         # Inter-chunk
-        decay = torch.exp(log_gamma.clamp(max=0.0)).unsqueeze(-1)
-        num_inter = torch.matmul(qc, S_chunk) * decay
-        den_inter = torch.matmul(qc, Z_chunk) * decay
+        decay = torch.exp(log\_gamma.clamp(max=0.0)).unsqueeze(-1)
+        num\_inter = torch.matmul(qc, S\_chunk) * decay
+        den\_inter = torch.matmul(qc, Z\_chunk) * decay
         
-        out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
-        outputs.append(out_c)
+        out\_c = (num\_intra + num\_inter) / (den\_intra + den\_inter + self.eps)
+        outputs.append(out\_c)
         
         # Update state
-        total_decay = torch.exp(log_gamma[:,:,-1:].clamp(max=0.0)).unsqueeze(-1)
-        w_to_end = torch.exp((log_gamma[:,:,-1:] - log_gamma).clamp(max=0.0)).unsqueeze(-1)
-        kc_w = kc * w_to_end
-        S_chunk = total_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2), vc)
-        Z_chunk = total_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
+        total\_decay = torch.exp(log\_gamma[:,:,-1:].clamp(max=0.0)).unsqueeze(-1)
+        w\_to\_end = torch.exp((log\_gamma[:,:,-1:] - log\_gamma).clamp(max=0.0)).unsqueeze(-1)
+        kc\_w = kc * w\_to\_end
+        S\_chunk = total\_decay * S\_chunk + torch.matmul(kc\_w.transpose(-1, -2), vc)
+        Z\_chunk = total\_decay * Z\_chunk + kc\_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
     
     context = torch.cat(outputs, dim=2).to(q.dtype)
-    return context, (S_chunk, Z_chunk)
+    return context, (S\_chunk, Z\_chunk)
 \end{lstlisting}
 
 \subsection{B.4 The `step\_recurrent` Method}
 
 \begin{lstlisting}
-def step_recurrent(self, x_t, past_state=None):
-    if x_t.dim() == 2:
-        x_t = x_t.unsqueeze(1)
+def step\_recurrent(self, x\_t, past\_state=None):
+    if x\_t.dim() == 2:
+        x\_t = x\_t.unsqueeze(1)
     
-    B = x_t.shape[0]
-    q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2)
-    k = self.k_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
-    v = self.v_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    B = x\_t.shape[0]
+    q = self.q\_proj(x\_t).view(B, 1, self.num\_heads, self.head\_dim).transpose(1, 2)
+    k = self.k\_proj(x\_t).view(B, 1, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
+    v = self.v\_proj(x\_t).view(B, 1, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
     
-    if self.num_kv_heads < self.num_heads:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.num\_kv\_heads \textless{} self.num\_heads:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
-    phi_q = F.elu(q.float()) + 1.0
-    phi_k = F.elu(k.float()) + 1.0
+    phi\_q = F.elu(q.float()) + 1.0
+    phi\_k = F.elu(k.float()) + 1.0
     
     # Decay
-    if self.use_decay_gating:
-        decay_logits = self.decay_gate(x_t)
-        # ... compute $\lambda$_t ...
+    if self.use\_decay\_gating:
+        decay\_logits = self.decay\_gate(x\_t)
+        # ... compute $\lambda$\_t ...
     else:
-        lam_t = torch.ones(B, H, 1, 1)
+        lam\_t = torch.ones(B, H, 1, 1)
     
     # Update state
-    if past_state is not None:
-        S_prev, Z_prev = past_state
+    if past\_state is not None:
+        S\_prev, Z\_prev = past\_state
     else:
-        S_prev = torch.zeros(B, H, D_k, D_v)
-        Z_prev = torch.zeros(B, H, D_k, 1)
+        S\_prev = torch.zeros(B, H, D\_k, D\_v)
+        Z\_prev = torch.zeros(B, H, D\_k, 1)
     
-    kt_t = phi_k.transpose(-1, -2)
-    kv_t = torch.matmul(kt_t, v.float())
+    kt\_t = phi\_k.transpose(-1, -2)
+    kv\_t = torch.matmul(kt\_t, v.float())
     
-    S_t = lam_t * S_prev + kv_t
-    Z_t = lam_t * Z_prev + kt_t
+    S\_t = lam\_t * S\_prev + kv\_t
+    Z\_t = lam\_t * Z\_prev + kt\_t
     
-    num_t = torch.matmul(phi_q, S_t)
-    den_t = torch.matmul(phi_t, Z_t) + self.eps
-    y_t = num_t / den_t
+    num\_t = torch.matmul(phi\_q, S\_t)
+    den\_t = torch.matmul(phi\_t, Z\_t) + self.eps
+    y\_t = num\_t / den\_t
     
     # Output projection
-    context = y_t.transpose(1, 2).contiguous().view(B, 1, self.all_head_size)
-    if self.is_nested_encoder:
-        out_t = context
+    context = y\_t.transpose(1, 2).contiguous().view(B, 1, self.all\_head\_size)
+    if self.is\_nested\_encoder:
+        out\_t = context
     else:
-        out_t = self.out_proj(context)
+        out\_t = self.out\_proj(context)
     
-    return out_t, (S_t, Z_t)
+    return out\_t, (S\_t, Z\_t)
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1498,7 +2345,7 @@ fixing to \texttt{bias\_target = -softplus\_inv(log(decay\_times))}.
 
 \subsubsection{B.5.2 Padding in Feature Map}
 
- (x) = ELU(x) + 1 > 0 always, so padding tokens contribute to the state. 
+ (x) = ELU(x) + 1 \textgreater{} 0 always, so padding tokens contribute to the state. 
 We mask them with \texttt{phi\_k = phi\_k * mask\_expanded}.
 
 \subsubsection{B.5.3 Chunk Size}
@@ -1514,6 +2361,7 @@ skipped (applied externally).
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1657,11 +2505,11 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
     "ratio": 50\%,
-    "accuracy_pct": 86.4,
-    "mode": "D_MODE",
+    "accuracy\_pct": 86.4,
+    "mode": "D\_MODE",
     "rank": 32
   },
   "roberta": {...},
@@ -1673,22 +2521,23 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_svd_linear_attention.py --models distilbert,roberta,gpt2
+python run\_all\_4\_svd\_linear\_attention.py --models distilbert,roberta,gpt2
 
 # Rank sweep
 for r in 8 16 32 64 128; do
-    python run_all_4_svd_linear_attention.py --rank $r --output_suffix r$r
+    python run\_all\_4\_svd\_linear\_attention.py --rank $r --output_suffix r$r
 done
 
 # Decay sweep
-python run_all_4_svd_linear_attention.py --use_decay_gating false --output_suffix nodecay
-python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffix decay
+python run\_all\_4\_svd\_linear\_attention.py --use\_decay\_gating false --output\_suffix nodecay
+python run\_all\_4\_svd\_linear\_attention.py --use\_decay\_gating true  --output\_suffix decay
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1736,7 +2585,7 @@ python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffi
 
 \textbf{Goal.} MLP-based  (x).
 
-\textbf{Result.} 3$\times$ slower, <0.5\% gain.
+\textbf{Result.} 3$\times$ slower, \textless{}0.5\% gain.
 
 \subsubsection{D.2.2 Multiple Decay Scales}
 
@@ -1843,6 +2692,7 @@ similar decay values.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1946,3 +2796,4 @@ deployment.
 
 ---
 \end{lstlisting}
+

@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{NASC: NEXUS-AEGIS Spectral Cascade Attention for Hybrid Transformer Inference}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -16,7 +18,7 @@ captures long-range structure but is either expensive or coarse.
 \textbf{Hybrid attention} resolves this by combining multiple branches:
 
 \[
-\text{Output} = \sum_{i} g_i \cdot \text{Branch}_i(X)
+\text{Output} = \sum\_{i} g\_i \cdot \text{Branch}\_i(X)
 \tag{1.1}
 \]
 
@@ -42,7 +44,7 @@ The three branches are fused by a \textbf{gate} computed from the batch-mean
 hidden state:
 
 \[
-g = \text{softmax}(W_g \cdot \bar{x}), \quad \bar{x} = \frac{1}{L} \sum_t x_t
+g = \text{softmax}(W\_g \cdot \bar{x}), \quad \bar{x} = \frac{1}{L} \sum\_t x\_t
 \tag{1.2}
 \]
 
@@ -85,6 +87,788 @@ Section 10 lists limitations. Section 11 concludes.
 
 \subsection{Notation}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d$ & Head dimension & 1.1 \\
+$H$ & Number of heads & 1.1 \\
+$W$ & Window size & 1.2 \\
+$B_s$ & Block size (sparse branch) & 1.2 \\
+$k$ & Top-k blocks & 1.2 \\
+$F$ & RFF features & 1.2 \\
+$g$ & Gate vector & 1.2 \\
+$\text{softpick}$ & ReLU-based attention & 3.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 02_related.tex ---
+
+\section{Related Work}
+
+\subsection{Hybrid Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Combines sliding-window with global 
+tokens.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global.
+
+\textbf{Hybrid Transformer} (Zhu et al., 2021). Local attention + low-rank 
+global.
+
+\textbf{Routing Transformer} (Roy et al., 2021). Content-based clustering.
+
+\textbf{NASC} combines three branches and uses a gate.
+
+\subsection{Sparse Block Attention}
+
+\textbf{BlockBERT} (Qiu et al., 2020). Block-sparse attention patterns.
+
+\textbf{Sparse Transformers} (Child et al., 2019). Fixed sparsity patterns.
+
+\textbf{NASC's block branch} selects blocks dynamically via mean Q/K scores.
+
+\subsection{Random Fourier Features}
+
+\textbf{Performer} (Choromanski et al., 2021). Positive orthogonal random features 
+for softmax approximation.
+
+\textbf{RFF in NASC} uses concatenated cos/sin features:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)]
+\tag{2.1}
+\]
+
+where $\Omega \in \mathbb{R}^{d \times F}$ is orthogonally initialized.
+
+\subsection{Softpick / ReLU Attention}
+
+\textbf{ReLU attention} (Katharopoulos et al., 2020). Uses $\text{relu}(\cdot)$ as 
+a kernel feature.
+
+\textbf{Softpick} (Alman \& Song, 2024). A sparse alternative to softmax with 
+reduced numerical overhead.
+
+\textbf{NASC's \texttt{softpick}} is ReLU-based with a batch-level softmax fallback.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{NASC} \\
+\midrule
+\textbf{Branches} & 2 (local + global) & \textbf{3 (local + sparse + RFF)} \\
+\textbf{Gate} & Learned per-token & \textbf{Learned per-batch} \\
+\textbf{Attention} & Softmax & \textbf{Softpick (ReLU + fallback)} \\
+\textbf{Causal path} & Full & \textbf{Prefix-sum for RFF} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} NASC's three-branch structure with batch-level gating 
+is unusual. The gate simplification reduces per-token adaptivity but 
+avoids gate collapse.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Standard Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
+\tag{3.1}
+\]
+
+Cost: $\mathcal{O}(L^2 d)$.
+
+\subsection{Sliding-Window Attention}
+
+\[
+M\_{ij} = \mathbf{1}[|i - j| \leq W]
+\tag{3.2}
+\]
+
+Cost: $\mathcal{O}(L W d)$.
+
+\subsection{Sparse Block Attention}
+
+Partition sequence into $n_b = L / B_s$ blocks. Compute block-level scores:
+
+\[
+s\_{ij} = \frac{\bar{q}\_i^\top \bar{k}\_j}{\sqrt{d}}, \quad \bar{q}\_i = \text{mean}(Q\_{\text{block } i})
+\tag{3.3}
+\]
+
+Select top-$k$ blocks per query block:
+
+\[
+\mathcal{B}\_i = \text{topk}\_{k}(\{s\_{ij}\}\_j)
+\tag{3.4}
+\]
+
+Then compute full attention within selected blocks.
+
+\subsection{Random Fourier Features}
+
+Approximate $\exp(q^\top k)$ via:
+
+\[
+\exp(q^\top k) \approx \phi(q)^\top \phi(k)
+\tag{3.5}
+\]
+
+with $\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)]$ where 
+$\Omega \in \mathbb{R}^{d \times F}$ is sampled from a Gaussian.
+
+\textbf{Cost:} $O(L F d)$ per head, linear in $L$.
+
+\subsection{Softpick}
+
+Softpick (Alman \& Song, 2024) replaces softmax with:
+
+\[
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i - m} - e^{-m})}{\sum\_j \text{ReLU}(e^{x\_j - m} - e^{-m})}
+\tag{3.6}
+\]
+
+where $m = \max_j x_j$.
+
+\textbf{Issues.} When all $x_j$ are negative (masked rows), $e^{-m}$ dominates 
+and the denominator can vanish. NASC handles this with a **batch-level 
+fallback** to standard softmax.
+
+\subsection{LoRA}
+
+Standard low-rank adaptation (Hu et al., 2021).
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Number of heads \\
+$W$ & Window size \\
+$B_s$ & Block size \\
+$k$ & Top-k blocks \\
+$F$ & RFF features \\
+$m$ & Row maximum (softpick) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textless{}/parameter\textgreater{}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+NASC has two paths, chosen by the flag \texttt{use\_dense}:
+
+\begin{lstlisting}
+use\_dense = is\_cross or (not self.is\_decoder and not self.enable\_cascade\_on\_encoders)
+\end{lstlisting}
+
+\begin{itemize}
+\item \textbf{Cross-attention:} dense (standard softmax).
+\item \textbf{Encoders:} dense by default (unless \texttt{enable\_cascade\_on\_encoders=True}).
+\item \textbf{Decoders:} cascade.
+
+\end{itemize}
+The cascade path combines three branches:
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+--------------+
+        |              |              |              |
+                                                      
+    +------+       +------+       +------+      +------+
+    |  Q   |       |  K   |       |  V   |      | Gate |
+    +--+---+       +--+---+       +--+---+      +--+---+
+       |              |              |              |
+       +------+-------+--------------+              |
+              |                      |              |
+   +----------+-----------+          |              |
+   |          |           |          |              |
+                                                     
+ +-----+   +------+  +--------+   +------+      [g ,g$_1$,g$_2$]
+ |Local|   |Block |  |RFF     |   |      |       softmax
+ |Win  |   |Sparse|  |Global  |   |      |       per-batch
+ +--+--+   +--+---+  +---+----+   |      |
+    |         |          |         |      |
+    +---------+----------+---------+      |
+              |                            |
+                                            
+        g  O\_loc + g$_1$ O\_sp + g$_2$ O\_glb
+              |
+               
+        Output Y
+\end{lstlisting}
+
+\subsection{Local Window Branch}
+
+Standard scaled dot-product attention with window mask:
+
+\[
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d}}
+\tag{4.1}
+\]
+
+Mask:
+
+\[
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W \text{ and } j \leq i \text{ (if causal)} \\ 0 & \text{otherwise} \end{cases}
+\tag{4.2}
+\]
+
+Standard softmax attention within the window.
+
+\subsection{Sparse Block Branch}
+
+\subsubsection{Block-Level Scores}
+
+Partition into $n_b = \lceil L / B_s \rceil$ blocks. Compute mean Q and K:
+
+\[
+\bar{q}\_i = \text{mean}(Q\_{\text{block } i}), \quad
+\bar{k}\_j = \text{mean}(K\_{\text{block } j})
+\tag{4.3}
+\]
+
+Block scores:
+
+\[
+s\_{ij} = \frac{\bar{q}\_i^\top \bar{k}\_j}{\sqrt{d}}
+\tag{4.4}
+\]
+
+\subsubsection{Top-$k$ Selection}
+
+For each query block $i$, select top-$k$ key blocks:
+
+\[
+\mathcal{B}\_i = \text{topk}\_{k}(\{s\_{ij}\}\_j)
+\tag{4.5}
+\]
+
+\subsubsection{Causal Handling}
+
+For causal decoders, blocks $j > i$ are masked. Also, block 0 is always 
+selected (an attention sink).
+
+\subsubsection{Attention Within Selected Blocks}
+
+Concatenate the selected blocks' K, V, compute softpick attention:
+
+\[
+O\_{\text{sp}, i} = \text{softpick}(Q\_i K\_{\mathcal{B}\_i}^\top / \sqrt{d}) V\_{\mathcal{B}\_i}
+\tag{4.6}
+\]
+
+\textbf{Implementation note.} The block loop uses a Python \texttt{for} loop over 
+$n_b$ iterations, gathering selected blocks each time. For $L = 128$, 
+$B_s = 32$, $n_b = 4$.
+
+\subsection{Global Spectral RFF Branch}
+
+\subsubsection{Feature Map}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)] \in \mathbb{R}^{2F}
+\tag{4.7}
+\]
+
+where $\Omega \in \mathbb{R}^{d \times F}$ is orthogonally initialized.
+
+\subsubsection{Non-Causal Path}
+
+\[
+KV = \phi(K)^\top V, \quad Z = \sum\_j \phi(K\_j)
+\tag{4.8}
+\]
+
+\[
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z}
+\tag{4.9}
+\]
+
+\subsubsection{Causal Path via Prefix Sums}
+
+For causal decoders:
+
+\[
+KV\_c = \text{cumsum}(\phi(K) \otimes V) \in \mathbb{R}^{B \times H \times L \times 2F \times d}
+\tag{4.10}
+\]
+
+\[
+Z\_c = \text{cumsum}(\phi(K))
+\tag{4.11}
+\]
+
+Then per-token:
+
+\[
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top KV\_{c,i}}{\phi(q\_i)^\top Z\_{c,i} + \epsilon}
+\tag{4.12}
+\]
+
+\textbf{Memory concern.} $KV_c$ is $B \times H \times L \times 2F \times d$. For 
+$B = 8$, $H = 12$, $L = 128$, $F = 64$, $d = 64$: 
+$8 \times 12 \times 128 \times 128 \times 64 = 8 \times 10^9$ elements.
+
+\textbf{This is 32 GB in FP32.} In practice, PyTorch's cumsum and einsum might 
+materialize this, causing OOM on RTX 4070.
+
+\subsection{Gate}
+
+Per-batch gate:
+
+\[
+\bar{x}\_b = \frac{1}{L} \sum\_t x\_{b,t}
+\tag{4.13}
+\]
+
+\[
+g = \text{softmax}(W\_g \bar{x}\_b) \in \mathbb{R}^3
+\tag{4.14}
+\]
+
+where $W_g \in \mathbb{R}^{3 \times d}$.
+
+\textbf{All tokens in a batch share the same $g$.} No per-token adaptivity.
+
+\subsection{Fusion}
+
+\[
+O = g\_0 \cdot O\_{\text{loc}} + g\_1 \cdot O\_{\text{sp}} + g\_2 \cdot O\_{\text{glb}}
+\tag{4.15}
+\]
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O projections & $4 d^2$ \\
+RFF $\Omega$ & $d \times F$ (frozen) \\
+Gate $W_g$ & $3 d$ \\
+LoRA & $4 \cdot 2 r_L d$ \\
+\textbf{Non-LoRA addition} & $d F + 3d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768, F = 64$: RFF = 49,152 + gate = 2,304.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Branch} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Local window & $O(L W d)$ & $O(L W)$ \\
+Sparse block & $O(L k B_s d)$ & $O(L k B_s)$ \\
+RFF (non-causal) & $O(L F d)$ & $O(F d)$ \\
+RFF (causal) & $O(L F d)$ & $O(L F d)$ $\leftarrow$ high \\
+Gate & $O(L d)$ & $O(d)$ \\
+\textbf{Total (cascade)} & $O(L(W + k B_s + F) d)$ & $O(L F d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} NASC forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, is\_cross, W, B\_s, k, F
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q; K $\leftarrow$ X W\_K; V $\leftarrow$ X W\_V
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
+ 4:
+ 5: if is\_cross or (not is\_decoder and not enable\_cascade):
+ 6:     # Dense path
+ 7:     O $\leftarrow$ softmax(Q K^T / sqrt(d)) V
+ 8: else:
+ 9:     # Cascade path
+10:     g $\leftarrow$ softmax(W\_g   mean(X, dim=1))     per-batch gate
+11:     O\_loc $\leftarrow$ local\_window\_attention(Q, K, V, W)
+12:     O\_sp $\leftarrow$ sparse\_block\_attention(Q, K, V, B\_s, k)
+13:     O\_glb $\leftarrow$ spectral\_rff\_attention(Q, K, V, F)
+14:     O $\leftarrow$ g[0] O\_loc + g[1] O\_sp + g[2] O\_glb
+15:
+16: if head\_mask: apply
+17: if is\_nested\_encoder: return O
+18: else: return out\_proj(O)
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Default path} \\
+\midrule
+DistilBERT & No & No & No & \textbf{Dense} (encoder) \\
+RoBERTa & Yes & No & No & \textbf{Dense} (encoder) \\
+GPT-2 & No & No & No & \textbf{Cascade} (decoder) \\
+Qwen3.5 & No & Yes & Yes & \textbf{Cascade} (decoder) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why Encoders Use Dense by Default}
+
+The flag \texttt{enable\_cascade\_on\_encoders} defaults to \texttt{True} **in the config 
+but the \texttt{use\_dense} decision also checks**:
+
+\begin{lstlisting}
+use\_dense = is\_cross or (not self.is\_decoder and not self.enable\_cascade\_on\_encoders)
+\end{lstlisting}
+
+If \texttt{enable\_cascade\_on\_encoders=True} (default), encoders use cascade. If 
+\texttt{False}, encoders use dense. \textbf{Ambiguity in the default} is a design 
+concern.
+
+\subsection{Weight Transfer}
+
+Standard four-architecture copy:
+
+\begin{lstlisting}
+# GPT-2
+c\_w = src.c\_attn.weight.data
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.data.t()
+
+# RoBERTa
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
+
+# DistilBERT
+q\_w = src.q\_lin.weight.data
+# ...
+\end{lstlisting}
+
+\subsection{GQA Handling}
+
+\begin{lstlisting}
+if proj\_key in ("k", "v"):
+    if src\_out == out\_d:
+        target\_w.data.copy\_(w\_oriented)
+    elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
+        # Mean-pool
+        rep = src\_out // out\_d
+        target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+    elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+        # Repeat
+        rep = out\_d // src\_out
+        target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
+\end{lstlisting}
+
+This handles GQA where $H_{kv} < H$ (Qwen, LLaMA).
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject NASC
+\begin{lstlisting}
+1: new $\leftarrow$ NASCAttention(config, old=old\_attn)
+2: if copy\_weights fails: raise (NOT return None)
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
+5: elif   has .attention:  .attention $\leftarrow$ new
+6: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+7: elif   has .self\_attn:  .self\_attn $\leftarrow$ new
+8: elif   has .attn:  .attn $\leftarrow$ new
+9: return new
+\end{lstlisting}
+
+\textbf{Important.} Unlike other modules, \texttt{inject\_nasc} \textbf{raises} on failure:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject\_nasc failed: \%s", e)
+    raise e
+\end{lstlisting}
+
+This violates the "safe injection returning None" contract.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{RFF Causal Path Memory}
+
+The \texttt{KV\_cumsum} tensor in \texttt{\_global\_spectral\_rff\_attention} has shape 
+$(B, H, L, 2F, d)$. For $L = 128$, this is manageable. For $L = 512$, it 
+may OOM.
+
+\subsubsection{Batch-Level Gate}
+
+The gate is computed from \texttt{hidden\_states.mean(dim=1)}, which averages over 
+all tokens. This eliminates per-token adaptivity.
+
+\subsubsection{`softpick` Batch Fallback}
+
+The fallback triggers when \textbf{any} row has zero denominator (batch-level), 
+not per-row:
+
+\begin{lstlisting}
+zero\_mask = denom \textless{}= 1e-8  # shape (B, H, L, 1)
+if zero\_mask.any():
+    fallback = F.softmax(x, dim=dim)
+    p = torch.where(zero\_mask, fallback, p / (denom + 1e-8))
+\end{lstlisting}
+
+The \texttt{torch.where} uses per-element fallback, but the \texttt{if} only triggers 
+if any element is affected. This is slightly better than fully batch-level.
+
+\subsubsection{The `\_logged\_once` Pattern}
+
+NASC logs the path once per instance:
+
+\begin{lstlisting}
+if not hasattr(self, '\_logged\_once'):
+    logger.debug("NASCAttention: L=\%d, ...")
+    self.\_logged\_once = True
+\end{lstlisting}
+
+This is a fix from previous log spam.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of nasc\_attention.}
+\label{fig:arch_nasc-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Default path} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & Dense \\
+RoBERTa & 12 & 768 & 12 & 124.6M & Dense \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Cascade \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{NASC Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{window\_size} & 128 (default 64) \\
+\texttt{block\_size} & 64 (default 32) \\
+\texttt{top\_k} & 2 (default 2) \\
+\texttt{rff\_features} & 64 (default 64) \\
+\texttt{enable\_cascade\_on\_encoders} & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\item Total params
+\item Peak VRAM
+\item Inference time
+\item \textbf{Gate distribution} (mean $g_0, g_1, g_2$)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_nasc.py \
+    --models distilbert,roberta,gpt2 \
+    --window\_size 128 \
+    --block\_size 64 \
+    --top\_k 2 \
+    --rff\_features 64 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Seeds}
+
+Single seed (42).
+
+\subsection{Ablations}
+
+\begin{itemize}
+\item \texttt{enable\_cascade\_on\_encoders}: True/False
+\item \texttt{window\_size}: 16, 32, 64, 128
+\item \texttt{block\_size}: 16, 32, 64
+\item \texttt{top\_k}: 1, 2, 3, 4
+\item \texttt{rff\_features}: 32, 64, 128
+
+\end{itemize}
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{nasc} -- our method
+\item Prior modules: \texttt{cosformer}, \texttt{fasa}, \texttt{a3}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -97,7 +881,7 @@ DistilBERT & \textbf{Nasc Attention} & \textbf{89.11\%} & -1.37\% & PASS & 0.891
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Nasc Attention} & \textbf{85.55\%} & +10.44\% & PASS & 0.8587 & 0 & \textbf{0.94$\times$} & 388.0 MB & 24.0 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Nasc Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 1514.1 MB & 54.5 & -- \\
+GPT-2 & \textbf{Nasc Attention} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 1514.1 MB & 54.5 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -308,12 +1092,13 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/nasc_attention_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{nasc_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/nasc\_attention\_gpt2\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{nasc\_attention}.}
 \label{fig:results_nasc_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -470,7 +1255,7 @@ Output proj & 1 & 1 \\
 \toprule
 \textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
 \midrule
-\textbf{RFF causal memory} & OOM at L > 512 & Large cumsum tensor \\
+\textbf{RFF causal memory} & OOM at L \textgreater{} 512 & Large cumsum tensor \\
 \textbf{Gate collapse} & $g_i \to 1$ for one branch & Training dynamics \\
 \textbf{Sparse block overhead} & Slower than baseline & Python loop \\
 \textbf{Encoder path ambiguity} & Unexpected path chosen & Config default \\
@@ -495,6 +1280,7 @@ Output proj & 1 & 1 \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -542,7 +1328,7 @@ Is the model a decoder? -- No -- NASC's cascade doesn't apply
   |
   Yes
    
-Is L <= 512? -- No -- OOM risk in RFF cumsum
+Is L \textless{}= 512? -- No -- OOM risk in RFF cumsum
   |
   Yes
    
@@ -624,6 +1410,7 @@ Cosformer & 0.85\% & 4.9$\times$ slower & Linear attention \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -658,7 +1445,7 @@ reduce latency.
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     raise e
 \end{lstlisting}
 
@@ -711,6 +1498,7 @@ level. Minor.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -801,14 +1589,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -817,22 +1606,22 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_nasc.py \
+python run\_all\_4\_nasc.py \
     --models distilbert,roberta,gpt2 \
-    --window_size 128 \
-    --block_size 64 \
-    --top_k 2 \
-    --rff_features 64 \
-    --recovery_steps 50
+    --window\_size 128 \
+    --block\_size 64 \
+    --top\_k 2 \
+    --rff\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-nasc",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-nasc",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -842,29 +1631,29 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_nasc.py --models distilbert,roberta,gpt2
+python run\_all\_4\_nasc.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Encoder Cascade Ablation}
 
 \begin{lstlisting}
-python run_all_4_nasc.py --enable_cascade_on_encoders true --output_suffix cascadeon
-python run_all_4_nasc.py --enable_cascade_on_encoders false --output_suffix cascadeoff
+python run\_all\_4\_nasc.py --enable\_cascade\_on\_encoders true --output\_suffix cascadeon
+python run\_all\_4\_nasc.py --enable\_cascade\_on\_encoders false --output\_suffix cascadeoff
 \end{lstlisting}
 
 \subsubsection{Window/Block/TopK Ablation}
 
 \begin{lstlisting}
 for w in 16 32 64 128; do
-    python run_all_4_nasc.py --window_size $w --output_suffix w$w
+    python run\_all\_4\_nasc.py --window\_size $w --output_suffix w$w
 done
 
 for b in 16 32 64; do
-    python run_all_4_nasc.py --block_size $b --output_suffix b$b
+    python run\_all\_4\_nasc.py --block\_size $b --output_suffix b$b
 done
 
 for k in 1 2 3 4; do
-    python run_all_4_nasc.py --top_k $k --output_suffix k$k
+    python run\_all\_4\_nasc.py --top\_k $k --output_suffix k$k
 done
 \end{lstlisting}
 
@@ -872,8 +1661,8 @@ done
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -899,13 +1688,13 @@ GPT-2 & 85.32\% $\pm$ 2\% & Cascade \\
 Add to \texttt{forward}:
 
 \begin{lstlisting}
-logger.info(f"Path: {'dense' if use_dense else 'cascade'}")
+logger.info(f"Path: {'dense' if use\_dense else 'cascade'}")
 \end{lstlisting}
 
 \subsubsection{Verify Gate}
 
 \begin{lstlisting}
-gates = F.softmax(model.gate_proj(summary), dim=-1)
+gates = F.softmax(model.gate\_proj(summary), dim=-1)
 print(f"Gate weights: {gates.mean(dim=0)}")
 # Should sum to 1
 \end{lstlisting}
@@ -913,9 +1702,9 @@ print(f"Gate weights: {gates.mean(dim=0)}")
 \subsubsection{Verify RFF Memory}
 
 \begin{lstlisting}
-KV_cumsum_size = B * H * L * 2 * F * d
-print(f"KV_cumsum elements: {KV_cumsum_size:,}")
-print(f"Memory (FP32): {KV_cumsum_size * 4 / 1e6:.1f} MB")
+KV\_cumsum\_size = B * H * L * 2 * F * d
+print(f"KV\_cumsum elements: {KV\_cumsum\_size:,}")
+print(f"Memory (FP32): {KV\_cumsum\_size * 4 / 1e6:.1f} MB")
 \end{lstlisting}
 
 \subsection{Known Issues}
@@ -940,6 +1729,7 @@ print(f"Memory (FP32): {KV_cumsum_size * 4 / 1e6:.1f} MB")
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1082,13 +1872,14 @@ print(f"Memory (FP32): {KV_cumsum_size * 4 / 1e6:.1f} MB")
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Local Window Attention}
 
 \[
-O_{\text{loc}, i} = \frac{\sum_{j: |i - j| \leq W, j \leq i} \exp(q_i^\top k_j / \sqrt{d}) v_j}{\sum_{j} \exp(q_i^\top k_j / \sqrt{d})}
+O\_{\text{loc}, i} = \frac{\sum\_{j: |i - j| \leq W, j \leq i} \exp(q\_i^\top k\_j / \sqrt{d}) v\_j}{\sum\_{j} \exp(q\_i^\top k\_j / \sqrt{d})}
 \tag{A.1}
 \]
 
@@ -1099,16 +1890,16 @@ Standard softmax over the window.
 For blocks $i, j$:
 
 \[
-s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}, \quad
-\bar{q}_i = \frac{1}{B_s} \sum_{t \in \text{block}_i} q_t
+s\_{ij} = \frac{\bar{q}\_i^\top \bar{k}\_j}{\sqrt{d}}, \quad
+\bar{q}\_i = \frac{1}{B\_s} \sum\_{t \in \text{block}\_i} q\_t
 \tag{A.2}
 \]
 
 Selection:
 
 \[
-\mathcal{B}_i = \text{topk}_{k}\{s_{ij}\}_j, \quad
-O_{\text{sp}, i} = \text{softpick}(Q_i K_{\mathcal{B}_i}^\top / \sqrt{d}) V_{\mathcal{B}_i}
+\mathcal{B}\_i = \text{topk}\_{k}\{s\_{ij}\}\_j, \quad
+O\_{\text{sp}, i} = \text{softpick}(Q\_i K\_{\mathcal{B}\_i}^\top / \sqrt{d}) V\_{\mathcal{B}\_i}
 \tag{A.3}
 \]
 
@@ -1135,49 +1926,49 @@ For $\Omega$ with orthogonal rows, this approximates $\exp(q^\top k)$.
 For causal decoder:
 
 \[
-(KV_c)_i = \sum_{j \leq i} \phi(k_j) v_j^\top
+(KV\_c)\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top
 \tag{A.6}
 \]
 
 \[
-(Z_c)_i = \sum_{j \leq i} \phi(k_j)
+(Z\_c)\_i = \sum\_{j \leq i} \phi(k\_j)
 \tag{A.7}
 \]
 
 Computed via \texttt{cumsum} along sequence dimension.
 
 \[
-O_{\text{glb}, i} = \frac{\phi(q_i)^\top (KV_c)_i}{\phi(q_i)^\top (Z_c)_i + \epsilon}
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top (KV\_c)\_i}{\phi(q\_i)^\top (Z\_c)\_i + \epsilon}
 \tag{A.8}
 \]
 
 \subsection{A.5 Gate Computation}
 
 \[
-g = \text{softmax}(W_g \bar{x}), \quad
-\bar{x} = \frac{1}{L} \sum_{t=1}^{L} x_t, \quad
-W_g \in \mathbb{R}^{3 \times d}
+g = \text{softmax}(W\_g \bar{x}), \quad
+\bar{x} = \frac{1}{L} \sum\_{t=1}^{L} x\_t, \quad
+W\_g \in \mathbb{R}^{3 \times d}
 \tag{A.9}
 \]
 
 \subsection{A.6 Fusion}
 
 \[
-O = g_0 O_{\text{loc}} + g_1 O_{\text{sp}} + g_2 O_{\text{glb}}
+O = g\_0 O\_{\text{loc}} + g\_1 O\_{\text{sp}} + g\_2 O\_{\text{glb}}
 \tag{A.10}
 \]
 
 \subsection{A.7 Softpick with Fallback}
 
 \[
-p_i = \text{ReLU}(e^{x_i - m} - e^{-m})
+p\_i = \text{ReLU}(e^{x\_i - m} - e^{-m})
 \tag{A.11}
 \]
 
 where $m = \max_j x_j$ (clamped to $0$ if $m < -10^3$).
 
 \[
-\hat{p}_i = \begin{cases} p_i / \sum_j p_j & \text{if } \sum_j p_j > \epsilon \\ \text{softmax}(x)_i & \text{otherwise} \end{cases}
+\hat{p}\_i = \begin{cases} p\_i / \sum\_j p\_j & \text{if } \sum\_j p\_j \textgreater{} \epsilon \\ \text{softmax}(x)\_i & \text{otherwise} \end{cases}
 \tag{A.12}
 \]
 
@@ -1217,6 +2008,7 @@ For $B=8, H=12, L=128, F=64, d=64$: 50 MB in FP32.
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -1224,22 +2016,22 @@ For $B=8, H=12, L=128, F=64, d=64$: 50 MB in FP32.
 
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
-    orig_dtype = x.dtype
+    orig\_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
-    m = torch.where(m < -1e3, torch.zeros_like(m), m)  # clamp for masked rows
+    m = torch.where(m \textless{} -1e3, torch.zeros\_like(m), m)  # clamp for masked rows
     z = x - m
-    exp_z = torch.exp(z / temperature)
-    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
-    p = F.relu(exp_z - exp_neg_m)
+    exp\_z = torch.exp(z / temperature)
+    exp\_neg\_m = torch.exp((-m) / temperature).clamp(max=1e4)
+    p = F.relu(exp\_z - exp\_neg\_m)
     denom = p.sum(dim=dim, keepdim=True)
-    zero_mask = denom <= 1e-8
-    if zero_mask.any():
+    zero\_mask = denom \textless{}= 1e-8
+    if zero\_mask.any():
         fallback = F.softmax(x, dim=dim)
-        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+        p = torch.where(zero\_mask, fallback, p / (denom + 1e-8))
     else:
         p = p / denom
-    return p.to(orig_dtype)
+    return p.to(orig\_dtype)
 \end{lstlisting}
 
 \textbf{Note.} The clamp \texttt{max=1e4} on \texttt{exp\_neg\_m} prevents overflow. The 
@@ -1248,21 +2040,21 @@ def softpick(x, dim=-1, temperature=1.0):
 \subsection{B.2 Local Window Attention}
 
 \begin{lstlisting}
-def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
+def \_local\_window\_attention(self, Q, K, V, valid\_mask, is\_causal):
     B, H, L, d = Q.shape
     scale = 1.0 / math.sqrt(d)
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     
     idx = torch.arange(L, device=Q.device)
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-    mask = dist > self.window_size
-    if is_causal:
-        mask = mask | (idx.unsqueeze(0) > idx.unsqueeze(1))
-    scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
+    mask = dist \textgreater{} self.window\_size
+    if is\_causal:
+        mask = mask | (idx.unsqueeze(0) \textgreater{} idx.unsqueeze(1))
+    scores = scores.masked\_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
     
-    pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)
-    scores = scores.masked_fill(pad_k, -10000.0)
-    scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+    pad\_k = (~valid\_mask).unsqueeze(1).unsqueeze(2)
+    scores = scores.masked\_fill(pad\_k, -10000.0)
+    scores = torch.nan\_to\_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
     
     attn = F.softmax(scores, dim=-1).to(Q.dtype)
     attn = self.dropout(attn)
@@ -1272,72 +2064,72 @@ def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
 \subsection{B.3 Sparse Block Attention (Python Loop)}
 
 \begin{lstlisting}
-def _sparse_block_attention(self, Q, K, V, valid_mask, is_causal):
-    # ... pad to multiple of block_size
-    nb = Lp // self.block_size
+def \_sparse\_block\_attention(self, Q, K, V, valid\_mask, is\_causal):
+    # ... pad to multiple of block\_size
+    nb = Lp // self.block\_size
     
     # Compute block-level scores
-    Q_mean = Qb.mean(dim=3)
-    K_mean = Kb.mean(dim=3)
-    blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1)) * scale
+    Q\_mean = Qb.mean(dim=3)
+    K\_mean = Kb.mean(dim=3)
+    blk\_scores = torch.matmul(Q\_mean.float(), K\_mean.float().transpose(-2, -1)) * scale
     
-    if is_causal:
-        blk_scores = blk_scores + causal_blk_mask
+    if is\_causal:
+        blk\_scores = blk\_scores + causal\_blk\_mask
     
-    top_k = min(self.top_k, nb)
-    _, top_idx = blk_scores.topk(top_k, dim=-1)
-    if is_causal:
+    top\_k = min(self.top\_k, nb)
+    \_, top\_idx = blk\_scores.topk(top\_k, dim=-1)
+    if is\_causal:
         for i in range(nb):
-            top_idx[:, :, i, 0] = i
+            top\_idx[:, :, i, 0] = i
     else:
-        top_idx[:, :, :, 0] = 0
+        top\_idx[:, :, :, 0] = 0
     
-    out_blocks = torch.zeros_like(Qb)
+    out\_blocks = torch.zeros\_like(Qb)
     for i in range(nb):  # $\leftarrow$ PYTHON LOOP
-        idx = top_idx[:, :, i, :]
-        idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
-        K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
-        V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
+        idx = top\_idx[:, :, i, :]
+        idx\_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block\_size, d)
+        K\_sel = torch.gather(Kb, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, d)
+        V\_sel = torch.gather(Vb, 2, idx\_exp).reshape(B, H, top\_k * self.block\_size, d)
         
-        scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1)) * scale
+        scores\_i = torch.matmul(Qb[:, :, i].float(), K\_sel.float().transpose(-2, -1)) * scale
         
         # Causal mask for selected tokens
         # ... 
         
-        attn_i = softpick(scores_i, dim=-1).to(Q.dtype)
-        out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
+        attn\_i = softpick(scores\_i, dim=-1).to(Q.dtype)
+        out\_blocks[:, :, i] = torch.matmul(attn\_i, V\_sel)
     
-    return out_blocks.view(B, H, Lp, d)[:, :, :L, :]
+    return out\_blocks.view(B, H, Lp, d)[:, :, :L, :]
 \end{lstlisting}
 
 \subsection{B.4 Global Spectral RFF}
 
 \begin{lstlisting}
-def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
+def \_global\_spectral\_rff\_attention(self, Q, K, V, valid\_mask, is\_causal):
     B, H, L, d = Q.shape
-    pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)
+    pad = (~valid\_mask).unsqueeze(1).unsqueeze(-1)
     
-    Qf = torch.matmul(Q.float(), self.rff_proj.float())
-    Kf = torch.matmul(K.float(), self.rff_proj.float())
-    norm = 1.0 / math.sqrt(self.rff_features)
-    phi_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
-    phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
+    Qf = torch.matmul(Q.float(), self.rff\_proj.float())
+    Kf = torch.matmul(K.float(), self.rff\_proj.float())
+    norm = 1.0 / math.sqrt(self.rff\_features)
+    phi\_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
+    phi\_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
     
-    phi_K = phi_K.masked_fill(pad, 0.0)
-    V_masked = V.float().masked_fill(pad, 0.0)
+    phi\_K = phi\_K.masked\_fill(pad, 0.0)
+    V\_masked = V.float().masked\_fill(pad, 0.0)
     
-    if is_causal:
-        KV = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # [B, H, L, 2F, d]
-        KV_cumsum = torch.cumsum(KV, dim=2)
-        num = torch.matmul(phi_Q.unsqueeze(-2), KV_cumsum).squeeze(-2)
-        Z = torch.cumsum(phi_K, dim=2)
-        den = (phi_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
+    if is\_causal:
+        KV = phi\_K.unsqueeze(-1) * V\_masked.unsqueeze(-2)  # [B, H, L, 2F, d]
+        KV\_cumsum = torch.cumsum(KV, dim=2)
+        num = torch.matmul(phi\_Q.unsqueeze(-2), KV\_cumsum).squeeze(-2)
+        Z = torch.cumsum(phi\_K, dim=2)
+        den = (phi\_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
         return (num / den).to(Q.dtype)
     else:
-        KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
-        Z = phi_K.sum(dim=-2, keepdim=True)
-        num = torch.matmul(phi_Q, KV)
-        den = torch.matmul(phi_Q, Z.transpose(-2, -1)) + 1e-5
+        KV = torch.matmul(phi\_K.transpose(-2, -1), V\_masked)
+        Z = phi\_K.sum(dim=-2, keepdim=True)
+        num = torch.matmul(phi\_Q, KV)
+        den = torch.matmul(phi\_Q, Z.transpose(-2, -1)) + 1e-5
         return (num / den).to(Q.dtype)
 \end{lstlisting}
 
@@ -1347,7 +2139,7 @@ def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     raise e  # $\leftarrow$ Re-raises!
 \end{lstlisting}
 
@@ -1393,22 +2185,23 @@ model = ...
 
 \begin{lstlisting}
 summary = x.mean(dim=1)
-gates = F.softmax(model.gate_proj(summary), dim=-1)
+gates = F.softmax(model.gate\_proj(summary), dim=-1)
 print(f"Gate: {gates.mean(dim=0)}")
 \end{lstlisting}
 
 \subsubsection{Check RFF Memory}
 
 \begin{lstlisting}
-def measure_rff_memory(B, H, L, F, d):
+def measure\_rff\_memory(B, H, L, F, d):
     return B * H * L * 2 * F * d * 4 / 1e6  # MB
-print(measure_rff_memory(8, 12, 128, 64, 64))  # ~50 MB
+print(measure\_rff\_memory(8, 12, 128, 64, 64))  # ~50 MB
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1568,10 +2361,10 @@ Remove global & 0.85\% & 0.85 \\
 \subsection{C.10 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_nasc.py --models distilbert,roberta,gpt2
+python run\_all\_4\_nasc.py --models distilbert,roberta,gpt2
 
 for w in 16 32 64 128; do
-    python run_all_4_nasc.py --window_size $w --output_suffix w$w
+    python run\_all\_4\_nasc.py --window\_size $w --output_suffix w$w
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1579,6 +2372,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1649,7 +2443,7 @@ Unlike other modules, \texttt{inject\_nasc} raises on failure. This breaks the
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     return None  # instead of raise
 \end{lstlisting}
 
@@ -1695,6 +2489,7 @@ Vectorize sparse loop & Not implemented \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1747,9 +2542,10 @@ prevent silent failures in deployed systems.
 
 ---
 
-##   `build.py` and `apply_vars.py`
+##   `build.py` and `apply\_vars.py`
 
 Same as previous templates.
 
 ---
 \end{lstlisting}
+

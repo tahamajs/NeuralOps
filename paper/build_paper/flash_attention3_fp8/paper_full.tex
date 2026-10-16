@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{FlashAttention-3 FP8: Low-Precision 8-bit Attention with Hardware-Aware Fallback}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -104,10 +106,11 @@ $\text{fp8}$ & 8-bit float format (e4m3fn or e5m2) & 3.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 
 
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -213,6 +216,7 @@ PyTorch SDPA & No & -- & Manual & Manual & Manual & Manual \\
 
 
 
+% --- Section: 03_background.tex ---
 
 \section{Background}
 
@@ -232,8 +236,8 @@ Memory for $QK^\top$ is $\mathcal{O}(BL^2)$ -- the target of reduction.
 GQA uses $H_{kv} < H$ to reduce KV-cache size:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d}, \qquad
-H_{\text{repeat}} = H / H_{kv}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d}, \qquad
+H\_{\text{repeat}} = H / H\_{kv}
 \tag{3.2}
 \]
 
@@ -245,7 +249,7 @@ FlashAttention partitions $Q, K, V$ into blocks that fit in SRAM ($\sim$ 100 KB
 on A100, $\sim$ 200 KB on H100). The inner loop:
 
 \[
-O_{ij} \leftarrow \text{softmax}(Q_i K_j^\top / \sqrt{d}) V_j
+O\_{ij} \leftarrow \text{softmax}(Q\_i K\_j^\top / \sqrt{d}) V\_j
 \tag{3.3}
 \]
 
@@ -339,6 +343,7 @@ $f_{p8}$ & FP8 format (e4m3 or e5m2) \\
 
 
 
+% --- Section: 04_method.tex ---
 
 \section{Method}
 
@@ -374,13 +379,13 @@ Our implementation wraps FlashAttention-3 with three layers of safety:
                              |
                               
               +-----------------------------+
-              |  FLASH_ATTN_AVAILABLE ?     |
+              |  FLASH\_ATTN\_AVAILABLE ?     |
               +------+--------------+-------+
                      | No           | Yes
                      |              |
                      |               
                      |    +-----------------+
-                     |    | self.use_fp8 ?  |
+                     |    | self.use\_fp8 ?  |
                      |    +--+---------+----+
                      |       | No      | Yes
                      |       |         |
@@ -407,14 +412,14 @@ Our implementation wraps FlashAttention-3 with three layers of safety:
 
 \begin{lstlisting}
 try:
-    from flash_attn_interface import flash_attn_func
-    FLASH_ATTN_AVAILABLE = True
+    from flash\_attn\_interface import flash\_attn\_func
+    FLASH\_ATTN\_AVAILABLE = True
 except ImportError:
     try:
-        from flash_attn import flash_attn_func
-        FLASH_ATTN_AVAILABLE = True
+        from flash\_attn import flash\_attn\_func
+        FLASH\_ATTN\_AVAILABLE = True
     except ImportError:
-        FLASH_ATTN_AVAILABLE = False
+        FLASH\_ATTN\_AVAILABLE = False
 \end{lstlisting}
 
 The first import path is used by the Hopper-optimized \texttt{flash-attn-3} package; 
@@ -425,11 +430,11 @@ the second by the community \texttt{flash-attn} package.
 At each forward, we check four conditions:
 
 \begin{lstlisting}
-use_fp8_path = (
-    FLASH_ATTN_AVAILABLE
-    and self.use_fp8
-    and q.is_cuda
-    and hasattr(torch, "float8_e4m3fn")
+use\_fp8\_path = (
+    FLASH\_ATTN\_AVAILABLE
+    and self.use\_fp8
+    and q.is\_cuda
+    and hasattr(torch, "float8\_e4m3fn")
 )
 \end{lstlisting}
 
@@ -442,10 +447,10 @@ catch it, falling back to SDPA.
 When the FP8 path is taken:
 
 \begin{lstlisting}
-q_fa = q.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-k_fa = k.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-v_fa = v.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
+q\_fa = q.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+k\_fa = k.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+v\_fa = v.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
 \end{lstlisting}
 
 \textbf{Cast order.} Q and K are cast to e4m3 (higher precision for products); 
@@ -460,20 +465,20 @@ models with large activations.
 If the FP8 path is not taken:
 
 \begin{lstlisting}
-if causal_flag and attn_mask is None:
-    out_sdpa = F.scaled_dot_product_attention(
-        q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p
+if causal\_flag and attn\_mask is None:
+    out\_sdpa = F.scaled\_dot\_product\_attention(
+        q, k, v, attn\_mask=None, is\_causal=True, dropout\_p=self.dropout.p
     )
 else:
     # Build causal mask, add padding mask
-    out_sdpa = F.scaled_dot_product_attention(
-        q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
+    out\_sdpa = F.scaled\_dot\_product\_attention(
+        q, k, v, attn\_mask=attn\_mask, is\_causal=False, dropout\_p=self.dropout.p
     )
 \end{lstlisting}
 
 PyTorch's SDPA dispatches internally to:
 \begin{itemize}
-\item FlashAttention-2 (if installed and CUDA >= 11.8)
+\item FlashAttention-2 (if installed and CUDA \textgreater{}= 11.8)
 \item Memory-efficient attention
 \item Native math
 
@@ -486,12 +491,12 @@ families:
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    w = src.c_attn.weight.data
-    if src.c_attn.__class__.__name__ == "Conv1D":
+if hasattr(src, "c\_attn"):
+    w = src.c\_attn.weight.data
+    if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
         w = w.t()  # (in, out) $\to$ (out, in)
-    q_w, k_w, v_w = w.chunk(3, dim=0)
-    extracted["q"] = (q_w, ...)
+    q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+    extracted["q"] = (q\_w, ...)
     ...
 \end{lstlisting}
 
@@ -499,21 +504,21 @@ if hasattr(src, "c_attn"):
 
 \begin{lstlisting}
 elif hasattr(src, "self") and hasattr(src.self, "query"):
-    q_w = src.self.query.weight.data
-    k_w = src.self.key.weight.data
-    v_w = src.self.value.weight.data
+    q\_w = src.self.query.weight.data
+    k\_w = src.self.key.weight.data
+    v\_w = src.self.value.weight.data
     if hasattr(src.output, "dense"):
-        o_w = src.output.dense.weight.data
+        o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 else:
-    q_w = src.q_lin.weight.data
-    k_w = src.k_lin.weight.data
-    v_w = src.v_lin.weight.data
-    o_w = src.out_lin.weight.data
+    q\_w = src.q\_lin.weight.data
+    k\_w = src.k\_lin.weight.data
+    v\_w = src.v\_lin.weight.data
+    o\_w = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -548,15 +553,15 @@ Each projection is wrapped in \texttt{LoRALinear}:
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, ..., lora_rank=16):
+    def \_\_init\_\_(self, in\_features, out\_features, ..., lora\_rank=16):
         self.weight = nn.Parameter(...)      # frozen after copy
-        self.lora_A = nn.Parameter(...)      # trainable
-        self.lora_B = nn.Parameter(...)      # trainable, initialized to 0
+        self.lora\_A = nn.Parameter(...)      # trainable
+        self.lora\_B = nn.Parameter(...)      # trainable, initialized to 0
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         return out
 \end{lstlisting}
 
@@ -588,7 +593,7 @@ Our implementation \textbf{does not reduce parameter count}. The LoRA adapters
 add:
 
 \[
-\Delta p = r \cdot (d_\text{in} + d_\text{out})
+\Delta p = r \cdot (d\_\text{in} + d\_\text{out})
 \tag{4.1}
 \]
 
@@ -603,17 +608,17 @@ per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
 
 \textbf{Algorithm 1:} FlashAttention3FP8 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      With LoRA
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V      With LoRA
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 3: if GQA:  (K, V) $\leftarrow$ repeat_kv(K, V)
+ 3: if GQA:  (K, V) $\leftarrow$ repeat\_kv(K, V)
  4:
- 5: if FLASH_ATTN_AVAILABLE AND use_fp8 AND q.is_cuda AND has_float8:
- 6:     q8, k8, v8 $\leftarrow$ cast_to_fp8(Q, K, V)
+ 5: if FLASH\_ATTN\_AVAILABLE AND use\_fp8 AND q.is\_cuda AND has\_float8:
+ 6:     q8, k8, v8 $\leftarrow$ cast\_to\_fp8(Q, K, V)
  7:     try:
- 8:         out $\leftarrow$ flash_attn_func(q8, k8, v8, causal)
+ 8:         out $\leftarrow$ flash\_attn\_func(q8, k8, v8, causal)
  9:     except:
 10:         out $\leftarrow$ NULL    Fallback
 11: else:
@@ -622,13 +627,14 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 14: if out is NULL:
 15:     out $\leftarrow$ SDPA(Q, K, V, mask, causal)
 16:
-17: if not is_nested_encoder:
-18:     out $\leftarrow$ out_proj(out)
+17: if not is\_nested\_encoder:
+18:     out $\leftarrow$ out\_proj(out)
 19: return out
 \end{lstlisting}
 
 
 
+% --- Section: 05_architecture.tex ---
 
 \section{Architecture Integration}
 
@@ -657,20 +663,20 @@ HuggingFace \texttt{Conv1D} stores weight as \texttt{(in\_features, out\_feature
 
 \begin{lstlisting}
 class Conv1D(nn.Module):
-    def __init__(self, nf, nx):
+    def \_\_init\_\_(self, nf, nx):
         self.weight = nn.Parameter(torch.empty(nx, nf))
-        # nx = in_features, nf = out_features
+        # nx = in\_features, nf = out\_features
 \end{lstlisting}
 
 Our extraction:
 
 \begin{lstlisting}
-if src.c_attn.__class__.__name__ == "Conv1D":
-    w = src.c_attn.weight.data.t()  # $\to$ (nf, nx)
+if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
+    w = src.c\_attn.weight.data.t()  # $\to$ (nf, nx)
 \end{lstlisting}
 
 We detect Conv1D via class name \textbf{or} the shape heuristic 
-\texttt{w.shape[0] < w.shape[1]} (which holds for Conv1D with $n_f > n_x$ but 
+\texttt{w.shape[0] \textless{} w.shape[1]} (which holds for Conv1D with $n_f > n_x$ but 
 not for square matrices).
 
 \subsubsection{Nested vs Flat Detection}
@@ -678,17 +684,17 @@ not for square matrices).
 We use the following logic in \texttt{copy\_weights}:
 
 \begin{lstlisting}
-if hasattr(src, "out_lin"):
-    is_nested = False       # DistilBERT
+if hasattr(src, "out\_lin"):
+    is\_nested = False       # DistilBERT
 elif (hasattr(src, "self") and hasattr(src.self, "query")
       and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True        # RoBERTa
-elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
-    is_nested = True
-elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower():
-    is_nested = True
+    is\_nested = True        # RoBERTa
+elif cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
+    is\_nested = True
+elif cls\_name.endswith("SelfAttention") and "distil" not in cls\_name.lower():
+    is\_nested = True
 else:
-    is_nested = False
+    is\_nested = False
 \end{lstlisting}
 
 \textbf{Key insight:} check \texttt{out\_lin} \textbf{first}. DistilBERT's 
@@ -701,20 +707,20 @@ For Qwen3.5 with $H_{kv} = 2 < H = 8$:
 
 \begin{lstlisting}
 # In forward:
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 The \texttt{repeat\_kv} function expands via broadcast and reshape:
 
 \begin{lstlisting}
-def repeat_kv(hidden_states, n_rep):
-    if n_rep == 1:
-        return hidden_states
-    B, H_kv, L, D = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(B, H_kv, n_rep, L, D)
-    return hidden_states.reshape(B, H_kv * n_rep, L, D)
+def repeat\_kv(hidden\_states, n\_rep):
+    if n\_rep == 1:
+        return hidden\_states
+    B, H\_kv, L, D = hidden\_states.shape
+    hidden\_states = hidden\_states[:, :, None, :, :].expand(B, H\_kv, n\_rep, L, D)
+    return hidden\_states.reshape(B, H\_kv * n\_rep, L, D)
 \end{lstlisting}
 
 \subsection{RoPE Support}
@@ -723,12 +729,12 @@ We support partial RoPE, where the rotary dimension is smaller than
 \texttt{head\_dim}:
 
 \begin{lstlisting}
-def apply_rotary_pos_emb(q, k, cos, sin):
-    rotary_dim = cos.shape[-1]
-    if rotary_dim < q.shape[-1]:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        q_rot_embed = q_rot * cos + rotate_half(q_rot) * sin
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+def apply\_rotary\_pos\_emb(q, k, cos, sin):
+    rotary\_dim = cos.shape[-1]
+    if rotary\_dim \textless{} q.shape[-1]:
+        q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+        q\_rot\_embed = q\_rot * cos + rotate\_half(q\_rot) * sin
+        q = torch.cat([q\_rot\_embed, q\_pass], dim=-1)
     ...
 \end{lstlisting}
 
@@ -748,18 +754,18 @@ cross-attention.
 
 \textbf{Algorithm 2:} Inject FlashAttention3FP8 into a layer
 \begin{lstlisting}
-Input:  layer   (transformer block), config, old_attn
+Input:  layer   (transformer block), config, old\_attn
 Output: new attention module in  
 
-1: new $\leftarrow$ FlashAttention3FP8(config, old_attn=old_attn)
-2: if new.copy_weights failed: return None
+1: new $\leftarrow$ FlashAttention3FP8(config, old\_attn=old\_attn)
+2: if new.copy\_weights failed: return None
 3: if   has .attention.self:
 4:      .attention.self $\leftarrow$ new
-5:     new.is_nested_encoder $\leftarrow$ True
+5:     new.is\_nested\_encoder $\leftarrow$ True
 6: elif   has .attention:
 7:      .attention $\leftarrow$ new
-8: elif   has .self_attn:
-9:      .self_attn $\leftarrow$ new
+8: elif   has .self\_attn:
+9:      .self\_attn $\leftarrow$ new
 10: return new
 \end{lstlisting}
 
@@ -797,8 +803,8 @@ twice (once inside our module, once by the outer block):
 
 \begin{lstlisting}
 # WRONG for RoBERTa
-if not self.is_nested_encoder:
-    out = self.out_proj(out)  # would double-project
+if not self.is\_nested\_encoder:
+    out = self.out\_proj(out)  # would double-project
 \end{lstlisting}
 
 We verify \texttt{is\_nested\_encoder} by checking \texttt{hasattr(src, "out\_lin")}.
@@ -809,7 +815,7 @@ If we forget to transpose Conv1D weights, Q/K/V shapes mismatch:
 
 \begin{lstlisting}
 # CORRECT
-w = src.c_attn.weight.data.t()
+w = src.c\_attn.weight.data.t()
 \end{lstlisting}
 
 \subsubsection{GQA Mismatch}
@@ -821,8 +827,8 @@ or silently produce wrong results. We detect the correct value from
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8")
-@ATTENTION_REGISTRY.register("flash_attention3_fp8")
+@ATTENTION\_REGISTRY.register("flash3\_fp8")
+@ATTENTION\_REGISTRY.register("flash\_attention3\_fp8")
 class FlashAttention3FP8(BaseAttention):
     ...
 \end{lstlisting}
@@ -852,6 +858,7 @@ This is the same pipeline as other modules in our framework.
 
 
 
+% --- Section: 06_setup.tex ---
 
 \section{Experimental Setup}
 
@@ -969,7 +976,7 @@ Dropout & 0.1 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1016,10 +1023,10 @@ This is documented as a \textbf{key limitation} (Section 10).
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_flash3_fp8.py \
+python run\_all\_4\_flash3\_fp8.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 Expected runtime: ~PyTorch 2.0 minutes on RTX 4070.
@@ -1038,6 +1045,7 @@ Single seed (42). No multi-seed runs.
 \end{itemize}
 
 
+% --- Section: 07_results.tex ---
 
 \section{Results}
 
@@ -1233,6 +1241,7 @@ hamming & 79.13\% & 50.92\% & 71.22\% & +0.88\% \\
 \end{itemize}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -1465,6 +1474,7 @@ We state these as \textbf{explicit limitations}.
 \end{enumerate}
 
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -1592,6 +1602,7 @@ Portability & Limited & Full \\
 \end{enumerate}
 
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -1630,7 +1641,7 @@ is untested.
 \subsection{Model Coverage}
 
 Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 was not completed. No testing on 
-LLaMA, Mistral, or >1B models.
+LLaMA, Mistral, or \textgreater{}1B models.
 
 \subsection{No Cross-Attention}
 
@@ -1695,6 +1706,7 @@ This is \textbf{not}:
 \end{itemize}
 
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1781,14 +1793,15 @@ None.
 
 
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1798,15 +1811,15 @@ pip install -r requirements.txt
 
 \begin{lstlisting}
 import torch
-print("CUDA:", torch.cuda.is_available())
-print("GPU:", torch.cuda.get_device_name(0))
-print("Capability:", torch.cuda.get_device_capability(0))
-print("Float8 dtype:", hasattr(torch, "float8_e4m3fn"))
+print("CUDA:", torch.cuda.is\_available())
+print("GPU:", torch.cuda.get\_device\_name(0))
+print("Capability:", torch.cuda.get\_device\_capability(0))
+print("Float8 dtype:", hasattr(torch, "float8\_e4m3fn"))
 try:
-    import flash_attn
-    print("flash_attn:", flash_attn.__version__)
+    import flash\_attn
+    print("flash\_attn:", flash\_attn.\_\_version\_\_)
 except ImportError:
-    print("flash_attn: NOT INSTALLED")
+    print("flash\_attn: NOT INSTALLED")
 \end{lstlisting}
 
 Expected on RTX 4070 Laptop:
@@ -1816,26 +1829,26 @@ CUDA: True
 GPU: NVIDIA GeForce RTX 4070 Laptop GPU
 Capability: (8, 9)
 Float8 dtype: True
-flash_attn: NOT INSTALLED  (or a version without FP8 support)
+flash\_attn: NOT INSTALLED  (or a version without FP8 support)
 \end{lstlisting}
 
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_flash3_fp8.py \
+python run\_all\_4\_flash3\_fp8.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-flash3_fp8",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-flash3\_fp8",
         filename="weights.pt",
     )
     print(f"Downloaded {model}")
@@ -1846,14 +1859,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.2 (Main Results)}
 
 \begin{lstlisting}
-python run_all_4_flash3_fp8.py --models distilbert,roberta,gpt2
+python run\_all\_4\_flash3\_fp8.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (use\_fp8 Ablation)}
 
 \begin{lstlisting}
-python run_all_4_flash3_fp8.py --use_fp8 true  --output_suffix fp8on
-python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix fp8off
+python run\_all\_4\_flash3\_fp8.py --use\_fp8 true  --output\_suffix fp8on
+python run\_all\_4\_flash3\_fp8.py --use\_fp8 false --output\_suffix fp8off
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -1863,8 +1876,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -1906,18 +1919,18 @@ PyTorch & 2.1+ \\
 
 \begin{itemize}
 \item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}.
-\item CUDA: FP8 requires CUDA >= 11.8.
+\item CUDA: FP8 requires CUDA \textgreater{}= 11.8.
 \item Driver: consumer Ada GPUs may not expose FP8 via driver.
 
 \end{itemize}
 \subsection{Reproducibility Checklist}
 
 \begin{itemize}
-\item [ ] Hardware printed via \texttt{torch.cuda.get\_device\_name(0)}
-\item [ ] \texttt{hasattr(torch, "float8\_e4m3fn")} result logged
-\item [ ] \texttt{flash\_attn} import attempt logged
-\item [ ] FP8 path taken or not taken logged
-\item [ ] SDPA backend logged
+\item [x] Hardware printed via \texttt{torch.cuda.get\_device\_name(0)}
+\item [x] \texttt{hasattr(torch, "float8\_e4m3fn")} result logged
+\item [x] \texttt{flash\_attn} import attempt logged
+\item [x] FP8 path taken or not taken logged
+\item [x] SDPA backend logged
 
 \end{itemize}
 \subsection{Data Availability}
@@ -1931,6 +1944,7 @@ PyTorch & 2.1+ \\
 \end{itemize}
 
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -2096,6 +2110,7 @@ PyTorch & 2.1+ \\
 
 
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -2104,7 +2119,7 @@ PyTorch & 2.1+ \\
 The attention output for query block $Q_i \in \mathbb{R}^{S \times d}$ is:
 
 \[
-O_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d}}\right) V
+O\_i = \text{softmax}\!\left(\frac{Q\_i K^\top}{\sqrt{d}}\right) V
 \tag{A.1}
 \]
 
@@ -2113,11 +2128,11 @@ Tiling partitions $K$ into blocks $\{K_j\}$. The streaming softmax (Milakov
 
 \[
 \begin{aligned}
-m_i^{(j)} &= \max(m_i^{(j-1)}, \text{rowmax}(Q_i K_j^\top / \sqrt{d})) \\
-\ell_i^{(j)} &= e^{m_i^{(j-1)} - m_i^{(j)}} \ell_i^{(j-1)} 
-              + \text{rowsum}(e^{Q_i K_j^\top / \sqrt{d} - m_i^{(j)}}) \\
-O_i^{(j)} &= e^{m_i^{(j-1)} - m_i^{(j)}} O_i^{(j-1)} 
-          + e^{Q_i K_j^\top / \sqrt{d} - m_i^{(j)}} V_j
+m\_i^{(j)} &= \max(m\_i^{(j-1)}, \text{rowmax}(Q\_i K\_j^\top / \sqrt{d})) \\
+\ell\_i^{(j)} &= e^{m\_i^{(j-1)} - m\_i^{(j)}} \ell\_i^{(j-1)} 
+              + \text{rowsum}(e^{Q\_i K\_j^\top / \sqrt{d} - m\_i^{(j)}}) \\
+O\_i^{(j)} &= e^{m\_i^{(j-1)} - m\_i^{(j)}} O\_i^{(j-1)} 
+          + e^{Q\_i K\_j^\top / \sqrt{d} - m\_i^{(j)}} V\_j
 \end{aligned}
 \tag{A.2}
 \]
@@ -2142,7 +2157,7 @@ In practice, for zero-mean activations, RMS error is ~0.5\%.
 FP16 and FP8. Then:
 
 \[
-\|O^\text{fp16} - O^\text{fp8}\|_F \leq \epsilon (1 + \|V\|_F) \|Q\|_F \|K\|_F
+\|O^\text{fp16} - O^\text{fp8}\|\_F \leq \epsilon (1 + \|V\|\_F) \|Q\|\_F \|K\|\_F
 \tag{A.4}
 \]
 
@@ -2168,7 +2183,7 @@ base model. This is critical for recovery stability.
 The KV expansion is:
 
 \[
-K_\text{expanded}[b, h, l, d] = K[b, h // r, l, d], \quad r = H / H_{kv}
+K\_\text{expanded}[b, h, l, d] = K[b, h // r, l, d], \quad r = H / H\_{kv}
 \tag{A.5}
 \]
 
@@ -2176,6 +2191,7 @@ This duplicates KV heads $r$ times to match Q head count.
 
 
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -2183,14 +2199,14 @@ This duplicates KV heads $r$ times to match Q head count.
 
 \begin{lstlisting}
 try:
-    from flash_attn_interface import flash_attn_func
-    FLASH_ATTN_AVAILABLE = True
+    from flash\_attn\_interface import flash\_attn\_func
+    FLASH\_ATTN\_AVAILABLE = True
 except ImportError:
     try:
-        from flash_attn import flash_attn_func
-        FLASH_ATTN_AVAILABLE = True
+        from flash\_attn import flash\_attn\_func
+        FLASH\_ATTN\_AVAILABLE = True
     except ImportError:
-        FLASH_ATTN_AVAILABLE = False
+        FLASH\_ATTN\_AVAILABLE = False
 \end{lstlisting}
 
 Two import paths: \texttt{flash\_attn\_interface} (Hopper-optimized) and \texttt{flash\_attn} 
@@ -2199,13 +2215,13 @@ Two import paths: \texttt{flash\_attn\_interface} (Hopper-optimized) and \texttt
 \subsection{B.2 FP8 Forward Path}
 
 \begin{lstlisting}
-if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn"):
+if FLASH\_ATTN\_AVAILABLE and self.use\_fp8 and q.is\_cuda and hasattr(torch, "float8\_e4m3fn"):
     try:
-        q_fa = q.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        k_fa = k.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        v_fa = v.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
-        out = out.contiguous().view(B, L, self.all_head_size)
+        q\_fa = q.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        k\_fa = k.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        v\_fa = v.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
+        out = out.contiguous().view(B, L, self.all\_head\_size)
     except Exception:
         out = None
 \end{lstlisting}
@@ -2214,34 +2230,34 @@ if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float
 
 \begin{lstlisting}
 if out is None:
-    if causal_flag and attn_mask is None:
-        out_sdpa = F.scaled_dot_product_attention(
-            q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p
+    if causal\_flag and attn\_mask is None:
+        out\_sdpa = F.scaled\_dot\_product\_attention(
+            q, k, v, attn\_mask=None, is\_causal=True, dropout\_p=self.dropout.p
         )
     else:
         # Combine causal and padding
-        if causal_flag:
-            causal_m = torch.triu(
-                torch.full((L, kv_len), float("-inf"), device=device),
+        if causal\_flag:
+            causal\_m = torch.triu(
+                torch.full((L, kv\_len), float("-inf"), device=device),
                 diagonal=1
             )
-            attn_mask = (attn_mask + causal_m.unsqueeze(0).unsqueeze(0)) \
-                        if attn_mask is not None else causal_m.unsqueeze(0).unsqueeze(0)
-        out_sdpa = F.scaled_dot_product_attention(
-            q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
+            attn\_mask = (attn\_mask + causal\_m.unsqueeze(0).unsqueeze(0)) \
+                        if attn\_mask is not None else causal\_m.unsqueeze(0).unsqueeze(0)
+        out\_sdpa = F.scaled\_dot\_product\_attention(
+            q, k, v, attn\_mask=attn\_mask, is\_causal=False, dropout\_p=self.dropout.p
         )
-    out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    out = out\_sdpa.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
 \end{lstlisting}
 
 \subsection{B.4 Weight Copy (GPT-2)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    w = src.c_attn.weight.data.clone()
-    if src.c_attn.__class__.__name__ == "Conv1D":
+if hasattr(src, "c\_attn"):
+    w = src.c\_attn.weight.data.clone()
+    if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
         w = w.t()
-    q_w, k_w, v_w = w.chunk(3, dim=0)
-    extracted["q"] = (q_w, ...)
+    q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+    extracted["q"] = (q\_w, ...)
 \end{lstlisting}
 
 \subsection{B.5 Weight Copy (RoBERTa)}
@@ -2259,23 +2275,23 @@ elif hasattr(src, "self") and hasattr(src.self, "query"):
 
 \begin{lstlisting}
 else:
-    extracted["q"] = (src.q_lin.weight.data, ...)
-    extracted["k"] = (src.k_lin.weight.data, ...)
-    extracted["v"] = (src.v_lin.weight.data, ...)
-    extracted["o"] = (src.out_lin.weight.data, ...)
+    extracted["q"] = (src.q\_lin.weight.data, ...)
+    extracted["k"] = (src.k\_lin.weight.data, ...)
+    extracted["v"] = (src.v\_lin.weight.data, ...)
+    extracted["o"] = (src.out\_lin.weight.data, ...)
 \end{lstlisting}
 
 \subsection{B.7 Nested vs Flat Detection}
 
 \begin{lstlisting}
-if hasattr(src, "out_lin"):        # DistilBERT
-    is_nested = False
+if hasattr(src, "out\_lin"):        # DistilBERT
+    is\_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
-    is_nested = True
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention"):
+    is\_nested = True
 else:
-    is_nested = False
+    is\_nested = False
 \end{lstlisting}
 
 \textbf{Critical:} Check \texttt{out\_lin} first. DistilBERT's \texttt{MultiHeadSelfAttention} 
@@ -2289,10 +2305,10 @@ Without detection:
 
 \begin{lstlisting}
 # WRONG -- crashes on RTX 4070
-out = flash_attn_func(q.to(torch.float8_e4m3fn), ...)
+out = flash\_attn\_func(q.to(torch.float8\_e4m3fn), ...)
 
 # CORRECT
-if FLASH_ATTN_AVAILABLE and hasattr(torch, "float8_e4m3fn"):
+if FLASH\_ATTN\_AVAILABLE and hasattr(torch, "float8\_e4m3fn"):
     ...
 \end{lstlisting}
 
@@ -2300,22 +2316,22 @@ if FLASH_ATTN_AVAILABLE and hasattr(torch, "float8_e4m3fn"):
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight.data  # (768, 2304) for GPT-2
-q_w, k_w, v_w = w.chunk(3, dim=0)  # wrong shapes
+w = src.c\_attn.weight.data  # (768, 2304) for GPT-2
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)  # wrong shapes
 
 # CORRECT
-w = src.c_attn.weight.data.t()  # (2304, 768)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.data.t()  # (2304, 768)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{B.8.3 Missing causal\_flag}
 
 \begin{lstlisting}
 # WRONG -- applies causal to cross-attention
-causal_flag = self.is_decoder
+causal\_flag = self.is\_decoder
 
 # CORRECT
-causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
+causal\_flag = self.is\_decoder and not is\_cross\_attention and L == kv\_len
 \end{lstlisting}
 
 \subsection{B.9 Diagnostics}
@@ -2323,20 +2339,20 @@ causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
 \begin{lstlisting}
 # Print hardware capabilities
 import torch
-print("GPU:", torch.cuda.get_device_name(0))
-print("Capability:", torch.cuda.get_device_capability(0))
-print("Float8 exists:", hasattr(torch, "float8_e4m3fn"))
-print("flash_attn available:", FLASH_ATTN_AVAILABLE)
+print("GPU:", torch.cuda.get\_device\_name(0))
+print("Capability:", torch.cuda.get\_device\_capability(0))
+print("Float8 exists:", hasattr(torch, "float8\_e4m3fn"))
+print("flash\_attn available:", FLASH\_ATTN\_AVAILABLE)
 
 # In forward, add:
-logger.info("FP8 path taken: %s", out is not None)
+logger.info("FP8 path taken: \%s", out is not None)
 \end{lstlisting}
 
 \subsection{B.10 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8")
-@ATTENTION_REGISTRY.register("flash_attention3_fp8")
+@ATTENTION\_REGISTRY.register("flash3\_fp8")
+@ATTENTION\_REGISTRY.register("flash\_attention3\_fp8")
 class FlashAttention3FP8(BaseAttention):
     ...
 \end{lstlisting}
@@ -2344,13 +2360,13 @@ class FlashAttention3FP8(BaseAttention):
 \subsection{B.11 Injection Factory}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8_inject")
-def inject_flash3_fp8(layer, model_config, comp_config, old_attn=None, **kwargs):
-    src_attn = old_attn or extract_attention(layer)
+@ATTENTION\_REGISTRY.register("flash3\_fp8\_inject")
+def inject\_flash3\_fp8(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
+    src\_attn = old\_attn or extract\_attention(layer)
     try:
-        new_attn = FlashAttention3FP8(config=model_config, old_attn=src_attn)
-        replace_attention(layer, new_attn)
-        return new_attn
+        new\_attn = FlashAttention3FP8(config=model\_config, old\_attn=src\_attn)
+        replace\_attention(layer, new\_attn)
+        return new\_attn
     except Exception as e:
         logger.error(f"Injection failed: {e}")
         return None
@@ -2358,6 +2374,7 @@ def inject_flash3_fp8(layer, model_config, comp_config, old_attn=None, **kwargs)
 
 
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -2512,10 +2529,10 @@ Step  Loss
 {
   "distilbert": {
     "accuracy": 86.4,
-    "params_after": 66.4M,
-    "fp8_path_taken": false,
-    "sdpa_backend": "flash",
-    "peak_vram_mb": 380 MB
+    "params\_after": 66.4M,
+    "fp8\_path\_taken": false,
+    "sdpa\_backend": "flash",
+    "peak\_vram\_mb": 380 MB
   },
   ...
 }
@@ -2525,10 +2542,10 @@ Step  Loss
 
 \begin{lstlisting}
 # Full run
-python run_all_4_flash3_fp8.py --models distilbert,roberta,gpt2
+python run\_all\_4\_flash3\_fp8.py --models distilbert,roberta,gpt2
 
 # Ablations
-python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix nofp8
+python run\_all\_4\_flash3\_fp8.py --use\_fp8 false --output\_suffix nofp8
 \end{lstlisting}
 
 \subsection{C.9 Hardware Comparison Table}
@@ -2552,6 +2569,7 @@ A100 & 8.0 &  \\
 
 
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -2586,7 +2604,7 @@ Cast Q/K/V manually to fp8 & SDPA does not accept fp8 inputs \\
 We tried casting Q/K/V to FP8 before SDPA:
 
 \begin{lstlisting}
-q8 = q.to(torch.float8_e4m3fn).to(q.dtype)
+q8 = q.to(torch.float8\_e4m3fn).to(q.dtype)
 # Then call SDPA with the cast-back values
 \end{lstlisting}
 
@@ -2655,6 +2673,7 @@ We do not support \texttt{encoder\_hidden\_states}. Attempting to pass it raises
 \end{enumerate}
 
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2712,4 +2731,6 @@ that supports it. This may:
 
 \end{itemize}
 We do not claim to solve these issues; we simply document the trade-offs.
+
+
 

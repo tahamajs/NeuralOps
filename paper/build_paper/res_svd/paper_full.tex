@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Res-SVD Attention: Spectral Residual Low-Rank Factorization for Attention Projections}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -54,25 +56,25 @@ Given a projection weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \textbf{Step 1.} Compute the top-$r_b$ SVD:
 \[
-W_b = U_b \Sigma_b V_b^\top, \quad r_b \ll \min(d_\text{in}, d_\text{out})
+W\_b = U\_b \Sigma\_b V\_b^\top, \quad r\_b \ll \min(d\_\text{in}, d\_\text{out})
 \tag{1.2}
 \]
 
 \textbf{Step 2.} Compute the residual:
 \[
-R = W - W_b
+R = W - W\_b
 \tag{1.3}
 \]
 
 \textbf{Step 3.} Take the top-$r_r$ SVD of the residual:
 \[
-R \approx U_r \Sigma_r V_r^\top
+R \approx U\_r \Sigma\_r V\_r^\top
 \tag{1.4}
 \]
 
 \textbf{Step 4.} Initialize the LoRA adapter with:
 \[
-B = U_r \Sigma_r^{1/2}, \quad A = \Sigma_r^{1/2} V_r^\top
+B = U\_r \Sigma\_r^{1/2}, \quad A = \Sigma\_r^{1/2} V\_r^\top
 \tag{1.5}
 \]
 
@@ -80,7 +82,7 @@ B = U_r \Sigma_r^{1/2}, \quad A = \Sigma_r^{1/2} V_r^\top
 
 The forward pass computes:
 \[
-y = x (U_b V_b)^\top + \alpha x (B A)^\top + b
+y = x (U\_b V\_b)^\top + \alpha x (B A)^\top + b
 \tag{1.6}
 \]
 
@@ -117,6 +119,7 @@ Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Low-Rank Factorization}
@@ -173,6 +176,655 @@ As shown in Appendix A.1, Res-SVD with $(r_b, r_r)$ gives the same
 approximation as SVD of rank $r_b + r_r$.
 
 \subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Aspect} & \textbf{Pure SVD} & \textbf{LoRA} & \textbf{PiSSA} & \textbf{Res-SVD} \\
+\midrule
+Base frozen & Yes & No (dense) & No & Yes \\
+Base rank & $r$ & Full & Full & $r_b$ \\
+Residual rank & 0 & $r$ & $r$ & $r_r$ \\
+Residual init & N/A & Zero & Principal & \textbf{Spectral} \\
+Compression & Yes & No & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Companion Modules}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Singular Value Decomposition}
+
+For $W \in \mathbb{R}^{m \times n}$:
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+with $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD:} $W_r = U_{:, :r} \Sigma_{:r} V_{:r, :}^\top$, error 
+$\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes weight updates as:
+\[
+\Delta W = \frac{\alpha}{r} B A, \quad A \in \mathbb{R}^{r \times d\_\text{in}}, \quad B \in \mathbb{R}^{d\_\text{out} \times r}
+\tag{3.2}
+\]
+with $B = 0$ at init, so $\Delta W = 0$.
+
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$.
+
+\subsection{Spectral Initialization}
+
+Standard LoRA: $B = 0$. This makes the initial model identical to the 
+base model but with no residual capacity.
+
+\textbf{PiSSA (Meng et al., 2024):} $B, A$ are initialized from the \textbf{top} 
+singular directions of $W$, and the base is set to the residual:
+\[
+W = W\_\text{residual} + B A \quad \text{where} \quad B A = U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
+\tag{3.3}
+\]
+
+\textbf{Res-SVD:} the \textbf{complement} -- base is the top singular directions, 
+residual is the next ones:
+\[
+W = W\_b + R \quad \text{where} \quad W\_b = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top, \quad R = U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
+\tag{3.4}
+\]
+
+\subsection{Two-Level Decomposition}
+
+The key observation: $W_b + R$ with $r_b + r_r$ components is the same as 
+$W_{r_b + r_r}$ (SVD of rank $r_b + r_r$), because SVD is additive on 
+orthogonal directions.
+
+\textbf{Proof sketch.} $U$ has orthogonal columns, so:
+\[
+U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top + U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top = U\_{:, :r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
+\tag{3.5}
+\]
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+Res-SVD Attention replaces each projection with a two-level decomposition. 
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------+
+    |  Original weight W $\in$ R^{m$\times$n}         |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 1: SVD of W                    |
+    |  W = U $\Sigma$ V^T                         |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 2: Base = top r\_b              |
+    |  W\_base = U\_b $\Sigma$\_b V\_b^T              |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 3: Residual = W - W\_base       |
+    |  R = W - W\_base                      |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 4: SVD of R                    |
+    |  R = U\_r $\Sigma$\_r V\_r^T                   |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 5: Init LoRA from residual     |
+    |  B = U\_r $\Sigma$\_r^{1/2}, A = $\Sigma$\_r^{1/2} V\_r^T |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Frozen: U\_b, V\_b                    |
+    |  Trainable: B, A                     |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{Two-Level Decomposition}
+
+\subsubsection{Base SVD}
+
+Given $W \in \mathbb{R}^{m \times n}$:
+\[
+U, \Sigma, V^\top = \text{SVD}(W)
+\tag{4.1}
+\]
+
+Take top $r_b$:
+\[
+W\_b = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top
+\tag{4.2}
+\]
+
+Store $U_b = U_{:, :r_b}$, $V_b = V_{:r_b, :}$ as \textbf{frozen} parameters.
+
+\subsubsection{Residual SVD}
+
+\[
+R = W - W\_b
+\tag{4.3}
+\]
+
+\[
+U\_r, \Sigma\_r, V\_r^\top = \text{SVD}(R)
+\tag{4.4}
+\]
+
+Take top $r_r$:
+\[
+R\_r = U\_{r, :, :r\_r} \Sigma\_{r, :r\_r} V\_{r, :r\_r, :}^\top
+\tag{4.5}
+\]
+
+\subsubsection{LoRA Initialization}
+
+Split $\Sigma_r^{1/2}$ symmetrically:
+\[
+B = U\_{r, :, :r\_r} \Sigma\_{r, :r\_r}^{1/2}, \quad
+A = \Sigma\_{r, :r\_r}^{1/2} V\_{r, :r\_r, :}^\top
+\tag{4.6}
+\]
+
+Store $B \in \mathbb{R}^{m \times r_r}$, $A \in \mathbb{R}^{r_r \times n}$ as 
+\textbf{trainable}.
+
+\subsection{Forward Pass}
+
+\[
+y = x (U\_b V\_b)^\top + \alpha x (B A)^\top + b
+\tag{4.7}
+\]
+
+where $\alpha$ is a scaling factor (default 1.0).
+
+\textbf{Alternative factorization for efficiency:}
+\begin{lstlisting}
+# Base
+h\_b = x @ V\_b.t()              # (B, L, r\_b)
+y\_b = h\_b @ U\_b.t()            # (B, L, m)
+
+# Residual
+h\_r = x @ A.t()                 # (B, L, r\_r)
+y\_r = h\_r @ B.t()               # (B, L, m)
+
+y = y\_b + alpha * y\_r + b
+\end{lstlisting}
+
+\subsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Base SVD & $r_b(m + n + 1)$ \\
+Residual LoRA & $r_r(m + n)$ \\
+Bias & $m$ \\
+\textbf{Total} & $(r_b + r_r)(m + n) + r_b + m$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Baseline:} $mn$.
+
+For $m = n = 768$, $r_b = 16$, $r_r = 4$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Base SVD & $16 \times 1537 = 24,592$ \\
+Residual LoRA & $4 \times 1536 = 6,144$ \\
+Bias & 768 \\
+\textbf{Total} & \textbf{31,504} \\
+Baseline & 589,824 \\
+\textbf{Ratio} & \textbf{~18.7$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Res-SVD factorization
+\begin{lstlisting}
+Input:  Weight W $\in$ R^{m$\times$n}, ranks r\_b, r\_r, scaling $\alpha$
+Output: Base factors (U\_b, V\_b), Residual factors (B, A), bias b
+
+1:  U, $\Sigma$, V^T $\leftarrow$ SVD(W)
+2:  # Base
+3:  U\_b $\leftarrow$ U[:, :r\_b];  $\Sigma$\_b $\leftarrow$ $\Sigma$[:r\_b];  V\_b^T $\leftarrow$ V^T[:r\_b, :]
+4:  W\_base $\leftarrow$ U\_b @ diag($\Sigma$\_b) @ V\_b^T
+5:  # Residual
+6:  R $\leftarrow$ W - W\_base
+7:  U\_r, $\Sigma$\_r, V\_r^T $\leftarrow$ SVD(R)
+8:  # LoRA init
+9:  $\Sigma$\_r\_sqrt $\leftarrow$ sqrt($\Sigma$\_r[:r\_r])
+10: B $\leftarrow$ U\_r[:, :r\_r] * $\Sigma$\_r\_sqrt[None, :]
+11: A $\leftarrow$ $\Sigma$\_r\_sqrt[:, None] * V\_r^T[:r\_r, :]
+12: return (U\_b, V\_b, B, A, b)
+\end{lstlisting}
+
+\textbf{Algorithm 2:} Res-SVD forward pass
+\begin{lstlisting}
+Input:  x $\in$ R^{B$\times$L$\times$n}, base (U\_b, V\_b), residual (B, A), bias b, $\alpha$
+Output: y $\in$ R^{B$\times$L$\times$m}
+
+1: h\_b $\leftarrow$ x @ V\_b^T
+2: y\_b $\leftarrow$ h\_b @ U\_b^T
+3: h\_r $\leftarrow$ x @ A^T
+4: y\_r $\leftarrow$ h\_r @ B^T
+5: y $\leftarrow$ y\_b + $\alpha$   y\_r + b
+6: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Base forward & $\mathcal{O}(L n r_b)$ & $\mathcal{O}(L r_b)$ \\
+Residual forward & $\mathcal{O}(L n r_r)$ & $\mathcal{O}(L r_r)$ \\
+Total & $\mathcal{O}(L n (r_b + r_r))$ & $\mathcal{O}(L (r_b + r_r))$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Baseline:} $\mathcal{O}(L n m)$.
+
+For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$\times$ reduction in projection FLOPs}.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Equivalence to Rank-$(r_b + r_r)$ SVD}
+
+\textbf{Claim.} Res-SVD with $(r_b, r_r)$ is mathematically equivalent to 
+truncated SVD of rank $r_b + r_r$.
+
+\textbf{Proof.} The columns of $U$ are orthogonal, so:
+\[
+U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top + U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top = U\_{:, :r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
+\]
+$\square$
+
+\textbf{Implication:} Res-SVD does not offer a better approximation than 
+rank-$(r_b + r_r)$ SVD. Its advantage is \textbf{PEFT structure} -- the base 
+is frozen and the residual is trainable.
+
+\subsubsection{Optimality at Initialization}
+
+\textbf{Claim.} At initialization, the combined Res-SVD approximation has 
+reconstruction error $\|W - W_b - R_r\|_F = \sqrt{\sum_{i > r_b+r_r} \sigma_i^2}$.
+
+\textbf{Proof.} Direct consequence of 4.7.1. $\square$
+
+\subsubsection{Gradient Flow}
+
+\textbf{Claim.} Only the residual $B, A$ receives gradient during training.
+
+\textbf{Proof.} $U_b, V_b$ have \texttt{requires\_grad = False}. Only $B, A$ are updated. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Proof.} Position-wise projections + causal attention mask. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+Res-SVD uses the same weight extraction as companion modules:
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+extracted["q"] = src.q\_lin.weight
+extracted["k"] = src.k\_lin.weight
+extracted["v"] = src.v\_lin.weight
+extracted["o"] = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = s.query.weight
+extracted["k"] = s.key.weight
+extracted["v"] = s.value.weight
+extracted["o"] = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{Qwen}
+
+Direct extraction from named projections.
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, the output projection is applied externally. 
+Res-SVD handles this via \textbf{identity initialization} of the output projection:
+
+\begin{lstlisting}
+if proj\_key == "o" and self.is\_nested\_encoder:
+    temp\_linear = nn.Linear(target.in\_features, target.out\_features)
+    nn.init.eye\_(temp\_linear.weight)
+    nn.init.zeros\_(temp\_linear.bias)
+    new\_layer = ResSVDLinear.from\_linear(temp\_linear, ...)
+    target.load\_state\_dict(new\_layer.state\_dict())
+\end{lstlisting}
+
+Then in forward:
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    return context  # skip out\_proj
+\end{lstlisting}
+
+\subsection{The `ResSVDLinear` Module}
+
+Located in \texttt{framework/compression\_engine/res\_svd.py}. Structure:
+
+\begin{lstlisting}
+class ResSVDLinear(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, base\_rank, residual\_rank,
+                 scaling=1.0, factorize\_base=True, bias=True):
+        super().\_\_init\_\_()
+        self.V\_base = nn.Parameter(torch.empty(base\_rank, in\_features))
+        self.U\_base = nn.Parameter(torch.empty(out\_features, base\_rank))
+        self.lora\_A = nn.Parameter(torch.empty(residual\_rank, in\_features))
+        self.lora\_B = nn.Parameter(torch.empty(out\_features, residual\_rank))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        self.scaling = scaling
+    
+    @classmethod
+    def from\_linear(cls, linear, base\_rank, residual\_rank, ...):
+        W = linear.weight.data.float()
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
+        
+        # Base
+        U\_b = U[:, :base\_rank]
+        S\_b = S[:base\_rank]
+        Vt\_b = Vt[:base\_rank, :]
+        
+        # Residual
+        W\_b = (U\_b * S\_b) @ Vt\_b
+        R = W - W\_b
+        U\_r, S\_r, Vt\_r = torch.linalg.svd(R, full\_matrices=False)
+        
+        # LoRA init
+        S\_r\_sqrt = torch.sqrt(S\_r[:residual\_rank])
+        B\_init = U\_r[:, :residual\_rank] * S\_r\_sqrt
+        A\_init = S\_r\_sqrt[:, None] * Vt\_r[:residual\_rank, :]
+        
+        layer = cls(...)
+        layer.U\_base.data = U\_b
+        layer.V\_base.data = Vt\_b
+        layer.lora\_B.data = B\_init
+        layer.lora\_A.data = A\_init
+        return layer
+    
+    def forward(self, x):
+        h\_b = F.linear(x, self.V\_base)
+        y\_b = F.linear(h\_b, self.U\_base)
+        h\_r = F.linear(x, self.lora\_A)
+        y\_r = F.linear(h\_r, self.lora\_B)
+        return y\_b + self.scaling * y\_r + self.bias
+\end{lstlisting}
+
+\subsection{Freezing Base Weights}
+
+\begin{lstlisting}
+self.U\_base.requires\_grad = False
+self.V\_base.requires\_grad = False
+# lora\_A, lora\_B remain trainable
+\end{lstlisting}
+
+\subsection{Injection}
+
+The \texttt{inject\_res\_svd} hook:
+\begin{itemize}
+\item Handles whole-model traversal
+\item Finds attention modules
+\item Creates new \texttt{ResSVDAttention} with weight transfer
+\item \textbf{Returns \texttt{None} on failure} (silent fallback)
+
+\end{itemize}
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject\_res\_svd failed at layer \%d: \%s", layer\_idx, e)
+    return None
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Failure} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises RuntimeError \\
+Small Frobenius norm & Raises RuntimeError \\
+Injection error & Returns None (silent) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("res\_svd")
+@ATTENTION\_REGISTRY.register("spectral\_residual\_svd")
+class ResSVDAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+\begin{lstlisting}
+if encoder\_hidden\_states is not None:
+    raise NotImplementedError(...)
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of res\_svd.}
+\label{fig:arch_res-svd}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+\begin{itemize}
+\item Train: 67,349
+\item Validation: 872
+\item Test: 1,821
+\item Majority: 50.92\%
+
+\end{itemize}
+\subsection{Res-SVD Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{base\_rank} $r_b$ & 32 \\
+\texttt{residual\_rank} $r_r$ & 16 \\
+\texttt{scaling} $\alpha$ & 1.0 \\
+\texttt{factorize\_base} & True \\
+\texttt{freeze\_base} & True \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Steps & 50 \\
+Batch size & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Compression:} Base + residual parameter ratio
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB VRAM.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_res\_svd.py \
+    --models distilbert,roberta,gpt2 \
+    --base\_rank 32 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
 
 \begin{table*}[t]
 \centering
@@ -358,12 +1010,13 @@ aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/res_svd_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{res_svd}.}
+\includegraphics[width=0.85\linewidth]{figures/res\_svd\_dissection\_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{res\_svd}.}
 \label{fig:results_res_svd}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Res-SVD Works}
@@ -486,7 +1139,7 @@ LoRA & 0 & 2.3 s ms \\
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_res_svd failed at layer %d: %s", layer_idx, e)
+    logger.error("inject\_res\_svd failed at layer \%d: \%s", layer\_idx, e)
     return None
 \end{lstlisting}
 
@@ -508,6 +1161,7 @@ baseline.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -616,6 +1270,7 @@ A3 & SVD + Fisher & 6$\times$ & 88.5\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Silent Injection Failure}
@@ -681,6 +1336,7 @@ Research-grade. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -754,13 +1410,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 pip install -r requirements.txt
 \end{lstlisting}
 
@@ -783,31 +1440,31 @@ datasets & 1.0.0 \\
 \subsection{Running Res-SVD}
 
 \begin{lstlisting}
-python run_all_4_res_svd.py \
+python run\_all\_4\_res\_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank 32 \
-    --residual_rank 16 \
-    --recovery_steps 50
+    --base\_rank 32 \
+    --residual\_rank 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_res_svd.py --models distilbert,roberta,gpt2
+python run\_all\_4\_res\_svd.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (base rank)}
 \begin{lstlisting}
 for rb in 8 16 32 64; do
-    python run_all_4_res_svd.py --base_rank $rb --output_suffix rb$rb
+    python run\_all\_4\_res\_svd.py --base\_rank $rb --output_suffix rb$rb
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (residual rank)}
 \begin{lstlisting}
 for rr in 0 2 4 8 16; do
-    python run_all_4_res_svd.py --residual_rank $rr --output_suffix rr$rr
+    python run\_all\_4\_res\_svd.py --residual\_rank $rr --output_suffix rr$rr
 done
 \end{lstlisting}
 
@@ -817,7 +1474,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -856,6 +1513,7 @@ GPT-2 & 71.33\% & 2.1$\times$ \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -954,6 +1612,7 @@ GPT-2 & 71.33\% & 2.1$\times$ \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Equivalence to Rank-$(r_b + r_r)$ SVD}
@@ -964,12 +1623,12 @@ truncated SVD of rank $r_b + r_r$.
 \textbf{Proof.} Let $W = U \Sigma V^\top$ be the full SVD. Then:
 
 \[
-W_b = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top
+W\_b = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top
 \tag{A.1}
 \]
 
 \[
-R = W - W_b = U_{:, r_b:} \Sigma_{r_b:} V_{r_b:, :}^\top
+R = W - W\_b = U\_{:, r\_b:} \Sigma\_{r\_b:} V\_{r\_b:, :}^\top
 \tag{A.2}
 \]
 
@@ -977,14 +1636,14 @@ The residual has the same left and right singular vectors as $W$, only
 shifted by $r_b$. Its top-$r_r$ SVD:
 
 \[
-R_{r_r} = U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+R\_{r\_r} = U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{A.3}
 \]
 
 Sum:
 
 \[
-W_b + R_{r_r} = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top + U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top = U_{:, :r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+W\_b + R\_{r\_r} = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top + U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top = U\_{:, :r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{A.4}
 \]
 
@@ -995,7 +1654,7 @@ This is exactly the rank-$(r_b + r_r)$ truncated SVD of $W$. $\square$
 \textbf{Claim.} At initialization:
 
 \[
-\|W - W_b - R_{r_r}\|_F = \sqrt{\sum_{i > r_b + r_r} \sigma_i^2}
+\|W - W\_b - R\_{r\_r}\|\_F = \sqrt{\sum\_{i \textgreater{} r\_b + r\_r} \sigma\_i^2}
 \tag{A.5}
 \]
 
@@ -1040,6 +1699,7 @@ at initialization. They differ in:
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The ResSVDLinear Module}
@@ -1049,12 +1709,12 @@ signature:
 
 \begin{lstlisting}
 ResSVDLinear(
-    in_features: int,
-    out_features: int,
-    base_rank: int,
-    residual_rank: int,
+    in\_features: int,
+    out\_features: int,
+    base\_rank: int,
+    residual\_rank: int,
     scaling: float = 1.0,
-    factorize_base: bool = True,
+    factorize\_base: bool = True,
     bias: bool = True,
 )
 \end{lstlisting}
@@ -1063,30 +1723,30 @@ The \texttt{from\_linear} class method decomposes a given \texttt{nn.Linear}:
 
 \begin{lstlisting}
 @classmethod
-def from_linear(cls, linear, base_rank, residual_rank, ...):
+def from\_linear(cls, linear, base\_rank, residual\_rank, ...):
     W = linear.weight.data.float()
     
     # Base SVD
-    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-    U_b = U[:, :base_rank]
-    S_b = S[:base_rank]
-    Vt_b = Vt[:base_rank, :]
+    U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
+    U\_b = U[:, :base\_rank]
+    S\_b = S[:base\_rank]
+    Vt\_b = Vt[:base\_rank, :]
     
     # Residual
-    W_b = (U_b * S_b) @ Vt_b
-    R = W - W_b
-    U_r, S_r, Vt_r = torch.linalg.svd(R, full_matrices=False)
+    W\_b = (U\_b * S\_b) @ Vt\_b
+    R = W - W\_b
+    U\_r, S\_r, Vt\_r = torch.linalg.svd(R, full\_matrices=False)
     
     # LoRA init
-    S_r_sqrt = torch.sqrt(S_r[:residual_rank])
-    B_init = U_r[:, :residual_rank] * S_r_sqrt
-    A_init = S_r_sqrt[:, None] * Vt_r[:residual_rank, :]
+    S\_r\_sqrt = torch.sqrt(S\_r[:residual\_rank])
+    B\_init = U\_r[:, :residual\_rank] * S\_r\_sqrt
+    A\_init = S\_r\_sqrt[:, None] * Vt\_r[:residual\_rank, :]
     
     layer = cls(...)
-    layer.U_base.data = U_b
-    layer.V_base.data = Vt_b
-    layer.lora_B.data = B_init
-    layer.lora_A.data = A_init
+    layer.U\_base.data = U\_b
+    layer.V\_base.data = Vt\_b
+    layer.lora\_B.data = B\_init
+    layer.lora\_A.data = A\_init
     if linear.bias is not None:
         layer.bias.data = linear.bias.data
     return layer
@@ -1097,21 +1757,21 @@ def from_linear(cls, linear, base_rank, residual_rank, ...):
 \begin{lstlisting}
 def forward(self, x):
     # Base
-    h_b = F.linear(x, self.V_base)
-    y_b = F.linear(h_b, self.U_base)
+    h\_b = F.linear(x, self.V\_base)
+    y\_b = F.linear(h\_b, self.U\_base)
     
     # Residual
-    h_r = F.linear(x, self.lora_A)
-    y_r = F.linear(h_r, self.lora_B)
+    h\_r = F.linear(x, self.lora\_A)
+    y\_r = F.linear(h\_r, self.lora\_B)
     
-    return y_b + self.scaling * y_r + self.bias
+    return y\_b + self.scaling * y\_r + self.bias
 \end{lstlisting}
 
 \subsection{B.3 Base Freezing}
 
 \begin{lstlisting}
-self.U_base.requires_grad = False
-self.V_base.requires_grad = False
+self.U\_base.requires\_grad = False
+self.V\_base.requires\_grad = False
 \end{lstlisting}
 
 Only \texttt{lora\_A}, \texttt{lora\_B}, and \texttt{bias} (optional) receive gradient.
@@ -1131,11 +1791,11 @@ For each of Q, K, V, O:
 \textbf{Verification.} After loading:
 
 \begin{lstlisting}
-sample_x = torch.eye(min(target.in_features, 64), target.in_features)
-y = target(sample_x)
+sample\_x = torch.eye(min(target.in\_features, 64), target.in\_features)
+y = target(sample\_x)
 fnorm = torch.linalg.norm(y.float()).item()
-if fnorm < 1e-4:
-    raise RuntimeError(f"Weight copy failed for {proj_key}")
+if fnorm \textless{} 1e-4:
+    raise RuntimeError(f"Weight copy failed for {proj\_key}")
 \end{lstlisting}
 
 \subsection{B.5 Nested Encoder Special Case}
@@ -1143,12 +1803,12 @@ if fnorm < 1e-4:
 For RoBERTa, the output projection is initialized to \textbf{identity}:
 
 \begin{lstlisting}
-if proj_key == "o" and self.is_nested_encoder:
-    temp_linear = nn.Linear(target.in_features, target.out_features)
-    nn.init.eye_(temp_linear.weight)
-    nn.init.zeros_(temp_linear.bias)
-    new_layer = ResSVDLinear.from_linear(temp_linear, ...)
-    target.load_state_dict(new_layer.state_dict())
+if proj\_key == "o" and self.is\_nested\_encoder:
+    temp\_linear = nn.Linear(target.in\_features, target.out\_features)
+    nn.init.eye\_(temp\_linear.weight)
+    nn.init.zeros\_(temp\_linear.bias)
+    new\_layer = ResSVDLinear.from\_linear(temp\_linear, ...)
+    target.load\_state\_dict(new\_layer.state\_dict())
 \end{lstlisting}
 
 This makes the output projection a pass-through, so the outer 
@@ -1156,7 +1816,7 @@ This makes the output projection a pass-through, so the outer
 
 \subsection{B.6 Common Pitfalls}
 
-\subsubsection{B.6.1 base\_rank + residual\_rank > min(d\_in, d\_out)}
+\subsubsection{B.6.1 base\_rank + residual\_rank \textgreater{} min(d\_in, d\_out)}
 
 If base\_rank + residual\_rank exceeds the matrix rank, the residual SVD 
 will have zero singular values beyond the original rank. This is fine 
@@ -1180,6 +1840,7 @@ RoBERTa requires identity init of output projection.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT}
@@ -1321,12 +1982,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
     "ratio": 50\%,
-    "accuracy_pct": 86.4,
-    "base_rank": 32,
-    "residual_rank": 16
+    "accuracy\_pct": 86.4,
+    "base\_rank": 32,
+    "residual\_rank": 16
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1337,16 +1998,16 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_res_svd.py --models distilbert,roberta,gpt2
+python run\_all\_4\_res\_svd.py --models distilbert,roberta,gpt2
 
 # Base rank sweep
 for rb in 8 16 32 64; do
-    python run_all_4_res_svd.py --base_rank $rb --output_suffix rb$rb
+    python run\_all\_4\_res\_svd.py --base\_rank $rb --output_suffix rb$rb
 done
 
 # Residual rank sweep
 for rr in 0 2 4 8 16; do
-    python run_all_4_res_svd.py --residual_rank $rr --output_suffix rr$rr
+    python run\_all\_4\_res\_svd.py --residual\_rank $rr --output_suffix rr$rr
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1354,6 +2015,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1372,7 +2034,7 @@ done
 
 \textbf{Result.} Accuracy dropped by 0.85\%.
 
-\textbf{Conclusion.} Residual rank > 0 is essential.
+\textbf{Conclusion.} Residual rank \textgreater{} 0 is essential.
 
 \subsubsection{D.1.3 Scaling $\alpha$ = 0.1}
 
@@ -1467,7 +2129,7 @@ Std & 0.1 \\
 \subsection{D.5 Lessons Learned}
 
 \begin{enumerate}
-\item \textbf{Residual rank > 0 is essential.}
+\item \textbf{Residual rank \textgreater{} 0 is essential.}
 \item \textbf{Base rank $\ge$ 16 for meaningful accuracy.}
 \item \textbf{Scaling $\alpha$ = 1.0 is a good default.}
 \item \textbf{Adaptive rank doesn't converge.}
@@ -1478,6 +2140,7 @@ Std & 0.1 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1557,3 +2220,4 @@ encourage responsible deployment.
 
 ---
 \end{lstlisting}
+

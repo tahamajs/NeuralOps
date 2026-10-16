@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{UnifiedRoPE: A Portable Rotary Position Embedding Attention Module for Multi-Architecture Transformers}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -138,6 +140,7 @@ Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -164,7 +167,7 @@ $\Delta = i - j$. T5 (Raffel et al., 2020) uses relative position biases.
 Su et al. (2021) rotate $Q, K$ by position-dependent angles:
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \mathrm{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \mathrm{rot}(q\_i) \sin(\theta\_i)
 \tag{2.1}
 \]
 
@@ -235,6 +238,7 @@ works across four families. The contribution is engineering, not science.
 ---
 \end{lstlisting}
 
+% --- Section: 03_background.tex ---
 
 \section{Background}
 
@@ -244,9 +248,9 @@ For input $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
 \begin{aligned}
-Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
-\text{head}_h &= \mathrm{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h \\
-\text{MHSA}(X) &= \mathrm{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+Q &= X W\_Q, \quad K = X W\_K, \quad V = X W\_V \\
+\text{head}\_h &= \mathrm{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h \\
+\text{MHSA}(X) &= \mathrm{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \end{aligned}
 \tag{3.1}
 \]
@@ -256,22 +260,22 @@ Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
 RoPE encodes position by rotating each 2D subspace of $Q, K$:
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \mathrm{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \mathrm{rot}(q\_i) \sin(\theta\_i)
 \tag{3.2}
 \]
 
 where the rotation operator acts on the first half vs second half:
 
 \[
-\mathrm{rot}(x) = \begin{pmatrix} -x_{d_h/2:} \\ x_{:d_h/2} \end{pmatrix}
+\mathrm{rot}(x) = \begin{pmatrix} -x\_{d\_h/2:} \\ x\_{:d\_h/2} \end{pmatrix}
 \tag{3.3}
 \]
 
 and $\theta_i$ is a position-dependent angle:
 
 \[
-\theta_i^{(k)} = i \cdot \omega_k, \qquad
-\omega_k = \mathrm{base}^{-2k/d_h}, \quad k = 0, \dots, d_h/2 - 1
+\theta\_i^{(k)} = i \cdot \omega\_k, \qquad
+\omega\_k = \mathrm{base}^{-2k/d\_h}, \quad k = 0, \dots, d\_h/2 - 1
 \tag{3.4}
 \]
 
@@ -279,17 +283,17 @@ and $\theta_i$ is a position-dependent angle:
 $i - j$:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j = f(q_i, k_j, i - j)
+\tilde{q}\_i^\top \tilde{k}\_j = f(q\_i, k\_j, i - j)
 \tag{3.5}
 \]
 
 \subsection{Partial-Dimension RoPE}
 
 Not all models apply RoPE to the full head dimension. For models with 
-partial rotation (e.g., Qwen with \texttt{rotary\_dim < head\_dim}):
+partial rotation (e.g., Qwen with \texttt{rotary\_dim \textless{} head\_dim}):
 
 \[
-\tilde{q}_i = \begin{pmatrix} q_i^{[:r]} \cos(\theta_i) + \mathrm{rot}(q_i^{[:r]}) \sin(\theta_i) \\ q_i^{[r:]} \end{pmatrix}
+\tilde{q}\_i = \begin{pmatrix} q\_i^{[:r]} \cos(\theta\_i) + \mathrm{rot}(q\_i^{[:r]}) \sin(\theta\_i) \\ q\_i^{[r:]} \end{pmatrix}
 \tag{3.6}
 \]
 
@@ -301,7 +305,7 @@ where $r$ is the rotary dimension. UnifiedRoPE supports this via
 $H_{kv} < H$ KV heads, repeated $H / H_{kv}$ times before attention:
 
 \[
-K_\text{expanded} = \mathrm{repeat\_kv}(K, H / H_{kv})
+K\_\text{expanded} = \mathrm{repeat\_kv}(K, H / H\_{kv})
 \tag{3.7}
 \]
 
@@ -331,7 +335,7 @@ GPT-2 uses HuggingFace's \texttt{Conv1D}, which stores weights as \texttt{(in, o
 
 \begin{lstlisting}
 class Conv1D(nn.Module):
-    def __init__(self, nf, nx):
+    def \_\_init\_\_(self, nf, nx):
         self.weight = nn.Parameter(torch.empty(nx, nf))  # (in, out)
 \end{lstlisting}
 
@@ -354,12 +358,12 @@ with $B = 0$ at initialization. UnifiedRoPE's \texttt{LoRALinear} wraps this.
 RoPE angles $\theta_i$ are precomputed once:
 
 \begin{lstlisting}
-inv_freq = 1.0 / (base ** (arange(0, rotary_dim, 2) / rotary_dim))
-t = arange(seq_len)
-freqs = einsum("i,j->ij", t, inv_freq)
+inv\_freq = 1.0 / (base ** (arange(0, rotary\_dim, 2) / rotary\_dim))
+t = arange(seq\_len)
+freqs = einsum("i,j-\textgreater{}ij", t, inv\_freq)
 emb = cat([freqs, freqs], dim=-1)
-cos_cached = emb.cos()
-sin_cached = emb.sin()
+cos\_cached = emb.cos()
+sin\_cached = emb.sin()
 \end{lstlisting}
 
 UnifiedRoPE stores these as \textbf{non-persistent buffers} (\texttt{persistent=False}), 
@@ -372,6 +376,7 @@ so they are not saved with the model state dict.
 ---
 \end{lstlisting}
 
+% --- Section: 04_method.tex ---
 
 \section{Method}
 
@@ -398,7 +403,7 @@ single \texttt{nn.Module}. It provides:
         +---------------+---------------+
                                          
    +---------+    +---------+    +---------+
-   | q_proj  |    | k_proj  |    | v_proj  |
+   | q\_proj  |    | k\_proj  |    | v\_proj  |
    | + LoRA  |    | + LoRA  |    | + LoRA  |
    +----+----+    +----+----+    +----+----+
         |              |              |
@@ -423,7 +428,7 @@ single \texttt{nn.Module}. It provides:
                |
                 
         +--------------+
-        |  out_proj    |
+        |  out\_proj    |
         |  + LoRA      |
         +--------------+
 \end{lstlisting}
@@ -434,37 +439,37 @@ single \texttt{nn.Module}. It provides:
 
 \begin{lstlisting}
 class UnifiedRoPE(BaseAttention):
-    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
-                 max_seq_len=4096, base=10000, dropout=0.1,
-                 pretrained_attn=None, lora_rank=16, lora_alpha=32.0,
-                 is_decoder=None, **kwargs):
+    def \_\_init\_\_(self, config=None, rank=None, dim=None, num\_heads=None,
+                 max\_seq\_len=4096, base=10000, dropout=0.1,
+                 pretrained\_attn=None, lora\_rank=16, lora\_alpha=32.0,
+                 is\_decoder=None, **kwargs):
         # Resolve dimensions
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.num_kv_heads = ...
-        self.head_dim = hidden_size // num_heads
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = ...
+        self.head\_dim = hidden\_size // num\_heads
         
         # LoRA projections
-        self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
-        self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
+        self.q\_proj = LoRALinear(hidden\_size, q\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.k\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.v\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.out\_proj = LoRALinear(q\_head\_size, hidden\_size, lora\_rank=..., freeze\_base=True)
         
         # RoPE cache
-        self.rotary_dim = 2 * (head_dim // 2)
-        self.register_buffer("inv_freq", ..., persistent=False)
-        self._build_cache(max_seq_len)
+        self.rotary\_dim = 2 * (head\_dim // 2)
+        self.register\_buffer("inv\_freq", ..., persistent=False)
+        self.\_build\_cache(max\_seq\_len)
 \end{lstlisting}
 
 \subsubsection{Precomputed RoPE Cache}
 
 \begin{lstlisting}
-def _build_cache(self, seq_len):
-    t = torch.arange(seq_len, dtype=self.inv_freq.dtype)
-    freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+def \_build\_cache(self, seq\_len):
+    t = torch.arange(seq\_len, dtype=self.inv\_freq.dtype)
+    freqs = torch.einsum("i,j-\textgreater{}ij", t, self.inv\_freq)
     emb = torch.cat((freqs, freqs), dim=-1)
-    self.register_buffer("cos_cached", emb.cos(), persistent=False)
-    self.register_buffer("sin_cached", emb.sin(), persistent=False)
+    self.register\_buffer("cos\_cached", emb.cos(), persistent=False)
+    self.register\_buffer("sin\_cached", emb.sin(), persistent=False)
 \end{lstlisting}
 
 \textbf{Note.} Buffers are \texttt{persistent=False}, so they are not stored in 
@@ -473,20 +478,20 @@ def _build_cache(self, seq_len):
 \subsubsection{Applying RoPE}
 
 \begin{lstlisting}
-def _apply_rope(self, x, seq_len):
-    rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
-    rotary_dim = 2 * (rotary_dim // 2)
+def \_apply\_rope(self, x, seq\_len):
+    rotary\_dim = min(self.rotary\_dim, self.cos\_cached.shape[-1], x.shape[-1])
+    rotary\_dim = 2 * (rotary\_dim // 2)
     
-    cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
-    sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    cos = self.cos\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
+    sin = self.sin\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
     
-    if rotary_dim < x.shape[-1]:
-        x_rot = x[..., :rotary_dim]
-        x_pass = x[..., rotary_dim:]
-        rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
-        return torch.cat((rotated, x_pass), dim=-1)
+    if rotary\_dim \textless{} x.shape[-1]:
+        x\_rot = x[..., :rotary\_dim]
+        x\_pass = x[..., rotary\_dim:]
+        rotated = (x\_rot * cos) + (\_rotate\_half(x\_rot) * sin)
+        return torch.cat((rotated, x\_pass), dim=-1)
     else:
-        return (x * cos) + (_rotate_half(x) * sin)
+        return (x * cos) + (\_rotate\_half(x) * sin)
 \end{lstlisting}
 
 \subsection{Weight Transfer}
@@ -514,18 +519,18 @@ UnifiedRoPE's \texttt{copy\_weights} handles:
 \subsubsection{Conv1D Transposition}
 
 \begin{lstlisting}
-if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-    c_attn_w = c_attn_w.t()
+if c\_attn\_w.shape[0] == self.hidden\_size and c\_attn\_w.shape[1] != self.hidden\_size:
+    c\_attn\_w = c\_attn\_w.t()
 \end{lstlisting}
 
 \subsubsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
-    src = old_attn.self
-    if hasattr(old_attn.output, "dense"):
-        w_o = old_attn.output.dense.weight
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    src = old\_attn.self
+    if hasattr(old\_attn.output, "dense"):
+        w\_o = old\_attn.output.dense.weight
 \end{lstlisting}
 
 When nested, \texttt{out\_proj} is \textbf{skipped} in forward; the outer layer applies.
@@ -535,62 +540,62 @@ When nested, \texttt{out\_proj} is \textbf{skipped} in forward; the outer layer 
 The \texttt{\_copy\_layer} helper preserves source LoRA adapters:
 
 \begin{lstlisting}
-def _copy_layer(target_layer, w, b, src_sub=None):
+def \_copy\_layer(target\_layer, w, b, src\_sub=None):
     # Copy base weight
     if w is not None: ...
     # Copy bias
     if b is not None: ...
     # Preserve LoRA
-    if src_sub is not None and hasattr(src_sub, "lora_A"):
-        target_layer.lora_A.data.copy_(src_sub.lora_A.data)
-        target_layer.lora_B.data.copy_(src_sub.lora_B.data)
+    if src\_sub is not None and hasattr(src\_sub, "lora\_A"):
+        target\_layer.lora\_A.data.copy\_(src\_sub.lora\_A.data)
+        target\_layer.lora\_B.data.copy\_(src\_sub.lora\_B.data)
 \end{lstlisting}
 
 \subsection{Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, L, _ = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, L, \_ = hidden\_states.shape
     
     # 1. Project
-    q = self.q_proj(hidden_states).view(B, L, H, d_h).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, L, H, d\_h).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, L, Hkv, d\_h).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, L, Hkv, d\_h).transpose(1, 2)
     
     # 2. Apply RoPE
-    pos_emb = kwargs.get("position_embeddings")
-    if pos_emb is not None:
-        cos, sin = pos_emb
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    pos\_emb = kwargs.get("position\_embeddings")
+    if pos\_emb is not None:
+        cos, sin = pos\_emb
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     else:
-        q = self._apply_rope(q, L)
-        k = self._apply_rope(k, L)
+        q = self.\_apply\_rope(q, L)
+        k = self.\_apply\_rope(k, L)
     
     # 3. GQA expansion
-    if self.num_kv_heads != self.num_heads:
-        k = repeat_kv(k, self.num_key_value_groups)
-        v = repeat_kv(v, self.num_key_value_groups)
+    if self.num\_kv\_heads != self.num\_heads:
+        k = repeat\_kv(k, self.num\_key\_value\_groups)
+        v = repeat\_kv(v, self.num\_key\_value\_groups)
     
     # 4. Scaled dot-product attention
-    scores = q @ k^T / sqrt(d_h)
+    scores = q @ k^T / sqrt(d\_h)
     
     # 5. Causal mask for decoders
-    if self.is_decoder and L > 1:
-        scores = scores + causal_mask
+    if self.is\_decoder and L \textgreater{} 1:
+        scores = scores + causal\_mask
     
     # 6. Padding mask
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 7. Softmax, dropout, context
     attn = softmax(scores)
     context = attn @ v
     
     # 8. Output projection (skip if nested)
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         output = context
     else:
-        output = self.out_proj(context)
+        output = self.out\_proj(context)
     
     return output, attn
 \end{lstlisting}
@@ -615,9 +620,9 @@ not. UnifiedRoPE supports both.
 For $H_{kv} < H$:
 
 \begin{lstlisting}
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.num_key_value_groups)
-    v = repeat_kv(v, self.num_key_value_groups)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.num\_key\_value\_groups)
+    v = repeat\_kv(v, self.num\_key\_value\_groups)
 \end{lstlisting}
 
 \texttt{repeat\_kv} broadcasts each KV head to \texttt{H / H\_{kv}} query heads.
@@ -627,10 +632,10 @@ if self.num_kv_heads != self.num_heads:
 For RoBERTa-style models:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     output = context   # Raw context
 else:
-    output = self.out_proj(context)
+    output = self.out\_proj(context)
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} applies the projection.
@@ -663,7 +668,7 @@ Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
 \textbf{Proposition.} The rotation operator preserves L2 norm:
 
 \[
-\|\tilde{q}_i\|_2 = \|q_i\|_2
+\|\tilde{q}\_i\|\_2 = \|q\_i\|\_2
 \tag{4.1}
 \]
 
@@ -674,7 +679,7 @@ Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
 \textbf{Proposition.} The attention score satisfies:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j = f(q_i, k_j, i - j)
+\tilde{q}\_i^\top \tilde{k}\_j = f(q\_i, k\_j, i - j)
 \tag{4.2}
 \]
 
@@ -704,6 +709,7 @@ It is a \textbf{substrate} for other compression techniques.
 ---
 \end{lstlisting}
 
+% --- Section: 05_architecture.tex ---
 
 \section{Architecture Integration}
 
@@ -733,18 +739,18 @@ For Qwen, RoPE is native -- UnifiedRoPE simply preserves it.
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Weight extraction:}
 \begin{lstlisting}
-w_q = src.q_lin.weight.detach()
-w_k = src.k_lin.weight.detach()
-w_v = src.v_lin.weight.detach()
-w_o = src.out_lin.weight.detach()
+w\_q = src.q\_lin.weight.detach()
+w\_k = src.k\_lin.weight.detach()
+w\_v = src.v\_lin.weight.detach()
+w\_o = src.out\_lin.weight.detach()
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -765,10 +771,10 @@ roberta.encoder.layer.0.attention
 
 \textbf{Nested detection:}
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
-    src = old_attn.self
-    w_o = old_attn.output.dense.weight
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    src = old\_attn.self
+    w\_o = old\_attn.output.dense.weight
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = True}. Forward returns raw context.
@@ -777,21 +783,21 @@ if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)
-+-- c_proj  (Conv1D 768 $\to$ 768)
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Split c\_attn:}
 \begin{lstlisting}
-c_attn_w = src.c_attn.weight.detach()
-if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-    c_attn_w = c_attn_w.t()
-q_dim = self.q_head_size
-k_dim = self.kv_head_size
-v_dim = self.kv_head_size
-w_q = c_attn_w[:q_dim, :]
-w_k = c_attn_w[q_dim:q_dim+k_dim, :]
-w_v = c_attn_w[q_dim+k_dim:, :]
+c\_attn\_w = src.c\_attn.weight.detach()
+if c\_attn\_w.shape[0] == self.hidden\_size and c\_attn\_w.shape[1] != self.hidden\_size:
+    c\_attn\_w = c\_attn\_w.t()
+q\_dim = self.q\_head\_size
+k\_dim = self.kv\_head\_size
+v\_dim = self.kv\_head\_size
+w\_q = c\_attn\_w[:q\_dim, :]
+w\_k = c\_attn\_w[q\_dim:q\_dim+k\_dim, :]
+w\_v = c\_attn\_w[q\_dim+k\_dim:, :]
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}. Causal mask applied in forward.
@@ -799,18 +805,18 @@ w_v = c_attn_w[q_dim+k_dim:, :]
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)
-+-- k_proj  (Linear 1024 $\to$ 512)
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA expansion:}
 \begin{lstlisting}
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.num_key_value_groups)
-    v = repeat_kv(v, self.num_key_value_groups)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.num\_key\_value\_groups)
+    v = repeat\_kv(v, self.num\_key\_value\_groups)
 \end{lstlisting}
 
 \textbf{RoPE:} Either internal \texttt{\_apply\_rope} or external \texttt{position\_embeddings}.
@@ -820,39 +826,39 @@ if self.num_kv_heads != self.num_heads:
 \subsection{Injection Hook}
 
 \begin{lstlisting}
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
-    src = old_attn
+def inject\_unified\_rope(layer, model\_config=None, comp\_config=None,
+                        old\_attn=None, **kwargs):
+    src = old\_attn
     if src is None:
-        for attr in ("attention", "self_attn", "attn", "self"):
+        for attr in ("attention", "self\_attn", "attn", "self"):
             if hasattr(layer, attr):
                 src = getattr(layer, attr)
                 break
     
-    if model_config is None and hasattr(layer, "config"):
-        model_config = layer.config
+    if model\_config is None and hasattr(layer, "config"):
+        model\_config = layer.config
     
-    lora_rank = kwargs.pop("lora_rank", 16)
+    lora\_rank = kwargs.pop("lora\_rank", 16)
     rank = kwargs.pop("rank", 32)
     
-    new_attn = UnifiedRoPE(
-        config=model_config, rank=rank, lora_rank=lora_rank,
-        pretrained_attn=src, **kwargs,
+    new\_attn = UnifiedRoPE(
+        config=model\_config, rank=rank, lora\_rank=lora\_rank,
+        pretrained\_attn=src, **kwargs,
     )
     
     # Replace
-    for attr in ("self_attn", "attn", "self"):
+    for attr in ("self\_attn", "attn", "self"):
         if hasattr(layer, attr):
-            setattr(layer, attr, new_attn)
-            return new_attn
+            setattr(layer, attr, new\_attn)
+            return new\_attn
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
+            layer.attention.self = new\_attn
         else:
-            layer.attention = new_attn
-        return new_attn
-    layer.attention = new_attn
-    return new_attn
+            layer.attention = new\_attn
+        return new\_attn
+    layer.attention = new\_attn
+    return new\_attn
 \end{lstlisting}
 
 \textbf{Safe injection.} Wraps in try/except. Logs errors. \textbf{Raises} 
@@ -868,7 +874,7 @@ def inject_unified_rope(layer, model_config=None, comp_config=None,
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & Validation & Raise RuntimeError \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise RuntimeError \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise RuntimeError \\
 Cross-attention & Not supported & Not implemented \\
 Conv1D wrong orientation & Shape check & Transpose \\
 \bottomrule
@@ -878,16 +884,16 @@ Conv1D wrong orientation & Shape check & Transpose \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("compression_unified_rope")
-@ATTENTION_REGISTRY.register("unified_rope")
-@ATTENTION_REGISTRY.register("unified_rope_attention")
+@ATTENTION\_REGISTRY.register("compression\_unified\_rope")
+@ATTENTION\_REGISTRY.register("unified\_rope")
+@ATTENTION\_REGISTRY.register("unified\_rope\_attention")
 class UnifiedRoPE(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("unified_rope_inject")
-@ATTENTION_REGISTRY.register("compression_unified_rope_inject")
-@ATTENTION_REGISTRY.register("inject_unified_rope")
-def inject_unified_rope(...):
+@ATTENTION\_REGISTRY.register("unified\_rope\_inject")
+@ATTENTION\_REGISTRY.register("compression\_unified\_rope\_inject")
+@ATTENTION\_REGISTRY.register("inject\_unified\_rope")
+def inject\_unified\_rope(...):
     ...
 \end{lstlisting}
 
@@ -929,6 +935,7 @@ Nystr mformer & Compute & Reduce compute \\
 
 
 
+% --- Section: 06_setup.tex ---
 
 \section{Experimental Setup}
 
@@ -1037,7 +1044,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1063,10 +1070,10 @@ Transformers & 4.36.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_unified_rope.py \
+python run\_all\_4\_unified\_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 Runtime: ~PyTorch 2.0 minutes.
@@ -1087,6 +1094,7 @@ All experiments use seed 42.
 ---
 \end{lstlisting}
 
+% --- Section: 07_results.tex ---
 
 \section{Results}
 
@@ -1150,7 +1158,7 @@ GPT-2 & 0.85 & 0.85 & 0.024 \\
 \end{tabular}
 \end{table}
 
-Error should be \texttt{< 1e-5}.
+Error should be \texttt{\textless{} 1e-5}.
 
 \subsection{Relative Position Property}
 
@@ -1314,12 +1322,13 @@ Nystr mformer & 0.85 & Compute \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/rope_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{unified_rope}.}
+\includegraphics[width=0.85\linewidth]{figures/rope\_roberta\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{unified\_rope}.}
 \label{fig:results_unified_rope}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -1444,7 +1453,7 @@ Qwen &  &  &  &  \\
 \end{tabular}
 \end{table}
 
-Verified by checking \texttt{ W\_original - W\_transferred \_F < 1e-5}.
+Verified by checking \texttt{ W\_original - W\_transferred \_F \textless{} 1e-5}.
 
 \subsection{Numerical Precision}
 
@@ -1529,6 +1538,7 @@ RoPE dim mismatch & Low & Cache shorter than seq \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -1653,6 +1663,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -1725,6 +1736,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1807,14 +1819,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1840,11 +1853,11 @@ numpy & 1.0.0 \\
 \subsection{Running UnifiedRoPE}
 
 \begin{lstlisting}
-python run_all_4_unified_rope.py \
+python run\_all\_4\_unified\_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes.
@@ -1852,14 +1865,14 @@ python run_all_4_unified_rope.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_unified_rope/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
-    --modules full,unified_rope \
-    --lora_rank 8
+    --output\_dir results/unified\_unified\_rope/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
+    --modules full,unified\_rope \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -1867,14 +1880,14 @@ python Codes/framework/run_quality_sweep.py \
 \subsubsection{Table 7.1 (Main)}
 
 \begin{lstlisting}
-python run_all_4_unified_rope.py --models distilbert,roberta,gpt2
+python run\_all\_4\_unified\_rope.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (RoPE base ablation)}
 
 \begin{lstlisting}
 for b in 5000 10000 100000; do
-    python run_all_4_unified_rope.py --base $b --output_suffix b$b
+    python run\_all\_4\_unified\_rope.py --base $b --output_suffix b$b
 done
 \end{lstlisting}
 
@@ -1882,7 +1895,7 @@ done
 
 \begin{lstlisting}
 for rd in 32 64 128; do
-    python run_all_4_unified_rope.py --rotary_dim $rd --output_suffix rd$rd
+    python run\_all\_4\_unified\_rope.py --rotary\_dim $rd --output_suffix rd$rd
 done
 \end{lstlisting}
 
@@ -1892,7 +1905,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1915,10 +1928,10 @@ GPT-2 & 57.45\% $\pm$ 1\% & 1.00$\times$ \\
 \subsection{Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-unified_rope",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-unified\_rope",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1946,6 +1959,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -2070,6 +2084,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -2085,7 +2100,7 @@ Therefore $\|R x\|_2 = \|x\|_2$. $\square$
 \textbf{Proposition.} For $q_i$ at position $i$ and $k_j$ at position $j$:
 
 \[
-(R_i q_i)^\top (R_j k_j) = f(q_i, k_j, i - j)
+(R\_i q\_i)^\top (R\_j k\_j) = f(q\_i, k\_j, i - j)
 \tag{A.1}
 \]
 
@@ -2097,7 +2112,7 @@ $R_i^\top R_j = R_{j-i}$ depends only on $j - i$. $\square$
 For rotary dimension $r < d_h$:
 
 \[
-\tilde{q}_i = \begin{pmatrix} R_i^{(r)} q_i^{[:r]} \\ q_i^{[r:]} \end{pmatrix}
+\tilde{q}\_i = \begin{pmatrix} R\_i^{(r)} q\_i^{[:r]} \\ q\_i^{[r:]} \end{pmatrix}
 \tag{A.2}
 \]
 
@@ -2137,6 +2152,7 @@ the original \texttt{nn.Linear} projections. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
@@ -2144,38 +2160,38 @@ the original \texttt{nn.Linear} projections. $\square$
 
 \begin{lstlisting}
 class UnifiedRoPE(BaseAttention):
-    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
-                 max_seq_len=4096, base=10000, ...):
-        super().__init__(config=config, rank=rank)
+    def \_\_init\_\_(self, config=None, rank=None, dim=None, num\_heads=None,
+                 max\_seq\_len=4096, base=10000, ...):
+        super().\_\_init\_\_(config=config, rank=rank)
         
         # Dimensions
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.num_kv_heads = ...
-        self.head_dim = hidden_size // num_heads
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = ...
+        self.head\_dim = hidden\_size // num\_heads
         
         # Projections
-        self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
-        self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
+        self.q\_proj = LoRALinear(hidden\_size, q\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.k\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.v\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.out\_proj = LoRALinear(q\_head\_size, hidden\_size, lora\_rank=..., freeze\_base=True)
         
         # RoPE cache
-        self.rotary_dim = 2 * (head_dim // 2)
-        inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2).float() / rotary_dim))
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
-        self._build_cache(max_seq_len)
+        self.rotary\_dim = 2 * (head\_dim // 2)
+        inv\_freq = 1.0 / (base ** (torch.arange(0, rotary\_dim, 2).float() / rotary\_dim))
+        self.register\_buffer("inv\_freq", inv\_freq, persistent=False)
+        self.\_build\_cache(max\_seq\_len)
 \end{lstlisting}
 
 \subsection{B.2 The `\_build\_cache` Method}
 
 \begin{lstlisting}
-def _build_cache(self, seq_len):
-    t = torch.arange(seq_len, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
-    freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+def \_build\_cache(self, seq\_len):
+    t = torch.arange(seq\_len, device=self.inv\_freq.device, dtype=self.inv\_freq.dtype)
+    freqs = torch.einsum("i,j-\textgreater{}ij", t, self.inv\_freq)
     emb = torch.cat((freqs, freqs), dim=-1)
-    self.register_buffer("cos_cached", emb.cos(), persistent=False)
-    self.register_buffer("sin_cached", emb.sin(), persistent=False)
+    self.register\_buffer("cos\_cached", emb.cos(), persistent=False)
+    self.register\_buffer("sin\_cached", emb.sin(), persistent=False)
 \end{lstlisting}
 
 \textbf{Non-persistent.} The cache is not saved with \texttt{state\_dict()}. On load, 
@@ -2184,73 +2200,73 @@ it is rebuilt from \texttt{inv\_freq}.
 \subsection{B.3 The `\_apply\_rope` Method}
 
 \begin{lstlisting}
-def _apply_rope(self, x, seq_len):
-    if self.rotary_dim == 0 or self.cos_cached.shape[-1] == 0:
+def \_apply\_rope(self, x, seq\_len):
+    if self.rotary\_dim == 0 or self.cos\_cached.shape[-1] == 0:
         return x
     
-    if seq_len > self.max_seq_len:
-        self._build_cache(seq_len)
-        self.max_seq_len = seq_len
+    if seq\_len \textgreater{} self.max\_seq\_len:
+        self.\_build\_cache(seq\_len)
+        self.max\_seq\_len = seq\_len
     
-    rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
-    rotary_dim = 2 * (rotary_dim // 2)
+    rotary\_dim = min(self.rotary\_dim, self.cos\_cached.shape[-1], x.shape[-1])
+    rotary\_dim = 2 * (rotary\_dim // 2)
     
-    cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
-    sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    cos = self.cos\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
+    sin = self.sin\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
     
-    if rotary_dim < x.shape[-1]:
-        x_rot = x[..., :rotary_dim]
-        x_pass = x[..., rotary_dim:]
-        rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
-        return torch.cat((rotated, x_pass), dim=-1)
+    if rotary\_dim \textless{} x.shape[-1]:
+        x\_rot = x[..., :rotary\_dim]
+        x\_pass = x[..., rotary\_dim:]
+        rotated = (x\_rot * cos) + (\_rotate\_half(x\_rot) * sin)
+        return torch.cat((rotated, x\_pass), dim=-1)
     else:
-        return (x * cos) + (_rotate_half(x) * sin)
+        return (x * cos) + (\_rotate\_half(x) * sin)
 \end{lstlisting}
 
 \subsection{B.4 The `\_copy\_layer` Helper}
 
 \begin{lstlisting}
-def _copy_layer(target_layer, w, b, src_sub=None):
+def \_copy\_layer(target\_layer, w, b, src\_sub=None):
     # Copy weight
     if w is not None:
-        if w.shape == target_layer.weight.shape:
-            target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-        elif w.t().shape == target_layer.weight.shape:
-            target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+        if w.shape == target\_layer.weight.shape:
+            target\_layer.weight.copy\_(w.to(target\_layer.weight.dtype))
+        elif w.t().shape == target\_layer.weight.shape:
+            target\_layer.weight.copy\_(w.t().to(target\_layer.weight.dtype))
         else:
             # Padding/truncation
-            min_0 = min(target_layer.weight.shape[0], w.shape[0])
-            min_1 = min(target_layer.weight.shape[1], w.shape[1])
-            target_layer.weight.zero_()
-            target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+            min\_0 = min(target\_layer.weight.shape[0], w.shape[0])
+            min\_1 = min(target\_layer.weight.shape[1], w.shape[1])
+            target\_layer.weight.zero\_()
+            target\_layer.weight[:min\_0, :min\_1].copy\_(w[:min\_0, :min\_1])
     
     # Copy bias
-    if b is not None and target_layer.bias is not None:
+    if b is not None and target\_layer.bias is not None:
         # Similar padding/truncation
         ...
     
     # Preserve LoRA
-    if src_sub is not None and hasattr(src_sub, "lora_A"):
-        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
-        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
-        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
+    if src\_sub is not None and hasattr(src\_sub, "lora\_A"):
+        src\_lA = getattr(src\_sub.lora\_A, "weight", src\_sub.lora\_A)
+        src\_lB = getattr(src\_sub.lora\_B, "weight", src\_sub.lora\_B)
+        if hasattr(src\_lA, "data") and hasattr(src\_lB, "data"):
             # Copy with truncation
-            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
-            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
-            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-            target_layer.lora_A.requires_grad = True
-            # Similar for lora_B
+            r\_min = min(target\_layer.lora\_A.shape[0], src\_lA.shape[0])
+            in\_min = min(target\_layer.lora\_A.shape[1], src\_lA.shape[1])
+            target\_layer.lora\_A.data[:r\_min, :in\_min].copy\_(src\_lA.data[:r\_min, :in\_min])
+            target\_layer.lora\_A.requires\_grad = True
+            # Similar for lora\_B
 \end{lstlisting}
 
 \subsection{B.5 The Injection Hook}
 
 \begin{lstlisting}
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
+def inject\_unified\_rope(layer, model\_config=None, comp\_config=None,
+                        old\_attn=None, **kwargs):
     try:
-        src = old_attn
+        src = old\_attn
         if src is None:
-            for attr in ("attention", "self_attn", "attn", "self"):
+            for attr in ("attention", "self\_attn", "attn", "self"):
                 if hasattr(layer, attr):
                     src = getattr(layer, attr)
                     break
@@ -2258,32 +2274,32 @@ def inject_unified_rope(layer, model_config=None, comp_config=None,
         if src is None:
             return None
         
-        if model_config is None and hasattr(layer, "config"):
-            model_config = layer.config
+        if model\_config is None and hasattr(layer, "config"):
+            model\_config = layer.config
         
-        lora_rank = kwargs.pop("lora_rank", 16)
+        lora\_rank = kwargs.pop("lora\_rank", 16)
         rank = kwargs.pop("rank", 32)
         
-        new_attn = UnifiedRoPE(
-            config=model_config, rank=rank, lora_rank=lora_rank,
-            pretrained_attn=src, **kwargs,
+        new\_attn = UnifiedRoPE(
+            config=model\_config, rank=rank, lora\_rank=lora\_rank,
+            pretrained\_attn=src, **kwargs,
         )
         
         # Replace
-        for attr in ("self_attn", "attn", "self"):
+        for attr in ("self\_attn", "attn", "self"):
             if hasattr(layer, attr):
-                setattr(layer, attr, new_attn)
-                return new_attn
+                setattr(layer, attr, new\_attn)
+                return new\_attn
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
+                layer.attention.self = new\_attn
             else:
-                layer.attention = new_attn
-            return new_attn
-        layer.attention = new_attn
-        return new_attn
+                layer.attention = new\_attn
+            return new\_attn
+        layer.attention = new\_attn
+        return new\_attn
     except Exception as e:
-        logger.error("inject_unified_rope failed: %s", e)
+        logger.error("inject\_unified\_rope failed: \%s", e)
         raise RuntimeError("Injection failed")
 \end{lstlisting}
 
@@ -2312,6 +2328,7 @@ If sequence length exceeds \texttt{max\_seq\_len}, cache must be rebuilt.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -2478,10 +2495,10 @@ Step  Loss
 {
   "distilbert": {
     "params": 66955010,
-    "accuracy_pct": 86.4,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "rope_base": 10000,
-    "rotary_dim": 64
+    "rope\_base": 10000,
+    "rotary\_dim": 64
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2492,6 +2509,7 @@ Step  Loss
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -2531,7 +2549,7 @@ Learnable base. Result: unstable, no gain.
 
 \subsubsection{D.2.3 Partial RoPE}
 
-Rotary dim < head\_dim. Result: similar accuracy.
+Rotary dim \textless{} head\_dim. Result: similar accuracy.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -2638,6 +2656,7 @@ Nystr mformer & 0.85 & Compute \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -2703,3 +2722,4 @@ implementation choices.
 
 ---
 \end{lstlisting}
+

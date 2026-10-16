@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{EAT: Efficient Attention Transformer with Progressive Token Pruning}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -60,7 +62,7 @@ EAT replaces the standard MHSA block with:
 The forward pass computes:
 
 \[
-\text{EAT}(X) = W_O \cdot \text{Concat}(\text{head}_1, \dots, \text{head}_H) + \text{LoRA}(X)
+\text{EAT}(X) = W\_O \cdot \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) + \text{LoRA}(X)
 \tag{1.1}
 \]
 
@@ -104,6 +106,7 @@ Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -157,6 +160,866 @@ DistilBERT (Sanh et al., 2019) distills. EAT transfers weights exactly
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{EAT} \\
+\midrule
+\textbf{Architecture} & Single family & Four families \\
+\textbf{Weight transfer} & Retrain or distill & Zero-shot transfer \\
+\textbf{Recovery} & Full or LoRA & LoRA only \\
+\textbf{Pruning} & Train-time & Inference-time \\
+\textbf{Parameter effect} & Reduces & \textbf{Increases} (LoRA) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} EAT is not a compressor. It replaces attention to 
+support \textbf{inference-time pruning} and \textbf{multi-architecture deployment}. 
+Any parameter reduction reported for EAT would be a misattribution.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
+\tag{3.1}
+\]
+
+with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
+
+\[
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
+\tag{3.2}
+\]
+
+\subsection{Grouped-Query Attention}
+
+For GQA with $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
+\tag{3.3}
+\]
+
+with $K, V$ repeated $H / H_{kv}$ times before attention.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates Q, K by position-dependent angles:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.4}
+\]
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) freezes $W$ and adds a low-rank update:
+
+\[
+W\_\text{eff} = W + \frac{\alpha}{r} B A
+\tag{3.5}
+\]
+
+with $B = 0$ at initialization. Only $A, B$ are trainable.
+
+\textbf{Parameter cost.} LoRA adds $r(d_\text{in} + d_\text{out})$ parameters 
+per layer. For $d = 768$ and $r = 16$: 24,576 parameters.
+
+\subsection{Progressive Token Pruning}
+
+Given a sequence of $L$ tokens $x_1, \dots, x_L$ with importance scores 
+$s_1, \dots, s_L \in \mathbb{R}$, pruning retains the top-$k$ tokens:
+
+\[
+\text{Prune}(X; k) = X[\text{argsort}(s)[:k]]
+\tag{3.6}
+\]
+
+The output sequence has length $k \leq L$.
+
+\textbf{At inference time}, pruning reduces compute for downstream layers. 
+\textbf{At training time}, it is typically disabled because gradient flow through 
+\texttt{argsort} is undefined.
+
+\subsection{Weight Transfer}
+
+EAT transfers weights from the pretrained attention block. Four cases:
+
+\begin{enumerate}
+\item \textbf{DistilBERT (flat):} \texttt{q\_lin, k\_lin, v\_lin, out\_lin} copied directly.
+\item \textbf{RoBERTa (nested):} \texttt{self.query/key/value} copied; \texttt{out\_proj} skipped
+  (outer \texttt{output.dense} applies projection).
+\item \textbf{GPT-2 (Conv1D):} Fused \texttt{c\_attn} transposed, chunked into Q/K/V;
+  \texttt{c\_proj} copied directly.
+\item \textbf{Qwen (GQA + RoPE):} \texttt{q\_proj/k\_proj/v\_proj/o\_proj} copied; RoPE
+  preserved via \texttt{rotary\_emb}.
+
+\end{enumerate}
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+EAT replaces the standard MHSA block with a version that:
+
+\begin{enumerate}
+\item Uses \textbf{frozen base projections} transferred from the pretrained attention.
+\item Attaches \textbf{trainable LoRA adapters} to each projection.
+\item Optionally applies \textbf{progressive token pruning} at inference.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +-------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                       |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Q/K/V projections (frozen W + LoRA)      |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Optional RoPE                            |
+    |  Optional GQA repeat\_kv                   |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Scaled dot-product attention             |
+    |  + causal / padding mask                  |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Output projection (frozen W + LoRA)      |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Optional: Progressive token pruning       |
+    |  (inference only, not training)           |
+    +----------------+--------------------------+
+                     |
+                      
+    Output Y
+\end{lstlisting}
+
+\subsection{Projections with LoRA}
+
+\subsubsection{Base Weights}
+
+The base projections $W_Q, W_K, W_V, W_O$ are \textbf{frozen}. They are 
+transferred from the pretrained attention via \texttt{copy\_weights} ( 5).
+
+\subsubsection{LoRA Adapters}
+
+Each projection has trainable LoRA adapters:
+
+\[
+W\_\text{eff} = W + \frac{\alpha}{r} B A
+\tag{4.1}
+\]
+
+with $A \in \mathbb{R}^{r \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r}$, 
+$B = 0$ at initialization.
+
+For the four projections:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Projection} & \textbf{Shape} & \textbf{Base frozen} & \textbf{LoRA added} \\
+\midrule
+$W_Q$ & $d_h H \times d$ & Yes & Yes \\
+$W_K$ & $d_h H_{kv} \times d$ & Yes & Yes \\
+$W_V$ & $d_h H_{kv} \times d$ & Yes & Yes \\
+$W_O$ & $d \times d_h H$ & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Why LoRA?}
+
+LoRA provides three benefits:
+
+\begin{enumerate}
+\item \textbf{Parameter efficiency.} Only $r(d_\text{in} + d_\text{out})$ trainable
+  parameters per projection.
+\item \textbf{Identity at initialization.} Since $B = 0$, the initial forward pass
+  matches the pretrained attention exactly.
+\item \textbf{Recovery capacity.} LoRA can absorb distributional drift after
+  injection.
+
+\end{enumerate}
+\subsection{Attention Computation}
+
+The EAT forward pass is standard scaled dot-product attention:
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
+\tag{4.2}
+\]
+
+with $Q = W_Q X + \text{LoRA}_Q(X)$, etc.
+
+\textbf{Causal mask.} For decoders:
+
+\[
+M\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
+\tag{4.3}
+\]
+
+\textbf{Padding mask.} For all architectures:
+
+\[
+M\_{ij} = M\_{ij} - \infty \cdot \mathbb{1}[\text{pad}(j)]
+\tag{4.4}
+\]
+
+\subsection{Progressive Token Pruning}
+
+\subsubsection{Motivation}
+
+At inference time, the sequence length $L$ drives cost. If we can reduce $L$ 
+for later layers, we save compute. The observation is that not all tokens 
+are equally important for the final prediction.
+
+\subsubsection{The Pruning Operator}
+
+Given the output of an attention block $Y \in \mathbb{R}^{B \times L \times d}$ 
+and a pruning module $\pi$:
+
+\[
+Y' = \pi(Y)
+\tag{4.5}
+\]
+
+where $\pi$ reduces the sequence dimension from $L$ to $k \leq L$.
+
+\subsubsection{Pruning Only at Inference}
+
+Pruning is \textbf{disabled during training}:
+
+\begin{lstlisting}
+if self.prune\_layer is not None and not self.training:
+    out, \_ = self.prune\_layer(out)
+\end{lstlisting}
+
+This avoids gradient flow issues through \texttt{argsort}.
+
+\subsubsection{The Pruning Module}
+
+EAT delegates pruning to a \texttt{ProgressiveTokenPruning} module (see companion 
+documentation). The module learns token importance scores and retains the 
+top-$k$ tokens.
+
+\subsection{Weight Transfer}
+
+EAT relies on exact weight transfer from the pretrained attention. We 
+support four cases:
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+target.q\_lin.weight.copy\_(src.q\_lin.weight)
+target.k\_lin.weight.copy\_(src.k\_lin.weight)
+target.v\_lin.weight.copy\_(src.v\_lin.weight)
+target.out\_lin.weight.copy\_(src.out\_lin.weight)
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False} -- DistilBERT applies \texttt{out\_lin} internally.
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+target.q\_lin.weight.copy\_(src.self.query.weight)
+target.k\_lin.weight.copy\_(src.self.key.weight)
+target.v\_lin.weight.copy\_(src.self.value.weight)
+# out\_proj skipped -- outer `attention.output.dense` applies it
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}.
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+target.q\_lin.weight.copy\_(q\_w)
+target.k\_lin.weight.copy\_(k\_w)
+target.v\_lin.weight.copy\_(v\_w)
+target.out\_lin.weight.copy\_(src.c\_proj.weight.t())
+\end{lstlisting}
+
+\subsubsection{Qwen}
+
+Direct copy from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}. RoPE handled via \texttt{rotary\_emb} 
+preservation.
+
+\subsection{Silent Failure Modes}
+
+EAT's \texttt{copy\_weights} is deliberately defensive: on failure, it logs a 
+warning and \textbf{continues with random initialization}. This design was chosen 
+to prevent injection from crashing, but it has a \textbf{critical implication}:
+
+\textgreater{} If \texttt{copy\_weights} silently fails, the attention block keeps random 
+\textgreater{} weights, and the model's forward pass produces garbage. Recovery 
+\textgreater{} fine-tuning cannot recover from this because gradient signals are 
+\textgreater{} dominated by noise.
+
+We encountered this failure mode in practice (see  8.2). We discuss 
+mitigation in  5.8.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} EAT forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_ids
+Output: Y $\in$ R^{B$\times$L'$\times$d}
+
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)           Frozen W + trainable LoRA
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+6:  S $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+7:  S $\leftarrow$ S + causal\_mask + padding\_mask
+8:  P $\leftarrow$ softmax(S)
+9:  A $\leftarrow$ P V
+10: A $\leftarrow$ concat\_heads(A)
+11: Y $\leftarrow$ W\_O A + LoRA\_O(A)
+12: if inference and prune\_layer:
+13:     Y $\leftarrow$ prune\_layer(Y)
+14: return Y
+\end{lstlisting}
+
+\subsection{Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+LoRA (all) & $\mathcal{O}(L d r)$ & $\mathcal{O}(L r)$ \\
+Pruning & $\mathcal{O}(L \log L)$ & $\mathcal{O}(L)$ \\
+\textbf{Total (baseline)} & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\textbf{Total (EAT)} & $\mathcal{O}(L^2 d + L d r)$ & $\mathcal{O}(L^2 + L r)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{At inference with pruning}, $L$ is replaced by $k$ in downstream layers:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+Downstream attention & $\mathcal{O}(k^2 d)$ \\
+Downstream FFN & $\mathcal{O}(k d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $k = L / 2$, downstream cost is reduced by 4$\times$.
+
+\subsection{Parameter Analysis}
+
+EAT \textbf{does not reduce} parameters. For each projection of shape 
+$d_\text{in} \times d_\text{out}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Baseline & $d_\text{in} d_\text{out}$ \\
+EAT with LoRA rank $r$ & $d_\text{in} d_\text{out} + r(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$ and $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{$\Delta$} \\
+\midrule
+Q projection baseline & 589,824 & -- \\
+Q projection EAT & 589,824 + 24,576 = 614,400 & +24,576 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Across 4 projections $\times$ $N_\ell$ layers:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{EAT param increase} \\
+\midrule
+DistilBERT & 6 & +589,824 \\
+RoBERTa & 12 & +1,179,648 \\
+GPT-2 & 12 & +1,179,648 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This matches the empirical observations in  7.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Resolution}
+
+EAT resolves \texttt{hidden\_size} and \texttt{num\_heads} in this order:
+
+\begin{enumerate}
+\item \texttt{config.hidden\_size} / \texttt{config.num\_attention\_heads}
+\item From \texttt{source\_attn} projections (\texttt{q\_lin.in\_features}, etc.)
+\item From \texttt{kwargs} (\texttt{hidden\_size}, \texttt{num\_heads})
+\item Default \texttt{768} / \texttt{12}
+
+\end{enumerate}
+This ensures EAT works even when \texttt{config} is incomplete.
+
+\subsection{Layer Targeting}
+
+The injection hook searches for attention modules in this order:
+
+\begin{enumerate}
+\item \texttt{layer.attention} (RoBERTa/BERT)
+\item \texttt{layer.self\_attn} (Qwen/LLaMA)
+\item \texttt{layer.attn} (GPT-2)
+\item \texttt{layer.self} (DistilBERT variants)
+
+\end{enumerate}
+For nested encoders, \texttt{layer.attention.self} is targeted.
+
+\subsection{Copy Weights -- Case by Case}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+# Flat attention -- all four projections available
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+# Nested -- extract from src.self, skip out\_proj
+s = src.self
+extracted["q"] = (s.query.weight.data, s.query.bias.data)
+extracted["k"] = (s.key.weight.data, s.key.bias.data)
+extracted["v"] = (s.value.weight.data, s.value.bias.data)
+extracted["o"] = (src.output.dense.weight.data, src.output.dense.bias.data)
+\end{lstlisting}
+
+The \texttt{is\_nested\_encoder = True} flag means EAT returns the raw context 
+without applying \texttt{out\_lin}. The outer \texttt{attention.output.dense} applies it.
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+# Fused Conv1D -- transpose and split
+w = src.c\_attn.weight.data.t()  # (3d, d)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:d])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[d:2*d])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[2*d:])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+
+\begin{lstlisting}
+# Direct copy from named projections
+extracted["q"] = (src.q\_proj.weight.data, src.q\_proj.bias.data)
+extracted["k"] = (src.k\_proj.weight.data, src.k\_proj.bias.data)
+extracted["v"] = (src.v\_proj.weight.data, src.v\_proj.bias.data)
+extracted["o"] = (src.o\_proj.weight.data, src.o\_proj.bias.data)
+# RoPE preserved via rotary\_emb copy
+\end{lstlisting}
+
+\subsection{The `is\_nested\_encoder` Flag}
+
+This flag determines whether the module applies its own \texttt{out\_lin} projection:
+
+\begin{itemize}
+\item \textbf{True} (RoBERTa): output projection is applied externally; EAT returns
+  raw context.
+\item \textbf{False} (DistilBERT, GPT-2, Qwen): EAT applies \texttt{out\_lin} internally.
+
+\end{itemize}
+\textbf{Common bug.} If \texttt{is\_nested\_encoder} is set incorrectly, the projection 
+is applied twice (resulting in a scale collapse) or zero times (resulting 
+in missing output).
+
+The detection logic:
+
+\begin{lstlisting}
+if (hasattr(src, "self") and hasattr(src.self, "query")
+    and hasattr(src, "output") and hasattr(src.output, "dense")):
+    is\_nested = True
+elif (cls\_name.endswith("SelfAttention") and "distil" not in cls\_name.lower()
+      and not has\_out\_lin):
+    is\_nested = True
+\end{lstlisting}
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject\_eat(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = EATBlock(config=model\_config, pretrained\_attn=src, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
+\end{lstlisting}
+
+The replacement targets the same attribute path as the source:
+
+\begin{lstlisting}
+for attr in ("attention", "self\_attn", "attn", "self"):
+    if hasattr(layer, attr):
+        setattr(layer, attr, new\_attn)
+        break
+\end{lstlisting}
+
+\subsection{Handling LoRA-Wrapped Source Modules}
+
+If the source module is already wrapped with LoRA:
+
+\begin{enumerate}
+\item \textbf{Merge LoRA} into the base layer (\texttt{c\_attn\_mod.merge()}).
+\item \textbf{Extract} merged weights.
+\item \textbf{Re-initialize} LoRA in EAT with the same rank.
+
+\end{enumerate}
+This ensures the weights transferred are the effective weights, not the 
+base weights.
+
+\subsection{Failure Modes and Silent Fallback}
+
+EAT's \texttt{copy\_weights} is defensive:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Failure} & \textbf{Action} \\
+\midrule
+LoRA merge fails & Log debug, continue with unmerged weights \\
+Missing projection & Log warning, keep random init for that projection \\
+Small Frobenius norm & Log warning, continue \\
+UniversalAdapter fails & Log debug, continue \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The critical consequence:} If weight transfer fails silently, EAT 
+initializes with random weights, and the model's forward pass produces 
+garbage. Recovery fine-tuning cannot compensate because gradient signals 
+are dominated by noise.
+
+\textbf{Mitigation.} We recommend:
+
+\begin{enumerate}
+\item \textbf{Add a hard assertion} (optional flag \texttt{strict\_weight\_transfer=True})
+  that raises if any projection is missing.
+\item \textbf{Post-injection sanity check:} Compare logits before and after
+  injection on a fixed input. If the difference is large, abort.
+\item \textbf{Log at WARN level} on any missing projection (currently does).
+
+\end{enumerate}
+\subsection{The `EATBlock` Module}
+
+\begin{lstlisting}
+class EATBlock(BaseAttention):
+    def \_\_init\_\_(self, config, rank=64, ..., prune\_layer=None):
+        super().\_\_init\_\_(config, rank)
+        self.q\_lin = LoRALinear(d, H*d\_h, lora\_rank=16)
+        self.k\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.v\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.out\_lin = LoRALinear(H*d\_h, d, lora\_rank=16)
+        self.prune\_layer = prune\_layer
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
+    
+    def forward(self, X, attention\_mask=None, ...):
+        Q = self.q\_lin(X).view(...)
+        K = self.k\_lin(X).view(...)
+        V = self.v\_lin(X).view(...)
+        # attention, output projection, optional pruning
+        return Y
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("eat")
+@ATTENTION\_REGISTRY.register("eat\_attention")
+class EATBlock(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality Verification}
+
+For decoder models, EAT maintains causality because:
+
+\begin{enumerate}
+\item \textbf{Attention masking:} Causal mask is applied in \texttt{scores}.
+\item \textbf{No future leakage in projections:} Q/K/V projections are
+  position-wise.
+\item \textbf{Pruning causality:} Progressive pruning, if used, must respect
+  causal ordering (see \texttt{ProgressiveTokenPruning} documentation).
+
+\end{enumerate}
+\textbf{Verification.}
+
+\begin{lstlisting}
+X = torch.randn(1, L, d, requires\_grad=True)
+Y = model(X)
+loss = Y[0, i].sum()
+loss.backward()
+assert X.grad[0, i+1:].abs().max() \textless{} 1e-6
+\end{lstlisting}
+
+32
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of eat.}
+\label{fig:arch_eat}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{rank} (unused for EAT) & 32 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{prune\_layer} & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} The \texttt{rank} parameter is inherited from \texttt{BaseAttention} but is not 
+used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Only LoRA parameters are trainable; base projections are frozen.
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1 (binary, macro), precision, recall
+\item \textbf{Efficiency:} Total params, trainable params, peak VRAM, inference time
+\item \textbf{Injection:} Compressed layers count, fallback count
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_eat.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 min.
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -169,7 +1032,7 @@ DistilBERT & \textbf{Eat} & \textbf{90.60\%} & -0.34\% & PASS & 0.9093 & 24 & \t
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
 RoBERTa & \textbf{Eat} & \textbf{85.32\%} & -5.28\% & PASS & 0.8697 & 85 & \textbf{0.95$\times$} & 396.6 MB & 28.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Eat} & \textbf{49.54\%} & +0.00\% & PASS_LOW & 0.2691 & 48 & \textbf{0.99$\times$} & 325.9 MB & 22.3 & -- \\
+GPT-2 & \textbf{Eat} & \textbf{49.54\%} & +0.00\% & PASS\_LOW & 0.2691 & 48 & \textbf{0.99$\times$} & 325.9 MB & 22.3 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -326,12 +1189,13 @@ GPT-2 & PASS & 82.11 & 32 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/eat_roberta_loss_convergence.png}
+\includegraphics[width=0.85\linewidth]{figures/eat\_roberta\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{eat}.}
 \label{fig:results_eat}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -354,8 +1218,8 @@ If RoBERTa fails with $\Delta$ = +4.12\%, we investigate:
 EAT's \texttt{copy\_weights} is defensive:
 
 \begin{lstlisting}
-if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections ...")
+if missing\_after:
+    logger.warning(f"EATBlock copy\_weights: missing projections ...")
     # $\leftarrow$ continues with random init!
 \end{lstlisting}
 
@@ -364,7 +1228,7 @@ projection after transfer:
 
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
-    w = getattr(new_attn, f"{proj}_lin").weight
+    w = getattr(new\_attn, f"{proj}\_lin").weight
     print(f"{proj}: norm={w.norm().item():.4f}")
 \end{lstlisting}
 
@@ -379,10 +1243,10 @@ outer layer applies another projection $\to$ double projection $\to$ scale colla
 \textbf{Test.} We compared logits before and after injection on a fixed input:
 
 \begin{lstlisting}
-logits_before = model(ids).logits
+logits\_before = model(ids).logits
 # inject
-logits_after = model(ids).logits
-print("diff:", (logits_before - logits_after).abs().max().item())
+logits\_after = model(ids).logits
+print("diff:", (logits\_before - logits\_after).abs().max().item())
 \end{lstlisting}
 
 \textbf{Result.} 32
@@ -510,7 +1374,7 @@ Multi-architecture deployment & EAT, NHA \\
 \textbf{Collapse} & Acc $\approx$ 50.92\% & Silent weight transfer failure \\
 \textbf{Double projection} & Acc drops 15-25\% & \texttt{is\_nested\_encoder} wrong \\
 \textbf{OOM} & CUDA error & Batch size too large \\
-\textbf{Slow} & >3$\times$ latency & LoRA overhead \\
+\textbf{Slow} & \textgreater{}3$\times$ latency & LoRA overhead \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -547,6 +1411,7 @@ EAT with LoRA + pruning & 86.4\% & 0.85 \\
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -668,6 +1533,7 @@ The combined pipeline achieves parameter reduction AND pruning speedup.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -708,8 +1574,8 @@ Only SST-2 is evaluated. EAT may behave differently on:
 Tested on models with $\le$124M parameters. Not tested on:
 
 \begin{itemize}
-\item >1B parameter models
-\item Very deep models (>24 layers)
+\item \textgreater{}1B parameter models
+\item Very deep models (\textgreater{}24 layers)
 \item Mixture-of-Experts
 
 \end{itemize}
@@ -776,6 +1642,7 @@ Research-grade implementation. Known issues:
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -854,14 +1721,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -887,21 +1755,21 @@ numpy & 1.0.0 \\
 \subsection{Running EAT}
 
 \begin{lstlisting}
-python run_all_4_eat.py \
+python run\_all\_4\_eat.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,eat \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -909,23 +1777,23 @@ python Codes/framework/run_quality_sweep.py \
 \subsubsection{Table 7.1}
 
 \begin{lstlisting}
-python run_all_4_eat.py --models distilbert,roberta,gpt2
+python run\_all\_4\_eat.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (LoRA rank)}
 
 \begin{lstlisting}
 for r in 4 8 16 32 64; do
-    python run_all_4_eat.py --lora_rank $r --output_suffix lora$r
+    python run\_all\_4\_eat.py --lora\_rank $r --output_suffix lora$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Pruning)}
 
 \begin{lstlisting}
-python run_all_4_eat.py --prune_ratio 0.5
-python run_all_4_eat.py --prune_ratio 0.7
-python run_all_4_eat.py --no_prune
+python run\_all\_4\_eat.py --prune\_ratio 0.5
+python run\_all\_4\_eat.py --prune\_ratio 0.7
+python run\_all\_4\_eat.py --no\_prune
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -934,7 +1802,7 @@ python run_all_4_eat.py --no_prune
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -975,6 +1843,7 @@ GPT-2 & 82.11\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1102,6 +1971,7 @@ GPT-2 & 82.11\% & +48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -1180,57 +2050,58 @@ weight to future tokens. $\square$
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 The EATBlock Module}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("eat")
-@ATTENTION_REGISTRY.register("eat_attention")
+@ATTENTION\_REGISTRY.register("eat")
+@ATTENTION\_REGISTRY.register("eat\_attention")
 class EATBlock(BaseAttention):
-    def __init__(self, config, rank=64, ..., prune_layer=None,
-                 pretrained_attn=None, ...):
-        super().__init__(config, rank)
-        self.q_lin = LoRALinear(d, H*d_h, lora_rank=16)
-        self.k_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.v_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.out_lin = LoRALinear(H*d_h, d, lora_rank=16)
-        self.prune_layer = prune_layer
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+    def \_\_init\_\_(self, config, rank=64, ..., prune\_layer=None,
+                 pretrained\_attn=None, ...):
+        super().\_\_init\_\_(config, rank)
+        self.q\_lin = LoRALinear(d, H*d\_h, lora\_rank=16)
+        self.k\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.v\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.out\_lin = LoRALinear(H*d\_h, d, lora\_rank=16)
+        self.prune\_layer = prune\_layer
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
     
-    def forward(self, X, attention_mask=None, head_mask=None,
-                encoder_hidden_states=None, position_embeddings=None, **kwargs):
+    def forward(self, X, attention\_mask=None, head\_mask=None,
+                encoder\_hidden\_states=None, position\_embeddings=None, **kwargs):
         B, L, D = X.shape
         # 1. Project
-        q = self.q_lin(X).view(B, L, H, d_h).transpose(1, 2)
-        k = self.k_lin(X).view(B, L, H_kv, d_h).transpose(1, 2)
-        v = self.v_lin(X).view(B, L, H_kv, d_h).transpose(1, 2)
+        q = self.q\_lin(X).view(B, L, H, d\_h).transpose(1, 2)
+        k = self.k\_lin(X).view(B, L, H\_kv, d\_h).transpose(1, 2)
+        v = self.v\_lin(X).view(B, L, H\_kv, d\_h).transpose(1, 2)
         # 2. RoPE
-        if position_embeddings is not None:
-            q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
+        if position\_embeddings is not None:
+            q, k = apply\_rotary\_pos\_emb(q, k, *position\_embeddings)
         # 3. GQA
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+        if self.kv\_repeat \textgreater{} 1:
+            k = repeat\_kv(k, self.kv\_repeat)
+            v = repeat\_kv(v, self.kv\_repeat)
         # 4. Attention
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-        if self.is_decoder:
-            scores = scores + causal_mask
-        if attention_mask is not None:
-            scores = scores + pad_mask
+        if self.is\_decoder:
+            scores = scores + causal\_mask
+        if attention\_mask is not None:
+            scores = scores + pad\_mask
         probs = F.softmax(scores, dim=-1)
-        attn_out = torch.matmul(probs.to(v.dtype), v)
-        attn_out = attn_out.transpose(1, 2).contiguous().view(B, L, H*d_h)
+        attn\_out = torch.matmul(probs.to(v.dtype), v)
+        attn\_out = attn\_out.transpose(1, 2).contiguous().view(B, L, H*d\_h)
         # 5. Output projection
-        if self.is_nested_encoder:
-            out = attn_out
+        if self.is\_nested\_encoder:
+            out = attn\_out
         else:
-            out = self.out_lin(attn_out)
+            out = self.out\_lin(attn\_out)
         # 6. Optional pruning (inference only)
-        if self.prune_layer is not None and not self.training:
-            out, _ = self.prune_layer(out)
+        if self.prune\_layer is not None and not self.training:
+            out, \_ = self.prune\_layer(out)
         return out, None
 \end{lstlisting}
 
@@ -1238,23 +2109,23 @@ class EATBlock(BaseAttention):
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
-        super().__init__()
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True,
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            lora = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            lora = F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
             out = out + lora
         return out
 \end{lstlisting}
@@ -1264,10 +2135,10 @@ class LoRALinear(nn.Module):
 \subsubsection{B.3.1 DistilBERT}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
-extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
-extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
-extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
 \end{lstlisting}
 
 \subsubsection{B.3.2 RoBERTa (nested)}
@@ -1283,21 +2154,21 @@ extracted["o"] = (src.output.dense.weight.data, src.output.dense.bias.data)
 \subsubsection{B.3.3 GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.t()  # transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = (q_w, src.c_attn.bias.data[:768])
-extracted["k"] = (k_w, src.c_attn.bias.data[768:1536])
-extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
-extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+w = src.c\_attn.weight.data.t()  # transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:768])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[768:1536])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[1536:2304])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
 \end{lstlisting}
 
 \subsubsection{B.3.4 Qwen}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_proj.weight.data, src.q_proj.bias.data)
-extracted["k"] = (src.k_proj.weight.data, src.k_proj.bias.data)
-extracted["v"] = (src.v_proj.weight.data, src.v_proj.bias.data)
-extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
+extracted["q"] = (src.q\_proj.weight.data, src.q\_proj.bias.data)
+extracted["k"] = (src.k\_proj.weight.data, src.k\_proj.bias.data)
+extracted["v"] = (src.v\_proj.weight.data, src.v\_proj.bias.data)
+extracted["o"] = (src.o\_proj.weight.data, src.o\_proj.bias.data)
 \end{lstlisting}
 
 \subsection{B.4 The Silent Failure Path}
@@ -1305,11 +2176,11 @@ extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
 \textbf{Critical code path} (in \texttt{copy\_weights}):
 
 \begin{lstlisting}
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
-if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections {missing_after} "
-                   f"from {pretrained_attn.__class__.__name__}; "
+missing\_after = [k for k, (w, \_) in extracted.items() 
+                 if w is None and (k != "o" or not self.is\_nested\_encoder)]
+if missing\_after:
+    logger.warning(f"EATBlock copy\_weights: missing projections {missing\_after} "
+                   f"from {pretrained\_attn.\_\_class\_\_.\_\_name\_\_}; "
                    f"proceeding with random init for those")
     # $\leftarrow$ continues, doesn't raise
 \end{lstlisting}
@@ -1317,21 +2188,21 @@ if missing_after:
 This is the origin of the "silent failure" problem. We recommend adding:
 
 \begin{lstlisting}
-if missing_after and os.environ.get("EAT_STRICT", "0") == "1":
-    raise RuntimeError(f"Missing projections: {missing_after}")
+if missing\_after and os.environ.get("EAT\_STRICT", "0") == "1":
+    raise RuntimeError(f"Missing projections: {missing\_after}")
 \end{lstlisting}
 
 \subsection{B.5 Post-Injection Sanity Check}
 
 \begin{lstlisting}
-def sanity_check(model, device, seq_len=32):
+def sanity\_check(model, device, seq\_len=32):
     model.eval()
-    ids = torch.randint(0, 1000, (2, seq_len), device=device)
-    with torch.no_grad():
+    ids = torch.randint(0, 1000, (2, seq\_len), device=device)
+    with torch.no\_grad():
         out = model(ids).logits
     std = out.std(dim=0).mean().item()
     uniq = out.argmax(-1).unique().numel()
-    if std < 1e-3 or uniq < 2:
+    if std \textless{} 1e-3 or uniq \textless{} 2:
         raise RuntimeError(f"Collapse detected: std={std}, uniq={uniq}")
 \end{lstlisting}
 
@@ -1355,6 +2226,7 @@ Base weights must have \texttt{requires\_grad = False} after copy.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1539,12 +2411,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "compressed_layers": 2.0x
+    "compressed\_layers": 2.0x
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1555,16 +2427,16 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_eat.py --models distilbert,roberta,gpt2
+python run\_all\_4\_eat.py --models distilbert,roberta,gpt2
 
 # LoRA rank sweep
 for r in 4 8 16 32 64; do
-    python run_all_4_eat.py --lora_rank $r --output_suffix lora$r
+    python run\_all\_4\_eat.py --lora\_rank $r --output_suffix lora$r
 done
 
 # Pruning sweep
 for ratio in 1.0 0.9 0.7 0.5 0.3; do
-    python run_all_4_eat.py --prune_ratio $ratio --output_suffix prune$ratio
+    python run\_all\_4\_eat.py --prune\_ratio $ratio --output_suffix prune$ratio
 done
 \end{lstlisting}
 \begin{lstlisting}
@@ -1572,6 +2444,7 @@ done
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 
 \section{Appendix D. Negative Results}
 
@@ -1720,7 +2593,7 @@ Std & 0.1 \\
 \item \textbf{Pruning is inference-only.}
 \item \textbf{\texttt{is\_nested\_encoder} must be correct.}
 \item \textbf{LoRA recovery is essential.}
-\item \textbf{Pruning ratio < 0.7 for accuracy.}
+\item \textbf{Pruning ratio \textless{} 0.7 for accuracy.}
 \item \textbf{Freeze base weights is best.}
 \end{enumerate}
 \begin{lstlisting}
@@ -1728,6 +2601,7 @@ Std & 0.1 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 
 \section{Appendix E. Ethical Considerations}
 
@@ -1826,3 +2700,4 @@ We encourage the community to weigh these trade-offs.
 
 ---
 \end{lstlisting}
+

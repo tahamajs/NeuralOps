@@ -1,0 +1,3 @@
+# 9. Discussion
+
+The design of `svd_linear_inject` represents an effective compromise between expressive capacity and computational parsimony. While extreme compression induces slight degradation on fine-grained reasoning benchmarks, downstream classification accuracy remains robust, indicating that task-critical features are preserved within the dominant subspaces.

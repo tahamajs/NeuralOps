@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -11,7 +13,7 @@ The softmax attention operation computes a pairwise score between every
 query and every key:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 This requires $\mathcal{O}(L^2 d)$ time and $\mathcal{O}(L^2)$ memory for 
@@ -83,7 +85,7 @@ producing $K$ centroids $C \in \mathbb{R}^{B \times H \times K \times d_h}$.
 to all keys:
 
 \[
-V_{\text{cent}} = \text{softmax}\!\left(\frac{C K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{B \times H \times K \times d_h}
+V\_{\text{cent}} = \text{softmax}\!\left(\frac{C K^\top}{\sqrt{d\_h}}\right) V \in \mathbb{R}^{B \times H \times K \times d\_h}
 \]
 
 This costs $\mathcal{O}(K L d_h)$ -- linear in $L$.
@@ -92,7 +94,7 @@ This costs $\mathcal{O}(K L d_h)$ -- linear in $L$.
 collect the corresponding context:
 
 \[
-\text{Global}(Q) = \text{softmax}\!\left(\frac{Q C^\top}{\sqrt{d_h} \cdot \tau}\right) V_{\text{cent}}
+\text{Global}(Q) = \text{softmax}\!\left(\frac{Q C^\top}{\sqrt{d\_h} \cdot \tau}\right) V\_{\text{cent}}
 \]
 
 where $\tau$ is a learnable temperature.
@@ -143,6 +145,7 @@ limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{Sparse Attention}
@@ -194,6 +197,717 @@ routing mechanism but different purpose.
 sequentially. ClusterFormer is vectorized and differentiable.
 
 \subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Global?} & \textbf{Local?} & \textbf{Differentiable?} \\
+\midrule
+Softmax & $\mathcal{O}(L^2)$ & Yes & Yes & Yes \\
+Longformer & $\mathcal{O}(LW)$ & Partial & Yes & Yes \\
+Performer & $\mathcal{O}(Lm)$ & Yes & No & Yes \\
+Reformer & $\mathcal{O}(L\log L)$ & Yes & No & Approx. \\
+Routing & $\mathcal{O}(L^2/k)$ & Partial & No & No (argmin) \\
+\textbf{ClusterFormer} & $\mathcal{O}(KL)$ & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+ClusterFormer is unique in combining:
+\begin{enumerate}
+\item \textbf{Exact} centroid-to-key attention (not approximate).
+\item \textbf{Global + local} blending.
+\item \textbf{Fully differentiable} clustering (softmax assignment).
+\item \textbf{Multi-architecture} support including GQA and RoPE.
+
+\end{enumerate}
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Multi-Head Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V \in \mathbb{R}^{B \times L \times d}
+\]
+
+Standard attention:
+
+\[
+\text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\]
+
+\subsection{K-Means Clustering}
+
+Given $L$ points $x_1, \dots, x_L \in \mathbb{R}^d$, K-means minimizes:
+
+\[
+\mathcal{L}(C) = \sum\_{i=1}^{L} \min\_{k \in [K]} \|x\_i - c\_k\|\_2^2
+\]
+
+Lloyd's algorithm alternates:
+
+\begin{enumerate}
+\item \textbf{Assignment:} $a_i = \arg\min_k \|x_i - c_k\|_2^2$
+\item \textbf{Update:} $c_k = \frac{\sum_{i: a_i = k} x_i}{|a_i = k|}$
+
+\end{enumerate}
+\textbf{Complexity.} $\mathcal{O}(L K d)$ per iteration.
+
+\textbf{Vectorization.} Both steps parallelize over $B, H$ in attention context.
+
+\subsection{Differentiable K-Means}
+
+Standard K-means uses \texttt{argmin}, which is non-differentiable. For 
+end-to-end training:
+
+\begin{itemize}
+\item \textbf{Forward:} Use \texttt{argmin} to get hard assignments (for the update step).
+\item \textbf{Backward:} Use softmax for gradient flow through assignments.
+
+\end{itemize}
+ClusterFormer is fully differentiable:
+\begin{itemize}
+\item Centroid updates use one-hot (non-differentiable) -- this is fine since
+  centroids are deterministic functions of $Q$.
+\item Assignment uses \texttt{softmax} with learnable temperature, giving gradients.
+
+\end{itemize}
+\subsection{Linear Attention}
+
+A generic linear attention reformulation:
+
+\[
+\text{Attn}(Q, K, V) = \frac{\phi(Q) \sum\_j \phi(K\_j) V\_j^\top}{\phi(Q) \sum\_j \phi(K\_j)}
+\]
+
+for some feature map $\phi$. If $\phi$ has dimension $m$, complexity is 
+$\mathcal{O}(L m d)$.
+
+ClusterFormer does not use this formulation. Instead, it clusters queries 
+and computes attention from $K$ centroids to keys.
+
+\subsection{LoRA Adapters}
+
+LoRA (Hu et al., 2021) parameterizes:
+
+\[
+W\_\text{eff} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A, \quad B = 0 \text{ at init}
+\]
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+ClusterFormer replaces the standard attention operation with four 
+components:
+
+\begin{enumerate}
+\item \textbf{Fast differentiable K-means} over queries ( 4.2).
+\item \textbf{Centroid-to-key cross-attention} ( 4.3).
+\item \textbf{Soft assignment with learned temperature} ( 4.4).
+\item \textbf{Local sliding window residual} ( 4.5).
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +---------------------------------------------+
+    |  Input X $\to$ Q, K, V projections (frozen+LoRA) |
+    +---------------------+-----------------------+
+                          |
+              +-----------+-----------+
+                                       
+        +-----------+           +-----------+
+        | K-means   |           | Local     |
+        | on Q      |           | Window    |
+        | $\to$ C       |           | Attention |
+        +-----+-----+           +-----+-----+
+              |                       |
+                                      |
+        +-----------+                 |
+        | Centroid- |                 |
+        | to-Key    |                 |
+        | $\to$ V\_cent  |                 |
+        +-----+-----+                 |
+              |                       |
+                                      |
+        +-----------+                 |
+        | Soft      |                 |
+        | Assign    |                 |
+        | $\to$ Global  |                 |
+        +-----+-----+                 |
+              |                       |
+              +---------+-------------+
+                         
+                +--------------+
+                | Blend with $\alpha$ |
+                +------+-------+
+                       |
+                        
+                  +--------+
+                  | out    |
+                  +--------+
+\end{lstlisting}
+
+\subsection{Phase 1: Fast Differentiable K-Means}
+
+\subsubsection{Initialization}
+
+Given queries $Q \in \mathbb{R}^{B \times H \times L \times d_h}$, we need 
+$K$ initial centroids. Padding tokens must be excluded.
+
+\textbf{Algorithm.} Given a valid-token mask $m \in \{0, 1\}^{B \times L}$:
+
+\begin{enumerate}
+\item Compute the rank of each valid token: $r_i = \sum_{j \leq i} m_j - 1$.
+\item Compute target ranks: $t_k = \lfloor k \cdot N_\text{valid} / K \rfloor$
+  for $k = 0, \dots, K-1$.
+\item For each centroid $k$, pick the valid token whose rank is closest to $t_k$.
+
+\end{enumerate}
+This spreads initial centroids uniformly across the valid sequence.
+
+\subsubsection{Lloyd Iterations}
+
+We run \textbf{3 iterations} of standard Lloyd's algorithm:
+
+\textbf{Assignment:}
+\[
+a\_{b,h,i} = \arg\min\_{k \in [K]} \|Q\_{b,h,i} - C\_{b,h,k}\|\_2^2
+\]
+
+Implemented via \texttt{torch.cdist} on FP32 for numerical stability.
+
+\textbf{Update:}
+\[
+C\_{b,h,k} = \frac{\sum\_{i: a\_{b,h,i} = k} Q\_{b,h,i}}{\sum\_{i: a\_{b,h,i} = k} 1}
+\]
+
+Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
+their previous centroid.
+
+\subsubsection{Why 3 Iterations?}
+
+Empirically, 3 iterations are enough for attention clustering:
+
+\begin{itemize}
+\item More iterations increase cost $\mathcal{O}(K L d)$ per iteration.
+\item The soft-assignment step (Phase 4) corrects for imperfect centroids.
+\item We ablate this in Section 7.6.
+
+\end{itemize}
+\subsection{Phase 2: Centroid-to-Key Cross-Attention}
+
+For each centroid $C_k$, compute attention to all keys:
+
+\[
+\text{scores}\_{b,h,k,j} = \frac{C\_{b,h,k} \cdot K\_{b,h,j}}{\sqrt{d\_h}}
+\]
+
+\[
+\alpha\_{b,h,k,j} = \text{softmax}\_j(\text{scores}\_{b,h,k,j})
+\]
+
+\[
+V\_{\text{cent}, b,h,k} = \sum\_j \alpha\_{b,h,k,j} V\_{b,h,j}
+\]
+
+\textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ -- linear in $L$!
+
+\textbf{Padding.} Invalid keys are masked with $-\infty$ before softmax.
+
+\textbf{Causality.} For decoders, we apply a causal mask by construction: 
+scores are restricted to $j \leq$ some threshold. See Section 5.4.
+
+\subsection{Phase 3: Soft Assignment with Temperature}
+
+Each query is assigned to centroids via soft attention:
+
+\[
+\text{assign}\_{b,h,i,k} = \text{softmax}\_k\!\left(\frac{Q\_{b,h,i} \cdot C\_{b,h,k}}{\sqrt{d\_h} \cdot \tau}\right)
+\]
+
+with learnable temperature $\tau$. The global context is:
+
+\[
+\text{Global}\_{b,h,i} = \sum\_k \text{assign}\_{b,h,i,k} \cdot V\_{\text{cent}, b,h,k}
+\]
+
+\textbf{Why temperature?} Small $\tau$ sharpens the assignment toward the 
+nearest centroid (harder clustering); large $\tau$ softens it. We initialize 
+$\tau = 0.1$ and let recovery training learn the optimal value.
+
+\textbf{Clamping.} $\tau$ is clamped to $[0.1, 10.0]$ for stability.
+
+\textbf{Empty clusters.} If a cluster has zero assigned tokens, its assignment 
+logit is masked to $-\infty$, ensuring no query attends to it.
+
+\subsection{Phase 4: Local Sliding Window Residual}
+
+Clustering captures global structure but can miss fine-grained local 
+dependencies. We add a sliding-window attention branch:
+
+\[
+\text{scores}^\text{local}\_{b,h,i,j} = \frac{Q\_{b,h,i} \cdot K\_{b,h,j}}{\sqrt{d\_h}} \cdot \mathbf{1}[|i - j| \leq W]
+\]
+
+\[
+\text{Local}\_{b,h,i} = \sum\_{j: |i-j| \leq W} \text{softmax}\_j(\text{scores}^\text{local}) \cdot V\_{b,h,j}
+\]
+
+\textbf{Complexity.} $\mathcal{O}(L \cdot W \cdot d_h)$.
+
+\subsubsection{Blending}
+
+The final output is:
+
+\[
+\text{Output} = (1 - \sigma(\alpha)) \cdot \text{Global} + \sigma(\alpha) \cdot \text{Local}
+\]
+
+where $\alpha \in \mathbb{R}$ is a \textbf{learnable scalar} initialized to 0 
+(so $\sigma(0) = 0.5$, giving 50/50 blend at start).
+
+\textbf{Why sigmoid?} Enforces $\alpha_\text{blend} \in (0, 1)$, avoiding 
+negative or \textgreater{}1 weights.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} ClusterFormer forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
+Output: Y, attn\_weights
+
+ 1: Q $\leftarrow$ LoRALinear\_Q(X)                         Frozen base + LoRA
+ 2: K $\leftarrow$ LoRALinear\_K(X)
+ 3: V $\leftarrow$ LoRALinear\_V(X)
+ 4:
+ 5: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+ 6: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 7:
+ 8: if decoder:                                   Exact causal path
+ 9:     S $\leftarrow$ QK^T / $\sqrt{}$d\_h
+10:     S $\leftarrow$ causal\_mask(S)
+11:     A $\leftarrow$ softmax(S)
+12:     Y\_ctx $\leftarrow$ A @ V
+13: else:                                          Cluster path
+14:     C, ids, counts $\leftarrow$ kmeans(Q, K, iters=3)     Cluster queries
+15:     S\_cent $\leftarrow$ C K^T / $\sqrt{}$d\_h
+16:     A\_cent $\leftarrow$ softmax(S\_cent)
+17:     V\_cent $\leftarrow$ A\_cent @ V                         Centroid contexts
+18:     S\_assign $\leftarrow$ Q C^T / ($\sqrt{}$d\_h   $\tau$)
+19:     A\_assign $\leftarrow$ softmax(S\_assign)
+20:     Y\_global $\leftarrow$ A\_assign @ V\_cent
+21:
+22:     if W \textgreater{} 0:
+23:         S\_local $\leftarrow$ QK^T / $\sqrt{}$d\_h
+24:         S\_local $\leftarrow$ window\_mask(S\_local, W)
+25:         A\_local $\leftarrow$ softmax(S\_local)
+26:         Y\_local $\leftarrow$ A\_local @ V
+27:         $\alpha$ $\leftarrow$ $\sigma$(learned\_scalar)
+28:         Y\_ctx $\leftarrow$ (1-$\alpha$) Y\_global + $\alpha$ Y\_local
+29:     else:
+30:         Y\_ctx $\leftarrow$ Y\_global
+31:
+32: Y $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+33: if nested: Y\_out $\leftarrow$ Y
+34: else: Y\_out $\leftarrow$ LoRALinear\_O(Y)
+35:
+36: return Y\_out
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Complexity} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(L d^2)$ \\
+K-means (3 iters) & $\mathcal{O}(K L d_h)$ \\
+Centroid-to-key & $\mathcal{O}(K L d_h)$ \\
+Soft assignment & $\mathcal{O}(K L d_h)$ \\
+Local window & $\mathcal{O}(L W d_h)$ \\
+Output projection & $\mathcal{O}(L d^2)$ \\
+\textbf{Total} & $\mathcal{O}(L d^2 + L K d_h + L W d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
+
+\subsubsection{Comparison with Baseline}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Attention cost} \\
+\midrule
+Baseline & $\mathcal{O}(L^2 d_h)$ \\
+ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
+\textbf{Reduction at $L=128$} & \textbf{$\approx 2.7$\times$} \\
+\textbf{Reduction at $L=512$} & \textbf{$\approx 10.7$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+LoRA ($r_L=16$) & $4 \times r_L \times d$ per layer \\
+Learnable temperature & 1 \\
+Learnable blend & 1 \\
+\textbf{Per layer} & $4 r_L d + 2$ \\
+\textbf{Total ($N_l$ layers)} & $4 r_L d N_l + 2 N_l$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): \textbf{+294,916 params}.
+
+\textbf{ClusterFormer is not a compression method.} Parameter count increases 
+by \textbf{0.88\%}.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{K-Means Convergence}
+
+Lloyd's algorithm monotonically decreases the objective (3.3) and converges 
+in finite iterations. We use 3 iterations as a practical approximation.
+
+\subsubsection{Complexity Proof}
+
+\textbf{Claim.} ClusterFormer's attention cost is $\mathcal{O}(K L d_h)$.
+
+\textbf{Proof.} Direct from the algorithm:
+
+\begin{itemize}
+\item K-means: each iteration is $\mathcal{O}(L K d_h)$ via cdist. Three
+  iterations = $\mathcal{O}(3 L K d_h)$.
+\item Centroid-to-key: matrix product of $(K \times d_h)$ and $(d_h \times L)$
+  is $\mathcal{O}(K L d_h)$.
+\item Soft assignment: product of $(L \times d_h)$ and $(d_h \times K)$ is
+  $\mathcal{O}(L K d_h)$.
+
+\end{itemize}
+Sum is $\mathcal{O}(L K d_h)$. $\square$
+
+\subsubsection{Approximation vs Exactness}
+
+Unlike Performer/Linformer, ClusterFormer is \textbf{exact} for the attention 
+distribution over centroids. It approximates the attention over tokens by 
+grouping tokens. The approximation error is bounded by the K-means 
+distortion:
+
+\[
+\epsilon \leq \sum\_i \|Q\_i - C\_{a\_i}\|\_2^2
+\]
+
+See Appendix A.5 for details.
+
+\subsection{Hyperparameter Guidance}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
+\midrule
+$K$ (num\_clusters) & 16 & Higher = better fidelity, more cost \\
+Iterations & 3 & Higher = better centroids \\
+$W$ (window\_size) & 32 & Higher = more local context \\
+$\tau$ (temp) & learnable & Smaller = harder clustering \\
+$\alpha$ (blend) & learnable & Higher = more local \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Choosing K:}
+
+\begin{itemize}
+\item $K = 8$: aggressive clustering, faster
+\item $K = 16$: balanced (default)
+\item $K = 32$: more fidelity, slower
+\item $K = L$: no compression (full attention)
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & Flat & No & No & No &  \\
+RoBERTa & Nested & Yes & No & No &  \\
+GPT-2 & Causal & No & No & No &  \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{DistilBERT (Flat)}
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+is\_nested\_encoder = False
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+# output.dense applied by outer module
+is\_nested\_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+\begin{lstlisting}
+w = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+Direct copy with GQA-aware dims.
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject\_cluster(layer, cfg, comp\_config, old\_attn):
+    new = ClusterAttention(
+        config=cfg,
+        comp\_config=comp\_config,
+        pretrained\_attn=old\_attn,
+        num\_clusters=16,
+        n\_iters=3,
+        window\_size=32,
+    )
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new
+        else:
+            layer.attention = new
+    return new
+\end{lstlisting}
+
+\subsection{Causal Masking}
+
+For decoders, ClusterFormer uses \textbf{exact causal attention}, not clustering:
+
+\begin{lstlisting}
+if is\_decoder:
+    scores = Q @ K.T / sqrt(d\_h)
+    scores = scores.masked\_fill(~causal\_tril, -10000)
+    attn = softmax(scores)
+    out = attn @ V
+\end{lstlisting}
+
+\textbf{Rationale.} Clustering introduces a global mixing effect that can leak 
+future information even with causal masking on keys. For stability we 
+use standard exact attention for decoder paths.
+
+\subsection{RoPE}
+
+Partial RoPE (Qwen3.5 with rotary\_dim \textless{} head\_dim) is supported via slicing 
+the first \texttt{rotary\_dim} coordinates.
+
+\subsection{GQA}
+
+\begin{lstlisting}
+if self.kv\_repeat \textgreater{} 1:
+    K = repeat\_kv(K, self.kv\_repeat)
+    V = repeat\_kv(V, self.kv\_repeat)
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("cluster")
+@ATTENTION\_REGISTRY.register("cluster\_attention")
+class ClusterAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises & Return None \\
+Empty clusters & \texttt{counts == 0} & Mask logit to -inf \\
+NaN in cdist & \texttt{torch.nan\_to\_num} & Replace with 0 \\
+Zero Frobenius & Check \textless{} 1e-4 & Raise error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Numerical Stability}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of cluster.}
+\label{fig:arch_cluster}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
+
+\subsection{Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{num\_clusters} & 16 \\
+\texttt{n\_iters} & 3 \\
+\texttt{window\_size} & 32 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+Temperature init & 0.1 \\
+Blend init & 0.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metrics}
+
+\begin{itemize}
+\item Accuracy, F1
+\item Attention FLOPs (theoretical)
+\item Peak VRAM
+\item Inference time
+\item Cluster quality (silhouette-like metric)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_cluster.py \
+    --models distilbert,roberta,gpt2 \
+    --num\_clusters 16 \
+    --window\_size 32 \
+    --recovery\_steps 50
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
 
 \begin{table*}[t]
 \centering
@@ -379,12 +1093,13 @@ High entropy and usage of many clusters indicate good diversity.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/cluster_roberta_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/cluster\_roberta\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cluster}.}
 \label{fig:results_cluster}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does ClusterFormer Work?}
@@ -522,6 +1237,7 @@ No systematic failures observed.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -568,7 +1284,7 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
   | No
    
-Sequence length > 128? --- No --- Use baseline softmax
+Sequence length \textgreater{} 128? --- No --- Use baseline softmax
   | Yes
    
 Latency critical? --- Yes --- Consider FlashAttention
@@ -661,6 +1377,7 @@ Total compute: ~15 GPU-hours, ~0.8 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Not a Compression Method}
@@ -734,6 +1451,7 @@ Dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -809,13 +1527,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -840,27 +1559,27 @@ datasets & 2.20.0 \\
 \subsection{Running ClusterFormer}
 
 \begin{lstlisting}
-python run_all_4_cluster.py \
+python run\_all\_4\_cluster.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters 16 \
-    --window_size 32 \
-    --recovery_steps 50
+    --num\_clusters 16 \
+    --window\_size 32 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \begin{lstlisting}
 # Main results
-python run_all_4_cluster.py --models distilbert,roberta,gpt2
+python run\_all\_4\_cluster.py --models distilbert,roberta,gpt2
 
 # K ablation
 for K in 4 8 16 32 64; do
-    python run_all_4_cluster.py --num_clusters $K --output_suffix K$K
+    python run\_all\_4\_cluster.py --num\_clusters $K --output_suffix K$K
 done
 
 # Window ablation
 for W in 0 8 32 64; do
-    python run_all_4_cluster.py --window_size $W --output_suffix W$W
+    python run\_all\_4\_cluster.py --window\_size $W --output_suffix W$W
 done
 \end{lstlisting}
 
@@ -870,8 +1589,8 @@ done
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -910,6 +1629,7 @@ GPT-2 & 87.96\% $\pm$ 1\% & +1188876M \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1051,6 +1771,7 @@ GPT-2 & 87.96\% $\pm$ 1\% & +1188876M \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Complexity Derivation}
@@ -1097,7 +1818,7 @@ is bounded below by 0, the algorithm converges. $\square$
 The soft assignment with temperature $\tau$:
 
 \[
-\text{assign}_{i,k} = \frac{\exp(Q_i \cdot C_k / (\sqrt{d_h} \tau))}{\sum_{k'} \exp(Q_i \cdot C_{k'} / (\sqrt{d_h} \tau))}
+\text{assign}\_{i,k} = \frac{\exp(Q\_i \cdot C\_k / (\sqrt{d\_h} \tau))}{\sum\_{k'} \exp(Q\_i \cdot C\_{k'} / (\sqrt{d\_h} \tau))}
 \]
 
 \textbf{Limit.} As $\tau \to 0$, this becomes a hard assignment (one-hot). As 
@@ -1108,7 +1829,7 @@ $\tau \to \infty$, it becomes uniform.
 \textbf{Statement.} The approximation error of ClusterFormer satisfies:
 
 \[
-\|\text{Output}_\text{CF} - \text{Output}_\text{exact}\|_F \leq f(\text{K-means distortion})
+\|\text{Output}\_\text{CF} - \text{Output}\_\text{exact}\|\_F \leq f(\text{K-means distortion})
 \]
 
 where $f$ is monotone increasing. We do not provide a tight bound; see 
@@ -1121,7 +1842,7 @@ empirical analysis in Section 8.
 \textbf{Proof.} We use exact causal attention for decoders (Section 5.4):
 
 \[
-\text{Attn}_i = \sum_{j \leq i} \alpha_{ij} V_j
+\text{Attn}\_i = \sum\_{j \leq i} \alpha\_{ij} V\_j
 \]
 
 Only keys with $j \leq i$ contribute. Causality is preserved. $\square$
@@ -1144,103 +1865,104 @@ For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): $8 \times 16 \times 768 \times 6 = 
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 K-Means Implementation}
 
 \begin{lstlisting}
-def _kmeans_cluster(self, Q, K_num, iters=3, valid_mask=None):
+def \_kmeans\_cluster(self, Q, K\_num, iters=3, valid\_mask=None):
     B, H, L, d = Q.shape
-    K = min(K_num, L)
+    K = min(K\_num, L)
     
     # Padding-aware initialization
-    if valid_mask is not None:
-        valid_f = valid_mask.float()
-        num_valid = valid_f.sum(dim=-1, keepdim=True).clamp(min=1.0)
-        step = (num_valid / K).clamp(min=1.0)
-        k_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)
-        target_ranks = (k_idx * step).clamp(max=num_valid - 1.0).long()
+    if valid\_mask is not None:
+        valid\_f = valid\_mask.float()
+        num\_valid = valid\_f.sum(dim=-1, keepdim=True).clamp(min=1.0)
+        step = (num\_valid / K).clamp(min=1.0)
+        k\_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)
+        target\_ranks = (k\_idx * step).clamp(max=num\_valid - 1.0).long()
         
-        ranks = (valid_f.cumsum(dim=-1) - 1.0) * valid_f
-        is_valid_3d = valid_mask.unsqueeze(1)
-        rank_diff = torch.where(
-            is_valid_3d,
-            (ranks.unsqueeze(1) - target_ranks.unsqueeze(-1)).abs(),
+        ranks = (valid\_f.cumsum(dim=-1) - 1.0) * valid\_f
+        is\_valid\_3d = valid\_mask.unsqueeze(1)
+        rank\_diff = torch.where(
+            is\_valid\_3d,
+            (ranks.unsqueeze(1) - target\_ranks.unsqueeze(-1)).abs(),
             torch.tensor(1e6, device=Q.device),
         )
-        chosen_indices = torch.argmin(rank_diff, dim=-1)
-        idx_expanded = chosen_indices.unsqueeze(1).unsqueeze(-1).expand(B, H, K, d)
-        centroids = torch.gather(Q, 2, idx_expanded).clone()
+        chosen\_indices = torch.argmin(rank\_diff, dim=-1)
+        idx\_expanded = chosen\_indices.unsqueeze(1).unsqueeze(-1).expand(B, H, K, d)
+        centroids = torch.gather(Q, 2, idx\_expanded).clone()
     else:
         step = max(1, L // K)
-        init_indices = torch.arange(0, L, step, device=Q.device)[:K]
-        centroids = Q[:, :, init_indices, :].clone()
+        init\_indices = torch.arange(0, L, step, device=Q.device)[:K]
+        centroids = Q[:, :, init\_indices, :].clone()
     
     # Lloyd iterations
-    cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
+    cluster\_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
     counts = torch.ones(B, H, K, 1, dtype=Q.dtype, device=Q.device)
-    Q_f = Q.float()
+    Q\_f = Q.float()
     
-    for _ in range(iters):
-        centroids_f = centroids.float()
-        dist = torch.cdist(Q_f, centroids_f)
-        if valid_mask is not None:
-            dist = dist.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), 1e6)
-        cluster_ids = torch.argmin(dist, dim=-1)
+    for \_ in range(iters):
+        centroids\_f = centroids.float()
+        dist = torch.cdist(Q\_f, centroids\_f)
+        if valid\_mask is not None:
+            dist = dist.masked\_fill(~valid\_mask.unsqueeze(1).unsqueeze(-1), 1e6)
+        cluster\_ids = torch.argmin(dist, dim=-1)
         
-        one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
-        if valid_mask is not None:
-            one_hot = one_hot * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
+        one\_hot = F.one\_hot(cluster\_ids, num\_classes=K).to(dtype=Q.dtype)
+        if valid\_mask is not None:
+            one\_hot = one\_hot * valid\_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
         
-        counts = one_hot.sum(dim=2).unsqueeze(-1)
-        counts_clamped = counts.clamp(min=1.0)
-        sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
-        centroids = torch.where(counts > 0, sum_q / (counts_clamped + 1e-8), centroids)
-        centroids = torch.nan_to_num(centroids, nan=0.0)
+        counts = one\_hot.sum(dim=2).unsqueeze(-1)
+        counts\_clamped = counts.clamp(min=1.0)
+        sum\_q = torch.einsum("bhlk,bhld-\textgreater{}bhkd", one\_hot, Q)
+        centroids = torch.where(counts \textgreater{} 0, sum\_q / (counts\_clamped + 1e-8), centroids)
+        centroids = torch.nan\_to\_num(centroids, nan=0.0)
     
-    return centroids, cluster_ids, counts
+    return centroids, cluster\_ids, counts
 \end{lstlisting}
 
 \subsection{B.2 Centroid-to-Key Attention}
 
 \begin{lstlisting}
 # Centroid scores
-scores_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale
-scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
-attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(dtype)
-attn_cent = self.dropout(attn_cent)
-V_cent = torch.matmul(attn_cent, V)  # [B, H, K, Dh]
+scores\_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale
+scores\_cent = scores\_cent.masked\_fill(~key\_valid\_4d, -10000.0)
+attn\_cent = torch.nan\_to\_num(F.softmax(scores\_cent.float(), dim=-1), nan=0.0).to(dtype)
+attn\_cent = self.dropout(attn\_cent)
+V\_cent = torch.matmul(attn\_cent, V)  # [B, H, K, Dh]
 \end{lstlisting}
 
 \subsection{B.3 Soft Assignment}
 
 \begin{lstlisting}
-scores_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
-empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
-scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
-temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
-attn_assign = torch.nan_to_num(
-    F.softmax((scores_assign / temp_clamped).float(), dim=-1),
+scores\_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
+empty\_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
+scores\_assign = scores\_assign.masked\_fill(empty\_clusters, -10000.0)
+temp\_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
+attn\_assign = torch.nan\_to\_num(
+    F.softmax((scores\_assign / temp\_clamped).float(), dim=-1),
     nan=0.0
 ).to(dtype)
-assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
-attn_assign = attn_assign / assign_denom
-global_context = torch.matmul(attn_assign, V_cent)
+assign\_denom = attn\_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
+attn\_assign = attn\_assign / assign\_denom
+global\_context = torch.matmul(attn\_assign, V\_cent)
 \end{lstlisting}
 
 \subsection{B.4 Local Window}
 
 \begin{lstlisting}
 idx = torch.arange(L, device=device)
-band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
-scores_loc = torch.matmul(Q, K.transpose(-2, -1)) * scale
-scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
-attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(dtype)
-attn_loc = self.dropout(attn_loc)
-local_context = torch.matmul(attn_loc, V)
-alpha = torch.sigmoid(self.local_residual)
-out_context = (1.0 - alpha) * global_context + alpha * local_context
+band\_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{}= self.window\_size
+band\_mask\_4d = band\_mask.unsqueeze(0).unsqueeze(0) & key\_valid\_4d
+scores\_loc = torch.matmul(Q, K.transpose(-2, -1)) * scale
+scores\_loc = scores\_loc.masked\_fill(~band\_mask\_4d, -10000.0)
+attn\_loc = torch.nan\_to\_num(F.softmax(scores\_loc.float(), dim=-1), nan=0.0).to(dtype)
+attn\_loc = self.dropout(attn\_loc)
+local\_context = torch.matmul(attn\_loc, V)
+alpha = torch.sigmoid(self.local\_residual)
+out\_context = (1.0 - alpha) * global\_context + alpha * local\_context
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -1273,6 +1995,7 @@ For RoBERTa, do not apply \texttt{out\_proj} -- the outer layer does.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT -- Complete Metrics}
@@ -1390,13 +2113,13 @@ Accuracy & 87.96\% \\
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 67544826,
-    "accuracy_pct": 89.91,
-    "num_clusters": 16,
-    "window_size": 32,
-    "learned_temp": 0.087,
-    "learned_alpha": 0.48
+    "params\_before": 66955010,
+    "params\_after": 67544826,
+    "accuracy\_pct": 89.91,
+    "num\_clusters": 16,
+    "window\_size": 32,
+    "learned\_temp": 0.087,
+    "learned\_alpha": 0.48
   }
 }
 \end{lstlisting}
@@ -1405,6 +2128,7 @@ Accuracy & 87.96\% \\
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Failed Attempts}
@@ -1482,6 +2206,7 @@ Std & 0.05 & 0.05 & 0.05 \\
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1547,3 +2272,4 @@ No human subjects.
 
 ---
 \end{lstlisting}
+

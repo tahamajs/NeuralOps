@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{TokenCompressedAttention: Learnable Token Selection for Efficient Transformer Inference}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 \section{Introduction}
 
 \subsection{Motivation}
@@ -37,7 +39,7 @@ Given a sequence of $L$ tokens, we seek a compressed KV sequence of length
 $k = \lceil \rho L \rceil$ such that:
 
 \[
-\text{Attn}(q_i, K_c, V_c) \approx \text{Attn}(q_i, K, V)
+\text{Attn}(q\_i, K\_c, V\_c) \approx \text{Attn}(q\_i, K, V)
 \tag{1.1}
 \]
 
@@ -109,6 +111,7 @@ trade-offs. Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 \section{Related Work}
 
 \subsection{KV Cache Compression}
@@ -162,6 +165,745 @@ residual stream, while TCA operates on K/V only.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Criterion} & \textbf{Learnable?} & \textbf{Preserves [CLS]?} & \textbf{Causal-safe?} \\
+\midrule
+H2O & Accumulated attn & No & Partial & Partial \\
+StreamingLLM & Position & No & Yes (sinks) & Yes \\
+SnapKV & Observation window & No & Partial & Partial \\
+\textbf{TCA} & \textbf{Score net + norm} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} TCA's selection criterion is learned. This is the first 
+KV token selection method to jointly learn the scoring function with LoRA 
+recovery.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+\section{Background}
+
+\subsection{Multi-Head Attention with KV Cache}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$, standard attention:
+
+\[
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
+\tag{3.1}
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
+\tag{3.2}
+\]
+
+At inference, $K, V$ are cached across decoding steps. Cache size per layer:
+
+\[
+\text{KV size} = 2 \cdot B \cdot H\_{kv} \cdot L \cdot d\_h \cdot \text{bytes}
+\tag{3.3}
+\]
+
+For $H_{kv} = 12$, $d_h = 64$, $L = 4096$, FP16: \textbf{~12.6 MB per layer}.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+GQA shares K/V across $H/H_{kv}$ query heads:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}, \quad
+K\_{\text{expanded}} = \text{repeat\_kv}(K, H/H\_{kv})
+\tag{3.4}
+\]
+
+TCA respects GQA by selecting tokens once per KV head (before expansion).
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE applies position-dependent rotations:
+
+\[
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
+\tag{3.5}
+\]
+
+TCA applies RoPE \textbf{before} compression -- so the position information is 
+already baked into $K$ when we select tokens.
+
+\subsection{Causal Masking}
+
+For decoders, query at position $i$ attends only to keys $j \leq i$:
+
+\[
+\text{mask}\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
+\tag{3.6}
+\]
+
+After compression, the effective mask must be computed against the **original 
+positions** of selected keys:
+
+\[
+\text{mask}\_{i, j'} = \begin{cases} 0 & \text{pos}(j') \leq i \\ -\infty & \text{pos}(j') \textgreater{} i \end{cases}
+\tag{3.7}
+\]
+
+where $j'$ indexes the compressed sequence and $\text{pos}(j')$ is the 
+original token position.
+
+\subsection{Attention Sinks}
+
+Xiao et al. (2024) observed that the first few tokens receive disproportionate 
+attention mass, acting as "sinks". TCA preserves token 0 (\texttt{[CLS]} for BERT-style 
+models) explicitly.
+
+\subsection{LoRA Recovery}
+
+We freeze the base weights and train only LoRA adapters plus the score\_net:
+
+\[
+\Delta W = \frac{\alpha}{r} B A, \quad A \in \mathbb{R}^{r \times k}, \quad B \in \mathbb{R}^{d \times r}
+\tag{3.8}
+\]
+
+with $B = 0$ initially. For TCA, we additionally train the score\_net (an MLP).
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+\section{Method}
+
+\subsection{Overview}
+
+TokenCompressedAttention (TCA) replaces standard attention by adding three 
+steps before the attention computation:
+
+\begin{enumerate}
+\item \textbf{Score computation} ( 4.2): compute per-token importance.
+\item \textbf{Token selection} ( 4.3): keep the top-$k$ tokens.
+\item \textbf{Causal-aware attention} ( 4.4): apply attention with a mask over
+  original positions.
+
+\end{enumerate}
+The overall pipeline:
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+               
+    +-----------------------+
+    | Project Q/K/V         |  (frozen base weights + LoRA)
+    +-----------+-----------+
+                |
+       +--------+--------+
+                          
+    +------+         +--------------+
+    | Q    |         | K, V         |
+    |      |         | Score K.V    |
+    |      |         +------+-------+
+    |      |                |
+    |      |         +------ -------+
+    |      |         | Top-k select |
+    |      |         | [CLS] pinned |
+    |      |         +------+-------+
+    |      |                |
+    +------+----------------+
+              |
+               
+    +-----------------------+
+    | Attention + causal    |
+    | mask against original |
+    | positions             |
+    +-----------+-----------+
+                |
+                 
+    +-----------------------+
+    | Output projection     |
+    +-----------------------+
+\end{lstlisting}
+
+\subsection{Token Importance Scoring}
+
+For each token $i$, we compute:
+
+\[
+s\_i = \underbrace{\|x\_i\|\_2}\_{\text{energy}} + \underbrace{f\_\theta(x\_i)}\_{\text{learned}}
+\tag{4.1}
+\]
+
+where:
+
+\begin{itemize}
+\item $\|x_i\|_2$ is the $\ell_2$ norm of the hidden state.
+\item $f_\theta$ is a small MLP: Linear($d$, 64) $\to$ GELU $\to$ Linear(64, 1).
+
+\end{itemize}
+\textbf{Why this combination?}
+
+\begin{itemize}
+\item The norm captures \textbf{activation energy} -- an established proxy for token
+  importance (Lin et al., 2023).
+\item The learned term captures \textbf{content-specific} importance that a
+  norm-based heuristic misses.
+
+\end{itemize}
+\subsection{Token Selection}
+
+We force the first token to be retained (attention sink):
+
+\[
+s\_0 \leftarrow 10^4
+\tag{4.2}
+\]
+
+We mask out padding tokens:
+
+\[
+s\_i \leftarrow -10^4 \quad \text{for padding tokens}
+\tag{4.3}
+\]
+
+Then we select the top-$k$ indices:
+
+\[
+\mathcal{S} = \text{TopK}(s, k), \quad k = \lceil \rho L \rceil
+\tag{4.4}
+\]
+
+and sort them to preserve order:
+
+\[
+\mathcal{S} \leftarrow \text{Sort}(\mathcal{S})
+\tag{4.5}
+\]
+
+Finally, we gather:
+
+\[
+K\_c = K[\mathcal{S}], \quad V\_c = V[\mathcal{S}]
+\tag{4.6}
+\]
+
+\textbf{Short-sequence handling.} If $L \leq 2$, no compression is applied.
+
+\subsection{Causal-Safe Attention}
+
+Standard attention over the compressed keys:
+
+\[
+\text{scores}\_{i, j'} = \frac{q\_i \cdot K\_{c, j'}^\top}{\sqrt{d\_h}}
+\tag{4.7}
+\]
+
+For decoders, we add a mask based on \textbf{original positions}:
+
+\[
+\text{mask}\_{i, j'} = \begin{cases} 0 & \mathcal{S}\_{j'} \leq i \\ -\infty & \mathcal{S}\_{j'} \textgreater{} i \end{cases}
+\tag{4.8}
+\]
+
+This ensures that query at position $i$ cannot attend to compressed keys 
+whose original position exceeds $i$.
+
+\textbf{Computing the mask:}
+
+\begin{lstlisting}
+q\_pos = torch.arange(L).view(1, 1, L, 1)       # (1, 1, L, 1)
+k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2) # (B, 1, 1, k)
+causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)             # (B, 1, L, k)
+scores = scores.masked\_fill(causal\_mask, -inf)
+\end{lstlisting}
+
+\subsection{Combined Algorithm}
+
+\textbf{Algorithm 1:} TCA forward pass
+\begin{lstlisting}
+Input:  hidden\_states X $\in$ R^{B$\times$L$\times$d}
+        attention\_mask $\in$ {0,1}^{B$\times$L}
+        position\_ids
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
+ 2: Q, K $\leftarrow$ RoPE(Q, K, position\_ids)
+ 3: s $\leftarrow$  X \_2 + score\_net(X)          Per-token score
+ 4: s[0] $\leftarrow$ 1e4                         Pin [CLS]
+ 5: s[padding] $\leftarrow$ -1e4                  Mask padding
+ 6: S $\leftarrow$ TopK(s, k)                     Select top-k
+ 7: S $\leftarrow$ Sort(S)                        Order-preserve
+ 8: K\_c $\leftarrow$ K[S];  V\_c $\leftarrow$ V[S]            Gather
+ 9: K\_c $\leftarrow$ repeat\_kv(K\_c, H/H\_kv)       GQA expand
+10: scores $\leftarrow$ Q @ K\_c^T / $\sqrt{}$d\_h
+11: if is\_decoder:
+12:     mask $\leftarrow$ (S[None,None,None,:] \textgreater{} arange(L)[None,None,:,None])
+13:     scores $\leftarrow$ scores.masked\_fill(mask, -inf)
+14: scores $\leftarrow$ mask\_padding(scores, attention\_mask)
+15: A $\leftarrow$ softmax(scores)
+16: Y $\leftarrow$ A @ V\_c
+17: Y $\leftarrow$ out\_proj(Y)
+18: return Y
+\end{lstlisting}
+
+\subsection{Memory and Compute Savings}
+
+For a single attention layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{TCA} & \textbf{Savings} \\
+\midrule
+KV cache & $2 H_{kv} L d_h$ & $2 H_{kv} k d_h$ & $1 - \rho$ \\
+Attention compute & $L^2$ & $L \cdot k$ & $1 - \rho$ \\
+Score net compute & 0 & $2 L \cdot (d \cdot 64 + 64)$ & +small \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $\rho = 0.5$:
+
+\begin{itemize}
+\item KV cache: \textbf{50\% reduction}
+\item Attention compute: \textbf{50\% reduction}
+\item Score net: \textbf{~0.5\% overhead}
+
+\end{itemize}
+\subsection{Parameter Analysis}
+
+\textbf{Important: TCA does NOT reduce parameter count.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{TCA} \\
+\midrule
+Projections & $4 d^2$ (frozen) & $4 d^2$ (frozen) \\
+LoRA & 0 & $4 \cdot r_L (d + d)$ \\
+Score net & 0 & $d \cdot 64 + 64 + 64 \cdot 1 + 1$ \\
+\textbf{Total per layer} & $4 d^2$ & $4 d^2 + 8 r_L d + 65 d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Baseline & 2,359,296 \\
+TCA & 2,359,296 + 98,304 + 49,920 = \textbf{2,507,520} \\
+\textbf{Change} & \textbf{+6.3\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We are explicit about this in the abstract.}
+
+\subsection{Compression Ratio Selection}
+
+The compression ratio $\rho$ trades off:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\rho$} & \textbf{KV reduction} & \textbf{Accuracy drop} \\
+\midrule
+0.9 & 10\% & ~0\% \\
+0.7 & 30\% & ~1\% \\
+0.5 & 50\% & ~3\% \\
+0.3 & 70\% & ~8\% \\
+0.1 & 90\% & severe \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We recommend $\rho = 0.5$ as a default.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+We copy base weights from the pretrained attention via \texttt{copy\_weights}, which 
+handles four patterns:
+
+\subsubsection{Pattern 1: GPT-2 Conv1D}
+
+\begin{lstlisting}
+c\_w = src.c\_attn.weight.t()  # Conv1D stores (in, out); transpose
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{Pattern 2: RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src, "output"):
+    self.is\_nested\_encoder = True
+    q\_w = src.self.query.weight
+    k\_w = src.self.key.weight
+    v\_w = src.self.value.weight
+    o\_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 3: Qwen/LLaMA (GQA)}
+
+\begin{lstlisting}
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 4: DistilBERT}
+
+\begin{lstlisting}
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 5: UniversalAdapter Fallback}
+
+If none of the above patterns match, we use \texttt{UniversalAdapter.get\_weight\_bias}.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}, meaning our \texttt{forward} returns 
+raw context and the outer \texttt{BertSelfOutput.dense} applies the output projection.
+
+\subsection{Causal Mask Construction}
+
+The most delicate part. For decoders:
+
+\begin{lstlisting}
+q\_pos = torch.arange(L).view(1, 1, L, 1)
+k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
+causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)
+scores = scores.masked\_fill(causal\_mask, float("-inf"))
+\end{lstlisting}
+
+\textbf{Why this is correct.} Even though compressed keys are indexed $0..k-1$, 
+their original positions \texttt{top\_idx} are what matters. Query at position $i$ 
+can attend only to keys whose original position is $\leq i$.
+
+\textbf{Verification.} We check that output at position $i$ depends only on 
+inputs $\leq i$ by computing gradients.
+
+\subsection{Handling Padding}
+
+Padding tokens are masked out of the score:
+
+\begin{lstlisting}
+total\_importance = total\_importance.masked\_fill(mask == 0, -10000.0)
+\end{lstlisting}
+
+After selection, the compressed mask is gathered:
+
+\begin{lstlisting}
+comp\_mask = torch.gather(mask, 1, top\_indices)
+\end{lstlisting}
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject TCA into a model
+\begin{lstlisting}
+Input:  model M, compression\_ratio  
+Output: M with attention replaced
+
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ TokenCompressedAttention(config,  , pretrained\_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{The `score\_net` Module}
+
+\begin{lstlisting}
+self.score\_net = nn.Sequential(
+    nn.Linear(self.dim, 64),
+    nn.GELU(),
+    nn.Linear(64, 1),
+)
+\end{lstlisting}
+
+Total parameters: \texttt{dim \textit{ 64 + 64 + 64 + 1 = 65}dim + 65}. For $d = 768$: 
+\textbf{49,985 parameters} per layer.
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Weight extraction fails & Exception in copy\_weights & Raise RuntimeError \\
+Score net NaN & \texttt{torch.isnan} on scores & Fallback to norm-only \\
+All tokens masked & \texttt{k\_keep = 0} & Force k\_keep = 1 \\
+Short sequence & $L \leq 2$ & Skip compression \\
+Causal leak & Grad check & Not observed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("token\_compressed")
+@ATTENTION\_REGISTRY.register("token\_compressed\_attention")
+@ATTENTION\_REGISTRY.register("token\_compressed\_module")
+class TokenCompressedAttention(BaseAttention):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of token\_compressed\_attention.}
+\label{fig:arch_token-compressed-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max sequence length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{compression\_ratio} & 50\% \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{rank} & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
+Steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trainable parameters per layer:}
+\begin{itemize}
+\item LoRA: \texttt{4   r\_L (d\_in + d\_out)} = \texttt{4   16   1536} = ~98K
+\item Score net: ~50K
+\item Total: ~148K per layer
+
+\end{itemize}
+For 6 layers (DistilBERT): ~888K trainable.
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters (baseline vs TCA)
+\item Peak VRAM (during inference)
+\item Inference time
+\item Effective KV cache size
+\item Attention FLOPs
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Compression ratio
+\item Effective KV length k
+\item Score-net stats (mean, std)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_token\_compressed.py \
+    --models distilbert,roberta,gpt2 \
+    --compression\_ratio 50\% \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{tca} & Our method \\
+\texttt{tca\_norm\_only} & TCA without score\_net (ablation) \\
+\texttt{tca\_no\_cls} & TCA without [CLS] pinning (ablation) \\
+H2O-style & Fixed attention-mass heuristic \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42). Single-seed limitation stated in Section 10.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -172,9 +914,9 @@ residual stream, while TCA operates on K/V only.
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Token Compressed} & \textbf{78.21\%} & -12.73\% & PASS & 0.7875 & 0 & \textbf{0.99$\times$} & 323.2 MB & 19.8 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Token Compressed} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.93$\times$} & 650.8 MB & 26.2 & -- \\
+RoBERTa & \textbf{Token Compressed} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 0 & \textbf{0.93$\times$} & 650.8 MB & 26.2 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Token Compressed} & \textbf{51.38\%} & -6.53\% & PASS_LOW & 0.6763 & 0 & \textbf{0.99$\times$} & 571.0 MB & 28.7 & -- \\
+GPT-2 & \textbf{Token Compressed} & \textbf{51.38\%} & -6.53\% & PASS\_LOW & 0.6763 & 0 & \textbf{0.99$\times$} & 571.0 MB & 28.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
@@ -365,12 +1107,13 @@ StreamingLLM-style & 0.85 & 32 & 0.85 & No \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/token_compressed_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{token_compressed_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/token\_compressed\_roberta\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{token\_compressed\_attention}.}
 \label{fig:results_token_compressed_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 \section{Analysis}
 
 \subsection{Why Does TCA Work?}
@@ -437,11 +1180,11 @@ important, consistent with attention sink findings (Xiao et al., 2024).
 We verify causally by computing gradients:
 
 \begin{lstlisting}
-X = torch.randn(1, 128, d, requires_grad=True)
+X = torch.randn(1, 128, d, requires\_grad=True)
 Y = model(X)
 loss = Y[0, 100].sum()
 loss.backward()
-assert X.grad[0, 101:].abs().max() < 1e-6
+assert X.grad[0, 101:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 All three models pass this check. \textbf{The causal mask is correct.}
@@ -523,6 +1266,7 @@ This is the trade-off: 6.3\% more parameters for 50\% less KV cache.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 \section{Discussion}
 
 \subsection{Key Takeaways}
@@ -545,7 +1289,7 @@ Pinning token 0 recovers \textbf{0.85\%} accuracy -- a free win.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{Long-context inference} (L > 512)
+\item \textbf{Long-context inference} (L \textgreater{} 512)
 \item \textbf{Memory-constrained deployment}
 \item \textbf{Streaming/decoding scenarios}
 \item \textbf{Combined with quantization} (TCA + INT8)
@@ -553,7 +1297,7 @@ Pinning token 0 recovers \textbf{0.85\%} accuracy -- a free win.
 \end{itemize}
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Short sequences} (L < 64): overhead dominates
+\item \textbf{Short sequences} (L \textless{} 64): overhead dominates
 \item \textbf{Latency-critical}: score\_net adds a small compute cost
 \item \textbf{Parameter-sensitive deployments}: TCA increases params by ~6\%
 
@@ -662,6 +1406,7 @@ TCA + INT8 $\to$ \textbf{~8$\times$ total reduction} in KV footprint.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 \section{Limitations}
 
 \subsection{Parameter Count}
@@ -676,7 +1421,7 @@ Only SST-2 is evaluated. Behavior on:
 \item Generation tasks: unknown
 \item Multi-class classification: unknown
 \item Token-level tasks (NER): unknown
-\item Long-context tasks (L > 512): unknown
+\item Long-context tasks (L \textgreater{} 512): unknown
 
 \end{itemize}
 \subsection{Model Coverage}
@@ -690,7 +1435,7 @@ Only SST-2 is evaluated. Behavior on:
 \midrule
 $\le$124M & Yes \\
 1B--10B & No \\
->10B & No \\
+\textgreater{}10B & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -754,6 +1499,7 @@ KV compression is dual-use. See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 \section{Conclusion}
 
 \subsection{Summary}
@@ -828,13 +1574,14 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 \section{Reproducibility}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -859,42 +1606,42 @@ datasets & 1.0.0 \\
 \subsection{Running TCA}
 
 \begin{lstlisting}
-python run_all_4_token_compressed.py \
+python run\_all\_4\_token\_compressed.py \
     --models distilbert,roberta,gpt2 \
-    --compression_ratio 50\% \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --compression\_ratio 50\% \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,token_compressed \
-    --compression_ratio 50\% \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,token\_compressed \
+    --compression\_ratio 50\% \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_token_compressed.py
+python run\_all\_4\_token\_compressed.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (  Ablation)}
 \begin{lstlisting}
 for r in 0.9 0.7 0.5 0.3 0.1; do
-    python run_all_4_token_compressed.py --compression_ratio $r --output_suffix r$r
+    python run\_all\_4\_token\_compressed.py --compression\_ratio $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Score Net Ablation)}
 \begin{lstlisting}
-python run_all_4_token_compressed.py --use_score_net true  --output_suffix learn
-python run_all_4_token_compressed.py --use_score_net false --output_suffix norm
+python run\_all\_4\_token\_compressed.py --use\_score\_net true  --output\_suffix learn
+python run\_all\_4\_token\_compressed.py --use\_score\_net false --output\_suffix norm
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -904,8 +1651,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -936,6 +1683,7 @@ GPT-2 & 50.92\% & 48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 \section{References}
 
 \begin{lstlisting}
@@ -1080,6 +1828,7 @@ GPT-2 & 50.92\% & 48.5\%\% \\
 ---
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{Appendix A. Mathematical Derivations}
 
 \subsection{A.1 Score Function}
@@ -1087,7 +1836,7 @@ GPT-2 & 50.92\% & 48.5\%\% \\
 Per-token score:
 
 \[
-s_i = \|x_i\|_2 + f_\theta(x_i)
+s\_i = \|x\_i\|\_2 + f\_\theta(x\_i)
 \tag{A.1}
 \]
 
@@ -1120,7 +1869,7 @@ $\square$
 For sequence length $L$ and compression ratio $\rho$:
 
 \[
-k = \lceil \rho L \rceil, \quad \text{KV bytes} = 2 B H_{kv} k d_h \cdot s
+k = \lceil \rho L \rceil, \quad \text{KV bytes} = 2 B H\_{kv} k d\_h \cdot s
 \tag{A.2}
 \]
 
@@ -1146,80 +1895,81 @@ For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L^2 d\_h =
 ---
 \end{lstlisting}
 
+% --- Section: B_implementation.tex ---
 \section{Appendix B. Implementation Details}
 
 \subsection{B.1 Core Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
     
     # 1. Project
-    q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-    k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
-    v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
+    q = self.q\_lin(hidden\_states).view(B, L, H, Dh).transpose(1, 2)
+    k = self.k\_lin(hidden\_states).view(B, L, H\_kv, Dh).transpose(1, 2)
+    v = self.v\_lin(hidden\_states).view(B, L, H\_kv, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. Compress
-    k, v, top_idx, comp_mask = self._select_compressed_tokens(
-        hidden_states, k, v, attention_mask
+    k, v, top\_idx, comp\_mask = self.\_select\_compressed\_tokens(
+        hidden\_states, k, v, attention\_mask
     )
     
     # 4. GQA
-    if H_kv != H:
-        k = repeat_kv(k, H // H_kv)
-        v = repeat_kv(v, H // H_kv)
+    if H\_kv != H:
+        k = repeat\_kv(k, H // H\_kv)
+        v = repeat\_kv(v, H // H\_kv)
     
     # 5. Attention with causal mask
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
-    if self.is_decoder:
-        q_pos = torch.arange(L).view(1, 1, L, 1)
-        k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)
-        causal_mask = (k_orig_pos > q_pos)
-        scores = scores.masked_fill(causal_mask, float("-inf"))
+    if self.is\_decoder:
+        q\_pos = torch.arange(L).view(1, 1, L, 1)
+        k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2)
+        causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)
+        scores = scores.masked\_fill(causal\_mask, float("-inf"))
     
     # 6. Padding mask
-    if comp_mask is not None:
-        scores = apply_attention_mask(scores, comp_mask)
+    if comp\_mask is not None:
+        scores = apply\_attention\_mask(scores, comp\_mask)
     
     # 7. Softmax, context, output
     attn = F.softmax(scores, dim=-1)
     context = torch.matmul(attn, v)
     context = context.transpose(1, 2).contiguous().view(B, L, H * Dh)
     
-    return self.out_lin(context), None
+    return self.out\_lin(context), None
 \end{lstlisting}
 
 \subsection{B.2 Score Computation}
 
 \begin{lstlisting}
-def _select_compressed_tokens(self, x, k_tensor, v_tensor, mask):
+def \_select\_compressed\_tokens(self, x, k\_tensor, v\_tensor, mask):
     B, L, D = x.shape
     
     energy = torch.norm(x.float(), p=2, dim=-1)          # (B, L)
-    learned = self.score_net(x.float()).squeeze(-1)       # (B, L)
-    total_importance = energy + learned
+    learned = self.score\_net(x.float()).squeeze(-1)       # (B, L)
+    total\_importance = energy + learned
     
-    k_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression_ratio)))))
+    k\_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression\_ratio)))))
     
-    total_importance[:, 0] = 1e4  # Pin [CLS]
+    total\_importance[:, 0] = 1e4  # Pin [CLS]
     
     if mask is not None:
         if mask.dim() == 2:
-            total_importance = total_importance.masked_fill(mask == 0, -1e4)
-        total_importance[:, 0] = 1e4
+            total\_importance = total\_importance.masked\_fill(mask == 0, -1e4)
+        total\_importance[:, 0] = 1e4
     
-    _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
-    top_indices, _ = torch.sort(top_indices, dim=-1)
+    \_, top\_indices = torch.topk(total\_importance, k\_keep, dim=-1)
+    top\_indices, \_ = torch.sort(top\_indices, dim=-1)
     
-    top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
-    k_comp = torch.gather(k_tensor, 2, top_idx_exp)
-    v_comp = torch.gather(v_tensor, 2, top_idx_exp)
+    top\_idx\_exp = top\_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H\_kv, -1, Dh)
+    k\_comp = torch.gather(k\_tensor, 2, top\_idx\_exp)
+    v\_comp = torch.gather(v\_tensor, 2, top\_idx\_exp)
     
-    return k_comp, v_comp, top_indices, comp_mask
+    return k\_comp, v\_comp, top\_indices, comp\_mask
 \end{lstlisting}
 
 \subsection{B.3 Weight Copy}
@@ -1247,6 +1997,7 @@ token may vary. Our implementation assumes index 0.
 ---
 \end{lstlisting}
 
+% --- Section: C_data.tex ---
 \section{Appendix C. Full Experimental Data}
 
 \subsection{C.1 DistilBERT Metrics}
@@ -1359,13 +2110,14 @@ Step  Loss
 \subsection{C.7 Reproduction Commands}
 
 \begin{lstlisting}
-python run_all_4_token_compressed.py --compression_ratio 0.5
+python run\_all\_4\_token\_compressed.py --compression\_ratio 0.5
 \end{lstlisting}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
+% --- Section: D_negative_results.tex ---
 \section{Appendix D. Negative Results}
 
 \subsection{D.1 Attempts That Failed}
@@ -1398,7 +2150,7 @@ python run_all_4_token_compressed.py --compression_ratio 0.5
 
 \textbf{Result.} Accuracy collapsed to 86.4\%\%.
 
-\textbf{Conclusion.}   < 0.3 is too aggressive.
+\textbf{Conclusion.}   \textless{} 0.3 is too aggressive.
 
 \subsection{D.2 Abandoned Variants}
 
@@ -1467,6 +2219,7 @@ Local sliding window (like StreamingLLM). Result: worse than learned selection.
 ---
 \end{lstlisting}
 
+% --- Section: E_ethics.tex ---
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
@@ -1526,3 +2279,4 @@ Parts drafted with LLM assistance. Content reviewed by authors.
 
 ---
 \end{lstlisting}
+

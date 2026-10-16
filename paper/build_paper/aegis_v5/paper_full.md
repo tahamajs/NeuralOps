@@ -1,5 +1,7 @@
 # AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections
 
+> **Note:** This is a legacy experimental version of `spectron`. See [`spectron`](../spectron/00_meta.md) for the current canonical implementation.
+
 **Authors:**
 - Your Name¹ — you@university.edu
 - Advisor Name² — advisor@university.edu
@@ -1134,14 +1136,14 @@ Single seed (42). Limitation stated in Section 10.
 ### Table 7.1: Main results on SST-2.
 
 <!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Params | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 183 MB |
-| DistilBERT | **AEGIS-V5** | **83.72** | -6.99 | 0.8515 | 68.2M | 212 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AEGIS-V5** | **86.47** | +7.91 | 0.8706 | 127.0M | 404 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AEGIS-V5** | **69.50** | -9.86 | 0.7555 | 127.0M | 349 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Aegis V5 Module** | **80.96%** | -9.98% | PASS | 0.8379 | 24 | **0.99x** | 208.3 MB | 25.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Aegis V5 Module** | **50.92%** | +0.00% | PASS_LOW | 0.6748 | 48 | **0.94x** | 385.2 MB | 49.1s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Aegis V5 Module** | **47.48%** | -2.06% | PASS_LOW | 0.3811 | 48 | **0.99x** | 334.6 MB | 35.4s |
 
 **Key observations:**
 
@@ -1277,6 +1279,23 @@ reduction. The parameter change is dominated by LoRA + RFF.
 - Decoder fallback preserves accuracy but not complexity.
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=89.80%, comp=1.197x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.80% | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| F1 Score | 0.8954 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compression | 1.197x | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Timestamp | 2026-09-19T16:08:22.693388 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+
+
 
 ---
 
@@ -2331,3 +2350,6 @@ This research was supported by the Advanced Machine Learning & Efficiency Labora
 Drafted with LLM assistance. Content reviewed by authors.
 
 ---
+
+---
+

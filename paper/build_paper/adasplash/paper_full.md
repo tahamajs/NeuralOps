@@ -99,6 +99,7 @@ accuracy on sentiment analysis while using cleaner attention patterns.
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -265,6 +266,7 @@ limitations. Section 11 concludes.
 | $H, H_{kv}$ | Query, KV head count | §1.4 |
 | $N_l$ | Layer count | §1.4 |
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -363,6 +365,7 @@ Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
 - **Increases** parameter count by ~0.88% via LoRA.
 
 Its value is in **sparsity** and **interpretability**, not size.
+
 
 ---
 
@@ -522,6 +525,7 @@ initial forward pass equals the pretrained model (since $B = 0$).
 | $A, B$ | LoRA factors |
 | $H, H_{kv}$ | Query, KV head counts |
 | $d_h$ | Per-head dimension |
+
 
 ---
 
@@ -945,6 +949,7 @@ determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 **Note:** Splash masking is only applied to causal decoders. Encoders use 
 full attention.
 
+
 ---
 
 # 5. Architecture Integration
@@ -1169,6 +1174,7 @@ For T5, the same class handles encoder (bidirectional, no splash) and decoder
 If the source module is a `LoRALinear`, AdaSplash unwraps to `base_layer` and 
 preserves the outer LoRA.
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1292,6 +1298,7 @@ All experiments with seed 42.
 | `adasplash_no_splash` | No splash masking |
 | `adasplash_no_sink` | No sink preservation |
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1308,14 +1315,14 @@ All experiments with seed 42.
 ### Table 7.1: Main results on SST-2 validation.
 
 <!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Params | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AdaSplash** | **67.09** | -11.47 | 0.780 | 125.8M | 730 MB |
-| GPT-2 | full | 79.37% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AdaSplash** | **79.37** | +0.00 | 0.7891 | 125.63M | 810 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Adasplash** | **90.94%** | +0.92% | PASS | 0.9125 | 0 | **1.00x** | 389.5 MB | 3.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Adasplash** | **75.46%** | +11.24% | PASS | 0.7277 | 0 | **1.00x** | 712.3 MB | 7.0s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Adasplash** | **87.84%** | +5.16% | PASS | 0.8776 | 48 | **1.00x** | 391.2 MB | 6.1s |
 
 **Key observations:**
 
@@ -1472,6 +1479,23 @@ architecture (not size).
 - **Parameter count:** increased by ~1-2% due to LoRA.
 - **Attention:** 40% sparse.
 - **Not a compression method.**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.00% | `results/rank_ablation/lora0_agnews/summary.csv` |
+| F1 Score | 0.9254 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_agnews/summary.csv` |
+
+
 
 ---
 
@@ -1642,6 +1666,7 @@ No systematic failures observed.
 4. **Sparsity is uniform across layers** — no layer-specific tuning needed.
 5. **Parameter count increases** due to LoRA — this is not compression.
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1765,6 +1790,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 ### Environmental
 Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1858,6 +1884,7 @@ Research-grade:
 
 Compression is dual-use. See Appendix E.
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1926,6 +1953,7 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 ## 11.8 Conflict of Interest
 
 None.
+
 
 ---
 
@@ -2034,6 +2062,7 @@ torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - Entmax bisection: 25 iterations
+
 
 ---
 
@@ -2202,6 +2231,7 @@ torch.cuda.manual_seed_all(seed)
 }
 ```
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2334,6 +2364,7 @@ distribution.
 **Proof.** Entmax is a row-wise operation on the score matrix. Masking with 
 $-\infty$ ensures that masked entries receive zero weight in the output. 
 Row-wise independence preserves row-specific causality. $\square$
+
 
 ---
 
@@ -2577,6 +2608,7 @@ for name, mod in model.named_modules():
         print(name, mod.alpha, mod.splash_radius)
 ```
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2733,6 +2765,7 @@ for W in 8 16 32 64 128; do
     python run_all_4_adasplash.py - splash_radius $W - output_suffix W$W
 done
 ```
+
 
 ---
 
@@ -2892,6 +2925,7 @@ but doubles the compute. Consider 15 for production.
 4. **Long context:** Does AdaSplash scale to L = 4096?
 5. **Other tasks:** Generation, QA, NLI?
 
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2996,3 +3030,7 @@ production method.
 ## E.11 Institutional Review
 
 No human subjects. No IRB required.
+
+
+---
+

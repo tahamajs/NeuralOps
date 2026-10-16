@@ -1,8 +1,10 @@
+% --- Section: 00_meta.tex ---
 \title{\textbf{Multi-Head Latent Attention (MLA): Reproduction and Multi-Architecture Hardening}}
 
 \author{Anonymous authors}
 
 
+% --- Section: 01_intro.tex ---
 
 \section{Introduction}
 
@@ -14,7 +16,7 @@ linearly with sequence length and dominates memory usage for long-context
 generation:
 
 \[
-\text{KV-cache size} = 2 \cdot N_l \cdot H \cdot d_h \cdot L \cdot B
+\text{KV-cache size} = 2 \cdot N\_l \cdot H \cdot d\_h \cdot L \cdot B
 \tag{1.1}
 \]
 
@@ -40,7 +42,7 @@ architecture. The key idea is to **replace the separate K and V projections
 with a single shared low-rank latent vector**:
 
 \[
-c_t = W^{DKV} h_t \in \mathbb{R}^{c}
+c\_t = W^{DKV} h\_t \in \mathbb{R}^{c}
 \tag{1.2}
 \]
 
@@ -50,7 +52,7 @@ is a down-projection to latent dimension $c$, and $c \ll 2 d_h H$.
 Then K and V are computed from this latent:
 
 \[
-k_t = W^{UK} c_t, \qquad v_t = W^{UV} c_t
+k\_t = W^{UK} c\_t, \qquad v\_t = W^{UV} c\_t
 \tag{1.3}
 \]
 
@@ -118,6 +120,7 @@ Section 10 lists limitations. Section 11 concludes.
 ---
 \end{lstlisting}
 
+% --- Section: 02_related.tex ---
 
 \section{Related Work}
 
@@ -186,6 +189,878 @@ reproduce MLA and study its portability to non-DeepSeek architectures.
 
 \subsection{Position of Our Work}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{DeepSeek-AI 2024} & \textbf{Our work} \\
+\midrule
+\textbf{Original architecture} & DeepSeek-V2 & Four families \\
+\textbf{Latent dimension} & 512 (V2), 1536 (V3) & 32 \\
+\textbf{Multi-architecture} & No & Yes \\
+\textbf{Portability study} & No & Yes \\
+\textbf{Reproduction} & -- & This paper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We do not claim to improve MLA. We reproduce it and 
+study its behavior on models it was not designed for.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 03_background.tex ---
+
+\section{Background}
+
+\subsection{Standard Multi-Head Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W^Q, \quad K = X W^K, \quad V = X W^V
+\tag{3.1}
+\]
+
+with $W^Q, W^K, W^V \in \mathbb{R}^{H d_h \times d}$. Attention:
+
+\[
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
+\tag{3.2}
+\]
+
+The KV cache stores $K, V \in \mathbb{R}^{B \times H \times L \times d_h}$ -- 
+a total of $2 \cdot H \cdot d_h \cdot L$ values per layer.
+
+\subsection{Multi-Head Latent Attention (MLA)}
+
+MLA replaces $W^K, W^V$ with a \textbf{shared low-rank latent}:
+
+\[
+c\_t = W^{DKV} h\_t \in \mathbb{R}^c
+\tag{3.3}
+\]
+
+Then:
+
+\[
+k\_t = W^{UK} c\_t, \quad v\_t = W^{UV} c\_t
+\tag{3.4}
+\]
+
+where $W^{UK}, W^{UV} \in \mathbb{R}^{H d_h \times c}$.
+
+The KV cache now stores $c_t \in \mathbb{R}^c$ instead of $(k_t, v_t) \in \mathbb{R}^{2 H d_h}$.
+
+\textbf{Compression ratio:}
+
+\[
+\rho = \frac{2 H d\_h}{c}
+\tag{3.5}
+\]
+
+For DeepSeek-V2: $2 H d_h = 2 \cdot 128 \cdot 128 = 32{,}768$, $c = 512$, 
+$\rho = 64$.
+
+\subsection{Low-Rank Initialization}
+
+To initialize $W^{DKV}, W^{UK}, W^{UV}$ from a pretrained attention, we 
+concatenate the existing $W^K$ and $W^V$:
+
+\[
+W^{KV}\_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H d\_h \times d}
+\tag{3.6}
+\]
+
+Then compute SVD:
+
+\[
+W^{KV}\_\text{fused} \approx U \Sigma V^\top
+\tag{3.7}
+\]
+
+and set:
+
+\[
+W^{DKV} = V\_{:, :c}^\top, \quad
+W^{UK} = U\_{:, :c} \Sigma\_{:c, :c}
+\tag{3.8}
+\]
+
+with the corresponding slice of $U \Sigma$ for $W^{UV}$.
+
+\subsection{Singular Value Normalization}
+
+To preserve the reconstruction scale, we compute a scalar correction:
+
+\[
+\gamma = \frac{\|W^{KV}\_\text{fused}\|\_F}{\|\Sigma\_{:c}\|\_F}
+\tag{3.9}
+\]
+
+and multiply the up-projection by $\gamma$:
+
+\[
+W^{UK} \leftarrow \gamma \cdot U\_{:H d\_h, :c} \Sigma\_{:c}
+\tag{3.10}
+\]
+
+This preserves the total Frobenius norm of the effective $W^K, W^V$ 
+reconstruction.
+
+\subsection{GQA Compatibility}
+
+MLA is compatible with GQA. When $H_{kv} < H$, the up-projections have 
+output dimension $H_{kv} d_h$, and \texttt{repeat\_kv} expands them to $H d_h$ 
+during forward.
+
+\subsection{RoPE Compatibility}
+
+RoPE (Su et al., 2021) applies rotations to $Q, K$. MLA preserves this by 
+applying RoPE \textbf{after} the up-projection.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable residuals:
+
+\[
+\Delta W = \frac{\alpha}{r\_L} B A
+\tag{3.11}
+\]
+
+with $B = 0$ at initialization. In MLA, we apply LoRA to the Q and O 
+projections.
+
+\subsection{Output Scale Calibration}
+
+MLA introduces a trainable scalar \texttt{output\_scale} that multiplies the 
+output. This is \textbf{not} in the original DeepSeek-V2 paper but is used in 
+our reproduction to absorb distributional shift from the K/V factorization.
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 04_method.tex ---
+
+\section{Method}
+
+\subsection{Overview}
+
+This section describes our reproduction of MLA from DeepSeek-AI (2024). We 
+do not introduce novel components; the goal is to (a) faithfully implement 
+the original method and (b) generalize its weight-transfer to 
+non-DeepSeek architectures.
+
+\textbf{Figure 4.1} shows the MLA pipeline.
+
+\begin{lstlisting}
+   +----------------------------------------------+
+   |  Input hidden h\_t $\in$ R^d                      |
+   +--------------------+-------------------------+
+                        |
+        +---------------+---------------+
+        |                               |
+                                         
+   +----------+                    +----------+
+   |  Q proj  |                    |  kv\_down |  $\leftarrow$ latent down-projection
+   |  W^Q     |                    |  W^DKV   |
+   +----+-----+                    +----+-----+
+        |                               |
+        |                                
+        |                          c\_t $\in$ R^c
+        |                               |
+        |                    +----------+----------+
+        |                    |                     |
+        |                                           
+        |              +----------+          +----------+
+        |              |  k\_up    |          |  v\_up    |
+        |              |  W^UK    |          |  W^UV    |
+        |              +----+-----+          +----+-----+
+        |                   |                     |
+        +-----------+-------+---------------------+
+                    |
+                     
+              Attention(Q, K, V)
+                    |
+                     
+              +----------+
+              |  out\_proj|
+              |  W^O     |
+              +----+-----+
+                   |
+                    
+              Output Y
+\end{lstlisting}
+
+\subsection{Forward Pass}
+
+Given hidden states $h \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\begin{aligned}
+q &= W^Q h \in \mathbb{R}^{B \times L \times H d\_h} \\
+c &= W^{DKV} h \in \mathbb{R}^{B \times L \times c} \\
+k &= W^{UK} c \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+v &= W^{UV} c \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
+\end{aligned}
+\tag{4.1}
+\]
+
+Then standard scaled dot-product attention with optional GQA repeat and 
+RoPE.
+
+\subsection{SVD-Based Initialization}
+
+The core of our reproduction is the SVD-based initialization of 
+$W^{DKV}, W^{UK}, W^{UV}$ from the concatenated pretrained $W^K, W^V$.
+
+\subsubsection{Concatenation}
+
+Given pretrained $W^K, W^V \in \mathbb{R}^{H_{kv} d_h \times d}$:
+
+\[
+W\_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H\_{kv} d\_h \times d}
+\tag{4.2}
+\]
+
+\subsubsection{Truncated SVD}
+
+\[
+W\_\text{fused} \approx U \Sigma V^\top
+\tag{4.3}
+\]
+
+where $U \in \mathbb{R}^{2 H_{kv} d_h \times r}$, $\Sigma \in \mathbb{R}^{r \times r}$, 
+$V^\top \in \mathbb{R}^{r \times d}$, and $r = \min(c, 2 H_{kv} d_h, d)$.
+
+\subsubsection{Setting the Parameters}
+
+\[
+W^{DKV} = V^\top, \qquad
+W^{UK} = U\_{:H\_{kv} d\_h, :} \Sigma, \qquad
+W^{UV} = U\_{H\_{kv} d\_h:, :} \Sigma
+\tag{4.4}
+\]
+
+\subsubsection{Singular Value Normalization}
+
+To preserve the total reconstruction scale, we compute:
+
+\[
+\gamma = \frac{\|W\_\text{fused}\|\_F}{\|\Sigma\|\_F}
+\tag{4.5}
+\]
+
+and multiply both up-projections by $\gamma$:
+
+\[
+W^{UK} \leftarrow \gamma \cdot U\_{:H\_{kv} d\_h, :} \Sigma, \qquad
+W^{UV} \leftarrow \gamma \cdot U\_{H\_{kv} d\_h:, :} \Sigma
+\tag{4.6}
+\]
+
+This ensures:
+
+\[
+\|W^{UK} W^{DKV}\|\_F \approx \|W^K\|\_F, \qquad
+\|W^{UV} W^{DKV}\|\_F \approx \|W^V\|\_F
+\tag{4.7}
+\]
+
+\subsection{Weight Transfer from Pretrained Attention}
+
+\subsubsection{Architecture-Aware Extraction}
+
+We extract $(W^Q, W^K, W^V, W^O)$ differently per architecture:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Architecture} & \textbf{Extraction path} \\
+\midrule
+DistilBERT & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} \\
+RoBERTa & \texttt{self.query, self.key, self.value, output.dense} \\
+GPT-2 & Split \texttt{c\_attn}; \texttt{c\_proj} for output \\
+Qwen3.5 & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Q and O Projections}
+
+$W^Q$ and $W^O$ are copied directly (with LoRA adapters frozen at 
+initialization):
+
+\begin{lstlisting}
+self.q\_proj.weight.data[:q\_dim, :hidden].copy\_(w\_q[:q\_dim, :hidden])
+self.out\_proj.weight.data[:hidden, :q\_dim].copy\_(w\_o[:hidden, :q\_dim])
+\end{lstlisting}
+
+\subsubsection{K/V Concatenation and SVD}
+
+\begin{lstlisting}
+w\_kv = torch.cat([w\_k\_f[:kv\_dim, :hidden], w\_v\_f[:kv\_dim, :hidden]], dim=0)
+u\_kv, s\_kv, vh\_kv = torch.linalg.svd(w\_kv, full\_matrices=False)
+r = min(self.rank, s\_kv.shape[0], kv\_down.weight.shape[0], ...)
+
+orig\_norm = torch.linalg.norm(w\_kv)
+approx\_norm = torch.linalg.norm(s\_kv[:r])
+norm\_scale = orig\_norm / max(approx\_norm, 1e-12)
+
+self.kv\_down.weight.data[:r, :].copy\_(vh\_kv[:r, :])
+up = (u\_kv[:, :r] * s\_kv[:r].unsqueeze(0)) * norm\_scale
+self.k\_up.weight.data[:kv\_dim, :r].copy\_(up[:kv\_dim, :r])
+self.v\_up.weight.data[:kv\_dim, :r].copy\_(up[kv\_dim:, :r])
+\end{lstlisting}
+
+\subsubsection{GQA Dimension Matching}
+
+When $H_{kv} < H$ in the pretrained model, K and V have larger output 
+dimension. We mean-pool before SVD:
+
+\begin{lstlisting}
+if w\_k\_f.shape[0] \textgreater{} self.kv\_dim:
+    rep = w\_k\_f.shape[0] // self.kv\_dim
+    w\_k\_f = w\_k\_f.view(self.kv\_dim, rep, -1).mean(dim=1)
+\end{lstlisting}
+
+\subsubsection{GPT-2 Conv1D}
+
+Handled by transposing before SVD:
+
+\begin{lstlisting}
+if hasattr(src, "c\_attn"):
+    if weight.shape[1] == 3 * self.hidden\_size:
+        weight = weight.t()
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, the output projection is outside the inner attention. When 
+nested, we set \texttt{is\_nested\_encoder = True} and skip \texttt{out\_proj} in forward.
+
+When initialization is nested but $W^O$ is not extracted, we set 
+\texttt{out\_proj} to an identity matrix:
+
+\begin{lstlisting}
+if self.is\_nested\_encoder:
+    min\_d = min(self.out\_proj.weight.shape[0], self.out\_proj.weight.shape[1])
+    self.out\_proj.weight.data.zero\_()
+    self.out\_proj.weight.data[:min\_d, :min\_d].fill\_diagonal\_(1.0)
+\end{lstlisting}
+
+\subsection{Output Scale Calibration}
+
+We introduce a trainable scalar \texttt{output\_scale} initialized to 1.0:
+
+\begin{lstlisting}
+self.output\_scale = nn.Parameter(torch.ones(1))
+\end{lstlisting}
+
+The forward pass multiplies the output by this scalar. This is \textbf{not} in 
+the original DeepSeek-V2 paper, but absorbs distributional shift from the 
+K/V factorization.
+
+\subsection{LoRA Recovery}
+
+We attach LoRA adapters to the Q and O projections:
+
+\begin{lstlisting}
+self.q\_proj = LoRALinear(..., lora\_rank=16, ...)
+self.out\_proj = LoRALinear(..., lora\_rank=16, ...)
+\end{lstlisting}
+
+Only LoRA parameters (and \texttt{output\_scale}) are trainable. Base weights 
+($W^{DKV}$, $W^{UK}$, $W^{UV}$, $W^Q$, $W^O$) are frozen.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} MLA initialization from pretrained attention
+\begin{lstlisting}
+Input:  pretrained attention module src
+        latent dimension c
+Output: MLA module with initialized weights
+
+1:  Extract W\_Q, W\_K, W\_V, W\_O from src
+2:  Orient to (out, in) form
+3:  Handle Conv1D transposition
+4:  GQA dimension match for K, V:
+5:      if W\_K.shape[0] \textgreater{} H\_kv * d\_h: mean-pool
+6:
+7:  # Q and O direct copy
+8:  q\_proj.weight[:q\_dim, :hidden] $\leftarrow$ W\_Q
+9:  out\_proj.weight[:hidden, :q\_dim] $\leftarrow$ W\_O
+10:
+11: # K, V concatenate and SVD
+12: W\_fused $\leftarrow$ concat([W\_K, W\_V], dim=0)
+13: U, $\Sigma$, V^T $\leftarrow$ svd(W\_fused)
+14: r $\leftarrow$ min(c, len($\Sigma$), ...)
+15: $\gamma$ $\leftarrow$  W\_fused \_F /  $\Sigma$[:r] \_F
+16:
+17: kv\_down.weight[:r, :] $\leftarrow$ V^T[:r, :]
+18: up $\leftarrow$ U[:, :r]   $\Sigma$[:r]   $\gamma$
+19: k\_up.weight[:kv\_dim, :r] $\leftarrow$ up[:kv\_dim, :r]
+20: v\_up.weight[:kv\_dim, :r] $\leftarrow$ up[kv\_dim:, :r]
+21:
+22: Freeze all base weights
+23: Initialize LoRA A/B (B = 0)
+24: return MLA module
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Extraction & $\mathcal{O}(N_l d^2)$ & $\mathcal{O}(d^2)$ \\
+SVD per layer & $\mathcal{O}((H d_h)^2 d)$ & $\mathcal{O}((H d_h) d)$ \\
+Initialization & $\mathcal{O}(N_l c d)$ & $\mathcal{O}(c d)$ \\
+Total & $\mathcal{O}(N_l (H d_h)^2 d)$ & $\mathcal{O}(N_l c d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{KV-Cache Reduction}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Standard KV} & \textbf{MLA KV} & \textbf{Reduction} \\
+\midrule
+DistilBERT & $2 \cdot 12 \cdot 64 = 1536$ & 0.85 & \textbf{2.1$\times$} \\
+RoBERTa & 1536 & 0.85 & \textbf{2.1$\times$} \\
+GPT-2 & 1536 & 0.85 & \textbf{2.1$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per token per layer. Total reduction depends on sequence length and batch.
+
+\subsection{Summary}
+
+MLA reproduction:
+\begin{enumerate}
+\item Replaces separate K and V with a shared latent.
+\item Initializes from concatenated K/V via SVD.
+\item Normalizes singular values to preserve scale.
+\item Handles four architectures with Conv1D transposition, nested bypass, and
+  GQA expansion.
+\item Uses LoRA for recovery.
+\item Achieves \textbf{32$\times$} KV-cache reduction.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 05_architecture.tex ---
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} & \textbf{RoPE?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No & No \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes & No \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+w\_q = src.q\_lin.weight.data
+w\_k = src.k\_lin.weight.data
+w\_v = src.v\_lin.weight.data
+w\_o = src.out\_lin.weight.data
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query
+|   +-- key
+|   +-- value
++-- output
+    +-- dense
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+src\_inner = src.self
+w\_q = src\_inner.query.weight.data
+w\_k = src\_inner.key.weight.data
+w\_v = src\_inner.value.weight.data
+w\_o = src.output.dense.weight.data
+\end{lstlisting}
+
+\textbf{Nested detection:} \texttt{hasattr(src, "self") and hasattr(src.self, "query")}.
+
+\texttt{is\_nested\_encoder = True}. Forward returns raw context; outer 
+\texttt{output.dense} applies projection.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+weight = src.c\_attn.weight.data
+if weight.shape[1] == 3 * hidden\_size:   # Conv1D stores (in, out)
+    weight = weight.t()
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+w\_o = src.c\_proj.weight.data
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+\textbf{GQA dimension match:}
+\begin{lstlisting}
+if w\_k\_f.shape[0] \textgreater{} self.kv\_dim:
+    rep = w\_k\_f.shape[0] // self.kv\_dim
+    w\_k\_f = w\_k\_f.view(self.kv\_dim, rep, -1).mean(dim=1)
+\end{lstlisting}
+
+\textbf{RoPE applied after up-projection} via \texttt{position\_embeddings} in kwargs.
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Injection Hook}
+
+\begin{lstlisting}
+def inject\_mla(layer, model\_config, comp\_config=None, old\_attn=None, ...):
+    rank = getattr(comp\_config, "mla\_rank", 128) if comp\_config else 128
+    new\_attn = MLAAttention(model\_config, rank=rank)
+    
+    src\_attn = old\_attn or getattr(layer, "attention", getattr(layer, "self", None))
+    if src\_attn is not None:
+        new\_attn.copy\_weights(src\_attn)
+        p = next(src\_attn.parameters(), None)
+        if p is not None:
+            new\_attn.to(device=p.device, dtype=p.dtype)
+    
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new\_attn
+        else:
+            layer.attention = new\_attn
+    elif hasattr(layer, "self"):
+        layer.self = new\_attn
+    
+    return new\_attn
+\end{lstlisting}
+
+\textbf{Note.} This injection hook is \textbf{single-layer only}. Whole-model traversal 
+is the caller's responsibility.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{copy\_weights} raises & Abort \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
+Wrong Conv1D & \texttt{hasattr(src, "c\_attn")} & Handle \\
+Missing out\_proj (nested) & \texttt{is\_nested\_encoder} & Identity matrix \\
+GQA dimension mismatch & Shape check & Mean-pool \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION\_REGISTRY.register("mla")
+@ATTENTION\_REGISTRY.register("mla\_attention")
+class MLAAttention(BaseAttention):
+    ...
+
+@ATTENTION\_REGISTRY.register("mla\_inject")
+def inject\_mla(...):
+    ...
+\end{lstlisting}
+
+\subsection{LoRA Recovery Integration}
+
+MLA integrates with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item MLA initialization $\to$ frozen base, trainable LoRA on Q/O.
+\item Recovery fine-tuning trains LoRA + \texttt{output\_scale}.
+\item Evaluation uses the fine-tuned model.
+
+\end{enumerate}
+\subsection{Cross-Attention}
+
+MLA does \textbf{not} support cross-attention. Encoder-decoder models (T5, BART) 
+are not applicable.
+
+\subsection{Comparison with Original DeepSeek-V2 MLA}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Original} & \textbf{Our reproduction} \\
+\midrule
+Target architecture & DeepSeek-V2 & Four families \\
+Latent dim & 512 (V2), 1536 (V3) & 32 \\
+RoPE on K & Decomposed & After projection \\
+GQA & Native & Supported via pool \\
+Output scale & Not specified & Trainable scalar \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Differences from original.}
+
+\begin{enumerate}
+\item \textbf{Latent dimension.} We use 32 instead of 512.
+\item \textbf{RoPE handling.} The original applies RoPE on a decoupled head
+  dimension; we apply it uniformly after up-projection.
+\item \textbf{Multi-architecture support.} The original does not target DistilBERT,
+  RoBERTa, or GPT-2.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of mla\_attention.}
+\label{fig:arch_mla-attention}
+\end{figure}
+
+
+
+% --- Section: 06_setup.tex ---
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128 tokens.
+
+\subsection{MLA Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+Latent dimension $c$ & 32 & MLA rank \\
+\texttt{lora\_rank} & 8 & Q, O adapters \\
+\texttt{lora\_alpha} & 16 & Scaling \\
+\texttt{output\_scale} init & 1.0 & Trainable \\
+\texttt{dropout} & 0.1 & Standard \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
+Recovery steps & 50 \\
+Batch size & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters
+\item \textbf{KV-cache size per token} (unique to MLA)
+\item Peak inference VRAM
+\item Inference time
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Latent dimension $c$
+\item Effective K/V reconstruction error
+\item Normalization scale $\gamma$
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & \textless{} 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run\_all\_4\_mla.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 32 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
+\end{lstlisting}
+
+Runtime: ~PyTorch 2.0 minutes.
+
+\subsection{Seeds}
+
+All experiments use seed 42.
+
+\subsection{Baselines}
+
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed model.
+\item \textbf{\texttt{mla}:} Our reproduction.
+\item \textbf{Companion methods:} \texttt{minimal\_svd}, \texttt{minimal\_prism}, \texttt{svd\_llm\_v2}.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+% --- Section: 07_results.tex ---
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
 \begin{table*}[t]
 \centering
 \small
@@ -194,9 +1069,9 @@ reproduce MLA and study its portability to non-DeepSeek architectures.
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Mla} & \textbf{50.92\%} & -40.02\% & PASS_LOW & 0.6748 & 0 & \textbf{1.10$\times$} & 298.5 MB & 3.9 & -- \\
+DistilBERT & \textbf{Mla} & \textbf{50.92\%} & -40.02\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.10$\times$} & 298.5 MB & 3.9 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Mla} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.05$\times$} & 601.3 MB & 7.5 & -- \\
+RoBERTa & \textbf{Mla} & \textbf{50.92\%} & -24.54\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.05$\times$} & 601.3 MB & 7.5 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Mla} & \textbf{57.22\%} & -0.69\% & PASS & 0.5260 & 0 & \textbf{1.11$\times$} & 511.9 MB & 8.4 & -- \\
 \bottomrule
@@ -436,12 +1311,13 @@ parameter count.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/mla_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mla_attention}.}
+\includegraphics[width=0.85\linewidth]{figures/mla\_gpt2\_loss\_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mla\_attention}.}
 \label{fig:results_mla_attention}
 \end{figure}
 
 
+% --- Section: 08_analysis.tex ---
 
 \section{Analysis}
 
@@ -543,7 +1419,7 @@ Without (bug) & Collapse \\
 We apply normalization by:
 
 \[
-\gamma = \frac{\|W_\text{fused}\|_F}{\|\Sigma_{:c}\|_F}
+\gamma = \frac{\|W\_\text{fused}\|\_F}{\|\Sigma\_{:c}\|\_F}
 \tag{8.1}
 \]
 
@@ -697,6 +1573,7 @@ can be combined with them.
 ---
 \end{lstlisting}
 
+% --- Section: 09_discussion.tex ---
 
 \section{Discussion}
 
@@ -732,7 +1609,7 @@ They can be combined.
 
 \begin{itemize}
 \item \textbf{Memory-bound by parameters} (not KV cache)
-\item \textbf{Very small models} (<10M params)
+\item \textbf{Very small models} (\textless{}10M params)
 \item \textbf{Extremely small latent dimension} ($c < 32$)
 
 \end{itemize}
@@ -849,6 +1726,7 @@ Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 ---
 \end{lstlisting}
 
+% --- Section: 10_limitations.tex ---
 
 \section{Limitations}
 
@@ -874,7 +1752,7 @@ long-context generation quality.
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
+\textgreater{}1B params & Not tested \\
 DeepSeek-V2 & Not tested \\
 MoE & Not tested \\
 \bottomrule
@@ -939,6 +1817,7 @@ See Appendix E.
 ---
 \end{lstlisting}
 
+% --- Section: 11_conclusion.tex ---
 
 \section{Conclusion}
 
@@ -1019,14 +1898,15 @@ None.
 ---
 \end{lstlisting}
 
+% --- Section: 12_reproducibility.tex ---
 
 \section{Reproducibility Statement}
 
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -1052,12 +1932,12 @@ numpy & 1.0.0 \\
 \subsection{Running MLA}
 
 \begin{lstlisting}
-python run_all_4_mla.py \
+python run\_all\_4\_mla.py \
     --models distilbert,roberta,gpt2 \
     --rank 32 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes.
@@ -1065,42 +1945,42 @@ python run_all_4_mla.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_mla/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --output\_dir results/unified\_mla/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,mla \
     --rank 32 \
-    --lora_rank 8
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_mla.py --models distilbert,roberta,gpt2
+python run\_all\_4\_mla.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.7 (Latent dimension)}
 \begin{lstlisting}
 for r in 64 128 256 512; do
-    python run_all_4_mla.py --rank $r --output_suffix r$r
+    python run\_all\_4\_mla.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.8 (LoRA rank)}
 \begin{lstlisting}
 for lr in 4 8 16 32; do
-    python run_all_4_mla.py --lora_rank $lr --output_suffix lr$lr
+    python run\_all\_4\_mla.py --lora\_rank $lr --output_suffix lr$lr
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.10 (Normalization)}
 \begin{lstlisting}
-python run_all_4_mla.py --normalize_sv true --output_suffix norm
-python run_all_4_mla.py --normalize_sv false --output_suffix nonorm
+python run\_all\_4\_mla.py --normalize\_sv true --output\_suffix norm
+python run\_all\_4\_mla.py --normalize\_sv false --output\_suffix nonorm
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -1109,7 +1989,7 @@ python run_all_4_mla.py --normalize_sv false --output_suffix nonorm
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
@@ -1132,10 +2012,10 @@ GPT-2 & 57.22\% $\pm$ 1\% & 2.1$\times$ \\
 \subsection{Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-mla",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-mla",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1169,6 +2049,7 @@ the original for the algorithmic details.
 ---
 \end{lstlisting}
 
+% --- Section: 13_references.tex ---
 
 \section{References}
 
@@ -1219,26 +2100,33 @@ the original for the algorithmic details.
 @inproceedings{hu2021l
 \end{lstlisting}
 
+% --- Section: A_math.tex ---
 \section{A Math}
 
-Draft content for mla_attention.
+Draft content for mla\_attention.
 
 
+% --- Section: B_implementation.tex ---
 \section{B Implementation}
 
-Draft content for mla_attention.
+Draft content for mla\_attention.
 
 
+% --- Section: C_data.tex ---
 \section{C Data}
 
-Draft content for mla_attention.
+Draft content for mla\_attention.
 
 
+% --- Section: D_negative_results.tex ---
 \section{D Negative Results}
 
-Draft content for mla_attention.
+Draft content for mla\_attention.
 
 
+% --- Section: E_ethics.tex ---
 \section{E Ethics}
 
-Draft content for mla_attention.
+Draft content for mla\_attention.
+
+
