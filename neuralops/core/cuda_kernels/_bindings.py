@@ -23,6 +23,15 @@ _DEFAULT_CACHE_DIR = (
 )
 _CACHE_DIR = os.environ.get("NEURALOPS_CUDA_CACHE", _DEFAULT_CACHE_DIR)
 os.environ.setdefault("TORCH_EXTENSIONS_DIR", _CACHE_DIR)
+
+if os.path.exists("/usr/local/cuda"):
+    if not os.environ.get("CUDA_HOME") or os.environ.get("CUDA_HOME") == "/usr/local":
+        os.environ["CUDA_HOME"] = "/usr/local/cuda"
+    cuda_bin = "/usr/local/cuda/bin"
+    curr_path = os.environ.get("PATH", "")
+    if cuda_bin not in curr_path:
+        os.environ["PATH"] = f"{cuda_bin}:{curr_path}"
+
 try:
     Path(_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 except Exception as e:
