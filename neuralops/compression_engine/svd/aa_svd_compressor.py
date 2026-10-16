@@ -329,7 +329,7 @@ class AASVDCompressor(BaseCompressor):
                 try:
                     from transformers import AutoTokenizer
 
-                    self.tokenizer = AutoTokenizer.from_pretrained(mp)
+                    self.tokenizer = AutoTokenizer.from_pretrained(mp, local_files_only=True)
                     if getattr(self.tokenizer, "pad_token", None) is None:
                         self.tokenizer.pad_token = self.tokenizer.eos_token
                 except Exception as e:
