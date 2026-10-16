@@ -304,3 +304,75 @@
 26 & \texttt{\_common.py} & توصیف‌گرهای مشترک تانسوری و پیکربندی پرتاب & تضمین‌شده & System \\
 \end{longtable}
 \end{center}
+\clearpage
+
+\section*{پیوست د: مشخصات فنی و کارنامه ۴۸ عملگر سخت‌افزاری بومی \lr{Native CUDA C++ (3-Level Fallback)}}
+\addcontentsline{toc}{section}{پیوست د: مشخصات فنی و کارنامه ۴۸ عملگر سخت‌افزاری بومی Native CUDA C++}
+به منظور تحقق بیشترین چگالی محاسباتی، بیش از ۴۸ پکیج مستقل هسته محاسباتی به زبان بومی \lr{CUDA C++} در دایرکتوری \lr{\texttt{neuralops/core/cuda\_kernels/}} پیاده‌سازی شده‌اند. کلیه این عملگرها از ساختار گسیل سه‌سطحی شفاف (\lr{CUDA $\to$ Triton JIT $\to$ PyTorch Reference}) بهره می‌برند و از معماری‌های ولتا \lr{(SM 7.0)} تا بلک‌ول \lr{(SM 10.0)} پشتیبانی می‌نمایند.
+
+\begin{center}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{r p{0.32\textwidth} p{0.32\textwidth} c c}
+\caption{فهرست کامل و مشخصات فنی ۴۸ عملگر شتاب‌یافته سخت‌افزاری Native CUDA C++}\label{tab:app_cuda_kernels}\\
+\toprule
+\textbf{\#} & \textbf{شناسه عملگر بومی (\lr{CUDA Operator})} & \textbf{کارکرد محاسباتی و بهینه‌سازی حافظه} & \textbf{سطوح گسیل} & \textbf{وضعیت} \\
+\midrule
+\endfirsthead
+\multicolumn{5}{c}{{\bfseries \tablename\ \thetable{} -- ادامه از صفحه قبل}} \\
+\toprule
+\textbf{\#} & \textbf{شناسه عملگر بومی (\lr{CUDA Operator})} & \textbf{کارکرد محاسباتی و بهینه‌سازی حافظه} & \textbf{سطوح گسیل} & \textbf{وضعیت} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \texttt{fused\_lowrank\_gated\_gemm} & ضرب ماتریسی فیوزشده رتبه-پایین با گیتینگ غیرخطی & 3-Level & \textbf{\lr{PASS}} \\
+2 & \texttt{chunked\_delta\_gate\_scan} & اسکن پویای دلتا-گیت تکه‌ای با حفظ پایداری گرادیان & 3-Level & \textbf{\lr{PASS}} \\
+3 & \texttt{hgrn2\_fused\_bwd\_scan} & پس‌انتشار خطای فیوزشده شبکه سلسله‌مراتبی HGRN2 & 3-Level & \textbf{\lr{PASS}} \\
+4 & \texttt{cosformer\_linear\_attention} & توجه خطی مبتنی بر نگاشت فرکانسی کسینوسی & 3-Level & \textbf{\lr{PASS}} \\
+5 & \texttt{fused\_norm\_linear} & ادغام محاسبات RMSNorm/LayerNorm در لایه پروجکشن & 3-Level & \textbf{\lr{PASS}} \\
+6 & \texttt{fused\_rotary\_emb} & جاسازی موقعیتی دورانی RoPE به صورت برخط و بدون تخصیص حافظه & 3-Level & \textbf{\lr{PASS}} \\
+7 & \texttt{kronecker\_matmul} & ضرب تانسوری فاکتورهای تجزیه کرونکر & 3-Level & \textbf{\lr{PASS}} \\
+8 & \texttt{lut\_codebook\_dequant\_gemm} & دیکدینگ سریع وزن‌های کوانتایزه‌شده با جدول جستجو (LUT) & 3-Level & \textbf{\lr{PASS}} \\
+9 & \texttt{linear\_attention} & هسته توجه خطی موازی استاندارد Katharopoulos & 3-Level & \textbf{\lr{PASS}} \\
+10 & \texttt{fused\_cross\_entropy} & تابع زیان انتروپی متقاطع بدون ذخیره‌سازی لاجیت‌های کامل & 3-Level & \textbf{\lr{PASS}} \\
+11 & \texttt{rpca\_sparse\_svd\_gemm} & تفکیک همزمان ماتریس‌های تنک و کم‌مرتبه (Robust PCA) & 3-Level & \textbf{\lr{PASS}} \\
+12 & \texttt{tt\_contraction} & انقباض تانسوری شبکه‌های قطار تانسوری (Tensor Train) & 3-Level & \textbf{\lr{PASS}} \\
+13 & \texttt{tt\_linear} & لایه خطی ساختاریافته مبتنی بر فاکتورسازی TT & 3-Level & \textbf{\lr{PASS}} \\
+14 & \texttt{hadamard\_w4a16\_gemm} & ضرب ماتریسی وزن‌های ۴-بیتی و فعال‌ساز ۱۶-بیتی با تبدیل هادامارد & 3-Level & \textbf{\lr{PASS}} \\
+15 & \texttt{act\_scale\_quant\_gemm} & کوانتایزاسیون برخط فعال‌سازها بر اساس مقیاس‌های پویا & 3-Level & \textbf{\lr{PASS}} \\
+16 & \texttt{latent\_kv\_cache\_attention} & توجه بر روی فضای نهفته بافر کلید-مقدار فشرده‌شده & 3-Level & \textbf{\lr{PASS}} \\
+17 & \texttt{spectral\_entropy\_svd\_gate} & گیتینگ بر مبنای انتروپی طیفی مقادیر منفرد برتر & 3-Level & \textbf{\lr{PASS}} \\
+18 & \texttt{fused\_kd\_loss} & تابع زیان تقطیر دانش (Knowledge Distillation) فیوزشده & 3-Level & \textbf{\lr{PASS}} \\
+19 & \texttt{recurrent\_linear\_step} & گام بازگشتی استنتاج تک‌توکنی با حالت ثابت $\mathcal{O}(1)$ & 3-Level & \textbf{\lr{PASS}} \\
+20 & \texttt{flash\_decoding\_attention} & دیکودینگ موازی با تسهیم محور K (Split-K Parallelism) & 3-Level & \textbf{\lr{PASS}} \\
+21 & \texttt{fms\_scan} & اسکن بازگشتی سریع حالت ماتریسی فاکتورگیری‌شده & 3-Level & \textbf{\lr{PASS}} \\
+22 & \texttt{rmsnorm} & نرمال‌سازی جذر میانگین مربعات برداری با همگام‌سازی وارپ & 3-Level & \textbf{\lr{PASS}} \\
+23 & \texttt{layernorm} & نرمال‌سازی لایه فیوزشده با محاسبه برخط میانگین و واریانس & 3-Level & \textbf{\lr{PASS}} \\
+24 & \texttt{swiglu} & فعال‌ساز گیت‌دار SwiGLU فیوزشده با مصرف حافظه مینیمال & 3-Level & \textbf{\lr{PASS}} \\
+25 & \texttt{fast\_gelu} & تقریب فوق سریع تابع غیرخطی GELU بدون خطای محاسباتی & 3-Level & \textbf{\lr{PASS}} \\
+26 & \texttt{fused\_softplus} & تابع فعال‌ساز سافت‌پلاس پایدار عددی در دامنه بزرگ & 3-Level & \textbf{\lr{PASS}} \\
+27 & \texttt{gla\_scan} & اسکن پیشوندی کامل شبکه توجه خطی گیت‌دار (GLA) & 3-Level & \textbf{\lr{PASS}} \\
+28 & \texttt{causal\_conv1d} & کانولوشن یک‌بعدی علی بافر دایره‌ای برای مدل‌های هیبرید & 3-Level & \textbf{\lr{PASS}} \\
+29 & \texttt{recurrent\_gla\_step} & گام استنتاج بازگشتی GLA با به‌روزرسانی درجا & 3-Level & \textbf{\lr{PASS}} \\
+30 & \texttt{recurrent\_hgrn2\_step} & گام استنتاج بازگشتی HGRN2 در حالت پایای استنتاج & 3-Level & \textbf{\lr{PASS}} \\
+31 & \texttt{fused\_dropout\_add} & اعمال همزمان ماسک دراپ‌اوت و جمع باقی‌مانده (Residual) & 3-Level & \textbf{\lr{PASS}} \\
+32 & \texttt{varlen\_attention} & توجه با طول دنباله متغیر با نمایه‌سازی پیشوندی دسته‌ها & 3-Level & \textbf{\lr{PASS}} \\
+33 & \texttt{cross\_attention} & توجه متقاطع فشرده انکودر-دیکودر با مقیاس‌بندی برخط & 3-Level & \textbf{\lr{PASS}} \\
+34 & \texttt{rotational\_svd} & تقریب مقادیر منفرد با ماتریس‌های دوران گیونز (Givens) & 3-Level & \textbf{\lr{PASS}} \\
+35 & \texttt{block\_diag\_matmul} & ضرب ماتریسی بلوکی قطری با ساختار خلوت منظم & 3-Level & \textbf{\lr{PASS}} \\
+36 & \texttt{ternary\_gemm} & ضرب ماتریسی وزن‌های ترنری ۱.۵۸-بیتی $\{-1, 0, 1\}$ & 3-Level & \textbf{\lr{PASS}} \\
+37 & \texttt{fp4\_gemm} & ضرب ماتریسی دقت بسیار پایین ممیز شناور ۴-بیتی (FP4 E2M1) & 3-Level & \textbf{\lr{PASS}} \\
+38 & \texttt{channel\_shuffle} & بازآرایی کانال‌های ویژگی جهت تبادل اطلاعات در معماری‌های سبک & 3-Level & \textbf{\lr{PASS}} \\
+39 & \texttt{speculative\_verify} & اعتبارسنجی موازی حدس‌های مدل کمکی در رمزگشایی گمانه‌زن & 3-Level & \textbf{\lr{PASS}} \\
+40 & \texttt{alibi\_attention} & سوگیری موقعیتی خطی ALiBi بدون نیاز به ضرایب تعبیه‌شده & 3-Level & \textbf{\lr{PASS}} \\
+41 & \texttt{multi\_scale\_retention} & مکانیزم ماندگاری چندمقیاسی RetNet با واپاشی نمایی & 3-Level & \textbf{\lr{PASS}} \\
+42 & \texttt{sparse\_attention} & توجه تنک الگویافته با ماسک‌های دودویی دلخواه & 3-Level & \textbf{\lr{PASS}} \\
+43 & \texttt{sliding\_window} & توجه پنجره محلی لغزان با باندینگ قطری & 3-Level & \textbf{\lr{PASS}} \\
+44 & \texttt{selective\_scan} & اسکن گزینشی مامبا با ماتریس‌های انتقال ورودی‌محور & 3-Level & \textbf{\lr{PASS}} \\
+45 & \texttt{quantized\_gemm} & ضرب ماتریسی کوانتایزه‌شده عمومی با مقیاس‌های متقارن/نامتقارن & 3-Level & \textbf{\lr{PASS}} \\
+46 & \texttt{paged\_kv\_cache} & تخصیص حافظه مجازی غیرهمجوار برای کلیدها و مقادیر & 3-Level & \textbf{\lr{PASS}} \\
+47 & \texttt{paged\_attention} & محاسبه توجه مستقیم بر روی بلوک‌های حافظه صفحه‌بندی‌شده & 3-Level & \textbf{\lr{PASS}} \\
+48 & \texttt{moe\_routing} & مسیریابی توکن‌ها به متخصصین با گیتینگ Top-k و نرمال‌سازی سافت‌مکس & 3-Level & \textbf{\lr{PASS}} \\
+\end{longtable}
+\end{center}
