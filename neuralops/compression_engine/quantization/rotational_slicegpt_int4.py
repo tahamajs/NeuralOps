@@ -206,10 +206,11 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         seed: int = 42,  # RS-FIX-05
         **kwargs: Any,
     ) -> None:
-        # Remove duplicates that arrive through kwargs/comp_config.
+        # Remove duplicates that arrive through kwargs/comp_config while capturing values
+        fb = kwargs.pop("fallback_to_original", None)
+        rk = kwargs.pop("target_rank", kwargs.pop("rank", None))
         for k in (
             "max_error",
-            "fallback_to_original",
             "r_ratio",
             "quant_bits",
             "lambda_reg",
@@ -227,11 +228,12 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             "max_error",
             adaptive_max_error(r_ratio, 768, 768) if r_ratio is not None else 0.85,
         )
-        fallback_to_original = _cfg_get(cfg, "fallback_to_original", True)
+        fallback_to_original = fb if fb is not None else _cfg_get(cfg, "fallback_to_original", True)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
 
+        self.rank = int(rk) if rk is not None else None
         self.r_ratio = float(slice_ratio if slice_ratio is not None else r_ratio)
         if self.r_ratio >= 0.5:
             logger.warning(
@@ -353,7 +355,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             rel_error:        float
         """
         D_out, D_in = W.shape
-        r = max(1, min(int(D_in * self.r_ratio), D_in))
+        r = self.rank if self.rank is not None else int(D_in * self.r_ratio)
+        r = max(1, min(r, D_in))
         device = W.device
 
         # 1. Orthogonal rotation

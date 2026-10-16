@@ -303,7 +303,7 @@ class EntropyBudgetCompressor(BaseCompressor):
             orig_layer_params = out_f * in_f
             total_orig_params += orig_layer_params
             max_r = min(out_f, in_f)
-            r_floor = max(1, min(16, max_r))
+            r_floor = max(1, min(self.rank if self.rank is not None else 16, max_r))
 
             cov_inv_sqrt = None
             if name in covs and covs[name].shape == (in_f, in_f):
@@ -351,10 +351,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         # Step 2: Allocate ranks
         if self.rank is not None:
             allocated_ranks = {
-                name: max(
-                    layer_decomp_info[name][5],
-                    min(self.rank, layer_decomp_info[name][4]),
-                )
+                name: max(1, min(self.rank, layer_decomp_info[name][4]))
                 for name, _ in target_layers
             }
         else:

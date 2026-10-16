@@ -128,6 +128,9 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         self.use_lora = bool(use_lora) or (lora_r > 0)
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
+        self.rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        if self.rank is not None:
+            self.rank = int(self.rank)
         self.layer_errors: dict[str, float] = {}
         self.layer_ranks: dict[str, int] = {}
         self.stats: dict[str, Any] = {}
@@ -377,7 +380,9 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             W_pca = torch.matmul(W, Q)
 
             # Determine number of principal coordinates to retain
-            if self.non_uniform and any(k in name for k in ("query", "key", "q_lin", "k_lin")):
+            if self.rank is not None:
+                keep = max(1, self.rank)
+            elif self.non_uniform and any(k in name for k in ("query", "key", "q_lin", "k_lin")):
                 head_sparsity = max(0.0, self.sparsity * 0.75)
                 keep = max(1, int(d_in * (1.0 - head_sparsity)))
             elif self.non_uniform and any(k in name for k in ("mlp", "ffn", "dense")):
