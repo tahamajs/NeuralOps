@@ -381,6 +381,89 @@ from neuralops.core.cuda_kernels.routing_attention import (
     routing_attention_ref,
 )
 
+# 20 Additional SSM, Recurrent & Global Attention CUDA Kernels
+from neuralops.core.cuda_kernels.vspec import (
+    vspec,
+    vspec_ref,
+)
+from neuralops.core.cuda_kernels.goldfinch_ahn import (
+    goldfinch_ahn,
+    goldfinch_ahn_ref,
+)
+from neuralops.core.cuda_kernels.phantom import (
+    phantom,
+    phantom_ref,
+)
+from neuralops.core.cuda_kernels.mamba_block import (
+    mamba_block,
+    mamba_block_ref,
+)
+from neuralops.core.cuda_kernels.selective_ssm import (
+    selective_ssm,
+    selective_ssm_ref,
+)
+from neuralops.core.cuda_kernels.upi_stuffed_mamba import (
+    upi_stuffed_mamba,
+    upi_stuffed_mamba_ref,
+)
+from neuralops.core.cuda_kernels.jamba import (
+    jamba,
+    jamba_ref,
+)
+from neuralops.core.cuda_kernels.nexus import (
+    nexus,
+    nexus_ref,
+)
+from neuralops.core.cuda_kernels.hymba_transx import (
+    hymba_transx,
+    hymba_transx_ref,
+)
+from neuralops.core.cuda_kernels.griffin_ssd import (
+    griffin_ssd,
+    griffin_ssd_ref,
+)
+from neuralops.core.cuda_kernels.jamba_info import (
+    jamba_info,
+    jamba_info_ref,
+)
+from neuralops.core.cuda_kernels.samba_moe import (
+    samba_moe,
+    samba_moe_ref,
+)
+from neuralops.core.cuda_kernels.mamba_svd_flash import (
+    mamba_svd_flash,
+    mamba_svd_flash_ref,
+)
+from neuralops.core.cuda_kernels.samba_m3 import (
+    samba_m3,
+    samba_m3_ref,
+)
+from neuralops.core.cuda_kernels.orion import (
+    orion,
+    orion_ref,
+)
+from neuralops.core.cuda_kernels.spectral_mamba import (
+    spectral_mamba,
+    spectral_mamba_ref,
+)
+from neuralops.core.cuda_kernels.simple_ssm import (
+    simple_ssm,
+    simple_ssm_ref,
+)
+from neuralops.core.cuda_kernels.nystrom_attention import (
+    nystrom_attention,
+    nystrom_attention_ref,
+)
+from neuralops.core.cuda_kernels.linformer_attention import (
+    linformer_attention,
+    linformer_attention_ref,
+)
+from neuralops.core.cuda_kernels.rwkv6 import (
+    rwkv6,
+    rwkv6_ref,
+)
+
+
 
 __all__ = [
     "load_cuda_module",
@@ -576,5 +659,47 @@ __all__ = [
     "cluster_attention_ref",
     "routing_attention",
     "routing_attention_ref",
+    # 20 Additional SSM, Recurrent & Global Attention CUDA Kernels
+    "vspec",
+    "vspec_ref",
+    "goldfinch_ahn",
+    "goldfinch_ahn_ref",
+    "phantom",
+    "phantom_ref",
+    "mamba_block",
+    "mamba_block_ref",
+    "selective_ssm",
+    "selective_ssm_ref",
+    "upi_stuffed_mamba",
+    "upi_stuffed_mamba_ref",
+    "jamba",
+    "jamba_ref",
+    "nexus",
+    "nexus_ref",
+    "hymba_transx",
+    "hymba_transx_ref",
+    "griffin_ssd",
+    "griffin_ssd_ref",
+    "jamba_info",
+    "jamba_info_ref",
+    "samba_moe",
+    "samba_moe_ref",
+    "mamba_svd_flash",
+    "mamba_svd_flash_ref",
+    "samba_m3",
+    "samba_m3_ref",
+    "orion",
+    "orion_ref",
+    "spectral_mamba",
+    "spectral_mamba_ref",
+    "simple_ssm",
+    "simple_ssm_ref",
+    "nystrom_attention",
+    "nystrom_attention_ref",
+    "linformer_attention",
+    "linformer_attention_ref",
+    "rwkv6",
+    "rwkv6_ref",
 ]
+
 
