@@ -239,6 +239,7 @@ __pycache__/
 *$py.class
 *.log
 *.jsonl
+!results/registry/master_ledger.jsonl
 audit/
 academic/
 results/batch_validation/
