@@ -513,8 +513,8 @@ def test_group12_full_logit_preservation_vs_scalar_loss():
     probe_match = (top1_probe_steered == top1_probe_anchor).float().mean().item()
     heldout_match = (top1_heldout_steered == top1_heldout_anchor).float().mean().item()
 
-    assert probe_match >= 0.40
-    assert heldout_match >= 0.35
+    assert probe_match >= 0.85, f"Expected probe_match >= 0.85, got {probe_match}"
+    assert heldout_match >= 0.75, f"Expected heldout_match >= 0.75, got {heldout_match}"
 
 
 # ============================================================================
@@ -598,9 +598,11 @@ def test_group15_hnc_svd_vs_naive_direct_svd_error(target_rank):
     torch.manual_seed(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    model_orig = SmallAnchorMLP(64, 128, 32).to(device)
     model_naive = SmallAnchorMLP(64, 128, 32).to(device)
+    model_naive.load_state_dict(model_orig.state_dict())
     model_hnc = SmallAnchorMLP(64, 128, 32).to(device)
-    model_hnc.load_state_dict(model_naive.state_dict())
+    model_hnc.load_state_dict(model_orig.state_dict())
 
     probe_x = torch.randn(16, 64, device=device)
 
@@ -617,13 +619,17 @@ def test_group15_hnc_svd_vs_naive_direct_svd_error(target_rank):
     )
     mod_hnc, _ = comp_hnc.compress()
 
-    # Compare output drift
+    # Compare output drift against original uncompressed model
     with torch.no_grad():
+        y_orig = model_orig(probe_x)
         out_naive = mod_naive(probe_x)
         out_hnc = mod_hnc(probe_x)
+        err_naive = (torch.norm(out_naive - y_orig) / (torch.norm(y_orig) + 1e-8)).item()
+        err_hnc = (torch.norm(out_hnc - y_orig) / (torch.norm(y_orig) + 1e-8)).item()
 
     assert not torch.isnan(out_naive).any()
     assert not torch.isnan(out_hnc).any()
+    assert err_hnc < 0.75 * err_naive, f"Expected err_hnc < 0.75 * err_naive, got {err_hnc:.5f} vs {err_naive:.5f}"
 
 
 @pytest.mark.parametrize("rank", [4, 8, 16, 32])
