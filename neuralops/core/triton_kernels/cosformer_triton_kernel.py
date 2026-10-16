@@ -113,11 +113,16 @@ def cosformer_pytorch_fwd(
     v: torch.Tensor,
     is_causal: bool = False,
     eps: float = 1e-4,
+    apply_act: bool = True,
 ) -> torch.Tensor:
     """Pure PyTorch linear cosformer reference forward pass O(N d^2)."""
     B, H, N, D = q.shape
     device = q.device
     dtype = q.dtype
+    if apply_act:
+        scale = 1.0 / math.sqrt(D)
+        q = torch.nn.functional.elu(q.float() * scale) + 1.0
+        k = torch.nn.functional.elu(k.float()) + 1.0
     m = torch.arange(N, device=device, dtype=torch.float32) * (3.141592653589793 / (2.0 * N))
     cos_m = torch.cos(m).view(1, 1, N, 1).to(dtype)
     sin_m = torch.sin(m).view(1, 1, N, 1).to(dtype)
@@ -309,7 +314,7 @@ class _CosformerAutograd(torch.autograd.Function):
                 return out
             except Exception:
                 pass
-        out = cosformer_pytorch_fwd(q_act, k_act, v, is_causal=is_causal, eps=eps)
+        out = cosformer_pytorch_fwd(q_act, k_act, v, is_causal=is_causal, eps=eps, apply_act=False)
         ctx.save_for_backward(q, k, v, q_act, k_act, cos_m, sin_m, out)
         return out
 
@@ -325,7 +330,7 @@ class _CosformerAutograd(torch.autograd.Function):
         k_r = k_act.detach().requires_grad_(True)
         v_r = v.detach().requires_grad_(True)
         with torch.enable_grad():
-            out_eval = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=is_causal, eps=eps)
+            out_eval = cosformer_pytorch_fwd(q_r, k_r, v_r, is_causal=is_causal, eps=eps, apply_act=False)
             g_q_act, g_k_act, g_v = torch.autograd.grad(out_eval, [q_r, k_r, v_r], grad_output, retain_graph=False)
 
         # Backprop through ELU+1 activation: d/dx (elu(x*scale)+1) = scale * (1.0 if x>0 else exp(x*scale))
