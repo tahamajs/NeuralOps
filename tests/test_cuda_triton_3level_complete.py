@@ -366,3 +366,289 @@ def test_moe_routing_dispatch_gather_parity(device):
         gather_cuda = moe_gather(disp_cuda, weights, topk_indices, offsets)
 
     assert torch.allclose(gather_cuda, gather_py, atol=1e-4, rtol=1e-4), "MoE Gather mismatch"
+
+
+# ==============================================================================
+# 9. Low-Rank Gated GEMM: Forward & Backward Autograd Parity
+# ==============================================================================
+def test_lowrank_gated_gemm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_lowrank_gated_gemm
+
+    torch.manual_seed(42)
+    M, K, r, N = 32, 128, 16, 64
+    x = torch.randn(M, K, device=device, dtype=torch.float32, requires_grad=True)
+    V = torch.randn(r, K, device=device, dtype=torch.float32, requires_grad=True)
+    U = torch.randn(N, r, device=device, dtype=torch.float32, requires_grad=True)
+    alpha = torch.randn(r, device=device, dtype=torch.float32)
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fused_lowrank_gated_gemm(x, V, U, alpha=alpha, bias=bias)
+        loss_py = out_py.sum()
+        loss_py.backward()
+        gx_py = x.grad.clone()
+        x.grad.zero_()
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fused_lowrank_gated_gemm(x, V, U, alpha=alpha, bias=bias)
+        loss_cuda = out_cuda.sum()
+        loss_cuda.backward()
+        gx_cuda = x.grad.clone()
+        x.grad.zero_()
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Low-Rank GEMM forward mismatch"
+    assert torch.allclose(gx_cuda, gx_py, atol=1e-3, rtol=1e-3), "Low-Rank GEMM backward dX mismatch"
+
+
+# ==============================================================================
+# 10. Chunked Delta-Gate Recurrent Scan Parity
+# ==============================================================================
+def test_gdn_chunked_scan_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import chunked_delta_gate_scan
+
+    torch.manual_seed(42)
+    B, H, L, D_K, D_V = 2, 2, 16, 16, 16
+    q = torch.randn(B, H, L, D_K, device=device, dtype=torch.float32)
+    k = F.normalize(torch.randn(B, H, L, D_K, device=device, dtype=torch.float32), p=2, dim=-1)
+    v = torch.randn(B, H, L, D_V, device=device, dtype=torch.float32)
+    alpha = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32))
+    beta = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=torch.float32))
+
+    with force_kernel_backend("pytorch"):
+        out_py = chunked_delta_gate_scan(q, k, v, alpha, beta)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = chunked_delta_gate_scan(q, k, v, alpha, beta)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "GDN Scan forward mismatch"
+
+
+# ==============================================================================
+# 11. HGRN2 Bidirectional Recurrent Scan Parity
+# ==============================================================================
+def test_hgrn2_scan_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import hgrn2_fused_bwd_scan
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 2, 16, 16
+    x = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    g = torch.sigmoid(torch.randn(B, H, L, D, device=device, dtype=torch.float32))
+
+    with force_kernel_backend("pytorch"):
+        out_py = hgrn2_fused_bwd_scan(x, g)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = hgrn2_fused_bwd_scan(x, g)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "HGRN2 Scan forward mismatch"
+
+
+# ==============================================================================
+# 12. Cosformer Linear Attention Parity
+# ==============================================================================
+def test_cosformer_linear_attention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import cosformer_linear_attention
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 2, 16, 16
+    q = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, device=device, dtype=torch.float32)
+
+    for causal in [True, False]:
+        with force_kernel_backend("pytorch"):
+            out_py = cosformer_linear_attention(q, k, v, is_causal=causal)
+
+        with force_kernel_backend("cuda"):
+            out_cuda = cosformer_linear_attention(q, k, v, is_causal=causal)
+
+        assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), f"Cosformer causal={causal} mismatch"
+
+
+# ==============================================================================
+# 13. Fused LayerNorm + Linear Parity
+# ==============================================================================
+def test_fused_norm_linear_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_norm_linear
+
+    torch.manual_seed(42)
+    M, K, N = 16, 32, 16
+    x = torch.randn(M, K, device=device, dtype=torch.float32, requires_grad=True)
+    weight = torch.randn(N, K, device=device, dtype=torch.float32, requires_grad=True)
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fused_norm_linear(x, weight, bias=bias)
+        loss_py = out_py.sum()
+        loss_py.backward()
+        gx_py = x.grad.clone()
+        x.grad.zero_()
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fused_norm_linear(x, weight, bias=bias)
+        loss_cuda = out_cuda.sum()
+        loss_cuda.backward()
+        gx_cuda = x.grad.clone()
+        x.grad.zero_()
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Fused Norm Linear forward mismatch"
+    assert torch.allclose(gx_cuda, gx_py, atol=1e-3, rtol=1e-3), "Fused Norm Linear backward dX mismatch"
+
+
+# ==============================================================================
+# 14. Fused RoPE Parity
+# ==============================================================================
+def test_fused_rope_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_rotary_emb
+
+    torch.manual_seed(42)
+    B, H, N, D = 2, 2, 16, 32
+    half_d = D // 2
+    x = torch.randn(B, H, N, D, device=device, dtype=torch.float32, requires_grad=True)
+    cos = torch.randn(1, 1, N, half_d, device=device, dtype=torch.float32)
+    sin = torch.randn(1, 1, N, half_d, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = fused_rotary_emb(x, cos, sin)
+        loss_py = out_py.sum()
+        loss_py.backward()
+        gx_py = x.grad.clone()
+        x.grad.zero_()
+
+    with force_kernel_backend("cuda"):
+        out_cuda = fused_rotary_emb(x, cos, sin)
+        loss_cuda = out_cuda.sum()
+        loss_cuda.backward()
+        gx_cuda = x.grad.clone()
+        x.grad.zero_()
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-4, rtol=1e-4), "Fused RoPE forward mismatch"
+    assert torch.allclose(gx_cuda, gx_py, atol=1e-4, rtol=1e-4), "Fused RoPE backward dX mismatch"
+
+
+# ==============================================================================
+# 15. Kronecker Matmul Parity
+# ==============================================================================
+def test_kronecker_matmul_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import kronecker_matmul
+
+    torch.manual_seed(42)
+    M, M1, N1, M2, N2 = 16, 16, 16, 16, 16
+    x = torch.randn(M, N1 * N2, device=device, dtype=torch.float32)
+    A = torch.randn(M1, N1, device=device, dtype=torch.float32)
+    B = torch.randn(M2, N2, device=device, dtype=torch.float32)
+    bias = torch.randn(M1 * M2, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = kronecker_matmul(x, A, B, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = kronecker_matmul(x, A, B, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Kronecker Matmul mismatch"
+
+
+# ==============================================================================
+# 16. In-Register LUT Codebook Dequantization GEMM Parity
+# ==============================================================================
+def test_lut_codebook_dequant_gemm_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import lut_codebook_dequant_gemm
+
+    torch.manual_seed(42)
+    M, K, N = 16, 64, 32
+    group_size = 32
+    num_groups = K // group_size
+
+    x = torch.randn(M, K, device=device, dtype=torch.float32)
+    indices_packed = torch.randint(0, 255, (N, K // 2), device=device, dtype=torch.uint8)
+    codebook = torch.randn(num_groups, 16, device=device, dtype=torch.float32) * 0.1
+    bias = torch.randn(N, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = lut_codebook_dequant_gemm(x, indices_packed, codebook, group_size=group_size, bias=bias)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = lut_codebook_dequant_gemm(x, indices_packed, codebook, group_size=group_size, bias=bias)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "LUT GEMM mismatch"
+
+
+# ==============================================================================
+# 17. Linear Attention Parity
+# ==============================================================================
+def test_linear_attention_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import linear_attention
+
+    torch.manual_seed(42)
+    B, H, L, D_K, D_V = 2, 2, 16, 16, 16
+    q = torch.randn(B, H, L, D_K, device=device, dtype=torch.float32)
+    k = torch.randn(B, H, L, D_K, device=device, dtype=torch.float32)
+    v = torch.randn(B, H, L, D_V, device=device, dtype=torch.float32)
+
+    with force_kernel_backend("pytorch"):
+        out_py = linear_attention(q, k, v)
+
+    with force_kernel_backend("cuda"):
+        out_cuda = linear_attention(q, k, v)
+
+    assert torch.allclose(out_cuda, out_py, atol=1e-3, rtol=1e-3), "Linear Attention mismatch"
+
+
+# ==============================================================================
+# 18. Fused Cross-Entropy Loss Parity
+# ==============================================================================
+def test_fused_cross_entropy_parity(device):
+    if device == "cpu":
+        pytest.skip("CUDA device required")
+
+    from neuralops.core.cuda_kernels import fused_cross_entropy
+
+    torch.manual_seed(42)
+    N_tokens, V = 32, 128
+    logits = torch.randn(N_tokens, V, device=device, dtype=torch.float32, requires_grad=True)
+    targets = torch.randint(0, V, (N_tokens,), device=device, dtype=torch.int64)
+    # inject an ignore index
+    targets[0] = -100
+
+    with force_kernel_backend("pytorch"):
+        loss_py = fused_cross_entropy(logits, targets, ignore_index=-100, reduction="mean")
+        loss_py.backward()
+        g_py = logits.grad.clone()
+        logits.grad.zero_()
+
+    with force_kernel_backend("cuda"):
+        loss_cuda = fused_cross_entropy(logits, targets, ignore_index=-100, reduction="mean")
+        loss_cuda.backward()
+        g_cuda = logits.grad.clone()
+        logits.grad.zero_()
+
+    assert torch.allclose(loss_cuda, loss_py, atol=1e-4, rtol=1e-4), "Fused CE forward mismatch"
+    assert torch.allclose(g_cuda, g_py, atol=1e-4, rtol=1e-4), "Fused CE backward d_logits mismatch"
+
