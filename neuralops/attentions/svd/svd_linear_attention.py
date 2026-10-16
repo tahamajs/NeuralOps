@@ -580,43 +580,74 @@ class SVDLinearAttention(BaseAttention):
     ) -> None:
         with torch.no_grad():
             dev = weight.device
-            target_w = weight.detach()
+            target_w = weight.detach().float()
+            d_out, d_in = target_w.shape
+            r = min(target_linear.rank, d_out, d_in)
+
             if use_hnc:
                 try:
                     from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
-                    hnc = HessianNullSpaceSVDContinuation(target_rank=target_linear.rank, num_steps=hnc_steps)
-                    target_w = hnc.run_continuation(target_w, probe_inputs=probe_inputs)
+                    hnc = HessianNullSpaceSVDContinuation(target_rank=r, num_steps=hnc_steps, step_size_eta=0.05)
+                    target_w = hnc.run_continuation(target_w, probe_inputs=probe_inputs).float()
                 except Exception as e:
                     logger.warning("HNC continuation failed in _factorize_and_set (%s); falling back to direct SVD.", e)
 
-            try:
-                U, S, Vt = torch.linalg.svd(target_w.float(), full_matrices=False)
-            except Exception:
-                U, S, Vt = torch.linalg.svd(target_w.cpu().float(), full_matrices=False)
-                U = U.to(dev)
-                S = S.to(dev)
-                Vt = Vt.to(dev)
+            # Compute SVD (Cholesky-whitened if probe_inputs provided and use_hnc is True)
+            if use_hnc and probe_inputs is not None:
+                try:
+                    px = probe_inputs.to(dev).float().view(-1, d_in)
+                    Hx = torch.matmul(px.t(), px) / max(px.shape[0], 1)
+                    reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
+                    Sx = Hx + reg * torch.eye(d_in, device=dev, dtype=torch.float32)
+                    L = torch.linalg.cholesky(Sx)
+                    W_whitened = torch.matmul(target_w, L)
+                    U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
+                    U_r = (U[:, :r] * torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+                    V_unwhitened = torch.linalg.solve_triangular(
+                        L, (torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+                    ).t().to(device=dev, dtype=weight.dtype)
+                    target_linear.set_low_rank_factors(U_r, V_unwhitened)
+                except Exception:
+                    U, S, Vt = torch.linalg.svd(target_w, full_matrices=False)
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
+                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
+                    target_linear.set_low_rank_factors(U_r, V_r)
+            else:
+                U, S, Vt = torch.linalg.svd(target_w, full_matrices=False)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
+                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
+                target_linear.set_low_rank_factors(U_r, V_r)
 
-            r = min(target_linear.rank, U.size(1), Vt.size(0))
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
-            target_linear.set_low_rank_factors(U_r, V_r)
             if bias is not None and target_linear.bias is not None:
-                target_linear.bias.data.copy_(
-                    bias.to(target_linear.bias.device, target_linear.bias.dtype)
-                )
+                if use_hnc and probe_inputs is not None:
+                    try:
+                        mu_x = probe_inputs.to(dev).float().view(-1, d_in).mean(dim=0)
+                        W_hat = torch.matmul(target_linear.U.data.float(), target_linear.V.data.float())
+                        drift_bias = torch.matmul(weight.float() - W_hat, mu_x)
+                        target_linear.bias.data.copy_(
+                            (bias.float() + drift_bias).to(target_linear.bias.device, target_linear.bias.dtype)
+                        )
+                    except Exception:
+                        target_linear.bias.data.copy_(bias.to(target_linear.bias.device, target_linear.bias.dtype))
+                else:
+                    target_linear.bias.data.copy_(
+                        bias.to(target_linear.bias.device, target_linear.bias.dtype)
+                    )
 
     def hnc_spectral_compress_and_align(
         self,
         probe_inputs: torch.Tensor | None = None,
         num_steps: int = 15,
         target_rank: int | None = None,
+        anchor_outputs: torch.Tensor | None = None,
+        full_rank_weights: dict[str, torch.Tensor] | None = None,
     ) -> dict[str, Any]:
         """
         Run Hessian Null Space Continuation (HNC) on all linear projections (Q, K, V, Out)
         to steer tail singular values toward zero while preserving network function,
-        then factorize into low-rank SVD projections.
+        then factorize into low-rank SVD projections with low-rank factor restoration.
         """
         results: dict[str, Any] = {}
         target_rank = target_rank or self.rank
@@ -626,8 +657,10 @@ class SVDLinearAttention(BaseAttention):
 
         for name, proj in projs:
             with torch.no_grad():
-                # Reconstruct full weight W = U @ V
-                W = torch.matmul(proj.U.data.float(), proj.V.data.float())
+                if full_rank_weights and name in full_rank_weights:
+                    W = full_rank_weights[name].to(proj.U.device)
+                else:
+                    W = torch.matmul(proj.U.data.float(), proj.V.data.float()).to(proj.U.device)
                 bias = proj.bias.data if proj.bias is not None else None
                 self._factorize_and_set(
                     proj,
@@ -638,6 +671,22 @@ class SVDLinearAttention(BaseAttention):
                     hnc_steps=num_steps,
                 )
                 results[name] = {"rank": proj.rank, "status": "hnc_aligned"}
+
+        # Fast post-truncation factor restoration on attention projections if probe inputs and anchor outputs are provided
+        if probe_inputs is not None and anchor_outputs is not None:
+            self.eval()
+            trainable_factors = []
+            for _, proj in projs:
+                trainable_factors.extend([proj.U, proj.V])
+            opt = torch.optim.Adam(trainable_factors, lr=2e-3)
+            for _ in range(12):
+                opt.zero_grad()
+                out = self(probe_inputs)
+                out_t = out[0] if isinstance(out, tuple) else out
+                loss = 0.5 * torch.mean((out_t.float() - anchor_outputs.float()) ** 2)
+                loss.backward()
+                opt.step()
+
         return results
 
     # ------------------------------------------------------------------
@@ -780,9 +829,16 @@ class SVDLinearAttention(BaseAttention):
                     else:
                         raise RuntimeError(f"SVDLinearAttention: {name} has near-zero Frobenius norm ({n:.2e})")
 
+            # Extract HNC parameters if provided
+            use_hnc = bool(kwargs.get("use_hnc", False))
+            probe_inputs = kwargs.get("probe_inputs", None)
+            hnc_steps = int(kwargs.get("hnc_steps", 15))
+
             # ---- factorize Q ----
             try:
-                self._factorize_and_set(self.q_proj, w_q, b_q)
+                self._factorize_and_set(
+                    self.q_proj, w_q, b_q, probe_inputs=probe_inputs, use_hnc=use_hnc, hnc_steps=hnc_steps
+                )
             except Exception as e:
                 logger.warning("SVDLinearAttention: Q factorization failed (%s).", e)
                 return
@@ -838,14 +894,18 @@ class SVDLinearAttention(BaseAttention):
 
             try:
                 w_k_a, b_k_a = _adapt_to_kv_size(w_k, b_k, mode="slice")
-                self._factorize_and_set(self.k_proj, w_k_a, b_k_a)
+                self._factorize_and_set(
+                    self.k_proj, w_k_a, b_k_a, probe_inputs=probe_inputs, use_hnc=use_hnc, hnc_steps=hnc_steps
+                )
             except Exception as e:
                 logger.warning("SVDLinearAttention: K factorization failed (%s).", e)
                 return
 
             try:
                 w_v_a, b_v_a = _adapt_to_kv_size(w_v, b_v, mode="slice")
-                self._factorize_and_set(self.v_proj, w_v_a, b_v_a)
+                self._factorize_and_set(
+                    self.v_proj, w_v_a, b_v_a, probe_inputs=probe_inputs, use_hnc=use_hnc, hnc_steps=hnc_steps
+                )
             except Exception as e:
                 logger.warning("SVDLinearAttention: V factorization failed (%s).", e)
                 return
@@ -863,7 +923,9 @@ class SVDLinearAttention(BaseAttention):
                         n_o,
                     )
                 try:
-                    self._factorize_and_set(self.out_proj, w_o, b_o)
+                    self._factorize_and_set(
+                        self.out_proj, w_o, b_o, probe_inputs=probe_inputs, use_hnc=use_hnc, hnc_steps=hnc_steps
+                    )
                 except Exception as e:
                     logger.warning("SVDLinearAttention: out_proj factorization failed (%s).", e)
 
