@@ -448,8 +448,8 @@ def main():
     # Kernel 11: Spectral Entropy SVD Gate
     # -----------------------------------------------------------------------
     print("\n[Kernel 11/13] triton_spectral_entropy_svd_gate")
-    M, K, R_MAX, N = 512, 768, 64, 768
-    eff_r = 32
+    M, K, R_MAX, N = 1024, 2048, 32, 2048
+    eff_r = 16
     x11 = torch.randn(M, K, device=device, dtype=torch.float16)
     V11 = torch.randn(K, R_MAX, device=device, dtype=torch.float16)
     U11 = torch.randn(R_MAX, N, device=device, dtype=torch.float16)
