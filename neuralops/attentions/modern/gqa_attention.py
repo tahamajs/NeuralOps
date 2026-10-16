@@ -319,6 +319,14 @@ class GroupedQueryAttention(BaseAttention):
         ):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
+                c_mod = src.c_attn
+                is_conv1d = (
+                    "Conv1D" in c_mod.__class__.__name__
+                    or hasattr(c_mod, "nf")
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                )
+                if is_conv1d:
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 extracted["q"] = (
                     weight[:split_size, :],
@@ -335,7 +343,16 @@ class GroupedQueryAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
-            extracted["o"] = (w_o, b_o)
+            if w_o is not None:
+                p_mod = src.c_proj
+                is_conv1d = (
+                    "Conv1D" in p_mod.__class__.__name__
+                    or hasattr(p_mod, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                )
+                if is_conv1d:
+                    w_o = w_o.t().contiguous()
+                extracted["o"] = (w_o, b_o)
 
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
