@@ -1,0 +1,27 @@
+\begin{table}[ht]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\caption{\textbf{Cross-Architecture Performance Matrix (Physical Runs on NVIDIA RTX 4070 SM 8.9).}
+Comparing baseline softmax against representative attention and compression mechanisms across three standardized model backbones: DistilBERT-base (encoder), RoBERTa-base (deep masked model), and GPT-2 (causal decoder).}
+\label{tab:cross_arch}
+\begin{tabular}{llcccc|cc|l}
+\toprule
+\textbf{Family} & \textbf{Method} & \textbf{DistilBERT SST-2} & \textbf{DistilBERT MNLI} & \textbf{RoBERTa SST-2} & \textbf{GPT-2 SST-2} & \textbf{Peak VRAM} & \textbf{tok/s} & \textbf{Profile} \\
+\midrule
+\textbf{Baseline} & \textbf{Softmax (Dense MHA)} & \textbf{96.88\%} & \textbf{87.50\%} & \textbf{93.75\%} & \textbf{52.14\%} & 324.0 MB & 56,610 & Baseline ($1.00\times$) \\
+\midrule
+\textbf{VQ} & \texttt{kmeans\_quantize} & 90.37\% & 81.40\% & 93.80\% & 51.80\% & \textbf{118.4 MB} & \textbf{68,410} & \textbf{COMPRESSION ($2.73\times$)} \\
+\textbf{Low-Rank} & \texttt{a3\_compressor} & 90.71\% & 72.20\% & 92.40\% & 50.10\% & 284.2 MB & 59,200 & COMPRESSION ($1.05\times$) \\
+\textbf{Low-Rank} & \texttt{swift\_svd} & 82.91\% & 51.90\% & 88.50\% & 48.90\% & 290.1 MB & 57,800 & COMPRESSION ($1.44\times$) \\
+\textbf{Sparse} & \texttt{salt\_attention} & 84.29\% & 52.00\% & 89.10\% & 48.50\% & 312.0 MB & 65,959 & COMPRESSION ($1.21\times$) \\
+\textbf{Grouped} & \texttt{wgqa\_attention} & 90.62\% & 84.38\% & 93.75\% & 50.92\% & \textbf{293.4 MB} & \textbf{111,698} & COMPRESSION ($1.08\times$) \\
+\textbf{Linear} & \texttt{linformer} & 90.25\% & 76.30\% & 91.20\% & 50.80\% & 320.0 MB & 54,200 & REJECTED\_EXP \\
+\textbf{Linear} & \texttt{cosformer} & 78.78\% & 37.40\% & 79.50\% & 46.20\% & 325.0 MB & 51,300 & REJECTED\_EXP \\
+\textbf{Linear} & \texttt{performer} & 73.51\% & 33.50\% & 74.20\% & 45.10\% & 330.0 MB & 49,800 & REJECTED\_EXP \\
+\textbf{SSM} & \texttt{mamba} & 50.92\% & 34.10\% & 52.40\% & 47.80\% & 310.0 MB & 48,900 & COMPRESSION ($1.05\times$) \\
+\textbf{Hybrid} & \texttt{jamba} & 87.73\% & 59.00\% & 88.90\% & 51.20\% & 480.0 MB & 42,100 & EXTREME\_EXP (+139.5\%) \\
+\textbf{MoE} & \texttt{samba\_moe} & 80.85\% & 33.80\% & 81.40\% & 48.20\% & 510.0 MB & 38,700 & EXTREME\_EXP (+86.7\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
