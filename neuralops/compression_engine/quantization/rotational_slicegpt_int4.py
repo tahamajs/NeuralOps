@@ -228,7 +228,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             "max_error",
             adaptive_max_error(r_ratio, 768, 768) if r_ratio is not None else 0.85,
         )
-        fallback_to_original = fb if fb is not None else _cfg_get(cfg, "fallback_to_original", True)
+        fallback_to_original = fb if fb is not None else _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
@@ -500,7 +500,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                     name,
                     self.max_error,
                 )
-                if self.fallback_to_original:
+                if self.fallback_to_original and self.rank is None:
                     fallback_layers.append(name)
                     for p in module.parameters():
                         p.requires_grad = False
