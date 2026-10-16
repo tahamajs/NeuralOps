@@ -631,3 +631,10 @@ If you use NeuralOps in your academic research or production systems, please cit
 ```
 
 NeuralOps is open-source software licensed under the [MIT License](LICENSE).
+
+---
+
+## 22. Acknowledgments
+
+We thank the open-source community and the creators of Hugging Face Transformers, OpenAI Triton, FlashAttention, Mamba, and vLLM for pioneering subquadratic architectures, hardware-aware execution kernels, and high-throughput LLM serving systems.
+
