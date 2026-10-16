@@ -8,7 +8,7 @@ import torch.nn as nn
 from neuralops.core.base import BaseAttention, BaseCompressor
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.adapters import get_adapter, BertAdapter, DistilBertAdapter, LlamaAdapter
-from neuralops.core.gqa_utils import repeat_kv
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.attention_utils import safe_softmax, softcap
 from neuralops.core.model_utils import count_parameters
 import neuralops.attentions  # noqa: F401 - populate ATTENTION_REGISTRY
