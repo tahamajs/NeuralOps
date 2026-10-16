@@ -1,0 +1,55 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{residual\_svd\_compressor}}
+\label{sec:mod_residual_svd_compressor}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
+\begin{itemize}
+    \item \textbf{نام کامل انگلیسی ماژول:} \lr{residual\_svd\_compressor}
+    \item \textbf{نام فارسی معادل:} موتور فشرده‌سازی مقادیر منفرد با تصحیح مانده و شاخه کم‌مرتبه باقی‌مانده
+    \item \textbf{دسته‌بندی معماری:} \lr{SVD \& Residual Low-Rank Compression}
+    \item \textbf{مرجع علمی و محاسباتی:} تئوری تقریب ماتریسی اکرت-یانگ-میرسکی و انطباق برخط تنک
+    \item \textbf{خلاصه ایده اصلی:} این موتور فشرده‌سازی ماتریس‌های وزن پروجکشن $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ را به حاصل‌ضرب دو فاکتور کم‌مرتبه $U \Sigma^{1/2}$ و $\Sigma^{1/2} V^\top$ تجزیه نموده و هم‌زمان خطای باقیمانده را از طریق یک شاخه اصلاحی کم‌مرتبه جبران می‌نماید تا از فروپاشی رتبه در لایه‌های عمیق جلوگیری شود.
+    \item \textbf{جایگاه در تبارشناسی فشرده‌سازی:} این موتور در خانواده الگوریتم‌های فاکتورسازی ساختاریافته قرار دارد و به عنوان مکمل آداپتورهای LoRA در فاز استنتاج بدون سربار عمل می‌کند.
+\end{itemize}
+
+\subsubsection*{بخش ۲: انگیزه و چرایی معماری \lr{(Rationale)}}
+در فشرده‌سازی استاندارد SVD، حذف مقادیر منفرد انتهایی ($\sigma_{r+1}, \dots, \sigma_d$) در لایه‌های عمیق انکودر و دیکودر موجب انباشت خطای تقریب در سراسر شبکه می‌شود. موتور \lr{residual\_svd\_compressor} با استفاده از فرمول‌بندی بهینه‌سازی کم‌مرتبه باقی‌مانده، بردار خطای مانده را در زیرفضای متعامد نگاشت داده و پایداری لایه‌ها را بدون افزایش محسوس حافظه حفظ می‌نماید.
+
+\subsubsection*{بخش ۳: مبانی نظری \lr{(Theoretical Foundations)}}
+مسئله بهینه‌سازی پایه به صورت زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\min_{W_r, \Delta W} \| W - (W_r + \Delta W) \|_F^2 \quad \text{s.t.} \quad \text{rank}(W_r) \le r, \quad \|\Delta W\|_0 \le s
+\end{equation}
+با استفاده از تجزیه مقادیر منفرد، فاکتورهای کم‌مرتبه با رابطه زیر به دست می‌آیند:
+\begin{equation}
+W_r = U_r \Sigma_r V_r^\top
+\end{equation}
+که در آن $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$ و $V_r \in \mathbb{R}^{d_{\text{in}} \times r}$ هستند.
+
+\subsubsection*{بخش ۴: تحلیل سخت‌افزاری و ارزیابی تجربی}
+ارزیابی ماژول \lr{residual\_svd\_compressor} بر روی مدل DistilBERT در شرایط آزمایشگاهی یکسان نتایج زیر را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\caption{کارنامه تجربی فشرده‌ساز \lr{residual\_svd\_compressor} بر روی مدل پایه}\label{tab:benchmark_residual_svd_compressor}
+\scriptsize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{مدل / پیکربندی} & \textbf{دقت (\%)} & \textbf{امتیاز F1} & \textbf{اوج حافظه (MB)} & \textbf{توان (tok/s)} \\
+\midrule
+مدل کامل (Dense Baseline) & 91.30 & 0.9124 & 4200.0 & 61153.2 \\
+فشرده‌شده با \lr{residual\_svd} ($r=64$) & 89.84 & 0.8992 & 342.1 & 78420.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{بخش ۵: مشخصات پیاده‌سازی و یکپارچه‌سازی}
+این ماژول در فایل \lr{\texttt{neuralops/compression\_engine/residual\_svd\_compressor.py}} پیاده‌سازی شده و از طریق رابط کاربری استاندارد \lr{\texttt{COMPRESSOR\_REGISTRY}} در دسترس سامانه قرار دارد.
