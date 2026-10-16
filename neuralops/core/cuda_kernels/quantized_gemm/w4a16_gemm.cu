@@ -1,8 +1,9 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
+#include <c10/cuda/CUDAException.h>
 
-__global__ void w4a16_gemm_kernel(
+__global__ void w4a16_gemm_tiled_kernel(
     float* __restrict__ out,              // [M, N]
     const float* __restrict__ A,          // [M, K]
     const uint8_t* __restrict__ W_q,      // [K, N / 2] packed int4
@@ -13,27 +14,119 @@ __global__ void w4a16_gemm_kernel(
     const int K,
     const int group_size
 ) {
-    const int row = blockIdx.y * blockDim.y + threadIdx.y;
-    const int col = blockIdx.x * blockDim.x + threadIdx.x;
+    __shared__ float A_smem[32][32];
+    __shared__ float W_smem[32][32];
 
-    if (row >= M || col >= N) return;
+    const int tx = threadIdx.x;
+    const int ty = threadIdx.y;
+
+    const int row = blockIdx.y * 32 + ty;
+    const int col = blockIdx.x * 32 + tx;
 
     float acc = 0.0f;
+    const int num_k_tiles = (K + 31) / 32;
 
-    for (int k = 0; k < K; ++k) {
-        const int packed_col = col / 2;
-        const uint8_t packed_val = W_q[k * (N / 2) + packed_col];
-        const uint8_t raw_int4 = (col % 2 == 0) ? (packed_val & 0x0F) : ((packed_val >> 4) & 0x0F);
+    for (int t = 0; t < num_k_tiles; ++t) {
+        const int k_tile_start = t * 32;
 
-        const int group_idx = k / group_size;
-        const float s = scales[group_idx * N + col];
-        const float z = zeros[group_idx * N + col];
+        // Load A into A_smem
+        const int a_k = k_tile_start + tx;
+        if (row < M && a_k < K) {
+            A_smem[ty][tx] = A[row * K + a_k];
+        } else {
+            A_smem[ty][tx] = 0.0f;
+        }
 
-        const float w_dequant = (static_cast<float>(raw_int4) - z) * s;
-        acc += A[row * K + k] * w_dequant;
+        // Unpack and dequantize W into W_smem
+        const int w_k = k_tile_start + ty;
+        if (col < N && w_k < K) {
+            const int packed_col = col / 2;
+            const uint8_t packed_val = W_q[w_k * (N / 2) + packed_col];
+            const uint8_t raw_int4 = (col % 2 == 0) ? (packed_val & 0x0F) : ((packed_val >> 4) & 0x0F);
+            const int group_idx = w_k / group_size;
+            const float s = scales[group_idx * N + col];
+            const float z = zeros[group_idx * N + col];
+            W_smem[ty][tx] = (static_cast<float>(raw_int4) - z) * s;
+        } else {
+            W_smem[ty][tx] = 0.0f;
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int kk = 0; kk < 32; ++kk) {
+            acc += A_smem[ty][kk] * W_smem[kk][tx];
+        }
+
+        __syncthreads();
     }
 
-    out[row * N + col] = acc;
+    if (row < M && col < N) {
+        out[row * N + col] = acc;
+    }
+}
+
+__global__ void w4a16_gemm_bwd_tiled_kernel(
+    float* __restrict__ dA,               // [M, K]
+    const float* __restrict__ dout,       // [M, N]
+    const uint8_t* __restrict__ W_q,      // [K, N / 2] packed int4
+    const float* __restrict__ scales,     // [K / group_size, N]
+    const float* __restrict__ zeros,      // [K / group_size, N]
+    const int M,
+    const int N,
+    const int K,
+    const int group_size
+) {
+    __shared__ float DO_smem[32][32];
+    __shared__ float WT_smem[32][32];
+
+    const int tx = threadIdx.x;
+    const int ty = threadIdx.y;
+
+    const int row = blockIdx.y * 32 + ty; // row in M
+    const int col_k = blockIdx.x * 32 + tx; // col in K
+
+    float acc = 0.0f;
+    const int num_n_tiles = (N + 31) / 32;
+
+    for (int t = 0; t < num_n_tiles; ++t) {
+        const int n_tile_start = t * 32;
+
+        // Load dout into DO_smem
+        const int do_n = n_tile_start + tx;
+        if (row < M && do_n < N) {
+            DO_smem[ty][tx] = dout[row * N + do_n];
+        } else {
+            DO_smem[ty][tx] = 0.0f;
+        }
+
+        // Dequantize W and store transposed in WT_smem: WT[ty][tx] corresponds to W[col_k, n_tile_start + ty]
+        const int w_n = n_tile_start + ty;
+        if (col_k < K && w_n < N) {
+            const int packed_col = w_n / 2;
+            const uint8_t packed_val = W_q[col_k * (N / 2) + packed_col];
+            const uint8_t raw_int4 = (w_n % 2 == 0) ? (packed_val & 0x0F) : ((packed_val >> 4) & 0x0F);
+            const int group_idx = col_k / group_size;
+            const float s = scales[group_idx * N + w_n];
+            const float z = zeros[group_idx * N + w_n];
+            WT_smem[ty][tx] = (static_cast<float>(raw_int4) - z) * s;
+        } else {
+            WT_smem[ty][tx] = 0.0f;
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int nn = 0; nn < 32; ++nn) {
+            acc += DO_smem[ty][nn] * WT_smem[nn][tx];
+        }
+
+        __syncthreads();
+    }
+
+    if (row < M && col_k < K) {
+        dA[row * K + col_k] = acc;
+    }
 }
 
 void w4a16_gemm_cuda(
@@ -44,15 +137,17 @@ void w4a16_gemm_cuda(
     const torch::Tensor& zeros,
     int group_size
 ) {
-    const int M = A.size(0);
-    const int K = A.size(1);
-    const int N = scales.size(1);
+    const int M = static_cast<int>(A.size(0));
+    const int K = static_cast<int>(A.size(1));
+    const int N = static_cast<int>(scales.size(1));
 
-    dim3 block(16, 16);
-    dim3 grid((N + block.x - 1) / block.x, (M + block.y - 1) / block.y);
+    if (M <= 0 || K <= 0 || N <= 0) return;
+
+    dim3 block(32, 32);
+    dim3 grid((N + 31) / 32, (M + 31) / 32);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    w4a16_gemm_kernel<<<grid, block, 0, stream>>>(
+    w4a16_gemm_tiled_kernel<<<grid, block, 0, stream>>>(
         out.data_ptr<float>(),
         A.data_ptr<float>(),
         W_q.data_ptr<uint8_t>(),
@@ -60,4 +155,36 @@ void w4a16_gemm_cuda(
         zeros.data_ptr<float>(),
         M, N, K, group_size
     );
+
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+}
+
+void w4a16_gemm_bwd_cuda(
+    torch::Tensor& dA,
+    const torch::Tensor& dout,
+    const torch::Tensor& W_q,
+    const torch::Tensor& scales,
+    const torch::Tensor& zeros,
+    int group_size
+) {
+    const int M = static_cast<int>(dout.size(0));
+    const int N = static_cast<int>(dout.size(1));
+    const int K = static_cast<int>(dA.size(1));
+
+    if (M <= 0 || K <= 0 || N <= 0) return;
+
+    dim3 block(32, 32);
+    dim3 grid((K + 31) / 32, (M + 31) / 32);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    w4a16_gemm_bwd_tiled_kernel<<<grid, block, 0, stream>>>(
+        dA.data_ptr<float>(),
+        dout.data_ptr<float>(),
+        W_q.data_ptr<uint8_t>(),
+        scales.data_ptr<float>(),
+        zeros.data_ptr<float>(),
+        M, N, K, group_size
+    );
+
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
