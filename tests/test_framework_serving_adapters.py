@@ -116,14 +116,11 @@ def test_hf_automodel_registration_hook():
     success = register_hf_automodel()
     assert success is True
 
-    from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
+    from transformers.models.auto.configuration_auto import CONFIG_MAPPING
     from neuralops.models.configuration import NeuralOpsConfig
-    from neuralops.models.modeling import NeuralOpsModel, NeuralOpsForCausalLM
 
-    # Verify registration in transformers mapping
-    assert "neuralops" in AutoConfig._model_mapping or issubclass(
-        AutoConfig._model_mapping.get("neuralops", object), NeuralOpsConfig
-    ) or True
+    assert "neuralops" in CONFIG_MAPPING
+    assert CONFIG_MAPPING["neuralops"] is NeuralOpsConfig
 
 
 def test_onnx_export_and_graph_validation(tmp_path: Path):
