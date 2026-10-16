@@ -122,3 +122,49 @@ torch::Tensor moe_gather(
 
     return out;
 }
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> moe_fused_dispatch(
+    torch::Tensor tokens,
+    torch::Tensor gate_logits,
+    int64_t top_k
+) {
+    TORCH_CHECK(tokens.is_cuda() && gate_logits.is_cuda(),
+                "moe_fused_dispatch: tokens and gate_logits must be CUDA tensors");
+    TORCH_CHECK(tokens.dim() == 2 && gate_logits.dim() == 2,
+                "moe_fused_dispatch: expected 2D tensors");
+    TORCH_CHECK(tokens.size(0) == gate_logits.size(0),
+                "moe_fused_dispatch: batch size mismatch between tokens and gate_logits");
+    TORCH_CHECK(top_k > 0 && top_k <= gate_logits.size(1),
+                "moe_fused_dispatch: invalid top_k");
+
+    const int num_tokens = static_cast<int>(tokens.size(0));
+    const int hidden_dim = static_cast<int>(tokens.size(1));
+    const int num_experts = static_cast<int>(gate_logits.size(1));
+    const int k = static_cast<int>(top_k);
+
+    auto dispatched = torch::empty({num_tokens * k, hidden_dim}, tokens.options());
+    auto routing_weights = torch::empty({num_tokens, k}, tokens.options());
+    auto topk_indices = torch::empty({num_tokens, k}, tokens.options().dtype(torch::kInt32));
+
+    if (num_tokens == 0 || hidden_dim == 0) {
+        return std::make_tuple(dispatched, routing_weights, topk_indices);
+    }
+
+    auto tokens_c = tokens.contiguous();
+    auto gate_logits_c = gate_logits.to(tokens.scalar_type()).contiguous();
+
+    moe_fused_dispatch_cuda(
+        dispatched,
+        routing_weights,
+        topk_indices,
+        tokens_c,
+        gate_logits_c,
+        num_tokens,
+        hidden_dim,
+        num_experts,
+        k
+    );
+
+    return std::make_tuple(dispatched, routing_weights, topk_indices);
+}
+
