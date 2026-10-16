@@ -19,6 +19,19 @@ from neuralops.integrations.serving import (
     TGIAttentionAdapter,
     SGLangRadixLinearCacheAdapter,
 )
+from neuralops.integrations.tgi import (
+    TGIServingAdapter,
+    TGIRequestBatch,
+    TGIRequestSlot,
+    TGIStreamingIterator,
+)
+from neuralops.integrations.sglang import (
+    SGLangRadixAdapter,
+    RadixPrefixNode,
+)
+from neuralops.integrations.tensorrt_llm import (
+    TensorRTLLMPluginBuilder,
+)
 
 __all__ = [
     "register_hf_automodel",
@@ -34,6 +47,13 @@ __all__ = [
     "VLLMAttentionAdapter",
     "TGIAttentionAdapter",
     "SGLangRadixLinearCacheAdapter",
+    "TGIServingAdapter",
+    "TGIRequestBatch",
+    "TGIRequestSlot",
+    "TGIStreamingIterator",
+    "SGLangRadixAdapter",
+    "RadixPrefixNode",
+    "TensorRTLLMPluginBuilder",
 ]
 
 # Auto-wired package members
@@ -41,4 +61,7 @@ from neuralops.integrations import distributed_compile
 from neuralops.integrations import hf_automodel
 from neuralops.integrations import serving
 from neuralops.integrations import vllm
+from neuralops.integrations import tgi
+from neuralops.integrations import sglang
+from neuralops.integrations import tensorrt_llm
 
