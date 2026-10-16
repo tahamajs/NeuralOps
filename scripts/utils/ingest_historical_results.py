@@ -133,7 +133,7 @@ def run_ingestion():
                     "peak_vram_mb": item.get("triton_vram_mb", 0.0),
                     "relative_error": item.get("rel_error", 0.0),
                 },
-                notes=f"Target: {item.get(target_module)}",
+                notes=f"Target: {item.get('target_module')}",
             )
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
