@@ -61,6 +61,8 @@ def get_cuda_arch_flags() -> list[str]:
         return ["-arch=sm_80"]
 
 
+import hashlib
+
 def load_cuda_module(
     name: str,
     cpp_sources: str,
@@ -70,11 +72,8 @@ def load_cuda_module(
     force_rebuild: bool = False,
 ) -> Any | None:
     """
-    Load a CUDA C++ module via load_inline with caching and fallback.
+    Load a CUDA C++ module via load_inline with content-hash caching and fallback.
     """
-    if not force_rebuild and name in _LOADED_MODULES:
-        return _LOADED_MODULES[name]
-
     if not torch.cuda.is_available():
         logger.debug(f"CUDA unavailable; skipping CUDA compilation for '{name}'")
         return None
@@ -101,11 +100,20 @@ def load_cuda_module(
     if os.path.exists("/usr/local/cuda/include"):
         cpp_cflags.append("-I/usr/local/cuda/include")
 
+    hash_str = hashlib.sha256(
+        (cpp_sources + "\n" + cuda_sources + "\n" + "".join(all_cuda_cflags)).encode("utf-8")
+    ).hexdigest()[:8]
+    cache_key = (name, hash_str)
+
+    if not force_rebuild and cache_key in _LOADED_MODULES:
+        return _LOADED_MODULES[cache_key]
+
     try:
-        mod_cache_dir = Path(_CACHE_DIR) / name
+        mod_ext_name = f"{name}_{hash_str}"
+        mod_cache_dir = Path(_CACHE_DIR) / mod_ext_name
         mod_cache_dir.mkdir(parents=True, exist_ok=True)
         module = load_inline(
-            name=name,
+            name=mod_ext_name,
             cpp_sources=cpp_sources,
             cuda_sources=cuda_sources,
             functions=functions,
@@ -115,9 +123,11 @@ def load_cuda_module(
             with_cuda=True,
             build_directory=str(mod_cache_dir),
         )
+        _LOADED_MODULES[cache_key] = module
         _LOADED_MODULES[name] = module
-        logger.info(f"✅ CUDA C++ module '{name}' loaded successfully")
+        logger.info(f"✅ CUDA C++ module '{mod_ext_name}' loaded successfully")
         return module
     except Exception as e:
         logger.warning(f"❌ CUDA C++ compilation failed for '{name}': {e}")
         return None
+
