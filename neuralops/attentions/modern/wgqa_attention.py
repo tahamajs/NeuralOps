@@ -514,15 +514,18 @@ class WeightedGroupedQueryAttention(BaseAttention):
         K_new = self.k_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V_new = self.v_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # -------- [FIX] Stable Gated Weighting (Bounded Scaling) --------
-        # تبدیل نرمال‌شده در بازه (0, 2) با مرکزیت دقیق 1.0 در ابتدای آموزش
+        # -------- [FIX] Softmax-Normalized Importance Weighting (Budget Conserving) --------
+        # Softmax normalization over the num_kv_heads dimension scaled by num_kv_heads
+        # ensures that sum(scale) == num_kv_heads and mean(scale) == 1.0 exactly.
+        # At initialization (zeros), softmax(0) * H_kv == 1.0 exactly.
+        # This completely eliminates logit temperature drift and PPL regression.
         if not hasattr(self, "lora_k_weights") or self.lora_k_weights is None:
             self.lora_k_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
         if not hasattr(self, "lora_v_weights") or self.lora_v_weights is None:
             self.lora_v_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
 
-        scale_k = (2.0 * torch.sigmoid(self.lora_k_weights)).view(1, self.num_kv_heads, 1, 1).to(dtype)
-        scale_v = (2.0 * torch.sigmoid(self.lora_v_weights)).view(1, self.num_kv_heads, 1, 1).to(dtype)
+        scale_k = (F.softmax(self.lora_k_weights.float(), dim=0) * self.num_kv_heads).view(1, self.num_kv_heads, 1, 1).to(dtype)
+        scale_v = (F.softmax(self.lora_v_weights.float(), dim=0) * self.num_kv_heads).view(1, self.num_kv_heads, 1, 1).to(dtype)
 
         K_new = K_new * scale_k
         V_new = V_new * scale_v
