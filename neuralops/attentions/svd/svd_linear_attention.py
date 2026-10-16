@@ -604,7 +604,7 @@ class SVDLinearAttention(BaseAttention):
                     U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
                     U_r = (U[:, :r] * torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(0)).to(device=dev, dtype=weight.dtype)
                     V_unwhitened = torch.linalg.solve_triangular(
-                        L, (torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(1) * Vh[:r, :]).t(), upper=False
+                        L.t(), (torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(1) * Vh[:r, :]).t(), upper=True
                     ).t().to(device=dev, dtype=weight.dtype)
                     target_linear.set_low_rank_factors(U_r, V_unwhitened)
                 except Exception:

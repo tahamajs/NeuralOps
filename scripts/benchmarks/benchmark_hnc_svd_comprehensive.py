@@ -238,13 +238,13 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
     probe_x = torch.randn(B, T, D, device=device)
     heldout_x = torch.randn(B, T, D, device=device)
 
-    # 1. Full-Rank Anchor Attention Layer (rank=256=D is dense full-rank)
+    # 1. Full-Rank Anchor Attention Layer (standard nn.MultiheadAttention)
     torch.manual_seed(42)
-    anchor_attn = SVDLinearAttention(hidden_size=D, num_heads=8, rank=D, is_decoder=True).to(device).eval()
+    anchor_attn = nn.MultiheadAttention(embed_dim=D, num_heads=8, batch_first=True).to(device).eval()
 
     with torch.no_grad():
-        out_anchor = anchor_attn(heldout_x)
-        out_anchor_tensor = out_anchor[0] if isinstance(out_anchor, tuple) else out_anchor
+        out_anchor, _ = anchor_attn(heldout_x, heldout_x, heldout_x)
+        out_anchor_tensor = out_anchor
 
     for rank in ranks:
         # Projection compression ratio: 4 projections of 256x256 = 262,144 params
@@ -261,14 +261,6 @@ def run_benchmark_table_2(device: str) -> List[Dict[str, Any]]:
             else:
                 # HNC Aligned SVD with Cholesky whitening and factor restoration
                 attn.copy_weights(anchor_attn, probe_inputs=probe_x, use_hnc=True, hnc_steps=15)
-                with torch.no_grad():
-                    anchor_probe_out = anchor_attn(probe_x)[0].detach()
-                attn.hnc_spectral_compress_and_align(
-                    probe_inputs=probe_x,
-                    num_steps=15,
-                    target_rank=rank,
-                    anchor_outputs=anchor_probe_out,
-                )
 
             with torch.no_grad():
                 out_test = attn(heldout_x)
