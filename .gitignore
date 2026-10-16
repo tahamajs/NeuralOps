@@ -52,6 +52,7 @@ coverage.xml
 # ============================================================
 .ipynb_checkpoints/
 *.ipynb
+!notebooks/*.ipynb
 cache/
 **/cache/
 .cache/
