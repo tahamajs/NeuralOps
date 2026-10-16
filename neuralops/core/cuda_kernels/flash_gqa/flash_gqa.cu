@@ -4,12 +4,12 @@
 #include <c10/cuda/CUDAException.h>
 #include <float.h>
 
-template<int HEAD_DIM, int BLOCK_M, int BLOCK_N>
-__global__ void flash_gqa_warp_kernel(
-    float* __restrict__ out,      // [B, H, N_Q, HEAD_DIM]
-    const float* __restrict__ q,  // [B, H, N_Q, HEAD_DIM]
-    const float* __restrict__ k,  // [B, H_KV, N_KV, HEAD_DIM]
-    const float* __restrict__ v,  // [B, H_KV, N_KV, HEAD_DIM]
+template<typename scalar_t, int HEAD_DIM, int TILE_Q, int BLOCK_N>
+__global__ void flash_gqa_kernel(
+    scalar_t* __restrict__ out,         // [B, H, N_Q, HEAD_DIM]
+    const scalar_t* __restrict__ q,     // [B, H, N_Q, HEAD_DIM]
+    const scalar_t* __restrict__ k,     // [B, H_KV, N_KV, HEAD_DIM]
+    const scalar_t* __restrict__ v,     // [B, H_KV, N_KV, HEAD_DIM]
     const int B,
     const int H,
     const int H_KV,
@@ -18,162 +18,133 @@ __global__ void flash_gqa_warp_kernel(
     const bool is_causal,
     const float scale
 ) {
-    constexpr int NUM_WARPS = 4;
-    constexpr int QUERIES_PER_WARP = BLOCK_M / NUM_WARPS;
-    constexpr int ELEMENTS_PER_THREAD = HEAD_DIM / 32;
-
-    const int q_block_idx = blockIdx.x;
+    const int q_tile_idx = blockIdx.x;
     const int h = blockIdx.y;
     const int b = blockIdx.z;
 
-    const int lane = threadIdx.x;
-    const int warp_id = threadIdx.y;
-
     const int kv_h = h / (H / H_KV);
+    const int tid = threadIdx.y * blockDim.x + threadIdx.x;
+    const int total_threads = blockDim.x * blockDim.y;
 
-    // Shared memory for staging K and V tiles with +1 padding to eliminate bank conflicts
+    const int cur_q_idx = q_tile_idx * TILE_Q + tid;
+
+    // Shared memory for K and V tiles (+1 padding to eliminate bank conflicts)
     __shared__ float K_smem[BLOCK_N][HEAD_DIM + 1];
     __shared__ float V_smem[BLOCK_N][HEAD_DIM + 1];
 
-    // Local registers for queries in this warp
-    float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
-    float acc[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
-    float m_prev[QUERIES_PER_WARP];
-    float l_prev[QUERIES_PER_WARP];
-    int q_indices[QUERIES_PER_WARP];
+    // Local registers for this thread's single query vector
+    float q_local[HEAD_DIM];
+    float acc[HEAD_DIM];
+    float m_prev = -1e30f;
+    float l_prev = 0.0f;
 
-    #pragma unroll
-    for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
-        q_indices[qi] = q_block_idx * BLOCK_M + warp_id * QUERIES_PER_WARP + qi;
-        m_prev[qi] = -FLT_MAX;
-        l_prev[qi] = 0.0f;
+    const int q_base = b * (H * N_Q * HEAD_DIM) + h * (N_Q * HEAD_DIM) + cur_q_idx * HEAD_DIM;
+    if (cur_q_idx < N_Q) {
         #pragma unroll
-        for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-            acc[qi][e] = 0.0f;
-            if (q_indices[qi] < N_Q) {
-                const int q_off = b * (H * N_Q * HEAD_DIM) + h * (N_Q * HEAD_DIM) + q_indices[qi] * HEAD_DIM + lane + e * 32;
-                q_local[qi][e] = q[q_off];
-            } else {
-                q_local[qi][e] = 0.0f;
-            }
+        for (int d = 0; d < HEAD_DIM; ++d) {
+            q_local[d] = static_cast<float>(q[q_base + d]);
+            acc[d] = 0.0f;
+        }
+    } else {
+        #pragma unroll
+        for (int d = 0; d < HEAD_DIM; ++d) {
+            q_local[d] = 0.0f;
+            acc[d] = 0.0f;
         }
     }
 
+    const int k_base = b * (H_KV * N_KV * HEAD_DIM) + kv_h * (N_KV * HEAD_DIM);
     const int num_kv_tiles = (N_KV + BLOCK_N - 1) / BLOCK_N;
-    const int tid_in_block = warp_id * 32 + lane;
-    const int total_threads = NUM_WARPS * 32;
-    const int kv_elements_per_tile = BLOCK_N * HEAD_DIM;
-    const int k_base_offset = b * (H_KV * N_KV * HEAD_DIM) + kv_h * (N_KV * HEAD_DIM);
+    const int kv_tile_elements = BLOCK_N * HEAD_DIM;
 
-    // Causal horizon check for the block
-    const int max_block_q = q_block_idx * BLOCK_M + BLOCK_M - 1;
-    const int max_block_k = max_block_q + (N_KV - N_Q);
+    // Causal horizon check for the tile
+    const int max_q_in_tile = (q_tile_idx + 1) * TILE_Q - 1;
+    const int max_k_in_tile = max_q_in_tile + (N_KV - N_Q);
 
     for (int tile_idx = 0; tile_idx < num_kv_tiles; ++tile_idx) {
         const int k_start = tile_idx * BLOCK_N;
-
-        if (is_causal && k_start > max_block_k) {
+        if (is_causal && k_start > max_k_in_tile) {
             break;
         }
 
-        // Cooperatively load K and V tile into SMEM
+        // Cooperative load of K and V into shared memory
         __syncthreads();
-        for (int idx = tid_in_block; idx < kv_elements_per_tile; idx += total_threads) {
-            const int tok_in_tile = idx / HEAD_DIM;
-            const int dim_in_tok = idx % HEAD_DIM;
-            const int global_tok = k_start + tok_in_tile;
+        for (int idx = tid; idx < kv_tile_elements; idx += total_threads) {
+            const int kt = idx / HEAD_DIM;
+            const int kd = idx % HEAD_DIM;
+            const int global_tok = k_start + kt;
 
             if (global_tok < N_KV) {
-                const int g_off = k_base_offset + global_tok * HEAD_DIM + dim_in_tok;
-                K_smem[tok_in_tile][dim_in_tok] = k[g_off];
-                V_smem[tok_in_tile][dim_in_tok] = v[g_off];
+                const int g_off = k_base + global_tok * HEAD_DIM + kd;
+                K_smem[kt][kd] = static_cast<float>(k[g_off]);
+                V_smem[kt][kd] = static_cast<float>(v[g_off]);
             } else {
-                K_smem[tok_in_tile][dim_in_tok] = 0.0f;
-                V_smem[tok_in_tile][dim_in_tok] = 0.0f;
+                K_smem[kt][kd] = 0.0f;
+                V_smem[kt][kd] = 0.0f;
             }
         }
         __syncthreads();
 
-        const int tokens_in_tile = min(BLOCK_N, N_KV - k_start);
+        if (cur_q_idx >= N_Q) {
+            continue;
+        }
 
-        // Process all queries assigned to this warp using tile-level online softmax
+        const int valid_keys = min(BLOCK_N, N_KV - k_start);
+        const int max_k_for_q = cur_q_idx + (N_KV - N_Q);
+
+        float scores[BLOCK_N];
+        float m_tile = -1e30f;
+
         #pragma unroll
-        for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
-            const int cur_q_idx = q_indices[qi];
-            if (cur_q_idx >= N_Q) continue;
-
-            const int max_k_for_query = cur_q_idx + (N_KV - N_Q);
-            if (is_causal && max_k_for_query < 0) continue;
-
-            float qk_tile[BLOCK_N];
-            float m_tile = -FLT_MAX;
-
-            for (int kt = 0; kt < tokens_in_tile; ++kt) {
-                const int global_k = k_start + kt;
-                if (is_causal && global_k > max_k_for_query) {
-                    qk_tile[kt] = -FLT_MAX;
-                    continue;
-                }
-
+        for (int kt = 0; kt < BLOCK_N; ++kt) {
+            const int global_k = k_start + kt;
+            if (kt < valid_keys && (!is_causal || global_k <= max_k_for_q)) {
                 float dot = 0.0f;
                 #pragma unroll
-                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    dot += q_local[qi][e] * K_smem[kt][lane + e * 32];
+                for (int d = 0; d < HEAD_DIM; ++d) {
+                    dot += q_local[d] * K_smem[kt][d];
                 }
-
-                #pragma unroll
-                for (int mask = 16; mask > 0; mask /= 2) {
-                    dot += __shfl_xor_sync(0xffffffff, dot, mask);
-                }
-
-                float qk = dot * scale;
-                qk_tile[kt] = qk;
-                m_tile = fmaxf(m_tile, qk);
+                float s = dot * scale;
+                scores[kt] = s;
+                m_tile = fmaxf(m_tile, s);
+            } else {
+                scores[kt] = -1e30f;
             }
+        }
 
-            // Tile-level online softmax update (rescale accumulator ONCE per tile)
-            float m_new = fmaxf(m_prev[qi], m_tile);
-            float alpha = (m_prev[qi] == -FLT_MAX) ? 0.0f : expf(m_prev[qi] - m_new);
-            m_prev[qi] = m_new;
-            l_prev[qi] *= alpha;
+        // Tile-level online softmax update (rescale accumulator ONCE per tile)
+        if (m_tile > -1e29f) {
+            float m_new = fmaxf(m_prev, m_tile);
+            float alpha = (m_prev == -1e30f) ? 0.0f : expf(m_prev - m_new);
+            m_prev = m_new;
+            l_prev *= alpha;
 
             #pragma unroll
-            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                acc[qi][e] *= alpha;
+            for (int d = 0; d < HEAD_DIM; ++d) {
+                acc[d] *= alpha;
             }
 
-            // Accumulate V values for the active tile
-            for (int kt = 0; kt < tokens_in_tile; ++kt) {
-                if (qk_tile[kt] == -FLT_MAX) continue;
-                float p = expf(qk_tile[kt] - m_new);
-                l_prev[qi] += p;
-
-                #pragma unroll
-                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] += p * V_smem[kt][lane + e * 32];
+            #pragma unroll
+            for (int kt = 0; kt < BLOCK_N; ++kt) {
+                if (scores[kt] > -1e29f) {
+                    float p = expf(scores[kt] - m_new);
+                    l_prev += p;
+                    #pragma unroll
+                    for (int d = 0; d < HEAD_DIM; ++d) {
+                        acc[d] += p * V_smem[kt][d];
+                    }
                 }
             }
         }
     }
 
-    // Write results to global memory
-    #pragma unroll
-    for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
-        const int cur_q_idx = q_indices[qi];
-        if (cur_q_idx < N_Q) {
-            const int out_base = b * (H * N_Q * HEAD_DIM) + h * (N_Q * HEAD_DIM) + cur_q_idx * HEAD_DIM;
-            if (l_prev[qi] > 0.0f) {
-                const float inv_l = 1.0f / l_prev[qi];
-                #pragma unroll
-                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    out[out_base + lane + e * 32] = acc[qi][e] * inv_l;
-                }
-            } else {
-                #pragma unroll
-                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    out[out_base + lane + e * 32] = 0.0f;
-                }
-            }
+    // Write final normalized result
+    if (cur_q_idx < N_Q) {
+        const int out_base = b * (H * N_Q * HEAD_DIM) + h * (N_Q * HEAD_DIM) + cur_q_idx * HEAD_DIM;
+        const float inv_l = (l_prev > 0.0f) ? (1.0f / l_prev) : 0.0f;
+        #pragma unroll
+        for (int d = 0; d < HEAD_DIM; ++d) {
+            out[out_base + d] = static_cast<scalar_t>(acc[d] * inv_l);
         }
     }
 }
@@ -197,38 +168,65 @@ void flash_gqa_fwd_cuda(
         return;
     }
 
-    constexpr int BLOCK_M = 16;
-    constexpr int BLOCK_N = 16;
-
-    dim3 grid((N_Q + BLOCK_M - 1) / BLOCK_M, H, B);
-    dim3 block(32, 4); // 4 warps = 128 threads
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    if (D == 32) {
-        flash_gqa_warp_kernel<32, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
-            out.data_ptr<float>(),
-            q.data_ptr<float>(),
-            k.data_ptr<float>(),
-            v.data_ptr<float>(),
-            B, H, H_KV, N_Q, N_KV, is_causal, scale
-        );
-    } else if (D == 64) {
-        flash_gqa_warp_kernel<64, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
-            out.data_ptr<float>(),
-            q.data_ptr<float>(),
-            k.data_ptr<float>(),
-            v.data_ptr<float>(),
-            B, H, H_KV, N_Q, N_KV, is_causal, scale
-        );
-    } else if (D == 128) {
-        flash_gqa_warp_kernel<128, BLOCK_M, BLOCK_N><<<grid, block, 0, stream>>>(
-            out.data_ptr<float>(),
-            q.data_ptr<float>(),
-            k.data_ptr<float>(),
-            v.data_ptr<float>(),
-            B, H, H_KV, N_Q, N_KV, is_causal, scale
-        );
-    }
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half,
+        at::ScalarType::BFloat16,
+        q.scalar_type(),
+        "flash_gqa_fwd_cuda",
+        ([&] {
+            if (D == 32) {
+                constexpr int TILE_Q = 128;
+                constexpr int BLOCK_N = 32;
+                dim3 grid((N_Q + TILE_Q - 1) / TILE_Q, H, B);
+                dim3 block(32, 4);
+                flash_gqa_kernel<scalar_t, 32, TILE_Q, BLOCK_N><<<grid, block, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    q.data_ptr<scalar_t>(),
+                    k.data_ptr<scalar_t>(),
+                    v.data_ptr<scalar_t>(),
+                    B, H, H_KV, N_Q, N_KV, is_causal, scale
+                );
+            } else if (D == 64) {
+                constexpr int TILE_Q = 128;
+                constexpr int BLOCK_N = 32;
+                dim3 grid((N_Q + TILE_Q - 1) / TILE_Q, H, B);
+                dim3 block(32, 4);
+                flash_gqa_kernel<scalar_t, 64, TILE_Q, BLOCK_N><<<grid, block, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    q.data_ptr<scalar_t>(),
+                    k.data_ptr<scalar_t>(),
+                    v.data_ptr<scalar_t>(),
+                    B, H, H_KV, N_Q, N_KV, is_causal, scale
+                );
+            } else if (D == 128) {
+                constexpr int TILE_Q = 64;
+                constexpr int BLOCK_N = 16;
+                dim3 grid((N_Q + TILE_Q - 1) / TILE_Q, H, B);
+                dim3 block(32, 2);
+                flash_gqa_kernel<scalar_t, 128, TILE_Q, BLOCK_N><<<grid, block, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    q.data_ptr<scalar_t>(),
+                    k.data_ptr<scalar_t>(),
+                    v.data_ptr<scalar_t>(),
+                    B, H, H_KV, N_Q, N_KV, is_causal, scale
+                );
+            } else if (D == 256) {
+                constexpr int TILE_Q = 32;
+                constexpr int BLOCK_N = 16;
+                dim3 grid((N_Q + TILE_Q - 1) / TILE_Q, H, B);
+                dim3 block(32, 1);
+                flash_gqa_kernel<scalar_t, 256, TILE_Q, BLOCK_N><<<grid, block, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    q.data_ptr<scalar_t>(),
+                    k.data_ptr<scalar_t>(),
+                    v.data_ptr<scalar_t>(),
+                    B, H, H_KV, N_Q, N_KV, is_causal, scale
+                );
+            }
+        })
+    );
 
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
