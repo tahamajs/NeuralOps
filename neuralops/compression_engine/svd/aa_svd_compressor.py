@@ -797,7 +797,7 @@ class AASVDCompressor(BaseCompressor):
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
 
-            too_big = (err > self.max_error) and not self.use_strs
+            too_big = (err > self.max_error) and not self.use_strs and not self.force_rank
             if svd_layer is None or too_big:
                 if self.fallback_to_original:
                     logger.warning(
