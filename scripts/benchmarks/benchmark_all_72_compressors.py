@@ -14,15 +14,28 @@ from neuralops.compression import COMPRESSOR_REGISTRY
 
 
 class TestModel(nn.Module):
-    """Transformer block module for compression benchmarking."""
+    """Transformer block module with attention and FFN for universal compression benchmarking."""
 
     def __init__(self, in_features: int = 256, hidden_dim: int = 512):
         super().__init__()
+        self.q_proj = nn.Linear(in_features, in_features, bias=False)
+        self.k_proj = nn.Linear(in_features, in_features, bias=False)
+        self.v_proj = nn.Linear(in_features, in_features, bias=False)
+        self.out_proj = nn.Linear(in_features, in_features, bias=False)
         self.fc1 = nn.Linear(in_features, hidden_dim, bias=False)
         self.fc2 = nn.Linear(hidden_dim, in_features, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.fc2(torch.nn.functional.gelu(self.fc1(x)))
+        if x.dim() == 2:
+            x_seq = x.unsqueeze(0)
+        else:
+            x_seq = x
+        q, k, v = self.q_proj(x_seq), self.k_proj(x_seq), self.v_proj(x_seq)
+        attn = torch.matmul(q, k.transpose(-1, -2)) / (q.shape[-1] ** 0.5)
+        a_out = self.out_proj(torch.matmul(torch.softmax(attn, dim=-1), v)) + x_seq
+        ffn = self.fc2(torch.nn.functional.gelu(self.fc1(a_out)))
+        out = a_out + ffn
+        return out.squeeze(0) if x.dim() == 2 else out
 
 
 def _extract_model_and_stats(res):
