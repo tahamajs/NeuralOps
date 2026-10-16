@@ -332,13 +332,16 @@ class AdaSVDCompressor(BaseCompressor):
             elif arg.startswith(("--adasvd_use_weighted_als=", "--use_weighted_als=")):
                 cli_use_weighted_als = arg.split("=")[1].lower() in ("true", "1", "yes")
 
-        if rank is None:
-            rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        target_rank_arg = kwargs.get("target_rank", kwargs.get("rank", None))
+        if target_rank_arg is not None:
+            rank = target_rank_arg
         self.rank = (
             cli_rank
             if cli_rank is not None
-            else _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", rank))
+            else (int(rank) if rank is not None else _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", None)))
         )
+        if self.rank is not None:
+            min_rank = min(min_rank, self.rank)
         self.target_param_ratio = float(
             _cfg_get(
                 cfg,
@@ -1204,14 +1207,15 @@ class AdaSVDCompressor(BaseCompressor):
 
             if self._is_fused_qkv_layer(name, module):
                 if self.rank is not None:
-                    r_floor = max(r_floor, min(128, self.rank))
-                    max_param_r = min(max_param_r, 432)
+                    r_floor = max(1, min(r_floor, self.rank))
+                    max_param_r = min(max_param_r, 432, self.rank)
                 else:
                     r_floor = max(r_floor, 128)
                     max_param_r = min(max_param_r, 432)
             else:
                 if self.rank is not None:
-                    r_floor = max(r_floor, min(64, self.rank))
+                    r_floor = max(1, min(r_floor, self.rank))
+                    max_param_r = min(max_param_r, self.rank)
                 else:
                     r_floor = max(r_floor, 64)
 
