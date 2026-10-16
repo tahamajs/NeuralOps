@@ -57,6 +57,23 @@ def block_sparse_attn_pytorch_ref(
     return torch.matmul(probs, v)
 
 
+def _block_sparse_triton_wrapper(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    block_mask: torch.Tensor,
+    block_size: int = 16,
+    scale: float | None = None,
+) -> torch.Tensor | None:
+    try:
+        from neuralops.core.triton_kernels.block_sparse import block_sparse_attention
+        N = q.shape[2]
+        dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
+        return block_sparse_attention(q, k, v, dense_mask)
+    except Exception:
+        return None
+
+
 def _block_sparse_forward_dispatch(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -73,7 +90,7 @@ def _block_sparse_forward_dispatch(
 
     return dispatch(
         cuda_fn,
-        None,
+        _block_sparse_triton_wrapper,
         block_sparse_attn_pytorch_ref,
         q,
         k,
