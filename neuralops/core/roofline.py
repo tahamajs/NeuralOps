@@ -250,9 +250,9 @@ def profile_roofline(
     num_heads: int = 12,
     dtype: str = "float16",
     warmup: int = 10,
-    rep: int = 20,
     device: Optional[Union[str, torch.device]] = None,
     module_name: Optional[str] = None,
+    log_to_ledger: bool = True,
     **module_kwargs: Any,
 ) -> RooflineReport:
     """Run dual-path timing (Triton vs PyTorch) and compute Roofline arithmetic intensity."""
@@ -442,7 +442,7 @@ def profile_roofline(
     else:
         regime = "Memory-Bandwidth Bound (HBM Limited)"
 
-    return RooflineReport(
+    rep_obj = RooflineReport(
         module_name=module_name,
         device_name=device_name,
         sm_version=sm_version,
@@ -469,6 +469,43 @@ def profile_roofline(
         peak_vram_mb=peak_vram_mb,
         bottleneck_regime=regime,
     )
+
+    if log_to_ledger:
+        try:
+            from neuralops.core.results_ledger import log_experiment_result
+            log_experiment_result(
+                module_name=module_name,
+                category="triton_kernel" if any(k in module_name.lower() for k in ("triton", "kernel", "scan")) else "attention",
+                family="hardware-roofline",
+                generation_method={
+                    "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+                    "source_component": "neuralops.core.roofline.profile_roofline",
+                },
+                experimental_setup={
+                    "batch_size": batch_size,
+                    "seq_len": seq_len,
+                    "embed_dim": embed_dim,
+                    "num_heads": num_heads,
+                    "head_dim": head_dim,
+                    "dtype": dtype,
+                    "hardware": f"{device_name} ({sm_version})",
+                },
+                metrics={
+                    "latency_triton_ms": latency_triton_ms,
+                    "latency_pytorch_ms": latency_pytorch_ms,
+                    "speedup_x": speedup_x,
+                    "achieved_tflops": achieved_tflops,
+                    "achieved_bandwidth_gb_s": achieved_bandwidth_gb_s,
+                    "peak_vram_mb": peak_vram_mb,
+                    "sram_bytes_saved_mb": sram_bytes_saved_mb,
+                    "arithmetic_intensity_fused": ai_fused,
+                },
+                notes=f"Bottleneck regime: {regime}",
+            )
+        except Exception:
+            pass
+
+    return rep_obj
 
 
 def render_roofline_terminal(report: RooflineReport) -> str:
