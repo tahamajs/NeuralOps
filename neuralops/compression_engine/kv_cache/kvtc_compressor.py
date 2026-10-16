@@ -684,8 +684,13 @@ class KVTCCompressor(BaseCompressor):
                     pass
 
                 if not test_passed:
-                    # Try continuous hidden tensor (1, 8, d_model)
-                    dummy_x = torch.randn(1, 8, 64, device=dev)
+                    # Dynamically inspect first linear layer for hidden dimension
+                    in_dim = 64
+                    for m in self.model.modules():
+                        if isinstance(m, nn.Linear):
+                            in_dim = getattr(m, "in_features", 64)
+                            break
+                    dummy_x = torch.randn(1, 8, in_dim, device=dev)
                     _ = self.model(dummy_x)
                     test_passed = True
 
