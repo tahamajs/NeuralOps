@@ -567,7 +567,19 @@ class HessianNullSpaceSVDContinuation:
                 if any(t in name for t in target_linear_modules) and isinstance(mod, nn.Linear):
                     target_layers[name] = mod
             else:
-                if isinstance(mod, nn.Linear) and mod.weight.ndim == 2:
+                name_lower = name.lower()
+                is_critical = any(
+                    k in name_lower
+                    for k in [
+                        "classifier",
+                        "score",
+                        "lm_head",
+                        "pooler",
+                        "embed",
+                        "logits_processor",
+                    ]
+                )
+                if not is_critical and isinstance(mod, nn.Linear) and mod.weight.ndim == 2:
                     if min(mod.weight.shape) > 1:
                         target_layers[name] = mod
 
@@ -715,6 +727,14 @@ class HessianNullSpaceSVDContinuation:
                 accepted_steps += 1
                 step_history.append({"step": step, "status": "ACCEPTED", "loss": cur_loss, "eta": cur_eta})
 
+        # Record pre-truncation post-walk steered tail energies
+        steered_tail_energies = {}
+        for name, mod in target_layers.items():
+            S_steered = torch.linalg.svdvals(mod.weight.data.float())
+            r_cur = max(1, min(self.target_rank, len(S_steered) - 1))
+            t_ratio = (S_steered[r_cur:] ** 2).sum().item() / max((S_steered ** 2).sum().item(), 1e-12)
+            steered_tail_energies[name] = t_ratio
+
         # 5. Generalized Eckart-Young Cholesky-Whitened SVD Truncation & Bias Drift Compensation
         low_rank_factors = {}
         for name, mod in target_layers.items():
@@ -810,6 +830,8 @@ class HessianNullSpaceSVDContinuation:
             "rejected_steps": rejected_steps,
             "final_function_loss": final_loss,
             "target_layers_count": len(target_layers),
+            "steered_tail_energies": steered_tail_energies,
+            "mean_steered_tail_ratio": sum(steered_tail_energies.values()) / max(len(steered_tail_energies), 1),
             "step_history": step_history,
             "low_rank_factors": {
                 name: (A_r.data.clone(), B_r.data.clone())
