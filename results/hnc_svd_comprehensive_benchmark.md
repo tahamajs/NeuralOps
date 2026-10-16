@@ -1,75 +1,85 @@
-# 🚀 NeuralOps v1.3.7 — Empirical Quantitative Benchmark Report for HNC-SVD
+# 🚀 HNC-SVD Comprehensive Quantitative Benchmark Report
 
-**Hardware Environment**: `NVIDIA GeForce RTX 4070 Laptop GPU` | **PyTorch**: `2.11.0+cu128` | **CUDA**: `True`
+**Hardware Platform**: NVIDIA GeForce RTX 4070 Laptop GPU
+**Execution Timestamp**: 2026-10-16 07:33:42 UTC
+**Total Benchmark Suite Duration**: 29.27 seconds
 
-**Benchmark Duration**: `10.44s` | **Date**: `2026-10-16T06:19:33Z`
+---
 
+## Table 1: HNC-SVD vs Naive DirectSVD Across Truncation Ranks
 
-## 📊 Table 1: HNC-SVD vs Naive DirectSVD on Transformer Encoder Block
+| Method | Rank | Comp (%) | Initial Tail Ratio | Post-Walk Tail Ratio | Rel Error | Top-1 Match (%) | Cosine Sim | L_func Drift | Fwd Latency (ms) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `Naive DirectSVD` | 8 | 95.3% | 0.9165 | 0.9165 | 0.248986 | 64.16% | 0.96900 | 3.099671e-02 | 0.327 |
+| `HNC-SVD (Ours)` | 8 | 95.3% | 0.9165 | 0.0000 | 0.181396 | 72.46% | 0.98355 | 1.645215e-02 | 0.259 |
+| `Naive DirectSVD` | 16 | 90.6% | 0.8412 | 0.8412 | 0.228798 | 67.48% | 0.97383 | 2.617402e-02 | 0.244 |
+| `HNC-SVD (Ours)` | 16 | 90.6% | 0.8412 | 0.0000 | 0.173267 | 73.24% | 0.98499 | 1.501055e-02 | 0.263 |
+| `Naive DirectSVD` | 32 | 81.2% | 0.7083 | 0.7083 | 0.185407 | 74.12% | 0.98281 | 1.718779e-02 | 0.241 |
+| `HNC-SVD (Ours)` | 32 | 81.2% | 0.7083 | 0.0000 | 0.158488 | 75.00% | 0.98744 | 1.255917e-02 | 0.241 |
+| `Naive DirectSVD` | 64 | 62.5% | 0.4930 | 0.4930 | 0.112209 | 81.05% | 0.99370 | 6.295345e-03 | 0.246 |
+| `HNC-SVD (Ours)` | 64 | 62.5% | 0.4930 | 0.0000 | 0.151562 | 76.07% | 0.98851 | 1.148547e-02 | 0.250 |
 
-| Compression Method | Rank $r$ | Tail Energy Ratio | Relative Error | Top-1 Match (%) | Cosine Sim | $\mathcal{L}_{\text{func}}$ | Fwd Latency (ms) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Naive DirectSVD** | 8 | `0.9165` | `0.228726` | `65.23%` | `0.97384` | `2.6158e-02` | `0.27` |
-| **HNC-SVD (Ours)** | 8 | `0.9165` | `0.187198` | `71.48%` | `0.98248` | `1.7521e-02` | `0.26` |
-| **Naive DirectSVD** | 16 | `0.8412` | `0.229017` | `66.80%` | `0.97378` | `2.6224e-02` | `0.25` |
-| **HNC-SVD (Ours)** | 16 | `0.8412` | `0.186539` | `74.71%` | `0.98260` | `1.7398e-02` | `0.26` |
-| **Naive DirectSVD** | 32 | `0.7083` | `0.229862` | `68.55%` | `0.97358` | `2.6418e-02` | `0.25` |
-| **HNC-SVD (Ours)** | 32 | `0.7083` | `0.181354` | `74.61%` | `0.98356` | `1.6444e-02` | `0.25` |
-| **Naive DirectSVD** | 64 | `0.4930` | `0.214448` | `67.68%` | `0.97701` | `2.2994e-02` | `0.25` |
-| **HNC-SVD (Ours)** | 64 | `0.4930` | `0.176735` | `72.85%` | `0.98438` | `1.5617e-02` | `0.25` |
+---
 
-> **Key Takeaway**: HNC-SVD consistently reduces relative output error by up to **2.5x** and retains higher Top-1 token agreement compared to un-guided naive SVD truncation, while preserving exact tensor shapes.
+## Table 2: Full-Rank (D=256) -> Low-Rank SVDLinearAttention Surgical Alignment
 
+| Alignment Method | Rank | Comp (%) | Cosine Sim to Full-Rank | MSE Output Drift | Relative Error | Training Tok/s |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `Raw Truncated SVD` | 8 | 93.8% | 0.03703 | 2.035881e-03 | 1.025625 | 697,247.8 |
+| `HNC Aligned SVD (Ours)` | 8 | 93.8% | 0.00166 | 2.443493e-03 | 1.123616 | 696,361.7 |
+| `Raw Truncated SVD` | 16 | 87.5% | 0.08707 | 2.100019e-03 | 1.041655 | 678,630.5 |
+| `HNC Aligned SVD (Ours)` | 16 | 87.5% | 0.04979 | 2.469207e-03 | 1.129513 | 693,696.1 |
+| `Raw Truncated SVD` | 32 | 75.0% | 0.13178 | 2.567116e-03 | 1.151689 | 703,044.9 |
+| `HNC Aligned SVD (Ours)` | 32 | 75.0% | 0.11296 | 2.840806e-03 | 1.211527 | 717,414.8 |
+| `Raw Truncated SVD` | 64 | 50.0% | 0.25120 | 3.546188e-03 | 1.353609 | 696,231.0 |
+| `HNC Aligned SVD (Ours)` | 64 | 50.0% | 0.22377 | 3.797849e-03 | 1.400816 | 682,985.0 |
 
-## 📈 Table 2: `SVDLinearAttention` with HNC Alignment vs Raw Truncated SVD
+---
 
-| Attention Alignment Mode | Rank $r$ | Cosine Sim to Anchor | MSE Output Drift | Relative Error | Training Tok/s |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| **Raw Truncated SVD** | 8 | `1.000000` | `0.0000e+00` | `0.000000` | `676,207.0` |
-| **HNC Aligned SVD (Ours)** | 8 | `1.000000` | `7.8757e-12` | `0.000358` | `695,156.8` |
-| **Raw Truncated SVD** | 16 | `1.000000` | `0.0000e+00` | `0.000000` | `675,770.7` |
-| **HNC Aligned SVD (Ours)** | 16 | `1.000000` | `3.6341e-13` | `0.000041` | `686,003.9` |
-| **Raw Truncated SVD** | 32 | `1.000000` | `0.0000e+00` | `0.000000` | `690,747.2` |
-| **HNC Aligned SVD (Ours)** | 32 | `1.000000` | `8.4782e-11` | `0.000350` | `684,731.7` |
+## Table 3: Damping Factor (mu_rel) and Restoring Steps (m) Ablations
 
-> **Key Takeaway**: Running `hnc_spectral_compress_and_align` drives cosine similarity to the uncompressed anchor above **0.9995+**, virtually eliminating output drift while maintaining subquadratic attention throughput.
+| Damping (mu_rel) | Restore Steps (m) | Initial Tail Ratio | Final Tail Ratio | Final L_func | Jacobian Drift ||W-W0||/||W0|| | Rejections |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `1.0e-07` | 0 | 0.3726 | 0.0131 | 9.616406e-14 | 0.7450 | 0 |
+| `1.0e-07` | 3 | 0.3726 | 0.0131 | 9.431719e-14 | 0.7450 | 0 |
+| `1.0e-07` | 6 | 0.3726 | 0.0131 | 9.408055e-14 | 0.7450 | 0 |
+| `1.0e-07` | 12 | 0.3726 | 0.0131 | 8.990389e-14 | 0.7450 | 0 |
+| `1.0e-05` | 0 | 0.3726 | 0.0130 | 6.540147e-10 | 0.7441 | 0 |
+| `1.0e-05` | 3 | 0.3726 | 0.0130 | 5.333226e-10 | 0.7441 | 0 |
+| `1.0e-05` | 6 | 0.3726 | 0.0130 | 4.452627e-10 | 0.7441 | 0 |
+| `1.0e-05` | 12 | 0.3726 | 0.0131 | 3.271981e-10 | 0.7440 | 0 |
+| `1.0e-03` | 0 | 0.3726 | 0.0141 | 6.199943e-06 | 0.7359 | 0 |
+| `1.0e-03` | 3 | 0.3726 | 0.0141 | 4.896371e-06 | 0.7256 | 0 |
+| `1.0e-03` | 6 | 0.3726 | 0.0153 | 3.901891e-06 | 0.7277 | 0 |
+| `1.0e-03` | 12 | 0.3726 | 0.0163 | 2.706554e-06 | 0.7251 | 0 |
+| `inf` | 0 | 0.3726 | 0.0107 | 4.562353e-02 | 0.5281 | 13 |
+| `inf` | 3 | 0.3726 | 0.0052 | 4.438309e-02 | 0.5542 | 12 |
+| `inf` | 6 | 0.3726 | 0.0009 | 4.822387e-02 | 0.6107 | 10 |
+| `inf` | 12 | 0.3726 | 0.0006 | 3.298581e-02 | 0.6126 | 0 |
 
+---
 
-## 🔬 Table 3: Scientific Ablations on Damping Factor $\mu_{\text{rel}}$ and Restoring Steps $m$
+## Table 4: Fused Triton Kernel Latency & Speedup on Dense Resolvents P_null
 
-| Damping $\mu_{\text{rel}}$ | Restoring Steps $m$ | Final $\mathcal{L}_{\text{func}}$ | Final Tail Energy Ratio | Jacobian Drift $\frac{\|W - W_0\|_F}{\|W_0\|_F}$ | Rejections |
+| Dtype | Matrix Shape | PyTorch Latency (us) | Triton Latency (us) | Speedup | Max Abs Diff |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| `1.0e-07` | 0 | `3.8356e-14` | `0.5778` | `0.7572` | 0 |
-| `1.0e-07` | 3 | `3.7435e-14` | `0.5778` | `0.7572` | 0 |
-| `1.0e-07` | 6 | `3.8468e-14` | `0.5778` | `0.7572` | 0 |
-| `1.0e-07` | 12 | `3.9535e-14` | `0.5778` | `0.7572` | 0 |
-| `1.0e-05` | 0 | `5.3292e-11` | `0.5843` | `0.7344` | 0 |
-| `1.0e-05` | 3 | `4.7994e-11` | `0.5843` | `0.7344` | 0 |
-| `1.0e-05` | 6 | `4.3757e-11` | `0.5843` | `0.7344` | 0 |
-| `1.0e-05` | 12 | `3.7326e-11` | `0.5843` | `0.7344` | 0 |
-| `1.0e-03` | 0 | `5.2992e-07` | `0.5844` | `0.7344` | 0 |
-| `1.0e-03` | 3 | `4.4903e-07` | `0.5844` | `0.7344` | 0 |
-| `1.0e-03` | 6 | `3.8602e-07` | `0.5844` | `0.7344` | 0 |
-| `1.0e-03` | 12 | `2.9503e-07` | `0.5844` | `0.7344` | 0 |
-| `inf` | 0 | `3.6903e-02` | `0.5758` | `0.4636` | 5 |
-| `inf` | 3 | `4.2647e-02` | `0.5873` | `0.5328` | 4 |
-| `inf` | 6 | `4.5831e-02` | `0.5962` | `0.6034` | 3 |
-| `inf` | 12 | `4.7410e-02` | `0.6074` | `0.7382` | 1 |
+| FP16 | 512x512 | 132.50 | 28.69 | **4.62x** | 9.77e-04 |
+| FP16 | 1024x1024 | 251.15 | 85.28 | **2.95x** | 1.95e-03 |
+| FP16 | 2048x2048 | 2247.15 | 521.87 | **4.31x** | 1.95e-03 |
+| FP16 | 4096x4096 | 15002.89 | 4475.41 | **3.35x** | 1.95e-03 |
+| FP32 | 512x512 | 46.24 | 46.31 | **1.00x** | 0.00e+00 |
+| FP32 | 1024x1024 | 245.68 | 246.25 | **1.00x** | 0.00e+00 |
+| FP32 | 2048x2048 | 1944.82 | 1930.34 | **1.01x** | 0.00e+00 |
+| FP32 | 4096x4096 | 13576.42 | 13565.01 | **1.00x** | 0.00e+00 |
 
-> **Key Takeaway**: Moderate damping $\mu_{\text{rel}} \in [10^{-5}, 10^{-3}]$ combined with $m \in [3, 6]$ restoring steps strikes the optimal pareto frontier: aggressive spectral tail suppression without triggering loss ceiling rejections.
+---
 
+## Table 5: Multi-Layer Transformer LM End-to-End Compression & Perplexity
 
-## ⚡ Table 4: Fused `@triton.jit` Kernel Latency, Speedup & Bit-Exact Parity vs PyTorch
+| Rank | Param Reduction (%) | Factor | Naive RelErr | HNC RelErr | Naive Top-1 (%) | HNC Top-1 (%) | Orig PPL | Naive PPL | HNC PPL |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 8 | 95.3% | 21.3x | 0.5650 | **0.9614** | 28.5% | **1.4%** | 846.76 | 893.05 | **987.43** |
+| 16 | 90.6% | 10.7x | 0.4989 | **0.9270** | 28.9% | **2.1%** | 846.85 | 882.62 | **976.92** |
+| 32 | 81.2% | 5.3x | 0.3904 | **0.8582** | 46.5% | **4.9%** | 846.89 | 868.65 | **957.22** |
+| 64 | 62.5% | 2.7x | 0.2305 | **0.7369** | 62.1% | **12.1%** | 846.39 | 853.90 | **926.55** |
 
-| Dtype | Matrix Dimension | PyTorch Latency ($\mu s$) | Triton Fused Latency ($\mu s$) | Speedup Factor | Max Abs Difference |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| **FP16** | 512x512 | `99.82` | `37.27` | **`2.68x`** | `0.00e+00` |
-| **FP16** | 1024x1024 | `218.76` | `60.62` | **`3.61x`** | `0.00e+00` |
-| **FP16** | 2048x2048 | `1875.01` | `407.48` | **`4.60x`** | `0.00e+00` |
-| **FP16** | 4096x4096 | `12706.00` | `3385.58` | **`3.75x`** | `0.00e+00` |
-| **FP32** | 512x512 | `34.71` | `34.76` | **`1.00x`** | `0.00e+00` |
-| **FP32** | 1024x1024 | `192.44` | `190.31` | **`1.01x`** | `0.00e+00` |
-| **FP32** | 2048x2048 | `1483.28` | `1481.13` | **`1.00x`** | `0.00e+00` |
-| **FP32** | 4096x4096 | `11336.40` | `11304.84` | **`1.00x`** | `0.00e+00` |
-
-> **Key Takeaway**: The fused Triton kernel achieves up to **1.5x - 2.8x** latency reduction across SM 8.9 Ada Lovelace architecture with bit-exact numerical parity ($\|y_{\text{triton}} - y_{\text{pytorch}}\|_\infty < 10^{-5}$ in FP32, $< 10^{-3}$ in FP16).
