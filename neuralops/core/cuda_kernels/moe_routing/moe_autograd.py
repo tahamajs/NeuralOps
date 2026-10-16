@@ -218,6 +218,17 @@ def moe_dispatch_gather(
         out = _MoEGatherAutograd.apply(expert_outputs, routing_weights, topk_indices, expert_offsets)
     else:
         mod = _get_module()
+        if mod is not None and tokens.is_cuda:
+            try:
+                dispatched = mod.moe_dispatch(tokens, topk_indices, expert_offsets, total_slots)
+                expert_outputs = expert_fn(dispatched)
+                out = mod.moe_gather(expert_outputs, routing_weights, topk_indices, expert_offsets)
+                if is_3d:
+                    out = out.view(B, T, hidden_dim)
+                return out
+            except Exception:
+                pass
+
         cuda_dispatch = mod.moe_dispatch if mod is not None else None
         cuda_gather = mod.moe_gather if mod is not None else None
 
