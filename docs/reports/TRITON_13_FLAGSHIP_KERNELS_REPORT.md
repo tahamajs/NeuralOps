@@ -2,9 +2,9 @@
 
 **Target Architecture:** NVIDIA Ada Lovelace SM 8.9 (GeForce RTX 4070 Laptop GPU, 8GB VRAM, CUDA 12.8, Triton 3.2.0)  
 **Verification Status:** 100% Passed (13 / 13 Flagship Unit Tests Passed, 68 / 68 Triton Matrix Tests Passed)  
-**Max Speedup:** **754.7x** (`triton_chunked_delta_gate_scan`)  
-**Peak VRAM Savings:** **55.2%** (`triton_cosformer_linear_attention`)  
-**Numerical Precision:** Cosine similarity $\ge 0.999999$, Max Relative Difference $\le 7.1 \times 10^{-4}$
+**Max Speedup:** **743.2x** (`triton_chunked_delta_gate_scan`)  
+**Peak VRAM Savings:** **29.7%** (`triton_cosformer_linear_attention`)  
+**Numerical Precision:** Cosine similarity $\ge 0.999999$, Max Relative Difference $\le 7.6 \times 10^{-4}$
 
 ---
 
@@ -15,7 +15,7 @@ In deep neural sequence models and dynamic matrix compression engines, PyTorch d
 2. High overhead zero-compute memory transformations such as `.permute().contiguous()` and `torch.flip()` before tensor contractions and bidirectional recurrent scans.
 3. Unfused sequential dequantization of 4-bit packed weights (`INT4`) and Look-Up Table (`LUT`) indices before dense GEMMs.
 4. Abandoning sparse outlier matrices $S_{\text{sparse}}$ in Robust PCA (`rpca_compressor`) due to the prohibitive latency of disparate dense and sparse GEMM dispatches.
-5. Re-expanding compressed rank-$r$ KV-cache latents back to high dimensions ($d=768$) before computing multi-head attention scores.
+5. Re-expanding compressed rank-$r$ KV-cache latents back to high dimensions ($d=768 / 2048$) before computing multi-head attention scores.
 
 To eliminate these memory hierarchy bottlenecks, we designed, implemented, mathematically verified, and benchmarked **13 high-ROI custom Triton JIT kernels**. All 13 kernels are integrated directly into the canonical **26-file structure** of `neuralops/core/triton_kernels/` without creating redundant directories or altering strict repository counts.
 
@@ -47,34 +47,34 @@ All metrics were recorded on physical silicon across 100 timed iterations preced
 
 | # | Kernel Identifier | PyTorch Reference (ms) | Triton JIT (ms) | **Speedup** | PyTorch VRAM (MB) | Triton VRAM (MB) | **VRAM Saved** | Cosine Similarity | Max Rel Error |
 |:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **1** | `triton_fused_lowrank_gated_gemm` | 0.035 | 0.039 | 0.89x | 10.81 | 10.00 | +7.5% | 0.99999988 | $5.4 \times 10^{-4}$ |
-| **2** | `triton_fused_lowrank_sparse_gemm` | 0.433 | 0.692 | 0.63x | 14.83 | 12.70 | +14.4% | 1.00000000 | $4.1 \times 10^{-4}$ |
-| **3** | `triton_strided_tt_linear` | 0.023 | 0.041 | 0.57x | 13.03 | 13.16 | -1.0% | 0.99999964 | $7.2 \times 10^{-4}$ |
-| **4** | `triton_fused_hadamard_w4a16_gemm` | 0.070 | 0.044 | **1.60x** | 18.07 | 13.44 | **+25.6%** | 0.99999988 | $3.5 \times 10^{-4}$ |
-| **5** | `triton_lut_codebook_dequant_gemm` | 0.137 | 0.025 | **5.42x** | 18.32 | 13.44 | **+26.6%** | 1.00000000 | $3.5 \times 10^{-4}$ |
-| **6** | `triton_fused_kronecker_matmul` | 0.029 | 0.025 | **1.19x** | 13.95 | 13.57 | +2.7% | 1.00000000 | $6.2 \times 10^{-4}$ |
-| **7** | `triton_chunked_delta_gate_scan` | 88.381 | 0.117 | **754.72x** | 14.47 | 14.46 | +0.1% | 1.00000012 | $1.0 \times 10^{-7}$ |
-| **8** | `triton_cosformer_linear_attention` | 0.186 | 0.045 | **4.10x** | 34.21 | 16.21 | **+55.2%** | 1.00000012 | $5.2 \times 10^{-4}$ |
-| **9** | `triton_block_sparse_streaming_attn` | 7.881 | 0.029 | **271.86x** | 16.83 | 16.71 | +0.7% | 0.99999988 | $4.3 \times 10^{-4}$ |
-| **10** | `triton_hgrn2_fused_bwd_scan` | 5.758 | 0.026 | **218.29x** | 20.97 | 17.96 | **+14.3%** | 1.00000012 | $3.6 \times 10^{-8}$ |
-| **11** | `triton_spectral_entropy_svd_gate` | 0.027 | 0.028 | 0.97x | 19.93 | 19.15 | +3.9% | 0.99999982 | $5.0 \times 10^{-4}$ |
-| **12** | `triton_fused_act_scale_quant_gemm` | 0.029 | 0.024 | **1.19x** | 20.47 | 19.90 | +2.8% | 0.99999994 | $3.5 \times 10^{-4}$ |
-| **13** | `triton_fused_latent_kv_cache_attention` | 0.059 | 0.034 | **1.76x** | 22.63 | 20.07 | **+11.3%** | 0.99999994 | $5.5 \times 10^{-4}$ |
+| **1** | `triton_fused_lowrank_gated_gemm` | 0.051 | 0.041 | **1.23x** | 20.69 | 16.63 | **+19.6%** | 0.99999988 | $5.5 \times 10^{-4}$ |
+| **2** | `triton_fused_lowrank_sparse_gemm` | 6.204 | 10.460 | 0.59x | 45.18 | 33.99 | **+24.8%** | 0.99999994 | $4.2 \times 10^{-4}$ |
+| **3** | `triton_strided_tt_linear` | 0.347 | 0.324 | **1.07x** | 50.09 | 50.09 | 0.0% | 0.99999976 | $7.6 \times 10^{-4}$ |
+| **4** | `triton_fused_hadamard_w4a16_gemm` | 0.071 | 0.044 | **1.62x** | 39.37 | 34.74 | **+11.8%** | 1.00000000 | $3.6 \times 10^{-4}$ |
+| **5** | `triton_lut_codebook_dequant_gemm` | 0.139 | 0.027 | **5.20x** | 39.37 | 34.74 | **+11.8%** | 0.99999988 | $3.5 \times 10^{-4}$ |
+| **6** | `triton_fused_kronecker_matmul` | 0.059 | 0.031 | **1.89x** | 54.63 | 42.63 | **+22.0%** | 0.99999994 | $6.2 \times 10^{-4}$ |
+| **7** | `triton_chunked_delta_gate_scan` | 88.314 | 0.119 | **743.23x** | 39.66 | 39.65 | +0.0% | 1.00000000 | $1.0 \times 10^{-7}$ |
+| **8** | `triton_cosformer_linear_attention` | 0.186 | 0.045 | **4.09x** | 58.90 | 41.40 | **+29.7%** | 0.99999994 | $5.3 \times 10^{-4}$ |
+| **9** | `triton_block_sparse_streaming_attn` | 8.325 | 0.030 | **275.87x** | 42.02 | 41.90 | +0.3% | 1.00000000 | $4.4 \times 10^{-4}$ |
+| **10** | `triton_hgrn2_fused_bwd_scan` | 5.698 | 0.027 | **214.04x** | 46.16 | 43.15 | **+6.5%** | 1.00000012 | $3.6 \times 10^{-8}$ |
+| **11** | `triton_spectral_entropy_svd_gate` | 0.035 | 0.117 | 0.30x | 54.94 | 50.90 | **+7.3%** | 0.99999982 | $5.1 \times 10^{-4}$ |
+| **12** | `triton_fused_act_scale_quant_gemm` | 0.029 | 0.026 | **1.12x** | 48.97 | 48.41 | +1.2% | 1.00000000 | $3.6 \times 10^{-4}$ |
+| **13** | `triton_fused_latent_kv_cache_attention` | 0.059 | 0.037 | **1.61x** | 51.13 | 48.57 | **+5.0%** | 0.99999988 | $5.4 \times 10^{-4}$ |
 
 ---
 
 ## 4. Key Takeaways & Architectural Highlights
 
 1. **Massive Speedups on Recurrent and Sparse Attention**:
-   - `triton_chunked_delta_gate_scan` achieves an extraordinary **754.72x speedup** (0.117 ms vs 88.381 ms in sequential PyTorch), collapsing the memory bandwidth wall for state-space delta networks.
-   - `triton_block_sparse_streaming_attn` achieves **271.86x speedup** (0.029 ms vs 7.881 ms) by computing online softmax streaming over active blocks in SRAM without dense attention matrix expansion.
-   - `triton_hgrn2_fused_bwd_scan` achieves **218.29x speedup** (0.026 ms vs 5.758 ms) by executing the backward recurrent scan in-place, eliminating PyTorch's costly `.flip()` and allocation overhead.
+   - `triton_chunked_delta_gate_scan` achieves **743.23x speedup** (0.119 ms vs 88.314 ms in sequential PyTorch), collapsing the memory bandwidth wall for state-space delta networks.
+   - `triton_block_sparse_streaming_attn` achieves **275.87x speedup** (0.030 ms vs 8.325 ms) by computing online softmax streaming over active blocks in SRAM without dense attention matrix expansion.
+   - `triton_hgrn2_fused_bwd_scan` achieves **214.04x speedup** (0.027 ms vs 5.698 ms) by executing the backward recurrent scan in-place, eliminating PyTorch's costly `.flip()` and allocation overhead.
 2. **Quantization & Codebook Acceleration**:
-   - `triton_lut_codebook_dequant_gemm` accelerates codebook quantization by **5.42x** (0.025 ms vs 0.137 ms) while cutting peak VRAM by **26.6%**, proving that in-register table dequantization is far superior to pre-dequantizing into global VRAM.
-   - `triton_fused_hadamard_w4a16_gemm` provides **1.60x speedup** with **25.6% VRAM reduction**.
+   - `triton_lut_codebook_dequant_gemm` accelerates codebook quantization by **5.20x** (0.027 ms vs 0.139 ms) while cutting peak VRAM by **11.8%**, proving that in-register table dequantization is far superior to pre-dequantizing into global VRAM.
+   - `triton_fused_hadamard_w4a16_gemm` provides **1.62x speedup** with **11.8% VRAM reduction**.
 3. **Subquadratic Attention & KV-Cache Latents**:
-   - `triton_cosformer_linear_attention` delivers **4.10x speedup** and slashes memory consumption by **55.2%** (16.21 MB vs 34.21 MB).
-   - `triton_fused_latent_kv_cache_attention` enables direct attention in latent space, achieving **1.76x speedup** and **11.3% memory savings**.
+   - `triton_cosformer_linear_attention` delivers **4.09x speedup** and slashes memory consumption by **29.7%** (41.40 MB vs 58.90 MB).
+   - `triton_fused_latent_kv_cache_attention` enables direct attention in latent space, achieving **1.61x speedup** and **5.0% memory savings**.
 4. **Strict Repository Invariants Upheld**:
    - Exactly **26 canonical Triton kernel files** in `neuralops/core/triton_kernels/`.
    - Exactly **131 attention mechanisms** and **72 compression engines** verified via `scripts/utils/verify_readme_counts.py`.
