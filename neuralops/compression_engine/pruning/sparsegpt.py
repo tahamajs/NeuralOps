@@ -87,11 +87,20 @@ class SparseGPTCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_attention_only = bool(target_attention_only)
-        self.structured_24 = structured_24 or (prunen == 2 and prunem == 4 and self.sparsity == 0.5)
-        if self.structured_24:
-            self.sparsity = 0.5
-            self.prunen = 2
-            self.prunem = 4
+        rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        if rank is not None:
+            r = float(rank)
+            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
+            self.sparsity = 1.0 - p_keep
+            self.structured_24 = False
+            self.prunen = 0
+            self.prunem = 0
+        else:
+            self.structured_24 = structured_24 or (prunen == 2 and prunem == 4 and self.sparsity == 0.5)
+            if self.structured_24:
+                self.sparsity = 0.5
+                self.prunen = 2
+                self.prunem = 4
         self.target_device = (
             torch.device(device)
             if device is not None

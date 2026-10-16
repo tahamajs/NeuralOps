@@ -188,19 +188,25 @@ class ADMMPruner(BaseCompressor):
         super().__init__(model, name="admm_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config")
 
-        self.sparsity = max(
-            0.0,
-            min(
-                float(
-                    _cfg_get(
-                        conf,
-                        "admm_pruner_sparsity",
-                        _cfg_get(conf, "admm_sparsity", _cfg_get(conf, "sparsity", sparsity)),
-                    )
+        rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        if rank is not None:
+            r = float(rank)
+            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
+            self.sparsity = 1.0 - p_keep
+        else:
+            self.sparsity = max(
+                0.0,
+                min(
+                    float(
+                        _cfg_get(
+                            conf,
+                            "admm_pruner_sparsity",
+                            _cfg_get(conf, "admm_sparsity", _cfg_get(conf, "sparsity", sparsity)),
+                        )
+                    ),
+                    0.95,
                 ),
-                0.95,
-            ),
-        )
+            )
         self.initial_rho = float(
             _cfg_get(
                 conf,
@@ -228,7 +234,7 @@ class ADMMPruner(BaseCompressor):
                     _cfg_get(conf, "structured_24", structured_24),
                 ),
             )
-        )
+        ) and (rank is None)
         self.block_size = block_size
         self.dynamic_rho = bool(
             _cfg_get(

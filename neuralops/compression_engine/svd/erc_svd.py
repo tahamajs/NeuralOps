@@ -237,20 +237,19 @@ class ERCCompressor(BaseCompressor):
             logger.warning("ERC-SVD SVD computation failed: %s", e)
             return None, 1.0, 0
 
-        s_squared = S**2
-        total_energy = s_squared.sum()
-        if total_energy <= 1e-12:
-            r_init = 1
-        else:
-            cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
-            target_retention = max(0.0, 1.0 - (self.allowed_error**2))
-            idx = torch.where(cum_energy >= target_retention)[0]
-            r_init = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
-
-        # ER-FIX-05: clamp r_init to max_r before use.
-        r_init = min(r_init, max_r)
         if self.rank is not None:
-            r_init = min(r_init, int(self.rank))
+            r_init = min(int(self.rank), max_r)
+        else:
+            s_squared = S**2
+            total_energy = s_squared.sum()
+            if total_energy <= 1e-12:
+                r_init = 1
+            else:
+                cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
+                target_retention = max(0.0, 1.0 - (self.allowed_error**2))
+                idx = torch.where(cum_energy >= target_retention)[0]
+                r_init = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
+
         current_r = max(1, min(r_init, max_r))
 
         best_svd_layer: SVDLinear | None = None
