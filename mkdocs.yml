@@ -58,5 +58,15 @@ nav:
   - Benchmarks:
       - Triton Kernels: benchmarks/triton_kernels.md
       - Native CUDA Kernels: benchmarks/cuda_kernels.md
+  - Upstream RFCs:
+      - vLLM PagedState RFC: upstream/VLLM_RFC.md
+      - TGI Continuous Batching RFC: upstream/TGI_RFC.md
+      - SGLang RadixAttention RFC: upstream/SGLANG_RFC.md
+  - Reports:
+      - Production Readiness: reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT.md
+      - Gaps & Incompletion: reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT.md
+      - Paper/Thesis Consistency: reports/PAPER_THESIS_CONSISTENCY_REPORT.md
+      - Benchmark Reconciliation: reports/BENCHMARK_RECONCILIATION.md
+      - HNC-SVD Decision: reports/HNC_SVD_STATUS_DECISION.md
   - Changelog: changelog.md
   - Security: security.md
