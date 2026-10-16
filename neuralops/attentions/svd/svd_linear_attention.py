@@ -601,33 +601,11 @@ class SVDLinearAttention(BaseAttention):
                 except Exception as e:
                     logger.warning("HNC continuation failed in _factorize_and_set (%s); falling back to direct SVD.", e)
 
-            # Compute SVD (Cholesky-whitened if probe_inputs provided and use_hnc is True)
-            if use_hnc and probe_inputs is not None:
-                try:
-                    px = probe_inputs.to(dev).float().view(-1, d_in)
-                    Hx = torch.matmul(px.t(), px) / max(px.shape[0], 1)
-                    reg = 1e-3 * (torch.trace(Hx) / float(d_in)).item() + 1e-6
-                    Sx = Hx + reg * torch.eye(d_in, device=dev, dtype=torch.float32)
-                    L = torch.linalg.cholesky(Sx)
-                    W_whitened = torch.matmul(target_w, L)
-                    U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
-                    U_r = (U[:, :r] * torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(0)).to(device=dev, dtype=weight.dtype)
-                    V_unwhitened = torch.linalg.solve_triangular(
-                        L.t(), (torch.sqrt(torch.clamp(S[:r], min=1e-5)).unsqueeze(1) * Vh[:r, :]).t(), upper=True
-                    ).t().to(device=dev, dtype=weight.dtype)
-                    target_linear.set_low_rank_factors(U_r, V_unwhitened)
-                except Exception:
-                    U, S, Vt = torch.linalg.svd(target_w, full_matrices=False)
-                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
-                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
-                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
-                    target_linear.set_low_rank_factors(U_r, V_r)
-            else:
-                U, S, Vt = torch.linalg.svd(target_w, full_matrices=False)
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
-                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
-                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
-                target_linear.set_low_rank_factors(U_r, V_r)
+            U, S, Vt = torch.linalg.svd(target_w, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
+            target_linear.set_low_rank_factors(U_r, V_r)
 
             if bias is not None and target_linear.bias is not None:
                 target_linear.bias.data.copy_(
