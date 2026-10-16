@@ -111,7 +111,8 @@ def _gla_fwd_kernel(
         Z = lam_t * Z + k_t
 
         num_t = tl.sum(q_t[:, None] * S, axis=0)
-        denom_t = tl.sum(q_t * Z) + 1e-4
+        denom_raw = tl.sum(q_t * Z) + 1e-4
+        denom_t = tl.maximum(denom_raw, 1e-4)
 
         y_t = num_t / denom_t
 
@@ -265,7 +266,7 @@ def _gla_bwd_kernel(
         Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
 
         num_t = tl.sum(q_t[:, None] * S_t, axis=0)
-        denom_raw = tl.sum(q_t * Z_t)
+        denom_raw = tl.sum(q_t * Z_t) + 1e-4
         denom_t = tl.maximum(denom_raw, 1e-4)
 
         dnum_t = dy_t / denom_t
@@ -530,11 +531,18 @@ def _gla_fwd_inference(
 
 def gla_scan_pytorch(
     q: torch.Tensor,
-    k: torch.Tensor,
-    v: torch.Tensor,
-    lambdas: torch.Tensor,
+    k: torch.Tensor | None = None,
+    v: torch.Tensor | None = None,
+    lambdas: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Pure PyTorch fallback reference implementation for GLA recurrent scan."""
+    if k is None:
+        k = q
+    if v is None:
+        v = q
+    if lambdas is None:
+        lambdas = torch.sigmoid(q.mean(dim=-1)).clamp(1e-4, 1.0 - 1e-4)
+
     B, H, L, D = q.shape
     device = q.device
     dtype = q.dtype
@@ -558,7 +566,8 @@ def gla_scan_pytorch(
         Z = lam_t.unsqueeze(-1) * Z + k_t
 
         num_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
-        den_t = (q_t * Z).sum(dim=-1, keepdim=True) + 1e-4
+        den_raw = (q_t * Z).sum(dim=-1, keepdim=True) + 1e-4
+        den_t = torch.clamp(den_raw, min=1e-4)
         y_t = num_t / den_t
         ys.append(y_t)
 
@@ -566,13 +575,23 @@ def gla_scan_pytorch(
 
 
 def gla_scan_triton(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, lambdas: torch.Tensor
+    q: torch.Tensor,
+    k: torch.Tensor | None = None,
+    v: torch.Tensor | None = None,
+    lambdas: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
     Triton-accelerated GLA scan function with tri-kernel autograd dispatch:
       - Uses fast fused recurrent kernel for inference (no workspace allocation).
       - Uses full autograd Function during training with exact backward gradients.
     """
+    if k is None:
+        k = q
+    if v is None:
+        v = q
+    if lambdas is None:
+        lambdas = torch.sigmoid(q.mean(dim=-1)).clamp(1e-4, 1.0 - 1e-4)
+
     B, H, L, D = q.shape
     if D > MAX_REGISTER_DIM:
         raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
@@ -592,9 +611,19 @@ def gla_scan_triton(
 
 
 def gla_scan(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, lambdas: torch.Tensor
+    q: torch.Tensor,
+    k: torch.Tensor | None = None,
+    v: torch.Tensor | None = None,
+    lambdas: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Dispatches GLA scan to Triton GPU kernel when suitable, else PyTorch fallback."""
+    if k is None:
+        k = q
+    if v is None:
+        v = q
+    if lambdas is None:
+        lambdas = torch.sigmoid(q.mean(dim=-1)).clamp(1e-4, 1.0 - 1e-4)
+
     from neuralops.core.triton_kernels._types import check_triton_suitability
     suitable, _ = check_triton_suitability(q, "gla_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
     if suitable:
