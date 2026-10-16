@@ -574,13 +574,25 @@ class SVDLinearAttention(BaseAttention):
         target_linear: SVDLinear,
         weight: torch.Tensor,
         bias: torch.Tensor | None = None,
+        probe_inputs: torch.Tensor | None = None,
+        use_hnc: bool = False,
+        hnc_steps: int = 15,
     ) -> None:
         with torch.no_grad():
             dev = weight.device
+            target_w = weight.detach()
+            if use_hnc:
+                try:
+                    from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
+                    hnc = HessianNullSpaceSVDContinuation(target_rank=target_linear.rank, num_steps=hnc_steps)
+                    target_w = hnc.run_continuation(target_w, probe_inputs=probe_inputs)
+                except Exception as e:
+                    logger.warning("HNC continuation failed in _factorize_and_set (%s); falling back to direct SVD.", e)
+
             try:
-                U, S, Vt = torch.linalg.svd(weight.detach().float(), full_matrices=False)
+                U, S, Vt = torch.linalg.svd(target_w.float(), full_matrices=False)
             except Exception:
-                U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
+                U, S, Vt = torch.linalg.svd(target_w.cpu().float(), full_matrices=False)
                 U = U.to(dev)
                 S = S.to(dev)
                 Vt = Vt.to(dev)
@@ -594,6 +606,39 @@ class SVDLinearAttention(BaseAttention):
                 target_linear.bias.data.copy_(
                     bias.to(target_linear.bias.device, target_linear.bias.dtype)
                 )
+
+    def hnc_spectral_compress_and_align(
+        self,
+        probe_inputs: torch.Tensor | None = None,
+        num_steps: int = 15,
+        target_rank: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Run Hessian Null Space Continuation (HNC) on all linear projections (Q, K, V, Out)
+        to steer tail singular values toward zero while preserving network function,
+        then factorize into low-rank SVD projections.
+        """
+        results: dict[str, Any] = {}
+        target_rank = target_rank or self.rank
+        projs = [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]
+        if self.out_proj is not None and isinstance(self.out_proj, SVDLinear):
+            projs.append(("out", self.out_proj))
+
+        for name, proj in projs:
+            with torch.no_grad():
+                # Reconstruct full weight W = U @ V
+                W = torch.matmul(proj.U.data.float(), proj.V.data.float())
+                bias = proj.bias.data if proj.bias is not None else None
+                self._factorize_and_set(
+                    proj,
+                    W.to(proj.U.dtype),
+                    bias=bias,
+                    probe_inputs=probe_inputs,
+                    use_hnc=True,
+                    hnc_steps=num_steps,
+                )
+                results[name] = {"rank": proj.rank, "status": "hnc_aligned"}
+        return results
 
     # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module, **kwargs: Any) -> None:

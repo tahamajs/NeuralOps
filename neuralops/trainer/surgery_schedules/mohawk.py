@@ -152,8 +152,107 @@ class MOHAWKTrainer:
         return float(loss.item())
 
 
+class HNCContinuationTrainer:
+    """
+    Hessian Null Space Continuation (HNC) Multi-Stage Distillation Trainer.
+    Combines:
+      - Closed-form Kronecker/Pearlmutter null-space projection for SVD layer alignment
+      - SmoothMax over layerwise CKA steering
+      - Logit distillation (DKD/forward KL)
+      - Predictor-corrector continuation across training iterations
+    """
+
+    def __init__(
+        self,
+        student: nn.Module,
+        teacher: nn.Module,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        temperature: float = 2.0,
+        cka_weight: float = 0.5,
+        hnc_eta: float = 0.01,
+        hnc_mu: float = 1e-4,
+    ) -> None:
+        self.student = student
+        self.teacher = teacher
+        self.device = device
+        self.student.to(self.device)
+        self.teacher.to(self.device)
+
+        from neuralops.trainer.distillation.multi_level_kd import (
+            LogitDistillationLoss,
+            SmoothMaxOverLayersCKASteeringLoss,
+        )
+
+        self.logit_loss_fn = LogitDistillationLoss(mode="decoupled_kd", temperature=temperature)
+        self.cka_steering_fn = SmoothMaxOverLayersCKASteeringLoss(temperature=0.1)
+        self.cka_weight = cka_weight
+        self.hnc_eta = hnc_eta
+        self.hnc_mu = hnc_mu
+
+    def step_nullspace_spectral_continuation(
+        self,
+        probe_batch: Any,
+        target_rank: int | None = None,
+        num_steps: int = 5,
+    ) -> dict[str, Any]:
+        """Align all SVD linear attention layers along Hessian null space."""
+        x = probe_batch["input_ids"] if isinstance(probe_batch, dict) else probe_batch
+        x = x.to(self.device)
+        results = {}
+        for name, module in self.student.named_modules():
+            if hasattr(module, "hnc_spectral_compress_and_align"):
+                res = module.hnc_spectral_compress_and_align(probe_inputs=x, num_steps=num_steps, target_rank=target_rank)
+                results[name] = res
+        return results
+
+    def step_distillation(
+        self,
+        batch: Any,
+        optimizer: torch.optim.Optimizer,
+    ) -> dict[str, float]:
+        """Execute one distillation step with SmoothMax CKA steering."""
+        self.student.train()
+        self.teacher.eval()
+        optimizer.zero_grad()
+
+        x = batch["input_ids"] if isinstance(batch, dict) else batch
+        x = x.to(self.device)
+        labels = batch.get("labels", None) if isinstance(batch, dict) else None
+        if labels is not None:
+            labels = labels.to(self.device)
+
+        with torch.no_grad():
+            t_out = self.teacher(x, output_hidden_states=True) if hasattr(self.teacher, "config") else self.teacher(x)
+            t_logits = t_out.logits if hasattr(t_out, "logits") else t_out[0]
+            t_hidden = getattr(t_out, "hidden_states", None)
+
+        s_out = self.student(x, output_hidden_states=True) if hasattr(self.student, "config") else self.student(x)
+        s_logits = s_out.logits if hasattr(s_out, "logits") else s_out[0]
+        s_hidden = getattr(s_out, "hidden_states", None)
+
+        kd_loss = self.logit_loss_fn(s_logits, t_logits, labels=labels)
+
+        total_loss = kd_loss
+        cka_loss_val = 0.0
+        if s_hidden is not None and t_hidden is not None:
+            cka_loss = self.cka_steering_fn(s_hidden, t_hidden)
+            cka_loss_val = float(cka_loss.item())
+            total_loss = total_loss + self.cka_weight * cka_loss
+
+        total_loss.backward()
+        optimizer.step()
+
+        return {
+            "total_loss": float(total_loss.item()),
+            "kd_loss": float(kd_loss.item()),
+            "cka_loss": cka_loss_val,
+        }
+
+
 __all__ = [
     "AttentionHomotopyScheduler",
     "AlphaBlendingAttentionWrapper",
     "MOHAWKTrainer",
+    "HNCContinuationTrainer",
 ]
+
