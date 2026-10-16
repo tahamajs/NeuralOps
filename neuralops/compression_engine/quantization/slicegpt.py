@@ -291,8 +291,10 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                         e,
                     )
 
-        # Fallback: random orthogonal basis
-        rand_mat = torch.randn(d_in, d_in, device=device)
+        # Fallback: deterministic orthogonal basis
+        gen_dev = device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu"
+        gen = torch.Generator(device=gen_dev).manual_seed(42 + d_in)
+        rand_mat = torch.randn(d_in, d_in, device=gen_dev, generator=gen).to(device)
         Q, _ = torch.linalg.qr(rand_mat)
         return Q, torch.ones(d_in, device=device)
 
@@ -424,8 +426,8 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             # Parameter count of factorization
             factorized_params = effective_keep * (d_out + d_in)
 
-            # Only apply if it actually reduces parameter count
-            if factorized_params >= d_out * d_in:
+            # Only apply if it actually reduces parameter count (unless explicit rank requested)
+            if factorized_params >= d_out * d_in and self.rank is None:
                 logger.info(
                     "PCA-ASVD: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
                     effective_keep, name, factorized_params, d_out * d_in,

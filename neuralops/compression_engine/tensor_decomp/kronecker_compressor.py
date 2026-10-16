@@ -319,15 +319,15 @@ class KroneckerLinear(nn.Module):
         W_norm = torch.norm(weight, p="fro").item()
 
         # Parameter reduction constraint: r * (in + out) < in * out
-        max_allowed_rank = max(
-            1,
-            min(in_f, out_f, int(0.75 * (in_f * out_f) / max(in_f + out_f, 1))),
-        )
-        base_r = rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
-        base_r = min(base_r, max_allowed_rank)
-
-        try:
-            U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
+        if rank is not None and rank > 0:
+            base_r = min(int(rank), in_f, out_f)
+            candidate_ranks = [base_r]
+        else:
+            max_allowed_rank = max(
+                1,
+                min(in_f, out_f, int(0.75 * (in_f * out_f) / max(in_f + out_f, 1))),
+            )
+            base_r = min(max(1, min(in_f, out_f) // 4), max_allowed_rank)
             candidate_ranks = [base_r]
             if base_r * 2 <= max_allowed_rank:
                 candidate_ranks.append(base_r * 2)
