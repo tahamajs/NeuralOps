@@ -5,30 +5,30 @@
 
 | Seq Len (T) | Module | Framework | Latency (ms) | Throughput (tok/s) | Peak VRAM (MB) | Speedup | Cosine Sim |
 |:---:|:---|:---|:---:|:---:|:---:|:---:|:---:|
-| 512 | `pytorch_mha_baseline` | PyTorch Reference | 0.32 | 3,192,931.6 | 35.1 | **1.0x** | 1.0 |
-| 512 | `gated_delta_net` | NeuralOps (Triton Fused) | 1.56 | 655,558.8 | 50.9 | **0.21x** | 1.0 |
-| 512 | `gla_attention` | NeuralOps (Triton Fused) | 2.17 | 472,202.7 | 51.6 | **0.15x** | 1.0 |
-| 512 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 3.08 | 332,280.8 | 120.4 | **0.1x** | 1.0 |
-| 512 | `cosformer` | NeuralOps (Triton Fused) | 1.54 | 665,179.6 | 80.1 | **0.21x** | 1.0 |
-| 512 | `minimal_svd` | NeuralOps (Triton Fused) | 0.38 | 2,667,239.0 | 25.1 | **0.84x** | 1.0 |
-| 1024 | `pytorch_mha_baseline` | PyTorch Reference | 1.70 | 1,205,684.8 | 83.3 | **1.0x** | 1.0 |
-| 1024 | `gated_delta_net` | NeuralOps (Triton Fused) | 3.06 | 668,306.9 | 82.8 | **0.55x** | 1.0 |
-| 1024 | `gla_attention` | NeuralOps (Triton Fused) | 3.74 | 547,281.6 | 81.2 | **0.45x** | 1.0 |
-| 1024 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 7.94 | 257,842.2 | 336.5 | **0.21x** | 1.0 |
-| 1024 | `cosformer` | NeuralOps (Triton Fused) | 3.20 | 639,723.6 | 148.4 | **0.53x** | 1.0 |
-| 1024 | `minimal_svd` | NeuralOps (Triton Fused) | 0.61 | 3,366,497.8 | 35.8 | **2.79x** | 1.0 |
-| 2048 | `pytorch_mha_baseline` | PyTorch Reference | 5.24 | 782,350.1 | 255.6 | **1.0x** | 1.0 |
-| 2048 | `gated_delta_net` | NeuralOps (Triton Fused) | 6.15 | 665,736.5 | 144.3 | **0.85x** | 1.0 |
-| 2048 | `gla_attention` | NeuralOps (Triton Fused) | 6.83 | 599,894.7 | 137.3 | **0.77x** | 1.0 |
-| 2048 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 25.58 | 160,105.8 | 1141.4 | **0.2x** | 1.0 |
-| 2048 | `cosformer` | NeuralOps (Triton Fused) | 4.10 | 999,314.4 | 236.4 | **1.28x** | 1.0 |
-| 2048 | `minimal_svd` | NeuralOps (Triton Fused) | 1.47 | 2,786,132.4 | 56.6 | **3.56x** | 1.0 |
-| 4096 | `pytorch_mha_baseline` | PyTorch Reference | 19.12 | 428,477.4 | 912.6 | **1.0x** | 1.0 |
-| 4096 | `gated_delta_net` | NeuralOps (Triton Fused) | 13.43 | 610,101.1 | 268.5 | **1.42x** | 1.0 |
-| 4096 | `gla_attention` | NeuralOps (Triton Fused) | 13.41 | 611,062.1 | 252.0 | **1.43x** | 1.0 |
-| 4096 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 87.39 | 93,735.0 | 4242.2 | **0.22x** | 1.0 |
-| 4096 | `cosformer` | NeuralOps (Triton Fused) | 9.95 | 823,451.0 | 452.0 | **1.92x** | 1.0 |
-| 4096 | `minimal_svd` | NeuralOps (Triton Fused) | 4.62 | 1,774,424.8 | 98.6 | **4.14x** | 1.0 |
+| 512 | `pytorch_mha_baseline` | PyTorch Reference | 0.32 | 3,161,437.7 | 35.1 | **1.0x** | 1.0 |
+| 512 | `gated_delta_net` | NeuralOps (Triton Fused) | 1.00 | 1,027,196.6 | 44.4 | **0.32x** | 1.0 |
+| 512 | `gla_attention` | NeuralOps (Triton Fused) | 0.49 | 2,067,147.6 | 41.2 | **0.65x** | 1.0 |
+| 512 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 1.67 | 612,031.8 | 62.9 | **0.19x** | 1.0 |
+| 512 | `cosformer` | NeuralOps (Triton Fused) | 1.60 | 639,572.1 | 88.0 | **0.2x** | 1.0 |
+| 512 | `minimal_svd` | NeuralOps (Triton Fused) | 0.58 | 1,777,336.1 | 25.1 | **0.56x** | 1.0 |
+| 1024 | `pytorch_mha_baseline` | PyTorch Reference | 1.72 | 1,194,479.8 | 83.3 | **1.0x** | 1.0 |
+| 1024 | `gated_delta_net` | NeuralOps (Triton Fused) | 1.94 | 1,058,484.5 | 70.3 | **0.89x** | 1.0 |
+| 1024 | `gla_attention` | NeuralOps (Triton Fused) | 0.95 | 2,150,457.8 | 65.5 | **1.8x** | 1.0 |
+| 1024 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 2.76 | 741,303.5 | 94.2 | **0.62x** | 1.0 |
+| 1024 | `cosformer` | NeuralOps (Triton Fused) | 3.40 | 602,152.2 | 156.5 | **0.5x** | 1.0 |
+| 1024 | `minimal_svd` | NeuralOps (Triton Fused) | 0.55 | 3,741,446.1 | 35.8 | **3.14x** | 1.0 |
+| 2048 | `pytorch_mha_baseline` | PyTorch Reference | 5.17 | 791,657.6 | 255.6 | **1.0x** | 1.0 |
+| 2048 | `gated_delta_net` | NeuralOps (Triton Fused) | 3.68 | 1,112,094.3 | 120.2 | **1.4x** | 1.0 |
+| 2048 | `gla_attention` | NeuralOps (Triton Fused) | 1.49 | 2,741,562.5 | 110.0 | **3.46x** | 1.0 |
+| 2048 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 6.27 | 653,213.9 | 156.2 | **0.83x** | 1.0 |
+| 2048 | `cosformer` | NeuralOps (Triton Fused) | 5.03 | 814,292.9 | 290.7 | **1.03x** | 1.0 |
+| 2048 | `minimal_svd` | NeuralOps (Triton Fused) | 1.21 | 3,396,112.0 | 56.6 | **4.29x** | 1.0 |
+| 4096 | `pytorch_mha_baseline` | PyTorch Reference | 19.12 | 428,551.8 | 912.6 | **1.0x** | 1.0 |
+| 4096 | `gated_delta_net` | NeuralOps (Triton Fused) | 8.13 | 1,008,133.1 | 219.3 | **2.35x** | 1.0 |
+| 4096 | `gla_attention` | NeuralOps (Triton Fused) | 3.23 | 2,538,085.5 | 198.5 | **5.92x** | 1.0 |
+| 4096 | `hgrn2_gated_deltanet` | NeuralOps (Triton Fused) | 13.61 | 602,111.9 | 283.1 | **1.41x** | 1.0 |
+| 4096 | `cosformer` | NeuralOps (Triton Fused) | 12.12 | 676,154.9 | 560.4 | **1.58x** | 1.0 |
+| 4096 | `minimal_svd` | NeuralOps (Triton Fused) | 3.45 | 2,373,698.3 | 98.6 | **5.54x** | 1.0 |
 
 
 *Generated automatically by `scripts/benchmarks/run_competitive_comparison.py`*
