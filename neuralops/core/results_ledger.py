@@ -321,7 +321,8 @@ class ResultsLedger:
         records = self.query(module_name=module_name, only_active=False, sort_by="revision", descending=False)
         if not records:
             return
-        mod_file = self.by_module_dir / f"{module_name}.json"
+        safe_name = str(module_name).replace("/", "_").replace("\\", "_").replace(" ", "_")
+        mod_file = self.by_module_dir / f"{safe_name}.json"
         active_recs = [r for r in records if r.status == "active"]
         dossier = {
             "module_name": module_name,

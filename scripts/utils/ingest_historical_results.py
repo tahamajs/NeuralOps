@@ -23,7 +23,15 @@ from pathlib import Path
 repo_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repo_root))
 
-from neuralops.core.results_ledger import ResultsLedger, ResultRecord, get_file_git_provenance
+import importlib.util
+spec = importlib.util.spec_from_file_location("results_ledger", repo_root / "neuralops" / "core" / "results_ledger.py")
+results_ledger = importlib.util.module_from_spec(spec)
+sys.modules["results_ledger"] = results_ledger
+spec.loader.exec_module(results_ledger)
+
+ResultsLedger = results_ledger.ResultsLedger
+ResultRecord = results_ledger.ResultRecord
+get_file_git_provenance = results_ledger.get_file_git_provenance
 
 def run_ingestion():
     ledger = ResultsLedger(root_dir=repo_root / "results")
@@ -145,7 +153,7 @@ def run_ingestion():
         with open(f3level, "r", encoding="utf-8") as f:
             data = json.load(f)
         for item in data:
-            name = item.get("operator")
+            name = item.get("kernel") or item.get("operator") or "cuda_kernel"
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -330,7 +338,94 @@ def run_ingestion():
             ledger.add_or_replace(rec, mode="upsert")
             total_ingested += 1
 
-    # 9. Ingest master_aggregated_results.csv if present
+    # 9. Ingest triton_full_leaderboard_v136.json
+    flead = repo_root / "results" / "triton_full_leaderboard_v136.json"
+    if flead.exists():
+        sha, ts = get_file_git_provenance(flead, repo_root)
+        with open(flead, "r", encoding="utf-8") as f:
+            dlead = json.load(f)
+        for tier_key, cat_name in [
+            ("tier1_core_triton_kernels", "triton_kernel"),
+            ("tier2_attention_architectures", "attention"),
+            ("tier3_compression_engines", "compressor"),
+        ]:
+            for row in dlead.get(tier_key, []):
+                mod_name = row.get("kernel_module", "").replace(".py", "").strip() or row.get("primary_primitive", "kernel")
+                rec = ResultRecord(
+                    record_id="",
+                    module_name=mod_name,
+                    category=cat_name,
+                    family=row.get("category", "triton"),
+                    version_tag="v1.3.6",
+                    revision=1,
+                    status="active",
+                    timestamp_utc=ts,
+                    git_commit_sha=sha,
+                    generation_method={
+                        "algorithm": "Triton vs PyTorch Benchmark v136",
+                        "primitive": row.get("primary_primitive"),
+                        "source_artifact": str(flead.relative_to(repo_root)),
+                    },
+                    experimental_setup={
+                        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+                        "shape": row.get("shape"),
+                    },
+                    metrics={
+                        "latency_triton_ms": row.get("latency_triton_ms", 0.0),
+                        "latency_pytorch_ms": row.get("latency_pytorch_ms", 0.0),
+                        "speedup_x": row.get("speedup_x", 1.0),
+                        "sram_bytes_saved_mb": row.get("sram_bytes_saved_mb", 0.0),
+                    },
+                    notes=f"Parity: {row.get('parity_status')}",
+                )
+                ledger.add_or_replace(rec, mode="upsert")
+                total_ingested += 1
+
+    # 10. Ingest all 01_unified_runs 4models_summary.json files
+    import glob
+    unified_summaries = sorted(glob.glob(str(repo_root / "results" / "01_unified_runs" / "*" / "4models_summary.json")))
+    for us_path_str in unified_summaries:
+        us_path = Path(us_path_str)
+        mod_name = us_path.parent.name.replace("unified_", "").strip()
+        sha, ts = get_file_git_provenance(us_path, repo_root)
+        try:
+            with open(us_path, "r", encoding="utf-8") as f:
+                us_data = json.load(f)
+            if isinstance(us_data, list):
+                for model_row in us_data:
+                    backbone = model_row.get("slug") or model_row.get("name", "distilbert")
+                    acc = model_row.get("accuracy_pct", 0.0)
+                    elapsed = model_row.get("elapsed_s", 0.0)
+                    rec = ResultRecord(
+                        record_id="",
+                        module_name=mod_name,
+                        category="attention" if any(k in mod_name for k in ("attn", "attention", "gqa", "mha", "scan")) else "compressor",
+                        family="unified-4models",
+                        version_tag="v1.3.7",
+                        revision=1,
+                        status="active",
+                        timestamp_utc=ts,
+                        git_commit_sha=sha,
+                        generation_method={
+                            "algorithm": "4-Model Unified Evaluation Suite",
+                            "source_artifact": str(us_path.relative_to(repo_root)),
+                        },
+                        experimental_setup={
+                            "backbone": backbone,
+                            "dataset": "SST-2",
+                        },
+                        metrics={
+                            "accuracy": float(acc) if acc else 0.0,
+                            "latency_ms": float(elapsed) if elapsed else 0.0,
+                        },
+                        notes=f"Status: {model_row.get('status')}",
+                    )
+                    ledger.add_or_replace(rec, mode="upsert")
+                    total_ingested += 1
+        except Exception:
+            pass
+
+    # 11. Ingest master_aggregated_results.csv if present
     fcsv = repo_root / "results" / "master_aggregated_results.csv"
     if fcsv.exists():
         sha, ts = get_file_git_provenance(fcsv, repo_root)
