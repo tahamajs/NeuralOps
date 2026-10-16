@@ -54,6 +54,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 19. [Compression Engines (72 Canonical Methods)](#19-compression-engines-72-canonical-methods)
 20. [Triton Kernels (26 Kernel Modules)](#20-triton-kernels-26-kernel-modules)
 21. [Citation & License](#21-citation--license)
+22. [Acknowledgments](#22-acknowledgments)
 
 ---
 
@@ -476,6 +477,37 @@ for step in range(1000):
     out_step = attn(new_token, past_key_value=cache, use_cache=True)
 
 print(f"Total Cache Memory Footprint after 1,000 steps: {cache.memory_mb():.2f} MB (strictly flat!)")
+```
+
+### Workflow 3: Automated Deep Model Compression (FWSVD & AdaSVD)
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+import neuralops
+
+# Load pre-trained base model
+model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
+
+# Compress all linear projections with Fisher-Weighted SVD (r=32, 24x parameter reduction)
+compressor = neuralops.create_compressor("fwsvd", model=model, rank=32)
+compressed_model = compressor.compress()
+
+# Evaluate parameter footprint and verify model integrity
+print(f"Compressed Parameters: {sum(p.numel() for p in compressed_model.parameters()) / 1e6:.1f}M")
+```
+
+### Workflow 4: Command-Line Interface (CLI) Inspection & Benchmarking
+
+```bash
+# Verify canonical registry counts (131 Attentions, 72 Compressors, 26 Triton Kernels)
+neuralops verify
+
+# Interactive hardware roofline analysis on available GPU
+neuralops roofline --device cuda --seq-len 4096
+
+# Launch interactive terminal TUI for inspection
+neuralops ui
 ```
 
 ---
