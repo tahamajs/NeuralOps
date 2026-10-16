@@ -511,8 +511,8 @@ class HLAAttention(BaseAttention):
         B, H, L, d = q.shape
         device = q.device
 
-        q_f = F.elu(q.float()) + 1.0
-        k_f = F.elu(k.float()) + 1.0
+        q_f = q.float()
+        k_f = k.float()
         v_f = v.float()
 
         if reverse:
@@ -545,22 +545,6 @@ class HLAAttention(BaseAttention):
             y_den = torch.matmul(q_f, Z_curr).clamp(min=1e-5)  # (B, H, 1, 1)
             y = y_num / y_den
             return y.to(q.dtype), (S_curr, Z_curr)
-
-        # ---- Accelerated Triton Path ----
-        from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK
-        if not FORCE_PYTORCH_FALLBACK and initial_state is None and q_f.is_cuda and not reverse:
-            try:
-                from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
-                # decay is (1, H, 1, 1), expand to (B, H, L)
-                dec_expanded = gamma.view(1, H, 1).expand(B, H, L).contiguous()
-                y_triton = fused_svd_linear_chunk_scan_triton(
-                    q, k, v, decay=dec_expanded, chunk_size=self.chunk_size, eps=1e-5
-                )
-                # Ensure parity with recurrent normalizer
-                if y_triton is not None and not torch.isnan(y_triton).any():
-                    return y_triton.to(q.dtype), (None, None)
-            except Exception:
-                pass
 
         # ---- Chunked path ----
         C = self.chunk_size
@@ -633,8 +617,8 @@ class HLAAttention(BaseAttention):
             den_inter = qZ * pos_decay  # (B, H, C, 1)
 
             num = num_intra + num_inter
-            den = den_intra + den_inter
-            y_chunk = num / den.clamp(min=1e-5)
+            den = den_intra + den_inter + 1e-5
+            y_chunk = num / den
             outputs.append(y_chunk)
 
             # ---- Update S_prev, Z_prev for next chunk ----
@@ -750,8 +734,9 @@ class HLAAttention(BaseAttention):
             v = repeat_kv(v, self.num_key_value_groups)
 
         # ---- Kernel feature map (ELU + 1) ----
-        q = F.elu(q) + 1.0
-        k = F.elu(k) + 1.0
+        scale = 1.0 / math.sqrt(Dh)
+        q = F.elu(q.float() * scale) + 1.0
+        k = F.elu(k.float()) + 1.0
 
         # ---- [HLA-FIX-01] Decay gate (lora_ prefix) ----
         decay = torch.sigmoid(self.lora_beta).unsqueeze(0)  # (1, H, 1, 1)
