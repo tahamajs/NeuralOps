@@ -133,15 +133,16 @@ class ResultsLedger:
     Provides ACID storage, multi-criteria filtering, version bumping, and plotting.
     """
 
-    def __init__(self, root_dir: Optional[Union[str, Path]] = None):
-        if root_dir is None:
+    def __init__(self, root_dir: Optional[Union[str, Path]] = None, results_dir: Optional[Union[str, Path]] = None):
+        target = root_dir or results_dir
+        if target is None:
             # Locate results directory relative to repo root
             curr = Path(__file__).resolve()
             # neuralops/core/results_ledger.py -> repo_root = parents[2]
             repo_root = curr.parents[2] if len(curr.parents) >= 3 else Path.cwd()
             self.root_dir = repo_root / "results"
         else:
-            self.root_dir = Path(root_dir)
+            self.root_dir = Path(target)
 
         self.registry_dir = self.root_dir / "registry"
         self.by_module_dir = self.root_dir / "by_module"

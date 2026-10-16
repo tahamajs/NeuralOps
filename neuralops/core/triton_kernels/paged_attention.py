@@ -12,36 +12,86 @@ __all__ = ["paged_attention_kernel", "paged_attention_pytorch"]
 if HAS_TRITON and tl is not None:
     @triton.jit
     def paged_attention_fwd_kernel(
-        Q, _KCACHE, _VCACHE, BLOCK_TABLE, SEQ_LENS, OUT,
+        Q_ptr, K_CACHE_ptr, V_CACHE_ptr, BLOCK_TABLE_ptr, SEQ_LENS_ptr, OUT_ptr,
         stride_qb, stride_qh, stride_qd,
-        _stride_kblk, _stride_kidx, stride_kh, stride_kd,
-        _stride_vblk, _stride_vidx, stride_vh, stride_vd,
+        stride_kblk, stride_kidx, stride_kh, stride_kd,
+        stride_vblk, stride_vidx, stride_vh, stride_vd,
+        stride_bt_b, stride_bt_idx,
         stride_ob, stride_oh, stride_od,
+        H,
         BLOCK_SIZE: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
+        """
+        Fused Paged Attention Decode Kernel:
+        Gather physical blocks via BLOCK_TABLE and compute online softmax in SRAM.
+        """
         pid_b = tl.program_id(0)
         pid_h = tl.program_id(1)
 
-        seq_len = tl.load(SEQ_LENS + pid_b)
+        seq_len = tl.load(SEQ_LENS_ptr + pid_b)
+        if seq_len <= 0:
+            return
+
         num_blocks = tl.cdiv(seq_len, BLOCK_SIZE)
-
         offs_d = tl.arange(0, BLOCK_D)
-        _q = tl.load(Q + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd)
 
-        _m_i = float("-inf")
-        _l_i = 0.0
+        # Load query vector q: [BLOCK_D]
+        q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd
+        q = tl.load(q_ptrs).to(tl.float32)
+
+        sm_scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
+
+        # Online softmax state in registers
+        m_i = -1e4
+        l_i = 0.0
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
 
-        _scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
-
         for i in range(num_blocks):
-            _physical_block = tl.load(BLOCK_TABLE + pid_b * 64 + i)
-            # Load block keys
-            # Compute partial softmax
-            pass
+            phys_block = tl.load(BLOCK_TABLE_ptr + pid_b * stride_bt_b + i * stride_bt_idx)
 
-        tl.store(OUT + pid_b * stride_ob + pid_h * stride_oh + offs_d * stride_od, acc)
+            offs_tok = i * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+            mask_tok = offs_tok < seq_len
+
+            # Load K block: [BLOCK_SIZE, BLOCK_D]
+            k_ptrs = (
+                K_CACHE_ptr
+                + phys_block * stride_kblk
+                + tl.arange(0, BLOCK_SIZE)[:, None] * stride_kidx
+                + pid_h * stride_kh
+                + offs_d[None, :] * stride_kd
+            )
+            k = tl.load(k_ptrs, mask=mask_tok[:, None], other=0.0).to(tl.float32)
+
+            # Dot-product scores: [BLOCK_SIZE]
+            scores = tl.sum(q[None, :] * k, axis=1) * sm_scale
+            scores = tl.where(mask_tok, scores, -1e4)
+
+            # Online softmax update
+            m_curr = tl.maximum(m_i, tl.max(scores, axis=0))
+            alpha = tl.exp(m_i - m_curr)
+            p = tl.exp(scores - m_curr)
+            l_curr = l_i * alpha + tl.sum(p, axis=0)
+            acc = acc * alpha
+
+            # Load V block: [BLOCK_SIZE, BLOCK_D]
+            v_ptrs = (
+                V_CACHE_ptr
+                + phys_block * stride_vblk
+                + tl.arange(0, BLOCK_SIZE)[:, None] * stride_vidx
+                + pid_h * stride_vh
+                + offs_d[None, :] * stride_vd
+            )
+            v = tl.load(v_ptrs, mask=mask_tok[:, None], other=0.0).to(tl.float32)
+
+            acc += tl.sum(p[:, None] * v, axis=0)
+
+            m_i = m_curr
+            l_i = l_curr
+
+        out = acc / tl.maximum(l_i, 1e-6)
+        out_ptrs = OUT_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_d * stride_od
+        tl.store(out_ptrs, out.to(OUT_ptr.dtype.element_ty))
 
 
 def paged_attention_pytorch(
@@ -93,6 +143,33 @@ def paged_attention_kernel(
     block_size: int = 16,
 ) -> torch.Tensor:
     """Dispatches paged attention to Triton kernel if supported, else PyTorch fallback."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    B, H, D = q.shape
+    if (
+        HAS_TRITON
+        and not FORCE_PYTORCH_FALLBACK
+        and q.is_cuda
+        and k_cache.is_cuda
+        and v_cache.is_cuda
+        and D in (16, 32, 64, 128, 256)
+    ):
+        try:
+            out = torch.empty_like(q)
+            grid = (B, H)
+            paged_attention_fwd_kernel[grid](
+                q, k_cache, v_cache, block_tables, seq_lens, out,
+                q.stride(0), q.stride(1), q.stride(2),
+                k_cache.stride(0), k_cache.stride(1), k_cache.stride(2), k_cache.stride(3),
+                v_cache.stride(0), v_cache.stride(1), v_cache.stride(2), v_cache.stride(3),
+                block_tables.stride(0), block_tables.stride(1),
+                out.stride(0), out.stride(1), out.stride(2),
+                H,
+                BLOCK_SIZE=block_size,
+                BLOCK_D=D,
+            )
+            return out
+        except Exception:
+            pass
     return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
 
 

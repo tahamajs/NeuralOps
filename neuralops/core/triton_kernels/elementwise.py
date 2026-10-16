@@ -962,6 +962,44 @@ def fused_aegis_multibranch_gate_norm_pytorch(
     return out
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _aegis_multibranch_gate_norm_2branch_kernel(
+        B0_ptr, B1_ptr, W_ptr, OUT_ptr,
+        total_tokens, D: tl.constexpr, eps,
+        stride_b0n, stride_b0d,
+        stride_b1n, stride_b1d,
+        stride_wn, stride_wm,
+        stride_on, stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        if pid >= total_tokens:
+            return
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask = offs_d < D
+
+        # Load weights
+        w0 = tl.load(W_ptr + pid * stride_wn + 0 * stride_wm).to(tl.float32)
+        w1 = tl.load(W_ptr + pid * stride_wn + 1 * stride_wm).to(tl.float32)
+
+        # Branch 0
+        b0 = tl.load(B0_ptr + pid * stride_b0n + offs_d * stride_b0d, mask=mask, other=0.0).to(tl.float32)
+        mean_sq0 = tl.sum(b0 * b0, axis=0) / tl.cast(D, tl.float32)
+        inv_rms0 = tl.rsqrt(mean_sq0 + eps)
+        normed_b0 = b0 * inv_rms0
+
+        # Branch 1
+        b1 = tl.load(B1_ptr + pid * stride_b1n + offs_d * stride_b1d, mask=mask, other=0.0).to(tl.float32)
+        mean_sq1 = tl.sum(b1 * b1, axis=0) / tl.cast(D, tl.float32)
+        inv_rms1 = tl.rsqrt(mean_sq1 + eps)
+        normed_b1 = b1 * inv_rms1
+
+        out = normed_b0 * w0 + normed_b1 * w1
+        tl.store(OUT_ptr + pid * stride_on + offs_d * stride_od, out.to(OUT_ptr.dtype.element_ty), mask=mask)
+
+
 def fused_aegis_multibranch_gate_norm_triton(
     branches: list[torch.Tensor],
     gate_logits: torch.Tensor,
@@ -969,11 +1007,38 @@ def fused_aegis_multibranch_gate_norm_triton(
     eps: float = 1e-5,
 ) -> torch.Tensor:
     """Fused Aegis multi-branch gating and normalization in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
 
-    if HAS_TRITON and branches[0].is_cuda:
+    M = len(branches)
+    if (
+        HAS_TRITON
+        and not FORCE_PYTORCH_FALLBACK
+        and branches[0].is_cuda
+        and M == 2
+        and branches[0].shape == branches[1].shape
+    ):
         try:
-            return fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau, eps)
+            orig_shape = branches[0].shape
+            D = orig_shape[-1]
+            b0_2d = branches[0].contiguous().view(-1, D)
+            b1_2d = branches[1].contiguous().view(-1, D)
+            total_tokens = b0_2d.shape[0]
+
+            weights = F.softmax(gate_logits.float() / max(tau, 1e-4), dim=-1).view(-1, M).contiguous()
+            out_2d = torch.empty_like(b0_2d)
+
+            block_d = triton.next_power_of_2(D)
+            grid = (total_tokens,)
+            _aegis_multibranch_gate_norm_2branch_kernel[grid](
+                b0_2d, b1_2d, weights, out_2d,
+                total_tokens, D=D, eps=float(eps),
+                stride_b0n=b0_2d.stride(0), stride_b0d=b0_2d.stride(1),
+                stride_b1n=b1_2d.stride(0), stride_b1d=b1_2d.stride(1),
+                stride_wn=weights.stride(0), stride_wm=weights.stride(1),
+                stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                BLOCK_D=block_d,
+            )
+            return out_2d.view(orig_shape)
         except Exception:
             pass
     return fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau, eps)
@@ -992,16 +1057,59 @@ def fused_split_head_hybrid_concat_norm_pytorch(
     return torch.cat(normed_groups, dim=-1)
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _split_head_rmsnorm_kernel(
+        X_ptr, OUT_ptr,
+        total_rows, D: tl.constexpr, eps,
+        stride_xn, stride_xd,
+        stride_on, stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        if pid >= total_rows:
+            return
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask = offs_d < D
+
+        x = tl.load(X_ptr + pid * stride_xn + offs_d * stride_xd, mask=mask, other=0.0).to(tl.float32)
+        sq = x * x
+        mean_sq = tl.sum(sq, axis=0) / tl.cast(D, tl.float32)
+        inv_rms = tl.rsqrt(mean_sq + eps)
+
+        normed_x = x * inv_rms
+        tl.store(OUT_ptr + pid * stride_on + offs_d * stride_od, normed_x.to(OUT_ptr.dtype.element_ty), mask=mask)
+
+
 def fused_split_head_hybrid_concat_norm_triton(
     head_groups: list[torch.Tensor],
     eps: float = 1e-5,
 ) -> torch.Tensor:
     """Fused heterogeneous split-head Group-RMSNorm in GPU SRAM."""
-    from neuralops.core.triton_kernels._types import HAS_TRITON
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
 
-    if HAS_TRITON and head_groups[0].is_cuda:
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and head_groups[0].is_cuda:
         try:
-            return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)
+            normed_groups = []
+            for g in head_groups:
+                orig_shape = g.shape
+                D = orig_shape[-1]
+                g_2d = g.contiguous().view(-1, D)
+                total_rows = g_2d.shape[0]
+                out_2d = torch.empty_like(g_2d)
+
+                block_d = triton.next_power_of_2(D)
+                grid = (total_rows,)
+                _split_head_rmsnorm_kernel[grid](
+                    g_2d, out_2d,
+                    total_rows, D=D, eps=float(eps),
+                    stride_xn=g_2d.stride(0), stride_xd=g_2d.stride(1),
+                    stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                    BLOCK_D=block_d,
+                )
+                normed_groups.append(out_2d.view(orig_shape))
+            return torch.cat(normed_groups, dim=-1)
         except Exception:
             pass
     return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)

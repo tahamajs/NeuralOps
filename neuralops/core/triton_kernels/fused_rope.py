@@ -11,13 +11,13 @@ __all__ = ["fused_rope_triton", "fused_rope_embedding_kernel"]
 if HAS_TRITON and tl is not None:
     @triton.jit
     def fused_rope_fwd_kernel(
-        Q, K, COS, SIN, OUT_Q, _OUT_K,
+        Q_ptr, K_ptr, COS_ptr, SIN_ptr, OUT_Q_ptr, OUT_K_ptr,
         stride_qb, stride_qh, stride_qn, stride_qd,
         stride_kb, stride_kh, stride_kn, stride_kd,
-        _stride_cos_b, stride_cos_n, stride_cos_d,
-        _stride_sin_b, stride_sin_n, stride_sin_d,
+        stride_cos_b, stride_cos_n, stride_cos_d,
+        stride_sin_b, stride_sin_n, stride_sin_d,
         stride_oqb, stride_oqh, stride_oqn, stride_oqd,
-        _stride_okb, _stride_okh, _stride_okn, _stride_okd,
+        stride_okb, stride_okh, stride_okn, stride_okd,
         H, N, D: tl.constexpr, HALF_D: tl.constexpr,
         BLOCK_M: tl.constexpr,
     ):
@@ -33,18 +33,28 @@ if HAS_TRITON and tl is not None:
         mask_n = offs_n[:, None] < N
 
         # Load Q halves
-        q1 = tl.load(Q + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d1[None, :] * stride_qd, mask=mask_n)
-        q2 = tl.load(Q + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d2[None, :] * stride_qd, mask=mask_n)
+        q1 = tl.load(Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d1[None, :] * stride_qd, mask=mask_n, other=0.0)
+        q2 = tl.load(Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_n[:, None] * stride_qn + offs_d2[None, :] * stride_qd, mask=mask_n, other=0.0)
+
+        # Load K halves
+        k1 = tl.load(K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d1[None, :] * stride_kd, mask=mask_n, other=0.0)
+        k2 = tl.load(K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d2[None, :] * stride_kd, mask=mask_n, other=0.0)
 
         # Load cos, sin
-        cos1 = tl.load(COS + offs_n[:, None] * stride_cos_n + offs_d1[None, :] * stride_cos_d, mask=mask_n)
-        sin1 = tl.load(SIN + offs_n[:, None] * stride_sin_n + offs_d1[None, :] * stride_sin_d, mask=mask_n)
+        cos1 = tl.load(COS_ptr + offs_n[:, None] * stride_cos_n + offs_d1[None, :] * stride_cos_d, mask=mask_n, other=0.0)
+        sin1 = tl.load(SIN_ptr + offs_n[:, None] * stride_sin_n + offs_d1[None, :] * stride_sin_d, mask=mask_n, other=0.0)
 
         oq1 = q1 * cos1 - q2 * sin1
         oq2 = q2 * cos1 + q1 * sin1
 
-        tl.store(OUT_Q + i_b * stride_oqb + i_h * stride_oqh + offs_n[:, None] * stride_oqn + offs_d1[None, :] * stride_oqd, oq1, mask=mask_n)
-        tl.store(OUT_Q + i_b * stride_oqb + i_h * stride_oqh + offs_n[:, None] * stride_oqn + offs_d2[None, :] * stride_oqd, oq2, mask=mask_n)
+        ok1 = k1 * cos1 - k2 * sin1
+        ok2 = k2 * cos1 + k1 * sin1
+
+        tl.store(OUT_Q_ptr + i_b * stride_oqb + i_h * stride_oqh + offs_n[:, None] * stride_oqn + offs_d1[None, :] * stride_oqd, oq1, mask=mask_n)
+        tl.store(OUT_Q_ptr + i_b * stride_oqb + i_h * stride_oqh + offs_n[:, None] * stride_oqn + offs_d2[None, :] * stride_oqd, oq2, mask=mask_n)
+
+        tl.store(OUT_K_ptr + i_b * stride_okb + i_h * stride_okh + offs_n[:, None] * stride_okn + offs_d1[None, :] * stride_okd, ok1, mask=mask_n)
+        tl.store(OUT_K_ptr + i_b * stride_okb + i_h * stride_okh + offs_n[:, None] * stride_okn + offs_d2[None, :] * stride_okd, ok2, mask=mask_n)
 
 
 def _apply_rope_rotation(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
@@ -109,6 +119,40 @@ def fused_rope_embedding_kernel(
     """Applies fused RoPE with full autograd backward support."""
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad:
         return _FusedRoPEFunction.apply(q, k, cos, sin)
+
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if (
+        HAS_TRITON
+        and not FORCE_PYTORCH_FALLBACK
+        and q.is_cuda
+        and k.is_cuda
+        and q.shape[-1] in (32, 64, 128, 256)
+        and q.shape[-1] == k.shape[-1]
+    ):
+        try:
+            B, H, N, D = q.shape
+            half_d = D // 2
+            out_q = torch.empty_like(q)
+            out_k = torch.empty_like(k)
+            BLOCK_M = 64
+            grid = (triton.cdiv(N, BLOCK_M), B * H)
+            cos_2d = cos.view(-1, cos.shape[-1]) if cos.dim() >= 2 else cos
+            sin_2d = sin.view(-1, sin.shape[-1]) if sin.dim() >= 2 else sin
+            fused_rope_fwd_kernel[grid](
+                q, k, cos_2d, sin_2d, out_q, out_k,
+                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                0, cos_2d.stride(0), cos_2d.stride(1),
+                0, sin_2d.stride(0), sin_2d.stride(1),
+                out_q.stride(0), out_q.stride(1), out_q.stride(2), out_q.stride(3),
+                out_k.stride(0), out_k.stride(1), out_k.stride(2), out_k.stride(3),
+                H, N, D=D, HALF_D=half_d,
+                BLOCK_M=BLOCK_M,
+            )
+            return out_q, out_k
+        except Exception:
+            pass
+
     return fused_rope_embedding(q, k, cos, sin)
 
 
@@ -143,6 +187,44 @@ def fused_unified_rope_offset_pytorch(
     return rx
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _unified_rope_offset_kernel(
+        X_ptr, COS_ptr, SIN_ptr, OUT_ptr,
+        total_tokens, D: tl.constexpr, ROTARY_DIM: tl.constexpr, HALF_ROTARY: tl.constexpr,
+        stride_xn, stride_xd,
+        stride_cn, stride_cd,
+        stride_sn, stride_sd,
+        stride_on, stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid = tl.program_id(0)
+        if pid >= total_tokens:
+            return
+
+        offs_d1 = tl.arange(0, HALF_ROTARY)
+        offs_d2 = HALF_ROTARY + tl.arange(0, HALF_ROTARY)
+
+        x1 = tl.load(X_ptr + pid * stride_xn + offs_d1 * stride_xd)
+        x2 = tl.load(X_ptr + pid * stride_xn + offs_d2 * stride_xd)
+
+        cos = tl.load(COS_ptr + pid * stride_cn + offs_d1 * stride_cd)
+        sin = tl.load(SIN_ptr + pid * stride_sn + offs_d1 * stride_sd)
+
+        rx1 = x1 * cos - x2 * sin
+        rx2 = x2 * cos + x1 * sin
+
+        tl.store(OUT_ptr + pid * stride_on + offs_d1 * stride_od, rx1)
+        tl.store(OUT_ptr + pid * stride_on + offs_d2 * stride_od, rx2)
+
+        # Copy unrotated pass-through tail if ROTARY_DIM < D
+        if ROTARY_DIM < D:
+            offs_pass = ROTARY_DIM + tl.arange(0, BLOCK_D)
+            mask_pass = offs_pass < D
+            x_pass = tl.load(X_ptr + pid * stride_xn + offs_pass * stride_xd, mask=mask_pass, other=0.0)
+            tl.store(OUT_ptr + pid * stride_on + offs_pass * stride_od, x_pass, mask=mask_pass)
+
+
 def fused_unified_rope_offset_triton(
     x: torch.Tensor,
     cos: torch.Tensor,
@@ -150,6 +232,42 @@ def fused_unified_rope_offset_triton(
     rotary_dim: int,
 ) -> torch.Tensor:
     """Fused RoPE coordinate rotation with past offset in GPU SRAM."""
+    from neuralops.core.triton_kernels._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if (
+        HAS_TRITON
+        and not FORCE_PYTORCH_FALLBACK
+        and x.is_cuda
+        and rotary_dim % 2 == 0
+        and rotary_dim in (16, 32, 64, 128, 256)
+    ):
+        try:
+            orig_shape = x.shape
+            D = orig_shape[-1]
+            x_2d = x.contiguous().view(-1, D)
+            total_tokens = x_2d.shape[0]
+            out_2d = torch.empty_like(x_2d)
+
+            cos_2d = cos.view(-1, cos.shape[-1]).contiguous() if cos.dim() >= 2 else cos.contiguous()
+            sin_2d = sin.view(-1, sin.shape[-1]).contiguous() if sin.dim() >= 2 else sin.contiguous()
+
+            half_rotary = rotary_dim // 2
+            pass_dim = max(1, D - rotary_dim)
+            block_d = triton.next_power_of_2(pass_dim)
+
+            grid = (total_tokens,)
+            _unified_rope_offset_kernel[grid](
+                x_2d, cos_2d, sin_2d, out_2d,
+                total_tokens, D=D, ROTARY_DIM=rotary_dim, HALF_ROTARY=half_rotary,
+                stride_xn=x_2d.stride(0), stride_xd=x_2d.stride(1),
+                stride_cn=cos_2d.stride(0), stride_cd=cos_2d.stride(1),
+                stride_sn=sin_2d.stride(0), stride_sd=sin_2d.stride(1),
+                stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                BLOCK_D=block_d,
+            )
+            return out_2d.view(orig_shape)
+        except Exception:
+            pass
+
     return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
 
 
