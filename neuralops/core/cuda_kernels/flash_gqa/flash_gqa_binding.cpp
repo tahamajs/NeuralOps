@@ -1,5 +1,13 @@
 #include <torch/extension.h>
-#include "flash_gqa.cuh"
+
+void flash_gqa_fwd_cuda(
+    torch::Tensor& out,
+    const torch::Tensor& q,
+    const torch::Tensor& k,
+    const torch::Tensor& v,
+    bool is_causal,
+    float scale
+);
 
 torch::Tensor flash_gqa_fwd(
     torch::Tensor q,
