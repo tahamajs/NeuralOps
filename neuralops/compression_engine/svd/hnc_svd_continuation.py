@@ -405,12 +405,12 @@ def solve_layerwise_kronecker_nullspace_step(
     The exact soft null-space projected step is computed in closed form:
     D_W = grad_phi * (I_{d_in} + (1/mu_X) H_X)^{-1}.
     """
-    d_in = W.shape[1]
     orig_dtype = W.dtype
     orig_device = W.device
 
     Hx_f32 = input_covariance_Hx.float().to(orig_device)
     grad_phi_f32 = grad_phi.float().to(orig_device)
+    d_in = Hx_f32.shape[0]
 
     # Compute top eigenvalue of Hx
     lambda_max = float(torch.linalg.eigvalsh(Hx_f32)[-1].item())
@@ -420,7 +420,12 @@ def solve_layerwise_kronecker_nullspace_step(
     I_d = torch.eye(d_in, device=orig_device, dtype=torch.float32)
     resolvent = torch.linalg.inv(I_d + (Hx_f32 / mu_X))
 
-    D_W = torch.matmul(grad_phi_f32, resolvent)
+    if grad_phi_f32.shape[1] == d_in:
+        D_W = torch.matmul(grad_phi_f32, resolvent)
+    elif grad_phi_f32.shape[0] == d_in:
+        D_W = torch.matmul(resolvent, grad_phi_f32)
+    else:
+        D_W = grad_phi_f32
     return D_W.to(dtype=orig_dtype), resolvent.to(dtype=orig_dtype)
 
 
@@ -574,8 +579,12 @@ class HessianNullSpaceSVDContinuation:
         # 2. Identify target linear weights
         target_layers = {}
         for name, mod in self.model.named_modules():
+            cls_name = mod.__class__.__name__.lower()
+            is_linear_like = isinstance(mod, nn.Linear) or "conv1d" in cls_name or hasattr(mod, "nf")
+            if not is_linear_like or not hasattr(mod, "weight") or mod.weight is None or mod.weight.ndim != 2:
+                continue
             if target_linear_modules is not None:
-                if any(t in name for t in target_linear_modules) and isinstance(mod, nn.Linear):
+                if any(t in name for t in target_linear_modules):
                     target_layers[name] = mod
             else:
                 name_lower = name.lower()
@@ -588,11 +597,12 @@ class HessianNullSpaceSVDContinuation:
                         "pooler",
                         "embed",
                         "logits_processor",
+                        "wte",
+                        "wpe",
                     ]
                 )
-                if not is_critical and isinstance(mod, nn.Linear) and mod.weight.ndim == 2:
-                    if min(mod.weight.shape) > 1:
-                        target_layers[name] = mod
+                if not is_critical and min(mod.weight.shape) > 1:
+                    target_layers[name] = mod
 
         if not target_layers:
             logger.warning("No target linear modules found for HNC SVD continuation.")
@@ -760,8 +770,14 @@ class HessianNullSpaceSVDContinuation:
         # 5. Generalized Eckart-Young Cholesky-Whitened SVD Truncation & Bias Drift Compensation
         low_rank_factors = {}
         for name, mod in target_layers.items():
-            W_steered = mod.weight.data.float()
-            W_0 = initial_weights[name].float()
+            cls_name = mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(mod, "nf")
+            if is_conv1d:
+                W_steered = mod.weight.data.t().float()
+                W_0 = initial_weights[name].t().float()
+            else:
+                W_steered = mod.weight.data.float()
+                W_0 = initial_weights[name].float()
             d_out, d_in = W_steered.shape
             r = max(1, min(self.target_rank, min(d_out, d_in) - 1)) if min(d_out, d_in) > 1 else 1
 
@@ -798,13 +814,16 @@ class HessianNullSpaceSVDContinuation:
                 if mod.bias is not None:
                     mod.bias.data.add_(drift_bias.to(dtype=mod.bias.dtype))
 
-            mod.weight.data.copy_(W_hat.to(dtype=mod.weight.dtype))
-            low_rank_factors[name] = (A_r, B_r, mod)
+            if is_conv1d:
+                mod.weight.data.copy_(W_hat.t().to(dtype=mod.weight.dtype))
+            else:
+                mod.weight.data.copy_(W_hat.to(dtype=mod.weight.dtype))
+            low_rank_factors[name] = (A_r, B_r, mod, is_conv1d)
 
         # 6. Stage D: Post-Truncation Low-Rank Factor Function-Restoration Steps
         # Invariant: rank(W_hat) <= r strictly preserved because W_hat = A_r @ B_r
         optimizer_factors = []
-        for name, (A_r, B_r, mod) in low_rank_factors.items():
+        for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
             A_r.requires_grad_(True)
             B_r.requires_grad_(True)
             optimizer_factors.extend([A_r, B_r])
@@ -812,7 +831,7 @@ class HessianNullSpaceSVDContinuation:
         if optimizer_factors and self.stage_d_steps > 0:
             # Temporarily replace mod.weight parameter with dynamic low-rank matrix product
             orig_params = {}
-            for name, (A_r, B_r, mod) in low_rank_factors.items():
+            for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
                 orig_params[name] = mod._parameters.pop("weight")
 
             try:
@@ -824,8 +843,9 @@ class HessianNullSpaceSVDContinuation:
                 )
                 for step_d in range(m_post):
                     post_opt.zero_grad()
-                    for name, (A_r, B_r, mod) in low_rank_factors.items():
-                        mod.weight = torch.matmul(A_r, B_r)
+                    for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
+                        prod = torch.matmul(A_r, B_r)
+                        mod.weight = prod.t() if is_conv1d else prod
 
                     loss_post = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device)
                     loss_post.backward()
@@ -839,10 +859,11 @@ class HessianNullSpaceSVDContinuation:
             finally:
                 # Ensure mod.weight is always properly restored as nn.Parameter
                 with torch.no_grad():
-                    for name, (A_r, B_r, mod) in low_rank_factors.items():
+                    for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
                         if hasattr(mod, "weight"):
                             del mod.weight
-                        final_W = torch.matmul(A_r.data, B_r.data).to(dtype=orig_params[name].dtype)
+                        prod = torch.matmul(A_r.data, B_r.data)
+                        final_W = (prod.t() if is_conv1d else prod).to(dtype=orig_params[name].dtype)
                         mod.register_parameter("weight", nn.Parameter(final_W))
 
         final_loss = compute_function_matching_loss(self.model, anchor_outputs, batches, self.device).item()
