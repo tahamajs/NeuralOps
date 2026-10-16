@@ -19,6 +19,8 @@ from neuralops.core.cuda_kernels._utils import (
     get_device_capability,
     check_cuda_error,
 )
+
+# 28 Native CUDA C++ Packages
 from neuralops.core.cuda_kernels.low_rank_svd import (
     fused_lowrank_gated_gemm,
     fused_lowrank_gated_gemm_pytorch_ref,
@@ -59,6 +61,48 @@ from neuralops.core.cuda_kernels.fused_ce import (
     fused_cross_entropy,
     fused_cross_entropy_pytorch_ref,
 )
+from neuralops.core.cuda_kernels.rpca_sparse_svd import (
+    rpca_sparse_svd_gemm,
+    rpca_sparse_svd_gemm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.tt_contraction import (
+    tt_contraction,
+    tt_contraction_pytorch_ref,
+    tt_linear,
+    tt_linear_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.hadamard_gemm import (
+    hadamard_w4a16_gemm,
+    hadamard_w4a16_gemm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.act_scale_gemm import (
+    act_scale_quant_gemm,
+    act_scale_quant_gemm_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.latent_kv_attn import (
+    latent_kv_cache_attention,
+    latent_kv_cache_attention_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.entropy_gate import (
+    spectral_entropy_svd_gate,
+    spectral_entropy_svd_gate_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.fused_kd import (
+    fused_kd_loss,
+    fused_kd_loss_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.state_update import (
+    recurrent_linear_step,
+    recurrent_linear_step_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.flash_decoding import (
+    flash_decoding_attention,
+    flash_decoding_attention_pytorch_ref,
+)
+from neuralops.core.cuda_kernels.fms_scan import (
+    fms_scan,
+    fms_scan_pytorch_ref,
+)
 
 __all__ = [
     "load_cuda_module",
@@ -70,7 +114,7 @@ __all__ = [
     "is_cuda_available",
     "get_device_capability",
     "check_cuda_error",
-    # 10 Flagship CUDA C++ Packages
+    # 28 Flagship CUDA C++ Operators
     "fused_lowrank_gated_gemm",
     "fused_lowrank_gated_gemm_pytorch_ref",
     "chunked_delta_gate_scan",
@@ -91,4 +135,26 @@ __all__ = [
     "linear_attention_pytorch_ref",
     "fused_cross_entropy",
     "fused_cross_entropy_pytorch_ref",
+    "rpca_sparse_svd_gemm",
+    "rpca_sparse_svd_gemm_pytorch_ref",
+    "tt_contraction",
+    "tt_contraction_pytorch_ref",
+    "tt_linear",
+    "tt_linear_pytorch_ref",
+    "hadamard_w4a16_gemm",
+    "hadamard_w4a16_gemm_pytorch_ref",
+    "act_scale_quant_gemm",
+    "act_scale_quant_gemm_pytorch_ref",
+    "latent_kv_cache_attention",
+    "latent_kv_cache_attention_pytorch_ref",
+    "spectral_entropy_svd_gate",
+    "spectral_entropy_svd_gate_pytorch_ref",
+    "fused_kd_loss",
+    "fused_kd_loss_pytorch_ref",
+    "recurrent_linear_step",
+    "recurrent_linear_step_pytorch_ref",
+    "flash_decoding_attention",
+    "flash_decoding_attention_pytorch_ref",
+    "fms_scan",
+    "fms_scan_pytorch_ref",
 ]
