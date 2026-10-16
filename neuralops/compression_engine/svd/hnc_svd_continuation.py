@@ -431,14 +431,16 @@ class HessianNullSpaceSVDContinuation:
         model: Optional[nn.Module] = None,
         target_rank: int = 32,
         mode: str = "kronecker",  # "kronecker" or "global_cg"
-        walk_steps: int = 25,
-        step_size_eta: float = 0.05,
-        restore_steps_m: int = 6,
+        walk_steps: int = 600,
+        step_size_eta: float = 0.03,
+        restore_steps_m: int = 12,
         restore_lr: float = 1e-3,
-        loss_ceiling_tau: float = 5e-3,
-        mu_rel: float = 1e-5,
+        loss_ceiling_tau: float = 1e-2,
+        mu_rel: float = 1e-7,
         gamma_nuc: float = 1e-3,
         gamma_bump: float = 0.05,
+        relinearize_every: int = 1,
+        anneal_sigma: bool = True,
         device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
@@ -455,6 +457,8 @@ class HessianNullSpaceSVDContinuation:
         self.mu_rel = mu_rel
         self.gamma_nuc = gamma_nuc
         self.gamma_bump = gamma_bump
+        self.relinearize_every = relinearize_every
+        self.anneal_sigma = anneal_sigma
         self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
 
     def run_continuation(
@@ -613,18 +617,62 @@ class HessianNullSpaceSVDContinuation:
         step_history = []
         cur_eta = self.eta
 
+        # Precompute initial tail sigma for annealed schedule (Appendix F.6)
+        initial_sigma_tildes = {}
+        if self.anneal_sigma:
+            for name, mod in target_layers.items():
+                _, S_init, _ = torch.linalg.svd(mod.weight.data.float(), full_matrices=False)
+                r_clamped = min(self.target_rank, len(S_init) - 1)
+                tail_init = S_init[r_clamped:]
+                med = float(torch.median(tail_init).item()) if len(tail_init) > 0 else 0.5
+                initial_sigma_tildes[name] = max(med, 1e-4)
+
         for step in range(self.walk_steps):
             # Backup weights for rollback on rejection
             saved_weights = {name: mod.weight.data.clone() for name, mod in target_layers.items()}
 
-            # A. PREDICT: Scale-Invariant Null-Space Step
+            # Per-step relinearization if requested
+            if self.relinearize_every > 0 and step > 0 and step % self.relinearize_every == 0:
+                with torch.no_grad():
+                    relin_inputs = {name: [] for name in target_layers}
+                    r_hooks = []
+                    for name, mod in target_layers.items():
+                        def _rhook(m, inp, out, layer_name=name):
+                            relin_inputs[layer_name].append(inp[0].detach())
+                        r_hooks.append(mod.register_forward_hook(_rhook))
+                    for b in batches:
+                        if isinstance(b, dict):
+                            _ = self.model(**b)
+                        elif isinstance(b, (list, tuple)):
+                            _ = self.model(*b)
+                        else:
+                            _ = self.model(b)
+                    for h in r_hooks:
+                        h.remove()
+                    for name, inps in relin_inputs.items():
+                        if inps:
+                            flat_inps = torch.cat([inp.reshape(-1, inp.shape[-1]) for inp in inps], dim=0).float()
+                            N_tok = flat_inps.shape[0]
+                            input_covariances[name] = torch.matmul(flat_inps.t(), flat_inps) / max(N_tok, 1)
+
+            # Compute annealed sigma scale for current step (starts at median, shrinks to 10%)
+            alpha_step = step / float(max(self.walk_steps - 1, 1))
+
+            # A. PREDICT: Scale-Invariant Null-Space Step with Annealed Sigma
             for name, mod in target_layers.items():
                 W = mod.weight.data
+                sigma_tilde_val = None
+                if self.anneal_sigma and name in initial_sigma_tildes:
+                    s_start = initial_sigma_tildes[name]
+                    s_end = 0.1 * s_start
+                    sigma_tilde_val = s_start * ((s_end / s_start) ** alpha_step)
+
                 _, grad_phi, stats = compute_spectral_tail_potential_and_gradient(
                     W,
                     rank=self.target_rank,
                     gamma_nuc=self.gamma_nuc,
                     gamma_bump=self.gamma_bump,
+                    sigma_tilde=sigma_tilde_val,
                 )
 
                 if name in input_covariances and self.mode == "kronecker":
@@ -763,5 +811,9 @@ class HessianNullSpaceSVDContinuation:
             "final_function_loss": final_loss,
             "target_layers_count": len(target_layers),
             "step_history": step_history,
+            "low_rank_factors": {
+                name: (A_r.data.clone(), B_r.data.clone())
+                for name, (A_r, B_r, _) in low_rank_factors.items()
+            },
         }
 
