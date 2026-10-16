@@ -7,6 +7,7 @@ and permuted/dropped slot (-1) guards.
 import pytest
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels.moe_routing import (
     moe_dispatch_gather,
