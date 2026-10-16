@@ -466,6 +466,8 @@ class GatedDeltaNet(BaseAttention):
         if source_attn is not None:
             if getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                 is_dec = True
+        if (config is None or getattr(config, "_is_synthetic", False)) and source_attn is None:
+            is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
 
