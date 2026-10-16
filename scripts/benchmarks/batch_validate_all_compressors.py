@@ -470,11 +470,22 @@ def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, dev
         ppl = None
         if model_name == "roberta":
             ids, mask = heldout
-            out = model(ids, attention_mask=mask).logits
+            b_size = 32
+            out_list = []
+            for i in range(0, len(ids), b_size):
+                b_ids = ids[i : i + b_size]
+                b_mask = mask[i : i + b_size]
+                out_list.append(model(b_ids, attention_mask=b_mask).logits)
+            out = torch.cat(out_list, dim=0)
             if heldout_labels is not None:
                 acc = (out.argmax(-1) == heldout_labels).float().mean().item()
         elif model_name == "gpt2":
-            out = model(heldout).logits
+            b_size = 4
+            out_list = []
+            for i in range(0, len(heldout), b_size):
+                b_ids = heldout[i : i + b_size]
+                out_list.append(model(b_ids).logits)
+            out = torch.cat(out_list, dim=0)
             loss = nn.functional.cross_entropy(out[:, :-1].reshape(-1, out.size(-1)), heldout[:, 1:].reshape(-1))
             ppl = float(torch.exp(loss).item())
         else:
@@ -657,11 +668,22 @@ def run_batch(
         with torch.no_grad():
             if model_name == "roberta":
                 ids, mask = heldout
-                y_anchor = anchor(ids, attention_mask=mask).logits
+                b_size = 32
+                y_list = []
+                for i in range(0, len(ids), b_size):
+                    b_ids = ids[i : i + b_size]
+                    b_mask = mask[i : i + b_size]
+                    y_list.append(anchor(b_ids, attention_mask=b_mask).logits)
+                y_anchor = torch.cat(y_list, dim=0)
                 acc_anchor = (y_anchor.argmax(-1) == heldout_labels).float().mean().item()
                 logger.info("Anchor RoBERTa heldout accuracy: %.4f", acc_anchor)
             elif model_name == "gpt2":
-                y_anchor = anchor(heldout).logits
+                b_size = 4
+                y_list = []
+                for i in range(0, len(heldout), b_size):
+                    b_ids = heldout[i : i + b_size]
+                    y_list.append(anchor(b_ids).logits)
+                y_anchor = torch.cat(y_list, dim=0)
                 loss = nn.functional.cross_entropy(y_anchor[:, :-1].reshape(-1, y_anchor.size(-1)), heldout[:, 1:].reshape(-1))
                 logger.info("Anchor GPT-2 heldout PPL: %.2f", torch.exp(loss).item())
             else:
