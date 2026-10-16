@@ -25,6 +25,11 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# Enforce strict offline operation to eliminate remote network hangs
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -79,19 +84,27 @@ def load_synthetic_block(device: str) -> nn.Module:
     return m
 
 def load_roberta(device: str) -> nn.Module:
-    from transformers import AutoModelForSequenceClassification
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
     m = AutoModelForSequenceClassification.from_pretrained(
-        "textattack/roberta-base-SST-2"
+        "textattack/roberta-base-SST-2", local_files_only=True
     ).to(device).eval()
     m.dim = 768
     m.hidden_size = 768
+    try:
+        m.tokenizer = AutoTokenizer.from_pretrained("textattack/roberta-base-SST-2", local_files_only=True)
+    except Exception:
+        pass
     return m
 
 def load_gpt2(device: str) -> nn.Module:
-    from transformers import GPT2LMHeadModel
-    m = GPT2LMHeadModel.from_pretrained("gpt2").to(device).eval()
+    from transformers import GPT2LMHeadModel, AutoTokenizer
+    m = GPT2LMHeadModel.from_pretrained("gpt2", local_files_only=True).to(device).eval()
     m.dim = 768
     m.hidden_size = 768
+    try:
+        m.tokenizer = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
+    except Exception:
+        pass
     return m
 
 MODELS = {
@@ -114,7 +127,7 @@ def get_probe_data(model_name: str, device: str):
     if model_name == "roberta":
         from transformers import AutoTokenizer
         from datasets import load_dataset
-        tok = AutoTokenizer.from_pretrained("textattack/roberta-base-SST-2")
+        tok = AutoTokenizer.from_pretrained("textattack/roberta-base-SST-2", local_files_only=True)
         parquet_path = Path.home() / ".cache/huggingface/hub/datasets--nyu-mll--glue/snapshots/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/sst2/validation-00000-of-00001.parquet"
         if parquet_path.exists():
             ds = load_dataset("parquet", data_files={"validation": str(parquet_path)}, split="validation")
@@ -136,7 +149,7 @@ def get_probe_data(model_name: str, device: str):
     if model_name == "gpt2":
         from transformers import AutoTokenizer
         from datasets import load_dataset
-        tok = AutoTokenizer.from_pretrained("gpt2")
+        tok = AutoTokenizer.from_pretrained("gpt2", local_files_only=True)
         parquet_path = Path.home() / ".cache/huggingface/hub/datasets--Salesforce--wikitext/snapshots/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1/test-00000-of-00001.parquet"
         if parquet_path.exists():
             ds = load_dataset("parquet", data_files={"test": str(parquet_path)}, split="test")
@@ -208,11 +221,24 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
             max_retries=0,
         )
 
-    # 3. Fisher SVD
-    if name == "fisher_svd":
+    # 2.5 AA-SVD & ASVD
+    if name in ("aa_svd", "asvd_compressor"):
+        from neuralops.compression_engine.svd.aa_svd_compressor import AASVDCompressor
+        tok = getattr(model, "tokenizer", None)
+        return AASVDCompressor(model=model, rank=rank, tokenizer=tok, fallback_to_original=False)
+
+    # 2.6 AdaSVD
+    if name == "adasvd_compressor":
+        from neuralops.compression_engine.svd.adasvd_compressor import ADASVDCompressor
+        tok = getattr(model, "tokenizer", None)
+        return ADASVDCompressor(model=model, target_rank=rank, tokenizer=tok)
+
+    # 3. Fisher SVD & FWSVD
+    if name in ("fisher_svd", "fwsvd"):
         from neuralops.compression_engine.svd.fwsvd_compressor import FWSVDCompressor
         try:
-            return FWSVDCompressor(model=model, rank=rank)
+            tok = getattr(model, "tokenizer", None)
+            return FWSVDCompressor(model=model, rank=rank, tokenizer=tok)
         except Exception:
             return None
 
