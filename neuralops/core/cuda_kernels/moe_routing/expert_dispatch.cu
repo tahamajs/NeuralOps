@@ -9,7 +9,7 @@ __global__ void moe_gather_kernel(
     scalar_t* __restrict__ out_tokens,               // [num_tokens, hidden_dim]
     const scalar_t* __restrict__ expert_outputs,     // [total_assignments, hidden_dim]
     const scalar_t* __restrict__ routing_weights,    // [num_tokens, top_k]
-    const int32_t* __restrict__ expert_offsets,      // [num_tokens, top_k] slot assignments
+    const int32_t* __restrict__ expert_offsets,      // [num_tokens, top_k] slot assignments (optional)
     const int num_tokens,
     const int hidden_dim,
     const int top_k,
@@ -23,7 +23,7 @@ __global__ void moe_gather_kernel(
     for (int i = d; i < hidden_dim; i += blockDim.x) {
         float acc = 0.0f;
         for (int k_idx = 0; k_idx < top_k; ++k_idx) {
-            const int slot = expert_offsets[tok_idx * top_k + k_idx];
+            const int slot = (expert_offsets != nullptr) ? expert_offsets[tok_idx * top_k + k_idx] : (tok_idx * top_k + k_idx);
             if (slot >= 0 && slot < total_assignments) {
                 const float weight = static_cast<float>(routing_weights[tok_idx * top_k + k_idx]);
                 acc += weight * static_cast<float>(expert_outputs[slot * hidden_dim + i]);
@@ -49,8 +49,10 @@ void moe_gather_cuda(
     }
 
     dim3 grid(num_tokens);
-    dim3 block(min(1024, hidden_dim));
+    dim3 block(std::min(256, hidden_dim));
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    const int32_t* expert_offsets_ptr = (expert_offsets.defined() && expert_offsets.numel() > 0) ? expert_offsets.data_ptr<int32_t>() : nullptr;
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half,
@@ -62,7 +64,7 @@ void moe_gather_cuda(
                 out_tokens.data_ptr<scalar_t>(),
                 expert_outputs.data_ptr<scalar_t>(),
                 routing_weights.data_ptr<scalar_t>(),
-                expert_offsets.data_ptr<int32_t>(),
+                expert_offsets_ptr,
                 num_tokens,
                 hidden_dim,
                 top_k,

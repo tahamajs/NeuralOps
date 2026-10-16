@@ -15,8 +15,9 @@ __global__ void kv_cache_copy_cow_kernel(
     const int max_blocks_src,
     const int max_blocks_dst
 ) {
-    const int copy_idx = blockIdx.x;
-    const int tid = threadIdx.x;
+    const int copy_idx = blockIdx.y;
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int total_threads = blockDim.x * gridDim.x;
 
     if (copy_idx >= num_blocks_to_copy) return;
 
@@ -31,9 +32,26 @@ __global__ void kv_cache_copy_cow_kernel(
     const int64_t src_offset = static_cast<int64_t>(src_block) * elements_per_block;
     const int64_t dst_offset = static_cast<int64_t>(dst_block) * elements_per_block;
 
-    for (int i = tid; i < elements_per_block; i += blockDim.x) {
-        dst_k[dst_offset + i] = src_k[src_offset + i];
-        dst_v[dst_offset + i] = src_v[src_offset + i];
+    // 128-bit vectorized transfer if elements * sizeof(scalar_t) is divisible by 16
+    if ((elements_per_block * sizeof(scalar_t)) % 16 == 0) {
+        constexpr int VEC_SIZE = 16 / sizeof(scalar_t);
+        const int num_vecs = elements_per_block / VEC_SIZE;
+        using vec_t = int4;
+
+        const vec_t* __restrict__ src_k_vec = reinterpret_cast<const vec_t*>(src_k + src_offset);
+        const vec_t* __restrict__ src_v_vec = reinterpret_cast<const vec_t*>(src_v + src_offset);
+        vec_t* __restrict__ dst_k_vec = reinterpret_cast<vec_t*>(dst_k + dst_offset);
+        vec_t* __restrict__ dst_v_vec = reinterpret_cast<vec_t*>(dst_v + dst_offset);
+
+        for (int i = tid; i < num_vecs; i += total_threads) {
+            dst_k_vec[i] = src_k_vec[i];
+            dst_v_vec[i] = src_v_vec[i];
+        }
+    } else {
+        for (int i = tid; i < elements_per_block; i += total_threads) {
+            dst_k[dst_offset + i] = src_k[src_offset + i];
+            dst_v[dst_offset + i] = src_v[src_offset + i];
+        }
     }
 }
 
@@ -56,8 +74,10 @@ void kv_cache_copy_cow_cuda(
     const int max_blocks_src = src_k.size(0);
     const int max_blocks_dst = dst_k.size(0);
 
-    dim3 grid(num_blocks);
-    dim3 block(min(1024, elements_per_block));
+    constexpr int THREADS = 256;
+    const int chunks = std::min(16, (elements_per_block + THREADS - 1) / THREADS);
+    dim3 grid(chunks, num_blocks);
+    dim3 block(THREADS);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
