@@ -557,12 +557,17 @@ class HessianNullSpaceSVDContinuation:
             for h in hooks:
                 h.remove()
 
+            active_target_layers = {}
             for name, inps in cached_inputs.items():
+                if not inps:
+                    continue
                 flat_inps = torch.cat([inp.reshape(-1, inp.shape[-1]) for inp in inps], dim=0).float()
                 N_tok = flat_inps.shape[0]
                 Hx = torch.matmul(flat_inps.t(), flat_inps) / max(N_tok, 1)
                 input_covariances[name] = Hx
                 input_means[name] = torch.mean(flat_inps, dim=0)
+                active_target_layers[name] = target_layers[name]
+            target_layers = active_target_layers
 
         # 4. Continuation Walk Loop (Predict - Correct - Accept/Reject)
         accepted_steps = 0
