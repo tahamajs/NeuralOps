@@ -86,12 +86,10 @@ class FLAPCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
-        rank = kwargs.get("target_rank", kwargs.get("rank", None))
-        if rank is not None:
-            r = float(rank)
-            p_keep = max(0.05, min(0.95, (2.0 * r) / 256.0))
-            self.sparsity = 1.0 - p_keep
+        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        if self.rank is not None:
             self.structured_24 = False
+            self.sparsity = 0.5
         else:
             raw_sp = _cfg_get(cfg, "flap_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             self.sparsity = max(0.0, min(float(raw_sp), 0.95))
@@ -370,7 +368,11 @@ class FLAPCompressor(BaseCompressor):
                     zeros = (W_pruned.abs() < 1e-12).float().sum().item()
                     effective_sparsity = zeros / max(1, W_pruned.numel())
             else:
-                n_keep = max(1, int(d_in * (1.0 - self.sparsity)))
+                if self.rank is not None:
+                    p_keep = max(0.05, min(0.98, float(self.rank * (d_in + d_out)) / max(d_in * d_out, 1)))
+                    n_keep = max(1, min(d_in, int(d_in * p_keep)))
+                else:
+                    n_keep = max(1, int(d_in * (1.0 - self.sparsity)))
                 _, keep_idx = torch.topk(scores, k=n_keep, largest=True)
                 mask = torch.zeros(d_in, device=device)
                 mask[keep_idx] = 1.0
