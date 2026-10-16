@@ -31,6 +31,9 @@ def _gdn_fwd_kernel(
     alpha_ptr,
     y_ptr,
     s_workspace_ptr,
+    init_state_ptr,
+    final_state_ptr,
+    mask_ptr,
     stride_qb,
     stride_qh,
     stride_ql,
@@ -58,11 +61,26 @@ def _gdn_fwd_kernel(
     stride_swl,
     stride_swd,
     stride_swn,
+    stride_isb,
+    stride_ish,
+    stride_isd,
+    stride_isn,
+    stride_fsb,
+    stride_fsh,
+    stride_fsd,
+    stride_fsn,
+    stride_mb,
+    stride_mh,
+    stride_ml,
     B_size,
     L_size,
     H_size,
     D_size,
     STORE_S: tl.constexpr,
+    HAS_INIT_STATE: tl.constexpr,
+    HAS_FINAL_STATE: tl.constexpr,
+    HAS_MASK: tl.constexpr,
+    NORMALIZE_QK: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
     pid_b = tl.program_id(0)
@@ -72,9 +90,20 @@ def _gdn_fwd_kernel(
 
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
+    mask_2d = mask_d[:, None] & mask_d[None, :]
 
     # S in registers (BLOCK_D x BLOCK_D)
-    S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
+    if HAS_INIT_STATE:
+        s_init_ptrs = (
+            init_state_ptr
+            + pid_b * stride_isb
+            + pid_h * stride_ish
+            + offs_d[:, None] * stride_isd
+            + offs_d[None, :] * stride_isn
+        )
+        S = tl.load(s_init_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
+    else:
+        S = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
 
     for t in range(L_size):
         # Load q, k, v
@@ -101,8 +130,17 @@ def _gdn_fwd_kernel(
             tl.float32
         )
 
+        valid = 1.0
+        if HAS_MASK:
+            valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
+
+        if NORMALIZE_QK:
+            q_norm_inv = tl.rsqrt(tl.sum(q_t * q_t) + 1e-12)
+            k_norm_inv = tl.rsqrt(tl.sum(k_t * k_t) + 1e-12)
+            q_t = q_t * q_norm_inv
+            k_t = k_t * k_norm_inv
+
         # inter_v = k_t @ S -> (D,)
-        # k_t is (D,) and S is (D, D). Result = sum_i k_t[i] * S[i, :]
         inter_v = tl.sum(k_t[:, None] * S, axis=0)  # (D,)
 
         err = v_t - inter_v  # (D,)
@@ -112,12 +150,13 @@ def _gdn_fwd_kernel(
         step = alpha_t / denom
 
         # Update S: S_t = beta_t * S + step * k_t^T @ err
-        # k_t^T @ err is outer product: shape (D, D)
         outer = k_t[:, None] * err[None, :]  # (D, D)
-        S = beta_t * S + step * outer
+        S_next = beta_t * S + step * outer
+        S = tl.where(valid > 0.0, S_next, S)
 
         # y_t = q_t @ S -> (D,)
-        y_t = tl.sum(q_t[:, None] * S, axis=0)
+        y_val = tl.sum(q_t[:, None] * S, axis=0)
+        y_t = tl.where(valid > 0.0, y_val, 0.0)
 
         # Store y
         tl.store(
@@ -138,6 +177,16 @@ def _gdn_fwd_kernel(
             )
             tl.store(s_ptrs, S)
 
+    if HAS_FINAL_STATE:
+        s_fin_ptrs = (
+            final_state_ptr
+            + pid_b * stride_fsb
+            + pid_h * stride_fsh
+            + offs_d[:, None] * stride_fsd
+            + offs_d[None, :] * stride_fsn
+        )
+        tl.store(s_fin_ptrs, S.to(final_state_ptr.dtype.element_ty), mask=mask_2d)
+
 
 @triton.jit
 def _gdn_bwd_kernel(
@@ -148,11 +197,14 @@ def _gdn_bwd_kernel(
     alpha_ptr,
     dy_ptr,
     s_workspace_ptr,
+    init_state_ptr,
+    mask_ptr,
     dq_ptr,
     dk_ptr,
     dv_ptr,
     dbeta_ptr,
     dalpha_ptr,
+    dinit_state_ptr,
     stride_qb,
     stride_qh,
     stride_ql,
@@ -180,6 +232,13 @@ def _gdn_bwd_kernel(
     stride_swl,
     stride_swd,
     stride_swn,
+    stride_isb,
+    stride_ish,
+    stride_isd,
+    stride_isn,
+    stride_mb,
+    stride_mh,
+    stride_ml,
     stride_dqb,
     stride_dqh,
     stride_dql,
@@ -202,6 +261,9 @@ def _gdn_bwd_kernel(
     L_size,
     H_size,
     D_size,
+    HAS_INIT_STATE: tl.constexpr,
+    HAS_MASK: tl.constexpr,
+    NORMALIZE_QK: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
     pid_b = tl.program_id(0)
@@ -211,6 +273,7 @@ def _gdn_bwd_kernel(
 
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
+    mask_2d = mask_d[:, None] & mask_d[None, :]
 
     # Adjoint state dS (D, D), initialized to 0
     dS = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
@@ -246,6 +309,16 @@ def _gdn_bwd_kernel(
             tl.float32
         )
 
+        valid = 1.0
+        if HAS_MASK:
+            valid = tl.load(mask_ptr + pid_b * stride_mb + pid_h * stride_mh + t * stride_ml).to(tl.float32)
+
+        if NORMALIZE_QK:
+            q_norm_inv = tl.rsqrt(tl.sum(q_t * q_t) + 1e-12)
+            k_norm_inv = tl.rsqrt(tl.sum(k_t * k_t) + 1e-12)
+            q_t = q_t * q_norm_inv
+            k_t = k_t * k_norm_inv
+
         # Load S_t and S_{t-1} from workspace
         s_t_ptrs = (
             s_workspace_ptr
@@ -267,15 +340,23 @@ def _gdn_bwd_kernel(
                 + tl.arange(0, BLOCK_D)[None, :] * stride_swn
             )
             S_prev = tl.load(s_prev_ptrs)
+        elif HAS_INIT_STATE:
+            s_init_ptrs = (
+                init_state_ptr
+                + pid_b * stride_isb
+                + pid_h * stride_ish
+                + offs_d[:, None] * stride_isd
+                + offs_d[None, :] * stride_isn
+            )
+            S_prev = tl.load(s_init_ptrs, mask=mask_2d, other=0.0).to(tl.float32)
         else:
             S_prev = tl.zeros((BLOCK_D, BLOCK_D), dtype=tl.float32)
 
         # === Adjoint update ===
-        # dS += q_t^T @ dy_t = outer product
-        dS += q_t[:, None] * dy_t[None, :]
+        dS += q_t[:, None] * (dy_t * valid)[None, :]
 
-        # === dq_t = S_t @ dy_t  → (D,) ===
-        dq_t = tl.sum(S_t * dy_t[None, :], axis=1)
+        # === dq_t = S_t @ dy_t ===
+        dq_t = tl.where(valid > 0.0, tl.sum(S_t * dy_t[None, :], axis=1), 0.0)
 
         # === Recompute intermediates ===
         inter_v = tl.sum(k_t[:, None] * S_prev, axis=0)  # (D,)
@@ -284,36 +365,28 @@ def _gdn_bwd_kernel(
         denom = tl.maximum(1.0 + norm_sq, 1.0)
         step = alpha_t / denom
 
-        # === dv_t = step * k_t @ dS^T → (D,) ===
-        # dS has shape (D, D). (k_t @ dS) gives (D,). But careful with axes:
-        # dS[m, n] = dL/dS_t[m, n]
-        # dv_t[n] = sum_m dS[m, n] * step * k_t[m]
-        dv_t = step * tl.sum(k_t[:, None] * dS, axis=0)  # (D,)
+        # === dv_t ===
+        dv_t = tl.where(valid > 0.0, step * tl.sum(k_t[:, None] * dS, axis=0), 0.0)
 
-        # === dk_t = dk_direct + dk_from_inter_v + dk_norm ===
-        dk_direct = step * tl.sum(dS * err[None, :], axis=1)  # (D,)
-
-        # Path through inter_v = k_t @ S_prev:
-        d_inter_v = -step * tl.sum(k_t[:, None] * dS, axis=0)  # (D,)
-        dk_from_inter_v = tl.sum(S_prev * d_inter_v[None, :], axis=1)  # (D,)
-
-        # Path through norm_sq in step = alpha_t / denom:
+        # === dk_t ===
+        dk_direct = step * tl.sum(dS * err[None, :], axis=1)
+        d_inter_v = -step * tl.sum(k_t[:, None] * dS, axis=0)
+        dk_from_inter_v = tl.sum(S_prev * d_inter_v[None, :], axis=1)
         dS_outer = tl.sum(dS * (k_t[:, None] * err[None, :]))
         d_step = -(alpha_t / (denom * denom)) * dS_outer
         dk_norm = 2.0 * d_step * k_t
+        dk_total = tl.where(valid > 0.0, dk_direct + dk_from_inter_v + dk_norm, 0.0)
 
-        dk_total = dk_direct + dk_from_inter_v + dk_norm
-
-        # === dbeta_t = sum(dS * S_prev) elementwise ===
-        dbeta_final = tl.sum(dS * S_prev)
+        # === dbeta_t ===
+        dbeta_final = tl.where(valid > 0.0, tl.sum(dS * S_prev), 0.0)
 
         # === dalpha_t ===
-        dalpha_final = dS_outer / denom
+        dalpha_final = tl.where(valid > 0.0, dS_outer / denom, 0.0)
 
-        # === Compute dS_prev for the next (earlier) iteration ===
-        # dS_prev = beta_t * dS - step * k_t @ k_t^T @ dS
+        # === Compute dS_prev ===
         kk_outer = k_t[:, None] * k_t[None, :]  # (D, D)
         dS_prev = beta_t * dS - step * tl.sum(kk_outer[:, :, None] * dS[None, :, :], axis=1)
+        dS = tl.where(valid > 0.0, dS_prev, dS)
 
         # Store gradients
         tl.store(
@@ -340,19 +413,53 @@ def _gdn_bwd_kernel(
             dalpha_final,
         )
 
-        # Propagate
-        dS = dS_prev
+    if HAS_INIT_STATE:
+        s_init_ptrs = (
+            dinit_state_ptr
+            + pid_b * stride_isb
+            + pid_h * stride_ish
+            + offs_d[:, None] * stride_isd
+            + offs_d[None, :] * stride_isn
+        )
+        tl.store(s_init_ptrs, dS.to(dinit_state_ptr.dtype.element_ty), mask=mask_2d)
 
 
-def _gdn_fwd_inference(q, k, v, beta, alpha):
+def _gdn_fwd_inference(
+    q,
+    k,
+    v,
+    beta,
+    alpha,
+    initial_state=None,
+    mask=None,
+    return_final_state=False,
+    normalize_qk=False,
+):
     """Fast forward path without s_workspace allocation for inference."""
     B, H, L, D = q.shape
     y = torch.empty_like(q)
     BLOCK_D = triton.next_power_of_2(D)
     grid = (B, H)
 
-    # Use a dummy 1-element tensor for workspace when STORE_S is False
+    # Workspace dummy
     dummy_ws = torch.empty((1,), device=q.device, dtype=torch.float32)
+
+    has_init = initial_state is not None
+    init_state = initial_state.contiguous() if has_init else dummy_ws
+
+    has_mask = mask is not None
+    if has_mask:
+        if mask.dim() == 2:
+            mask_t = mask.unsqueeze(1).expand(-1, H, -1).contiguous().float()
+        elif mask.dim() == 4:
+            mask_t = mask.squeeze(1).contiguous().float()
+        else:
+            mask_t = mask.contiguous().float()
+    else:
+        mask_t = dummy_ws
+
+    has_final = bool(return_final_state)
+    final_state = torch.empty((B, H, D, D), device=q.device, dtype=q.dtype) if has_final else dummy_ws
 
     _gdn_fwd_kernel[grid](
         q,
@@ -362,6 +469,9 @@ def _gdn_fwd_inference(q, k, v, beta, alpha):
         alpha,
         y,
         dummy_ws,
+        init_state,
+        final_state,
+        mask_t,
         q.stride(0),
         q.stride(1),
         q.stride(2),
@@ -385,28 +495,73 @@ def _gdn_fwd_inference(q, k, v, beta, alpha):
         y.stride(2),
         y.stride(3),
         0, 0, 0, 0, 0,
+        init_state.stride(0) if has_init else 0,
+        init_state.stride(1) if has_init else 0,
+        init_state.stride(2) if has_init else 0,
+        init_state.stride(3) if has_init else 0,
+        final_state.stride(0) if has_final else 0,
+        final_state.stride(1) if has_final else 0,
+        final_state.stride(2) if has_final else 0,
+        final_state.stride(3) if has_final else 0,
+        mask_t.stride(0) if has_mask else 0,
+        mask_t.stride(1) if has_mask else 0,
+        mask_t.stride(2) if has_mask else 0,
         B,
         L,
         H,
         D,
         STORE_S=False,
+        HAS_INIT_STATE=has_init,
+        HAS_FINAL_STATE=has_final,
+        HAS_MASK=has_mask,
+        NORMALIZE_QK=normalize_qk,
         BLOCK_D=BLOCK_D,
     )
+    if return_final_state:
+        return y, final_state
     return y
 
 
 class _GatedDeltaNetScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, q, k, v, beta, alpha):
+    def forward(
+        ctx,
+        q,
+        k,
+        v,
+        beta,
+        alpha,
+        initial_state=None,
+        mask=None,
+        return_final_state=False,
+        normalize_qk=False,
+    ):
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"head_dim {D} > {MAX_REGISTER_DIM}"
 
         y = torch.empty_like(q)
-        # Workspace for S_t: (B, H, L, D, D)
         s_workspace = torch.empty((B, H, L, D, D), device=q.device, dtype=torch.float32)
 
         BLOCK_D = triton.next_power_of_2(D)
         grid = (B, H)
+
+        dummy_t = torch.empty((1,), device=q.device, dtype=torch.float32)
+        has_init = initial_state is not None
+        init_state = initial_state.contiguous() if has_init else dummy_t
+
+        has_mask = mask is not None
+        if has_mask:
+            if mask.dim() == 2:
+                mask_t = mask.unsqueeze(1).expand(-1, H, -1).contiguous().float()
+            elif mask.dim() == 4:
+                mask_t = mask.squeeze(1).contiguous().float()
+            else:
+                mask_t = mask.contiguous().float()
+        else:
+            mask_t = dummy_t
+
+        has_final = bool(return_final_state)
+        final_state = torch.empty((B, H, D, D), device=q.device, dtype=q.dtype) if has_final else dummy_t
 
         _gdn_fwd_kernel[grid](
             q,
@@ -416,6 +571,9 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
             alpha,
             y,
             s_workspace,
+            init_state,
+            final_state,
+            mask_t,
             q.stride(0),
             q.stride(1),
             q.stride(2),
@@ -443,28 +601,51 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
             s_workspace.stride(2),
             s_workspace.stride(3),
             s_workspace.stride(4),
+            init_state.stride(0) if has_init else 0,
+            init_state.stride(1) if has_init else 0,
+            init_state.stride(2) if has_init else 0,
+            init_state.stride(3) if has_init else 0,
+            final_state.stride(0) if has_final else 0,
+            final_state.stride(1) if has_final else 0,
+            final_state.stride(2) if has_final else 0,
+            final_state.stride(3) if has_final else 0,
+            mask_t.stride(0) if has_mask else 0,
+            mask_t.stride(1) if has_mask else 0,
+            mask_t.stride(2) if has_mask else 0,
             B,
             L,
             H,
             D,
             STORE_S=True,
+            HAS_INIT_STATE=has_init,
+            HAS_FINAL_STATE=has_final,
+            HAS_MASK=has_mask,
+            NORMALIZE_QK=normalize_qk,
             BLOCK_D=BLOCK_D,
         )
 
-        ctx.save_for_backward(q, k, v, beta, alpha, s_workspace)
+        ctx.save_for_backward(q, k, v, beta, alpha, s_workspace, init_state, mask_t)
+        ctx.has_init = has_init
+        ctx.has_mask = has_mask
+        ctx.normalize_qk = normalize_qk
+        ctx.return_final_state = return_final_state
+
+        if return_final_state:
+            return y, final_state
         return y
 
     @staticmethod
-    def backward(ctx, dy):
-        q, k, v, beta, alpha, s_workspace = ctx.saved_tensors
+    def backward(ctx, *grad_outputs):
+        dy = grad_outputs[0].contiguous()
+        q, k, v, beta, alpha, s_workspace, init_state, mask_t = ctx.saved_tensors
         B, H, L, D = q.shape
 
-        dy = dy.contiguous()
         dq = torch.empty_like(q)
         dk = torch.empty_like(k)
         dv = torch.empty_like(v)
         dbeta = torch.empty_like(beta)
         dalpha = torch.empty_like(alpha)
+        dinit_state = torch.empty_like(init_state) if ctx.has_init else torch.empty((1,), device=q.device)
 
         BLOCK_D = triton.next_power_of_2(D)
         grid = (B, H)
@@ -477,11 +658,14 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
             alpha,
             dy,
             s_workspace,
+            init_state,
+            mask_t,
             dq,
             dk,
             dv,
             dbeta,
             dalpha,
+            dinit_state,
             q.stride(0),
             q.stride(1),
             q.stride(2),
@@ -509,6 +693,13 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
             s_workspace.stride(2),
             s_workspace.stride(3),
             s_workspace.stride(4),
+            init_state.stride(0) if ctx.has_init else 0,
+            init_state.stride(1) if ctx.has_init else 0,
+            init_state.stride(2) if ctx.has_init else 0,
+            init_state.stride(3) if ctx.has_init else 0,
+            mask_t.stride(0) if ctx.has_mask else 0,
+            mask_t.stride(1) if ctx.has_mask else 0,
+            mask_t.stride(2) if ctx.has_mask else 0,
             dq.stride(0),
             dq.stride(1),
             dq.stride(2),
@@ -531,10 +722,15 @@ class _GatedDeltaNetScanFn(torch.autograd.Function):
             L,
             H,
             D,
+            HAS_INIT_STATE=ctx.has_init,
+            HAS_MASK=ctx.has_mask,
+            NORMALIZE_QK=ctx.normalize_qk,
             BLOCK_D=BLOCK_D,
         )
 
-        return dq, dk, dv, dbeta, dalpha
+        d_init = dinit_state if ctx.has_init else None
+        return dq, dk, dv, dbeta, dalpha, d_init, None, None, None
+
 
 
 def gdn_scan_pytorch(q, k, v, beta, alpha):

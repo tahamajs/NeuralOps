@@ -1,25 +1,27 @@
-# Tutorial 1: Quickstart with NeuralOps
+# Tutorial 1: End-to-End Quickstart
 
-NeuralOps provides 159 attention mechanisms and 73 model compression engines for PyTorch.
+This tutorial walks through loading a model, applying attention surgery, compressing with low-rank SVD, and serving with continuous batching.
 
 ```python
 import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import neuralops
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.attentions, neuralops.compression_engine
+from neuralops.integrations.tgi import TGIServingAdapter
 
-print(f"NeuralOps Version: {neuralops.__version__}")
-print(f"Registered Attentions: {len(ATTENTION_REGISTRY)}")
-print(f"Registered Compressors: {len(COMPRESSOR_REGISTRY)}")
+# 1. Load HuggingFace checkpoint
+model_name = "gpt2"
+model = AutoModelForCausalLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-# Instantiate a Cosformer attention module
-cosformer_cls = ATTENTION_REGISTRY["cosformer"]
-attn = cosformer_cls()
+# 2. Inject Subquadratic Attention
+model = neuralops.replace_attention(model, attention="cosformer")
 
-# Forward pass with (batch=2, seq_len=16, dim=64)
-x = torch.randn(2, 16, 64)
-out = attn(x)
-if isinstance(out, tuple):
-    out = out[0]
-print("Cosformer output shape:", out.shape)
+# 3. Compress Linear Projections
+compressed = neuralops.compress(model, method="fwsvd", rank=32)
+
+# 4. Continuous Batching Serving
+adapter = TGIServingAdapter(model=compressed, tokenizer=tokenizer, max_batch_size=8)
+for token, text in adapter.streaming_generate("NeuralOps achieves", max_new_tokens=15):
+    print(text, end="", flush=True)
+print()
 ```
