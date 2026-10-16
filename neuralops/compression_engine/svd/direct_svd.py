@@ -82,11 +82,13 @@ class DirectSVDCompressor(BaseCompressor):
         max_retries: int = 2,
         target_modules: list[str] | None = None,
         cfg: Any | None = None,
+        use_triton: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="direct_svd", **kwargs)
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
+        self.use_triton = bool(use_triton or _cfg_get(cfg_obj, "use_triton", True))
 
         rank = _cfg_get(
             cfg_obj,
@@ -349,6 +351,7 @@ class DirectSVDCompressor(BaseCompressor):
                 device=device,
                 lora_r=eff_lora_r,
                 lora_alpha=eff_lora_alpha,
+                use_triton=self.use_triton,
             )
             svd_layer.set_low_rank_factors(U_r, V_r)
             if target_mod.bias is not None and svd_layer.bias is not None:
@@ -475,6 +478,7 @@ class DirectSVDCompressor(BaseCompressor):
                     bias=target_mod.bias is not None,
                     dtype=raw_w.dtype,
                     device=raw_w.device,
+                    use_triton=self.use_triton,
                 )
                 svd_layer.set_low_rank_factors(
                     A_hnc.to(dtype=raw_w.dtype, device=raw_w.device),
