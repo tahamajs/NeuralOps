@@ -247,3 +247,42 @@ def moe_dispatch_gather(
 
     return out
 
+
+def moe_dispatch(
+    tokens: torch.Tensor,
+    topk_indices: torch.Tensor,
+    expert_offsets: torch.Tensor,
+    total_slots: int,
+) -> torch.Tensor:
+    """Dispatches tokens to expert slots with 3-level fallback."""
+    mod = _get_module()
+    cuda_dispatch = mod.moe_dispatch if mod is not None else None
+    return dispatch(
+        cuda_dispatch, None, _moe_dispatch_pytorch_ref,
+        tokens, topk_indices, expert_offsets, total_slots, kernel_name="moe_dispatch"
+    )
+
+
+def moe_gather(
+    expert_outputs: torch.Tensor,
+    routing_weights: torch.Tensor,
+    topk_indices: torch.Tensor,
+    expert_offsets: torch.Tensor,
+) -> torch.Tensor:
+    """Gathers and weights expert outputs with 3-level fallback."""
+    mod = _get_module()
+    cuda_gather = mod.moe_gather if mod is not None else None
+    return dispatch(
+        cuda_gather, None, _moe_gather_pytorch_ref,
+        expert_outputs, routing_weights, topk_indices, expert_offsets, kernel_name="moe_gather"
+    )
+
+
+__all__ = [
+    "moe_dispatch_gather",
+    "moe_dispatch",
+    "moe_gather",
+    "_moe_dispatch_pytorch_ref",
+    "_moe_gather_pytorch_ref",
+]
+
