@@ -21,6 +21,7 @@ from neuralops.integrations.serving import (
 )
 from neuralops.integrations.tgi import (
     TGIServingAdapter,
+    TGIRequest,
     TGIRequestBatch,
     TGIRequestSlot,
     TGIStreamingIterator,
@@ -48,6 +49,7 @@ __all__ = [
     "TGIAttentionAdapter",
     "SGLangRadixLinearCacheAdapter",
     "TGIServingAdapter",
+    "TGIRequest",
     "TGIRequestBatch",
     "TGIRequestSlot",
     "TGIStreamingIterator",
