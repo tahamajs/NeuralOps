@@ -207,7 +207,7 @@ class SVDLinear(nn.Module):
 
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training and (self.lora_rank == 0 or self.lora_A is None):
             try:
-                from neuralops.kernels.triton.fused_lowrank_gemm import triton_fused_lowrank_gated_gemm
+                from neuralops.core.triton_kernels.low_rank import triton_fused_lowrank_gated_gemm
                 return triton_fused_lowrank_gated_gemm(x, self.V, self.U, alpha=None, b_drift=self.bias)
             except Exception as e:
                 logger.debug("Triton fused lowrank gemm failed (%s); fallback", e)
