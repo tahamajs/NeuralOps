@@ -31,8 +31,10 @@ def smoothquant_layer(
         if isinstance(calib_data, list):
             stacked = torch.cat([x.reshape(-1, x.shape[-1]) for x in calib_data], dim=0)
         else:
-            stacked = calib_data.reshape(-1, calib_data.shape[-1])
-        a_max = stacked.abs().amax(dim=0).clamp(min=1e-5)
+        if stacked.shape[-1] != module.weight.shape[1]:
+            a_max = module.weight.abs().amax(dim=0).clamp(min=1e-5)
+        else:
+            a_max = stacked.abs().amax(dim=0).clamp(min=1e-5)
     else:
         a_max = act_scales.clamp(min=1e-5)
 
