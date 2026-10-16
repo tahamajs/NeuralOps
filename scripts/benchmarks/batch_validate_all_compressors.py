@@ -383,15 +383,21 @@ def get_compressor(name: str, model: nn.Module, rank: int, probe_inputs: Any):
 # ============================================================
 # EVALUATION FUNCTION
 # ============================================================
-def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, device: str) -> Dict[str, Any]:
-    """Return dict with rel_err, top1_match, and inference latency."""
+def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, device: str, heldout_labels: Any = None) -> Dict[str, Any]:
+    """Return dict with rel_err, top1_match, and downstream metrics (accuracy or perplexity)."""
     model.eval()
     with torch.no_grad():
+        acc = None
+        ppl = None
         if model_name == "roberta":
             ids, mask = heldout
             out = model(ids, attention_mask=mask).logits
+            if heldout_labels is not None:
+                acc = (out.argmax(-1) == heldout_labels).float().mean().item()
         elif model_name == "gpt2":
             out = model(heldout).logits
+            loss = nn.functional.cross_entropy(out[:, :-1].reshape(-1, out.size(-1)), heldout[:, 1:].reshape(-1))
+            ppl = float(torch.exp(loss).item())
         else:
             out = model(heldout)
 
@@ -400,7 +406,12 @@ def evaluate(model: nn.Module, heldout: Any, y_anchor: Any, model_name: str, dev
 
         rel_err = (torch.norm(out.float() - y_anchor.float()) / torch.norm(y_anchor.float())).item()
         top1_match = (out.argmax(-1) == y_anchor.argmax(-1)).float().mean().item()
-        return {"rel_err": rel_err, "top1_match": top1_match}
+        res = {"rel_err": rel_err, "top1_match": top1_match}
+        if acc is not None:
+            res["accuracy"] = round(acc, 4)
+        if ppl is not None:
+            res["perplexity"] = round(ppl, 2)
+        return res
 
 
 # ============================================================
