@@ -113,7 +113,7 @@ def _strided_tt_reconstruct_kernel(
         acc += tl.sum(c0_vals * c1_vals, axis=2)
 
     w_ptrs = w_ptr + offs_n[:, None] * stride_wn + offs_k[None, :] * stride_wk
-    tl.store(w_ptrs, acc, mask=mask_n[:, None] & mask_k[None, :])
+    tl.store(w_ptrs, acc.to(c0_vals.dtype), mask=mask_n[:, None] & mask_k[None, :])
 
 
 def triton_strided_tt_contraction(

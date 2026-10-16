@@ -121,7 +121,7 @@ def _fused_rpca_gemm_kernel(
                     # Accumulate into column i of y_acc in SRAM
                     y_acc = y_acc + tl.where(
                         (tl.arange(0, BLOCK_N) == i)[None, :],
-                        (x_vals * val)[:, None],
+                        (x_vals * val).to(tl.float32)[:, None],
                         0.0,
                     )
 
@@ -131,10 +131,10 @@ def _fused_rpca_gemm_kernel(
     if HAS_BIAS:
         b_ptrs = b_ptr + offs_n
         b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
-        y_acc += b_tile[None, :]
+        y_acc += b_tile[None, :].to(tl.float32)
 
     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
-    tl.store(y_ptrs, y_acc, mask=mask_m[:, None] & mask_n[None, :])
+    tl.store(y_ptrs, y_acc.to(x_tile.dtype), mask=mask_m[:, None] & mask_n[None, :])
 
 
 def triton_fused_lowrank_sparse_gemm(
