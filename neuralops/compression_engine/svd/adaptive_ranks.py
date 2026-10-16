@@ -136,7 +136,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         model: nn.Module,
         energy_threshold: float = 0.92,
         min_rank: int = 16,
-        max_error: float = 0.20,
+        max_error: float = 0.65,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
         target_attention_only: bool = False,
@@ -1083,8 +1083,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 self.layer_ranks[name] = r
                 self.used_covariance[name] = used_cov
                 self.used_jg_svd[name] = used_jg
-
-                if svd_layer is None or err > self.max_error:
+                too_big = (err > self.max_error) and (self.target_rank is None)
+                if svd_layer is None or too_big:
                     if self.fallback_to_original:
                         logger.warning(
                             "AdaptiveRanks error %.4f on %s exceeded threshold %.4f. Falling back to original layer.",
