@@ -190,7 +190,7 @@ def _fused_lowrank_gated_gemm_2d_kernel(
     if HAS_ALPHA:
         alpha_ptrs = alpha_ptr + offs_r
         alpha_tile = tl.load(alpha_ptrs, mask=mask_r, other=0.0)
-        gate = tl.sigmoid(alpha_tile)
+        gate = tl.sigmoid(alpha_tile.to(tl.float32))
         z_acc = z_acc * gate[None, :]
 
     z_tile = z_acc.to(x_tile.dtype)
