@@ -1964,7 +1964,7 @@ if HAS_TRITON:
             gp_tile = tl.load(gp_ptrs, mask=gp_mask, other=0.0)
             res_tile = tl.load(res_ptrs, mask=res_mask, other=0.0)
 
-            acc += tl.dot(gp_tile, res_tile)
+            acc += tl.dot(gp_tile, res_tile, allow_tf32=True)
 
         # Load existing W tile
         w_ptrs = W_ptr + (offs_m[:, None] * stride_w_m + offs_n[None, :] * stride_w_k)
@@ -2016,7 +2016,7 @@ class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
         ctx.alpha = alpha
         ctx.has_restore = restore_grad is not None
 
-        is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank")
+        is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank", allow_fp32=True)
         if not is_suitable or not HAS_TRITON:
             return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
@@ -2085,7 +2085,7 @@ def fused_hnc_nullspace_step_triton(
     """Execute fused HNC null-space step with automated Pascal SM < 7.0 fallback."""
     if not w.is_cuda or not HAS_TRITON:
         return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
-    is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank")
+    is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank", allow_fp32=True)
     if not is_suitable:
         return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
     return _FusedHNCNullSpaceStepFn.apply(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
