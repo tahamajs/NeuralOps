@@ -131,8 +131,9 @@ def fused_lowrank_gated_gemm(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Low-Rank Gated GEMM."""
-    def cuda_fn(x, V, U, alpha=None, bias=None):
-        return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, bias)
+    def cuda_fn(x, V, U, alpha=None, bias=None, b_drift=None, **kwargs):
+        b = bias if bias is not None else b_drift
+        return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
 
     triton_fn = _get_triton_impl()
 
