@@ -22,6 +22,71 @@ logger = logging.getLogger(__name__)
 
 
 
+class RPCALinear(nn.Module):
+    """
+    Robust PCA factorized linear layer:
+        y = (x @ V.T) @ U.T + (x @ S.T) + bias
+    where L = U @ V captures low-rank principal components and S captures sparse outliers.
+    Leverages triton_fused_lowrank_sparse_gemm for zero intermediate HBM materialization.
+    """
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+        use_triton: bool = True,
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = rank
+        self.use_triton = bool(use_triton)
+
+        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
+        self.register_buffer("S_sparse", torch.zeros(out_features, in_features, dtype=dtype, device=device))
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+    def set_factors(self, U: torch.Tensor, V: torch.Tensor, S: torch.Tensor | None = None) -> None:
+        with torch.no_grad():
+            self.U.copy_(U)
+            self.V.copy_(V)
+            if S is not None:
+                self.S_sparse.copy_(S)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        w = torch.matmul(self.U.float(), self.V.float()) + self.S_sparse.float()
+        return w.to(self.U.dtype)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.view(-1, self.in_features)
+
+        if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
+            try:
+                from neuralops.kernels.triton.rpca_sparse_gemm import triton_fused_lowrank_sparse_gemm
+                out = triton_fused_lowrank_sparse_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
+                return out.view(*orig_shape[:-1], self.out_features)
+            except Exception as e:
+                logger.debug("Triton RPCALinear failed (%s); fallback to PyTorch", e)
+
+        # PyTorch fallback
+        y_lr = F.linear(F.linear(x_flat, self.V), self.U)
+        y_sp = F.linear(x_flat, self.S_sparse)
+        out = y_lr + y_sp
+        if self.bias is not None:
+            out = out + self.bias
+        return out.view(*orig_shape[:-1], self.out_features)
+
 
 @COMPRESSOR_REGISTRY.register("rpca_compressor")
 class RPCACompressor(BaseCompressor):
@@ -78,6 +143,7 @@ class RPCACompressor(BaseCompressor):
         self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
+        self.use_triton = bool(kwargs.get("use_triton", _cfg_get(cfg_obj, "use_triton", True)))
         self.target_modules = target_modules
         self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 1.0))
         self.fallback_to_original = bool(
@@ -285,6 +351,23 @@ class RPCACompressor(BaseCompressor):
         effective_lora_r = self.lora_r
         if has_existing_lora and getattr(layer, "r", 0) > 0:
             effective_lora_r = getattr(layer, "r", self.lora_r)
+
+        if getattr(self, "use_triton", True) and not (self.use_lora or has_existing_lora):
+            rpca_layer = RPCALinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                bias=base_layer.bias is not None,
+                dtype=dtype,
+                device=device,
+                use_triton=self.use_triton,
+            )
+            s_tensor = S_sparse.to(dtype=dtype, device=device) if 'S_sparse' in locals() else None
+            rpca_layer.set_factors(U_final, V_final, s_tensor)
+            if base_layer.bias is not None and rpca_layer.bias is not None:
+                rpca_layer.bias.data.copy_(base_layer.bias.data)
+            rpca_layer.reconstruction_error = rel_err
+            return rpca_layer
 
         svd_layer = SVDLinear(
             in_features=in_f,

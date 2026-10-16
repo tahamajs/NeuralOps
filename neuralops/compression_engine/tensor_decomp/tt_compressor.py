@@ -199,6 +199,7 @@ class TTLinearLayer(nn.Module):
         shape: tuple[tuple[int, ...], tuple[int, ...]] | None = None,
         dtype: torch.dtype | None = None,
         device: torch.device | None = None,
+        use_triton: bool = True,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -206,6 +207,7 @@ class TTLinearLayer(nn.Module):
         self.nf = out_features
         self.nx = in_features
         self.tt_rank = int(tt_rank)
+        self.use_triton = bool(use_triton)
 
         if shape is None:
             self.p_dims, self.q_dims = factorize_dimension_pair(in_features, out_features, 2)
@@ -280,6 +282,17 @@ class TTLinearLayer(nn.Module):
         ):
             return self._cached_weight
 
+        if getattr(self, "use_triton", True) and self.cores[0].is_cuda and self.d == 2:
+            try:
+                from neuralops.kernels.triton.strided_tt import triton_strided_tt_contraction
+                W = triton_strided_tt_contraction(self.cores[0], self.cores[1], self.p_dims, self.q_dims)
+                if not self.training:
+                    self._cached_weight = W
+                    self._cached_version = self._current_version()
+                return W
+            except Exception as e:
+                logger.debug("Triton strided TT contraction failed (%s); fallback", e)
+
         res = self.cores[0][0]  # (p0, q0, r1)
         for i in range(1, self.d):
             core = self.cores[i]  # (r_i, p_i, q_i, r_{i+1})
@@ -303,6 +316,15 @@ class TTLinearLayer(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
+
+        if getattr(self, "use_triton", True) and x.is_cuda and self.d == 2:
+            try:
+                from neuralops.kernels.triton.strided_tt import triton_strided_tt_linear
+                return triton_strided_tt_linear(
+                    x, self.cores[0], self.cores[1], self.p_dims, self.q_dims, bias=self.bias
+                )
+            except Exception as e:
+                logger.debug("Triton strided TT linear failed (%s); fallback to PyTorch", e)
 
         # TT-FIX-09: generic path always works.
         W = self.materialize_weight()
