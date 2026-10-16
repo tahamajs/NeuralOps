@@ -839,29 +839,20 @@ class KroneckerCompressor(BaseCompressor):
             self.layer_errors[name] = err
 
             # KC-FIX-15: only set mode/rank after decision.
-            if new_layer is None or err > self.max_error:
+            if new_layer is None or (err > self.max_error and self.fallback_to_original and self.rank is None):
                 logger.warning(
-                    "Kronecker: error %.4f on %s > %.4f. %s",
+                    "Kronecker: error %.4f on %s > %.4f. Falling back to original weight.",
                     err,
                     name,
                     self.max_error,
-                    ("Falling back." if self.fallback_to_original else "Keeping original weight."),
                 )
-                if self.fallback_to_original:
-                    self.fallback_layers.append(name)
-                    self.layer_ranks[name] = None
-                    self.layer_modes[name] = "fallback"
-                    for p in module.parameters():
-                        p.requires_grad = False
-                    # KC-FIX-06: use orig_layer_params (no double-count).
-                    total_comp_params += orig_layer_params
-                    continue
-                else:
-                    self.fallback_layers.append(name)
-                    self.layer_ranks[name] = None
-                    self.layer_modes[name] = "fallback"
-                    total_comp_params += orig_layer_params
-                    continue
+                self.fallback_layers.append(name)
+                self.layer_ranks[name] = None
+                self.layer_modes[name] = "fallback"
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_layer_params
+                continue
 
             # Accepted.
             mode = "kronecker" if getattr(new_layer, "can_decompose", False) else "svd"
