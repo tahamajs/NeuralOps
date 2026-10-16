@@ -7,21 +7,19 @@ Provides transparent 3-level fallback: CUDA C++ -> Triton JIT -> PyTorch Referen
 
 from __future__ import annotations
 
-from neuralops.core.cuda_kernels._bindings import load_cuda_module
-from neuralops.core.cuda_kernels._fallback import dispatch_3level
-from neuralops.core.cuda_kernels._types import DataType, KernelLaunchConfig
+from neuralops.core.cuda_kernels._bindings import load_cuda_module, get_cuda_arch_flags
+from neuralops.core.cuda_kernels._fallback import dispatch
 from neuralops.core.cuda_kernels._utils import (
-    check_cuda_compatibility,
-    get_cuda_device_capability,
-    is_cuda_cpp_available,
+    is_cuda_available,
+    get_device_capability,
+    check_cuda_error,
 )
 
 __all__ = [
     "load_cuda_module",
-    "dispatch_3level",
-    "DataType",
-    "KernelLaunchConfig",
-    "check_cuda_compatibility",
-    "get_cuda_device_capability",
-    "is_cuda_cpp_available",
+    "get_cuda_arch_flags",
+    "dispatch",
+    "is_cuda_available",
+    "get_device_capability",
+    "check_cuda_error",
 ]
