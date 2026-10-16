@@ -69,10 +69,12 @@ def cosformer_linear_attention(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=cosformer_linear_attention_pytorch_ref,
-        args=(q, k, v),
-        kwargs={"is_causal": is_causal},
-        op_name="cosformer_linear_attention",
+        cuda_fn,
+        triton_fn,
+        cosformer_linear_attention_pytorch_ref,
+        q,
+        k,
+        v,
+        is_causal=is_causal,
+        kernel_name="cosformer_linear_attention",
     )

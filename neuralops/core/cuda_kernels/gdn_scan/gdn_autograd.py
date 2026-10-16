@@ -71,9 +71,13 @@ def chunked_delta_gate_scan(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=chunked_delta_gate_scan_pytorch_ref,
-        args=(q, k, v, alpha, beta),
-        op_name="chunked_delta_gate_scan",
+        cuda_fn,
+        triton_fn,
+        chunked_delta_gate_scan_pytorch_ref,
+        q,
+        k,
+        v,
+        alpha,
+        beta,
+        kernel_name="chunked_delta_gate_scan",
     )

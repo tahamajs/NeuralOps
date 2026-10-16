@@ -75,10 +75,13 @@ def lut_codebook_dequant_gemm(
     triton_fn = _get_triton_impl()
 
     return dispatch(
-        cuda_fn=cuda_fn,
-        triton_fn=triton_fn,
-        pytorch_fn=lut_codebook_dequant_gemm_pytorch_ref,
-        args=(x, indices_packed, codebook),
-        kwargs={"group_size": group_size, "bias": bias},
-        op_name="lut_codebook_dequant_gemm",
+        cuda_fn,
+        triton_fn,
+        lut_codebook_dequant_gemm_pytorch_ref,
+        x,
+        indices_packed,
+        codebook,
+        group_size=group_size,
+        bias=bias,
+        kernel_name="lut_codebook_dequant_gemm",
     )
