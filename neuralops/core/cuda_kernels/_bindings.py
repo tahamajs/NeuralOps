@@ -28,19 +28,25 @@ if os.path.exists("/usr/local/cuda"):
 
 logger = logging.getLogger(__name__)
 
-# Persistent cache directory on /mnt/c if available, else ~/.cache
-_DEFAULT_CACHE_DIR = (
-    "/mnt/c/linux_cache/torch_extensions"
-    if os.path.exists("/mnt/c")
-    else os.path.expanduser("~/.cache/torch_extensions")
-)
-_CACHE_DIR = os.environ.get("NEURALOPS_CUDA_CACHE", _DEFAULT_CACHE_DIR)
-os.environ.setdefault("TORCH_EXTENSIONS_DIR", _CACHE_DIR)
+# Persistent cache directory with write-access verification
+_candidate_cache = os.environ.get("NEURALOPS_CUDA_CACHE")
+if not _candidate_cache:
+    if os.path.exists("/mnt/d/cache/torch_extensions"):
+        _candidate_cache = "/mnt/d/cache/torch_extensions"
+    else:
+        _candidate_cache = os.path.expanduser("~/.cache/torch_extensions")
 
 try:
+    Path(_candidate_cache).mkdir(parents=True, exist_ok=True)
+    test_file = Path(_candidate_cache) / ".write_test"
+    test_file.touch()
+    test_file.unlink()
+    _CACHE_DIR = _candidate_cache
+except Exception:
+    _CACHE_DIR = os.path.expanduser("~/.cache/torch_extensions")
     Path(_CACHE_DIR).mkdir(parents=True, exist_ok=True)
-except Exception as e:
-    logger.debug(f"Could not create cache dir {_CACHE_DIR}: {e}")
+
+os.environ["TORCH_EXTENSIONS_DIR"] = _CACHE_DIR
 
 _LOADED_MODULES: dict[Any, Any] = {}
 _FAILED_MODULES: set[str] = set()
