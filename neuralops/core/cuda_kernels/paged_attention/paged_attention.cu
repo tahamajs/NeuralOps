@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 #include <float.h>
 
 #define WARP_SIZE 32
@@ -127,9 +128,10 @@ void paged_attention_v1_cuda(
 
     dim3 grid(num_seqs, num_heads);
     dim3 block(32);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (head_dim == 64 && block_size == 16) {
-        paged_attention_kernel<64, 16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        paged_attention_kernel<64, 16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k_cache.data_ptr<float>(),
@@ -142,7 +144,7 @@ void paged_attention_v1_cuda(
             scale
         );
     } else if (head_dim == 128 && block_size == 16) {
-        paged_attention_kernel<128, 16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        paged_attention_kernel<128, 16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k_cache.data_ptr<float>(),
@@ -156,7 +158,7 @@ void paged_attention_v1_cuda(
         );
     } else {
         // Dynamic fallback configuration
-        paged_attention_kernel<64, 16><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        paged_attention_kernel<64, 16><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k_cache.data_ptr<float>(),

@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 #include <float.h>
 
 template<int HEAD_DIM>
@@ -83,9 +84,10 @@ void sliding_window_attn_fwd_cuda(
 
     dim3 grid(B, H, N);
     dim3 block(1);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     if (D == 64) {
-        sliding_window_attn_kernel<64><<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+        sliding_window_attn_kernel<64><<<grid, block, 0, stream>>>(
             out.data_ptr<float>(),
             q.data_ptr<float>(),
             k.data_ptr<float>(),

@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 
 __global__ void fp8_gemm_kernel(
     float* __restrict__ out,
@@ -36,8 +37,9 @@ void fp8_gemm_cuda(
 
     dim3 block(16, 16);
     dim3 grid((N + block.x - 1) / block.x, (M + block.y - 1) / block.y);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    fp8_gemm_kernel<<<grid, block, 0, at::cuda::getCurrentCUDAStream()>>>(
+    fp8_gemm_kernel<<<grid, block, 0, stream>>>(
         out.data_ptr<float>(),
         A.data_ptr<float>(),
         B.data_ptr<float>(),
