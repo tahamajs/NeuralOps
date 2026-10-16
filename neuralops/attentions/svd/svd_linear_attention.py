@@ -584,6 +584,15 @@ class SVDLinearAttention(BaseAttention):
             d_out, d_in = target_w.shape
             r = min(target_linear.rank, d_out, d_in)
 
+            # Full-rank bypass: if rank >= full dimension, identity factorization with zero distortion
+            if r >= min(d_out, d_in):
+                U_r = weight.to(device=dev, dtype=weight.dtype)
+                V_r = torch.eye(d_in, device=dev, dtype=weight.dtype)
+                target_linear.set_low_rank_factors(U_r, V_r)
+                if bias is not None and target_linear.bias is not None:
+                    target_linear.bias.data.copy_(bias.to(target_linear.bias.device, target_linear.bias.dtype))
+                return
+
             if use_hnc:
                 try:
                     from neuralops.compression_engine.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
@@ -593,11 +602,7 @@ class SVDLinearAttention(BaseAttention):
                     logger.warning("HNC continuation failed in _factorize_and_set (%s); falling back to direct SVD.", e)
 
             # Compute SVD (Cholesky-whitened if probe_inputs provided and use_hnc is True)
-            if r >= min(d_out, d_in) and not use_hnc:
-                U_r = target_w.to(device=dev, dtype=weight.dtype)
-                V_r = torch.eye(d_in, device=dev, dtype=weight.dtype)
-                target_linear.set_low_rank_factors(U_r, V_r)
-            elif use_hnc and probe_inputs is not None:
+            if use_hnc and probe_inputs is not None:
                 try:
                     px = probe_inputs.to(dev).float().view(-1, d_in)
                     Hx = torch.matmul(px.t(), px) / max(px.shape[0], 1)
@@ -677,7 +682,7 @@ class SVDLinearAttention(BaseAttention):
                 results[name] = {"rank": proj.rank, "status": "hnc_aligned"}
 
         # Fast post-truncation factor restoration on attention projections if probe inputs and anchor outputs are provided
-        if probe_inputs is not None and anchor_outputs is not None:
+        if probe_inputs is not None and anchor_outputs is not None and target_rank < self.hidden_size:
             self.eval()
             anchor_targets = anchor_outputs.detach().float()
             trainable_factors = []
@@ -767,12 +772,14 @@ class SVDLinearAttention(BaseAttention):
                             w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
-            # Qwen / LLaMA
+            # Qwen / LLaMA / SVDLinearAttention
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
-                if hasattr(src, "o_proj"):
+                if hasattr(src, "out_proj"):
+                    w_o, b_o = _unpack_weight_bias(src.out_proj)
+                elif hasattr(src, "o_proj"):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # DistilBERT
