@@ -72,8 +72,8 @@ def test_selective_scan_3level_parity(device, d_state, dtype):
     torch.manual_seed(42)
     B, D, L = 2, 16, 32
     u = torch.randn(B, D, L, device=device, dtype=dtype, requires_grad=True)
-    delta = torch.rand(B, D, L, device=device, dtype=dtype, requires_grad=True) * 0.1
-    A = -torch.rand(D, d_state, device=device, dtype=dtype, requires_grad=True)
+    delta = (torch.rand(B, D, L, device=device, dtype=dtype) * 0.1).detach().requires_grad_(True)
+    A = (-torch.rand(D, d_state, device=device, dtype=dtype)).detach().requires_grad_(True)
     B_mat = torch.randn(B, d_state, L, device=device, dtype=dtype, requires_grad=True)
     C_mat = torch.randn(B, d_state, L, device=device, dtype=dtype, requires_grad=True)
     D_val = torch.randn(D, device=device, dtype=dtype, requires_grad=True)
