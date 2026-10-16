@@ -477,12 +477,14 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 if act_flat.shape[-1] == d_in:
                     # Synthesize a small sample matrix from the mean vector.
                     mean_act = act_flat.mean(dim=0, keepdim=True).to(device=device)  # (1, D_in)
-                    # Repeat with small jitter to give variance-based slicing signal.
-                    X = mean_act.T + 0.01 * torch.randn(d_in, 32, device=device)
+                    gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                    X = mean_act.T + 0.01 * torch.randn(d_in, 32, device=device, generator=gen_x)
                 else:
-                    X = torch.randn(d_in, 32, device=device)
+                    gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                    X = torch.randn(d_in, 32, device=device, generator=gen_x)
             else:
-                X = torch.randn(d_in, 32, device=device)
+                gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                X = torch.randn(d_in, 32, device=device, generator=gen_x)
 
             try:
                 W_idx, W_cents, Q_P_r, rel_error = self.compress_matrix(W, X)
