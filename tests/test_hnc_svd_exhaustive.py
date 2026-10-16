@@ -444,8 +444,8 @@ def test_group10_loss_ceiling_rejection_and_rollback():
     model = SmallAnchorMLP(16, 24, 8).to(device)
     probe_x = torch.randn(8, 16, device=device)
 
-    # Use an impossibly strict loss ceiling to force rejections
-    strict_tau = 1e-12
+    # Use an impossibly strict loss ceiling to force rejections (below machine-precision null space drift 1e-14)
+    strict_tau = 1e-16
     hnc = HessianNullSpaceSVDContinuation(
         model,
         target_rank=4,
