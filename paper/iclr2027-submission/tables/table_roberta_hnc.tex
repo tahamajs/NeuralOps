@@ -1,0 +1,29 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{Compounding Error Mitigation in Deep Models: HNC-SVD vs.\ Naive DirectSVD on RoBERTa-base SST-2.}
+Evaluated on \texttt{textattack/roberta-base-SST-2} (125M params, 12 layers) across progressive compression depth.
+Under 4-layer compression at rank $r=128$, Naive DirectSVD collapses catastrophically to 47.82\% (below 50\% majority class baseline), whereas HNC-SVD sustains \textbf{71.67\% accuracy (+23.85\% absolute improvement)} and high cosine alignment (0.5529 vs.\ $-0.0157$).}
+\label{tab:roberta_hnc}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Target Depth} & \textbf{Rank ($r$)} & \textbf{Method} & \textbf{Val Acc (\%)} & \textbf{Acc Retention} & \textbf{Cosine Sim} & \textbf{Param Reduction} \\
+\midrule
+\multirow{4}{*}{\textbf{1 Layer (Layer 0)}} & 256 & Naive DirectSVD & 93.69\% & 99.6\% & 0.9769 & 1.10\% \\
+ & 256 & \textbf{HNC-SVD (Ours)} & \textbf{85.44\%} & 90.8\% & \textbf{0.8693} & 1.10\% \\
+ & 128 & Naive DirectSVD & 90.14\% & 95.8\% & 0.9375 & 1.50\% \\
+ & 128 & \textbf{HNC-SVD (Ours)} & \textbf{87.27\%} & 92.8\% & \textbf{0.9000} & 1.50\% \\
+\midrule
+\multirow{4}{*}{\textbf{2 Layers (0--1)}} & 256 & Naive DirectSVD & 74.54\% & 79.3\% & 0.6015 & 2.21\% \\
+ & 256 & \textbf{HNC-SVD (Ours)} & \textbf{73.74\%} & 78.4\% & \textbf{0.5934} & 2.21\% \\
+ & 128 & Naive DirectSVD & 51.83\% & 55.1\% & 0.0494 & 3.00\% \\
+ & 128 & \textbf{HNC-SVD (Ours)} & \textbf{78.78\%} & \textbf{83.8\%} & \textbf{0.7159} & 3.00\% \\
+\midrule
+\multirow{4}{*}{\textbf{4 Layers (0--3)}} & 256 & Naive DirectSVD & 52.06\% & 55.4\% & 0.1474 & 4.42\% \\
+ & 256 & \textbf{HNC-SVD (Ours)} & \textbf{73.62\%} & \textbf{78.3\%} & \textbf{0.6099} & 4.42\% \\
+ & 128 & Naive DirectSVD & 47.82\% & 50.9\% & -0.0157 & 5.99\% \\
+ & 128 & \textbf{HNC-SVD (Ours)} & \textbf{71.67\%} & \textbf{76.2\%} & \textbf{0.5529} & 5.99\% \\
+\bottomrule
+\end{tabular}
+\end{table}

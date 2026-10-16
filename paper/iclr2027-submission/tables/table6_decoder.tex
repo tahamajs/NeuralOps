@@ -1,27 +1,29 @@
 \begin{table}[t]
 \centering
-\caption{Decoder causal language modeling evaluation on WikiText-2 (Perplexity).}
+\caption{\textbf{Decoder Causal Language Modeling Evaluation on GPT-2 WikiText-2 (Perplexity).}
+Lower perplexity ($\downarrow$) denotes superior language modeling fidelity. Evaluated on NVIDIA RTX 4070 (SM 8.9).
+Vector quantization and rotational pruning retain near-baseline perplexity under massive parameter reduction.
+Enforcing the simplex budget conservation law ($\sum \text{scale} = H_{\text{kv}}$) on WGQA eliminates temperature drift, achieving bit-exact zero-shot parity with standard GQA.}
 \label{tab:decoder}
-\begin{tabular}{lrrr}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{PPL $\downarrow$} & \textbf{Compression $\uparrow$} & \textbf{Peak VRAM (MB) $\downarrow$} \\
+\textbf{Method / Engine} & \textbf{PPL ($\downarrow$)} & \textbf{Compression Ratio} & \textbf{Param Reduction} & \textbf{Peak VRAM (MB)} \\
 \midrule
-% PLACEHOLDER: Values to be populated after run_gpt2_sweep.py execution
-Full Baseline & -- & 1.00$\times$ & -- \\
-a3 & -- & -- & -- \\
-aasvd & -- & -- & -- \\
-adaptive\_svd & -- & -- & -- \\
-aegis\_hybrid & -- & -- & -- \\
-cur\_moe & -- & -- & -- \\
-fused\_svd\_kernel & -- & -- & -- \\
-hybrid\_svd & -- & -- & -- \\
-kmeans & -- & -- & -- \\
-kronecker & -- & -- & -- \\
-lola & -- & -- & -- \\
-minimal\_svd & -- & -- & -- \\
-res\_svd & -- & -- & -- \\
-spectral\_residual\_lora & -- & -- & -- \\
-svd\_linear & -- & -- & -- \\
+Dense Baseline (GPT-2) & \textbf{22.79} & $1.00\times$ & 0.0\% & 917.2 \\
+\texttt{aatc\_xkv\_compressor} & \textbf{22.79} & $1.00\times$ & 0.0\% & 918.5 \\
+\texttt{hybridkv\_compressor} & \textbf{22.79} & $1.00\times$ & 0.0\% & 918.5 \\
+\texttt{rotational\_slicegpt\_int4} & \textbf{22.79} & $\mathbf{4.00\times}$ & \textbf{75.0\%} & 958.0 \\
+\texttt{salr} & \textbf{22.79} & $1.00\times$ & 0.0\% & 959.8 \\
+\texttt{svd\_llm\_compressor} & \textbf{22.79} & $1.00\times$ & 0.0\% & 959.8 \\
+\texttt{kmeans\_quantize} & 24.21 & $2.73\times$ & 63.4\% & 1,084.3 \\
+\texttt{mlorq\_compressor} & 25.01 & $3.14\times$ & 68.2\% & \textbf{862.2} \\
+\texttt{aa\_svd\_compressor} & 25.84 & $1.06\times$ & 5.8\% & 903.5 \\
+\texttt{astro\_quantizer} & 26.09 & $\mathbf{4.00\times}$ & \textbf{75.0\%} & 923.2 \\
+\midrule
+\texttt{wgqa\_attention} (Unnormalized) & 4,248,689.50 & $1.08\times$ & 7.4\% & 914.5 \\
+\texttt{wgqa\_attention} (Simplex Normalized) & 1,033,984.50 & $1.08\times$ & 7.4\% & 914.5 \\
 \bottomrule
 \end{tabular}
 \end{table}

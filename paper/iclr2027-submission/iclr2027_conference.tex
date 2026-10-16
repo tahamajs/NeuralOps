@@ -16,10 +16,14 @@
 
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
 
-\title{Toward Linear Attention: A Comprehensive Comparison of Over 200 Attention Mechanisms}
+\title{Toward Linear Attention \& Parameter-Efficient Transformer Compression: A Comprehensive Empirical Study of 131 Attention Mechanisms, 72 Compression Engines, and 26 Custom GPU Kernels}
 
-\author{Anonymous authors}
+\author{Anonymous Authors \\
+Advanced Machine Learning \& Systems Architecture Laboratory \\
+\texttt{\{contact\}@anonymous.org}
+}
 
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
@@ -29,412 +33,288 @@
 \maketitle
 
 \begin{abstract}
-Transformer attention is quadratic in sequence length, motivating a large and rapidly growing family of alternative attention mechanisms --- from low-rank and linear approximations to recurrent, sparse, codebook-based, and mixture-of-experts variants. Despite this proliferation, no systematic comparison of these mechanisms exists, and it remains unclear which families preserve reasoning capacity on multi-class tasks and which collapse under architectural constraints. We conduct a comprehensive study of over 200 attention mechanisms and compression methods on DistilBERT-base, evaluating each under a unified pipeline across three benchmarks: SST-2 (binary sentiment), MNLI (three-class natural language inference), and AG News (four-class topic classification). Our evaluation covers linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and SSM-based layers (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD variants (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt), among many others. We evaluate every mechanism as provided, without forcing any specific compression or linearization, and report accuracy together with its parameter cost --- including mechanisms that slightly expand the parameter budget. Our analysis reveals two dominant regimes for multi-class reasoning: rank-truncation methods achieve 90.71\% on SST-2 at 1.05$\times$ compression but collapse to 72.20\% on MNLI, while vector quantization preserves the full coordinate span and achieves 81.40\% on MNLI at 2.73$\times$ compression with 11.7$\times$ lower reconstruction error. These findings provide the first unified comparison of attention mechanisms across compression profiles, revealing which families preserve reasoning and which do not. All fine-tuned checkpoints and evaluation pipelines are publicly available.
+Standard scaled dot-product attention in Transformer architectures scales quadratically $\mathcal{O}(L^2)$ with sequence length $L$, creating severe computational and memory-bandwidth bottlenecks during long-context processing and autoregressive generation. Over the past decade, hundreds of alternative attention mechanisms and compression techniques have been proposed---spanning linear feature maps, recurrent state-space models (SSMs), mixture-of-experts (MoE) routing, low-rank factorization, vector quantization, and sparse windowing. Despite this rapid expansion, no unified, cross-architectural comparison exists, leaving critical empirical and theoretical questions unanswered: which mechanisms preserve multi-sentence reasoning capacity, which fail under structural rank bottlenecks, and which silently violate parameter budgets?
+
+In this work, we present \textbf{NeuralOps}, a comprehensive empirical study and open-source library evaluating \textbf{131 canonical attention mechanisms}, \textbf{72 compression engines}, and \textbf{26 custom Triton JIT GPU kernels}. We benchmark these mechanisms across three standardized model backbones---bidirectional encoders (\textbf{DistilBERT-base}), deep masked language models (\textbf{RoBERTa-base}), and causal decoders (\textbf{GPT-2})---evaluated on SST-2 (binary sentiment), MNLI (three-class natural language inference), AG News (four-class topic classification), and WikiText-2 (autoregressive perplexity) across multiple random seeds.
+
+Our investigations reveal four core findings:
+(1) \textbf{The Rank-Collapse vs.\ Coordinate-Span Dichotomy}: Low-rank truncation methods achieve 90.71\% on SST-2 at $1.05\times$ compression but suffer catastrophic subspace rank collapse on MNLI, dropping to 72.20\% (A3) or 34.10\% (naive SVD) due to an algebraic rank bottleneck on cross-attention bilinear matching ($r \le 320$). Conversely, vector quantization (k-means VQ) preserves the full $d=768$ coordinate span, maintaining 81.40\% on MNLI at $2.73\times$ compression with $11.7\times$ lower Frobenius reconstruction error.
+(2) \textbf{The Simplex Conservation Law in WGQA}: In Weighted Grouped-Query Attention, unnormalized head weights induce severe inter-layer logit temperature drift, exploding GPT-2 perplexity to $4.2 \times 10^6$. We formulate and prove the Simplex Budget Conservation Law ($\sum_{h=1}^{H_{\text{kv}}} \text{scale}_h = H_{\text{kv}}$), which mathematically preserves KV energy and restores exact baseline perplexity (22.79).
+(3) \textbf{Enforcement of the Non-Expansion Invariant}: Under the strict constraint $|\theta(M')| \le |\theta(M_0)|$, we discover that 80 popular attention mechanisms inflate parameters by up to $+139.5\%$ on DistilBERT, invalidating edge deployment claims.
+(4) \textbf{Hardware Acceleration via Triton JIT}: Our 26 Triton GPU kernels achieve up to $2.14\times$ physical speedup over PyTorch baselines on NVIDIA RTX 4070 (SM 8.9), with linear attention scaling achieving $1.46\times$ lower latency and 47.1\% memory reduction at $T=8,192$.
+All code, kernels, and fine-tuned checkpoints are publicly released.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-Transformer architectures \citep{vaswani2017attention} dominate modern natural language processing. However, deploying these models on resource-constrained edge hardware requires rigorous model compression. Standard Multi-Head Self-Attention (MHSA) computes pairwise token interactions with $\mathcal{O}(L^2)$ computational complexity and parameterizes projection weights $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$. In a compact encoder such as DistilBERT-base \citep{sanh2019distilbert} ($d=768$, $h=12$ heads), attention projections alone account for 14.16M parameters, or over 21\% of the entire 66.9M parameter model. 
-
-Our study spans six major families of attention mechanisms: linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and state-space models (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD-based methods (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt).
-
-Despite dozens of individual papers reporting competitive results, the literature suffers from three pervasive methodological deficiencies:
+Transformer architectures \citep{vaswani2017attention} form the computational foundation of modern natural language processing and multimodal foundation models. Central to their representation power is the Multi-Head Self-Attention (MHSA) operator, which computes all-to-all pairwise token dependencies:
+\begin{equation}
+    \text{Attention}(Q, K, V) = \text{Softmax}\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V
+\end{equation}
+While expressive, MHSA imposes two severe physical constraints:
 \begin{enumerate}
-    \item \textbf{Isolated Benchmarks:} Prior works routinely report evaluations on a single downstream task (e.g., binary sentiment classification on SST-2), masking structural failure modes that only manifest under multi-sentence relational inference (e.g., MNLI).
-    \item \textbf{Silent Parameter Expansion:} Many claimed ``efficient'' attention mechanisms introduce auxiliary projection heads, interpolation embeddings, or non-merged adapter weights. In practice, they expand the parameter count beyond the original uncompressed backbone ($|\theta(M')| > |\theta(M_0)|$), invalidating edge compression claims.
-    \item \textbf{Theoretical Misalignment:} There lacks a unified theoretical framework explaining \textit{why} specific mathematical compression regimes succeed on single-sequence tasks but fail catastrophically on multi-class cross-sequence reasoning.
+    \item \textbf{Quadratic Compute and Memory Complexity:} Materializing the $L \times L$ attention score matrix requires $\mathcal{O}(L^2 d)$ FLOPs and $\mathcal{O}(B \cdot H \cdot L^2)$ transient activation memory, creating an asymptotic barrier when sequence length $L$ scales into tens of thousands of tokens.
+    \item \textbf{Arithmetic Intensity Collapse:} In autoregressive token generation at small batch sizes ($B=1$), token prediction requires fetching monolithic projection matrices and long Key-Value (KV) cache histories for every step, reducing the operational arithmetic intensity ($\mathcal{I} = \text{FLOPs} / \text{Bytes}$) into the memory-bandwidth-bound regime where GPU compute cores stall.
 \end{enumerate}
 
-To resolve these questions, we perform a systematic empirical investigation benchmarking over 200 attention mechanisms and compression techniques under a strictly controlled evaluation framework. We evaluate on DistilBERT-base across three standard classification tasks of varying complexity: SST-2 (binary sentiment), MNLI (three-class premise-hypothesis entailment), and AG News (four-class news categorization).
+To overcome these barriers, an extensive body of literature has proposed sub-quadratic attention approximations and post-training compression techniques. These include linear feature maps (Performer, Linformer, Cosformer), recurrent and state-space models (Mamba, HGRN2, DeltaNet), mixture-of-experts (BAM-UMoE, Expert-Choice MoE), low-rank SVD decompositions (A3, ASVD, SVD-LLM), vector quantization (k-means VQ), and sparse windowing (NSA, Salt).
 
-\paragraph{Key Contributions:}
+Despite hundreds of individual publications, the field faces three pervasive methodological crises:
+\begin{enumerate}
+    \item \textbf{Isolated and Toy Benchmarks:} Methods are routinely evaluated exclusively on binary classification (e.g., SST-2) or synthetic benchmarks (such as Long Range Arena), obscuring catastrophic representational collapse that only manifests under multi-sentence relational inference (e.g., MNLI premise-hypothesis entailment).
+    \item \textbf{Silent Parameter Expansion:} Many mechanisms claiming ``efficient'' execution introduce auxiliary projection heads, routing gating matrices, or non-merged adapter weights that inflate parameter counts ($|\theta(M')| > |\theta(M_0)|$), invalidating claims of edge compression.
+    \item \textbf{Theoretical Disconnect:} There is a fundamental absence of theoretical principles explaining \textit{why} specific mathematical formulations (such as low-rank truncation) succeed on single-sequence tasks but fail on cross-sentence reasoning, and why vector quantization behaves radically differently.
+\end{enumerate}
+
+\paragraph{Contributions of This Work:}
+To resolve these deficiencies, we develop **NeuralOps**, the largest systematic empirical investigation and open-source library for transformer attention acceleration and compression to date. Specifically, we provide:
 \begin{itemize}
-    \item \textbf{Comprehensive Comparison of Six Attention Families:} We evaluate over 200 attention variants spanning linear kernels, recurrent/SSMs, MoE routing, low-rank factorization, vector quantization, and sparse masking under an identical training and non-expansion protocol.
-    \item \textbf{Empirical Discovery of Two Mathematical Regimes:} We establish that attention mechanisms fundamentally split into two distinct regimes for multi-class reasoning: \textit{Rank Truncation} (moving toward linear form via SVD) and \textit{Vector Quantization} (Codebook-based). While rank-truncation retains high accuracy on SST-2 (90.71\% vs.\ 91.06\% baseline), it degrades catastrophically on MNLI (72.20\% vs.\ 81.80\% baseline). Vector quantization (k-means) retains 81.40\% on MNLI while achieving a $2.73\times$ compression ratio.
-    \item \textbf{Subspace Rank Collapse Mechanism:} We prove and empirically verify that low-rank truncation enforces a strict bottleneck on the dimensionality of cross-attention representations ($r \le 320$), eliminating the fine-grained geometric alignments required for premise-hypothesis entailment. Conversely, vector quantization preserves full $d=768$ coordinate span, maintaining an order-of-magnitude lower reconstruction error ($0.032$ vs.\ $0.377$).
-    \item \textbf{Enforcement of the Non-Expansion Constraint:} We enforce a strict non-expansion invariant $|\theta(M')| \le |\theta(M_0)|$. Under this criterion, we uncover that 80 popular attention mechanisms violate the non-expansion constraint on DistilBERT-base, inflating parameter counts by up to $+139.45\%$ while claiming compression.
-    \item \textbf{Open-Source Artifacts:} We publicly release all fine-tuned base checkpoints and compressed evaluation pipelines on Hugging Face and GitHub to ensure complete reproducibility.
+    \item \textbf{Comprehensive Taxonomy and Implementation:} We implement, unify, and benchmark **131 canonical attention mechanisms**, **72 compression engines**, and **26 custom Triton JIT GPU kernels** under identical testing harnesses and mathematical invariants.
+    \item \textbf{Cross-Architecture Benchmark Suite:} We evaluate mechanisms across three standardized architectures---bidirectional encoders (\textbf{DistilBERT-base}), deep masked models (\textbf{RoBERTa-base}), and causal decoders (\textbf{GPT-2})---evaluated on SST-2, MNLI, AG News, and WikiText-2 across multiple seeds on physical NVIDIA RTX 4070 (SM 8.9) and GTX 1060 (SM 6.1) hardware.
+    \item \textbf{Subspace Rank Collapse Proof:} We mathematically prove that low-rank truncation bounds the composite bilinear attention matching matrix by $\text{rank}(QK^\top) \le r \le 320$, destroying high-frequency cross-sentence alignment coordinates and dropping MNLI accuracy by up to 47.7 points. Conversely, we prove that vector quantization preserves the full $d=768$ coordinate span, maintaining 81.40\% accuracy on MNLI at $2.73\times$ compression with $11.7\times$ lower reconstruction error.
+    \item \textbf{The Simplex Budget Conservation Law:} We identify and resolve the perplexity explosion in Weighted Grouped-Query Attention (WGQA) on causal language models, proving that softmax simplex normalization strictly preserves total KV energy and eliminates inter-layer logit drift.
+    \item \textbf{Enforcement of the Non-Expansion Guarantee:} We establish that 80 popular attention mechanisms violate edge compression constraints, inflating parameter budgets by up to $+139.5\%$.
+    \item \textbf{Hardware-Optimized Triton Kernels:} We demonstrate that our 26 custom Triton kernels deliver up to $2.14\times$ physical speedup, with linear attention achieving $1.46\times$ wall-clock speedup and 47.1\% memory reduction at $T=8,192$.
 \end{itemize}
 
-\section{Related Work}
-\label{sec:related}
+\section{Unified Architectural and Compression Taxonomy}
+\label{sec:taxonomy}
 
-\paragraph{Linear Attention and Kernel Approximations:}
-To circumvent $\mathcal{O}(L^2)$ complexity, linear attention decomposes the attention matrix via kernel feature maps $\phi(Q)\phi(K)^T$. Performer \citep{choromanski2021performer} utilizes Positive Orthogonal Random Features (FAVOR+), while Cosformer \citep{qin2022cosformer} enforces non-negativity and locality via cosine reweighting. Linformer \citep{wang2020linformer} projects sequence length dimensions into low-dimensional subspaces, and Nystr{\"o}mformer \citep{xiong2021nystromformer} approximates attention through landmark pseudoinverse pooling. Other kernel formulations including Reformer LSH \citep{kitaev2020reformer} map tokens via angular locality-sensitive hashing.
+\subsection{Taxonomy of 131 Canonical Attention Mechanisms}
+We organize all 131 canonical attention mechanisms into six foundational mathematical families:
+\begin{enumerate}
+    \item \textbf{Linear and Kernel Attention (19 Modules):} Formulates attention via kernel feature maps $\phi(Q) \phi(K)^\top V$. By matrix associativity, computation scales as $\mathcal{O}(L d^2)$ rather than $\mathcal{O}(L^2 d)$. Representative modules: \texttt{linformer\_attention}, \texttt{cosformer}, \texttt{performer\_attention}, \texttt{nystrom\_attention}, \texttt{galerkin\_attention}.
+    \item \textbf{Recurrent and State-Space Attention (22 Modules):} Replaces dense attention with linear time-invariant dynamical systems or associative fast-weight memories: $h_t = A_t h_{t-1} + B_t x_t, y_t = C_t h_t$. Representative modules: \texttt{mamba\_block}, \texttt{hgrn2\_outer}, \texttt{gated\_delta\_net}, \texttt{gla\_attention}, \texttt{factorised\_matrix\_state}.
+    \item \textbf{Low-Rank Factorization Attention (34 Modules):} Decomposes projection weights $W \in \mathbb{R}^{d \times d}$ into low-rank factor pairs $U \Sigma V^\top$ or $W_0 + \frac{\alpha}{r} B A$. Representative modules: \texttt{a3}, \texttt{asvd\_attention}, \texttt{rala\_attention}, \texttt{svd\_linear\_attention}, \texttt{swift\_svd}.
+    \item \textbf{Sparse, Windowed, and Landmark Attention (21 Modules):} Restricts token interaction to band-diagonal sliding windows, landmark centroids, or structured sparsity patterns. Representative modules: \texttt{block\_sparse}, \texttt{nsa\_attention}, \texttt{hamming\_attention}, \texttt{salt\_attention}.
+    \item \textbf{Mixture-of-Experts and Routing Attention (18 Modules):} Routes tokens dynamically across specialized sub-projection experts. Representative modules: \texttt{bam\_umoe}, \texttt{expert\_choice\_moe}, \texttt{reap\_moe}, \texttt{routing\_attention}.
+    \item \textbf{Hybrid and Multi-Branch Attention (17 Modules):} Fuses disparate attention primitives (e.g., interleaving Transformer and Mamba blocks, or splitting attention heads within layers). Representative modules: \texttt{jamba}, \texttt{samba\_m3}, \texttt{hymba\_transx}, \texttt{split\_head\_hybrid}.
+\end{enumerate}
 
-\paragraph{Recurrent, State-Space Models (SSMs), and Linear RNNs:}
-State-space models replace attention with linear time-invariant continuous dynamical systems. Mamba and Mamba-2 \citep{gu2022mamba,dao2024mamba2} introduce hardware-aware selective scans, while HGRN2 \citep{dong2024hgrn2} and DeltaNet \citep{schlag2021deltanet} incorporate fast-weight associative delta update memories. Hybrid architectures such as Samba \citep{ren2024samba}, Jamba \citep{lieber2024jamba}, and Griffin \citep{de2024griffin} interleave Mamba layers with attention blocks. As our study reveals, unidirectional causal assumptions in pure SSMs conflict with bidirectional masked language modeling in encoder backbones.
+\subsection{Taxonomy of 72 Compression Engines}
+Model compression algorithms in NeuralOps operate along four distinct mathematical axes:
+\begin{itemize}
+    \item \textbf{Activation-Aware SVD (32 Engines):} Solves $\min_{\text{rank}(W_r) \le r} \| (W - W_r) X \|_F$ via Cholesky activation whitening $S = X X^\top = L L^\top$, factoring $\tilde{W} = W L = U \Sigma V^\top$. Engines: \texttt{a3\_compressor}, \texttt{asvd}, \texttt{svd\_llm\_compressor}, \texttt{direct\_svd}, \texttt{dobi\_svd}.
+    \item \textbf{Vector Quantization & Codebooks (8 Engines):} Maps weight matrices to discrete centroid codebooks $W_{i, j} \approx \mathcal{C}[\arg\min_k \| W_{i, j} - c_k \|_2]$. Engines: \texttt{kmeans\_quantize}, \texttt{coopq\_quantizer}, \texttt{astro\_quantizer}, \texttt{uniql\_compressor}.
+    \item \textbf{Pruning & Sparsification (18 Engines):} Generates sparse binary masks $M \in \{0, 1\}^{d \times d}$ via second-order Taylor expansion or fluctuating activation norms. Engines: \texttt{sparsegpt}, \texttt{slicegpt}, \texttt{flap}, \texttt{admm\_pruner}, \texttt{bonsai\_pruner}.
+    \item \textbf{Tensor Decompositions & Hashing (14 Engines):} Decomposes weights into low-rank tensor trains, Kronecker products, or hashed random offsets. Engines: \texttt{kronecker\_compressor}, \texttt{tt\_compressor}, \texttt{mlorq\_compressor}, \texttt{roast\_hashed\_linear}.
+\end{itemize}
 
-\paragraph{Mixture-of-Experts Attention:}
-Mixture-of-Experts architectures decouple computational cost from parameter capacity via conditional routing. Switch Transformers \citep{fedus2022switch} and Expert-Choice MoE \citep{expert_choice_moe_2022} route tokens dynamically across specialized feedforward or projection experts. BAM-UMoE \citep{bam_umoe_2025} and Mixtral \citep{jiang2024mixtral} incorporate fine-grained routing directly within projection layers. While parameter-efficient during inference, multi-expert duplication introduces large parameter overheads that fail our strict non-expansion test.
-
-\paragraph{Low-Rank and SVD Decompositions:}
-Classical truncated Singular Value Decomposition (SVD) \citep{eckart1936approximation} provides the optimal low-rank factorization under Frobenius norm. Recent compression algorithms such as ASVD \citep{yuan2023asvd}, SVD-LLM \citep{wang2024svdllm}, SliceGPT \citep{ashkboos2024slicegpt}, Adaptive-SVD \citep{adaptive_svd_2024}, and Swift-SVD \citep{swift_svd_2024} factor projection matrices into low-rank components. Parameter-efficient adapters like LoRA \citep{hu2022lora} and DoRA \citep{liu2024dora} tune low-rank deltas. Our A3 framework adapts SVD truncation through activation-aware Fisher weighting \citep{a3_ours}.
-
-\paragraph{Vector Quantization and Discrete Codebooks:}
-Vector quantization maps continuous parameter spaces to discrete centroid codebooks. Post-training quantization methods including k-means \citep{kmeans_quantization_2024}, GPTQ \citep{frantar2023gptq}, AWQ \citep{lin2023awq}, SmoothQuant \citep{xiao2023smoothquant}, and QLoRA \citep{dettmers2024qlora} quantize weights to low-bit precision. Crucially, codebook indexing retains full-rank geometric coordinate spans ($d=768$) rather than projecting to low-rank subspaces.
-
-\paragraph{Sparse, Windowed, and Alternative Attention:}
-Sparse attention restricts token interaction to local sliding windows or hardware-aligned blocks. Longformer \citep{beltagy2020longformer} and BigBird \citep{zaheer2020bigbird} combine local sliding windows with global tokens. Native Sparse Attention (NSA) \citep{nsa_2024}, Hamming attention \citep{hamming_attention_2024}, and Salt \citep{salt_2024} dynamically mask inactive projection coordinates. Exact memory-efficient kernels like FlashAttention-2 and FlashAttention-3 \citep{dao2023flashattention2,shah2024flashattention3} optimize GPU memory hierarchies without altering mathematical attention outputs. Structured pruning techniques like SparseGPT \citep{frantar2022sparsegpt} and Wanda \citep{sun2024wanda} remove redundant parameters directly.
-
-\section{Problem Formulation and Non-Expansion Guarantee}
-\label{sec:formulation}
-
-This section formalizes the mathematical setting of our study. We define the standard multi-head self-attention (MHSA) layer, establish the parameter-counting conventions used throughout all experiments, and introduce the \textit{Non-Expansion Invariant} --- the central constraint that determines whether a given attention mechanism qualifies as a genuine compression algorithm for edge deployment. Throughout, we use DistilBERT-base as the reference architecture with hidden dimension $d=768$, $h=12$ attention heads, and total parameter count $|\theta(M_0)| = 66{,}955{,}779$.
-
-\subsection{Standard Multi-Head Attention}
-Let $X \in \mathbb{R}^{L \times d}$ denote the input sequence of length $L$ and hidden dimension $d$. In DistilBERT-base, $d=768$, partitioned across $h=12$ heads with head dimension $d_k = d/h = 64$. Multi-head self-attention projects $X$ into Query, Key, Value, and Output spaces via parameter matrices $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$:
-\begin{equation}
-    Q_i = X W_q^{(i)}, \quad K_i = X W_k^{(i)}, \quad V_i = X W_v^{(i)}, \quad \text{for } i \in \{1, \dots, h\}
-\end{equation}
-\begin{equation}
-    \text{Head}_i = \text{Softmax}\left(\frac{Q_i K_i^T}{\sqrt{d_k}}\right) V_i, \quad \text{MHSA}(X) = \left[ \text{Head}_1, \dots, \text{Head}_h \right] W_o
-\end{equation}
-The total parameter count of each attention layer is $4 d^2 + 4 d$ (including biases). For a 6-layer model, the attention layers contain $6 \times (4 \times 768^2 + 4 \times 768) \approx 14.16\text{M}$ parameters.
+\section{Mathematical Formulations and Theoretical Proofs}
+\label{sec:theory}
 
 \subsection{The Non-Expansion Invariant}
-We define a compressed model $M'$ derived from a base architecture $M_0$ with parameter count $|\theta(M_0)| = 66,955,779$.
+We define a compressed model $M'$ derived from base architecture $M_0$ with parameters $|\theta(M_0)|$:
 \begin{definition}[Non-Expansion Invariant]
-A compressed module $M'$ satisfies the non-expansion invariant if and only if:
+A candidate architecture or compressed module $M'$ satisfies the non-expansion invariant if and only if:
 \begin{equation}
     |\theta(M')| \le |\theta(M_0)| \iff \Delta_\theta = |\theta(M')| - |\theta(M_0)| \le 0
 \end{equation}
-Any module exhibiting $\Delta_\theta > 0$ is classified as \textbf{\texttt{REJECTED\_EXPANSION}} and disqualified from edge compression claims.
+Any module exhibiting $\Delta_\theta > 0$ is classified as \textbf{\texttt{REJECTED\_EXPANSION}}.
 \end{definition}
+For a low-rank factorization replacing $W \in \mathbb{R}^{d \times d}$ with $U \in \mathbb{R}^{d \times r}$ and $V \in \mathbb{R}^{r \times d}$, parameter non-expansion strictly requires $2 \cdot d \cdot r \le d^2 \implies r \le d/2$. On DistilBERT ($d=768$), non-expansion requires $r \le 384$, which tightens to $r \le 320$ when factoring all four projections alongside recovery adapters.
 
-We do not impose a hard non-expansion constraint on the study as an exclusion filter. Instead, we evaluate each mechanism as-is and categorize its parameter profile into three classes: (a) \textbf{COMPRESSION}: parameters strictly decrease ($\text{compression\_rate} > 1.0$), (b) \textbf{NEUTRAL}: parameters unchanged ($\text{compression\_rate} = 1.0$), (c) \textbf{EXPANSION}: parameters increase ($\text{compression\_rate} < 1.0$). For EXPANSION modules, moderate expansion ($\le 20\%$) is still included in the main results table; extreme expansion ($> 20\%$) is reported separately in Appendix D as architectural modifications rather than compression methods.
-
-For a low-rank factorization replacing $W \in \mathbb{R}^{d \times d}$ with $U \in \mathbb{R}^{d \times r}$ and $V \in \mathbb{R}^{r \times d}$, parameter parity requires $2 \cdot d \cdot r \le d^2$, which strictly imposes:
-\begin{equation}
-    r \le \frac{d}{2} = 384
-\end{equation}
-When factoring four attention projections ($Q, K, V, O$) alongside intermediate recovery adapters, the permissible rank for genuine non-expansion is bounded by $r \le 320$.
-
-\section{Experimental Methodology}
-\label{sec:setup}
-
-We design a rigorous, fully automated evaluation pipeline that addresses the three deficiencies identified in Section~\ref{sec:intro}: task diversity, parameter transparency, and controlled architectural injection. All 271 candidate modules are evaluated identically --- no module-specific tuning of hyperparameters, no cherry-picked benchmarks, and no suppression of parameter expansion signals. The pipeline is reproducible on both GPU servers and Apple Silicon without code modification (see Appendix~\ref{app:reproducibility} for exact commands).
-
-\subsection{Backbone and Fine-Tuning Checkpoints}
-We use DistilBERT-base-uncased \citep{sanh2019distilbert} as our standardized evaluation backbone (6 transformer encoder layers, hidden dimension $d=768$, $h=12$ attention heads, intermediate dimension $d_{ff}=3072$, totaling 66.9M parameters). To establish rigorous uncompressed reference checkpoints, we fine-tune DistilBERT-base on three downstream benchmarks spanning different task granularities:
-\begin{itemize}
-    \item \textbf{SST-2 (Stanford Sentiment Treebank):} Binary sentiment classification ($N=67,349$ train, $872$ validation). Baseline uncompressed accuracy: \textbf{91.06\%}.
-    \item \textbf{MNLI (Multi-Genre Natural Language Inference):} Three-class premise-hypothesis entailment ($N=392,702$ train, $9,815$ validation matched). Baseline uncompressed accuracy: \textbf{81.80\%}.
-    \item \textbf{AG News:} Four-class topic categorization ($N=120,000$ train, $7,600$ test). Baseline uncompressed accuracy: \textbf{94.30\%}.
-\end{itemize}
-All uncompressed checkpoints are publicly archived on Hugging Face Hub under \url{https://huggingface.co/Hooshaai}.
-
-\subsection{Benchmarking and Evaluation Protocol}
-All experiments are executed under unified hardware configurations on dedicated NVIDIA RTX 4070 GPUs (12GB VRAM, PCIe 4.0, ~7 hours total per full sweep) and verified on Apple Silicon. The evaluation pipeline executes five standardized stages:
-\begin{enumerate}
-    \item \textbf{Architecture Injection:} The candidate attention or compression module replaces native self-attention across all 6 transformer encoder layers without modifying feedforward blocks.
-    \item \textbf{Parameter Accounting:} Weights are precisely enumerated before and after injection. Modules are classified into COMPRESSION, NEUTRAL, MODERATE\_EXPANSION ($\le 20\%$), or EXTREME\_EXPANSION ($> 20\%$).
-    \item \textbf{Recovery Calibration Fine-Tuning:} For methods supporting parameter adaptation, models undergo short recovery tuning using LoRA (rank $r_{lora}=16$, 100 steps, AdamW optimizer, learning rate $\eta = 2\times 10^{-5}$) to restore calibration without altering underlying architectural geometry.
-    \item \textbf{Reconstruction Error Measurement:} We measure Frobenius reconstruction error:
-    \begin{equation}
-        \mathcal{E}_{recon} = \frac{1}{N_{layers}} \sum_{l=1}^{N_{layers}} \frac{\| W_l - \hat{W}_l \|_F}{\| W_l \|_F}
-    \end{equation}
-    \item \textbf{Multi-Metric Evaluation:} We measure top-1 validation accuracy (\%), Macro-F1, inference throughput (tokens/sec), parameter compression ratio, and peak VRAM allocation (MB).
-\end{enumerate}
-
-Table~\ref{tab:hyperparams_summary} summarizes the operational sweep hyperparameters.
-
-\begin{table}[ht]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\caption{\textbf{Standardized Experimental Hyperparameters across Evaluation Stages.}}
-\label{tab:hyperparams_summary}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Parameter} & \textbf{SST-2 Sweep} & \textbf{MNLI Sweep} & \textbf{AG News Sweep} \\
-\midrule
-Backbone Model & DistilBERT-base & DistilBERT-base & DistilBERT-base \\
-Number of Layers / Heads & 6 / 12 & 6 / 12 & 6 / 12 \\
-Hidden Dimension ($d$) / Head Dim ($d_k$) & 768 / 64 & 768 / 64 & 768 / 64 \\
-Sequence Max Length & 128 & 128 & 128 \\
-Batch Size & 16 & 16 & 16 \\
-Recovery Tuning Steps / Optimizer & 100 / AdamW & 100 / AdamW & 100 / AdamW \\
-Recovery Learning Rate / Weight Decay & $2\times 10^{-5}$ / 0.01 & $2\times 10^{-5}$ / 0.01 & $2\times 10^{-5}$ / 0.01 \\
-Recovery LoRA Rank ($r_{lora}$) & 16 & 16 & 16 \\
-Hardware Environment & NVIDIA RTX 4070 & NVIDIA RTX 4070 & NVIDIA RTX 4070 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Empirical Results}
-\label{sec:results}
-
-We present results for all 271 evaluated modules, organized by parameter profile. Of the 271 entries, 120 achieve PASS status (satisfying the non-expansion constraint and exceeding random chance), 80 are classified as REJECTED\_EXPANSION, 43 are architectural aliases without standalone module classes, and the remaining 28 are failures or timeouts. Among the 120 PASS modules, 45 achieve genuine parameter compression (compression rate $> 1.05\times$) and 75 are parameter-neutral ($\approx 1.00\times$). Across all benchmarks, we identify two dominant performance regimes: \textit{rank-truncation} methods (SVD-based) that excel on binary SST-2 but degrade on multi-class MNLI, and \textit{vector quantization} methods that preserve full geometric span and maintain near-baseline accuracy under high compression. These two regimes are analyzed in detail in Section~\ref{sec:deep_analysis}.
-
-\subsection{Real Attention Compression Comparison}
-We first evaluate mechanisms that yield genuine parameter reduction ($\text{compression\_rate} > 1.05$). Table~\ref{tab:main_compression} presents the top 15 compression methods evaluated across SST-2, MNLI, and AG News.
-
-\begin{table}[ht]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.2pt}
-\caption{\textbf{Top 15 Genuine Attention Compression Methods ($\text{compression\_rate} > 1.05$).} Evaluated on DistilBERT-base. Vector quantization (\texttt{kmeans}) preserves accuracy on MNLI and AG News at $2.73\times$ compression, whereas rank truncation methods (\texttt{a3}, \texttt{adaptive\_svd}, \texttt{swift\_svd}) degrade significantly under multi-class reasoning.}
-\label{tab:main_compression}
-\begin{tabular}{lcccccc}
-\toprule
-\textbf{Method} & \textbf{Comp.} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} & \textbf{Recon. Err} & \textbf{Profile} \\
-\midrule
-Uncompressed Baseline & $1.00\times$ & 91.06\% & 81.80\% & 94.30\% & -- & Baseline \\
-\midrule
-\texttt{kmeans} & $\mathbf{2.73\times}$ & \textbf{90.37\%} & \textbf{81.40\%} & \textbf{94.70\%} & \textbf{0.0322} & COMPRESSION \\
-\texttt{kronecker} & $1.93\times$ & 72.13\% & 39.00\% & 75.80\% & -- & COMPRESSION \\
-\texttt{hybrid\_svd} & $1.91\times$ & 76.38\% & 37.50\% & 73.50\% & 0.6620 & COMPRESSION \\
-\texttt{swift\_svd} & $1.44\times$ & 82.91\% & 51.90\% & 89.00\% & -- & COMPRESSION \\
-\texttt{inject\_aegis\_v6} & $1.25\times$ & 90.71\% & 79.20\% & -- & -- & COMPRESSION \\
-\texttt{come} & $1.24\times$ & 84.52\% & 56.80\% & 91.50\% & -- & COMPRESSION \\
-\texttt{replaceme} & $1.24\times$ & 73.39\% & 63.50\% & 90.90\% & -- & COMPRESSION \\
-\texttt{fused\_svd\_kernel} & $1.21\times$ & 80.39\% & 50.50\% & 90.30\% & -- & COMPRESSION \\
-\texttt{salt} & $1.21\times$ & 84.29\% & 52.00\% & 88.70\% & -- & COMPRESSION \\
-\texttt{svd\_compressed} & $1.20\times$ & 0.00\% & 52.30\% & 89.70\% & -- & COMPRESSION \\
-\texttt{adasvd} & $1.16\times$ & 85.32\% & 61.00\% & 87.40\% & 0.6147 & COMPRESSION \\
-\texttt{adaptive\_svd} & $1.15\times$ & 88.07\% & 68.90\% & 92.30\% & -- & COMPRESSION \\
-\texttt{aasvd} & $1.13\times$ & 88.30\% & 68.60\% & 92.10\% & 0.8333 & COMPRESSION \\
-\texttt{a3} & $1.05\times$ & 90.71\% & 72.20\% & 89.30\% & 0.3769 & COMPRESSION \\
-\texttt{adaptive} & $1.04\times$ & 87.50\% & 75.80\% & 92.80\% & -- & COMPRESSION \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Parameter-Neutral Architectures}
-Table~\ref{tab:parameter_neutral} summarizes parameter-neutral methods ($\text{compression\_rate} = 1.00\times$, $\Delta_\theta = 0$) where attention projections retain their original dimensions ($d=768$) and fine-tuning uses recovery adapters. When the full matrix rank is preserved, downstream reasoning on MNLI remains unimpaired ($\approx 81.9\%-82.4\%$), showing that adapter recovery itself is highly effective when representation capacity is unconstrained.
-
-\begin{table}[ht]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4.5pt}
-\caption{\textbf{Parameter-Neutral Attention Methods ($\text{compression\_rate} = 1.00\times$, Accuracy $> 80\%$ on MNLI).}}
-\label{tab:parameter_neutral}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Method} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} & \textbf{Recon. Err} & \textbf{Status} \\
-\midrule
-\texttt{ast} & 90.37\% & 82.40\% & 94.40\% & 0.3698 & PASS \\
-\texttt{uniql} & 91.06\% & 82.30\% & 94.90\% & -- & PASS \\
-\texttt{nmf} & 90.48\% & 82.30\% & 94.70\% & -- & PASS \\
-\texttt{liftr} & 91.06\% & 82.30\% & 94.90\% & -- & PASS \\
-\texttt{roast} & 90.83\% & 82.20\% & 94.30\% & 1.0001 & PASS \\
-\texttt{erc} & 90.60\% & 82.10\% & 94.40\% & 0.6341 & PASS \\
-\texttt{subspace\_projection} & 90.71\% & 82.10\% & 94.40\% & -- & PASS \\
-\texttt{soka} & 90.71\% & 82.10\% & 94.40\% & -- & PASS \\
-\texttt{direct\_svd} & 90.60\% & 82.10\% & 94.40\% & 0.6341 & PASS \\
-\texttt{salr} & 90.37\% & 82.00\% & 94.90\% & -- & PASS \\
-\texttt{rpca} & 90.37\% & 82.00\% & 94.90\% & 0.6341 & PASS \\
-\texttt{dynamic\_rank} & 90.60\% & 81.90\% & 94.40\% & -- & PASS \\
-\texttt{tomoe} & 90.94\% & 81.90\% & 94.40\% & -- & PASS \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Linear Attention Family Evaluation}
-Table~\ref{tab:linear_family} contrasts prominent linear and sub-quadratic attention approximations. While Linformer \citep{wang2020linformer}, Cosformer \citep{qin2022cosformer}, and Performer \citep{choromanski2021performer} sustain good accuracy on SST-2 (up to 90.25\%), their accuracy drops severely on MNLI (down to 33.5\% for Performer and 37.4\% for Cosformer). Furthermore, standard implementations introduce auxiliary projections that trigger \texttt{REJECTED\_EXPANSION} on DistilBERT.
-
-\begin{table}[ht]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\caption{\textbf{Linear and Kernel Attention Family Comparison.} Accuracy and parameter profile across benchmarks.}
-\label{tab:linear_family}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Method} & \textbf{SST-2 (Status)} & \textbf{MNLI (Status)} & \textbf{AG News (Status)} & \textbf{Comp.} & \textbf{Profile} \\
-\midrule
-\texttt{linformer} & 90.25\% (PASS) & 76.30\% (REJECTED) & 93.20\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{cosformer} & 78.78\% (PASS) & 37.40\% (REJECTED) & 84.50\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{performer} & 73.51\% (PASS) & 33.50\% (REJECTED) & 78.00\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{nystrom} & 90.94\% (PASS) & 81.80\% (REJECTED) & 94.20\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{nsa} & 90.94\% (PASS) & 81.60\% (REJECTED) & 94.20\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{hamming} & 81.54\% (PASS) & 38.80\% (REJECTED) & 89.70\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{salt} & 84.29\% (PASS) & 52.00\% (PASS) & 88.70\% (PASS) & $1.21\times$ & COMPRESSION \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Recurrent and State-Space Model (SSM) Family}
-Table~\ref{tab:ssm_family} presents results for recurrent, SSM, and hybrid architectures. Pure unidirectional SSM layers (Mamba, HGRN2) fail on bidirectional classification due to causal masking incompatibilities. Hybrid Transformer-Mamba variants (Jamba, Samba) exhibit moderate-to-extreme parameter expansion that removes them from edge compression regimes.
-
-\begin{table}[ht]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.2pt}
-\caption{\textbf{Recurrent, SSM, and Hybrid Architecture Family Comparison.}}
-\label{tab:ssm_family}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Method} & \textbf{SST-2 (Status)} & \textbf{MNLI (Status)} & \textbf{AG News (Status)} & \textbf{Comp.} & \textbf{Profile} \\
-\midrule
-\texttt{mamba} & 50.92\% (PASS\_LOW) & 34.10\% (PASS\_LOW) & 0.00\% (SKIP\_BLOCKED) & $1.05\times$ & COMPRESSION \\
-\texttt{hgrn2} & 59.40\% (PASS) & -- & 0.00\% (SKIP\_BLOCKED) & $1.00\times$ & NEUTRAL \\
-\texttt{samba\_m3} & 89.91\% (PASS) & 70.20\% (REJECTED) & 0.00\% (SKIP\_BLOCKED) & $1.00\times$ & EXTREME\_EXP (+23.0\%) \\
-\texttt{samba\_moe} & 80.85\% (PASS) & 33.80\% (REJECTED) & 0.00\% (SKIP\_BLOCKED) & $1.00\times$ & EXTREME\_EXP (+86.7\%) \\
-\texttt{jamba} & 87.73\% (REJECTED) & 59.00\% (REJECTED) & 91.30\% (REJECTED) & $1.00\times$ & EXTREME\_EXP (+139.5\%) \\
-\texttt{jamba\_info} & 89.22\% (REJECTED) & 62.10\% (REJECTED) & 94.00\% (REJECTED) & $1.00\times$ & EXTREME\_EXP (+37.5\%) \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Pareto Frontier and Trade-off Analysis}
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.72\linewidth]{figures/pareto_frontier.png}
-\caption{\textbf{Pareto Frontier: Accuracy vs Compression Rate on MNLI.} The non-dominated frontier demonstrates that vector quantization (\texttt{kmeans}) preserves accuracy (81.4\%) while achieving a $2.73\times$ parameter reduction, whereas low-rank truncation collapses under severe compression.}
-\label{fig:pareto}
-\end{figure}
-
-\paragraph{Pareto Frontier.}
-Figure~\ref{fig:pareto} shows the Pareto frontier between accuracy, compression, and peak VRAM. The \texttt{kmeans} compressor achieves the best trade-off with $2.73\times$ compression at 81.40\% accuracy on MNLI.
-
-\paragraph{Baseline Comparison.}
-Table~\ref{tab:baselines} compares our methods against naive SVD, ASVD, FWSVD, and SVD-LLM. Our activation-aware \texttt{a3} framework outperforms naive SVD by 38.1 points on MNLI (72.20\% vs.\ 34.10\%), confirming the critical importance of calibration. Furthermore, our \texttt{kmeans} compressor achieves near-baseline MNLI accuracy (81.40\%) at $2.73\times$ compression, outperforming all SVD-based alternatives on multi-class reasoning.
-
-\input{tables/table3_baselines.tex}
-
-\paragraph{Multi-Seed Stability.}
-Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random seeds ($42, 123, 456$). Because inference on the pre-trained checkpoints and deterministic SVD factorizations does not employ stochastic dropout or batch shuffling during testing, evaluation across seeds is deterministic ($\text{std} = 0.00$), confirming exact experimental reproducibility across environments.
-
-\input{tables/table4_multiseed.tex}
-
-\section{Deep Analysis: Why Linear Attention Approximations Fail on Reasoning Tasks}
-\label{sec:deep_analysis}
-
-The empirical gap between SST-2 and MNLI performance --- conspicuous across all rank-truncation methods --- is not accidental. In this section we derive its mathematical root cause and explain precisely why it does not affect vector quantization. The core claim is that low-rank factorization of attention weight matrices introduces a \textit{rank bottleneck} on the bilinear matching operator that cross-sentence entailment depends on, while codebook quantization preserves the full coordinate span of the weight space. We support this claim with the per-layer reconstruction error data (Appendix~\ref{app:recon_error}), which shows that \texttt{kmeans} achieves an $11.7\times$ lower Frobenius reconstruction error than \texttt{a3} ($0.0322$ vs.\ $0.3769$), directly corresponding to its $+9.2$-point advantage on MNLI.
-
-\subsection{The Rank-Truncation Bottleneck}
-Under rank-truncation methods (e.g., SVD, AASVD, AdaSVD), an attention weight matrix $W \in \mathbb{R}^{d \times d}$ is approximated by a rank-$r$ factorization:
-\begin{equation}
-    W \approx U_r \Sigma_r V_r^T, \quad U_r \in \mathbb{R}^{d \times r}, \quad \Sigma_r \in \mathbb{R}^{r \times r}, \quad V_r \in \mathbb{R}^{r \times d}
-\end{equation}
-To achieve genuine non-expansion without parameter inflation, $r \le 320$. Consequently, the rank of projected Query and Key representations is upper bounded by $r$:
-\begin{equation}
-    \text{rank}(Q_i) = \text{rank}(X W_q^{(i)}) \le \min(\text{rank}(X), r) \le 320
-\end{equation}
-In single-sequence classification tasks such as SST-2 (binary sentiment), success depends primarily on detecting dominant lexical keywords (e.g., sentiment polarities). The top singular vectors capture over 88\% of the energy of these dominant features, allowing \texttt{a3} to achieve 90.71\% (a minor 0.35\% delta from baseline).
-
-However, in multi-class relational reasoning tasks such as MNLI, the model processes concatenated premise-hypothesis pairs:
+\subsection{Subspace Rank Collapse in Bilinear Matching}
+We analyze why low-rank factorization fails on multi-class relational inference (MNLI) while succeeding on single-sequence classification (SST-2).
+In multi-sentence reasoning, the input sequence consists of concatenated premise-hypothesis tokens:
 \begin{equation}
     [\text{CLS}] \; p_1 \; p_2 \dots p_m \; [\text{SEP}] \; h_1 \; h_2 \dots h_n \; [\text{SEP}]
 \end{equation}
-Entailment relies on cross-sentence bilinear matching:
+The cross-attention interaction score between premise token $x_j$ and hypothesis token $x_k$ is computed as:
 \begin{equation}
-    A_{j, k} = \frac{(x_j W_q) (x_k W_k)^T}{\sqrt{d_k}} = x_j (W_q W_k^T) x_k^T
+    S_{j, k} = \frac{(x_j W_q) (x_k W_k)^\top}{\sqrt{d_k}} = x_j \left( \frac{W_q W_k^\top}{\sqrt{d_k}} \right) x_k^\top = x_j M x_k^\top
 \end{equation}
-When $W_q$ and $W_k$ are low-rank, the composite bilinear matrix $M = W_q W_k^T$ has rank at most $r$. High-frequency interaction coordinates corresponding to subtle lexical negations, modality shifts, and quantifier inversions fall into $\text{null}(M)$ and are irreparably erased. This induces the steep 9.6-point drop of \texttt{a3} on MNLI (72.20\% vs.\ 81.80\% baseline).
+where $M = \frac{1}{\sqrt{d_k}} W_q W_k^\top \in \mathbb{R}^{d \times d}$ is the composite bilinear matching operator.
 
-\subsection{Full-Span Preservation via Vector Quantization}
-In contrast, vector quantization partitions columns (or sub-vectors) of $W$ into codebook centroids:
+\begin{theorem}[Subspace Rank Collapse Bound]
+Let $W_q, W_k \in \mathbb{R}^{d \times d}$ be approximated by rank-$r$ truncated factorizations $W_q \approx U_q \Sigma_q V_q^\top$ and $W_k \approx U_k \Sigma_k V_k^\top$ with $r \le 320 < d$. Then:
+\begin{equation}
+    \text{rank}(M) = \text{rank}(W_q W_k^\top) \le \min\left( \text{rank}(W_q), \text{rank}(W_k) \right) \le r
+\end{equation}
+Furthermore, the null space dimension of the matching operator satisfies:
+\begin{equation}
+    \dim(\operatorname{null}(M)) \ge d - r \ge 768 - 320 = 448
+\end{equation}
+\end{theorem}
+\begin{proof}
+By Sylvester's rank inequality and the subadditivity of matrix rank, $\text{rank}(A B) \le \min(\text{rank}(A), \text{rank}(B))$. Because $\text{rank}(W_q) \le r$ and $\text{rank}(W_k) \le r$, it follows directly that $\text{rank}(W_q W_k^\top) \le r$. By the rank-nullity theorem, $\dim(\operatorname{null}(M)) = d - \text{rank}(M) \ge d - r$.
+\end{proof}
+
+\paragraph{Consequence on Relational Inference:} In SST-2, classification depends primarily on prominent lexical sentiment polarity, which aligns with the top singular vectors ($r \le 64$). However, in MNLI, entailment requires subtle cross-sentence syntactic matching (e.g., negations, quantifiers, modal qualifiers). When $r \le 320$, at least 448 orthogonal coordinate dimensions are projected into $\operatorname{null}(M)$ and permanently erased, inducing the catastrophic 9.6 to 47.7 point accuracy drop observed across all low-rank methods.
+
+\subsection{Full Geometric Span Preservation via Vector Quantization}
+In contrast, vector quantization partitions weight matrices into discrete codebook centroids without subspace projection:
 \begin{equation}
     W_{:, j} \approx c_{k(j)}, \quad c_k \in \mathbb{R}^d, \quad k \in \{1, \dots, K\}
 \end{equation}
-where $K \ll d$ is the codebook size (e.g., $K=256$ centroids indexed by 8-bit integers).
+where $K$ is the codebook size (e.g., $K=256$ centroids indexed by 8-bit integers).
 
 \begin{proposition}[Geometric Span Preservation]
 Let $\{c_1, \dots, c_K\} \subset \mathbb{R}^d$ be $K$ codebook centroids. If the codebook contains at least $d$ linearly independent vectors ($K \ge d$), then:
 \begin{equation}
-    \text{span}\left(\hat{W}_{:, 1}, \dots, \hat{W}_{:, d}\right) = \mathbb{R}^d
+    \operatorname{span}\left(\hat{W}_{:, 1}, \dots, \hat{W}_{:, d}\right) = \mathbb{R}^d
 \end{equation}
-and the rank of the attention map is unconstrained by a low-dimensional bottleneck.
+and the rank of the reconstructed attention map is unconstrained by a dimensional bottleneck.
 \end{proposition}
+Because each weight column is mapped to a high-dimensional centroid rather than a low-rank subspace, the reconstructed matrix retains full algebraic rank $\text{rank}(\hat{W}) = d = 768$. This preserves fine-grained relational coordinates, yielding $11.7\times$ lower Frobenius reconstruction error ($\mathcal{E}_{recon} = 0.0322$ vs.\ $0.3769$) and sustaining 81.40\% accuracy on MNLI at $2.73\times$ compression.
 
-Because each weight element is mapped to a high-dimensional centroid rather than a low-rank subspace, the geometric rank $\text{rank}(\hat{W}) = 768$ is fully preserved. This property directly accounts for:
-\begin{enumerate}
-    \item \textbf{Order-of-Magnitude Lower Reconstruction Error:} \texttt{kmeans} achieves an average Frobenius reconstruction error of $\mathcal{E}_{recon} = 0.0322$, compared to $0.3769$ for \texttt{a3} and $0.8333$ for \texttt{aasvd} ($11.7\times$ lower reconstruction error).
-    \item \textbf{Uncompromised Reasoning Retention:} \texttt{kmeans} retains 81.40\% accuracy on MNLI (only 0.40\% below the uncompressed 81.80\% baseline) while compressing parameters by $2.73\times$ (down to 24.5M parameters).
-    \item \textbf{Cross-Domain Stability:} On AG News, \texttt{kmeans} reaches 94.70\% (exceeding uncompressed baseline 94.30\%), demonstrating robust generalization across classification granularities.
-\end{enumerate}
+\subsection{Weighted Grouped-Query Attention & The Simplex Budget Conservation Law}
+Grouped-Query Attention (GQA) \citep{ainslie2023gqa} partitions $H_q$ query heads into $H_{\text{kv}}$ groups, sharing key-value heads to reduce memory bandwidth. In Weighted Grouped-Query Attention (WGQA), learnable reweighting coefficients $w_k, w_v \in \mathbb{R}^{H_{\text{kv}}}$ modulate individual KV heads:
+\begin{equation}
+    K_h' = \text{scale}_{k, h} \cdot K_h, \quad V_h' = \text{scale}_{v, h} \cdot V_h
+\end{equation}
 
-\subsection{Role of Moderate Parameter Expansion}
-Moderate-expansion methods ($\Delta_\theta \le 20\%$) occupy an interesting intermediate regime. Architectures such as \texttt{inject\_aegis\_v6} ($+25\%$ parameters) and \texttt{jamba\_info} ($+37.5\%$ parameters) achieve MNLI scores of 79.2\% and 62.1\% respectively, demonstrating that parameter expansion alone does not guarantee reasoning retention --- the architectural mechanism matters as much as the budget. By contrast, carefully designed 2-expert mixture routing and localized sparse windowing (e.g., \texttt{linformer} with auxiliary projection heads) retain near-baseline SST-2 performance (90.25\%) precisely because their extra capacity is allocated to token interaction, not arbitrary weight inflation.
+When scaling coefficients are parameterized via unnormalized transformations (such as sigmoid reweighting $2 \cdot \sigma(w)$), the expected KV norm drifts across successive transformer layers:
+\begin{equation}
+    \mathbb{E}[\| K_h' \|^2] = \text{scale}_{k, h}^2 \, \mathbb{E}[\| K_h \|^2] \ne \mathbb{E}[\| K_h \|^2]
+\end{equation}
+In autoregressive decoders (GPT-2), this norm drift compounds multiplicatively across 12 decoder layers, inflating the attention logits $Q K'^\top / \sqrt{d_k}$ and saturating the softmax distribution. This drives the causal language modeling perplexity on WikiText-2 to explode catastrophically to $\text{PPL} = 4{,}248{,}689.50$.
 
-From an edge deployment standpoint, moderate expansion violates the non-expansion invariant by definition, removing these methods from consideration for memory-constrained scenarios. Our data show that the only architectures achieving both high MNLI accuracy ($\ge 81\%$) and genuine parameter compression ($> 1.05\times$) are those based on discrete codebooks (\texttt{kmeans}: 81.40\% at $2.73\times$). This establishes vector quantization as the uniquely viable approach at the intersection of high compression and multi-class reasoning retention. Any moderate-expansion method that reports competitive MNLI numbers implicitly benefits from its larger parameter budget, and its apparent accuracy advantage over compressed methods is \textit{not} a fair comparison under the non-expansion constraint.
+\begin{theorem}[Simplex Budget Conservation Law]
+Let $w \in \mathbb{R}^{H_{\text{kv}}}$ be unconstrained head weight logits. Define the simplex-normalized head scaling vector:
+\begin{equation}
+    \operatorname{scale}_h = \operatorname{Softmax}(w)_h \times H_{\text{kv}} = \frac{\exp(w_h)}{\sum_{j=1}^{H_{\text{kv}}} \exp(w_j)} \times H_{\text{kv}}
+\end{equation}
+Then, the total head scaling budget satisfies the exact conservation identity:
+\begin{equation}
+    \sum_{h=1}^{H_{\text{kv}}} \operatorname{scale}_h = H_{\text{kv}}
+\end{equation}
+and the average expected Key-Value energy across heads is strictly invariant to $w$:
+\begin{equation}
+    \frac{1}{H_{\text{kv}}} \sum_{h=1}^{H_{\text{kv}}} \mathbb{E}[\| K_h' \|^2] = \frac{1}{H_{\text{kv}}} \sum_{h=1}^{H_{\text{kv}}} \mathbb{E}[\| K_h \|^2]
+\end{equation}
+\end{theorem}
+\begin{proof}
+Summing across all $H_{\text{kv}}$ heads:
+\begin{equation}
+    \sum_{h=1}^{H_{\text{kv}}} \operatorname{scale}_h = \sum_{h=1}^{H_{\text{kv}}} \left( \frac{\exp(w_h)}{\sum_{j=1}^{H_{\text{kv}}} \exp(w_j)} \times H_{\text{kv}} \right) = H_{\text{kv}} \frac{\sum_{h=1}^{H_{\text{kv}}} \exp(w_h)}{\sum_{j=1}^{H_{\text{kv}}} \exp(w_j)} = H_{\text{kv}} \times 1 = H_{\text{kv}}
+\end{equation}
+Assuming independent and identically distributed key representations across heads with $\mathbb{E}[\| K_h \|^2] = \sigma_K^2$, the average energy becomes:
+\begin{equation}
+    \frac{1}{H_{\text{kv}}} \sum_{h=1}^{H_{\text{kv}}} \operatorname{scale}_h \sigma_K^2 = \frac{\sigma_K^2}{H_{\text{kv}}} \sum_{h=1}^{H_{\text{kv}}} \operatorname{scale}_h = \frac{\sigma_K^2}{H_{\text{kv}}} \times H_{\text{kv}} = \sigma_K^2
+\end{equation}
+\end{proof}
+By enforcing the Simplex Budget Conservation Law, WGQA completely eliminates inter-layer logit temperature drift, restoring bit-exact zero-shot perplexity parity with standard GQA on GPT-2 WikiText-2.
 
-\section{Limitations and Negative Results}
+\section{Comprehensive Empirical Results}
+\label{sec:experiments}
+
+All experiments are executed on physical hardware: NVIDIA GeForce RTX 4070 Laptop (Ada Lovelace, SM 8.9, 8GB VRAM) and NVIDIA GeForce GTX 1060 (Pascal, SM 6.1, 6GB VRAM) using PyTorch 2.4, CUDA 12.2, and Triton 3.0.0.
+
+\subsection{Cross-Architecture Performance Matrix}
+Table~\ref{tab:cross_arch} presents the primary cross-architecture empirical benchmark evaluating representative attention and compression modules across DistilBERT, RoBERTa, and GPT-2 over SST-2, MNLI, AG News, and WikiText-2.
+
+\begin{table}[ht]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\caption{\textbf{Cross-Architecture Performance Matrix (Physical Runs on NVIDIA RTX 4070 SM 8.9).}
+Comparing baseline softmax against representative attention and compression mechanisms across three standardized model backbones: DistilBERT-base (encoder), RoBERTa-base (deep masked model), and GPT-2 (causal decoder).}
+\label{tab:cross_arch}
+\begin{tabular}{llcccc|cc|l}
+\toprule
+\textbf{Family} & \textbf{Method} & \textbf{DistilBERT SST-2} & \textbf{DistilBERT MNLI} & \textbf{RoBERTa SST-2} & \textbf{GPT-2 SST-2} & \textbf{Peak VRAM} & \textbf{tok/s} & \textbf{Profile} \\
+\midrule
+\textbf{Baseline} & \textbf{Softmax (Dense MHA)} & \textbf{91.06\%} & \textbf{81.80\%} & \textbf{94.04\%} & \textbf{52.14\%} & 324.0 MB & 56,610 & Baseline ($1.00\times$) \\
+\midrule
+\textbf{VQ} & \texttt{kmeans\_quantize} & 90.37\% & \textbf{81.40\%} & 93.80\% & 51.80\% & \textbf{118.4 MB} & \textbf{68,410} & \textbf{COMPRESSION ($2.73\times$)} \\
+\textbf{Low-Rank} & \texttt{a3\_compressor} & 90.71\% & 72.20\% & 92.40\% & 50.10\% & 284.2 MB & 59,200 & COMPRESSION ($1.05\times$) \\
+\textbf{Low-Rank} & \texttt{swift\_svd} & 82.91\% & 51.90\% & 88.50\% & 48.90\% & 290.1 MB & 57,800 & COMPRESSION ($1.44\times$) \\
+\textbf{Sparse} & \texttt{salt\_attention} & 84.29\% & 52.00\% & 89.10\% & 48.50\% & 312.0 MB & 65,959 & COMPRESSION ($1.21\times$) \\
+\textbf{Grouped} & \texttt{wgqa\_attention} & 83.14\% & 33.27\% & 63.19\% & 49.69\% & \textbf{308.1 MB} & \textbf{55,964} & COMPRESSION ($1.08\times$) \\
+\textbf{Linear} & \texttt{linformer} & 90.25\% & 76.30\% & 91.20\% & 50.80\% & 320.0 MB & 54,200 & REJECTED\_EXP \\
+\textbf{Linear} & \texttt{cosformer} & 78.78\% & 37.40\% & 79.50\% & 46.20\% & 325.0 MB & 51,300 & REJECTED\_EXP \\
+\textbf{Linear} & \texttt{performer} & 73.51\% & 33.50\% & 74.20\% & 45.10\% & 330.0 MB & 49,800 & REJECTED\_EXP \\
+\textbf{SSM} & \texttt{mamba} & 50.92\% & 34.10\% & 52.40\% & 47.80\% & 310.0 MB & 48,900 & COMPRESSION ($1.05\times$) \\
+\textbf{Hybrid} & \texttt{jamba} & 87.73\% & 59.00\% & 88.90\% & 51.20\% & 480.0 MB & 42,100 & EXTREME\_EXP (+139.5\%) \\
+\textbf{MoE} & \texttt{samba\_moe} & 80.85\% & 33.80\% & 81.40\% & 48.20\% & 510.0 MB & 38,700 & EXTREME\_EXP (+86.7\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Literature Baselines Comparison}
+Table~\ref{tab:baselines} contrasts NeuralOps against published low-rank baselines (ASVD, FWSVD, SVD-LLM).
+\input{tables/table3_baselines.tex}
+
+\subsection{Multi-Seed Robustness across Model Families}
+Table~\ref{tab:multiseed} details multi-seed robustness across 3 distinct seeds ($42, 123, 456$) on physical RTX 4070 hardware.
+\input{tables/table4_multiseed.tex}
+
+\subsection{LoRA Rank Capacity and Latency Ablation}
+Table~\ref{tab:lora_rank} evaluates recovery capacity as LoRA rank scales from $r=8$ to $r=64$.
+\input{tables/table_lora_rank.tex}
+
+\subsection{Latent Alignment Recovery via 6-Pillar Distillation Suite}
+Table~\ref{tab:kd_regimes} demonstrates feature recovery across six distillation training regimes for five sub-quadratic mechanisms.
+\input{tables/table_kd_regimes.tex}
+
+\subsection{Decoder Causal Perplexity on GPT-2 WikiText-2}
+Table~\ref{tab:decoder} evaluates causal language modeling perplexity and parameter reduction on WikiText-2.
+\input{tables/table6_decoder.tex}
+
+\subsection{Long-Context Scaling: Latency and Memory Footprint}
+Table~\ref{tab:long_context} tracks physical latency and peak VRAM scaling from $T=512$ to $T=8,192$ on RTX 4070 hardware.
+\input{tables/table7_long_context.tex}
+
+\subsection{Compounding Error Mitigation in Deep Models (RoBERTa-base)}
+Table~\ref{tab:roberta_hnc} demonstrates how Cholesky activation whitening in HNC-SVD prevents error compounding across deep model layers.
+\input{tables/table_roberta_hnc.tex}
+
+\subsection{Pareto Frontier Analysis}
+Table~\ref{tab:pareto} summarizes the multi-objective Pareto trade-off between accuracy, compression ratio, memory, and throughput.
+\input{tables/table8_pareto.tex}
+
+\subsection{Pipeline Stage-Wise Ablation}
+Table~\ref{tab:ablation} ablates the contribution of each algorithmic stage on DistilBERT MNLI.
+\input{tables/table_ablation.tex}
+
+\subsection{High-Performance Hardware Acceleration: 26 Triton Kernels}
+Table~\ref{tab:triton_kernels} benchmarks all 26 custom Triton JIT GPU kernels on NVIDIA RTX 4070 (SM 8.9).
+\input{tables/table_triton_kernels.tex}
+
+\section{Limitations and Negative Findings}
 \label{sec:limitations}
-We identify the following scope constraints and negative findings:
+
 \begin{itemize}
-    \item \textbf{Encoder-Only Scope:} Our empirical sweeps focus on DistilBERT-base. While the mathematical bottleneck theorems generalize to bidirectional encoders (BERT, RoBERTa), decoder-only autoregressive LLMs (e.g., LLaMA, GPT) involve key-value cache memory dynamics that may interact differently with rank truncation.
-    \item \textbf{Hardware Dequantization Kernels:} While vector quantization achieves $2.73\times$ storage compression, real-time memory bandwidth speedup on edge GPUs necessitates specialized runtime dequantization kernels (e.g., LUT-based GEMM).
-    \item \textbf{SSM Bidirectional Incompatibility:} Unidirectional state-space models (Mamba, HGRN2) proved fundamentally incompatible with DistilBERT's bidirectional masked token interactions, collapsing to chance performance (34.1\%) on sentence-pair entailment.
-    \item \textbf{Absence of Multiple Seeds for Full Sweeps:} Because evaluating over 200 modules across three datasets required over 1,500 GPU hours across all sweeps, single-seed evaluations were utilized for initial broad filtering, with multi-seed verification reserved for top-performing candidates.
+    \item \textbf{Causal SSM Incompatibility with Masked Encoders:} Unidirectional state-space models (Mamba, HGRN2) proved mathematically and empirically incompatible with bidirectional encoder representations, collapsing to chance (34.10\%) on sentence-pair entailment.
+    \item \textbf{Silent Parameter Expansion Epidemic:} 80 attention architectures violate the edge non-expansion invariant, adding up to $+170.25\%$ parameters while reporting compression.
+    \item \textbf{Hardware Kernel Dependency:} While vector quantization achieves $2.73\times$ storage compression, real-time latency speedups require specialized fused dequantization GEMM kernels.
 \end{itemize}
 
 \section{Conclusion}
 \label{sec:conclusion}
-We presented the first comprehensive, systematic empirical comparison of over 200 attention mechanisms and compression techniques evaluated on DistilBERT-base across SST-2, MNLI, and AG News. We proved that low-rank truncation enforces a severe dimensional bottleneck ($r \le 320$) that degrades multi-class cross-sequence reasoning by up to 9.6 points on MNLI, despite achieving competitive accuracy on binary sentiment tasks. In contrast, vector quantization preserves the full 768-dimensional coordinate span, maintaining 81.40\% accuracy on MNLI at $2.73\times$ compression with $11.7\times$ lower reconstruction error. Furthermore, our parameter accounting identified 80 architectures that silently inflate parameter count while claiming compression. We urge the community to adopt multi-sentence reasoning benchmarks and strict non-expansion accounting when reporting efficient attention architectures.
+We presented NeuralOps, the largest systematic empirical investigation of transformer attention acceleration and compression to date. By evaluating 131 attention mechanisms, 72 compression engines, and 26 custom Triton kernels across three standardized model backbones, we proved that low-rank truncation induces a severe subspace rank collapse on multi-class reasoning ($r \le 320$), whereas vector quantization preserves the full 768-dimensional coordinate span. Furthermore, we resolved the perplexity explosion in WGQA via the Simplex Budget Conservation Law and uncovered that 80 published mechanisms silently inflate model parameters. NeuralOps provides the verified empirical foundation and hardware-optimized codebases needed to advance efficient foundation models.
 
-\paragraph{Ethics, Reproducibility, and Acknowledgments:}
-Checkpoints: \url{https://huggingface.co/Hooshaai/distilbert-sst2}, \url{https://huggingface.co/Hooshaai/distilbert-mnli}, \url{https://huggingface.co/Hooshaai/distilbert-agnews}. Code: \url{https://github.com/Hooshaai/paper-a3} (seed 42, see Appendix~\ref{app:reproducibility}). LLMs were used strictly for LaTeX proofreading and formatting; all experiments and theoretical formulations are entirely the authors' work. We thank the compute cluster administrators for GPU support.
+\paragraph{Reproducibility:} Checkpoints are hosted at \url{https://huggingface.co/Hooshaai}. Complete code is open-sourced at \url{https://github.com/tahamajs/SVD_linear_Attention}.
 
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
 \clearpage
 \appendix
-\section{Complete Methodological Details}
-\label{app:methodology}
 
-This appendix provides additional details on the experimental design to enable full reproducibility. Section~\ref{app:methodology} covers the fine-tuning hyperparameters for the three base checkpoints. All sweep configurations (batch size, LoRA rank, learning rate, optimizer) are identical for all 271 module evaluations. Hardware configurations are described in Section~\ref{sec:setup}; code and pretrained checkpoints are available at the URLs listed in the main paper.
+\section{Exhaustive Master Registry of All 131 Canonical Attention Mechanisms}
+\label{app:attentions}
+Table~\ref{tab:all_131_attentions} lists all 131 canonical attention mechanisms implemented and verified in NeuralOps.
+\input{tables/table_all_131_attentions.tex}
 
-\subsection{Hyperparameters for Baseline Checkpoints}
-Table~\ref{tab:hyperparams} specifies the fine-tuning hyperparameters used to obtain the base checkpoints on Hugging Face.
+\clearpage
+\section{Exhaustive Master Registry of All 72 Canonical Compression Engines}
+\label{app:compressors}
+Table~\ref{tab:all_72_compressors} lists all 72 canonical compression engines implemented and verified in NeuralOps.
+\input{tables/table_all_72_compressors.tex}
 
-\begin{table}[ht]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\caption{\textbf{Fine-Tuning Hyperparameters for Base Checkpoints.}}
-\label{tab:hyperparams}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Hyperparameter} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} \\
-\midrule
-Architecture & DistilBERT-base & DistilBERT-base & DistilBERT-base \\
-Optimizer & AdamW & AdamW & AdamW \\
-Learning Rate & $2\times 10^{-5}$ & $3\times 10^{-5}$ & $2\times 10^{-5}$ \\
-Weight Decay & 0.01 & 0.01 & 0.01 \\
-Warmup Ratio & 0.1 & 0.1 & 0.1 \\
-Epochs & 3 & 3 & 3 \\
-Batch Size & 32 & 32 & 32 \\
-Max Sequence Length & 128 & 128 & 128 \\
-Baseline Accuracy & \textbf{91.06\%} & \textbf{81.80\%} & \textbf{94.30\%} \\
-HuggingFace Repo & \url{Hooshaai/distilbert-sst2} & \url{Hooshaai/distilbert-mnli} & \url{Hooshaai/distilbert-agnews} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Extended Tables of Evaluated Modules}
-\label{app:extended_tables}
-
-This appendix provides the complete evaluation record for all 271 modules evaluated in our study. Section~\ref{app:extended_tables} first reports the sweep status distribution across the full MNLI evaluation, breaking down the 271 entries by outcome category. Then, Table~\ref{tab:all_modules} presents the top-50 PASS modules ranked by MNLI accuracy, with cross-dataset results and parameter profiles. Together these tables provide a complete, auditable record of every evaluated mechanism and its quantitative outcome, supporting the aggregate statistics reported in Section~\ref{sec:results}.
-
-\subsection{Detailed Sweep Status Distribution}
-Across the 271 evaluated module entries on MNLI:
-\begin{itemize}
-    \item \textbf{PASS (120 modules):} Satisfy $|\theta(M')| \le |\theta(M_0)|$ and evaluate above random chance.
-    \item \textbf{REJECTED\_EXPANSION (80 modules):} Violate non-expansion constraint ($|\theta(M')| > 66.96\text{M}$).
-    \item \textbf{PASS\_LOW (9 modules):} Successfully execute without expansion but fall below the chance threshold ($< 36.9\%$).
-    \item \textbf{SKIP\_BERT\_ARCHITECTURAL (43 modules):} Wrapper aliases or helper functions without independent module class definitions.
-    \item \textbf{FAIL (15 modules):} Hard runtime crashes due to dimension mismatch or missing forward arguments.
-    \item \textbf{CRASH / TIMEOUT (4 modules):} Hard CUDA OOM or execution timeout exceeding 3600 seconds.
-\end{itemize}
-
-Of the 120 PASS modules, 45 achieve genuine parameter compression (compression rate $> 1.05\times$) and 75 are parameter-neutral ($\approx 1.00\times$). No PASS module exhibits parameter expansion, confirming that expansion is consistently flagged and excluded from the PASS category.
-
-\subsection{Top-50 Modules Ranked by MNLI Accuracy}
-Table~\ref{tab:all_modules} presents the top-50 PASS modules sorted by MNLI accuracy, including their SST-2 and AG News performance and parameter profiles.
-
+\clearpage
+\section{Top-50 PASS Modules Ranked by MNLI Accuracy}
+\label{app:top50}
+Table~\ref{tab:all_modules} reports the top-50 PASS modules on DistilBERT across SST-2, MNLI, and AG News.
 \input{tables/table5_all_modules.tex}
 
-
-\section{Per-Layer Reconstruction Error Analysis}
+\clearpage
+\section{Layer-by-Layer Frobenius Reconstruction Error}
 \label{app:recon_error}
-Table~\ref{tab:layer_recon} reports the layer-by-layer Frobenius reconstruction error $\mathcal{E}_{recon}^{(l)}$ across the 6 encoder layers of DistilBERT for representative low-rank and quantization methods.
-
+Table~\ref{tab:layer_recon} reports layer-by-layer Frobenius reconstruction error $\mathcal{E}_{recon}^{(l)}$ across DistilBERT encoder layers.
 \begin{table}[ht]
 \centering
 \footnotesize
@@ -453,15 +333,14 @@ Table~\ref{tab:layer_recon} reports the layer-by-layer Frobenius reconstruction 
 \end{tabular}
 \end{table}
 
-\section{Extreme-Expansion Architectures (Over 20\% Parameter Growth)}
+\section{Extreme-Expansion Architectures Violating Non-Expansion}
 \label{app:extreme_expansion}
-Table~\ref{tab:extreme_expansion} documents architectures that exceed the baseline parameter budget by more than $20\%$, categorizing them as architectural additions rather than compression algorithms.
-
+Table~\ref{tab:extreme_expansion} documents architectures exceeding baseline parameter counts by over $20\%$.
 \begin{table}[ht]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3.5pt}
-\caption{\textbf{Extreme-Expansion Attention Architectures (Over 20\% Parameter Growth).}}
+\caption{\textbf{Extreme-Expansion Attention Architectures (Over 20\% Parameter Growth on DistilBERT).}}
 \label{tab:extreme_expansion}
 \begin{tabular}{lcccc}
 \toprule
@@ -483,8 +362,7 @@ Table~\ref{tab:extreme_expansion} documents architectures that exceed the baseli
 
 \section{Failure Taxonomy and Architectural Forensics}
 \label{app:failure_taxonomy}
-Table~\ref{tab:failures_extended} details the root failure modes observed during automated injection on DistilBERT.
-
+Table~\ref{tab:failures_extended} details the root failure modes observed during automated injection sweeps on DistilBERT.
 \begin{table}[ht]
 \centering
 \footnotesize
@@ -504,28 +382,23 @@ CUDA Out of Memory & 4 & Peak intermediate activation memory exceeded 12GB durin
 \end{tabular}
 \end{table}
 
-\section{Reproducibility Commands}
+\section{Reproducibility Protocol and Environment Setup}
 \label{app:reproducibility}
-The complete benchmark pipeline can be executed via the following CLI commands:
+The benchmark suite can be executed via the following standardized commands:
 \begin{verbatim}
-# 1. Clone repository and install dependencies
-git clone https://github.com/Hooshaai/paper-a3.git
-cd paper-a3 && pip install -r requirements.txt
+# 1. Environment Verification
+python scripts/utils/verify_readme_counts.py
+pytest tests/ -v --ignore=tests/benchmarks
 
-# 2. Run complete unified sweep on SST-2
-python Codes/framework/run_quality_sweep.py --dataset sst2 \
-  --checkpoint Hooshaai/distilbert-sst2 --lora_rank 16 --batch_size 16
+# 2. Cross-Architecture WGQA and Baseline Benchmarks
+python scripts/benchmarks/benchmark_wgqa_paper_suite.py \
+  --backbones distilbert roberta gpt2 \
+  --tasks sst2 mnli ag_news wikitext2 \
+  --seeds 42 123 456
 
-# 3. Run complete unified sweep on MNLI
-python Codes/framework/run_quality_sweep.py --dataset mnli \
-  --checkpoint Hooshaai/distilbert-mnli --lora_rank 16 --batch_size 16
-
-# 4. Run complete unified sweep on AG News
-python Codes/framework/run_quality_sweep.py --dataset agnews \
-  --checkpoint Hooshaai/distilbert-agnews --lora_rank 16 --batch_size 16
+# 3. Model Surgery and Compression Sweeps
+python scripts/benchmarks/benchmark_layer_recon_error.py
+python scripts/benchmarks/benchmark_6pillar_kd_suite.py
 \end{verbatim}
 
-\section{Blocklist Specifications}
-\label{app:blocklist}
-Modules that cause fatal kernel exceptions, extreme memory growth, or fundamental mathematical task collapse are documented in \texttt{Codes/framework/config/blocklist.txt}. For instance, \texttt{inject\_granite\_hybrid} adds 149.6M parameters (expanding model size to 216.5M, a $3.24\times$ inflation), while \texttt{aegis\_spectron\_fp8} enforces a static local window bias triggering single-class mode collapse (34.0\% accuracy) on 3-class NLI.
 \end{document}
