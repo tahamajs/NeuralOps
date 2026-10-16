@@ -305,5 +305,13 @@ __all__ = [
     "paged_recurrent_state_step_triton",
     "paged_recurrent_state_step_pytorch",
     "paged_kv_evict_compact_triton",
+    "triton_fused_latent_kv_cache_attention",
+    "triton_fused_latent_kv_cache_attention_pytorch_ref",
 ]
+
+from neuralops.core.triton_kernels.linear_attn import (
+    triton_fused_latent_kv_cache_attention,
+    triton_fused_latent_kv_cache_attention_pytorch_ref,
+)
+
 
