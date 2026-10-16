@@ -65,7 +65,7 @@ Benchmarked directly on physical NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelac
 | 3 | `fused_kronecker_gemm` | $\text{dim}=256, r=16$ | 0.050 ms | 0.031 ms | 0.63x | $6.25 \times 10^{-2}$ | PASS |
 | 4 | `fused_nystrom_landmark_pinv` | $m=32, N=512$ | 0.209 ms | 0.209 ms | **1.00x** | $0.00 \times 10^0$ | PASS |
 | 5 | `sliding_window_attention` | $T=2048, W=128$ | 0.034 ms | 6.890 ms | **201.01x** | $1.95 \times 10^{-3}$ | PASS |
-| 6 | `gla_scan` | $T=1024, d=64$ | 1.323 ms | 80.768 ms | **61.07x** | $8.00 \times 10^0$ | PASS |
+| 6 | `gla_scan` | $T=1024, d=64$ | 0.842 ms | 79.946 ms | **94.98x** | $9.77 \times 10^{-4}$ | PASS |
 | 7 | `gdn_scan` | $T=1024, d=64$ | 1.243 ms | 89.458 ms | **71.94x** | $4.88 \times 10^{-4}$ | PASS |
 | 8 | `hgrn2_scan` | $T=1024, D=256$ | 0.341 ms | 21.196 ms | **62.22x** | $4.88 \times 10^{-4}$ | PASS |
 | 9 | `softplus` | $N=4,194,304$ | 0.073 ms | 0.098 ms | **1.34x** | $1.95 \times 10^{-3}$ | PASS |
