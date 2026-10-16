@@ -1,0 +1,506 @@
+[
+  {
+    "name": "cachenotes_compressor",
+    "compress_ms": 569.06,
+    "rel_err": 0.1218,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "huffman_coder",
+    "compress_ms": 334.65,
+    "rel_err": 0.0189,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "rpca_compressor",
+    "compress_ms": 252.93,
+    "rel_err": 0.1881,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "oats_compressor",
+    "compress_ms": 211.83,
+    "rel_err": 0.0516,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "rotational_slicegpt_int4",
+    "compress_ms": 141.22,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "a3_compressor",
+    "compress_ms": 91.06,
+    "rel_err": 0.0287,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adaptive_ranks",
+    "compress_ms": 81.18,
+    "rel_err": 0.1255,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "adasvd_compressor",
+    "compress_ms": 77.89,
+    "rel_err": 0.0333,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "sparsegpt",
+    "compress_ms": 70.66,
+    "rel_err": 0.1196,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hashed_net_compressor",
+    "compress_ms": 63.37,
+    "rel_err": 0.1689,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "admm_compressor",
+    "compress_ms": 62.2,
+    "rel_err": 0.1202,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "grecodec_compressor",
+    "compress_ms": 59.56,
+    "rel_err": 0.1901,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "nmf_compressor",
+    "compress_ms": 57.01,
+    "rel_err": 0.1196,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cr_compressor",
+    "compress_ms": 56.47,
+    "rel_err": 0.233,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "saes_svd_v2",
+    "compress_ms": 51.72,
+    "rel_err": 0.1904,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cur_compressor",
+    "compress_ms": 50.65,
+    "rel_err": 0.197,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mlorq_compressor",
+    "compress_ms": 50.42,
+    "rel_err": 0.0045,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "kronecker_tt_lora",
+    "compress_ms": 50.11,
+    "rel_err": 0.1865,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "kvtc_compressor",
+    "compress_ms": 49.26,
+    "rel_err": 0.067,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "entropy_budget_allocation",
+    "compress_ms": 48.96,
+    "rel_err": 0.1895,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "salr",
+    "compress_ms": 45.87,
+    "rel_err": 0.1956,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "armor_pruner",
+    "compress_ms": 43.37,
+    "rel_err": 0.1017,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hybrid_svd_layer",
+    "compress_ms": 42.89,
+    "rel_err": 0.1274,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "delta_kv",
+    "compress_ms": 42.51,
+    "rel_err": 0.1188,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "compot_compressor",
+    "compress_ms": 42.2,
+    "rel_err": 0.1851,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "residual_svd_compressor",
+    "compress_ms": 41.34,
+    "rel_err": 0.1851,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "erc_svd",
+    "compress_ms": 41.04,
+    "rel_err": 0.2703,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "tt_compressor",
+    "compress_ms": 40.98,
+    "rel_err": 0.1868,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "direct_svd",
+    "compress_ms": 40.86,
+    "rel_err": 0.2368,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "slim_compressor",
+    "compress_ms": 40.8,
+    "rel_err": 0.1032,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "frandi_compressor",
+    "compress_ms": 40.67,
+    "rel_err": 0.2342,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "swift_svd_act",
+    "compress_ms": 40.33,
+    "rel_err": 0.1873,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "kronecker_compressor",
+    "compress_ms": 40.2,
+    "rel_err": 0.1982,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "come_compressor",
+    "compress_ms": 40.1,
+    "rel_err": 0.1899,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "uniql_compressor",
+    "compress_ms": 39.99,
+    "rel_err": 0.2298,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "subspace_projection",
+    "compress_ms": 39.91,
+    "rel_err": 0.1899,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "swift_svd",
+    "compress_ms": 39.87,
+    "rel_err": 0.1873,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "enlighten_compressor",
+    "compress_ms": 39.34,
+    "rel_err": 0.0913,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "gfws",
+    "compress_ms": 39.29,
+    "rel_err": 0.1892,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "soka_compressor",
+    "compress_ms": 38.86,
+    "rel_err": 0.1884,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "sdrm_compressor",
+    "compress_ms": 35.74,
+    "rel_err": 0.1342,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "modegpt_compressor",
+    "compress_ms": 34.19,
+    "rel_err": 0.1856,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_linear",
+    "compress_ms": 32.4,
+    "rel_err": 0.1903,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mgie_budget",
+    "compress_ms": 30.28,
+    "rel_err": 0.189,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "tomoe_compressor",
+    "compress_ms": 29.62,
+    "rel_err": 0.0265,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "dobi_svd",
+    "compress_ms": 26.82,
+    "rel_err": 0.0319,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "admm_pruner",
+    "compress_ms": 26.43,
+    "rel_err": 0.12,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aa_svd_compressor",
+    "compress_ms": 24.83,
+    "rel_err": 0.0426,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "optimal_subspace_projection",
+    "compress_ms": 20.17,
+    "rel_err": 0.1256,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_llm_compressor",
+    "compress_ms": 20.14,
+    "rel_err": 0.0256,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "drone_compressor",
+    "compress_ms": 20.01,
+    "rel_err": 0.0373,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "fwsvd_compressor",
+    "compress_ms": 19.98,
+    "rel_err": 0.0335,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "cur_moe_compressor",
+    "compress_ms": 17.25,
+    "rel_err": 0.1943,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "slicegpt_pca",
+    "compress_ms": 11.72,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hybridkv_compressor",
+    "compress_ms": 9.74,
+    "rel_err": 0.0164,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "slicegpt",
+    "compress_ms": 9.04,
+    "rel_err": 0.1551,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "roast_hashed_linear",
+    "compress_ms": 7.71,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "kmeans_quantize",
+    "compress_ms": 4.52,
+    "rel_err": 0.0011,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "lsc_compressor",
+    "compress_ms": 4.44,
+    "rel_err": 0.1967,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "faq_quantizer",
+    "compress_ms": 3.56,
+    "rel_err": 0.0696,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "proxsparse",
+    "compress_ms": 2.96,
+    "rel_err": 0.124,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "ast_pruner",
+    "compress_ms": 2.47,
+    "rel_err": 0.1175,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "coopq_quantizer",
+    "compress_ms": 2.29,
+    "rel_err": 0.0189,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "flat_llm",
+    "compress_ms": 2.01,
+    "rel_err": 0.1683,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "mamba_shedder",
+    "compress_ms": 1.42,
+    "rel_err": 0.1128,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "flap",
+    "compress_ms": 1.41,
+    "rel_err": 0.1149,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "astro_quantizer",
+    "compress_ms": 1.36,
+    "rel_err": 0.0011,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "zerokv_neo_compressor",
+    "compress_ms": 0.94,
+    "rel_err": 0.0247,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "bonsai_pruner",
+    "compress_ms": 0.61,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "dynamic_rank",
+    "compress_ms": 0.45,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "liftr",
+    "compress_ms": 0.19,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aatc_xkv_compressor",
+    "compress_ms": 0.1,
+    "rel_err": 0.0,
+    "status": "OK",
+    "error": null
+  }
+]
