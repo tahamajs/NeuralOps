@@ -611,7 +611,10 @@ def pca_asvd_factory(
     return compressed_model
 
 
+SliceGPTCompressor = PCAActivationAwareSVDCompressor
+
 __all__ = [
     "PCAActivationAwareSVDCompressor",
+    "SliceGPTCompressor",
     "pca_asvd_factory",
 ]
