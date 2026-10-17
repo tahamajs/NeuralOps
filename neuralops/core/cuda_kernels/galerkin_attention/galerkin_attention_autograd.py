@@ -9,8 +9,8 @@ def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "galerkin_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "galerkin.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "galerkin_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
+        with open(curr_dir / "galerkin_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_galerkin", cpp_src, cuda_src, ["galerkin_fwd"])
     return _MODULE
 

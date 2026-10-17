@@ -16,8 +16,8 @@ namespace cuda {
 // 2. Cooperative Thread Block Processing: Threads in block collaboratively compute contractions.
 // 3. Strict FP32 intermediate accumulation.
 // 4. Memory latency hiding via register caching.
-template <typename scalar_t, int BLOCK_M = 16, int MAX_M1 = 16, int MAX_M2 = 16, int MAX_N1 = 16, int MAX_N2 = 16>
-__launch_bounds__(128)
+template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void kronecker_gemm_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -31,40 +31,30 @@ __global__ void kronecker_gemm_fwd_kernel(
     const int N2,
     const bool has_bias
 ) {
-    const int m = blockIdx.x * blockDim.x + threadIdx.x;
-    if (m >= M) return;
+    const int m = blockIdx.z;
+    const int m1 = blockIdx.y * blockDim.y + threadIdx.y;
+    const int m2 = blockIdx.x * blockDim.x + threadIdx.x;
+    if (m >= M || m1 >= M1 || m2 >= M2) return;
 
-    // Cache intermediate contraction T in Shared Memory or small bounded registers
-    float T[MAX_N1 * MAX_M2];
-
-    // Stage 1: Contraction with B: T[n1, m2] = \sum_{n2} X[m, n1, n2] * B[m2, n2]
-    for (int n1 = 0; n1 < N1 && n1 < MAX_N1; ++n1) {
-        for (int m2 = 0; m2 < M2 && m2 < MAX_M2; ++m2) {
-            float acc = 0.0f;
-            for (int n2 = 0; n2 < N2 && n2 < MAX_N2; ++n2) {
-                const float x_val = to_float(x[m * (N1 * N2) + n1 * N2 + n2]);
-                const float b_val = to_float(B[m2 * N2 + n2]);
-                acc = fmaf(x_val, b_val, acc);
-            }
-            T[n1 * M2 + m2] = acc;
+    float acc = 0.0f;
+    #pragma unroll
+    for (int n1 = 0; n1 < N1; ++n1) {
+        const float a_val = to_float(A[m1 * N1 + n1]);
+        float inner = 0.0f;
+        #pragma unroll
+        for (int n2 = 0; n2 < N2; ++n2) {
+            const float x_val = to_float(x[m * (N1 * N2) + n1 * N2 + n2]);
+            const float b_val = to_float(B[m2 * N2 + n2]);
+            inner = fmaf(x_val, b_val, inner);
         }
+        acc = fmaf(a_val, inner, acc);
     }
 
-    // Stage 2: Contraction with A: Y[m, m1, m2] = \sum_{n1} A[m1, n1] * T[n1, m2] + bias
-    for (int m1 = 0; m1 < M1 && m1 < MAX_M1; ++m1) {
-        for (int m2 = 0; m2 < M2 && m2 < MAX_M2; ++m2) {
-            float y_val = 0.0f;
-            for (int n1 = 0; n1 < N1 && n1 < MAX_N1; ++n1) {
-                const float a_val = to_float(A[m1 * N1 + n1]);
-                y_val = fmaf(a_val, T[n1 * M2 + m2], y_val);
-            }
-            const int out_idx = m1 * M2 + m2;
-            if (has_bias && bias != nullptr) {
-                y_val += to_float(bias[out_idx]);
-            }
-            out[m * (M1 * M2) + out_idx] = from_float<scalar_t>(y_val);
-        }
+    const int out_idx = m1 * M2 + m2;
+    if (has_bias && bias != nullptr) {
+        acc += to_float(bias[out_idx]);
     }
+    out[m * (M1 * M2) + out_idx] = from_float<scalar_t>(acc);
 }
 
 } // namespace cuda
@@ -94,9 +84,9 @@ torch::Tensor kronecker_gemm_fwd(
         CHECK_INPUT(bias);
     }
 
-    constexpr int THREADS = 128;
-    const int blocks = (M + THREADS - 1) / THREADS;
-    auto stream = c10::cuda::getCurrentCUDAStream();
+    dim3 block(16, 16);
+    dim3 grid((M2 + 15) / 16, (M1 + 15) / 16, M);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     auto x_c = x.contiguous();
     auto a_c = A.contiguous();
@@ -106,7 +96,7 @@ torch::Tensor kronecker_gemm_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "kronecker_gemm_fwd", ([&] {
-            neuralops::cuda::kronecker_gemm_fwd_kernel<scalar_t, 16, 16, 16, 16, 16><<<blocks, THREADS, 0, stream>>>(
+            neuralops::cuda::kronecker_gemm_fwd_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 a_c.data_ptr<scalar_t>(),
