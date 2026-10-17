@@ -115,8 +115,8 @@ __global__ void __launch_bounds__(256) rms_variance_match_vectorized_kernel(
 torch::Tensor rms_variance_match_fwd(
     const torch::Tensor& y,
     const torch::Tensor& v_ref,
-    double c_min,
-    double c_max
+    float c_min,
+    float c_max
 ) {
     CHECK_INPUT(y);
     CHECK_INPUT(v_ref);
