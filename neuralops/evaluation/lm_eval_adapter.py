@@ -15,8 +15,24 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
+# Graceful fallback if lm_eval is not installed
+try:
+    import lm_eval.api.model
+    from lm_eval.api.instance import Instance
+    BaseLM = lm_eval.api.model.LM
+    HAS_LM_EVAL = True
+except (ImportError, AttributeError, ModuleNotFoundError):
+    try:
+        from lm_eval.base import LM as BaseLM
+        HAS_LM_EVAL = True
+    except (ImportError, AttributeError, ModuleNotFoundError):
+        class BaseLM:
+            """Fallback BaseLM if lm-evaluation-harness is not installed."""
+            pass
+        HAS_LM_EVAL = False
 
-class NeuralOpsLMEvalAdapter:
+
+class NeuralOpsLMEvalAdapter(BaseLM):
     """
     Adapter implementing the EleutherAI LM interface for NeuralOps models.
     Supports loglikelihood, loglikelihood_rolling, and generate_until with
@@ -30,7 +46,13 @@ class NeuralOpsLMEvalAdapter:
         batch_size: int = 1,
         max_length: int = 2048,
         device: torch.device | str = "cuda",
+        **kwargs: Any,
     ) -> None:
+        if HAS_LM_EVAL and hasattr(super(), "__init__"):
+            try:
+                super().__init__()
+            except Exception:
+                pass
         self.model = model
         self.tokenizer = tokenizer
         self.batch_size = batch_size
@@ -146,4 +168,5 @@ def evaluate_zero_shot_tasks(
 __all__ = [
     "NeuralOpsLMEvalAdapter",
     "evaluate_zero_shot_tasks",
+    "HAS_LM_EVAL",
 ]

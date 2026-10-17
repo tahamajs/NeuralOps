@@ -1,9 +1,13 @@
 """Production-grade Activation-aware Weight Quantization (AWQ)."""
 from __future__ import annotations
+from typing import Any, Dict, Optional
 import torch
 import torch.nn as nn
 
-__all__ = ["AWQQuantizer", "quantize_model_awq"]
+from neuralops.core.base import BaseCompressor
+from neuralops.core.registry import COMPRESSOR_REGISTRY
+
+__all__ = ["AWQQuantizer", "AWQCompressor", "quantize_model_awq"]
 
 
 class AWQQuantizer:
@@ -46,6 +50,70 @@ class AWQQuantizer:
 
         self.layer.weight.data.copy_(Q.to(self.layer.weight.dtype))
         return Q
+
+
+@COMPRESSOR_REGISTRY.register("awq_real", is_alias=True)
+@COMPRESSOR_REGISTRY.register("awq_compressor", is_alias=True)
+class AWQCompressor(BaseCompressor):
+    """Unified BaseCompressor wrapper for AWQ quantization with compressed-tensors support."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        bits: int = 4,
+        alpha: float = 0.5,
+        group_size: int = 128,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="awq", **kwargs)
+        self.bits = bits
+        self.alpha = alpha
+        self.group_size = group_size
+
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
+        """Applies AWQ quantization across all linear layers in model."""
+        stats = {"bits": self.bits, "alpha": self.alpha, "layers": []}
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                awq = AWQQuantizer(module, bits=self.bits, alpha=self.alpha)
+                awq.quantize()
+                stats["layers"].append(name)
+        if not stats["layers"] and isinstance(self.model, nn.Linear):
+            awq = AWQQuantizer(self.model, bits=self.bits, alpha=self.alpha)
+            awq.quantize()
+            stats["layers"].append("root")
+        return self.model, stats
+
+    def compress_to_tensors(self, model: Optional[nn.Module] = None) -> dict[str, torch.Tensor]:
+        """Returns compressed tensor dictionary compatible with compressed-tensors / safetensors."""
+        m = model if model is not None else self.model
+        tensors: dict[str, torch.Tensor] = {}
+        for name, param in m.named_parameters():
+            tensors[name] = param.data
+        for name, buffer in m.named_buffers():
+            tensors[name] = buffer.data
+        return tensors
+
+    def get_quantization_config(self) -> dict[str, Any]:
+        """Returns quantization configuration compatible with compressed-tensors and vLLM."""
+        return {
+            "quant_method": "compressed-tensors",
+            "format": f"W{self.bits}A16",
+            "bits": self.bits,
+            "group_size": self.group_size,
+            "config_groups": {
+                "group_0": {
+                    "weights": {
+                        "num_bits": self.bits,
+                        "type": "int",
+                        "symmetric": True,
+                        "strategy": "group" if self.group_size > 0 else "channel",
+                        "group_size": self.group_size,
+                    },
+                    "targets": ["Linear"],
+                }
+            },
+        }
 
 
 def quantize_model_awq(
