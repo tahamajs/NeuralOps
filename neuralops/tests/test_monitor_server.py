@@ -46,3 +46,35 @@ def test_endpoints():
     launch = launch_new_run({"rank": 16})
     assert launch["success"] is True
     assert launch["params"]["rank"] == 16
+
+def test_advanced_monitor_endpoints():
+    """Verify new 131 Attentions, 72 Compressors, PagedKV, and Speculative Decoding APIs."""
+    import os
+    from neuralops.runners.monitor.advanced_data import (
+        get_all_131_attentions,
+        get_all_72_compressors,
+        get_paged_kv_cache_state,
+        get_speculative_decoding_state,
+    )
+    from neuralops.runners.monitor.fastapi_app import create_app
+
+    project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    attns = get_all_131_attentions(project_dir)
+    assert len(attns) >= 131, f"Expected at least 131 attentions, got {len(attns)}"
+    assert "name" in attns[0]
+
+    comps = get_all_72_compressors(project_dir)
+    assert len(comps) >= 72, f"Expected at least 72 compressors, got {len(comps)}"
+    assert "rel_err" in comps[0]
+
+    paged = get_paged_kv_cache_state()
+    assert "allocated_blocks" in paged
+    assert "blocks" in paged
+    assert len(paged["blocks"]) == 64
+
+    spec = get_speculative_decoding_state()
+    assert spec["acceptance_rate"] > 0.0
+    assert spec["speedup_factor"] > 1.0
+
+    app = create_app(project_dir)
+    assert app.title == "NeuralOps Research Platform & Telemetry Monitor"

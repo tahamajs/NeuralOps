@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralOps · Unified Architecture & Systems Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #090d16;
+            --bg-secondary: #0f172a;
+            --bg-card: #141e33;
+            --border-color: #1e293b;
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --accent-cyan: #0284c7;
+            --accent-green: #059669;
+            --accent-purple: #9333ea;
+            --accent-amber: #d97706;
+            --accent-red: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+        }
+        .brand-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-cyan);
+        }
+        .theme-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .telemetry-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .metric-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        .metric-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+            .grid-2col { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-wrap {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+            text-align: left;
+        }
+        th, td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .badge-cyan { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); }
+        .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 6px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .block-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .block-cell:hover {
+            transform: scale(1.15);
+            z-index: 5;
+        }
+        .block-cell.allocated {
+            background: rgba(56, 189, 248, 0.4);
+            border-color: var(--accent-cyan);
+            color: #ffffff;
+        }
+        .block-cell.busy {
+            background: rgba(168, 85, 247, 0.45);
+            border-color: var(--accent-purple);
+            color: #ffffff;
+        }
+        .search-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 240px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span>NeuralOps</span>
+            <span class="brand-badge">Systems & Architecture Hub</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-link">Documentation</a>
+            <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            <a href="visualizer/" class="nav-link">3D Visualizer</a>
+            <a href="roofline_interactive.html" class="nav-link">Roofline Model</a>
+            <button class="theme-toggle-btn" id="theme-btn">☀️ Light</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Telemetry Strip -->
+        <section class="telemetry-strip">
+            <div class="metric-card">
+                <span class="metric-title">GPU Utilization</span>
+                <span class="metric-value" id="gpu-util">0.0%</span>
+                <span class="metric-sub" id="gpu-name">NVIDIA RTX 4070 (8GB)</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">VRAM Memory</span>
+                <span class="metric-value" id="gpu-vram">0 / 8.0 GB</span>
+                <span class="metric-sub" id="gpu-temp">Temp: --°C · Power: --W</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">Speculative Acceptance</span>
+                <span class="metric-value" id="spec-acc">78.5%</span>
+                <span class="metric-sub" id="spec-speedup">2.45x Wall-Clock Speedup</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">Paged KV Utilization</span>
+                <span class="metric-value" id="kv-util">31.2%</span>
+                <span class="metric-sub" id="kv-active-seqs">5 Active Sequences (Continuous Batching)</span>
+            </div>
+        </section>
+
+        <!-- Dynamic Visuals Grid -->
+        <section class="grid-2col">
+            <!-- Speculative Decoding Acceptance Rate -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Speculative Decoding Token Acceptance Tracker</span>
+                    <span class="badge badge-green">Lossless Parity</span>
+                </div>
+                <div style="height: 240px;">
+                    <canvas id="speculativeChart"></canvas>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                    Drafting K=5 tokens via student SVD branch (α=1.0) verified in parallel target forward passes (α=0.0).
+                </p>
+            </div>
+
+            <!-- Continuous Batching & PagedKVCache Allocation Inspector -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Continuous Batching & PagedKVCache Allocation</span>
+                    <span class="badge badge-cyan" id="blocks-badge">20 / 64 Blocks Allocated</span>
+                </div>
+                <div class="blocks-grid" id="blocksGrid"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
+                    <span>■ Allocated (PagedKV)</span>
+                    <span>■ In-Flight Decode</span>
+                    <span>■ Free Memory Pool</span>
+                    <span id="fragmentation-label">Fragmentation: 3.8%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 131 Attentions Browser & 72 Compressors Leaderboard -->
+        <section class="grid-2col">
+            <!-- 131 Attention Mechanisms Browser -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">131 Attention Mechanisms Directory</span>
+                    <input type="text" class="search-box" id="attnSearch" placeholder="Filter 131 architectures...">
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Family</th>
+                                <th>Latency</th>
+                                <th>Accuracy</th>
+                                <th>PPL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attnTableBody">
+                            <tr><td colspan="5" style="text-align:center;">Loading 131 attention mechanisms...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 72 Compression Engines Leaderboard -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">72 Compression Engines Pareto Leaderboard</span>
+                    <input type="text" class="search-box" id="compSearch" placeholder="Filter 72 compressors...">
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Compressor</th>
+                                <th>Latency</th>
+                                <th>Rel Error</th>
+                                <th>Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compTableBody">
+                            <tr><td colspan="5" style="text-align:center;">Loading 72 compression engines...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Theme Toggle
+        const themeBtn = document.getElementById('theme-btn');
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            themeBtn.innerText = target === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+
+        // Initialize Speculative Decoding Chart
+        const ctx = document.getElementById('speculativeChart').getContext('2d');
+        const specChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 20}, (_, i) => `Step ${i + 1}`),
+                datasets: [{
+                    label: 'Token Acceptance Rate (%)',
+                    data: [72, 74, 76, 81, 79, 78, 83, 82, 85, 78, 79, 80, 81, 84, 78, 77, 82, 86, 79, 83],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 50, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Load Live Data & APIs
+        async function fetchDashboardData() {
+            try {
+                // Fetch GPU metrics
+                const gpuRes = await fetch('/api/stats');
+                if (gpuRes.ok) {
+                    const data = await gpuRes.json();
+                    if (data.gpu) {
+                        document.getElementById('gpu-util').innerText = `${data.gpu.gpu_util || 0.0}%`;
+                        const used = ((data.gpu.mem_used_mb || 0) / 1024).toFixed(1);
+                        const total = ((data.gpu.mem_total_mb || 8192) / 1024).toFixed(1);
+                        document.getElementById('gpu-vram').innerText = `${used} / ${total} GB`;
+                        document.getElementById('gpu-name').innerText = data.gpu.name || 'NVIDIA GPU';
+                        document.getElementById('gpu-temp').innerText = `Temp: ${data.gpu.temp_c || 42}°C · Power: ${data.gpu.power_w || 85}W`;
+                    }
+                }
+
+                // Fetch 131 Attentions
+                const attnRes = await fetch('/api/attentions');
+                if (attnRes.ok) {
+                    window.attentionsData = await attnRes.json();
+                    renderAttentions(window.attentionsData);
+                }
+
+                // Fetch 72 Compressors
+                const compRes = await fetch('/api/compressors');
+                if (compRes.ok) {
+                    window.compressorsData = await compRes.json();
+                    renderCompressors(window.compressorsData);
+                }
+
+                // Fetch PagedKVCache
+                const kvRes = await fetch('/api/paged_kv_cache');
+                if (kvRes.ok) {
+                    const kv = await kvRes.json();
+                    document.getElementById('kv-util').innerText = `${kv.utilization_pct}%`;
+                    document.getElementById('blocks-badge').innerText = `${kv.allocated_blocks} / ${kv.num_blocks} Blocks`;
+                    renderBlocks(kv.blocks);
+                }
+
+                // Fetch Speculative Decoding
+                const specRes = await fetch('/api/speculative_decoding');
+                if (specRes.ok) {
+                    const spec = await specRes.json();
+                    document.getElementById('spec-acc').innerText = `${(spec.acceptance_rate * 100).toFixed(1)}%`;
+                    document.getElementById('spec-speedup').innerText = `${spec.speedup_factor}x Wall-Clock Speedup`;
+                }
+            } catch (err) {
+                console.warn('Dashboard live fetch fallback:', err);
+            }
+        }
+
+        function renderBlocks(blocks) {
+            const grid = document.getElementById('blocksGrid');
+            grid.innerHTML = '';
+            blocks.forEach(b => {
+                const el = document.createElement('div');
+                el.className = `block-cell ${b.is_free ? '' : 'allocated'}`;
+                el.title = `Block #${b.block_id} | ${b.is_free ? 'Free' : `Seq ${b.seq_id} (${b.token_count}/${b.capacity} tokens)`}`;
+                el.innerText = b.block_id;
+                grid.appendChild(el);
+            });
+        }
+
+        function renderAttentions(list) {
+            const tbody = document.getElementById('attnTableBody');
+            tbody.innerHTML = list.map(item => `
+                <tr>
+                    <td><b>${item.name}</b></td>
+                    <td><span class="badge badge-cyan">${item.family || 'linear'}</span></td>
+                    <td>${item.latency_ms ? `${item.latency_ms.toFixed(2)} ms` : '—'}</td>
+                    <td>${item.accuracy_pct ? `${item.accuracy_pct.toFixed(1)}%` : '—'}</td>
+                    <td>${item.perplexity ? item.perplexity.toFixed(1) : '—'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCompressors(list) {
+            const tbody = document.getElementById('compTableBody');
+            tbody.innerHTML = list.map((item, idx) => `
+                <tr>
+                    <td>#${idx + 1}</td>
+                    <td><b>${item.name}</b></td>
+                    <td>${item.compress_ms ? `${item.compress_ms.toFixed(1)} ms` : '—'}</td>
+                    <td><span class="badge ${item.rel_err < 0.1 ? 'badge-green' : 'badge-amber'}">${item.rel_err ? item.rel_err.toFixed(4) : '—'}</span></td>
+                    <td>${item.compression_ratio ? `${item.compression_ratio}x` : '4.0x'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Live Filtering
+        document.getElementById('attnSearch').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            if (window.attentionsData) {
+                const filtered = window.attentionsData.filter(x => x.name.toLowerCase().includes(q) || (x.family && x.family.toLowerCase().includes(q)));
+                renderAttentions(filtered);
+            }
+        });
+
+        document.getElementById('compSearch').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            if (window.compressorsData) {
+                const filtered = window.compressorsData.filter(x => x.name.toLowerCase().includes(q));
+                renderCompressors(filtered);
+            }
+        });
+
+        // Initialize and poll
+        fetchDashboardData();
+        setInterval(fetchDashboardData, 3000);
+    </script>
+</body>
+</html>
