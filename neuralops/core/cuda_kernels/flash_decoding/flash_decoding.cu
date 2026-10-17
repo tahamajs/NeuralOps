@@ -10,6 +10,7 @@ namespace cuda {
 // Flash Decoding Attention forward: Q: [B, H, N_q, D], K: [B, H, N_kv, D], V: [B, H, N_kv, D]
 // Online softmax accumulation per query token
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(128)
 __global__ void flash_decoding_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -150,5 +151,6 @@ torch::Tensor flash_decoding_attention_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

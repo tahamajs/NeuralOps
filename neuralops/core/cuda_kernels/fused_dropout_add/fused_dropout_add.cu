@@ -16,6 +16,7 @@ __device__ inline float lcg_rand(unsigned int seed, unsigned int idx) {
 }
 
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void fused_dropout_add_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -82,5 +83,6 @@ torch::Tensor fused_dropout_add_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

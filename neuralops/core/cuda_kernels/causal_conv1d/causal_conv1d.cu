@@ -10,6 +10,7 @@ namespace cuda {
 
 // Causal Depthwise 1D Conv: x: [B, D, L], weight: [D, Kw], bias: [D] (optional)
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void causal_conv1d_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -91,5 +92,6 @@ torch::Tensor causal_conv1d_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
