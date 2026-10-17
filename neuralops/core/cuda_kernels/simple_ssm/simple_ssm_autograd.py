@@ -38,14 +38,15 @@ class _SimpleSSMFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout):
+    def backward(ctx: Any, *douts):
         x, decay, scale = ctx.saved_tensors
         x_p = x.detach().requires_grad_(x.requires_grad)
         decay_p = decay.detach().requires_grad_(decay.requires_grad)
         scale_p = scale.detach().requires_grad_(scale.requires_grad)
         with torch.enable_grad():
             out_p = simple_ssm_ref(x_p, decay_p, scale_p)
-        grads = torch.autograd.grad(out_p, [x_p, decay_p, scale_p], dout, allow_unused=True)
+        dout_val = douts[0] if len(douts) == 1 else douts
+        grads = torch.autograd.grad(out_p, [x_p, decay_p, scale_p], dout_val, allow_unused=True)
         return grads[0], grads[1], grads[2]
 
 def simple_ssm(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:

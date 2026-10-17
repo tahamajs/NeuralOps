@@ -88,7 +88,7 @@ class _PagedRecurrentStepFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, dout):
+    def backward(ctx: Any, *douts):
         q, k, v, page_pool, block_tables = ctx.saved_tensors
         q_p = q.detach().requires_grad_(q.requires_grad)
         k_p = k.detach().requires_grad_(k.requires_grad)
