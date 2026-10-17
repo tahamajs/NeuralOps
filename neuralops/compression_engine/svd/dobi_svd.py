@@ -227,6 +227,7 @@ class DobiSVDCompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_attention_only = bool(target_attention_only)
+        self.truncate_activations = bool(kwargs.get("truncate_activations", True))
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
@@ -353,8 +354,18 @@ class DobiSVDCompressor(BaseCompressor):
             )
             return None, 1.0, 0
 
+        # Outlier smoothing via fast Walsh-Hadamard transform if truncate_activations
+        W_target = W
+        if self.truncate_activations:
+            try:
+                from neuralops.core.triton_kernels.elementwise import fast_hadamard_transform
+                # Apply orthogonal Hadamard rotation along input channel dimension
+                W_target = fast_hadamard_transform(W, block_size=min(128, in_f))
+            except Exception:
+                W_target = W
+
         try:
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            U, S, Vt = torch.linalg.svd(W_target, full_matrices=False)
         except Exception as e:
             logger.warning("DobiSVD SVD computation failed: %s", e)
             return None, 1.0, 0

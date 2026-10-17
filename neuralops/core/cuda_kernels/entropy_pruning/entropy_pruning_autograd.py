@@ -34,10 +34,12 @@ def entropy_pruning_triton_ref(scores):
     return h
 
 def entropy_pruning(scores: torch.Tensor) -> torch.Tensor:
+    orig_shape = scores.shape[:-1]
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = getattr(mod, "entropy_row_reduction_fwd")
-        return fn(*args, **kwargs)
+        res = fn(*args, **kwargs)
+        return res.view(*orig_shape) if len(orig_shape) > 1 else res
     return dispatch(
         cuda_fn,
         entropy_pruning_triton_ref,
