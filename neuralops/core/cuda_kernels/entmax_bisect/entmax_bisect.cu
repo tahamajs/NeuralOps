@@ -61,25 +61,57 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     }
     __syncthreads();
 
-    const float m = block_reduce_max(local_max);
+    __shared__ float s_warp_scratch[32];
+    const int lane = tid & 31;
+    const int wid = tid >> 5;
+    const int num_warps = (blockDim.x + 31) >> 5;
+
+    // Fast block reduction for initial maximum
+    float wmax = warp_reduce_max(local_max);
+    if (lane == 0) s_warp_scratch[wid] = wmax;
+    __syncthreads();
+    float m = (lane < num_warps) ? s_warp_scratch[lane] : -1e30f;
+    m = warp_reduce_max(m);
+    if (lane == 0) s_warp_scratch[0] = m;
+    __syncthreads();
+    m = s_warp_scratch[0];
 
     // Initial bounds for bisection
     float low = m - 2.0f;
     float high = m;
 
     // Warp/Block Coordinated Bisection using shared memory
+    #pragma unroll 5
     for (int it = 0; it < n_iter; ++it) {
         const float mid = 0.5f * (low + high);
         float local_sum = 0.0f;
 
-        for (int i = tid; i < N; i += blockDim.x) {
+        for (int i = tid; i < num_vec; i += blockDim.x) {
+            const int base = i * 4;
+            #pragma unroll
+            for (int k = 0; k < 4; ++k) {
+                const float d = (s_scores[base + k] - mid) * 0.5f;
+                if (d > 0.0f) {
+                    local_sum = fmaf(d, d, local_sum);
+                }
+            }
+        }
+        for (int i = rem_start + tid; i < N; i += blockDim.x) {
             const float d = (s_scores[i] - mid) * 0.5f;
             if (d > 0.0f) {
                 local_sum = fmaf(d, d, local_sum);
             }
         }
 
-        const float total_sum = block_reduce_sum(local_sum);
+        float wsum = warp_reduce_sum(local_sum);
+        if (lane == 0) s_warp_scratch[wid] = wsum;
+        __syncthreads();
+        float total_sum = (lane < num_warps) ? s_warp_scratch[lane] : 0.0f;
+        total_sum = warp_reduce_sum(total_sum);
+        if (lane == 0) s_warp_scratch[0] = total_sum;
+        __syncthreads();
+        total_sum = s_warp_scratch[0];
+
         if (total_sum > 1.0f) {
             low = mid;
         } else {
@@ -91,12 +123,28 @@ __global__ void __launch_bounds__(256) entmax15_shared_kernel(
     // Final normalization
     const float final_tau = 0.5f * (low + high);
     float final_sum = 0.0f;
-    for (int i = tid; i < N; i += blockDim.x) {
-        const float d = (s_scores[i] - final_tau) * 0.5f;
-        const float p = (d > 0.0f) ? (d * d) : 0.0f;
-        final_sum += p;
+    for (int i = tid; i < num_vec; i += blockDim.x) {
+        const int base = i * 4;
+        #pragma unroll
+        for (int k = 0; k < 4; ++k) {
+            const float d = (s_scores[base + k] - final_tau) * 0.5f;
+            if (d > 0.0f) final_sum = fmaf(d, d, final_sum);
+        }
     }
-    const float total_final = block_reduce_sum(final_sum);
+    for (int i = rem_start + tid; i < N; i += blockDim.x) {
+        const float d = (s_scores[i] - final_tau) * 0.5f;
+        if (d > 0.0f) final_sum = fmaf(d, d, final_sum);
+    }
+
+    float wsum = warp_reduce_sum(final_sum);
+    if (lane == 0) s_warp_scratch[wid] = wsum;
+    __syncthreads();
+    float total_final = (lane < num_warps) ? s_warp_scratch[lane] : 0.0f;
+    total_final = warp_reduce_sum(total_final);
+    if (lane == 0) s_warp_scratch[0] = total_final;
+    __syncthreads();
+    total_final = s_warp_scratch[0];
+
     const float inv_denom = 1.0f / fmaxf(total_final, 1e-9f);
 
     for (int i = tid; i < num_vec; i += blockDim.x) {
