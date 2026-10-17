@@ -178,6 +178,8 @@ __all__ = [
     "triton_cosformer_linear_attention_pytorch_ref",
     "triton_block_sparse_streaming_attn",
     "triton_block_sparse_streaming_attn_pytorch_ref",
+    "fused_dsa_sparse_attn_triton",
+    "fused_dsa_sparse_attn_pytorch_ref",
     "triton_hgrn2_fused_bwd_scan",
     "triton_hgrn2_fused_bwd_scan_pytorch_ref",
     "triton_spectral_entropy_svd_gate",
@@ -236,6 +238,8 @@ from neuralops.core.triton_kernels.cosformer_triton_kernel import (
 from neuralops.core.triton_kernels.block_sparse import (
     triton_block_sparse_streaming_attn,
     triton_block_sparse_streaming_attn_pytorch_ref,
+    fused_dsa_sparse_attn_triton,
+    fused_dsa_sparse_attn_pytorch_ref,
 )
 from neuralops.core.triton_kernels.hgrn2_scan import (
     triton_hgrn2_fused_bwd_scan,
