@@ -34,10 +34,9 @@ def rms_variance_match_pytorch_ref(y: torch.Tensor, v_ref: torch.Tensor, clamp_m
     return y * gain
 
 def rms_variance_match(y: torch.Tensor, v_ref: torch.Tensor, clamp_min: float = 0.25, clamp_max: float = 4.0) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(y, v_ref, clamp_min=0.25, clamp_max=4.0):
         mod = _get_module()
-        fn = getattr(mod, "rms_variance_match_fwd")
-        return fn(*args, **kwargs)
+        return mod.rms_variance_match_fwd(y.contiguous(), v_ref.contiguous(), float(clamp_min), float(clamp_max))
     return dispatch(
         cuda_fn,
         fused_rms_variance_match_triton,
