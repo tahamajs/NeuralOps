@@ -1,0 +1,224 @@
+{
+  "module_name": "positive_kernel_linear_attention_gpt2",
+  "category": "end_to_end",
+  "family": "model_surgery",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "1a2ee47690",
+  "latest_timestamp": "2026-10-17T15:04:48.735661+00:00",
+  "latest_record": {
+    "record_id": "c91b355081824ccc",
+    "module_name": "positive_kernel_linear_attention_gpt2",
+    "category": "end_to_end",
+    "family": "model_surgery",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-17T15:04:48.735661+00:00",
+    "git_commit_sha": "1a2ee47690",
+    "generation_method": {},
+    "experimental_setup": {
+      "backbone": "gpt2",
+      "batch_size": 2,
+      "seq_len": 2048,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    },
+    "metrics": {
+      "batch_size": 2.0,
+      "seq_len": 2048.0,
+      "mha_latency_ms": 58.12,
+      "mha_vram_mb": 3030.5,
+      "mha_tok_per_sec": 70477.0,
+      "linear_latency_ms": 55.69,
+      "linear_vram_mb": 3106.2,
+      "linear_tok_per_sec": 73551.0,
+      "speedup": 1.04
+    },
+    "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+  },
+  "active_records": [
+    {
+      "record_id": "6c28a1d791f1b1c8",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.717438+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 4,
+        "seq_len": 512,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 4.0,
+        "seq_len": 512.0,
+        "mha_latency_ms": 22.88,
+        "mha_vram_mb": 1750.1,
+        "mha_tok_per_sec": 89530.0,
+        "linear_latency_ms": 22.77,
+        "linear_vram_mb": 1788.0,
+        "linear_tok_per_sec": 89952.0,
+        "speedup": 1.0
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    },
+    {
+      "record_id": "fa622dd0e29c33ac",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.727575+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 4,
+        "seq_len": 1024,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 4.0,
+        "seq_len": 1024.0,
+        "mha_latency_ms": 55.97,
+        "mha_vram_mb": 3030.4,
+        "mha_tok_per_sec": 73183.0,
+        "linear_latency_ms": 55.71,
+        "linear_vram_mb": 3106.2,
+        "linear_tok_per_sec": 73527.0,
+        "speedup": 1.0
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    },
+    {
+      "record_id": "c91b355081824ccc",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.735661+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 2,
+        "seq_len": 2048,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 2.0,
+        "seq_len": 2048.0,
+        "mha_latency_ms": 58.12,
+        "mha_vram_mb": 3030.5,
+        "mha_tok_per_sec": 70477.0,
+        "linear_latency_ms": 55.69,
+        "linear_vram_mb": 3106.2,
+        "linear_tok_per_sec": 73551.0,
+        "speedup": 1.04
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "6c28a1d791f1b1c8",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.717438+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 4,
+        "seq_len": 512,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 4.0,
+        "seq_len": 512.0,
+        "mha_latency_ms": 22.88,
+        "mha_vram_mb": 1750.1,
+        "mha_tok_per_sec": 89530.0,
+        "linear_latency_ms": 22.77,
+        "linear_vram_mb": 1788.0,
+        "linear_tok_per_sec": 89952.0,
+        "speedup": 1.0
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    },
+    {
+      "record_id": "fa622dd0e29c33ac",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.727575+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 4,
+        "seq_len": 1024,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 4.0,
+        "seq_len": 1024.0,
+        "mha_latency_ms": 55.97,
+        "mha_vram_mb": 3030.4,
+        "mha_tok_per_sec": 73183.0,
+        "linear_latency_ms": 55.71,
+        "linear_vram_mb": 3106.2,
+        "linear_tok_per_sec": 73527.0,
+        "speedup": 1.0
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    },
+    {
+      "record_id": "c91b355081824ccc",
+      "module_name": "positive_kernel_linear_attention_gpt2",
+      "category": "end_to_end",
+      "family": "model_surgery",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.735661+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "batch_size": 2,
+        "seq_len": 2048,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 2.0,
+        "seq_len": 2048.0,
+        "mha_latency_ms": 58.12,
+        "mha_vram_mb": 3030.5,
+        "mha_tok_per_sec": 70477.0,
+        "linear_latency_ms": 55.69,
+        "linear_vram_mb": 3106.2,
+        "linear_tok_per_sec": 73551.0,
+        "speedup": 1.04
+      },
+      "notes": "End-to-end GPT-2 model surgery benchmark vs Dense MHA"
+    }
+  ]
+}

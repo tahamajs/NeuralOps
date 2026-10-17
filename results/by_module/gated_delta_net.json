@@ -1,36 +1,46 @@
 {
   "module_name": "gated_delta_net",
   "category": "attention",
-  "family": "subquadratic-attention",
-  "total_runs": 10,
+  "family": "hardware-roofline",
+  "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "c5aaefc147",
-  "latest_timestamp": "2026-10-16T09:02:16Z",
+  "latest_git_sha": "8ba5c4eb68",
+  "latest_timestamp": "2026-10-17T15:13:21.255926+00:00",
   "latest_record": {
-    "record_id": "8b141150da358834",
+    "record_id": "45b0f5061643647f",
     "module_name": "gated_delta_net",
     "category": "attention",
-    "family": "subquadratic-attention",
+    "family": "hardware-roofline",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-16T09:02:16Z",
-    "git_commit_sha": "c5aaefc147",
+    "timestamp_utc": "2026-10-17T15:13:21.255926+00:00",
+    "git_commit_sha": "8ba5c4eb68",
     "generation_method": {
-      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+      "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+      "source_component": "neuralops.core.roofline.profile_roofline"
     },
     "experimental_setup": {
-      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-      "dtype": "float16",
       "batch_size": 2,
-      "seq_len": 2048
+      "seq_len": 4096,
+      "embed_dim": 768,
+      "num_heads": 12,
+      "head_dim": 64,
+      "dtype": "float16",
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
     },
     "metrics": {
-      "latency_triton_ms": 6.094
+      "latency_triton_ms": 13.465190124511718,
+      "latency_pytorch_ms": 620.6075032552084,
+      "speedup_x": 46.08976906501074,
+      "achieved_tflops": 3.8799489751649165,
+      "achieved_bandwidth_gb_s": 5.131985019224216,
+      "peak_vram_mb": 257.2783203125,
+      "sram_bytes_saved_mb": 1538.5,
+      "arithmetic_intensity_fused": 756.0327944510318
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
   },
   "active_records": [
     {
@@ -315,6 +325,41 @@
         "latency_triton_ms": 6.094
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "45b0f5061643647f",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:13:21.255926+00:00",
+      "git_commit_sha": "8ba5c4eb68",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 2,
+        "seq_len": 4096,
+        "embed_dim": 768,
+        "num_heads": 12,
+        "head_dim": 64,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.465190124511718,
+        "latency_pytorch_ms": 620.6075032552084,
+        "speedup_x": 46.08976906501074,
+        "achieved_tflops": 3.8799489751649165,
+        "achieved_bandwidth_gb_s": 5.131985019224216,
+        "peak_vram_mb": 257.2783203125,
+        "sram_bytes_saved_mb": 1538.5,
+        "arithmetic_intensity_fused": 756.0327944510318
+      },
+      "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
     }
   ],
   "history": [
@@ -600,6 +645,41 @@
         "latency_triton_ms": 6.094
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
+    },
+    {
+      "record_id": "45b0f5061643647f",
+      "module_name": "gated_delta_net",
+      "category": "attention",
+      "family": "hardware-roofline",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:13:21.255926+00:00",
+      "git_commit_sha": "8ba5c4eb68",
+      "generation_method": {
+        "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
+        "source_component": "neuralops.core.roofline.profile_roofline"
+      },
+      "experimental_setup": {
+        "batch_size": 2,
+        "seq_len": 4096,
+        "embed_dim": 768,
+        "num_heads": 12,
+        "head_dim": 64,
+        "dtype": "float16",
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.465190124511718,
+        "latency_pytorch_ms": 620.6075032552084,
+        "speedup_x": 46.08976906501074,
+        "achieved_tflops": 3.8799489751649165,
+        "achieved_bandwidth_gb_s": 5.131985019224216,
+        "peak_vram_mb": 257.2783203125,
+        "sram_bytes_saved_mb": 1538.5,
+        "arithmetic_intensity_fused": 756.0327944510318
+      },
+      "notes": "Bottleneck regime: Compute-Bound (Tensor Core Saturated)"
     }
   ]
 }

@@ -33,14 +33,13 @@ def svd_prefix_scan_triton_ref(q, k, v, eps=1e-4):
     return svd_prefix_scan_pytorch_ref(q, k, v, eps=eps)
 
 def svd_prefix_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(q, k, v, eps=1e-4, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "svd_prefix_scan_fwd")
-        return fn(*args, **kwargs)
+        return mod.svd_prefix_scan_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(eps))
     return dispatch(
         cuda_fn,
         svd_prefix_scan_triton_ref,
         svd_prefix_scan_pytorch_ref,
-        q, k, v, eps=eps,
+        q, k, v, float(eps),
         kernel_name="svd_prefix_scan",
     )
