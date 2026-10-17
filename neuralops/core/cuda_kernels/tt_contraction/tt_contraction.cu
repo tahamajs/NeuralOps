@@ -9,6 +9,7 @@ namespace cuda {
 
 // Core contraction: W[n, k] = sum_r core0[p0_idx, q0_idx, r] * core1[r, p1_idx, q1_idx]
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void tt_contraction_kernel(
     scalar_t* __restrict__ W,
     const scalar_t* __restrict__ c0,
@@ -48,6 +49,7 @@ __global__ void tt_contraction_kernel(
 
 // Fused TT Linear forward: out[m, n] = sum_k X[m, k] * W[n, k] + bias[n]
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void tt_linear_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -133,6 +135,7 @@ torch::Tensor tt_contraction_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return W;
 }
 
@@ -200,6 +203,8 @@ torch::Tensor tt_linear_fwd(
             }
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

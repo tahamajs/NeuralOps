@@ -10,6 +10,7 @@ namespace cuda {
 // Rotational SVD: Y = ((X @ R_in) @ V_r^T) @ U_r^T + bias
 // X: [M, K], R_in: [K, K], V_r: [R, K], U_r: [N, R], bias: [N] (optional)
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void rotational_svd_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -130,6 +131,8 @@ torch::Tensor rotational_svd_fwd(
             }
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

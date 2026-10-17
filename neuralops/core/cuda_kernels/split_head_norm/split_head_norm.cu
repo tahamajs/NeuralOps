@@ -5,7 +5,7 @@
 
 namespace neuralops { namespace cuda {
 
-// Heterogeneous split-head group RMSNorm with online variance accumulation
+// Heterogeneous split-head group RMSNorm with warp-level reduction
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) split_head_norm_kernel(
     scalar_t* __restrict__ out,
@@ -26,14 +26,15 @@ __global__ void __launch_bounds__(256) split_head_norm_kernel(
         sum_sq += val * val;
     }
 
-    __shared__ float s_sum;
-    if (tid == 0) s_sum = 0.0f;
+    sum_sq = block_reduce_sum(sum_sq);
+
+    __shared__ float s_rrms;
+    if (tid == 0) {
+        s_rrms = rsqrtf((sum_sq / static_cast<float>(D)) + eps);
+    }
     __syncthreads();
 
-    atomicAdd(&s_sum, sum_sq);
-    __syncthreads();
-
-    const float rrms = rsqrtf((s_sum / static_cast<float>(D)) + eps);
+    const float rrms = s_rrms;
 
     for (int i = tid; i < D; i += blockDim.x) {
         const float val = to_float(x[r * D + i]);
@@ -58,7 +59,8 @@ torch::Tensor split_head_norm_fwd(
 
     if (total_rows == 0 || D == 0) return out;
 
-    const int threads = std::min(256, ((D + 31) / 32) * 32);
+    int threads = std::min(256, ((D + 31) / 32) * 32);
+    if (threads < 32) threads = 32;
     dim3 grid(1, total_rows);
 
     auto stream = c10::cuda::getCurrentCUDAStream();

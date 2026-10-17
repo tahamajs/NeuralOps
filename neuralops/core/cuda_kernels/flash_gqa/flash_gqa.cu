@@ -3,6 +3,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 #include <float.h>
+#include "_common.cuh"
 
 template<typename scalar_t, int HEAD_DIM, int TILE_Q, int BLOCK_N>
 __launch_bounds__(128)
@@ -196,6 +197,11 @@ void flash_gqa_fwd_cuda(
     bool is_causal,
     float scale
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
+
     const int B = static_cast<int>(q.size(0));
     const int H = static_cast<int>(q.size(1));
     const int N_Q = static_cast<int>(q.size(2));

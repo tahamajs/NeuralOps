@@ -4,6 +4,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 #include <float.h>
+#include "_common.cuh"
 
 #define WARP_SIZE 32
 
@@ -227,6 +228,13 @@ void paged_attention_v1_cuda(
     int max_context_len,
     float scale
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(q);
+    CHECK_INPUT(k_cache);
+    CHECK_INPUT(v_cache);
+    CHECK_INPUT(block_tables);
+    CHECK_INPUT(context_lens);
+
     const int num_seqs = q.size(0);
     if (num_seqs == 0) return;
 

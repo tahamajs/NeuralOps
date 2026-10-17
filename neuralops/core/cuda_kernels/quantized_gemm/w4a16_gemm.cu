@@ -2,6 +2,7 @@
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
+#include "_common.cuh"
 
 __launch_bounds__(1024)
 __global__ void w4a16_gemm_tiled_kernel(
@@ -139,6 +140,12 @@ void w4a16_gemm_cuda(
     const torch::Tensor& zeros,
     int group_size
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(A);
+    CHECK_INPUT(W_q);
+    CHECK_INPUT(scales);
+    CHECK_INPUT(zeros);
+
     const int M = static_cast<int>(A.size(0));
     const int K = static_cast<int>(A.size(1));
     const int N = static_cast<int>(scales.size(1));
@@ -169,6 +176,12 @@ void w4a16_gemm_bwd_cuda(
     const torch::Tensor& zeros,
     int group_size
 ) {
+    CHECK_INPUT(dA);
+    CHECK_INPUT(dout);
+    CHECK_INPUT(W_q);
+    CHECK_INPUT(scales);
+    CHECK_INPUT(zeros);
+
     const int M = static_cast<int>(dout.size(0));
     const int N = static_cast<int>(dout.size(1));
     const int K = static_cast<int>(dA.size(1));

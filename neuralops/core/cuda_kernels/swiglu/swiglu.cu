@@ -9,6 +9,7 @@ namespace neuralops {
 namespace cuda {
 
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void swiglu_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -79,5 +80,6 @@ torch::Tensor swiglu_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
