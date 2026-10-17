@@ -18,8 +18,14 @@ __global__ void __launch_bounds__(512) aegis_gate_norm_2b_kernel(
     const int pid = blockIdx.x;
     if (pid >= total_tokens) return;
     const int tid = threadIdx.x;
-    const float w0 = weights[pid * 2 + 0];
-    const float w1 = weights[pid * 2 + 1];
+    const float raw_w0 = weights[pid * 2 + 0];
+    const float raw_w1 = weights[pid * 2 + 1];
+    const float max_w = fmaxf(raw_w0, raw_w1);
+    const float exp0 = expf(raw_w0 - max_w);
+    const float exp1 = expf(raw_w1 - max_w);
+    const float inv_sum = 1.0f / (exp0 + exp1 + 1e-8f);
+    const float w0 = exp0 * inv_sum;
+    const float w1 = exp1 * inv_sum;
 
     float sq0 = 0.0f, sq1 = 0.0f;
     for (int i = tid; i < D; i += blockDim.x) {
