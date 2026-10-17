@@ -1,0 +1,224 @@
+{
+  "module_name": "gfws_d_compressor",
+  "category": "compressor",
+  "family": "bert",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-22T05:29:01.609968",
+  "latest_record": {
+    "record_id": "0bb223b51e035a48",
+    "module_name": "gfws_d_compressor",
+    "category": "compressor",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-22T05:29:01.609968",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 0.0,
+      "peak_vram_mb": 0.0,
+      "throughput_tok_s": 0.0,
+      "latency_ms": 570.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: FAIL"
+  },
+  "active_records": [
+    {
+      "record_id": "c94229ea93e0462a",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T19:38:26.061089",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "3db943c4d3925f16",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:33:55.592687",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "0bb223b51e035a48",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T05:29:01.609968",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "c94229ea93e0462a",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T19:38:26.061089",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "3db943c4d3925f16",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:33:55.592687",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "0bb223b51e035a48",
+      "module_name": "gfws_d_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T05:29:01.609968",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/gfws_d_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    }
+  ]
+}

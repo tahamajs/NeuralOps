@@ -1,0 +1,104 @@
+{
+  "module_name": "dobi_svd_compressor",
+  "category": "compressor",
+  "family": "gpt",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-24T20:18:37.292344",
+  "latest_record": {
+    "record_id": "edbdaa58a154c9ec",
+    "module_name": "dobi_svd_compressor",
+    "category": "compressor",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-24T20:18:37.292344",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/dobi_svd_compressor/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 3.721979489231453,
+      "peak_vram_mb": 816.22509765625,
+      "throughput_tok_s": 1379.7834114011162,
+      "latency_ms": 189700.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "edbdaa58a154c9ec",
+      "module_name": "dobi_svd_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:18:37.292344",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/dobi_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1379.7834114011162,
+        "latency_ms": 189700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "edbdaa58a154c9ec",
+      "module_name": "dobi_svd_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:18:37.292344",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/dobi_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1379.7834114011162,
+        "latency_ms": 189700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

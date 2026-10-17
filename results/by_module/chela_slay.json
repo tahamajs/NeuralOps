@@ -1,37 +1,478 @@
 {
   "module_name": "chela_slay",
   "category": "attention",
-  "family": "attention",
-  "total_runs": 2,
+  "family": "subquadratic-attention",
+  "total_runs": 16,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "5d553a2079",
-  "latest_timestamp": "2026-10-15T04:02:13+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "4116d3df4e20612f",
+    "record_id": "189773d44ebc0fc2",
     "module_name": "chela_slay",
     "category": "attention",
-    "family": "attention",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T04:02:13+03:30",
-    "git_commit_sha": "5d553a2079",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "End-to-End Evaluation & Perplexity Probe",
-      "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2 / WikiText-2",
-      "backbone": "DistilBERT / GPT-2"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 0.0,
-      "ppl": 0.0
+      "latency_triton_ms": 2.104
     },
-    "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "93c27d3a0f841f2c",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:28:32.679912",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_chela_slay/roberta/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 63.3,
+        "f1": 0.6088,
+        "val_loss": 0.7661,
+        "peak_vram_mb": 704.71,
+        "throughput_tok_s": 8282.64,
+        "latency_ms": 35590.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bf71caeb996c9207",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:32:46.797497",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_chela_slay/gpt2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 78.9,
+        "f1": 0.7928,
+        "val_loss": 0.4796,
+        "peak_vram_mb": 2526.15,
+        "throughput_tok_s": 4120.88,
+        "latency_ms": 223370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "46d9ec1a3e350650",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:24:01.818774",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_chela_slay/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.6,
+        "f1": 0.1888,
+        "val_loss": 1.1,
+        "peak_vram_mb": 449.05,
+        "throughput_tok_s": 35524.18,
+        "latency_ms": 7550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c97af106a3aac169",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T10:16:50.906060",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_chela_slay/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.7,
+        "f1": 0.6328,
+        "val_loss": 0.9733,
+        "peak_vram_mb": 920.1,
+        "throughput_tok_s": 61770.51,
+        "latency_ms": 13330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "da7b7bd9738991ba",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:39:05.986526",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9091,
+        "val_loss": 0.2735,
+        "peak_vram_mb": 429.3,
+        "throughput_tok_s": 38206.23,
+        "latency_ms": 12950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0773d8d7f2d548f9",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:06.786888",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.2,
+        "f1": 0.1736,
+        "val_loss": 1.1048,
+        "peak_vram_mb": 359.32,
+        "throughput_tok_s": 16665.92,
+        "latency_ms": 18580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "d28ec2687111213e",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:00:02.986138",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 59.5,
+        "f1": 0.5917,
+        "val_loss": 0.8863,
+        "peak_vram_mb": 360.52,
+        "throughput_tok_s": 14299.7,
+        "latency_ms": 33220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "21541ce7974cd2a3",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T08:14:22.653671",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 91.0,
+        "f1": 0.9062,
+        "val_loss": 0.2976,
+        "peak_vram_mb": 359.32,
+        "throughput_tok_s": 12192.22,
+        "latency_ms": 22310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "1b1739b0b79f8c99",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:48:42.833308",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 52.6,
+        "f1": 0.5231,
+        "val_loss": 0.9955,
+        "peak_vram_mb": 869.03,
+        "throughput_tok_s": 36545.58,
+        "latency_ms": 76440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "dc07ea1ea5a02942",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:34:19.805014",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_chela_slay/roberta/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9362,
+        "val_loss": 0.1962,
+        "peak_vram_mb": 461.18,
+        "throughput_tok_s": 7648.06,
+        "latency_ms": 37890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "696f39d7ffa105ec",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:38:19.829712",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_chela_slay/gpt2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8942,
+        "val_loss": 0.2996,
+        "peak_vram_mb": 382.13,
+        "throughput_tok_s": 23646.04,
+        "latency_ms": 185340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_GPT_TIMEOUT"
+    },
+    {
+      "record_id": "79285c70f74f9f50",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:15:28.900682",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/chela_slay/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 92.43,
+        "f1": 0.9278,
+        "val_loss": 0.2155,
+        "peak_vram_mb": 972.92,
+        "throughput_tok_s": 16264.21,
+        "latency_ms": 83100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "ad29322422e5a5f0",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:16:44.276573",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_distilbert/chela_slay/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.2823,
+        "peak_vram_mb": 923.22,
+        "throughput_tok_s": 59780.5,
+        "latency_ms": 42900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "0b50a41f52533074",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:33:29Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.8533333333333334,
+        "peak_vram_mb": 1104.81640625
+      },
+      "notes": "Run: 711ada94-ad7d-457d-a51f-7a424dddf374"
+    },
+    {
+      "record_id": "4116d3df4e20612f",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 89.0,
+        "ppl": 38.5,
+        "latency_ms": 1760.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
     {
       "record_id": "189773d44ebc0fc2",
       "module_name": "chela_slay",
@@ -56,34 +497,450 @@
         "latency_triton_ms": 2.104
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "4116d3df4e20612f",
-      "module_name": "chela_slay",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     }
   ],
   "history": [
     {
+      "record_id": "93c27d3a0f841f2c",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:28:32.679912",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_chela_slay/roberta/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 63.3,
+        "f1": 0.6088,
+        "val_loss": 0.7661,
+        "peak_vram_mb": 704.71,
+        "throughput_tok_s": 8282.64,
+        "latency_ms": 35590.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bf71caeb996c9207",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T14:32:46.797497",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_chela_slay/gpt2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 78.9,
+        "f1": 0.7928,
+        "val_loss": 0.4796,
+        "peak_vram_mb": 2526.15,
+        "throughput_tok_s": 4120.88,
+        "latency_ms": 223370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "46d9ec1a3e350650",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:24:01.818774",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_chela_slay/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.6,
+        "f1": 0.1888,
+        "val_loss": 1.1,
+        "peak_vram_mb": 449.05,
+        "throughput_tok_s": 35524.18,
+        "latency_ms": 7550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c97af106a3aac169",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T10:16:50.906060",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_chela_slay/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.7,
+        "f1": 0.6328,
+        "val_loss": 0.9733,
+        "peak_vram_mb": 920.1,
+        "throughput_tok_s": 61770.51,
+        "latency_ms": 13330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "da7b7bd9738991ba",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:39:05.986526",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9091,
+        "val_loss": 0.2735,
+        "peak_vram_mb": 429.3,
+        "throughput_tok_s": 38206.23,
+        "latency_ms": 12950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0773d8d7f2d548f9",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:06.786888",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.2,
+        "f1": 0.1736,
+        "val_loss": 1.1048,
+        "peak_vram_mb": 359.32,
+        "throughput_tok_s": 16665.92,
+        "latency_ms": 18580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "d28ec2687111213e",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:00:02.986138",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 59.5,
+        "f1": 0.5917,
+        "val_loss": 0.8863,
+        "peak_vram_mb": 360.52,
+        "throughput_tok_s": 14299.7,
+        "latency_ms": 33220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "21541ce7974cd2a3",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T08:14:22.653671",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 91.0,
+        "f1": 0.9062,
+        "val_loss": 0.2976,
+        "peak_vram_mb": 359.32,
+        "throughput_tok_s": 12192.22,
+        "latency_ms": 22310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "1b1739b0b79f8c99",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:48:42.833308",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 52.6,
+        "f1": 0.5231,
+        "val_loss": 0.9955,
+        "peak_vram_mb": 869.03,
+        "throughput_tok_s": 36545.58,
+        "latency_ms": 76440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "dc07ea1ea5a02942",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:34:19.805014",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_chela_slay/roberta/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9362,
+        "val_loss": 0.1962,
+        "peak_vram_mb": 461.18,
+        "throughput_tok_s": 7648.06,
+        "latency_ms": 37890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "696f39d7ffa105ec",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:38:19.829712",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_chela_slay/gpt2/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8942,
+        "val_loss": 0.2996,
+        "peak_vram_mb": 382.13,
+        "throughput_tok_s": 23646.04,
+        "latency_ms": 185340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_GPT_TIMEOUT"
+    },
+    {
+      "record_id": "79285c70f74f9f50",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:15:28.900682",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/chela_slay/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 92.43,
+        "f1": 0.9278,
+        "val_loss": 0.2155,
+        "peak_vram_mb": 972.92,
+        "throughput_tok_s": 16264.21,
+        "latency_ms": 83100.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "ad29322422e5a5f0",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:16:44.276573",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_distilbert/chela_slay/checkpoints/chela_slay/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.2823,
+        "peak_vram_mb": 923.22,
+        "throughput_tok_s": 59780.5,
+        "latency_ms": 42900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "0b50a41f52533074",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:33:29Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.8533333333333334,
+        "peak_vram_mb": 1104.81640625
+      },
+      "notes": "Run: 711ada94-ad7d-457d-a51f-7a424dddf374"
+    },
+    {
+      "record_id": "4116d3df4e20612f",
+      "module_name": "chela_slay",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 89.0,
+        "ppl": 38.5,
+        "latency_ms": 1760.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "189773d44ebc0fc2",
       "module_name": "chela_slay",
       "category": "attention",
@@ -107,30 +964,6 @@
         "latency_triton_ms": 2.104
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "4116d3df4e20612f",
-      "module_name": "chela_slay",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     }
   ]
 }

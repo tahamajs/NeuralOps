@@ -14,6 +14,7 @@ namespace neuralops { namespace cuda {
 // 2. Dual Online Softmax States: Tracks (m1, d1) and (m2, d2) along causal window j <= i.
 // 3. Fused Differential Accumulation: out = acc_1 / d_1 - lambda * (acc_2 / d_2).
 // 4. Strict FP32 intermediate accumulation to avoid precision cancellation.
+// 5. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) diff_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -31,69 +32,96 @@ __global__ void __launch_bounds__(128) diff_attn_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const int warp_id = threadIdx.x / 32;
+    const int lane = threadIdx.x % 32;
+    const int i = blockIdx.x * (blockDim.x / 32) + warp_id;
     if (i >= N) return;
 
     const int base_offset = bh * (N * D);
     const int qi_offset = base_offset + i * D;
     const float scale = rsqrtf(static_cast<float>(D));
 
-    // Dual Online Softmax statistics for causal sequence j in [0, i]
+    // Register cache for query vectors (up to D=128, e.g. 2 elements per lane for D=64, 4 for D=128)
+    constexpr int MAX_E = 4;
+    const int elements_per_lane = (D + 31) / 32;
+    float q1_reg[MAX_E];
+    float q2_reg[MAX_E];
+
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            q1_reg[e] = to_float(q1[qi_offset + d]) * scale;
+            q2_reg[e] = to_float(q2[qi_offset + d]) * scale;
+        } else {
+            q1_reg[e] = 0.0f;
+            q2_reg[e] = 0.0f;
+        }
+    }
+
+    // Single-pass FlashAttention: fused online softmax rescaling and value accumulation
     float m1 = -1e30f, d1 = 0.0f;
     float m2 = -1e30f, d2 = 0.0f;
+    float acc1[MAX_E] = {0.0f};
+    float acc2[MAX_E] = {0.0f};
 
     for (int j = 0; j <= i; ++j) {
         const int kj_offset = base_offset + j * D;
-        float dot1 = 0.0f;
-        float dot2 = 0.0f;
+        float dot1_local = 0.0f;
+        float dot2_local = 0.0f;
 
-        for (int d = 0; d < D; ++d) {
-            dot1 += to_float(q1[qi_offset + d]) * to_float(k1[kj_offset + d]);
-            dot2 += to_float(q2[qi_offset + d]) * to_float(k2[kj_offset + d]);
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                dot1_local = fmaf(q1_reg[e], to_float(k1[kj_offset + d]), dot1_local);
+                dot2_local = fmaf(q2_reg[e], to_float(k2[kj_offset + d]), dot2_local);
+            }
         }
-        dot1 *= scale;
-        dot2 *= scale;
 
-        // Online softmax state 1
-        const float m1_new = fmaxf(m1, dot1);
-        d1 = d1 * expf(m1 - m1_new) + expf(dot1 - m1_new);
+        // Warp reduction across 32 lanes
+        #pragma unroll
+        for (int offset = 16; offset > 0; offset /= 2) {
+            dot1_local += __shfl_xor_sync(0xffffffff, dot1_local, offset);
+            dot2_local += __shfl_xor_sync(0xffffffff, dot2_local, offset);
+        }
+
+        // Online softmax 1 update
+        const float m1_new = fmaxf(m1, dot1_local);
+        const float alpha1 = expf(m1 - m1_new);
+        const float p1 = expf(dot1_local - m1_new);
+        d1 = d1 * alpha1 + p1;
         m1 = m1_new;
 
-        // Online softmax state 2
-        const float m2_new = fmaxf(m2, dot2);
-        d2 = d2 * expf(m2 - m2_new) + expf(dot2 - m2_new);
+        // Online softmax 2 update
+        const float m2_new = fmaxf(m2, dot2_local);
+        const float alpha2 = expf(m2 - m2_new);
+        const float p2 = expf(dot2_local - m2_new);
+        d2 = d2 * alpha2 + p2;
         m2 = m2_new;
+
+        // Scale prior accumulations by alpha and add current p * v
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                const float v_val = to_float(v[kj_offset + d]);
+                acc1[e] = acc1[e] * alpha1 + p1 * v_val;
+                acc2[e] = acc2[e] * alpha2 + p2 * v_val;
+            }
+        }
     }
 
     const float inv_d1 = (d1 > 1e-6f) ? (1.0f / d1) : 0.0f;
     const float inv_d2 = (d2 > 1e-6f) ? (1.0f / d2) : 0.0f;
 
-    // Pass 2: Accumulate weighted values
-    for (int d = 0; d < D; ++d) {
-        float acc1 = 0.0f;
-        float acc2 = 0.0f;
-
-        for (int j = 0; j <= i; ++j) {
-            const int kj_offset = base_offset + j * D;
-            float dot1 = 0.0f;
-            float dot2 = 0.0f;
-            for (int dd = 0; dd < D; ++dd) {
-                dot1 += to_float(q1[qi_offset + dd]) * to_float(k1[kj_offset + dd]);
-                dot2 += to_float(q2[qi_offset + dd]) * to_float(k2[kj_offset + dd]);
-            }
-            dot1 *= scale;
-            dot2 *= scale;
-
-            const float w1 = expf(dot1 - m1) * inv_d1;
-            const float w2 = expf(dot2 - m2) * inv_d2;
-            const float v_val = to_float(v[kj_offset + d]);
-
-            acc1 += w1 * v_val;
-            acc2 += w2 * v_val;
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            const float res = (acc1[e] * inv_d1) - lambda_val * (acc2[e] * inv_d2);
+            out[qi_offset + d] = from_float<scalar_t>(res);
         }
-
-        const float res = acc1 - lambda_val * acc2;
-        out[qi_offset + d] = from_float<scalar_t>(res);
     }
 }
 
@@ -127,8 +155,9 @@ torch::Tensor diff_attn_fwd(
     auto out = torch::empty_like(q1);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
-    constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
+    constexpr int THREADS = 128; // 4 warps per block -> 4 queries per block
+    constexpr int WARPS_PER_BLOCK = THREADS / 32;
+    const int blocks_x = (N + WARPS_PER_BLOCK - 1) / WARPS_PER_BLOCK;
     dim3 grid(blocks_x, B * H);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
@@ -156,3 +185,4 @@ torch::Tensor diff_attn_fwd(
     CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
+

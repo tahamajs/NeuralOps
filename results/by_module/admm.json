@@ -1,0 +1,284 @@
+{
+  "module_name": "admm",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-19T05:51:42.267543",
+  "latest_record": {
+    "record_id": "94b3b92d870d385d",
+    "module_name": "admm",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T05:51:42.267543",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/admm/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "distilbert-base-uncased",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 36.5,
+      "f1": 0.2986,
+      "val_loss": 1.1023,
+      "peak_vram_mb": 303.33,
+      "throughput_tok_s": 43254.44,
+      "latency_ms": 6750.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "a37a008d9d5f2e40",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:00:21.029783",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_admm/gpt2/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 79.36,
+        "f1": 0.7978,
+        "val_loss": 0.4875,
+        "peak_vram_mb": 628.41,
+        "throughput_tok_s": 19301.53,
+        "latency_ms": 9840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7539d1cd0ed1e2c7",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:54:01.542265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9129,
+        "val_loss": 0.3454,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 89753.55,
+        "latency_ms": 5130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "b4e5277c84c30417",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:56:59.713478",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.15,
+        "f1": 0.6758,
+        "val_loss": 0.6977,
+        "peak_vram_mb": 545.33,
+        "throughput_tok_s": 46898.48,
+        "latency_ms": 9480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "94b3b92d870d385d",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:51:42.267543",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.5,
+        "f1": 0.2986,
+        "val_loss": 1.1023,
+        "peak_vram_mb": 303.33,
+        "throughput_tok_s": 43254.44,
+        "latency_ms": 6750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "a37a008d9d5f2e40",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:00:21.029783",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_admm/gpt2/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 79.36,
+        "f1": 0.7978,
+        "val_loss": 0.4875,
+        "peak_vram_mb": 628.41,
+        "throughput_tok_s": 19301.53,
+        "latency_ms": 9840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7539d1cd0ed1e2c7",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:54:01.542265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9129,
+        "val_loss": 0.3454,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 89753.55,
+        "latency_ms": 5130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "b4e5277c84c30417",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:56:59.713478",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.15,
+        "f1": 0.6758,
+        "val_loss": 0.6977,
+        "peak_vram_mb": 545.33,
+        "throughput_tok_s": 46898.48,
+        "latency_ms": 9480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "94b3b92d870d385d",
+      "module_name": "admm",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:51:42.267543",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/admm/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.5,
+        "f1": 0.2986,
+        "val_loss": 1.1023,
+        "peak_vram_mb": 303.33,
+        "throughput_tok_s": 43254.44,
+        "latency_ms": 6750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

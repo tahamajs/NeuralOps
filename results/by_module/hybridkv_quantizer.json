@@ -1,0 +1,104 @@
+{
+  "module_name": "hybridkv_quantizer",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-19T06:09:04.130896",
+  "latest_record": {
+    "record_id": "115a2dd5ec8aab18",
+    "module_name": "hybridkv_quantizer",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T06:09:04.130896",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hybridkv_quantizer/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "distilbert-base-uncased",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 34.4,
+      "f1": 0.187,
+      "val_loss": 1.112,
+      "peak_vram_mb": 292.33,
+      "throughput_tok_s": 45363.89,
+      "latency_ms": 3800.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "115a2dd5ec8aab18",
+      "module_name": "hybridkv_quantizer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:09:04.130896",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hybridkv_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.187,
+        "val_loss": 1.112,
+        "peak_vram_mb": 292.33,
+        "throughput_tok_s": 45363.89,
+        "latency_ms": 3800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "115a2dd5ec8aab18",
+      "module_name": "hybridkv_quantizer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:09:04.130896",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hybridkv_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.187,
+        "val_loss": 1.112,
+        "peak_vram_mb": 292.33,
+        "throughput_tok_s": 45363.89,
+        "latency_ms": 3800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

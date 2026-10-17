@@ -2,7 +2,7 @@
   "module_name": "hashed_net_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,66 @@
   },
   "active_records": [
     {
+      "record_id": "f1bdc67350df5ba4",
+      "module_name": "hashed_net_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:05:47.191211",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/hashed_net_compressor/checkpoints/hashed_net_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 62726.58,
+        "latency_ms": 2900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c516256bd5a8b152",
+      "module_name": "hashed_net_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:06:24.247464",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/hashed_net_compressor/checkpoints/hashed_net_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 129805.64,
+        "latency_ms": 8500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "33a87066acac7a25",
       "module_name": "hashed_net_compressor",
       "category": "compressor",
@@ -58,6 +118,66 @@
     }
   ],
   "history": [
+    {
+      "record_id": "f1bdc67350df5ba4",
+      "module_name": "hashed_net_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:05:47.191211",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/hashed_net_compressor/checkpoints/hashed_net_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 62726.58,
+        "latency_ms": 2900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c516256bd5a8b152",
+      "module_name": "hashed_net_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:06:24.247464",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/hashed_net_compressor/checkpoints/hashed_net_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 129805.64,
+        "latency_ms": 8500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "33a87066acac7a25",
       "module_name": "hashed_net_compressor",

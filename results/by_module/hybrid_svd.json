@@ -1,0 +1,164 @@
+{
+  "module_name": "hybrid_svd",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-21T07:55:21.098954",
+  "latest_record": {
+    "record_id": "06261bd5946cdbe1",
+    "module_name": "hybrid_svd",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-21T07:55:21.098954",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hybrid_svd/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 37.1,
+      "f1": 0.2771,
+      "val_loss": 1.0981,
+      "peak_vram_mb": 491.2,
+      "throughput_tok_s": 89158.49,
+      "latency_ms": 33710.0,
+      "compression_ratio": 1.9073,
+      "param_reduction_pct": 47.57
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "bcc0fa6bdadf5348",
+      "module_name": "hybrid_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:08:28.550250",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hybrid_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.1,
+        "f1": 0.2947,
+        "val_loss": 1.1069,
+        "peak_vram_mb": 252.05,
+        "throughput_tok_s": 37395.93,
+        "latency_ms": 11850.0,
+        "compression_ratio": 1.9073,
+        "param_reduction_pct": 47.57
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "06261bd5946cdbe1",
+      "module_name": "hybrid_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T07:55:21.098954",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hybrid_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.1,
+        "f1": 0.2771,
+        "val_loss": 1.0981,
+        "peak_vram_mb": 491.2,
+        "throughput_tok_s": 89158.49,
+        "latency_ms": 33710.0,
+        "compression_ratio": 1.9073,
+        "param_reduction_pct": 47.57
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "bcc0fa6bdadf5348",
+      "module_name": "hybrid_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:08:28.550250",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/hybrid_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.1,
+        "f1": 0.2947,
+        "val_loss": 1.1069,
+        "peak_vram_mb": 252.05,
+        "throughput_tok_s": 37395.93,
+        "latency_ms": 11850.0,
+        "compression_ratio": 1.9073,
+        "param_reduction_pct": 47.57
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "06261bd5946cdbe1",
+      "module_name": "hybrid_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T07:55:21.098954",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/hybrid_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.1,
+        "f1": 0.2771,
+        "val_loss": 1.0981,
+        "peak_vram_mb": 491.2,
+        "throughput_tok_s": 89158.49,
+        "latency_ms": 33710.0,
+        "compression_ratio": 1.9073,
+        "param_reduction_pct": 47.57
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

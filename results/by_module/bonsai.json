@@ -1,0 +1,284 @@
+{
+  "module_name": "bonsai",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T04:11:11.600053",
+  "latest_record": {
+    "record_id": "1a60737714ff8f72",
+    "module_name": "bonsai",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T04:11:11.600053",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/bonsai/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.48,
+      "f1": 0.9095,
+      "val_loss": 0.3339,
+      "peak_vram_mb": 312.7,
+      "throughput_tok_s": 90937.07,
+      "latency_ms": 3050.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "682bbffd0d683cc9",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:38:28.119017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7526,
+        "val_loss": 0.4626,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 104140.39,
+        "latency_ms": 2950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b17b9152c954e7e0",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:07:39.641215",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7116,
+        "peak_vram_mb": 534.32,
+        "throughput_tok_s": 49626.15,
+        "latency_ms": 7290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2d77c4f829de115f",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:55:38.066815",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1113,
+        "peak_vram_mb": 292.32,
+        "throughput_tok_s": 41613.06,
+        "latency_ms": 5200.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "1a60737714ff8f72",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:11:11.600053",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9095,
+        "val_loss": 0.3339,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 90937.07,
+        "latency_ms": 3050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "682bbffd0d683cc9",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:38:28.119017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7526,
+        "val_loss": 0.4626,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 104140.39,
+        "latency_ms": 2950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b17b9152c954e7e0",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:07:39.641215",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7116,
+        "peak_vram_mb": 534.32,
+        "throughput_tok_s": 49626.15,
+        "latency_ms": 7290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2d77c4f829de115f",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:55:38.066815",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1113,
+        "peak_vram_mb": 292.32,
+        "throughput_tok_s": 41613.06,
+        "latency_ms": 5200.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "1a60737714ff8f72",
+      "module_name": "bonsai",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:11:11.600053",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/bonsai/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9095,
+        "val_loss": 0.3339,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 90937.07,
+        "latency_ms": 3050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

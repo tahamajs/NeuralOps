@@ -1,0 +1,209 @@
+{
+  "module_name": "inject_leka_v3",
+  "category": "attention",
+  "family": "kd-finetune",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "dde5933e0c",
+  "latest_timestamp": "2026-10-13T23:20:37Z",
+  "latest_record": {
+    "record_id": "7dd5e79321b92cfc",
+    "module_name": "inject_leka_v3",
+    "category": "attention",
+    "family": "kd-finetune",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-13T23:20:37Z",
+    "git_commit_sha": "dde5933e0c",
+    "generation_method": {
+      "algorithm": "Knowledge Distillation Recovery (finetune)",
+      "source_artifact": "results/results.jsonl"
+    },
+    "experimental_setup": {
+      "backbone": "roberta-base",
+      "dataset": "sst2",
+      "rank": 64
+    },
+    "metrics": {
+      "accuracy": 0.5166666666666667,
+      "peak_vram_mb": 1035.787109375
+    },
+    "notes": "Run: 2761fa8c-c6ee-4af5-9f5c-4553ef53497f"
+  },
+  "active_records": [
+    {
+      "record_id": "aa64abdecab79daf",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:40:54.065458",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "a763929ad2224be5",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:42:18.105325",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "7dd5e79321b92cfc",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:20:37Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 1035.787109375
+      },
+      "notes": "Run: 2761fa8c-c6ee-4af5-9f5c-4553ef53497f"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "aa64abdecab79daf",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:40:54.065458",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "a763929ad2224be5",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:42:18.105325",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_leka_v3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "7dd5e79321b92cfc",
+      "module_name": "inject_leka_v3",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:20:37Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 1035.787109375
+      },
+      "notes": "Run: 2761fa8c-c6ee-4af5-9f5c-4553ef53497f"
+    }
+  ]
+}

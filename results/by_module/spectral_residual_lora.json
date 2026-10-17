@@ -1,0 +1,104 @@
+{
+  "module_name": "spectral_residual_lora",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-19T18:33:09.344589",
+  "latest_record": {
+    "record_id": "77d75a06dba7ec24",
+    "module_name": "spectral_residual_lora",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T18:33:09.344589",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/spectral_residual_lora/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 35.8,
+      "f1": 0.2585,
+      "val_loss": 1.1272,
+      "peak_vram_mb": 236.87,
+      "throughput_tok_s": 22811.54,
+      "latency_ms": 20810.0,
+      "compression_ratio": 2.1981,
+      "param_reduction_pct": 54.51
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "77d75a06dba7ec24",
+      "module_name": "spectral_residual_lora",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T18:33:09.344589",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/spectral_residual_lora/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.8,
+        "f1": 0.2585,
+        "val_loss": 1.1272,
+        "peak_vram_mb": 236.87,
+        "throughput_tok_s": 22811.54,
+        "latency_ms": 20810.0,
+        "compression_ratio": 2.1981,
+        "param_reduction_pct": 54.51
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "77d75a06dba7ec24",
+      "module_name": "spectral_residual_lora",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T18:33:09.344589",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/spectral_residual_lora/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.8,
+        "f1": 0.2585,
+        "val_loss": 1.1272,
+        "peak_vram_mb": 236.87,
+        "throughput_tok_s": 22811.54,
+        "latency_ms": 20810.0,
+        "compression_ratio": 2.1981,
+        "param_reduction_pct": 54.51
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

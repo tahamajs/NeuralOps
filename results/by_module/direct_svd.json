@@ -2,7 +2,7 @@
   "module_name": "direct_svd",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,186 @@
   },
   "active_records": [
     {
+      "record_id": "f03d94803e6a7819",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:44:18.087214",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9107,
+        "val_loss": 0.426,
+        "peak_vram_mb": 324.46,
+        "throughput_tok_s": 105764.4,
+        "latency_ms": 6150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "372c455dad213f09",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:59:21.067428",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.9,
+        "f1": 0.3058,
+        "val_loss": 1.1028,
+        "peak_vram_mb": 304.08,
+        "throughput_tok_s": 47192.81,
+        "latency_ms": 8210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "6632664d3765a0a6",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:10:28.991996",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/direct_svd/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8198,
+        "val_loss": 0.552,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 84735.23,
+        "latency_ms": 6840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9975097ac51ab5c4",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:21:20.240937",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/direct_svd/seed_456/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 23473.44,
+        "latency_ms": 45890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1bcc1618a4acfdf1",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:29:48.581834",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/direct_svd/seed_456/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9363,
+        "val_loss": 0.1978,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 80740.59,
+        "latency_ms": 29530.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "58a270cc76c0e822",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:47:33.022587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/direct_svd/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 69.84,
+        "f1": 0.7107,
+        "val_loss": 0.5871,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 69606.81,
+        "latency_ms": 8900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "17a1d5d25202ce62",
       "module_name": "direct_svd",
       "category": "compressor",
@@ -58,6 +238,186 @@
     }
   ],
   "history": [
+    {
+      "record_id": "f03d94803e6a7819",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:44:18.087214",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9107,
+        "val_loss": 0.426,
+        "peak_vram_mb": 324.46,
+        "throughput_tok_s": 105764.4,
+        "latency_ms": 6150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "372c455dad213f09",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:59:21.067428",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.9,
+        "f1": 0.3058,
+        "val_loss": 1.1028,
+        "peak_vram_mb": 304.08,
+        "throughput_tok_s": 47192.81,
+        "latency_ms": 8210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "6632664d3765a0a6",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:10:28.991996",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/direct_svd/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8198,
+        "val_loss": 0.552,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 84735.23,
+        "latency_ms": 6840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9975097ac51ab5c4",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:21:20.240937",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/direct_svd/seed_456/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 23473.44,
+        "latency_ms": 45890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1bcc1618a4acfdf1",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:29:48.581834",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/direct_svd/seed_456/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9363,
+        "val_loss": 0.1978,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 80740.59,
+        "latency_ms": 29530.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "58a270cc76c0e822",
+      "module_name": "direct_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:47:33.022587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/direct_svd/checkpoints/direct_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 69.84,
+        "f1": 0.7107,
+        "val_loss": 0.5871,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 69606.81,
+        "latency_ms": 8900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "17a1d5d25202ce62",
       "module_name": "direct_svd",

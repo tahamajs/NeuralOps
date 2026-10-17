@@ -1,0 +1,164 @@
+{
+  "module_name": "inject_jamba",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-19T14:41:09.733059",
+  "latest_record": {
+    "record_id": "cdef9d1123ae0a32",
+    "module_name": "inject_jamba",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T14:41:09.733059",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_jamba/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 0.0,
+      "peak_vram_mb": 0.0,
+      "throughput_tok_s": 0.0,
+      "latency_ms": 1490.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+  },
+  "active_records": [
+    {
+      "record_id": "ececdbde252368ed",
+      "module_name": "inject_jamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:39:10.172283",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_jamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "cdef9d1123ae0a32",
+      "module_name": "inject_jamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:41:09.733059",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_jamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1490.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "ececdbde252368ed",
+      "module_name": "inject_jamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T04:39:10.172283",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/inject_jamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "cdef9d1123ae0a32",
+      "module_name": "inject_jamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:41:09.733059",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_jamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 1490.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    }
+  ]
+}

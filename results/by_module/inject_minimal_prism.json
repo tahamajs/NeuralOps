@@ -1,0 +1,164 @@
+{
+  "module_name": "inject_minimal_prism",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-19T14:46:12.122807",
+  "latest_record": {
+    "record_id": "61ca21cf167249ce",
+    "module_name": "inject_minimal_prism",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T14:46:12.122807",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_minimal_prism/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 0.0,
+      "peak_vram_mb": 0.0,
+      "throughput_tok_s": 0.0,
+      "latency_ms": 2640.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+  },
+  "active_records": [
+    {
+      "record_id": "8ee4b15398535a2e",
+      "module_name": "inject_minimal_prism",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:18:36.357768",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_minimal_prism/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 12580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "61ca21cf167249ce",
+      "module_name": "inject_minimal_prism",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:46:12.122807",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_minimal_prism/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 2640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "8ee4b15398535a2e",
+      "module_name": "inject_minimal_prism",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:18:36.357768",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_minimal_prism/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 12580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    },
+    {
+      "record_id": "61ca21cf167249ce",
+      "module_name": "inject_minimal_prism",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T14:46:12.122807",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/inject_minimal_prism/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 2640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    }
+  ]
+}

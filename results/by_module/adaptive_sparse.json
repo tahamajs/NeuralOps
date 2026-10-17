@@ -2,7 +2,7 @@
   "module_name": "adaptive_sparse",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,195 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 0.0,
+      "roberta_acc": 58.14,
+      "gpt2_acc": 0.0,
+      "latency_ms": 82.0
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "bda9180ed4beaedf",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:53:29.086639",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8951,
+        "val_loss": 0.2566,
+        "peak_vram_mb": 461.88,
+        "throughput_tok_s": 33197.12,
+        "latency_ms": 13360.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "93df671ef3f4924d",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:55:00.073539",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.83,
+        "f1": 0.6784,
+        "val_loss": 0.6782,
+        "peak_vram_mb": 848.54,
+        "throughput_tok_s": 16727.24,
+        "latency_ms": 27830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ee7d159993913133",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:49:49.279405",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.1779,
+        "val_loss": 1.1096,
+        "peak_vram_mb": 431.48,
+        "throughput_tok_s": 17291.65,
+        "latency_ms": 17130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2d44d619d7f8b446",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:39:11.695424",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 90.8,
+        "f1": 0.9032,
+        "val_loss": 0.3025,
+        "peak_vram_mb": 376.36,
+        "throughput_tok_s": 19561.01,
+        "latency_ms": 22130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "1f50e167ec6adaaa",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T07:58:37.764485",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2373,
+        "val_loss": 1.3946,
+        "peak_vram_mb": 555.44,
+        "throughput_tok_s": 94595.87,
+        "latency_ms": 62340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "90b000f22d3db852",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:08:55.040763",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_adaptive_sparse/roberta/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.12,
+        "f1": 0.9321,
+        "val_loss": 0.1938,
+        "peak_vram_mb": 449.11,
+        "throughput_tok_s": 7490.99,
+        "latency_ms": 33700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "04952a770bb110ea",
       "module_name": "adaptive_sparse",
@@ -47,12 +232,197 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 58.14,
+        "gpt2_acc": 0.0,
+        "latency_ms": 82.0
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "bda9180ed4beaedf",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:53:29.086639",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8951,
+        "val_loss": 0.2566,
+        "peak_vram_mb": 461.88,
+        "throughput_tok_s": 33197.12,
+        "latency_ms": 13360.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "93df671ef3f4924d",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:55:00.073539",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.83,
+        "f1": 0.6784,
+        "val_loss": 0.6782,
+        "peak_vram_mb": 848.54,
+        "throughput_tok_s": 16727.24,
+        "latency_ms": 27830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ee7d159993913133",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:49:49.279405",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.1779,
+        "val_loss": 1.1096,
+        "peak_vram_mb": 431.48,
+        "throughput_tok_s": 17291.65,
+        "latency_ms": 17130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2d44d619d7f8b446",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T20:39:11.695424",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 90.8,
+        "f1": 0.9032,
+        "val_loss": 0.3025,
+        "peak_vram_mb": 376.36,
+        "throughput_tok_s": 19561.01,
+        "latency_ms": 22130.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "1f50e167ec6adaaa",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T07:58:37.764485",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2373,
+        "val_loss": 1.3946,
+        "peak_vram_mb": 555.44,
+        "throughput_tok_s": 94595.87,
+        "latency_ms": 62340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "90b000f22d3db852",
+      "module_name": "adaptive_sparse",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:08:55.040763",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_adaptive_sparse/roberta/checkpoints/adaptive_sparse/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.12,
+        "f1": 0.9321,
+        "val_loss": 0.1938,
+        "peak_vram_mb": 449.11,
+        "throughput_tok_s": 7490.99,
+        "latency_ms": 33700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "04952a770bb110ea",
       "module_name": "adaptive_sparse",
       "category": "attention",
@@ -70,7 +440,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 58.14,
+        "gpt2_acc": 0.0,
+        "latency_ms": 82.0
+      },
       "notes": "Master Aggregated Results"
     }
   ]

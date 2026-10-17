@@ -2,7 +2,7 @@
   "module_name": "svd_sequence_attention",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,45 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 51.26,
+      "roberta_acc": 50.0,
+      "gpt2_acc": 53.1,
+      "latency_ms": 80.0
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "5b12f8a30fb415a8",
+      "module_name": "svd_sequence_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:38:53.757045",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/svd_sequence_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7409,
+        "peak_vram_mb": 635.62,
+        "throughput_tok_s": 2543.76,
+        "latency_ms": 67330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "041a366df2af9cec",
       "module_name": "svd_sequence_attention",
@@ -47,12 +82,47 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 51.26,
+        "roberta_acc": 50.0,
+        "gpt2_acc": 53.1,
+        "latency_ms": 80.0
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "5b12f8a30fb415a8",
+      "module_name": "svd_sequence_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:38:53.757045",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/svd_sequence_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7409,
+        "peak_vram_mb": 635.62,
+        "throughput_tok_s": 2543.76,
+        "latency_ms": 67330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "041a366df2af9cec",
       "module_name": "svd_sequence_attention",
       "category": "attention",
@@ -70,7 +140,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 51.26,
+        "roberta_acc": 50.0,
+        "gpt2_acc": 53.1,
+        "latency_ms": 80.0
+      },
       "notes": "Master Aggregated Results"
     }
   ]

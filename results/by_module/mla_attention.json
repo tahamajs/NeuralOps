@@ -1,37 +1,148 @@
 {
   "module_name": "mla_attention",
   "category": "attention",
-  "family": "attention",
-  "total_runs": 2,
+  "family": "subquadratic-attention",
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "5d553a2079",
-  "latest_timestamp": "2026-10-15T04:02:13+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "e4380111bf1ec4f2",
+    "record_id": "99bcf0945f9c01ee",
     "module_name": "mla_attention",
     "category": "attention",
-    "family": "attention",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T04:02:13+03:30",
-    "git_commit_sha": "5d553a2079",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "End-to-End Evaluation & Perplexity Probe",
-      "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2 / WikiText-2",
-      "backbone": "DistilBERT / GPT-2"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
     "metrics": {
-      "accuracy": 0.0,
-      "ppl": 0.0
+      "latency_triton_ms": 1.363
     },
-    "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "986f5fd6ed7d1a51",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T02:08:05.996354",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/mla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.8522,
+        "peak_vram_mb": 576.16,
+        "throughput_tok_s": 9858.84,
+        "latency_ms": 21970.0,
+        "compression_ratio": 1.0394,
+        "param_reduction_pct": 3.79
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0d4320c9d7e5f317",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T07:46:50.922267",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/mla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.1,
+        "f1": 0.2066,
+        "val_loss": 1.1087,
+        "peak_vram_mb": 485.27,
+        "throughput_tok_s": 109700.88,
+        "latency_ms": 28770.0,
+        "compression_ratio": 1.0811,
+        "param_reduction_pct": 7.5
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "221d0e443812ac07",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:37:51Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 949.5234375
+      },
+      "notes": "Run: 00a981c9-3f2b-41f6-b792-431885bdcafb"
+    },
+    {
+      "record_id": "e4380111bf1ec4f2",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 89.36,
+        "ppl": 36.16,
+        "latency_ms": 5660.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
     {
       "record_id": "99bcf0945f9c01ee",
       "module_name": "mla_attention",
@@ -56,34 +167,120 @@
         "latency_triton_ms": 1.363
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "e4380111bf1ec4f2",
-      "module_name": "mla_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     }
   ],
   "history": [
     {
+      "record_id": "986f5fd6ed7d1a51",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T02:08:05.996354",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/mla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.8522,
+        "peak_vram_mb": 576.16,
+        "throughput_tok_s": 9858.84,
+        "latency_ms": 21970.0,
+        "compression_ratio": 1.0394,
+        "param_reduction_pct": 3.79
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0d4320c9d7e5f317",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T07:46:50.922267",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/mla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.1,
+        "f1": 0.2066,
+        "val_loss": 1.1087,
+        "peak_vram_mb": 485.27,
+        "throughput_tok_s": 109700.88,
+        "latency_ms": 28770.0,
+        "compression_ratio": 1.0811,
+        "param_reduction_pct": 7.5
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "221d0e443812ac07",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:37:51Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 949.5234375
+      },
+      "notes": "Run: 00a981c9-3f2b-41f6-b792-431885bdcafb"
+    },
+    {
+      "record_id": "e4380111bf1ec4f2",
+      "module_name": "mla_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 89.36,
+        "ppl": 36.16,
+        "latency_ms": 5660.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "99bcf0945f9c01ee",
       "module_name": "mla_attention",
       "category": "attention",
@@ -107,30 +304,6 @@
         "latency_triton_ms": 1.363
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "e4380111bf1ec4f2",
-      "module_name": "mla_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     }
   ]
 }

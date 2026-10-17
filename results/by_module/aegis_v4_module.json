@@ -2,7 +2,7 @@
   "module_name": "aegis_v4_module",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,105 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 83.72,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 56.31,
+      "latency_ms": 106.2
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "df50eadef94595c4",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:38:22.955014",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/distilbert/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 85.21,
+        "f1": 0.8652,
+        "val_loss": 0.3732,
+        "peak_vram_mb": 331.26,
+        "throughput_tok_s": 12420.27,
+        "latency_ms": 28910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "60fb297710ad2d6e",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:39:58.996183",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/roberta/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.8,
+        "f1": 0.707,
+        "val_loss": 0.822,
+        "peak_vram_mb": 676.53,
+        "throughput_tok_s": 6292.0,
+        "latency_ms": 54220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2f1b144d6893fce1",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:41:21.331798",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/gpt2/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 70.99,
+        "f1": 0.7668,
+        "val_loss": 0.54,
+        "peak_vram_mb": 590.29,
+        "throughput_tok_s": 9879.27,
+        "latency_ms": 38390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "d2f0458df0568c33",
       "module_name": "aegis_v4_module",
@@ -47,12 +142,107 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 83.72,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 56.31,
+        "latency_ms": 106.2
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "df50eadef94595c4",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:38:22.955014",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/distilbert/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 85.21,
+        "f1": 0.8652,
+        "val_loss": 0.3732,
+        "peak_vram_mb": 331.26,
+        "throughput_tok_s": 12420.27,
+        "latency_ms": 28910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "60fb297710ad2d6e",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:39:58.996183",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/roberta/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.8,
+        "f1": 0.707,
+        "val_loss": 0.822,
+        "peak_vram_mb": 676.53,
+        "throughput_tok_s": 6292.0,
+        "latency_ms": 54220.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2f1b144d6893fce1",
+      "module_name": "aegis_v4_module",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T10:41:21.331798",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/archive_unified/unified_aegis_v4_module/gpt2/checkpoints/aegis_v4_module/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 70.99,
+        "f1": 0.7668,
+        "val_loss": 0.54,
+        "peak_vram_mb": 590.29,
+        "throughput_tok_s": 9879.27,
+        "latency_ms": 38390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "d2f0458df0568c33",
       "module_name": "aegis_v4_module",
       "category": "attention",
@@ -70,7 +260,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 83.72,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 56.31,
+        "latency_ms": 106.2
+      },
       "notes": "Master Aggregated Results"
     }
   ]

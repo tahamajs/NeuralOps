@@ -1,0 +1,284 @@
+{
+  "module_name": "compot_compressor_class",
+  "category": "compressor",
+  "family": "bert",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T04:05:33.908871",
+  "latest_record": {
+    "record_id": "dd901e174c42f61a",
+    "module_name": "compot_compressor_class",
+    "category": "compressor",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T04:05:33.908871",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/compot_compressor_class/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.48,
+      "f1": 0.9097,
+      "val_loss": 0.3665,
+      "peak_vram_mb": 323.71,
+      "throughput_tok_s": 89610.27,
+      "latency_ms": 6340.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "307e43b77a7af946",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:40:10.385854",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9095,
+        "val_loss": 0.4773,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 114350.15,
+        "latency_ms": 4290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6566d88318a0b758",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:00.188673",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.83,
+        "f1": 0.6784,
+        "val_loss": 0.6529,
+        "peak_vram_mb": 545.33,
+        "throughput_tok_s": 41243.8,
+        "latency_ms": 24950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a1cef2759887fade",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:46.691942",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.3254,
+        "val_loss": 1.0963,
+        "peak_vram_mb": 303.33,
+        "throughput_tok_s": 45803.67,
+        "latency_ms": 7840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "dd901e174c42f61a",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:05:33.908871",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9097,
+        "val_loss": 0.3665,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 89610.27,
+        "latency_ms": 6340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "307e43b77a7af946",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:40:10.385854",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9095,
+        "val_loss": 0.4773,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 114350.15,
+        "latency_ms": 4290.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6566d88318a0b758",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:00.188673",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 51.83,
+        "f1": 0.6784,
+        "val_loss": 0.6529,
+        "peak_vram_mb": 545.33,
+        "throughput_tok_s": 41243.8,
+        "latency_ms": 24950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a1cef2759887fade",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:46.691942",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.3254,
+        "val_loss": 1.0963,
+        "peak_vram_mb": 303.33,
+        "throughput_tok_s": 45803.67,
+        "latency_ms": 7840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "dd901e174c42f61a",
+      "module_name": "compot_compressor_class",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:05:33.908871",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/compot_compressor_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9097,
+        "val_loss": 0.3665,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 89610.27,
+        "latency_ms": 6340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

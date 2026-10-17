@@ -1,0 +1,224 @@
+{
+  "module_name": "dobi_class",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T03:23:24.685904",
+  "latest_record": {
+    "record_id": "c119eb12e7174357",
+    "module_name": "dobi_class",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T03:23:24.685904",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/dobi_class/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.6,
+      "f1": 0.9099,
+      "val_loss": 0.3256,
+      "peak_vram_mb": 312.7,
+      "throughput_tok_s": 78050.57,
+      "latency_ms": 4250.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "9e6b4506457757e7",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:44:46.059263",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9137,
+        "val_loss": 0.3137,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 106528.89,
+        "latency_ms": 3570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "f2af2efcba2f1826",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:59:42.474534",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.187,
+        "val_loss": 1.112,
+        "peak_vram_mb": 292.32,
+        "throughput_tok_s": 47191.05,
+        "latency_ms": 5380.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c119eb12e7174357",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T03:23:24.685904",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3256,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 78050.57,
+        "latency_ms": 4250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "9e6b4506457757e7",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:44:46.059263",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9137,
+        "val_loss": 0.3137,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 106528.89,
+        "latency_ms": 3570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "f2af2efcba2f1826",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:59:42.474534",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.4,
+        "f1": 0.187,
+        "val_loss": 1.112,
+        "peak_vram_mb": 292.32,
+        "throughput_tok_s": 47191.05,
+        "latency_ms": 5380.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c119eb12e7174357",
+      "module_name": "dobi_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T03:23:24.685904",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/dobi_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3256,
+        "peak_vram_mb": 312.7,
+        "throughput_tok_s": 78050.57,
+        "latency_ms": 4250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

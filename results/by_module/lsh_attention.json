@@ -1,34 +1,266 @@
 {
   "module_name": "lsh_attention",
   "category": "attention",
-  "family": "general",
-  "total_runs": 3,
+  "family": "subquadratic-attention",
+  "total_runs": 10,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "58d24b46ea12fc55",
+    "record_id": "cce3ec359047be6b",
     "module_name": "lsh_attention",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "latency_triton_ms": 13.078
+    },
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "7231b9cd4a93b1b3",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T04:38:49.436468",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_lsh_attention/roberta/checkpoints/lsh_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6661,
+        "val_loss": 0.7297,
+        "peak_vram_mb": 666.82,
+        "throughput_tok_s": 5986.65,
+        "latency_ms": 58940.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8bcc9070a539a3db",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:47:41.283975",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/lsh_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 54.13,
+        "f1": 0.6117,
+        "val_loss": 0.7761,
+        "peak_vram_mb": 634.79,
+        "throughput_tok_s": 3024.46,
+        "latency_ms": 57050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "568106e174b26302",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:32:16Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 899.296875
+      },
+      "notes": "Run: 1913ca1c-d641-400b-8597-f44fe56ee874"
+    },
+    {
+      "record_id": "58d24b46ea12fc55",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 80.28,
+        "roberta_acc": 49.54,
+        "gpt2_acc": 51.61,
+        "latency_ms": 77.1
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a328cfabf5dfff98",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.5391
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "b3c27fccb84872b4",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.2649
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "b092cffaa250970c",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.1312
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "bb33de2719100f06",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.0631
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "feda714255456b42",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.92,
+        "ppl": 36.72,
+        "latency_ms": 8380.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
     {
       "record_id": "cce3ec359047be6b",
       "module_name": "lsh_attention",
@@ -53,55 +285,238 @@
         "latency_triton_ms": 13.078
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "feda714255456b42",
-      "module_name": "lsh_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "58d24b46ea12fc55",
-      "module_name": "lsh_attention",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "7231b9cd4a93b1b3",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T04:38:49.436468",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_lsh_attention/roberta/checkpoints/lsh_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6661,
+        "val_loss": 0.7297,
+        "peak_vram_mb": 666.82,
+        "throughput_tok_s": 5986.65,
+        "latency_ms": 58940.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8bcc9070a539a3db",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:47:41.283975",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/lsh_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 54.13,
+        "f1": 0.6117,
+        "val_loss": 0.7761,
+        "peak_vram_mb": 634.79,
+        "throughput_tok_s": 3024.46,
+        "latency_ms": 57050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "568106e174b26302",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T23:32:16Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 899.296875
+      },
+      "notes": "Run: 1913ca1c-d641-400b-8597-f44fe56ee874"
+    },
+    {
+      "record_id": "58d24b46ea12fc55",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 80.28,
+        "roberta_acc": 49.54,
+        "gpt2_acc": 51.61,
+        "latency_ms": 77.1
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "a328cfabf5dfff98",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.5391
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "b3c27fccb84872b4",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.2649
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "b092cffaa250970c",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.1312
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "bb33de2719100f06",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "GroupB_LinearAttention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "GroupB_LinearAttention"
+      },
+      "metrics": {
+        "latency_ms": 0.0631
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "feda714255456b42",
+      "module_name": "lsh_attention",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 91.92,
+        "ppl": 36.72,
+        "latency_ms": 8380.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "cce3ec359047be6b",
       "module_name": "lsh_attention",
       "category": "attention",
@@ -125,51 +540,6 @@
         "latency_triton_ms": 13.078
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "feda714255456b42",
-      "module_name": "lsh_attention",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "58d24b46ea12fc55",
-      "module_name": "lsh_attention",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

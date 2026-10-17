@@ -2,7 +2,7 @@
   "module_name": "wgqa",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,105 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 90.71,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 51.03,
+      "latency_ms": 74.8
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "b7b44f70d2010b23",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T01:08:12.131798",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/roberta/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6978,
+        "peak_vram_mb": 368.98,
+        "throughput_tok_s": 8321.14,
+        "latency_ms": 31190.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2550088482187243",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T01:09:02.630123",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/gpt2/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.31,
+        "f1": 0.2633,
+        "val_loss": 0.8036,
+        "peak_vram_mb": 326.46,
+        "throughput_tok_s": 9863.76,
+        "latency_ms": 32980.0,
+        "compression_ratio": 0.9906,
+        "param_reduction_pct": -0.95
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "50356cef3aa88fc9",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:38:59.985212",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 78.8,
+        "f1": 0.7868,
+        "val_loss": 0.5872,
+        "peak_vram_mb": 314.83,
+        "throughput_tok_s": 684.03,
+        "latency_ms": 399330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "b6ffdad10f8d6605",
       "module_name": "wgqa",
@@ -47,12 +142,107 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.71,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 74.8
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "b7b44f70d2010b23",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T01:08:12.131798",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/roberta/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6978,
+        "peak_vram_mb": 368.98,
+        "throughput_tok_s": 8321.14,
+        "latency_ms": 31190.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2550088482187243",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T01:09:02.630123",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_wgqa_rerun/gpt2/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.31,
+        "f1": 0.2633,
+        "val_loss": 0.8036,
+        "peak_vram_mb": 326.46,
+        "throughput_tok_s": 9863.76,
+        "latency_ms": 32980.0,
+        "compression_ratio": 0.9906,
+        "param_reduction_pct": -0.95
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "50356cef3aa88fc9",
+      "module_name": "wgqa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:38:59.985212",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/wgqa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 78.8,
+        "f1": 0.7868,
+        "val_loss": 0.5872,
+        "peak_vram_mb": 314.83,
+        "throughput_tok_s": 684.03,
+        "latency_ms": 399330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "b6ffdad10f8d6605",
       "module_name": "wgqa",
       "category": "attention",
@@ -70,7 +260,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.71,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 74.8
+      },
       "notes": "Master Aggregated Results"
     }
   ]

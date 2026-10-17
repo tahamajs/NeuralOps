@@ -2,7 +2,7 @@
   "module_name": "rpca_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,156 @@
   },
   "active_records": [
     {
+      "record_id": "737adb2f0fe956ff",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:32:11.882707",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/rpca_compressor/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.818,
+        "val_loss": 0.5441,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 15165.91,
+        "latency_ms": 758640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "33265f3c9cffe6e4",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:54:53.176387",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/rpca_compressor/seed_456/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.2957,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 88533.88,
+        "latency_ms": 28170.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ca4cd5f53e4a75e3",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:57:50.738098",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/rpca_compressor/seed_456/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.27,
+        "f1": 0.9442,
+        "val_loss": 0.1966,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 31901.93,
+        "latency_ms": 56080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "786ff1e8cf9ca592",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:48:35.639191",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/rpca_compressor/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 70.3,
+        "f1": 0.7259,
+        "val_loss": 0.5843,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 232095.35,
+        "latency_ms": 21440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "85385d7e99cdd1b0",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:43:23.655725",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/rpca_compressor/rank_32/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.5575,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 37531.79,
+        "latency_ms": 32910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "a716f5da8f960bf3",
       "module_name": "rpca_compressor",
       "category": "compressor",
@@ -58,6 +208,156 @@
     }
   ],
   "history": [
+    {
+      "record_id": "737adb2f0fe956ff",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:32:11.882707",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/rpca_compressor/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.818,
+        "val_loss": 0.5441,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 15165.91,
+        "latency_ms": 758640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "33265f3c9cffe6e4",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:54:53.176387",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/rpca_compressor/seed_456/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.2957,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 88533.88,
+        "latency_ms": 28170.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ca4cd5f53e4a75e3",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:57:50.738098",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/rpca_compressor/seed_456/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.27,
+        "f1": 0.9442,
+        "val_loss": 0.1966,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 31901.93,
+        "latency_ms": 56080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "786ff1e8cf9ca592",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:48:35.639191",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/rpca_compressor/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 70.3,
+        "f1": 0.7259,
+        "val_loss": 0.5843,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 232095.35,
+        "latency_ms": 21440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "85385d7e99cdd1b0",
+      "module_name": "rpca_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:43:23.655725",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/rpca_compressor/rank_32/checkpoints/rpca_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.5575,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 37531.79,
+        "latency_ms": 32910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "a716f5da8f960bf3",
       "module_name": "rpca_compressor",

@@ -1,34 +1,281 @@
 {
   "module_name": "performer",
   "category": "attention",
-  "family": "general",
-  "total_runs": 1,
+  "family": "O(N^2) Softmax",
+  "total_runs": 11,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
   "latest_timestamp": "2026-10-15T00:07:14+03:30",
   "latest_record": {
-    "record_id": "d4c8a735e1511373",
+    "record_id": "4cd52b084997a2f1",
     "module_name": "performer",
     "category": "attention",
-    "family": "general",
+    "family": "O(N^2) Softmax",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-10-15T00:07:14+03:30",
     "git_commit_sha": "b3e2b3ad08",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Master Benchmark Suite",
+      "source_artifact": "results/master_benchmark_summary.csv"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "dataset": "c4",
+      "complexity": "O(N^2) Softmax"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "ppl": 11.25,
+      "val_loss": 2.4204,
+      "throughput_tok_s": 341333.0,
+      "peak_vram_mb": 50.8,
+      "speedup_x": 8.53,
+      "latency_ms": 1.5
+    },
+    "notes": "Status: SUCCESS"
   },
   "active_records": [
+    {
+      "record_id": "588e0790cb38044a",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:39:49.671149",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 73.62,
+        "f1": 0.7262,
+        "val_loss": 0.6377,
+        "peak_vram_mb": 322.91,
+        "throughput_tok_s": 19563.3,
+        "latency_ms": 14240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "549477560f07f6fc",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:40:47.760830",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/roberta/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.45,
+        "f1": 0.6402,
+        "val_loss": 1.1186,
+        "peak_vram_mb": 650.05,
+        "throughput_tok_s": 10540.87,
+        "latency_ms": 27340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "66b473caa849f9fd",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:41:59.356915",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/gpt2/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 56.54,
+        "f1": 0.6435,
+        "val_loss": 0.6988,
+        "peak_vram_mb": 567.8,
+        "throughput_tok_s": 6984.21,
+        "latency_ms": 41320.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "69b3094b095f9f64",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:51:04.820037",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.9,
+        "f1": 0.2522,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 356.52,
+        "throughput_tok_s": 38627.46,
+        "latency_ms": 6810.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "a78008902581c304",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T16:07:58.088209",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 65.7,
+        "f1": 0.6093,
+        "val_loss": 0.9592,
+        "peak_vram_mb": 505.27,
+        "throughput_tok_s": 12800.45,
+        "latency_ms": 65670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bb111ad5a82e4a42",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:45:47.341139",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 78.0,
+        "f1": 0.7645,
+        "val_loss": 0.6188,
+        "peak_vram_mb": 339.9,
+        "throughput_tok_s": 34048.26,
+        "latency_ms": 32590.000000000004,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "bad81df3b49a4bd4",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:16:10.935323",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.5,
+        "f1": 0.242,
+        "val_loss": 1.2926,
+        "peak_vram_mb": 314.49,
+        "throughput_tok_s": 51272.37,
+        "latency_ms": 16750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a0073c9875a82195",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:03:28.952195",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/performer/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.8,
+        "f1": 0.6913,
+        "val_loss": NaN,
+        "peak_vram_mb": 695.52,
+        "throughput_tok_s": 39491.21,
+        "latency_ms": 69120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "d4c8a735e1511373",
       "module_name": "performer",
@@ -47,12 +294,313 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 74.08,
+        "roberta_acc": 60.32,
+        "gpt2_acc": 50.8,
+        "latency_ms": 130.2
+      },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "2fd098ea47f8939a",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "wikitext2",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 341333.0,
+        "peak_vram_mb": 50.8,
+        "speedup_x": 8.53,
+        "latency_ms": 1.5
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "4cd52b084997a2f1",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "c4",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 341333.0,
+        "peak_vram_mb": 50.8,
+        "speedup_x": 8.53,
+        "latency_ms": 1.5
+      },
+      "notes": "Status: SUCCESS"
     }
   ],
   "history": [
     {
+      "record_id": "588e0790cb38044a",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:39:49.671149",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 73.62,
+        "f1": 0.7262,
+        "val_loss": 0.6377,
+        "peak_vram_mb": 322.91,
+        "throughput_tok_s": 19563.3,
+        "latency_ms": 14240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "549477560f07f6fc",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:40:47.760830",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/roberta/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.45,
+        "f1": 0.6402,
+        "val_loss": 1.1186,
+        "peak_vram_mb": 650.05,
+        "throughput_tok_s": 10540.87,
+        "latency_ms": 27340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "66b473caa849f9fd",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T22:41:59.356915",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_performer/gpt2/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 56.54,
+        "f1": 0.6435,
+        "val_loss": 0.6988,
+        "peak_vram_mb": 567.8,
+        "throughput_tok_s": 6984.21,
+        "latency_ms": 41320.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "69b3094b095f9f64",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:51:04.820037",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.9,
+        "f1": 0.2522,
+        "val_loss": 1.1114,
+        "peak_vram_mb": 356.52,
+        "throughput_tok_s": 38627.46,
+        "latency_ms": 6810.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "a78008902581c304",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T16:07:58.088209",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_performer/distilbert/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 65.7,
+        "f1": 0.6093,
+        "val_loss": 0.9592,
+        "peak_vram_mb": 505.27,
+        "throughput_tok_s": 12800.45,
+        "latency_ms": 65670.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bb111ad5a82e4a42",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:45:47.341139",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 78.0,
+        "f1": 0.7645,
+        "val_loss": 0.6188,
+        "peak_vram_mb": 339.9,
+        "throughput_tok_s": 34048.26,
+        "latency_ms": 32590.000000000004,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "bad81df3b49a4bd4",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:16:10.935323",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 33.5,
+        "f1": 0.242,
+        "val_loss": 1.2926,
+        "peak_vram_mb": 314.49,
+        "throughput_tok_s": 51272.37,
+        "latency_ms": 16750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a0073c9875a82195",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:03:28.952195",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/performer/checkpoints/performer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 57.8,
+        "f1": 0.6913,
+        "val_loss": NaN,
+        "peak_vram_mb": 695.52,
+        "throughput_tok_s": 39491.21,
+        "latency_ms": 69120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "d4c8a735e1511373",
       "module_name": "performer",
       "category": "attention",
@@ -70,8 +618,69 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 74.08,
+        "roberta_acc": 60.32,
+        "gpt2_acc": 50.8,
+        "latency_ms": 130.2
+      },
       "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "2fd098ea47f8939a",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "wikitext2",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 341333.0,
+        "peak_vram_mb": 50.8,
+        "speedup_x": 8.53,
+        "latency_ms": 1.5
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "4cd52b084997a2f1",
+      "module_name": "performer",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "c4",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 341333.0,
+        "peak_vram_mb": 50.8,
+        "speedup_x": 8.53,
+        "latency_ms": 1.5
+      },
+      "notes": "Status: SUCCESS"
     }
   ]
 }

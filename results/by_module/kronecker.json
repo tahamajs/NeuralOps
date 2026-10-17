@@ -1,0 +1,104 @@
+{
+  "module_name": "kronecker",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-20T18:48:44.255351",
+  "latest_record": {
+    "record_id": "aa3330088f3fe06a",
+    "module_name": "kronecker",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-20T18:48:44.255351",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kronecker/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 35.3,
+      "f1": 0.3444,
+      "val_loss": 1.1154,
+      "peak_vram_mb": 505.85,
+      "throughput_tok_s": 152355.9,
+      "latency_ms": 34580.0,
+      "compression_ratio": 1.9316,
+      "param_reduction_pct": 48.23
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "aa3330088f3fe06a",
+      "module_name": "kronecker",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T18:48:44.255351",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kronecker/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.3,
+        "f1": 0.3444,
+        "val_loss": 1.1154,
+        "peak_vram_mb": 505.85,
+        "throughput_tok_s": 152355.9,
+        "latency_ms": 34580.0,
+        "compression_ratio": 1.9316,
+        "param_reduction_pct": 48.23
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "aa3330088f3fe06a",
+      "module_name": "kronecker",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T18:48:44.255351",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/kronecker/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.3,
+        "f1": 0.3444,
+        "val_loss": 1.1154,
+        "peak_vram_mb": 505.85,
+        "throughput_tok_s": 152355.9,
+        "latency_ms": 34580.0,
+        "compression_ratio": 1.9316,
+        "param_reduction_pct": 48.23
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

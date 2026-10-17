@@ -2,7 +2,7 @@
   "module_name": "cur_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,126 @@
   },
   "active_records": [
     {
+      "record_id": "67d7d8a7233fea31",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:59:19.020138",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/cur_compressor/rank_64/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3261,
+        "peak_vram_mb": 624.86,
+        "throughput_tok_s": 105645.66,
+        "latency_ms": 13540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "182398b1a04ac422",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:03:20.347100",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/cur_compressor/rank_64/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 34416.52,
+        "latency_ms": 37320.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "dbac32a3bfb1cb2a",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:13:46.068278",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_compressor/rank_32/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 185290.97,
+        "latency_ms": 5040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "17c2c9fbcb585f21",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:43:40.163333",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cur_compressor/rank_32/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.38,
+        "f1": 0.9445,
+        "val_loss": 0.1896,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 22120.93,
+        "latency_ms": 30150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "8b15de0080e07f02",
       "module_name": "cur_compressor",
       "category": "compressor",
@@ -58,6 +178,126 @@
     }
   ],
   "history": [
+    {
+      "record_id": "67d7d8a7233fea31",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:59:19.020138",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/cur_compressor/rank_64/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3261,
+        "peak_vram_mb": 624.86,
+        "throughput_tok_s": 105645.66,
+        "latency_ms": 13540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "182398b1a04ac422",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T12:03:20.347100",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/cur_compressor/rank_64/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 34416.52,
+        "latency_ms": 37320.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "dbac32a3bfb1cb2a",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:13:46.068278",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_compressor/rank_32/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 185290.97,
+        "latency_ms": 5040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "17c2c9fbcb585f21",
+      "module_name": "cur_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:43:40.163333",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cur_compressor/rank_32/checkpoints/cur_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.38,
+        "f1": 0.9445,
+        "val_loss": 0.1896,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 22120.93,
+        "latency_ms": 30150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "8b15de0080e07f02",
       "module_name": "cur_compressor",

@@ -2,7 +2,7 @@
   "module_name": "weighted_ensemble",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,135 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 90.14,
+      "roberta_acc": 0.0,
+      "gpt2_acc": 61.01,
+      "latency_ms": 59.7
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "0fb38bbe5df5ae84",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:12:35.357945",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 53.8,
+        "f1": 0.5121,
+        "val_loss": 1.3201,
+        "peak_vram_mb": 335.69,
+        "throughput_tok_s": 26974.84,
+        "latency_ms": 16480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "0604735a959fb81a",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T22:12:45.046283",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "D:\\svd_project\\models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 79.2,
+        "f1": 0.7904,
+        "val_loss": 0.5464,
+        "peak_vram_mb": 524.03,
+        "throughput_tok_s": 137556.64,
+        "latency_ms": 23480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "070ba8a0d80e0624",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:13:49.578629",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 69.61,
+        "f1": 0.7698,
+        "val_loss": 0.7715,
+        "peak_vram_mb": 413.46,
+        "throughput_tok_s": 114917.69,
+        "latency_ms": 22550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "b073542d74372989",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:05:37.641924",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9059,
+        "val_loss": 0.3845,
+        "peak_vram_mb": 681.18,
+        "throughput_tok_s": 6268.37,
+        "latency_ms": 32470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "bbdd16b7a4e5f51d",
       "module_name": "weighted_ensemble",
@@ -47,12 +172,137 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.14,
+        "roberta_acc": 0.0,
+        "gpt2_acc": 61.01,
+        "latency_ms": 59.7
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "0fb38bbe5df5ae84",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:12:35.357945",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 53.8,
+        "f1": 0.5121,
+        "val_loss": 1.3201,
+        "peak_vram_mb": 335.69,
+        "throughput_tok_s": 26974.84,
+        "latency_ms": 16480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "0604735a959fb81a",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T22:12:45.046283",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "D:\\svd_project\\models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 79.2,
+        "f1": 0.7904,
+        "val_loss": 0.5464,
+        "peak_vram_mb": 524.03,
+        "throughput_tok_s": 137556.64,
+        "latency_ms": 23480.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "070ba8a0d80e0624",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:13:49.578629",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 69.61,
+        "f1": 0.7698,
+        "val_loss": 0.7715,
+        "peak_vram_mb": 413.46,
+        "throughput_tok_s": 114917.69,
+        "latency_ms": 22550.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "b073542d74372989",
+      "module_name": "weighted_ensemble",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:05:37.641924",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/weighted_ensemble/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9059,
+        "val_loss": 0.3845,
+        "peak_vram_mb": 681.18,
+        "throughput_tok_s": 6268.37,
+        "latency_ms": 32470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "bbdd16b7a4e5f51d",
       "module_name": "weighted_ensemble",
       "category": "attention",
@@ -70,7 +320,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.14,
+        "roberta_acc": 0.0,
+        "gpt2_acc": 61.01,
+        "latency_ms": 59.7
+      },
       "notes": "Master Aggregated Results"
     }
   ]

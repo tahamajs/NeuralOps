@@ -2,7 +2,7 @@
   "module_name": "modegpt",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 90.48,
+      "roberta_acc": 72.02,
+      "gpt2_acc": 60.55,
+      "latency_ms": 93.9
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "a076aa376be70549",
+      "module_name": "modegpt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:52:38.866018",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/modegpt/rank_64/checkpoints/modegpt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 81458.95,
+        "latency_ms": 14040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "aed4c539fc8400c8",
+      "module_name": "modegpt",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:28:03.017222",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/modegpt/rank_64/checkpoints/modegpt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9417,
+        "val_loss": 0.1889,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 70594.09,
+        "latency_ms": 14730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "eb28be6418c0c0be",
       "module_name": "modegpt",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 72.02,
+        "gpt2_acc": 60.55,
+        "latency_ms": 93.9
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "a076aa376be70549",
+      "module_name": "modegpt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:52:38.866018",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/modegpt/rank_64/checkpoints/modegpt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 81458.95,
+        "latency_ms": 14040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "aed4c539fc8400c8",
+      "module_name": "modegpt",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:28:03.017222",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/modegpt/rank_64/checkpoints/modegpt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9417,
+        "val_loss": 0.1889,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 70594.09,
+        "latency_ms": 14730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "eb28be6418c0c0be",
       "module_name": "modegpt",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 72.02,
+        "gpt2_acc": 60.55,
+        "latency_ms": 93.9
+      },
       "notes": "Master Aggregated Results"
     }
   ]

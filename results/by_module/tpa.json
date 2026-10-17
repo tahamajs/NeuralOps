@@ -2,7 +2,7 @@
   "module_name": "tpa",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,165 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 75.46,
+      "roberta_acc": 59.75,
+      "gpt2_acc": 0.0,
+      "latency_ms": 200.4
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "daf2e4c14d319294",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:46:10.727108",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_tpa/distilbert/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.2385,
+        "val_loss": 1.1185,
+        "peak_vram_mb": 314.11,
+        "throughput_tok_s": 47780.52,
+        "latency_ms": 14370.0,
+        "compression_ratio": 1.0753,
+        "param_reduction_pct": 7.01
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7dfa6d4146b2f154",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T13:23:47.945463",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_tpa/distilbert/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 61.7,
+        "f1": 0.6205,
+        "val_loss": 0.9472,
+        "peak_vram_mb": 3603.14,
+        "throughput_tok_s": 8910.06,
+        "latency_ms": 357860.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "99bdd7c4d12aab98",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:03:27.962270",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.8,
+        "f1": 0.3675,
+        "val_loss": 1.1909,
+        "peak_vram_mb": 798.01,
+        "throughput_tok_s": 12987.15,
+        "latency_ms": 61250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "aec2ab2d1c4d7561",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:50:21.707587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 84.3,
+        "f1": 0.8352,
+        "val_loss": 0.5465,
+        "peak_vram_mb": 1198.57,
+        "throughput_tok_s": 9132.87,
+        "latency_ms": 112140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "73884dfc18f7f049",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:29:13.753168",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.98,
+        "f1": 0.7725,
+        "val_loss": 0.5443,
+        "peak_vram_mb": 1244.36,
+        "throughput_tok_s": 16847.8,
+        "latency_ms": 52120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
     {
       "record_id": "f626757fdf19b0c6",
       "module_name": "tpa",
@@ -47,12 +202,167 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 75.46,
+        "roberta_acc": 59.75,
+        "gpt2_acc": 0.0,
+        "latency_ms": 200.4
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "daf2e4c14d319294",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:46:10.727108",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_tpa/distilbert/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.2385,
+        "val_loss": 1.1185,
+        "peak_vram_mb": 314.11,
+        "throughput_tok_s": 47780.52,
+        "latency_ms": 14370.0,
+        "compression_ratio": 1.0753,
+        "param_reduction_pct": 7.01
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7dfa6d4146b2f154",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T13:23:47.945463",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_tpa/distilbert/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 61.7,
+        "f1": 0.6205,
+        "val_loss": 0.9472,
+        "peak_vram_mb": 3603.14,
+        "throughput_tok_s": 8910.06,
+        "latency_ms": 357860.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "99bdd7c4d12aab98",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:03:27.962270",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.8,
+        "f1": 0.3675,
+        "val_loss": 1.1909,
+        "peak_vram_mb": 798.01,
+        "throughput_tok_s": 12987.15,
+        "latency_ms": 61250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "aec2ab2d1c4d7561",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:50:21.707587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 84.3,
+        "f1": 0.8352,
+        "val_loss": 0.5465,
+        "peak_vram_mb": 1198.57,
+        "throughput_tok_s": 9132.87,
+        "latency_ms": 112140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "73884dfc18f7f049",
+      "module_name": "tpa",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:29:13.753168",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/tpa/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.98,
+        "f1": 0.7725,
+        "val_loss": 0.5443,
+        "peak_vram_mb": 1244.36,
+        "throughput_tok_s": 16847.8,
+        "latency_ms": 52120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
       "record_id": "f626757fdf19b0c6",
       "module_name": "tpa",
       "category": "attention",
@@ -70,7 +380,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 75.46,
+        "roberta_acc": 59.75,
+        "gpt2_acc": 0.0,
+        "latency_ms": 200.4
+      },
       "notes": "Master Aggregated Results"
     }
   ]

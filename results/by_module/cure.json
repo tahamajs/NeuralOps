@@ -1,0 +1,404 @@
+{
+  "module_name": "cure",
+  "category": "attention",
+  "family": "roberta",
+  "total_runs": 6,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-27T07:47:14.186438",
+  "latest_record": {
+    "record_id": "9f9fa7193e4fbccb",
+    "module_name": "cure",
+    "category": "attention",
+    "family": "roberta",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T07:47:14.186438",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\roberta_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 94.38,
+      "f1": 0.9445,
+      "val_loss": 0.1896,
+      "peak_vram_mb": 292.72,
+      "throughput_tok_s": 24116.26,
+      "latency_ms": 23500.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "a32a4f60b1af3ba0",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:41:17.290878",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/cure/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8198,
+        "val_loss": 0.552,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 21521.57,
+        "latency_ms": 31070.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e6cf4be91decfcd1",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:07:21.100392",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_distilbert/cure/seed_456/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 155931.69,
+        "latency_ms": 7810.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0162df148243fd04",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:09:23.383047",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_roberta/cure/seed_456/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9363,
+        "val_loss": 0.1978,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 83044.24,
+        "latency_ms": 18430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c1d96923a5fc3534",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:51:57.933441",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/cure/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 69.84,
+        "f1": 0.7107,
+        "val_loss": 0.5871,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 173673.07,
+        "latency_ms": 9370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "35302bc68fed72a1",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:16:22.426792",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cure/rank_32/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 51037.4,
+        "latency_ms": 12210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9f9fa7193e4fbccb",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:47:14.186438",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.38,
+        "f1": 0.9445,
+        "val_loss": 0.1896,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 24116.26,
+        "latency_ms": 23500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "a32a4f60b1af3ba0",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:41:17.290878",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/cure/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 82.0,
+        "f1": 0.8198,
+        "val_loss": 0.552,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 21521.57,
+        "latency_ms": 31070.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e6cf4be91decfcd1",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:07:21.100392",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_distilbert/cure/seed_456/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3241,
+        "peak_vram_mb": 445.96,
+        "throughput_tok_s": 155931.69,
+        "latency_ms": 7810.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0162df148243fd04",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:09:23.383047",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/07_misc_tests/multiseed_rigor_roberta/cure/seed_456/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.35,
+        "f1": 0.9363,
+        "val_loss": 0.1978,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 83044.24,
+        "latency_ms": 18430.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c1d96923a5fc3534",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:51:57.933441",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/cure/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 69.84,
+        "f1": 0.7107,
+        "val_loss": 0.5871,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 173673.07,
+        "latency_ms": 9370.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "35302bc68fed72a1",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:16:22.426792",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cure/rank_32/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 51037.4,
+        "latency_ms": 12210.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "9f9fa7193e4fbccb",
+      "module_name": "cure",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:47:14.186438",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/cure/rank_32/checkpoints/cure/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.38,
+        "f1": 0.9445,
+        "val_loss": 0.1896,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 24116.26,
+        "latency_ms": 23500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

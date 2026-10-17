@@ -2,7 +2,7 @@
   "module_name": "aa_svd_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "b7b8326270241c63",
+      "module_name": "aa_svd_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T04:41:00.892587",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/aa_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 504280.0,
+        "compression_ratio": 1.2191,
+        "param_reduction_pct": 17.97
+      },
+      "notes": "Status: EVAL_FAILED"
+    },
+    {
       "record_id": "ae9805eb78763d07",
       "module_name": "aa_svd_compressor",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "b7b8326270241c63",
+      "module_name": "aa_svd_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T04:41:00.892587",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/aa_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 504280.0,
+        "compression_ratio": 1.2191,
+        "param_reduction_pct": 17.97
+      },
+      "notes": "Status: EVAL_FAILED"
+    },
     {
       "record_id": "ae9805eb78763d07",
       "module_name": "aa_svd_compressor",

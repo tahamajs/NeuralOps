@@ -2,7 +2,7 @@
   "module_name": "mamba",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 10,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,285 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 50.92,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 49.54,
+      "latency_ms": 88.3
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "931ca36f1c82d1f0",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T21:47:31.965576",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_mamba/roberta/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6931,
+        "peak_vram_mb": 852.09,
+        "throughput_tok_s": 11475.19,
+        "latency_ms": 23140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5b1f1845f9ce27fe",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T21:48:21.752808",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_mamba/gpt2/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 48.85,
+        "f1": 0.231,
+        "val_loss": 1.1739,
+        "peak_vram_mb": 649.68,
+        "throughput_tok_s": 15361.74,
+        "latency_ms": 19690.0,
+        "compression_ratio": 1.0537,
+        "param_reduction_pct": 5.1
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4d979cf5febab9e1",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:47:23.577542",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_mamba/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.11,
+        "peak_vram_mb": 552.19,
+        "throughput_tok_s": 39802.12,
+        "latency_ms": 5960.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "3f140daaafea4e4c",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T14:14:27.227988",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_mamba/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": 1.5529,
+        "peak_vram_mb": 591.46,
+        "throughput_tok_s": 18003.64,
+        "latency_ms": 50920.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "bb41c7d6b6e38bd2",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:01:22.278157",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7096,
+        "peak_vram_mb": 492.06,
+        "throughput_tok_s": 16410.75,
+        "latency_ms": 13100.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7a1923accf89bbc2",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:09:10.575672",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1695,
+        "val_loss": 1.1192,
+        "peak_vram_mb": 493.65,
+        "throughput_tok_s": 22708.16,
+        "latency_ms": 14940.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4c6db60bc38b2ead",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T21:12:46.197259",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7005,
+        "peak_vram_mb": 523.04,
+        "throughput_tok_s": 68044.91,
+        "latency_ms": 19670.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "bb892dd11fabee64",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:48:16.433244",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7604,
+        "peak_vram_mb": 805.8,
+        "throughput_tok_s": 6347.79,
+        "latency_ms": 28660.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4d2e09f7e569312f",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T22:42:04.225865",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1043,
+        "peak_vram_mb": 3988.38,
+        "throughput_tok_s": 2377.77,
+        "latency_ms": 774700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "df340d287a70056a",
       "module_name": "mamba",
@@ -47,12 +322,287 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 49.54,
+        "latency_ms": 88.3
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "931ca36f1c82d1f0",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T21:47:31.965576",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_mamba/roberta/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6931,
+        "peak_vram_mb": 852.09,
+        "throughput_tok_s": 11475.19,
+        "latency_ms": 23140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5b1f1845f9ce27fe",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T21:48:21.752808",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_mamba/gpt2/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 48.85,
+        "f1": 0.231,
+        "val_loss": 1.1739,
+        "peak_vram_mb": 649.68,
+        "throughput_tok_s": 15361.74,
+        "latency_ms": 19690.0,
+        "compression_ratio": 1.0537,
+        "param_reduction_pct": 5.1
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4d979cf5febab9e1",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:47:23.577542",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_mamba/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.11,
+        "peak_vram_mb": 552.19,
+        "throughput_tok_s": 39802.12,
+        "latency_ms": 5960.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "3f140daaafea4e4c",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-17T14:14:27.227988",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_mamba/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": 1.5529,
+        "peak_vram_mb": 591.46,
+        "throughput_tok_s": 18003.64,
+        "latency_ms": 50920.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "bb41c7d6b6e38bd2",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:01:22.278157",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7096,
+        "peak_vram_mb": 492.06,
+        "throughput_tok_s": 16410.75,
+        "latency_ms": 13100.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7a1923accf89bbc2",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:09:10.575672",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1695,
+        "val_loss": 1.1192,
+        "peak_vram_mb": 493.65,
+        "throughput_tok_s": 22708.16,
+        "latency_ms": 14940.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4c6db60bc38b2ead",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T21:12:46.197259",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7005,
+        "peak_vram_mb": 523.04,
+        "throughput_tok_s": 68044.91,
+        "latency_ms": 19670.0,
+        "compression_ratio": 1.0497,
+        "param_reduction_pct": 4.73
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "bb892dd11fabee64",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T01:48:16.433244",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7604,
+        "peak_vram_mb": 805.8,
+        "throughput_tok_s": 6347.79,
+        "latency_ms": 28660.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "4d2e09f7e569312f",
+      "module_name": "mamba",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T22:42:04.225865",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/mamba/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1043,
+        "peak_vram_mb": 3988.38,
+        "throughput_tok_s": 2377.77,
+        "latency_ms": 774700.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "df340d287a70056a",
       "module_name": "mamba",
       "category": "attention",
@@ -70,7 +620,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 50.92,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 49.54,
+        "latency_ms": 88.3
+      },
       "notes": "Master Aggregated Results"
     }
   ]

@@ -1,34 +1,273 @@
 {
   "module_name": "swift_svd_act",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 2,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 9,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "bdcd0c719d3a75aa",
+    "record_id": "c455703a654174f2",
     "module_name": "swift_svd_act",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "compress_ms": 40.33,
+      "relative_error": 0.1873
+    },
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "791b91481e382f56",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:50:40.591391",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/06_adhoc_experiments/smoke_test_swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.3173,
+        "peak_vram_mb": 173.87,
+        "throughput_tok_s": 34781.51,
+        "latency_ms": 9300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e89037b682696526",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:06:12.385281",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/concurrent_test/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9351,
+        "val_loss": 0.2934,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 30777.52,
+        "latency_ms": 21330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4c636353cd1c98b6",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:34:45.001356",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1215.0535096554534,
+        "latency_ms": 217050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "3c35250af8ad5317",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:23:27.375568",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 113412.96,
+        "latency_ms": 18420.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d6238b0534434471",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T19:08:16.356484",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.2054,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 26193.85,
+        "latency_ms": 58580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0500a92560afb4aa",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:49:48.516638",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.722293095485914,
+        "peak_vram_mb": 2254.10302734375,
+        "throughput_tok_s": 8003.848623203467,
+        "latency_ms": 139110.0,
+        "compression_ratio": 1.166,
+        "param_reduction_pct": 14.23
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "1121255f32247a32",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:57:08.794200",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_act/rank_32/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 38091.09,
+        "latency_ms": 19410.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bdcd0c719d3a75aa",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 72.02,
+        "gpt2_acc": 60.09,
+        "latency_ms": 91.0
+      },
+      "notes": "Master Aggregated Results"
+    },
     {
       "record_id": "c455703a654174f2",
       "module_name": "swift_svd_act",
@@ -52,31 +291,246 @@
         "relative_error": 0.1873
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "bdcd0c719d3a75aa",
-      "module_name": "swift_svd_act",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "791b91481e382f56",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:50:40.591391",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/06_adhoc_experiments/smoke_test_swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.3173,
+        "peak_vram_mb": 173.87,
+        "throughput_tok_s": 34781.51,
+        "latency_ms": 9300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e89037b682696526",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:06:12.385281",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/concurrent_test/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9351,
+        "val_loss": 0.2934,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 30777.52,
+        "latency_ms": 21330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4c636353cd1c98b6",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:34:45.001356",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1215.0535096554534,
+        "latency_ms": 217050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "3c35250af8ad5317",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:23:27.375568",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 113412.96,
+        "latency_ms": 18420.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d6238b0534434471",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T19:08:16.356484",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_act/rank_64/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.2054,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 26193.85,
+        "latency_ms": 58580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0500a92560afb4aa",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:49:48.516638",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/swift_svd_act/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.722293095485914,
+        "peak_vram_mb": 2254.10302734375,
+        "throughput_tok_s": 8003.848623203467,
+        "latency_ms": 139110.0,
+        "compression_ratio": 1.166,
+        "param_reduction_pct": 14.23
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "1121255f32247a32",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:57:08.794200",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_act/rank_32/checkpoints/swift_svd_act/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 38091.09,
+        "latency_ms": 19410.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "bdcd0c719d3a75aa",
+      "module_name": "swift_svd_act",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 72.02,
+        "gpt2_acc": 60.09,
+        "latency_ms": 91.0
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
       "record_id": "c455703a654174f2",
       "module_name": "swift_svd_act",
       "category": "compressor",
@@ -99,27 +553,6 @@
         "relative_error": 0.1873
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "bdcd0c719d3a75aa",
-      "module_name": "swift_svd_act",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

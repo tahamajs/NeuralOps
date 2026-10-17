@@ -2,7 +2,7 @@
   "module_name": "kronecker_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "0ff3756f95ec9d03",
+      "module_name": "kronecker_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:26:48.830905",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/kronecker_compressor/rank_32/checkpoints/kronecker_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 35977.26,
+        "latency_ms": 11000.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "813803055f729a55",
       "module_name": "kronecker_compressor",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "0ff3756f95ec9d03",
+      "module_name": "kronecker_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:26:48.830905",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/kronecker_compressor/rank_32/checkpoints/kronecker_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 35977.26,
+        "latency_ms": 11000.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "813803055f729a55",
       "module_name": "kronecker_compressor",

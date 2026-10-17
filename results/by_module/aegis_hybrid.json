@@ -1,34 +1,347 @@
 {
   "module_name": "aegis_hybrid",
   "category": "attention",
-  "family": "general",
-  "total_runs": 3,
+  "family": "subquadratic-attention",
+  "total_runs": 12,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "9cc18e02c35cbbaf",
+    "record_id": "789d08c7e438014c",
     "module_name": "aegis_hybrid",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "latency_triton_ms": 2.018
+    },
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "aeef035b1493069e",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:33:45.916410",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8362,
+        "val_loss": 0.454,
+        "peak_vram_mb": 347.79,
+        "throughput_tok_s": 29435.28,
+        "latency_ms": 34460.0,
+        "compression_ratio": 1.1808,
+        "param_reduction_pct": 15.31
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a0c475b1615310bb",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:58:47.223314",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7021,
+        "peak_vram_mb": 643.42,
+        "throughput_tok_s": 10515.08,
+        "latency_ms": 76700.0,
+        "compression_ratio": 1.1206,
+        "param_reduction_pct": 10.76
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "b0390cdebbb92603",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:52:23.172727",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1078,
+        "peak_vram_mb": 298.93,
+        "throughput_tok_s": 13764.28,
+        "latency_ms": 40960.0,
+        "compression_ratio": 1.1808,
+        "param_reduction_pct": 15.31
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "fbe26e91ad821943",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:34:54.673999",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.21,
+        "f1": 0.6837,
+        "val_loss": 0.6659,
+        "peak_vram_mb": 572.93,
+        "throughput_tok_s": 3670.5,
+        "latency_ms": 55320.0,
+        "compression_ratio": 1.1206,
+        "param_reduction_pct": 10.76
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "d5df370a7e038615",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:09:26.916354",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "5b3ee1876089e7e2",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-12T19:28:56.812683+00:00",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "dataset": "wikitext2",
+        "rank": 32
+      },
+      "metrics": {
+        "ppl": 3671.2,
+        "kd_gain": 0.0,
+        "recovery_pct": 0.0,
+        "peak_vram_mb": 1372.29
+      },
+      "notes": "Run: kd_aegis_hybrid_C_20261012_192759"
+    },
+    {
+      "record_id": "fcb4623e1fbb1e0d",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:12:28Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 950.685546875
+      },
+      "notes": "Run: 5e544944-1956-4470-8d54-66efdbee1331"
+    },
+    {
+      "record_id": "9cc18e02c35cbbaf",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 78.44,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 85.9
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "bfc45c5e7c883c2a",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "wikitext2",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 54700.0,
+        "peak_vram_mb": 4864.6,
+        "speedup_x": 0.03,
+        "latency_ms": 9.36
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "7417956252450aa8",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "c4",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 54700.0,
+        "peak_vram_mb": 4864.6,
+        "speedup_x": 0.03,
+        "latency_ms": 9.36
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "c637fee8241371d8",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 94.2,
+        "ppl": 29.0,
+        "latency_ms": 8220.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
     {
       "record_id": "789d08c7e438014c",
       "module_name": "aegis_hybrid",
@@ -53,55 +366,319 @@
         "latency_triton_ms": 2.018
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "c637fee8241371d8",
-      "module_name": "aegis_hybrid",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "9cc18e02c35cbbaf",
-      "module_name": "aegis_hybrid",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "aeef035b1493069e",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:33:45.916410",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8362,
+        "val_loss": 0.454,
+        "peak_vram_mb": 347.79,
+        "throughput_tok_s": 29435.28,
+        "latency_ms": 34460.0,
+        "compression_ratio": 1.1808,
+        "param_reduction_pct": 15.31
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "a0c475b1615310bb",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:58:47.223314",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7021,
+        "peak_vram_mb": 643.42,
+        "throughput_tok_s": 10515.08,
+        "latency_ms": 76700.0,
+        "compression_ratio": 1.1206,
+        "param_reduction_pct": 10.76
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "b0390cdebbb92603",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:52:23.172727",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1078,
+        "peak_vram_mb": 298.93,
+        "throughput_tok_s": 13764.28,
+        "latency_ms": 40960.0,
+        "compression_ratio": 1.1808,
+        "param_reduction_pct": 15.31
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "fbe26e91ad821943",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:34:54.673999",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.21,
+        "f1": 0.6837,
+        "val_loss": 0.6659,
+        "peak_vram_mb": 572.93,
+        "throughput_tok_s": 3670.5,
+        "latency_ms": 55320.0,
+        "compression_ratio": 1.1206,
+        "param_reduction_pct": 10.76
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "d5df370a7e038615",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:09:26.916354",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/aegis_hybrid/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 330.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "5b3ee1876089e7e2",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-12T19:28:56.812683+00:00",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "gpt2",
+        "dataset": "wikitext2",
+        "rank": 32
+      },
+      "metrics": {
+        "ppl": 3671.2,
+        "kd_gain": 0.0,
+        "recovery_pct": 0.0,
+        "peak_vram_mb": 1372.29
+      },
+      "notes": "Run: kd_aegis_hybrid_C_20261012_192759"
+    },
+    {
+      "record_id": "fcb4623e1fbb1e0d",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:12:28Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 950.685546875
+      },
+      "notes": "Run: 5e544944-1956-4470-8d54-66efdbee1331"
+    },
+    {
+      "record_id": "9cc18e02c35cbbaf",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 78.44,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.03,
+        "latency_ms": 85.9
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "bfc45c5e7c883c2a",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "wikitext2",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 54700.0,
+        "peak_vram_mb": 4864.6,
+        "speedup_x": 0.03,
+        "latency_ms": 9.36
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "7417956252450aa8",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "O(N^2) Softmax",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Benchmark Suite",
+        "source_artifact": "results/master_benchmark_summary.csv"
+      },
+      "experimental_setup": {
+        "dataset": "c4",
+        "complexity": "O(N^2) Softmax"
+      },
+      "metrics": {
+        "ppl": 11.25,
+        "val_loss": 2.4204,
+        "throughput_tok_s": 54700.0,
+        "peak_vram_mb": 4864.6,
+        "speedup_x": 0.03,
+        "latency_ms": 9.36
+      },
+      "notes": "Status: SUCCESS"
+    },
+    {
+      "record_id": "c637fee8241371d8",
+      "module_name": "aegis_hybrid",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 94.2,
+        "ppl": 29.0,
+        "latency_ms": 8220.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "789d08c7e438014c",
       "module_name": "aegis_hybrid",
       "category": "attention",
@@ -125,51 +702,6 @@
         "latency_triton_ms": 2.018
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "c637fee8241371d8",
-      "module_name": "aegis_hybrid",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "9cc18e02c35cbbaf",
-      "module_name": "aegis_hybrid",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

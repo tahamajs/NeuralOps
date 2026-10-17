@@ -1,0 +1,284 @@
+{
+  "module_name": "grecodec",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T07:23:00.294065",
+  "latest_record": {
+    "record_id": "c41ffb6848928844",
+    "module_name": "grecodec",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T07:23:00.294065",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/grecodec/rank_32/checkpoints/grecodec/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.6,
+      "f1": 0.9099,
+      "val_loss": 0.3267,
+      "peak_vram_mb": 291.93,
+      "throughput_tok_s": 49009.94,
+      "latency_ms": 3900.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "03cadd7d8a7bcfae",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:05:23.744159",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.7,
+        "f1": 0.3282,
+        "val_loss": 1.0959,
+        "peak_vram_mb": 304.08,
+        "throughput_tok_s": 49053.62,
+        "latency_ms": 11950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "cc3be6d310509e46",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:01:18.792278",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/grecodec/rank_64/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3156,
+        "peak_vram_mb": 536.17,
+        "throughput_tok_s": 93543.31,
+        "latency_ms": 2570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8d5fa09e391358e1",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:09:15.331698",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/grecodec/rank_64/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 52508.53,
+        "latency_ms": 9650.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c41ffb6848928844",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:23:00.294065",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/grecodec/rank_32/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 49009.94,
+        "latency_ms": 3900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "03cadd7d8a7bcfae",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:05:23.744159",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.7,
+        "f1": 0.3282,
+        "val_loss": 1.0959,
+        "peak_vram_mb": 304.08,
+        "throughput_tok_s": 49053.62,
+        "latency_ms": 11950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "cc3be6d310509e46",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:01:18.792278",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/grecodec/rank_64/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3156,
+        "peak_vram_mb": 536.17,
+        "throughput_tok_s": 93543.31,
+        "latency_ms": 2570.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8d5fa09e391358e1",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T15:09:15.331698",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/grecodec/rank_64/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2093,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 52508.53,
+        "latency_ms": 9650.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c41ffb6848928844",
+      "module_name": "grecodec",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:23:00.294065",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/grecodec/rank_32/checkpoints/grecodec/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9099,
+        "val_loss": 0.3267,
+        "peak_vram_mb": 291.93,
+        "throughput_tok_s": 49009.94,
+        "latency_ms": 3900.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

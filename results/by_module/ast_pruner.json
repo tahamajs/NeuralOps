@@ -2,7 +2,7 @@
   "module_name": "ast_pruner",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,126 @@
   },
   "active_records": [
     {
+      "record_id": "9e016b574c6bab38",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:40:19.652866",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/distilbert/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.8,
+        "f1": 0.5281,
+        "val_loss": 1.1064,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 54970.0,
+        "latency_ms": 13040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "19befe2d5a6fc616",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:24.701190",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8058,
+        "val_loss": 0.5516,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 32356.56,
+        "latency_ms": 31610.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "df49f4cff12b1077",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:39.016494",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/gpt2/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.2,
+        "f1": 0.818,
+        "val_loss": 0.4946,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 50300.65,
+        "latency_ms": 13080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1e8b3cd7995ecfd2",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T10:56:59.457790",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.34,
+        "throughput_tok_s": 61084.14,
+        "latency_ms": 10440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "178eedf373185e51",
       "module_name": "ast_pruner",
       "category": "compressor",
@@ -58,6 +178,126 @@
     }
   ],
   "history": [
+    {
+      "record_id": "9e016b574c6bab38",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:40:19.652866",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/distilbert/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 55.8,
+        "f1": 0.5281,
+        "val_loss": 1.1064,
+        "peak_vram_mb": 249.7,
+        "throughput_tok_s": 54970.0,
+        "latency_ms": 13040.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "19befe2d5a6fc616",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:24.701190",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/roberta/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8058,
+        "val_loss": 0.5516,
+        "peak_vram_mb": 371.82,
+        "throughput_tok_s": 32356.56,
+        "latency_ms": 31610.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "df49f4cff12b1077",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T20:41:39.016494",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_ast_pruner/gpt2/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.2,
+        "f1": 0.818,
+        "val_loss": 0.4946,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 50300.65,
+        "latency_ms": 13080.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1e8b3cd7995ecfd2",
+      "module_name": "ast_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T10:56:59.457790",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/ast_pruner/checkpoints/ast_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.34,
+        "throughput_tok_s": 61084.14,
+        "latency_ms": 10440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "178eedf373185e51",
       "module_name": "ast_pruner",

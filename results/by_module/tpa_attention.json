@@ -1,0 +1,164 @@
+{
+  "module_name": "tpa_attention",
+  "category": "attention",
+  "family": "roberta",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-22T03:48:12.182048",
+  "latest_record": {
+    "record_id": "f4b3f9740b73fa0c",
+    "module_name": "tpa_attention",
+    "category": "attention",
+    "family": "roberta",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-22T03:48:12.182048",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tpa_attention/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/roberta_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 72.25,
+      "f1": 0.7299,
+      "val_loss": 0.8508,
+      "peak_vram_mb": 1041.48,
+      "throughput_tok_s": 3817.99,
+      "latency_ms": 84880.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: EXTREME_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "690a7548f4b26437",
+      "module_name": "tpa_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:04:19.035440",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/tpa_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.98,
+        "f1": 0.7848,
+        "val_loss": 0.542,
+        "peak_vram_mb": 1996.4,
+        "throughput_tok_s": 19796.08,
+        "latency_ms": 79010.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "f4b3f9740b73fa0c",
+      "module_name": "tpa_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:48:12.182048",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tpa_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 72.25,
+        "f1": 0.7299,
+        "val_loss": 0.8508,
+        "peak_vram_mb": 1041.48,
+        "throughput_tok_s": 3817.99,
+        "latency_ms": 84880.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "690a7548f4b26437",
+      "module_name": "tpa_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T23:04:19.035440",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/tpa_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 77.98,
+        "f1": 0.7848,
+        "val_loss": 0.542,
+        "peak_vram_mb": 1996.4,
+        "throughput_tok_s": 19796.08,
+        "latency_ms": 79010.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    },
+    {
+      "record_id": "f4b3f9740b73fa0c",
+      "module_name": "tpa_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:48:12.182048",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tpa_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 72.25,
+        "f1": 0.7299,
+        "val_loss": 0.8508,
+        "peak_vram_mb": 1041.48,
+        "throughput_tok_s": 3817.99,
+        "latency_ms": 84880.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: EXTREME_EXPANSION"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "module_name": "tomoe",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 69.5,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 54.24,
+      "latency_ms": 208.0
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "e429658ce85783f8",
+      "module_name": "tomoe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:28:43.450316",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/tomoe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.4028,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 51526.05,
+        "latency_ms": 13240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "08d7be17b98695e3",
+      "module_name": "tomoe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:29:46.275945",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/tomoe/rank_32/checkpoints/tomoe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.69,
+        "f1": 0.9392,
+        "val_loss": 0.2457,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 19826.3,
+        "latency_ms": 18240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "047e4116f6dd0417",
       "module_name": "tomoe",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 69.5,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 54.24,
+        "latency_ms": 208.0
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "e429658ce85783f8",
+      "module_name": "tomoe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:28:43.450316",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/tomoe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.4028,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 51526.05,
+        "latency_ms": 13240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "08d7be17b98695e3",
+      "module_name": "tomoe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:29:46.275945",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/tomoe/rank_32/checkpoints/tomoe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.69,
+        "f1": 0.9392,
+        "val_loss": 0.2457,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 19826.3,
+        "latency_ms": 18240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "047e4116f6dd0417",
       "module_name": "tomoe",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 69.5,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 54.24,
+        "latency_ms": 208.0
+      },
       "notes": "Master Aggregated Results"
     }
   ]

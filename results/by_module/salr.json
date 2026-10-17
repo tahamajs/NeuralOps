@@ -1,34 +1,213 @@
 {
   "module_name": "salr",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 2,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "76cdf7f2fac520bb",
+    "record_id": "929bb213b67285a1",
     "module_name": "salr",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "compress_ms": 45.87,
+      "relative_error": 0.1956
+    },
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "02148693929a88b1",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:05:02.735577",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/salr/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8181,
+        "val_loss": 0.5454,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 135855.42,
+        "latency_ms": 44450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7695e3714c413910",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:32:33.614422",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/salr/seed_456/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.2957,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 59435.51,
+        "latency_ms": 16340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5ffbd95d70332461",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:38:16.805473",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/salr/seed_456/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9405,
+        "val_loss": 0.1891,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 45835.03,
+        "latency_ms": 19840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8d27fc93a151a71f",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:50:41.588298",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/salr/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 70.18,
+        "f1": 0.7257,
+        "val_loss": 0.5842,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 108741.77,
+        "latency_ms": 11610.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d4fe03fd27d83370",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:48:59.249358",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/salr/rank_32/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.5575,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 41669.33,
+        "latency_ms": 10440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "76cdf7f2fac520bb",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.37,
+        "roberta_acc": 80.96,
+        "gpt2_acc": 58.94,
+        "latency_ms": 78.4
+      },
+      "notes": "Master Aggregated Results"
+    },
     {
       "record_id": "929bb213b67285a1",
       "module_name": "salr",
@@ -52,31 +231,186 @@
         "relative_error": 0.1956
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "76cdf7f2fac520bb",
-      "module_name": "salr",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "02148693929a88b1",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T13:05:02.735577",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/mnli_deep_sweep/salr/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 81.9,
+        "f1": 0.8181,
+        "val_loss": 0.5454,
+        "peak_vram_mb": 420.46,
+        "throughput_tok_s": 135855.42,
+        "latency_ms": 44450.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "7695e3714c413910",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:32:33.614422",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_distilbert/salr/seed_456/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9099,
+        "val_loss": 0.2957,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 59435.51,
+        "latency_ms": 16340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5ffbd95d70332461",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:38:16.805473",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/multiseed_rigor_roberta/salr/seed_456/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9405,
+        "val_loss": 0.1891,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 45835.03,
+        "latency_ms": 19840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "8d27fc93a151a71f",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:50:41.588298",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/agnews_deep_sweep/salr/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_agnews_full",
+        "dataset": "agnews"
+      },
+      "metrics": {
+        "accuracy": 70.18,
+        "f1": 0.7257,
+        "val_loss": 0.5842,
+        "peak_vram_mb": 331.86,
+        "throughput_tok_s": 108741.77,
+        "latency_ms": 11610.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d4fe03fd27d83370",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:48:59.249358",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/salr/rank_32/checkpoints/salr/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.5575,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 41669.33,
+        "latency_ms": 10440.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "76cdf7f2fac520bb",
+      "module_name": "salr",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.37,
+        "roberta_acc": 80.96,
+        "gpt2_acc": 58.94,
+        "latency_ms": 78.4
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
       "record_id": "929bb213b67285a1",
       "module_name": "salr",
       "category": "compressor",
@@ -99,27 +433,6 @@
         "relative_error": 0.1956
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "76cdf7f2fac520bb",
-      "module_name": "salr",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

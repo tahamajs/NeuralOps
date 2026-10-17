@@ -1,34 +1,123 @@
 {
   "module_name": "roast_hashed_linear",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 2,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "194691b699f5d8c4",
+    "record_id": "d74cb6963ba7aa13",
     "module_name": "roast_hashed_linear",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "compress_ms": 7.71,
+      "relative_error": 0.0
+    },
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "09b9e4b9f4a99a84",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:15:16.815257",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/roast_hashed_linear/checkpoints/roast_hashed_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9107,
+        "val_loss": 0.2995,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 101830.24,
+        "latency_ms": 8800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5e8f9ddd4ea0ece6",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:16:10.855103",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/roast_hashed_linear/checkpoints/roast_hashed_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.15,
+        "f1": 0.9431,
+        "val_loss": 0.1954,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 120400.45,
+        "latency_ms": 13360.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "194691b699f5d8c4",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "roberta_acc": 51.26,
+        "gpt2_acc": 51.72,
+        "latency_ms": 86.0
+      },
+      "notes": "Master Aggregated Results"
+    },
     {
       "record_id": "d74cb6963ba7aa13",
       "module_name": "roast_hashed_linear",
@@ -52,31 +141,96 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "194691b699f5d8c4",
-      "module_name": "roast_hashed_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "09b9e4b9f4a99a84",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:15:16.815257",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/roast_hashed_linear/checkpoints/roast_hashed_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9107,
+        "val_loss": 0.2995,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 101830.24,
+        "latency_ms": 8800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "5e8f9ddd4ea0ece6",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:16:10.855103",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/roast_hashed_linear/checkpoints/roast_hashed_linear/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.15,
+        "f1": 0.9431,
+        "val_loss": 0.1954,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 120400.45,
+        "latency_ms": 13360.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "194691b699f5d8c4",
+      "module_name": "roast_hashed_linear",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "roberta_acc": 51.26,
+        "gpt2_acc": 51.72,
+        "latency_ms": 86.0
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
       "record_id": "d74cb6963ba7aa13",
       "module_name": "roast_hashed_linear",
       "category": "compressor",
@@ -99,27 +253,6 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "194691b699f5d8c4",
-      "module_name": "roast_hashed_linear",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

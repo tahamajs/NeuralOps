@@ -331,3 +331,44 @@ class TestSubsystemTelemetryHooks:
         )
         assert rec.module_name == "telemetry_test_attention"
         assert len(ledger.query(module_name="telemetry_test_attention")) == 1
+
+
+class TestLedgerAdminAndSync:
+    def test_rebuild_sqlite_index_and_stats(self, ledger):
+        # Insert test records
+        ledger.add_or_replace(ResultRecord(
+            record_id="rec_1",
+            module_name="mod_sync_1",
+            category="attention",
+            family="recurrent",
+            version_tag="v1.3.7",
+            metrics={"accuracy": 92.5},
+        ))
+        ledger.add_or_replace(ResultRecord(
+            record_id="rec_2",
+            module_name="mod_sync_2",
+            category="compressor",
+            family="svd",
+            version_tag="v1.3.7",
+            metrics={"relative_error": 0.05},
+        ))
+
+        stats = ledger.get_summary_stats()
+        assert stats["total_records"] >= 2
+        assert stats["distinct_modules"] >= 2
+        assert "attention" in stats["by_category"]
+        assert "compressor" in stats["by_category"]
+
+        # Rebuild index and verify parity
+        rebuilt_count = ledger.rebuild_sqlite_index()
+        assert rebuilt_count == stats["total_records"]
+
+        # Test dossier generation
+        dossier_count = ledger.generate_all_dossiers()
+        assert dossier_count >= 2
+
+        # Test category summary regeneration
+        cat_counts = ledger.regenerate_category_summaries()
+        assert "attention" in cat_counts
+        assert "compressor" in cat_counts
+

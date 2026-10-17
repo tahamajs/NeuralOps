@@ -1,34 +1,183 @@
 {
   "module_name": "slicegpt_pca",
-  "category": "attention",
-  "family": "general",
-  "total_runs": 2,
+  "category": "compressor",
+  "family": "matrix-compression",
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "25d9fe36fa",
+  "latest_timestamp": "2026-10-16T09:08:37Z",
   "latest_record": {
-    "record_id": "69628395bc91b3c7",
+    "record_id": "ac4903c2915f966f",
     "module_name": "slicegpt_pca",
-    "category": "attention",
-    "family": "general",
+    "category": "compressor",
+    "family": "matrix-compression",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:08:37Z",
+    "git_commit_sha": "25d9fe36fa",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+      "source_artifact": "results/triton_all_72_compressors_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16"
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "compress_ms": 11.72,
+      "relative_error": 0.0
+    },
+    "notes": "72 Compressor Matrix Compression Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "93f4591ceb344ea1",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:08:25.977058",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/slicegpt_pca/rank_64/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 157198.17,
+        "latency_ms": 11730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "aeb4e23da9f8cb2b",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:57:31.034320",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/slicegpt_pca/rank_64/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.69,
+        "f1": 0.9392,
+        "val_loss": 0.2031,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 52010.1,
+        "latency_ms": 38340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "14716daaab1ebca1",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:20:04.803526",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/old_tests/test_c4_slicegpt/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.633803865514899,
+        "peak_vram_mb": 1402.94677734375,
+        "throughput_tok_s": 9985.78680171748,
+        "latency_ms": 159470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "89aeed7af1e3ba92",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:53:05.143832",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/slicegpt_pca/rank_32/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 43814.35,
+        "latency_ms": 9390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "69628395bc91b3c7",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 67.66,
+        "gpt2_acc": 62.04,
+        "latency_ms": 98.9
+      },
+      "notes": "Master Aggregated Results"
+    },
     {
       "record_id": "ac4903c2915f966f",
       "module_name": "slicegpt_pca",
@@ -52,31 +201,156 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "69628395bc91b3c7",
-      "module_name": "slicegpt_pca",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "93f4591ceb344ea1",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:08:25.977058",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/slicegpt_pca/rank_64/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 157198.17,
+        "latency_ms": 11730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "aeb4e23da9f8cb2b",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:57:31.034320",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/slicegpt_pca/rank_64/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.69,
+        "f1": 0.9392,
+        "val_loss": 0.2031,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 52010.1,
+        "latency_ms": 38340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "14716daaab1ebca1",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:20:04.803526",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/old_tests/test_c4_slicegpt/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.633803865514899,
+        "peak_vram_mb": 1402.94677734375,
+        "throughput_tok_s": 9985.78680171748,
+        "latency_ms": 159470.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "89aeed7af1e3ba92",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:53:05.143832",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/slicegpt_pca/rank_32/checkpoints/slicegpt_pca/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 43814.35,
+        "latency_ms": 9390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "69628395bc91b3c7",
+      "module_name": "slicegpt_pca",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 67.66,
+        "gpt2_acc": 62.04,
+        "latency_ms": 98.9
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
       "record_id": "ac4903c2915f966f",
       "module_name": "slicegpt_pca",
       "category": "compressor",
@@ -99,27 +373,6 @@
         "relative_error": 0.0
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
-    },
-    {
-      "record_id": "69628395bc91b3c7",
-      "module_name": "slicegpt_pca",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

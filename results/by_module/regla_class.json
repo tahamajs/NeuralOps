@@ -1,0 +1,104 @@
+{
+  "module_name": "regla_class",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T06:00:38.697672",
+  "latest_record": {
+    "record_id": "55fe9685c869ca1e",
+    "module_name": "regla_class",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T06:00:38.697672",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/regla_class/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 81.77,
+      "f1": 0.8191,
+      "val_loss": 0.4155,
+      "peak_vram_mb": 473.97,
+      "throughput_tok_s": 26967.55,
+      "latency_ms": 22580.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "55fe9685c869ca1e",
+      "module_name": "regla_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:00:38.697672",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/regla_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 81.77,
+        "f1": 0.8191,
+        "val_loss": 0.4155,
+        "peak_vram_mb": 473.97,
+        "throughput_tok_s": 26967.55,
+        "latency_ms": 22580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "55fe9685c869ca1e",
+      "module_name": "regla_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:00:38.697672",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/regla_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 81.77,
+        "f1": 0.8191,
+        "val_loss": 0.4155,
+        "peak_vram_mb": 473.97,
+        "throughput_tok_s": 26967.55,
+        "latency_ms": 22580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}

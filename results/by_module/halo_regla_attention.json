@@ -1,0 +1,104 @@
+{
+  "module_name": "halo_regla_attention",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-23T16:32:12.547861",
+  "latest_record": {
+    "record_id": "7acd80960fb1656c",
+    "module_name": "halo_regla_attention",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-23T16:32:12.547861",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/halo_regla_attention/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.48,
+      "f1": 0.9083,
+      "val_loss": 0.3171,
+      "peak_vram_mb": 483.8,
+      "throughput_tok_s": 38224.85,
+      "latency_ms": 17500.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "7acd80960fb1656c",
+      "module_name": "halo_regla_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T16:32:12.547861",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/halo_regla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9083,
+        "val_loss": 0.3171,
+        "peak_vram_mb": 483.8,
+        "throughput_tok_s": 38224.85,
+        "latency_ms": 17500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "7acd80960fb1656c",
+      "module_name": "halo_regla_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T16:32:12.547861",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/halo_regla_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9083,
+        "val_loss": 0.3171,
+        "peak_vram_mb": 483.8,
+        "throughput_tok_s": 38224.85,
+        "latency_ms": 17500.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}

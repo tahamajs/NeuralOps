@@ -1,24 +1,24 @@
 {
   "module_name": "hgrn2_fused_bwd_scan",
   "category": "cuda_kernel",
-  "family": "3-level-native-cuda",
-  "total_runs": 1,
+  "family": "native-cuda-acceleration",
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "9ed147b99c",
   "latest_timestamp": "2026-10-16T21:00:09+03:30",
   "latest_record": {
-    "record_id": "ba25161ce980c6a5",
+    "record_id": "6ffa982d7417cd2a",
     "module_name": "hgrn2_fused_bwd_scan",
     "category": "cuda_kernel",
-    "family": "3-level-native-cuda",
+    "family": "native-cuda-acceleration",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
     "timestamp_utc": "2026-10-16T21:00:09+03:30",
     "git_commit_sha": "9ed147b99c",
     "generation_method": {
-      "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+      "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
       "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
     },
     "experimental_setup": {
@@ -57,6 +57,31 @@
         "speedup_x": 422.5987840291893
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
+    },
+    {
+      "record_id": "6ffa982d7417cd2a",
+      "module_name": "hgrn2_fused_bwd_scan",
+      "category": "cuda_kernel",
+      "family": "native-cuda-acceleration",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:00:09+03:30",
+      "git_commit_sha": "9ed147b99c",
+      "generation_method": {
+        "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
+        "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_cuda_ms": 0.013455679416656494,
+        "latency_triton_ms": 0.02592767953872681,
+        "latency_pytorch_ms": 5.686353759765625,
+        "speedup_x": 422.5987840291893
+      },
+      "notes": "3-Level Execution Hierarchy Benchmark"
     }
   ],
   "history": [
@@ -72,6 +97,31 @@
       "git_commit_sha": "9ed147b99c",
       "generation_method": {
         "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+        "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_cuda_ms": 0.013455679416656494,
+        "latency_triton_ms": 0.02592767953872681,
+        "latency_pytorch_ms": 5.686353759765625,
+        "speedup_x": 422.5987840291893
+      },
+      "notes": "3-Level Execution Hierarchy Benchmark"
+    },
+    {
+      "record_id": "6ffa982d7417cd2a",
+      "module_name": "hgrn2_fused_bwd_scan",
+      "category": "cuda_kernel",
+      "family": "native-cuda-acceleration",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T21:00:09+03:30",
+      "git_commit_sha": "9ed147b99c",
+      "generation_method": {
+        "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
         "source_artifact": "results/benchmark_3level_cuda_triton_pytorch.json"
       },
       "experimental_setup": {

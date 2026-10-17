@@ -2,7 +2,7 @@
   "module_name": "mgie_budget",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "569a79e30fe8fcfa",
+      "module_name": "mgie_budget",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T05:02:17.322392",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/mgie_budget/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.3749,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 52783.39,
+        "latency_ms": 11820.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "86a89da4d8168808",
       "module_name": "mgie_budget",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "569a79e30fe8fcfa",
+      "module_name": "mgie_budget",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T05:02:17.322392",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/mgie_budget/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.94,
+        "f1": 0.9127,
+        "val_loss": 0.3749,
+        "peak_vram_mb": 323.71,
+        "throughput_tok_s": 52783.39,
+        "latency_ms": 11820.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "86a89da4d8168808",
       "module_name": "mgie_budget",

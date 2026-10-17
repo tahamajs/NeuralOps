@@ -1,34 +1,354 @@
 {
   "module_name": "fused_svd_kernel",
   "category": "attention",
-  "family": "general",
-  "total_runs": 3,
+  "family": "subquadratic-attention",
+  "total_runs": 12,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "ed9ed45bb4e8d870",
+    "record_id": "02d81c4da91342dd",
     "module_name": "fused_svd_kernel",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "latency_triton_ms": 1.209
+    },
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
+    {
+      "record_id": "b3ea2ccbc611e3f7",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T03:30:16.639520",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/distilbert/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9125,
+        "val_loss": 0.3587,
+        "peak_vram_mb": 389.51,
+        "throughput_tok_s": 51763.49,
+        "latency_ms": 580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "f7b8d08b9c3ff36b",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T03:31:20.896076",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/gpt2/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7978,
+        "val_loss": 0.4875,
+        "peak_vram_mb": 793.19,
+        "throughput_tok_s": 26724.05,
+        "latency_ms": 1390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "fce0befa6b174b2f",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T12:42:14.244443",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/roberta/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7847,
+        "peak_vram_mb": 558.41,
+        "throughput_tok_s": 17791.54,
+        "latency_ms": 22410.0,
+        "compression_ratio": 1.1783,
+        "param_reduction_pct": 15.13
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "81b7ebaad37c697c",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:04:32.496983",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1942,
+        "val_loss": 1.1009,
+        "peak_vram_mb": 287.21,
+        "throughput_tok_s": 3046.75,
+        "latency_ms": 76270.0,
+        "compression_ratio": 1.2139,
+        "param_reduction_pct": 17.62
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ea48adbb8ced16d7",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T03:16:50.292803",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank32/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 1.4204,
+        "peak_vram_mb": 317.38,
+        "throughput_tok_s": 4985.85,
+        "latency_ms": 73560.0,
+        "compression_ratio": 1.2404,
+        "param_reduction_pct": 19.38
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "59c4e4763d0f43c9",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:27:05.527648",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6991,
+        "peak_vram_mb": 550.46,
+        "throughput_tok_s": 8535.02,
+        "latency_ms": 30050.0,
+        "compression_ratio": 1.1526,
+        "param_reduction_pct": 13.24
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0629556ef89c71db",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:17:21.313685",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_fused_svd_kernel/roberta/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.33,
+        "f1": 0.6857,
+        "val_loss": 0.6671,
+        "peak_vram_mb": 310.87,
+        "throughput_tok_s": 14463.72,
+        "latency_ms": 30270.0,
+        "compression_ratio": 1.1783,
+        "param_reduction_pct": 15.13
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "43b48c50362cc079",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:32:56.982975",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 7.224503519472546,
+        "peak_vram_mb": 1067.34912109375,
+        "throughput_tok_s": 882.5789956993611,
+        "latency_ms": 308380.0,
+        "compression_ratio": 1.2339,
+        "param_reduction_pct": 18.96
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "ae5f3c677891512b",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:57:25Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 908.34375
+      },
+      "notes": "Run: d8ce77db-017d-4e25-a443-9b1b893fc944"
+    },
+    {
+      "record_id": "ed9ed45bb4e8d870",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 70.07,
+        "gpt2_acc": 0.0,
+        "latency_ms": 214.4
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "1cf467785459b71a",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 88.91,
+        "ppl": 36.71,
+        "latency_ms": 8230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
     {
       "record_id": "02d81c4da91342dd",
       "module_name": "fused_svd_kernel",
@@ -53,55 +373,326 @@
         "latency_triton_ms": 1.209
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "1cf467785459b71a",
-      "module_name": "fused_svd_kernel",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "ed9ed45bb4e8d870",
-      "module_name": "fused_svd_kernel",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "b3ea2ccbc611e3f7",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T03:30:16.639520",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/distilbert/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.9125,
+        "val_loss": 0.3587,
+        "peak_vram_mb": 389.51,
+        "throughput_tok_s": 51763.49,
+        "latency_ms": 580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "f7b8d08b9c3ff36b",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T03:31:20.896076",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/gpt2/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7978,
+        "val_loss": 0.4875,
+        "peak_vram_mb": 793.19,
+        "throughput_tok_s": 26724.05,
+        "latency_ms": 1390.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "fce0befa6b174b2f",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T12:42:14.244443",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_fused_svd_kernel/roberta/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7847,
+        "peak_vram_mb": 558.41,
+        "throughput_tok_s": 17791.54,
+        "latency_ms": 22410.0,
+        "compression_ratio": 1.1783,
+        "param_reduction_pct": 15.13
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "81b7ebaad37c697c",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:04:32.496983",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.5,
+        "f1": 0.1942,
+        "val_loss": 1.1009,
+        "peak_vram_mb": 287.21,
+        "throughput_tok_s": 3046.75,
+        "latency_ms": 76270.0,
+        "compression_ratio": 1.2139,
+        "param_reduction_pct": 17.62
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "ea48adbb8ced16d7",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T03:16:50.292803",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank32/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 1.4204,
+        "peak_vram_mb": 317.38,
+        "throughput_tok_s": 4985.85,
+        "latency_ms": 73560.0,
+        "compression_ratio": 1.2404,
+        "param_reduction_pct": 19.38
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "59c4e4763d0f43c9",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T00:27:05.527648",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.6991,
+        "peak_vram_mb": 550.46,
+        "throughput_tok_s": 8535.02,
+        "latency_ms": 30050.0,
+        "compression_ratio": 1.1526,
+        "param_reduction_pct": 13.24
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0629556ef89c71db",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T19:17:21.313685",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_fused_svd_kernel/roberta/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.33,
+        "f1": 0.6857,
+        "val_loss": 0.6671,
+        "peak_vram_mb": 310.87,
+        "throughput_tok_s": 14463.72,
+        "latency_ms": 30270.0,
+        "compression_ratio": 1.1783,
+        "param_reduction_pct": 15.13
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "43b48c50362cc079",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:32:56.982975",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/fused_svd_kernel/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 7.224503519472546,
+        "peak_vram_mb": 1067.34912109375,
+        "throughput_tok_s": 882.5789956993611,
+        "latency_ms": 308380.0,
+        "compression_ratio": 1.2339,
+        "param_reduction_pct": 18.96
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
+      "record_id": "ae5f3c677891512b",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:57:25Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.5166666666666667,
+        "peak_vram_mb": 908.34375
+      },
+      "notes": "Run: d8ce77db-017d-4e25-a443-9b1b893fc944"
+    },
+    {
+      "record_id": "ed9ed45bb4e8d870",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "roberta_acc": 70.07,
+        "gpt2_acc": 0.0,
+        "latency_ms": 214.4
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "1cf467785459b71a",
+      "module_name": "fused_svd_kernel",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 88.91,
+        "ppl": 36.71,
+        "latency_ms": 8230.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+    },
+    {
       "record_id": "02d81c4da91342dd",
       "module_name": "fused_svd_kernel",
       "category": "attention",
@@ -125,51 +716,6 @@
         "latency_triton_ms": 1.209
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
-    },
-    {
-      "record_id": "1cf467785459b71a",
-      "module_name": "fused_svd_kernel",
-      "category": "attention",
-      "family": "attention",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
-      "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
-      },
-      "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
-      },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "ed9ed45bb4e8d870",
-      "module_name": "fused_svd_kernel",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
     }
   ]
 }

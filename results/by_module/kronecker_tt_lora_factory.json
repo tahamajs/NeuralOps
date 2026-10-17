@@ -1,0 +1,104 @@
+{
+  "module_name": "kronecker_tt_lora_factory",
+  "category": "attention",
+  "family": "gpt",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-24T21:56:50.474427",
+  "latest_record": {
+    "record_id": "e3b979ba87a16e80",
+    "module_name": "kronecker_tt_lora_factory",
+    "category": "attention",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-24T21:56:50.474427",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/kronecker_tt_lora_factory/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 4.006677507657782,
+      "peak_vram_mb": 1400.36865234375,
+      "throughput_tok_s": 598.6744661889823,
+      "latency_ms": 443280.0,
+      "compression_ratio": 0.9533,
+      "param_reduction_pct": -4.9
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "e3b979ba87a16e80",
+      "module_name": "kronecker_tt_lora_factory",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:56:50.474427",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/kronecker_tt_lora_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.006677507657782,
+        "peak_vram_mb": 1400.36865234375,
+        "throughput_tok_s": 598.6744661889823,
+        "latency_ms": 443280.0,
+        "compression_ratio": 0.9533,
+        "param_reduction_pct": -4.9
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "e3b979ba87a16e80",
+      "module_name": "kronecker_tt_lora_factory",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:56:50.474427",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/kronecker_tt_lora_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.006677507657782,
+        "peak_vram_mb": 1400.36865234375,
+        "throughput_tok_s": 598.6744661889823,
+        "latency_ms": 443280.0,
+        "compression_ratio": 0.9533,
+        "param_reduction_pct": -4.9
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}

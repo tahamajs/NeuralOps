@@ -1,0 +1,344 @@
+{
+  "module_name": "come",
+  "category": "attention",
+  "family": "gpt2",
+  "total_runs": 5,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-25T23:17:51.755167",
+  "latest_record": {
+    "record_id": "595d9b27278d1927",
+    "module_name": "come",
+    "category": "attention",
+    "family": "gpt2",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-25T23:17:51.755167",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/come_fixed_gpt2/come/rank_64/checkpoints/come/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 4.635490286025627,
+      "peak_vram_mb": 2402.1669921875,
+      "throughput_tok_s": 7056.227312654908,
+      "latency_ms": 70490.0,
+      "compression_ratio": 1.1083,
+      "param_reduction_pct": 9.77
+    },
+    "notes": "Status: FAIL_PPL_DIVERGED"
+  },
+  "active_records": [
+    {
+      "record_id": "182f314780950c98",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:39:34.073258",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8475,
+        "val_loss": 0.3882,
+        "peak_vram_mb": 274.26,
+        "throughput_tok_s": 129911.77,
+        "latency_ms": 3450.0,
+        "compression_ratio": 1.2409,
+        "param_reduction_pct": 19.41
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c418b1f53c23d784",
+      "module_name": "come",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:09:34.166793",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 55.05,
+        "f1": 0.6909,
+        "val_loss": 0.6541,
+        "peak_vram_mb": 445.68,
+        "throughput_tok_s": 44908.22,
+        "latency_ms": 9320.0,
+        "compression_ratio": 1.2635,
+        "param_reduction_pct": 20.85
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "6df0fd3caec7a1b5",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:17.210282",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.2,
+        "f1": 0.3392,
+        "val_loss": 1.0959,
+        "peak_vram_mb": 254.88,
+        "throughput_tok_s": 60848.18,
+        "latency_ms": 4830.0,
+        "compression_ratio": 1.2408,
+        "param_reduction_pct": 19.41
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "be325c9b23309ae1",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:05:11.688499",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/come_fixed_distil/come/rank_384/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.25,
+        "f1": 0.9071,
+        "val_loss": 0.3332,
+        "peak_vram_mb": 414.59,
+        "throughput_tok_s": 34027.16,
+        "latency_ms": 12530.0,
+        "compression_ratio": 0.9806,
+        "param_reduction_pct": -1.98
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "595d9b27278d1927",
+      "module_name": "come",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:17:51.755167",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/come_fixed_gpt2/come/rank_64/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.635490286025627,
+        "peak_vram_mb": 2402.1669921875,
+        "throughput_tok_s": 7056.227312654908,
+        "latency_ms": 70490.0,
+        "compression_ratio": 1.1083,
+        "param_reduction_pct": 9.77
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "182f314780950c98",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:39:34.073258",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8475,
+        "val_loss": 0.3882,
+        "peak_vram_mb": 274.26,
+        "throughput_tok_s": 129911.77,
+        "latency_ms": 3450.0,
+        "compression_ratio": 1.2409,
+        "param_reduction_pct": 19.41
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c418b1f53c23d784",
+      "module_name": "come",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:09:34.166793",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 55.05,
+        "f1": 0.6909,
+        "val_loss": 0.6541,
+        "peak_vram_mb": 445.68,
+        "throughput_tok_s": 44908.22,
+        "latency_ms": 9320.0,
+        "compression_ratio": 1.2635,
+        "param_reduction_pct": 20.85
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "6df0fd3caec7a1b5",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:56:17.210282",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.2,
+        "f1": 0.3392,
+        "val_loss": 1.0959,
+        "peak_vram_mb": 254.88,
+        "throughput_tok_s": 60848.18,
+        "latency_ms": 4830.0,
+        "compression_ratio": 1.2408,
+        "param_reduction_pct": 19.41
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "be325c9b23309ae1",
+      "module_name": "come",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:05:11.688499",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/come_fixed_distil/come/rank_384/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.25,
+        "f1": 0.9071,
+        "val_loss": 0.3332,
+        "peak_vram_mb": 414.59,
+        "throughput_tok_s": 34027.16,
+        "latency_ms": 12530.0,
+        "compression_ratio": 0.9806,
+        "param_reduction_pct": -1.98
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "595d9b27278d1927",
+      "module_name": "come",
+      "category": "attention",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:17:51.755167",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/come_fixed_gpt2/come/rank_64/checkpoints/come/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.635490286025627,
+        "peak_vram_mb": 2402.1669921875,
+        "throughput_tok_s": 7056.227312654908,
+        "latency_ms": 70490.0,
+        "compression_ratio": 1.1083,
+        "param_reduction_pct": 9.77
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ]
+}

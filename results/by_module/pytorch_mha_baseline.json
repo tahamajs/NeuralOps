@@ -30,8 +30,7 @@
     "metrics": {
       "latency_triton_ms": 19.116,
       "throughput_tok_s": 428551.8,
-      "peak_vram_mb": 912.57,
-      "speedup_x": 1.0
+      "peak_vram_mb": 912.57
     },
     "notes": "Cross-Framework Competitive Benchmark"
   },
@@ -59,8 +58,7 @@
       "metrics": {
         "latency_triton_ms": 19.116,
         "throughput_tok_s": 428551.8,
-        "peak_vram_mb": 912.57,
-        "speedup_x": 1.0
+        "peak_vram_mb": 912.57
       },
       "notes": "Cross-Framework Competitive Benchmark"
     }
@@ -89,8 +87,7 @@
       "metrics": {
         "latency_triton_ms": 19.116,
         "throughput_tok_s": 428551.8,
-        "peak_vram_mb": 912.57,
-        "speedup_x": 1.0
+        "peak_vram_mb": 912.57
       },
       "notes": "Cross-Framework Competitive Benchmark"
     }

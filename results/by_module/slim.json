@@ -2,7 +2,7 @@
   "module_name": "slim",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 87.96,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 52.41,
+      "latency_ms": 77.3
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "995bf1501d493bcd",
+      "module_name": "slim",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:11:48.242265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/slim/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 89.91,
+        "f1": 0.902,
+        "val_loss": 0.4628,
+        "peak_vram_mb": 323.83,
+        "throughput_tok_s": 28336.6,
+        "latency_ms": 16030.000000000002,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1579b7b1d34cec31",
+      "module_name": "slim",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:25:15.591006",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/slim/rank_64/checkpoints/slim/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 87.04,
+        "f1": 0.8799,
+        "val_loss": 0.3608,
+        "peak_vram_mb": 293.1,
+        "throughput_tok_s": 17153.14,
+        "latency_ms": 17150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "67a3c20898a110bc",
       "module_name": "slim",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 87.96,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 52.41,
+        "latency_ms": 77.3
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "995bf1501d493bcd",
+      "module_name": "slim",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T06:11:48.242265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/slim/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 89.91,
+        "f1": 0.902,
+        "val_loss": 0.4628,
+        "peak_vram_mb": 323.83,
+        "throughput_tok_s": 28336.6,
+        "latency_ms": 16030.000000000002,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1579b7b1d34cec31",
+      "module_name": "slim",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:25:15.591006",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/slim/rank_64/checkpoints/slim/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 87.04,
+        "f1": 0.8799,
+        "val_loss": 0.3608,
+        "peak_vram_mb": 293.1,
+        "throughput_tok_s": 17153.14,
+        "latency_ms": 17150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "67a3c20898a110bc",
       "module_name": "slim",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 87.96,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 52.41,
+        "latency_ms": 77.3
+      },
       "notes": "Master Aggregated Results"
     }
   ]

@@ -2,7 +2,7 @@
   "module_name": "svd_sequence",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,45 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 51.26,
+      "roberta_acc": 50.0,
+      "gpt2_acc": 53.1,
+      "latency_ms": 87.1
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "d8069da9a38efd46",
+      "module_name": "svd_sequence",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:48:08.528647",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/svd_sequence/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 8.134166488287603,
+        "peak_vram_mb": 1273.271484375,
+        "throughput_tok_s": 520.0883493432772,
+        "latency_ms": 518730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
     {
       "record_id": "d91122c4530a5e89",
       "module_name": "svd_sequence",
@@ -47,12 +82,47 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 51.26,
+        "roberta_acc": 50.0,
+        "gpt2_acc": 53.1,
+        "latency_ms": 87.1
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "d8069da9a38efd46",
+      "module_name": "svd_sequence",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:48:08.528647",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/svd_sequence/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 8.134166488287603,
+        "peak_vram_mb": 1273.271484375,
+        "throughput_tok_s": 520.0883493432772,
+        "latency_ms": 518730.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    },
+    {
       "record_id": "d91122c4530a5e89",
       "module_name": "svd_sequence",
       "category": "attention",
@@ -70,7 +140,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 51.26,
+        "roberta_acc": 50.0,
+        "gpt2_acc": 53.1,
+        "latency_ms": 87.1
+      },
       "notes": "Master Aggregated Results"
     }
   ]

@@ -1,0 +1,584 @@
+{
+  "module_name": "a3",
+  "category": "attention",
+  "family": "gpt",
+  "total_runs": 9,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-24T05:31:54.206050",
+  "latest_record": {
+    "record_id": "e944365aa02df54c",
+    "module_name": "a3",
+    "category": "attention",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-24T05:31:54.206050",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/a3/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 4.816165372749886,
+      "peak_vram_mb": 0.0,
+      "throughput_tok_s": 0.0,
+      "latency_ms": 848240.0,
+      "compression_ratio": 1.0072,
+      "param_reduction_pct": 0.71
+    },
+    "notes": "Status: FAIL_PPL_DIVERGED"
+  },
+  "active_records": [
+    {
+      "record_id": "2f5daddd042f29b1",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:28:28.553471",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/mnli/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.1,
+        "f1": 0.3035,
+        "val_loss": 1.1025,
+        "peak_vram_mb": 335.74,
+        "throughput_tok_s": 13922.77,
+        "latency_ms": 27830.0,
+        "compression_ratio": 1.0042,
+        "param_reduction_pct": 0.42
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9141e06920f397a8",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:29:22.622407",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/distilbert/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 2.5746,
+        "peak_vram_mb": 204.73,
+        "throughput_tok_s": 55504.77,
+        "latency_ms": 14710.0,
+        "compression_ratio": 1.019,
+        "param_reduction_pct": 1.86
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7ce8236694eaef8b",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:30:39.343993",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/roberta/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 2.723,
+        "peak_vram_mb": 301.61,
+        "throughput_tok_s": 15782.72,
+        "latency_ms": 27040.0,
+        "compression_ratio": 1.0048,
+        "param_reduction_pct": 0.47
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "af8bc7a912beb31d",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:31:56.553987",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 5.6276,
+        "peak_vram_mb": 335.75,
+        "throughput_tok_s": 14049.31,
+        "latency_ms": 27870.0,
+        "compression_ratio": 1.0042,
+        "param_reduction_pct": 0.42
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c0818b07f6246e06",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T00:02:54.986205",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/isolated_test/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 21250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "e083a7d7825edc4a",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:30:12.241691",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.846,
+        "val_loss": 0.7473,
+        "peak_vram_mb": 283.07,
+        "throughput_tok_s": 93199.86,
+        "latency_ms": 8680.0,
+        "compression_ratio": 1.0522,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0b6ebdb3f377d201",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:50:41.916079",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7028,
+        "val_loss": 0.6371,
+        "peak_vram_mb": 343.03,
+        "throughput_tok_s": 55706.32,
+        "latency_ms": 11620.0,
+        "compression_ratio": 1.0377,
+        "param_reduction_pct": 3.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "396281d7557f6651",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:15:39.791196",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.67,
+        "f1": 0.6834,
+        "val_loss": 0.6706,
+        "peak_vram_mb": 754.83,
+        "throughput_tok_s": 48451.63,
+        "latency_ms": 24650.0,
+        "compression_ratio": 1.0093,
+        "param_reduction_pct": 0.92
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "e944365aa02df54c",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T05:31:54.206050",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.816165372749886,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 848240.0,
+        "compression_ratio": 1.0072,
+        "param_reduction_pct": 0.71
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "2f5daddd042f29b1",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:28:28.553471",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/mnli/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.1,
+        "f1": 0.3035,
+        "val_loss": 1.1025,
+        "peak_vram_mb": 335.74,
+        "throughput_tok_s": 13922.77,
+        "latency_ms": 27830.0,
+        "compression_ratio": 1.0042,
+        "param_reduction_pct": 0.42
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9141e06920f397a8",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:29:22.622407",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/distilbert/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 2.5746,
+        "peak_vram_mb": 204.73,
+        "throughput_tok_s": 55504.77,
+        "latency_ms": 14710.0,
+        "compression_ratio": 1.019,
+        "param_reduction_pct": 1.86
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "7ce8236694eaef8b",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:30:39.343993",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/roberta/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 2.723,
+        "peak_vram_mb": 301.61,
+        "throughput_tok_s": 15782.72,
+        "latency_ms": 27040.0,
+        "compression_ratio": 1.0048,
+        "param_reduction_pct": 0.47
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "af8bc7a912beb31d",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T16:31:56.553987",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/09_diagnostics/a3_tests/datasets/agnews/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 5.6276,
+        "peak_vram_mb": 335.75,
+        "throughput_tok_s": 14049.31,
+        "latency_ms": 27870.0,
+        "compression_ratio": 1.0042,
+        "param_reduction_pct": 0.42
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "c0818b07f6246e06",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T00:02:54.986205",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/isolated_test/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 21250.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "e083a7d7825edc4a",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:30:12.241691",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.846,
+        "val_loss": 0.7473,
+        "peak_vram_mb": 283.07,
+        "throughput_tok_s": 93199.86,
+        "latency_ms": 8680.0,
+        "compression_ratio": 1.0522,
+        "param_reduction_pct": 4.96
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0b6ebdb3f377d201",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:50:41.916079",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7028,
+        "val_loss": 0.6371,
+        "peak_vram_mb": 343.03,
+        "throughput_tok_s": 55706.32,
+        "latency_ms": 11620.0,
+        "compression_ratio": 1.0377,
+        "param_reduction_pct": 3.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "396281d7557f6651",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:15:39.791196",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/gpt2/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 53.67,
+        "f1": 0.6834,
+        "val_loss": 0.6706,
+        "peak_vram_mb": 754.83,
+        "throughput_tok_s": 48451.63,
+        "latency_ms": 24650.0,
+        "compression_ratio": 1.0093,
+        "param_reduction_pct": 0.92
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "e944365aa02df54c",
+      "module_name": "a3",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T05:31:54.206050",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/a3/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.816165372749886,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 848240.0,
+        "compression_ratio": 1.0072,
+        "param_reduction_pct": 0.71
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ]
+}

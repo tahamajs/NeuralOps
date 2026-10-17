@@ -1,58 +1,595 @@
 {
   "module_name": "cosformer",
   "category": "attention",
-  "family": "general",
-  "total_runs": 4,
+  "family": "subquadratic-attention",
+  "total_runs": 22,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
-  "latest_git_sha": "b3e2b3ad08",
-  "latest_timestamp": "2026-10-15T00:07:14+03:30",
+  "latest_git_sha": "c5aaefc147",
+  "latest_timestamp": "2026-10-16T09:02:16Z",
   "latest_record": {
-    "record_id": "ea01792558751dc2",
+    "record_id": "0f3e22f0b29b468e",
     "module_name": "cosformer",
     "category": "attention",
-    "family": "general",
+    "family": "subquadratic-attention",
     "version_tag": "v1.3.7",
     "revision": 1,
     "status": "active",
-    "timestamp_utc": "2026-10-15T00:07:14+03:30",
-    "git_commit_sha": "b3e2b3ad08",
+    "timestamp_utc": "2026-10-16T09:02:16Z",
+    "git_commit_sha": "c5aaefc147",
     "generation_method": {
-      "algorithm": "Master Aggregated Evaluation Suite",
-      "source_artifact": "results/master_aggregated_results.csv"
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+      "source_artifact": "results/triton_all_131_attentions_benchmark.json"
     },
     "experimental_setup": {
-      "dataset": "SST-2",
-      "backbone": "DistilBERT"
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "float16",
+      "batch_size": 2,
+      "seq_len": 2048
     },
-    "metrics": {},
-    "notes": "Master Aggregated Results"
+    "metrics": {
+      "latency_triton_ms": 3.092
+    },
+    "notes": "131 Attention Comprehensive Latency Benchmark"
   },
   "active_records": [
     {
-      "record_id": "0f3e22f0b29b468e",
+      "record_id": "b778b575b5849783",
       "module_name": "cosformer",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "gpt",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-15T14:41:37.887519",
+      "git_commit_sha": "2f366e4546",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cosformer/gpt2/checkpoints/cosformer/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "latency_triton_ms": 3.092
+        "accuracy": 61.35,
+        "f1": 0.6529,
+        "val_loss": 0.6898,
+        "peak_vram_mb": 567.91,
+        "throughput_tok_s": 4233.69,
+        "latency_ms": 68580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b953e3996b8b3551",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:24:55.567826",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_cosformer/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.6,
+        "f1": 0.2329,
+        "val_loss": 1.1167,
+        "peak_vram_mb": 368.33,
+        "throughput_tok_s": 39560.59,
+        "latency_ms": 6630.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0dd59ca52c49f85c",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T23:08:50.585839",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_cosformer/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.8,
+        "f1": 0.6406,
+        "val_loss": 0.9264,
+        "peak_vram_mb": 596.25,
+        "throughput_tok_s": 107520.23,
+        "latency_ms": 7460.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4110ce1ede358f51",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:41:48.228017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7871,
+        "val_loss": 0.5286,
+        "peak_vram_mb": 360.6,
+        "throughput_tok_s": 37751.08,
+        "latency_ms": 11240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0350185f0e81b40e",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:12:29.274662",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 3140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "58e7a6c58b02a885",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:54.052603",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2886,
+        "val_loss": 1.103,
+        "peak_vram_mb": 324.1,
+        "throughput_tok_s": 13819.08,
+        "latency_ms": 18980.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0bb3b4616c6aa351",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:00:31.524587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.1,
+        "f1": 0.3702,
+        "val_loss": NaN,
+        "peak_vram_mb": 325.29,
+        "throughput_tok_s": 18265.59,
+        "latency_ms": 23340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "149a111593b2fcbe",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T08:15:24.019861",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 83.7,
+        "f1": 0.8319,
+        "val_loss": 0.6412,
+        "peak_vram_mb": 324.1,
+        "throughput_tok_s": 13186.3,
+        "latency_ms": 21640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "be8df0c5803c678f",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:56:48.209051",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.4,
+        "f1": 0.3492,
+        "val_loss": 1.2673,
+        "peak_vram_mb": 591.95,
+        "throughput_tok_s": 89289.48,
+        "latency_ms": 57770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "769a16a0b9606910",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T00:36:13.637731",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/cosformer_grid/sst2_rank32/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 60.44,
+        "f1": 0.6601,
+        "val_loss": 0.6772,
+        "peak_vram_mb": 421.23,
+        "throughput_tok_s": 10229.08,
+        "latency_ms": 27050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "9ae365585d15db51",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T00:54:01.516608",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/cosformer_grid/mrpc_rank64/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "mrpc"
+      },
+      "metrics": {
+        "accuracy": 68.38,
+        "f1": 0.8122,
+        "val_loss": 0.6315,
+        "peak_vram_mb": 636.43,
+        "throughput_tok_s": 4754.09,
+        "latency_ms": 29260.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "0aad86eea90c6d60",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:58:59.473308",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/cosformer/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 73.85,
+        "f1": 0.7432,
+        "val_loss": 0.6122,
+        "peak_vram_mb": 683.31,
+        "throughput_tok_s": 24453.69,
+        "latency_ms": 159950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "5373e59a311136d4",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:25:47.833549",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/old_tests/test_run/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 75.11,
+        "f1": 0.7607,
+        "val_loss": 0.5298,
+        "peak_vram_mb": 683.31,
+        "throughput_tok_s": 52647.05,
+        "latency_ms": 101490.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "3180da2448965361",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:40:04Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.87,
+        "peak_vram_mb": 1090.5947265625
+      },
+      "notes": "Run: 5fd26c53-ba67-40e0-a1da-49408f2f19db"
+    },
+    {
+      "record_id": "ea01792558751dc2",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 78.21,
+        "roberta_acc": 56.77,
+        "gpt2_acc": 50.92,
+        "latency_ms": 135.9
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "92f5d8e6a91334b0",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 7857.2
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "bc42675d44f6a336",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 15964.0
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "8c732556af8cf027",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 34349.1
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "09328344c3cd24bf",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 36980.9
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "00cfe145e0a55ce5",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 95.0,
+        "ppl": 38.5,
+        "latency_ms": 1690.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "6fbb6bebf72370c8",
@@ -77,82 +614,594 @@
       "metrics": {
         "latency_triton_ms": 12.116,
         "throughput_tok_s": 676154.9,
-        "peak_vram_mb": 560.38,
-        "speedup_x": 1.0
+        "peak_vram_mb": 560.38
       },
       "notes": "Cross-Framework Competitive Benchmark"
     },
     {
-      "record_id": "00cfe145e0a55ce5",
+      "record_id": "0f3e22f0b29b468e",
       "module_name": "cosformer",
       "category": "attention",
-      "family": "attention",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
+        "latency_triton_ms": 3.092
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "ea01792558751dc2",
-      "module_name": "cosformer",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ],
   "history": [
     {
-      "record_id": "0f3e22f0b29b468e",
+      "record_id": "b778b575b5849783",
       "module_name": "cosformer",
       "category": "attention",
-      "family": "subquadratic-attention",
+      "family": "gpt",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-16T09:02:16Z",
-      "git_commit_sha": "c5aaefc147",
+      "timestamp_utc": "2026-09-15T14:41:37.887519",
+      "git_commit_sha": "2f366e4546",
       "generation_method": {
-        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
-        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cosformer/gpt2/checkpoints/cosformer/summary_record.json"
       },
       "experimental_setup": {
-        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
-        "dtype": "float16",
-        "batch_size": 2,
-        "seq_len": 2048
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
       },
       "metrics": {
-        "latency_triton_ms": 3.092
+        "accuracy": 61.35,
+        "f1": 0.6529,
+        "val_loss": 0.6898,
+        "peak_vram_mb": 567.91,
+        "throughput_tok_s": 4233.69,
+        "latency_ms": 68580.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b953e3996b8b3551",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:24:55.567826",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_cosformer/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.6,
+        "f1": 0.2329,
+        "val_loss": 1.1167,
+        "peak_vram_mb": 368.33,
+        "throughput_tok_s": 39560.59,
+        "latency_ms": 6630.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "0dd59ca52c49f85c",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T23:08:50.585839",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_cosformer/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 63.8,
+        "f1": 0.6406,
+        "val_loss": 0.9264,
+        "peak_vram_mb": 596.25,
+        "throughput_tok_s": 107520.23,
+        "latency_ms": 7460.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4110ce1ede358f51",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:41:48.228017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.7871,
+        "val_loss": 0.5286,
+        "peak_vram_mb": 360.6,
+        "throughput_tok_s": 37751.08,
+        "latency_ms": 11240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0350185f0e81b40e",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:12:29.274662",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tok_s": 0.0,
+        "latency_ms": 3140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: FAIL"
+    },
+    {
+      "record_id": "58e7a6c58b02a885",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:54.052603",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2886,
+        "val_loss": 1.103,
+        "peak_vram_mb": 324.1,
+        "throughput_tok_s": 13819.08,
+        "latency_ms": 18980.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "0bb3b4616c6aa351",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T22:00:31.524587",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full_lora2/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.1,
+        "f1": 0.3702,
+        "val_loss": NaN,
+        "peak_vram_mb": 325.29,
+        "throughput_tok_s": 18265.59,
+        "latency_ms": 23340.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "149a111593b2fcbe",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T08:15:24.019861",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 83.7,
+        "f1": 0.8319,
+        "val_loss": 0.6412,
+        "peak_vram_mb": 324.1,
+        "throughput_tok_s": 13186.3,
+        "latency_ms": 21640.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "be8df0c5803c678f",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T04:56:48.209051",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/distilbert_mnli_full_mnli_sweep/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 35.4,
+        "f1": 0.3492,
+        "val_loss": 1.2673,
+        "peak_vram_mb": 591.95,
+        "throughput_tok_s": 89289.48,
+        "latency_ms": 57770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "769a16a0b9606910",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T00:36:13.637731",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/cosformer_grid/sst2_rank32/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 60.44,
+        "f1": 0.6601,
+        "val_loss": 0.6772,
+        "peak_vram_mb": 421.23,
+        "throughput_tok_s": 10229.08,
+        "latency_ms": 27050.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "9ae365585d15db51",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T00:54:01.516608",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/cosformer_grid/mrpc_rank64/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta-base",
+        "dataset": "mrpc"
+      },
+      "metrics": {
+        "accuracy": 68.38,
+        "f1": 0.8122,
+        "val_loss": 0.6315,
+        "peak_vram_mb": 636.43,
+        "throughput_tok_s": 4754.09,
+        "latency_ms": 29260.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "0aad86eea90c6d60",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:58:59.473308",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/attn_roberta/cosformer/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 73.85,
+        "f1": 0.7432,
+        "val_loss": 0.6122,
+        "peak_vram_mb": 683.31,
+        "throughput_tok_s": 24453.69,
+        "latency_ms": 159950.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "5373e59a311136d4",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:25:47.833549",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/old_tests/test_run/checkpoints/cosformer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 75.11,
+        "f1": 0.7607,
+        "val_loss": 0.5298,
+        "peak_vram_mb": 683.31,
+        "throughput_tok_s": 52647.05,
+        "latency_ms": 101490.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "3180da2448965361",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:40:04Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.87,
+        "peak_vram_mb": 1090.5947265625
+      },
+      "notes": "Run: 5fd26c53-ba67-40e0-a1da-49408f2f19db"
+    },
+    {
+      "record_id": "ea01792558751dc2",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 78.21,
+        "roberta_acc": 56.77,
+        "gpt2_acc": 50.92,
+        "latency_ms": 135.9
+      },
+      "notes": "Master Aggregated Results"
+    },
+    {
+      "record_id": "92f5d8e6a91334b0",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 128,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 7857.2
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "bc42675d44f6a336",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 256,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 15964.0
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "8c732556af8cf027",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 512,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 34349.1
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "09328344c3cd24bf",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "auto",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T00:07:14+03:30",
+      "git_commit_sha": "b3e2b3ad08",
+      "generation_method": {
+        "algorithm": "Sequence Length Scaling Benchmark",
+        "source_artifact": "results/SEQLEN_SCALING_MASTER.csv"
+      },
+      "experimental_setup": {
+        "seq_len": 1024,
+        "group": "auto"
+      },
+      "metrics": {
+        "latency_ms": 36980.9
+      },
+      "notes": "Sequence Length Scaling Master Suite"
+    },
+    {
+      "record_id": "00cfe145e0a55ce5",
+      "module_name": "cosformer",
+      "category": "attention",
+      "family": "attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T04:02:13+03:30",
+      "git_commit_sha": "5d553a2079",
+      "generation_method": {
+        "algorithm": "End-to-End Evaluation & Perplexity Probe",
+        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2 / WikiText-2",
+        "backbone": "DistilBERT / GPT-2"
+      },
+      "metrics": {
+        "accuracy": 95.0,
+        "ppl": 38.5,
+        "latency_ms": 1690.0
+      },
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
     },
     {
       "record_id": "6fbb6bebf72370c8",
@@ -177,55 +1226,34 @@
       "metrics": {
         "latency_triton_ms": 12.116,
         "throughput_tok_s": 676154.9,
-        "peak_vram_mb": 560.38,
-        "speedup_x": 1.0
+        "peak_vram_mb": 560.38
       },
       "notes": "Cross-Framework Competitive Benchmark"
     },
     {
-      "record_id": "00cfe145e0a55ce5",
+      "record_id": "0f3e22f0b29b468e",
       "module_name": "cosformer",
       "category": "attention",
-      "family": "attention",
+      "family": "subquadratic-attention",
       "version_tag": "v1.3.7",
       "revision": 1,
       "status": "active",
-      "timestamp_utc": "2026-10-15T04:02:13+03:30",
-      "git_commit_sha": "5d553a2079",
+      "timestamp_utc": "2026-10-16T09:02:16Z",
+      "git_commit_sha": "c5aaefc147",
       "generation_method": {
-        "algorithm": "End-to-End Evaluation & Perplexity Probe",
-        "source_artifact": "results/accuracy_and_ppl_benchmark_all131.json"
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing",
+        "source_artifact": "results/triton_all_131_attentions_benchmark.json"
       },
       "experimental_setup": {
-        "dataset": "SST-2 / WikiText-2",
-        "backbone": "DistilBERT / GPT-2"
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16",
+        "batch_size": 2,
+        "seq_len": 2048
       },
       "metrics": {
-        "accuracy": 0.0,
-        "ppl": 0.0
+        "latency_triton_ms": 3.092
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
-    },
-    {
-      "record_id": "ea01792558751dc2",
-      "module_name": "cosformer",
-      "category": "attention",
-      "family": "general",
-      "version_tag": "v1.3.7",
-      "revision": 1,
-      "status": "active",
-      "timestamp_utc": "2026-10-15T00:07:14+03:30",
-      "git_commit_sha": "b3e2b3ad08",
-      "generation_method": {
-        "algorithm": "Master Aggregated Evaluation Suite",
-        "source_artifact": "results/master_aggregated_results.csv"
-      },
-      "experimental_setup": {
-        "dataset": "SST-2",
-        "backbone": "DistilBERT"
-      },
-      "metrics": {},
-      "notes": "Master Aggregated Results"
+      "notes": "131 Attention Comprehensive Latency Benchmark"
     }
   ]
 }

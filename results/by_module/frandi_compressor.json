@@ -2,7 +2,7 @@
   "module_name": "frandi_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 5,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,126 @@
   },
   "active_records": [
     {
+      "record_id": "6e285cde6c3b3e92",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:05:21.299429",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1320.7183459581092,
+        "latency_ms": 197980.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2a2da525c2b79efd",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:28:04.376513",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9117,
+        "val_loss": 0.314,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 28994.44,
+        "latency_ms": 56690.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "76450250ad5343c1",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:36:04.223693",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.81,
+        "f1": 0.94,
+        "val_loss": 0.1976,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 30386.14,
+        "latency_ms": 35190.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c8121b5ad5255df6",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:55:44.396563",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/frandi_compressor/rank_32/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 48.97,
+        "f1": 0.5473,
+        "val_loss": 0.6962,
+        "peak_vram_mb": 320.51,
+        "throughput_tok_s": 20620.9,
+        "latency_ms": 24360.0,
+        "compression_ratio": 2.7686,
+        "param_reduction_pct": 63.88
+      },
+      "notes": "Status: FAIL_BELOW_CHANCE"
+    },
+    {
       "record_id": "c180c0c4925e9742",
       "module_name": "frandi_compressor",
       "category": "compressor",
@@ -58,6 +178,126 @@
     }
   ],
   "history": [
+    {
+      "record_id": "6e285cde6c3b3e92",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T21:05:21.299429",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1320.7183459581092,
+        "latency_ms": 197980.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2a2da525c2b79efd",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:28:04.376513",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9117,
+        "val_loss": 0.314,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 28994.44,
+        "latency_ms": 56690.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "76450250ad5343c1",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T14:36:04.223693",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/frandi_compressor/rank_64/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.81,
+        "f1": 0.94,
+        "val_loss": 0.1976,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 30386.14,
+        "latency_ms": 35190.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "c8121b5ad5255df6",
+      "module_name": "frandi_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:55:44.396563",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/frandi_compressor/rank_32/checkpoints/frandi_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 48.97,
+        "f1": 0.5473,
+        "val_loss": 0.6962,
+        "peak_vram_mb": 320.51,
+        "throughput_tok_s": 20620.9,
+        "latency_ms": 24360.0,
+        "compression_ratio": 2.7686,
+        "param_reduction_pct": 63.88
+      },
+      "notes": "Status: FAIL_BELOW_CHANCE"
+    },
     {
       "record_id": "c180c0c4925e9742",
       "module_name": "frandi_compressor",

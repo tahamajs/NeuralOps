@@ -2,7 +2,7 @@
   "module_name": "coopq_quantizer",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,96 @@
   },
   "active_records": [
     {
+      "record_id": "7d90076fc89ebecd",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T22:18:39.977342",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.34490334053389,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 601.1171949444911,
+        "latency_ms": 421310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6064a7494ce83ae5",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T10:59:41.615612",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9089,
+        "val_loss": 0.3237,
+        "peak_vram_mb": 500.03,
+        "throughput_tok_s": 83145.93,
+        "latency_ms": 2890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "88f1a17b302acb48",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:00:30.808017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9341,
+        "val_loss": 0.2148,
+        "peak_vram_mb": 565.22,
+        "throughput_tok_s": 53268.35,
+        "latency_ms": 4620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "5a1ca64e6e2be46a",
       "module_name": "coopq_quantizer",
       "category": "compressor",
@@ -58,6 +148,96 @@
     }
   ],
   "history": [
+    {
+      "record_id": "7d90076fc89ebecd",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T22:18:39.977342",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.34490334053389,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 601.1171949444911,
+        "latency_ms": 421310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6064a7494ce83ae5",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T10:59:41.615612",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9089,
+        "val_loss": 0.3237,
+        "peak_vram_mb": 500.03,
+        "throughput_tok_s": 83145.93,
+        "latency_ms": 2890.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "88f1a17b302acb48",
+      "module_name": "coopq_quantizer",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:00:30.808017",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/coopq_quantizer/checkpoints/coopq_quantizer/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9341,
+        "val_loss": 0.2148,
+        "peak_vram_mb": 565.22,
+        "throughput_tok_s": 53268.35,
+        "latency_ms": 4620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "5a1ca64e6e2be46a",
       "module_name": "coopq_quantizer",

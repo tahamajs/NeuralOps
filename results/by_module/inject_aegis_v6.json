@@ -1,0 +1,104 @@
+{
+  "module_name": "inject_aegis_v6",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-19T06:12:19.969600",
+  "latest_record": {
+    "record_id": "ae71b68e7d57702d",
+    "module_name": "inject_aegis_v6",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-19T06:12:19.969600",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_v6/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "distilbert-base-uncased",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 34.3,
+      "f1": 0.1778,
+      "val_loss": 1.1156,
+      "peak_vram_mb": 333.77,
+      "throughput_tok_s": 10580.82,
+      "latency_ms": 31000.0,
+      "compression_ratio": 1.2525,
+      "param_reduction_pct": 20.16
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "ae71b68e7d57702d",
+      "module_name": "inject_aegis_v6",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:12:19.969600",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_v6/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.3,
+        "f1": 0.1778,
+        "val_loss": 1.1156,
+        "peak_vram_mb": 333.77,
+        "throughput_tok_s": 10580.82,
+        "latency_ms": 31000.0,
+        "compression_ratio": 1.2525,
+        "param_reduction_pct": 20.16
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "ae71b68e7d57702d",
+      "module_name": "inject_aegis_v6",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T06:12:19.969600",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/inject_aegis_v6/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.3,
+        "f1": 0.1778,
+        "val_loss": 1.1156,
+        "peak_vram_mb": 333.77,
+        "throughput_tok_s": 10580.82,
+        "latency_ms": 31000.0,
+        "compression_ratio": 1.2525,
+        "param_reduction_pct": 20.16
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

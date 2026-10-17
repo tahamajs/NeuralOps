@@ -11,12 +11,19 @@ Extracts benchmark metrics across:
 - results/benchmark_3level_cuda_triton_pytorch.json
 - results/roberta_glue_compression_results.json
 - results/accuracy_and_ppl_benchmark_all131.json
+- results/01_unified_runs/**/4models_summary.json
+- results/01_unified_runs/**/summary_record.json
+- results/results.jsonl
+- results/SEQLEN_SCALING_MASTER.csv
+- results/master_benchmark_summary.csv
+- results/pareto_table.csv
 """
 
 import csv
 import json
 import os
 import sys
+import glob
 from pathlib import Path
 
 # Ensure neuralops is importable
@@ -33,6 +40,23 @@ ResultsLedger = results_ledger.ResultsLedger
 ResultRecord = results_ledger.ResultRecord
 get_file_git_provenance = results_ledger.get_file_git_provenance
 
+BOGUS_NAMES = {"_common / _types.py", "_common____types", "_types", "_common"}
+
+def clean_metrics(m: dict) -> dict:
+    cleaned = {}
+    for k, v in m.items():
+        if v is None:
+            continue
+        try:
+            val = float(v)
+            cleaned[k] = val
+        except (ValueError, TypeError):
+            pass
+    # Drop all-zero metrics if that is all that exists
+    if cleaned and all(val == 0.0 for val in cleaned.values()):
+        return {}
+    return cleaned
+
 def run_ingestion():
     ledger = ResultsLedger(root_dir=repo_root / "results")
     print(f"[+] Initialized ledger at: {ledger.root_dir}")
@@ -46,7 +70,12 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("name")
+            if not name or name in BOGUS_NAMES:
+                continue
             lat = item.get("latency_ms", 0.0)
+            m = clean_metrics({"latency_triton_ms": lat})
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -67,7 +96,7 @@ def run_ingestion():
                     "batch_size": 2,
                     "seq_len": 2048,
                 },
-                metrics={"latency_triton_ms": lat},
+                metrics=m,
                 notes="131 Attention Comprehensive Latency Benchmark",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -81,8 +110,13 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("name")
+            if not name or name in BOGUS_NAMES:
+                continue
             c_ms = item.get("compress_ms", 0.0)
             rel_err = item.get("rel_err", 0.0)
+            m = clean_metrics({"compress_ms": c_ms, "relative_error": rel_err})
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -101,7 +135,7 @@ def run_ingestion():
                     "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                     "dtype": "float16",
                 },
-                metrics={"compress_ms": c_ms, "relative_error": rel_err},
+                metrics=m,
                 notes="72 Compressor Matrix Compression Benchmark",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -115,6 +149,18 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("kernel")
+            if not name or name in BOGUS_NAMES:
+                continue
+            m = clean_metrics({
+                "latency_triton_ms": item.get("triton_ms", 0.0),
+                "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
+                "speedup_x": item.get("speedup", 1.0),
+                "cosine_sim": item.get("cosine_sim", 1.0),
+                "peak_vram_mb": item.get("triton_vram_mb", 0.0),
+                "relative_error": item.get("rel_error", 0.0),
+            })
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -133,14 +179,7 @@ def run_ingestion():
                     "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                     "target_modules": item.get("target_module"),
                 },
-                metrics={
-                    "latency_triton_ms": item.get("triton_ms", 0.0),
-                    "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
-                    "speedup_x": item.get("speedup", 1.0),
-                    "cosine_sim": item.get("cosine_sim", 1.0),
-                    "peak_vram_mb": item.get("triton_vram_mb", 0.0),
-                    "relative_error": item.get("rel_error", 0.0),
-                },
+                metrics=m,
                 notes=f"Target: {item.get('target_module')}",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -154,29 +193,34 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("kernel") or item.get("operator") or "cuda_kernel"
+            if not name or name in BOGUS_NAMES:
+                continue
+            m = clean_metrics({
+                "latency_cuda_ms": item.get("cuda_ms", 0.0),
+                "latency_triton_ms": item.get("triton_ms", 0.0) if item.get("triton_ms") is not None else 0.0,
+                "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
+                "speedup_x": item.get("speedup_cuda_vs_py", 1.0),
+            })
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
                 category="cuda_kernel",
-                family="3-level-native-cuda",
+                family="native-cuda-acceleration",
                 version_tag="v1.3.7",
                 revision=1,
                 status="active",
                 timestamp_utc=ts,
                 git_commit_sha=sha,
                 generation_method={
-                    "algorithm": "Native CUDA C++ Kernel w/ 3-Level Fallback Dispatch",
+                    "algorithm": "3-Level Native CUDA C++ vs Triton JIT vs PyTorch",
                     "source_artifact": str(f3level.relative_to(repo_root)),
                 },
                 experimental_setup={
                     "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                 },
-                metrics={
-                    "latency_cuda_ms": item.get("cuda_ms", 0.0),
-                    "latency_triton_ms": item.get("triton_ms", 0.0) if item.get("triton_ms") is not None else 0.0,
-                    "latency_pytorch_ms": item.get("pytorch_ms", 0.0),
-                    "speedup_x": item.get("speedup_cuda_vs_py", 1.0),
-                },
+                metrics=m,
                 notes="3-Level Execution Hierarchy Benchmark",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -193,6 +237,16 @@ def run_ingestion():
                 for r in rows:
                     method = r.get("method") or r.get("alignment_method") or "HNC-SVD"
                     rank = r.get("rank")
+                    m = clean_metrics({
+                        "cosine_sim": r.get("cosine_sim") or r.get("cos_sim") or r.get("cosine_sim_to_full_rank"),
+                        "relative_error": r.get("rel_error"),
+                        "accuracy": r.get("top1_match_pct"),
+                        "speedup_x": r.get("speedup_x") or r.get("speedup"),
+                        "compression_pct": r.get("compression_pct") or r.get("comp_pct") or r.get("param_reduction_pct"),
+                        "latency_ms": r.get("fwd_latency_ms") or (r.get("triton_us", 0.0) / 1000.0 if r.get("triton_us") else None),
+                    })
+                    if not m:
+                        continue
                     rec = ResultRecord(
                         record_id="",
                         module_name="hnc_svd",
@@ -210,13 +264,9 @@ def run_ingestion():
                         experimental_setup={
                             "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                             "rank": rank,
+                            "table": tbl_name,
                         },
-                        metrics={
-                            "cosine_sim": r.get("cosine_sim") or r.get("cosine_sim_to_full_rank", 0.0),
-                            "relative_error": r.get("rel_error", 0.0),
-                            "accuracy": r.get("top1_match_pct", 0.0),
-                            "speedup_x": r.get("speedup", 1.0),
-                        },
+                        metrics=m,
                         notes=f"Table: {tbl_name}",
                     )
                     ledger.add_or_replace(rec, mode="upsert")
@@ -228,19 +278,30 @@ def run_ingestion():
         sha, ts = get_file_git_provenance(froberta, repo_root)
         with open(froberta, "r", encoding="utf-8") as f:
             data = json.load(f)
-        for item in data.get("runs", []):
+        runs_list = data.get("runs", []) or data.get("experiments", [])
+        for item in runs_list:
+            m = clean_metrics({
+                "accuracy": item.get("accuracy_pct") or item.get("eval_accuracy") or item.get("accuracy"),
+                "retention_pct": item.get("retention_pct"),
+                "cosine_sim": item.get("cosine_sim_to_anchor") or item.get("cosine_sim"),
+                "latency_ms": item.get("latency_ms"),
+                "peak_vram_mb": item.get("peak_vram_mb"),
+                "param_reduction_pct": item.get("param_reduction_pct"),
+            })
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name="roberta_compression",
                 category="ablation",
-                family="activation-aware-svd",
+                family="glue-benchmark",
                 version_tag="v1.3.7",
                 revision=1,
                 status="active",
                 timestamp_utc=ts,
                 git_commit_sha=sha,
                 generation_method={
-                    "algorithm": item.get("method"),
+                    "algorithm": item.get("method") or "GLUE SST-2 Compression",
                     "source_artifact": str(froberta.relative_to(repo_root)),
                 },
                 experimental_setup={
@@ -249,14 +310,7 @@ def run_ingestion():
                     "rank": item.get("rank"),
                     "target_depth": item.get("target_depth"),
                 },
-                metrics={
-                    "accuracy": item.get("accuracy_pct", 0.0),
-                    "retention_pct": item.get("retention_pct", 0.0),
-                    "cosine_sim": item.get("cosine_sim_to_anchor", 0.0),
-                    "latency_ms": item.get("latency_ms", 0.0),
-                    "peak_vram_mb": item.get("peak_vram_mb", 0.0),
-                    "param_reduction_pct": item.get("param_reduction_pct", 0.0),
-                },
+                metrics=m,
                 notes="RoBERTa Downstream GLUE SST-2 Compression Sweep",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -270,7 +324,17 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("module")
+            if not name or name in BOGUS_NAMES:
+                continue
             seq = item.get("seq_len")
+            m = clean_metrics({
+                "latency_triton_ms": item.get("latency_ms"),
+                "throughput_tok_s": item.get("throughput_tok_s"),
+                "peak_vram_mb": item.get("peak_vram_mb"),
+                "speedup_x": item.get("speedup"),
+            })
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -282,7 +346,7 @@ def run_ingestion():
                 timestamp_utc=ts,
                 git_commit_sha=sha,
                 generation_method={
-                    "algorithm": item.get("framework"),
+                    "algorithm": item.get("framework") or "Comparative",
                     "source_artifact": str(fcomp.relative_to(repo_root)),
                 },
                 experimental_setup={
@@ -291,12 +355,7 @@ def run_ingestion():
                     "embed_dim": 768,
                     "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                 },
-                metrics={
-                    "latency_triton_ms": item.get("latency_ms", 0.0),
-                    "throughput_tok_s": item.get("throughput_tok_s", 0.0),
-                    "peak_vram_mb": item.get("peak_vram_mb", 0.0),
-                    "speedup_x": item.get("speedup", 1.0),
-                },
+                metrics=m,
                 notes="Cross-Framework Competitive Benchmark",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -310,10 +369,17 @@ def run_ingestion():
             data = json.load(f)
         for item in data:
             name = item.get("module") or item.get("name")
-            if not name:
+            if not name or name in BOGUS_NAMES:
                 continue
-            acc = item.get("sst2_accuracy") or item.get("accuracy", 0.0)
-            ppl = item.get("wikitext_ppl") or item.get("ppl", 0.0)
+            acc = item.get("accuracy_pct") or item.get("sst2_accuracy") or item.get("accuracy")
+            ppl = item.get("perplexity") or item.get("wikitext_ppl") or item.get("ppl")
+            m = clean_metrics({
+                "accuracy": acc,
+                "ppl": ppl,
+                "latency_ms": (item.get("duration_s") * 1000.0) if item.get("duration_s") else None,
+            })
+            if not m:
+                continue
             rec = ResultRecord(
                 record_id="",
                 module_name=name,
@@ -332,7 +398,7 @@ def run_ingestion():
                     "dataset": "SST-2 / WikiText-2",
                     "backbone": "DistilBERT / GPT-2",
                 },
-                metrics={"accuracy": float(acc) if acc else 0.0, "ppl": float(ppl) if ppl else 0.0},
+                metrics=m,
                 notes="131 Attention Comprehensive Accuracy & Perplexity Suite",
             )
             ledger.add_or_replace(rec, mode="upsert")
@@ -351,6 +417,16 @@ def run_ingestion():
         ]:
             for row in dlead.get(tier_key, []):
                 mod_name = row.get("kernel_module", "").replace(".py", "").strip() or row.get("primary_primitive", "kernel")
+                if not mod_name or mod_name in BOGUS_NAMES:
+                    continue
+                m = clean_metrics({
+                    "latency_triton_ms": row.get("latency_triton_ms"),
+                    "latency_pytorch_ms": row.get("latency_pytorch_ms"),
+                    "speedup_x": row.get("speedup_x"),
+                    "sram_bytes_saved_mb": row.get("sram_bytes_saved_mb"),
+                })
+                if not m:
+                    continue
                 rec = ResultRecord(
                     record_id="",
                     module_name=mod_name,
@@ -370,23 +446,19 @@ def run_ingestion():
                         "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
                         "shape": row.get("shape"),
                     },
-                    metrics={
-                        "latency_triton_ms": row.get("latency_triton_ms", 0.0),
-                        "latency_pytorch_ms": row.get("latency_pytorch_ms", 0.0),
-                        "speedup_x": row.get("speedup_x", 1.0),
-                        "sram_bytes_saved_mb": row.get("sram_bytes_saved_mb", 0.0),
-                    },
+                    metrics=m,
                     notes=f"Parity: {row.get('parity_status')}",
                 )
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
     # 10. Ingest all 01_unified_runs 4models_summary.json files
-    import glob
     unified_summaries = sorted(glob.glob(str(repo_root / "results" / "01_unified_runs" / "*" / "4models_summary.json")))
     for us_path_str in unified_summaries:
         us_path = Path(us_path_str)
         mod_name = us_path.parent.name.replace("unified_", "").strip()
+        if not mod_name or mod_name in BOGUS_NAMES:
+            continue
         sha, ts = get_file_git_provenance(us_path, repo_root)
         try:
             with open(us_path, "r", encoding="utf-8") as f:
@@ -394,8 +466,14 @@ def run_ingestion():
             if isinstance(us_data, list):
                 for model_row in us_data:
                     backbone = model_row.get("slug") or model_row.get("name", "distilbert")
-                    acc = model_row.get("accuracy_pct", 0.0)
-                    elapsed = model_row.get("elapsed_s", 0.0)
+                    acc = model_row.get("accuracy_pct")
+                    elapsed = model_row.get("elapsed_s")
+                    m = clean_metrics({
+                        "accuracy": acc,
+                        "latency_ms": elapsed,
+                    })
+                    if not m:
+                        continue
                     rec = ResultRecord(
                         record_id="",
                         module_name=mod_name,
@@ -414,10 +492,7 @@ def run_ingestion():
                             "backbone": backbone,
                             "dataset": "SST-2",
                         },
-                        metrics={
-                            "accuracy": float(acc) if acc else 0.0,
-                            "latency_ms": float(elapsed) if elapsed else 0.0,
-                        },
+                        metrics=m,
                         notes=f"Status: {model_row.get('status')}",
                     )
                     ledger.add_or_replace(rec, mode="upsert")
@@ -425,7 +500,7 @@ def run_ingestion():
         except Exception:
             pass
 
-    # 11. Ingest master_aggregated_results.csv if present
+    # 11. Ingest master_aggregated_results.csv
     fcsv = repo_root / "results" / "master_aggregated_results.csv"
     if fcsv.exists():
         sha, ts = get_file_git_provenance(fcsv, repo_root)
@@ -433,16 +508,19 @@ def run_ingestion():
             reader = csv.DictReader(f)
             for row in reader:
                 mod = row.get("module") or row.get("module_name") or row.get("name")
-                if not mod:
+                if not mod or mod in BOGUS_NAMES:
                     continue
                 metrics = {}
-                for k in ("accuracy", "acc", "ppl", "speedup", "latency_ms", "vram_mb", "peak_vram_mb"):
+                for k in ("accuracy", "acc", "distilbert_acc", "roberta_acc", "gpt2_acc", "ppl", "speedup", "latency_ms", "vram_mb", "peak_vram_mb", "elapsed_s"):
                     if k in row and row[k]:
                         try:
-                            clean_k = "accuracy" if k == "acc" else ("speedup_x" if k == "speedup" else k)
+                            clean_k = "accuracy" if k in ("acc", "distilbert_acc") else ("speedup_x" if k == "speedup" else ("latency_ms" if k == "elapsed_s" else k))
                             metrics[clean_k] = float(row[k])
                         except ValueError:
                             pass
+                m = clean_metrics(metrics)
+                if not m:
+                    continue
                 rec = ResultRecord(
                     record_id="",
                     module_name=mod,
@@ -455,37 +533,216 @@ def run_ingestion():
                     git_commit_sha=sha,
                     generation_method={"algorithm": "Master Aggregated Evaluation Suite", "source_artifact": str(fcsv.relative_to(repo_root))},
                     experimental_setup={"dataset": row.get("dataset", "SST-2"), "backbone": row.get("model", "DistilBERT")},
-                    metrics=metrics,
+                    metrics=m,
                     notes="Master Aggregated Results",
                 )
                 ledger.add_or_replace(rec, mode="upsert")
                 total_ingested += 1
 
-    print(f"[✓] Completed ingestion! Total records processed into ledger: {total_ingested}")
+    # 12. Ingest results/results.jsonl (KD Fine-tuning runs)
+    fres_jsonl = repo_root / "results" / "results.jsonl"
+    if fres_jsonl.exists():
+        sha, ts = get_file_git_provenance(fres_jsonl, repo_root)
+        with open(fres_jsonl, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    item = json.loads(line)
+                    mod = item.get("module")
+                    if not mod or mod in BOGUS_NAMES:
+                        continue
+                    m = clean_metrics({
+                        "accuracy": item.get("accuracy"),
+                        "ppl": item.get("perplexity"),
+                        "kd_gain": item.get("kd_gain"),
+                        "recovery_pct": item.get("recovery_pct"),
+                        "peak_vram_mb": item.get("peak_vram_mb"),
+                    })
+                    if not m:
+                        continue
+                    rec = ResultRecord(
+                        record_id="",
+                        module_name=mod,
+                        category=item.get("module_type", "attention"),
+                        family="kd-finetune",
+                        version_tag="v1.3.7",
+                        revision=1,
+                        status="active",
+                        timestamp_utc=item.get("timestamp") or ts,
+                        git_commit_sha=sha,
+                        generation_method={
+                            "algorithm": f"Knowledge Distillation Recovery ({item.get('training_type', 'finetune')})",
+                            "source_artifact": str(fres_jsonl.relative_to(repo_root)),
+                        },
+                        experimental_setup={
+                            "backbone": item.get("model", "gpt2"),
+                            "dataset": item.get("dataset", "wikitext2"),
+                            "rank": item.get("rank"),
+                        },
+                        metrics=m,
+                        notes=f"Run: {item.get('run_id')}",
+                    )
+                    ledger.add_or_replace(rec, mode="upsert")
+                    total_ingested += 1
+                except Exception:
+                    pass
 
-    # Generate Category Summaries
-    print("[+] Generating Category Markdown Summaries...")
-    cats = [
-        ("attentions", "attention", "Comprehensive Master Registry of Evaluated Attention Mechanisms"),
-        ("compressors", "compressor", "Comprehensive Master Registry of Evaluated Compression Engines"),
-        ("triton_kernels", "triton_kernel", "Hardware Benchmarks of Triton JIT Accelerated Kernels"),
-        ("cuda_kernels", "cuda_kernel", "Hardware Benchmarks of 3-Level Native CUDA C++ Operators"),
-        ("ablations_and_kd", "ablation", "Mathematical Ablations, HNC-SVD Homotopy & RoBERTa GLUE Audits"),
-    ]
-    for folder, cat_filter, heading in cats:
-        recs = ledger.query(category=cat_filter, limit=150)
-        md_text = f"# 📊 {heading}\n\n"
-        md_text += f"**Category Filter:** `{cat_filter}` | **Total Verified Records:** {len(recs)}\n\n"
-        md_text += ledger.export_table(recs, format="markdown", include_provenance=True)
-        summary_file = ledger.by_category_dir / folder / "SUMMARY.md"
-        summary_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(summary_file, "w", encoding="utf-8") as f:
-            f.write(md_text + "\n")
-        print(f"  -> Generated {summary_file.relative_to(repo_root)} ({len(recs)} records)")
+    # 13. Ingest all summary_record.json files across results/
+    summary_records = sorted(glob.glob(str(repo_root / "results" / "**" / "summary_record.json"), recursive=True))
+    for sr_str in summary_records:
+        sr_path = Path(sr_str)
+        sha, ts = get_file_git_provenance(sr_path, repo_root)
+        try:
+            with open(sr_path, "r", encoding="utf-8") as f:
+                sr_data = json.load(f)
+            mod_name = sr_data.get("module_name")
+            if not mod_name or mod_name in BOGUS_NAMES:
+                continue
+            m = clean_metrics({
+                "accuracy": sr_data.get("accuracy_pct"),
+                "f1": sr_data.get("f1_score"),
+                "val_loss": sr_data.get("val_loss"),
+                "peak_vram_mb": sr_data.get("peak_vram_mb"),
+                "throughput_tok_s": sr_data.get("tokens_per_sec"),
+                "latency_ms": (sr_data.get("elapsed_s") * 1000.0) if sr_data.get("elapsed_s") else None,
+                "compression_ratio": sr_data.get("compression_rate"),
+                "param_reduction_pct": sr_data.get("compression_ratio_pct"),
+            })
+            if not m:
+                continue
+            rec = ResultRecord(
+                record_id="",
+                module_name=mod_name,
+                category="compressor" if "compressor" in mod_name else "attention",
+                family=sr_data.get("model_family", "transformer"),
+                version_tag="v1.3.7",
+                revision=1,
+                status="active",
+                timestamp_utc=sr_data.get("timestamp") or ts,
+                git_commit_sha=sha,
+                generation_method={
+                    "algorithm": "Calibration Sweep Record",
+                    "source_artifact": str(sr_path.relative_to(repo_root)),
+                },
+                experimental_setup={
+                    "backbone": sr_data.get("model_name"),
+                    "dataset": sr_data.get("dataset"),
+                },
+                metrics=m,
+                notes=f"Status: {sr_data.get('status')}",
+            )
+            ledger.add_or_replace(rec, mode="upsert")
+            total_ingested += 1
+        except Exception:
+            pass
+
+    # 14. Ingest results/SEQLEN_SCALING_MASTER.csv
+    fseq = repo_root / "results" / "SEQLEN_SCALING_MASTER.csv"
+    if fseq.exists():
+        sha, ts = get_file_git_provenance(fseq, repo_root)
+        with open(fseq, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                mod = row.get("module")
+                if not mod or mod in BOGUS_NAMES:
+                    continue
+                seq = row.get("seq_len")
+                m = clean_metrics({
+                    "latency_ms": row.get("forward_time_mean_ms") or row.get("forward_time_ms"),
+                    "peak_vram_mb": row.get("peak_vram_mb"),
+                    "latency_per_tok_ms": row.get("latency_ms_per_token"),
+                })
+                if not m:
+                    continue
+                rec = ResultRecord(
+                    record_id="",
+                    module_name=mod,
+                    category="attention",
+                    family=row.get("group", "sequence-scaling"),
+                    version_tag="v1.3.7",
+                    revision=1,
+                    status="active",
+                    timestamp_utc=ts,
+                    git_commit_sha=sha,
+                    generation_method={
+                        "algorithm": "Sequence Length Scaling Benchmark",
+                        "source_artifact": str(fseq.relative_to(repo_root)),
+                    },
+                    experimental_setup={
+                        "seq_len": int(seq) if seq and seq.isdigit() else seq,
+                        "group": row.get("group"),
+                    },
+                    metrics=m,
+                    notes="Sequence Length Scaling Master Suite",
+                )
+                ledger.add_or_replace(rec, mode="upsert")
+                total_ingested += 1
+
+    # 15. Ingest results/master_benchmark_summary.csv
+    fmbs = repo_root / "results" / "master_benchmark_summary.csv"
+    if fmbs.exists():
+        sha, ts = get_file_git_provenance(fmbs, repo_root)
+        with open(fmbs, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                mod = row.get("architecture")
+                if not mod or mod in BOGUS_NAMES:
+                    continue
+                m = clean_metrics({
+                    "ppl": row.get("perplexity"),
+                    "val_loss": row.get("loss"),
+                    "throughput_tok_s": row.get("throughput_tok_sec"),
+                    "peak_vram_mb": row.get("peak_vram_mb"),
+                    "speedup_x": row.get("speedup_vs_dense"),
+                    "latency_ms": row.get("lat_512"),
+                })
+                if not m:
+                    continue
+                rec = ResultRecord(
+                    record_id="",
+                    module_name=mod,
+                    category="attention",
+                    family=row.get("complexity", "general"),
+                    version_tag="v1.3.7",
+                    revision=1,
+                    status="active",
+                    timestamp_utc=ts,
+                    git_commit_sha=sha,
+                    generation_method={
+                        "algorithm": "Master Benchmark Suite",
+                        "source_artifact": str(fmbs.relative_to(repo_root)),
+                    },
+                    experimental_setup={
+                        "dataset": row.get("dataset"),
+                        "complexity": row.get("complexity"),
+                    },
+                    metrics=m,
+                    notes=f"Status: {row.get('status')}",
+                )
+                ledger.add_or_replace(rec, mode="upsert")
+                total_ingested += 1
+
+    print(f"[✓] Initial ingestion complete. Total records ingested: {total_ingested}")
+
+    # Rebuild SQLite index and guarantee 100% 1:1 parity with deduplication
+    print("[+] Rebuilding SQLite index and deduplicating master_ledger.jsonl...")
+    dedup_count = ledger.rebuild_sqlite_index()
+    print(f"[✓] Rebuilt SQLite index! Total unique records: {dedup_count}")
+
+    # Synchronize all dossiers
+    print("[+] Generating and synchronizing all module dossiers...")
+    dossier_count = ledger.generate_all_dossiers()
+    print(f"[✓] Successfully generated {dossier_count} module dossiers!")
+
+    # Regenerate Category Summaries without truncation
+    print("[+] Regenerating category markdown summaries...")
+    cat_counts = ledger.regenerate_category_summaries()
+    for cat, c in cat_counts.items():
+        print(f"  -> {cat}: {c} records")
 
     # Generate Default SVG Plots
-    print("[+] Generating Standard Vector Plots in results/plots/...")
-    # 1. Triton Speedup Leaderboard
+    print("[+] Generating standard vector plots in results/plots/...")
     triton_recs = ledger.query(category="triton_kernel", limit=15)
     if triton_recs:
         ledger.plot_results(
@@ -495,7 +752,6 @@ def run_ingestion():
             output_path=ledger.plots_dir / "triton_speedup_leaderboard.svg",
             title="Triton JIT Speedup Over PyTorch (RTX 4070 SM 8.9)",
         )
-    # 2. Compressor Pareto Frontier
     comp_recs = ledger.query(category="compressor", limit=25)
     if comp_recs:
         ledger.plot_results(
@@ -505,7 +761,10 @@ def run_ingestion():
             output_path=ledger.plots_dir / "compressor_relative_error_leaderboard.svg",
             title="Compression Reconstruction Relative Error",
         )
-    print("[✓] Ingestion and summary generation complete!")
+
+    stats = ledger.get_summary_stats()
+    print(f"[✓] Ingestion finished! Summary stats: {stats}")
+    return stats
 
 if __name__ == "__main__":
     run_ingestion()

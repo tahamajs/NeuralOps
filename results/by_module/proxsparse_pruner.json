@@ -2,7 +2,7 @@
   "module_name": "proxsparse_pruner",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 78.33,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 54.01,
+      "latency_ms": 77.0
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "394920ce1bfa29e2",
+      "module_name": "proxsparse_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:13:58.914612",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/proxsparse_pruner/checkpoints/proxsparse_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 64071.05,
+        "latency_ms": 9750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ef8a7591b590409b",
+      "module_name": "proxsparse_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:14:38.188506",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/proxsparse_pruner/checkpoints/proxsparse_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9417,
+        "val_loss": 0.1889,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 121978.69,
+        "latency_ms": 14150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "95c0855cfb25e07a",
       "module_name": "proxsparse_pruner",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 78.33,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 54.01,
+        "latency_ms": 77.0
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "394920ce1bfa29e2",
+      "module_name": "proxsparse_pruner",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:13:58.914612",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/proxsparse_pruner/checkpoints/proxsparse_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9091,
+        "val_loss": 0.2926,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 64071.05,
+        "latency_ms": 9750.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "ef8a7591b590409b",
+      "module_name": "proxsparse_pruner",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:14:38.188506",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/proxsparse_pruner/checkpoints/proxsparse_pruner/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9417,
+        "val_loss": 0.1889,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 121978.69,
+        "latency_ms": 14150.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "95c0855cfb25e07a",
       "module_name": "proxsparse_pruner",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 78.33,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 54.01,
+        "latency_ms": 77.0
+      },
       "notes": "Master Aggregated Results"
     }
   ]

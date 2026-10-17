@@ -2,7 +2,7 @@
   "module_name": "lora_attn",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 89.91,
+      "roberta_acc": 59.52,
+      "gpt2_acc": 51.26,
+      "latency_ms": 79.4
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "fa48a89d8837cd59",
+      "module_name": "lora_attn",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:06:44.920365",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/lora_attn/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 58.9,
+        "f1": 0.5863,
+        "val_loss": 0.8974,
+        "peak_vram_mb": 329.39,
+        "throughput_tok_s": 28865.55,
+        "latency_ms": 15000.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "0db4dc18c0ae92c3",
+      "module_name": "lora_attn",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:19:07.348395",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/lora_attn/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.3,
+        "f1": 0.939,
+        "val_loss": 0.1885,
+        "peak_vram_mb": 354.45,
+        "throughput_tok_s": 41215.76,
+        "latency_ms": 24300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
     {
       "record_id": "61cd4485855182d1",
       "module_name": "lora_attn",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 89.91,
+        "roberta_acc": 59.52,
+        "gpt2_acc": 51.26,
+        "latency_ms": 79.4
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "fa48a89d8837cd59",
+      "module_name": "lora_attn",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:06:44.920365",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/lora_attn/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 58.9,
+        "f1": 0.5863,
+        "val_loss": 0.8974,
+        "peak_vram_mb": 329.39,
+        "throughput_tok_s": 28865.55,
+        "latency_ms": 15000.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "0db4dc18c0ae92c3",
+      "module_name": "lora_attn",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:19:07.348395",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/lora_attn/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 94.3,
+        "f1": 0.939,
+        "val_loss": 0.1885,
+        "peak_vram_mb": 354.45,
+        "throughput_tok_s": 41215.76,
+        "latency_ms": 24300.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
       "record_id": "61cd4485855182d1",
       "module_name": "lora_attn",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 89.91,
+        "roberta_acc": 59.52,
+        "gpt2_acc": 51.26,
+        "latency_ms": 79.4
+      },
       "notes": "Master Aggregated Results"
     }
   ]

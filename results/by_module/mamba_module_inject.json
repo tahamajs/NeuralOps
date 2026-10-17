@@ -1,0 +1,104 @@
+{
+  "module_name": "mamba_module_inject",
+  "category": "attention",
+  "family": "gpt",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-23T22:56:46.377991",
+  "latest_record": {
+    "record_id": "d69341aa547ad86b",
+    "module_name": "mamba_module_inject",
+    "category": "attention",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-23T22:56:46.377991",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/mamba_module_inject/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 100.0,
+      "f1": 0.0,
+      "val_loss": 0.0,
+      "peak_vram_mb": 2014.16,
+      "throughput_tok_s": 427.2,
+      "latency_ms": 818200.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "d69341aa547ad86b",
+      "module_name": "mamba_module_inject",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T22:56:46.377991",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/mamba_module_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 100.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 2014.16,
+        "throughput_tok_s": 427.2,
+        "latency_ms": 818200.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "d69341aa547ad86b",
+      "module_name": "mamba_module_inject",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-23T22:56:46.377991",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/mamba_module_inject/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 100.0,
+        "f1": 0.0,
+        "val_loss": 0.0,
+        "peak_vram_mb": 2014.16,
+        "throughput_tok_s": 427.2,
+        "latency_ms": 818200.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}

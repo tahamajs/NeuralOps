@@ -2,7 +2,7 @@
   "module_name": "uniql_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,66 @@
   },
   "active_records": [
     {
+      "record_id": "1a0ab6eadca4acda",
+      "module_name": "uniql_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:59:56.659331",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/uniql_compressor/rank_32/checkpoints/uniql_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.6691,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 42953.82,
+        "latency_ms": 5770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d6efb30f0055217d",
+      "module_name": "uniql_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:08:32.851801",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/uniql_compressor/rank_32/checkpoints/uniql_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9352,
+        "val_loss": 0.2973,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 28101.48,
+        "latency_ms": 8540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "a959eac42d2b9571",
       "module_name": "uniql_compressor",
       "category": "compressor",
@@ -58,6 +118,66 @@
     }
   ],
   "history": [
+    {
+      "record_id": "1a0ab6eadca4acda",
+      "module_name": "uniql_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:59:56.659331",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/uniql_compressor/rank_32/checkpoints/uniql_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.6691,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 42953.82,
+        "latency_ms": 5770.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "d6efb30f0055217d",
+      "module_name": "uniql_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:08:32.851801",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/uniql_compressor/rank_32/checkpoints/uniql_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.23,
+        "f1": 0.9352,
+        "val_loss": 0.2973,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 28101.48,
+        "latency_ms": 8540.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "a959eac42d2b9571",
       "module_name": "uniql_compressor",

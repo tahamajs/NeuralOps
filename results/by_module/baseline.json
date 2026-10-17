@@ -1,0 +1,89 @@
+{
+  "module_name": "baseline",
+  "category": "baseline",
+  "family": "kd-finetune",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "dde5933e0c",
+  "latest_timestamp": "2026-10-13T21:54:35Z",
+  "latest_record": {
+    "record_id": "e03b46b77cfbd581",
+    "module_name": "baseline",
+    "category": "baseline",
+    "family": "kd-finetune",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-13T21:54:35Z",
+    "git_commit_sha": "dde5933e0c",
+    "generation_method": {
+      "algorithm": "Knowledge Distillation Recovery (finetune)",
+      "source_artifact": "results/results.jsonl"
+    },
+    "experimental_setup": {
+      "backbone": "roberta-base",
+      "dataset": "sst2",
+      "rank": 64
+    },
+    "metrics": {
+      "accuracy": 0.85,
+      "peak_vram_mb": 1034.2734375
+    },
+    "notes": "Run: f5840018-0bf7-40a9-b3cf-f98194d81918"
+  },
+  "active_records": [
+    {
+      "record_id": "e03b46b77cfbd581",
+      "module_name": "baseline",
+      "category": "baseline",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:54:35Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "peak_vram_mb": 1034.2734375
+      },
+      "notes": "Run: f5840018-0bf7-40a9-b3cf-f98194d81918"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "e03b46b77cfbd581",
+      "module_name": "baseline",
+      "category": "baseline",
+      "family": "kd-finetune",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-13T21:54:35Z",
+      "git_commit_sha": "dde5933e0c",
+      "generation_method": {
+        "algorithm": "Knowledge Distillation Recovery (finetune)",
+        "source_artifact": "results/results.jsonl"
+      },
+      "experimental_setup": {
+        "backbone": "roberta-base",
+        "dataset": "sst2",
+        "rank": 64
+      },
+      "metrics": {
+        "accuracy": 0.85,
+        "peak_vram_mb": 1034.2734375
+      },
+      "notes": "Run: f5840018-0bf7-40a9-b3cf-f98194d81918"
+    }
+  ]
+}

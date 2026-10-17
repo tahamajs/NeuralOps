@@ -2,7 +2,7 @@
   "module_name": "lsh",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 4,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,105 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 80.28,
+      "roberta_acc": 49.54,
+      "gpt2_acc": 51.61,
+      "latency_ms": 75.4
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "25f7ad9acfd77749",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T04:35:26.937115",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_lsh/roberta/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6661,
+        "val_loss": 0.7297,
+        "peak_vram_mb": 666.82,
+        "throughput_tok_s": 6004.49,
+        "latency_ms": 58720.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "50377a77e4c3fa25",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:08:20.799500",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.9,
+        "f1": 0.3491,
+        "val_loss": 1.086,
+        "peak_vram_mb": 324.95,
+        "throughput_tok_s": 10034.63,
+        "latency_ms": 32710.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "25d83e6e655dead7",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:22:05.424849",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9006,
+        "val_loss": 0.3226,
+        "peak_vram_mb": 362.58,
+        "throughput_tok_s": 25280.34,
+        "latency_ms": 40800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
     {
       "record_id": "e29c68898cd4541c",
       "module_name": "lsh",
@@ -47,12 +142,107 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 80.28,
+        "roberta_acc": 49.54,
+        "gpt2_acc": 51.61,
+        "latency_ms": 75.4
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "25f7ad9acfd77749",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T04:35:26.937115",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_lsh/roberta/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6661,
+        "val_loss": 0.7297,
+        "peak_vram_mb": 666.82,
+        "throughput_tok_s": 6004.49,
+        "latency_ms": 58720.0,
+        "compression_ratio": 0.9378,
+        "param_reduction_pct": -6.63
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "50377a77e4c3fa25",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T17:08:20.799500",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli_full/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 41.9,
+        "f1": 0.3491,
+        "val_loss": 1.086,
+        "peak_vram_mb": 324.95,
+        "throughput_tok_s": 10034.63,
+        "latency_ms": 32710.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
+      "record_id": "25d83e6e655dead7",
+      "module_name": "lsh",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T21:22:05.424849",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/lsh/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9006,
+        "val_loss": 0.3226,
+        "peak_vram_mb": 362.58,
+        "throughput_tok_s": 25280.34,
+        "latency_ms": 40800.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: REJECTED_EXPANSION"
+    },
+    {
       "record_id": "e29c68898cd4541c",
       "module_name": "lsh",
       "category": "attention",
@@ -70,7 +260,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 80.28,
+        "roberta_acc": 49.54,
+        "gpt2_acc": 51.61,
+        "latency_ms": 75.4
+      },
       "notes": "Master Aggregated Results"
     }
   ]

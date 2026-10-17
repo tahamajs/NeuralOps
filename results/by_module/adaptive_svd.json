@@ -2,7 +2,7 @@
   "module_name": "adaptive_svd",
   "category": "compressor",
   "family": "unified-4models",
-  "total_runs": 4,
+  "total_runs": 7,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -32,6 +32,96 @@
     "notes": "Status: SKIP_NO_WEIGHTS"
   },
   "active_records": [
+    {
+      "record_id": "8eb52b2e16a20842",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:53:40.417953",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8857,
+        "val_loss": 0.3339,
+        "peak_vram_mb": 309.01,
+        "throughput_tok_s": 45709.36,
+        "latency_ms": 24320.0,
+        "compression_ratio": 1.1523,
+        "param_reduction_pct": 13.21
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "175e9da554923339",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:55:15.886967",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 52.06,
+        "f1": 0.6799,
+        "val_loss": 0.676,
+        "peak_vram_mb": 605.38,
+        "throughput_tok_s": 19637.67,
+        "latency_ms": 43850.0,
+        "compression_ratio": 1.093,
+        "param_reduction_pct": 8.51
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "97936ac26ba3aa4b",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:50:14.565621",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1934,
+        "val_loss": 1.1048,
+        "peak_vram_mb": 279.1,
+        "throughput_tok_s": 23010.88,
+        "latency_ms": 15710.0,
+        "compression_ratio": 1.1523,
+        "param_reduction_pct": 13.21
+      },
+      "notes": "Status: PASS_LOW"
+    },
     {
       "record_id": "e2a12504749a584d",
       "module_name": "adaptive_svd",
@@ -130,6 +220,96 @@
     }
   ],
   "history": [
+    {
+      "record_id": "8eb52b2e16a20842",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:53:40.417953",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8857,
+        "val_loss": 0.3339,
+        "peak_vram_mb": 309.01,
+        "throughput_tok_s": 45709.36,
+        "latency_ms": 24320.0,
+        "compression_ratio": 1.1523,
+        "param_reduction_pct": 13.21
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "175e9da554923339",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T02:55:15.886967",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 52.06,
+        "f1": 0.6799,
+        "val_loss": 0.676,
+        "peak_vram_mb": 605.38,
+        "throughput_tok_s": 19637.67,
+        "latency_ms": 43850.0,
+        "compression_ratio": 1.093,
+        "param_reduction_pct": 8.51
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "97936ac26ba3aa4b",
+      "module_name": "adaptive_svd",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:50:14.565621",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/adaptive_svd/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.1,
+        "f1": 0.1934,
+        "val_loss": 1.1048,
+        "peak_vram_mb": 279.1,
+        "throughput_tok_s": 23010.88,
+        "latency_ms": 15710.0,
+        "compression_ratio": 1.1523,
+        "param_reduction_pct": 13.21
+      },
+      "notes": "Status: PASS_LOW"
+    },
     {
       "record_id": "e2a12504749a584d",
       "module_name": "adaptive_svd",

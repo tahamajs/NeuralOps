@@ -1,0 +1,164 @@
+{
+  "module_name": "kronecker_tt_lora_class",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T05:31:13.127044",
+  "latest_record": {
+    "record_id": "491d58d40e3c6d2f",
+    "module_name": "kronecker_tt_lora_class",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T05:31:13.127044",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/kronecker_tt_lora_class/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/distilbert_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 90.83,
+      "f1": 0.9117,
+      "val_loss": 0.3254,
+      "peak_vram_mb": 328.62,
+      "throughput_tok_s": 30730.41,
+      "latency_ms": 18190.0,
+      "compression_ratio": 0.9735,
+      "param_reduction_pct": -2.72
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "00e948f216740000",
+      "module_name": "kronecker_tt_lora_class",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:23:55.133124",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/kronecker_tt_lora_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.006350465468848,
+        "peak_vram_mb": 1400.36865234375,
+        "throughput_tok_s": 647.2535671635274,
+        "latency_ms": 410900.0,
+        "compression_ratio": 0.9533,
+        "param_reduction_pct": -4.9
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "491d58d40e3c6d2f",
+      "module_name": "kronecker_tt_lora_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T05:31:13.127044",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/kronecker_tt_lora_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9117,
+        "val_loss": 0.3254,
+        "peak_vram_mb": 328.62,
+        "throughput_tok_s": 30730.41,
+        "latency_ms": 18190.0,
+        "compression_ratio": 0.9735,
+        "param_reduction_pct": -2.72
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "00e948f216740000",
+      "module_name": "kronecker_tt_lora_class",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:23:55.133124",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/kronecker_tt_lora_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.006350465468848,
+        "peak_vram_mb": 1400.36865234375,
+        "throughput_tok_s": 647.2535671635274,
+        "latency_ms": 410900.0,
+        "compression_ratio": 0.9533,
+        "param_reduction_pct": -4.9
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "491d58d40e3c6d2f",
+      "module_name": "kronecker_tt_lora_class",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T05:31:13.127044",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/kronecker_tt_lora_class/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.83,
+        "f1": 0.9117,
+        "val_loss": 0.3254,
+        "peak_vram_mb": 328.62,
+        "throughput_tok_s": 30730.41,
+        "latency_ms": 18190.0,
+        "compression_ratio": 0.9735,
+        "param_reduction_pct": -2.72
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}

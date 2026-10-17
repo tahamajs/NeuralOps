@@ -2,7 +2,7 @@
   "module_name": "cur_moe",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 12,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,345 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 67.43,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 50.92,
+      "latency_ms": 81.3
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "721e8cdbfd6fca7d",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T11:45:27.698766",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.8282,
+        "peak_vram_mb": 615.57,
+        "throughput_tok_s": 20364.41,
+        "latency_ms": 17630.0,
+        "compression_ratio": 1.4572,
+        "param_reduction_pct": 31.38
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "16d738feaa97f968",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T11:46:15.844477",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7083,
+        "peak_vram_mb": 625.48,
+        "throughput_tok_s": 21553.95,
+        "latency_ms": 17390.0,
+        "compression_ratio": 1.4061,
+        "param_reduction_pct": 28.88
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8082e395a2bc6171",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:42:48.901588",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8807,
+        "val_loss": 0.5176,
+        "peak_vram_mb": 311.07,
+        "throughput_tok_s": 101981.62,
+        "latency_ms": 7160.0,
+        "compression_ratio": 1.0563,
+        "param_reduction_pct": 5.33
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2897fea9680d8c09",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:58:23.798132",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 31.8,
+        "f1": 0.1974,
+        "val_loss": 1.1665,
+        "peak_vram_mb": 291.2,
+        "throughput_tok_s": 47716.52,
+        "latency_ms": 9480.0,
+        "compression_ratio": 1.0563,
+        "param_reduction_pct": 5.33
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "73f3e87b6d7c89a1",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T00:47:59.203757",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 31.9,
+        "f1": 0.1612,
+        "val_loss": 1.1003,
+        "peak_vram_mb": 246.42,
+        "throughput_tok_s": 40990.18,
+        "latency_ms": 10090.0,
+        "compression_ratio": 1.307,
+        "param_reduction_pct": 23.49
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "27a8d9e8b1586cb3",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T04:01:43.460881",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank256/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 1.4158,
+        "peak_vram_mb": 269.27,
+        "throughput_tok_s": 72528.82,
+        "latency_ms": 8680.0,
+        "compression_ratio": 1.307,
+        "param_reduction_pct": 23.49
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9efe53342c0fb60d",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:59:51.768992",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2583,
+        "peak_vram_mb": 292.22,
+        "throughput_tok_s": 19461.11,
+        "latency_ms": 18940.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "fc0ef815e3116e46",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:02:43.551984",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 89.11,
+        "f1": 0.8964,
+        "val_loss": 0.3195,
+        "peak_vram_mb": 382.13,
+        "throughput_tok_s": 16408.57,
+        "latency_ms": 19140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2e2fcbdf2993c465",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:55:00.216549",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1269.5887074790128,
+        "latency_ms": 209120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6ed5ba471bb6775b",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:07:26.970006",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9111,
+        "val_loss": 0.3034,
+        "peak_vram_mb": 324.46,
+        "throughput_tok_s": 92104.62,
+        "latency_ms": 8240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "a5f1004c6c5db85f",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:04:22.246339",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_moe/rank_64/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9093,
+        "val_loss": 0.5275,
+        "peak_vram_mb": 303.69,
+        "throughput_tok_s": 43206.8,
+        "latency_ms": 10690.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "ecd7997ddcb715bb",
       "module_name": "cur_moe",
@@ -47,12 +382,347 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 67.43,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 81.3
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "721e8cdbfd6fca7d",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T11:45:27.698766",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.8282,
+        "peak_vram_mb": 615.57,
+        "throughput_tok_s": 20364.41,
+        "latency_ms": 17630.0,
+        "compression_ratio": 1.4572,
+        "param_reduction_pct": 31.38
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "16d738feaa97f968",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T11:46:15.844477",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7083,
+        "peak_vram_mb": 625.48,
+        "throughput_tok_s": 21553.95,
+        "latency_ms": 17390.0,
+        "compression_ratio": 1.4061,
+        "param_reduction_pct": 28.88
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "8082e395a2bc6171",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:42:48.901588",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8807,
+        "val_loss": 0.5176,
+        "peak_vram_mb": 311.07,
+        "throughput_tok_s": 101981.62,
+        "latency_ms": 7160.0,
+        "compression_ratio": 1.0563,
+        "param_reduction_pct": 5.33
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "2897fea9680d8c09",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:58:23.798132",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 31.8,
+        "f1": 0.1974,
+        "val_loss": 1.1665,
+        "peak_vram_mb": 291.2,
+        "throughput_tok_s": 47716.52,
+        "latency_ms": 9480.0,
+        "compression_ratio": 1.0563,
+        "param_reduction_pct": 5.33
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "73f3e87b6d7c89a1",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T00:47:59.203757",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 31.9,
+        "f1": 0.1612,
+        "val_loss": 1.1003,
+        "peak_vram_mb": 246.42,
+        "throughput_tok_s": 40990.18,
+        "latency_ms": 10090.0,
+        "compression_ratio": 1.307,
+        "param_reduction_pct": 23.49
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "27a8d9e8b1586cb3",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T04:01:43.460881",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/agnews_rank256/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 25.3,
+        "f1": 0.101,
+        "val_loss": 1.4158,
+        "peak_vram_mb": 269.27,
+        "throughput_tok_s": 72528.82,
+        "latency_ms": 8680.0,
+        "compression_ratio": 1.307,
+        "param_reduction_pct": 23.49
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9efe53342c0fb60d",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T17:59:51.768992",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/roberta/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.46,
+        "f1": 0.9372,
+        "val_loss": 0.2583,
+        "peak_vram_mb": 292.22,
+        "throughput_tok_s": 19461.11,
+        "latency_ms": 18940.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "fc0ef815e3116e46",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T18:02:43.551984",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/unified_runs/unified_cur_moe/gpt2/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\gpt2_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 89.11,
+        "f1": 0.8964,
+        "val_loss": 0.3195,
+        "peak_vram_mb": 382.13,
+        "throughput_tok_s": 16408.57,
+        "latency_ms": 19140.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "2e2fcbdf2993c465",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:55:00.216549",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 3.721979489231453,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1269.5887074790128,
+        "latency_ms": 209120.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "6ed5ba471bb6775b",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T04:07:26.970006",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/02_glue_sweeps/distilbert/sst2_4parallel/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9111,
+        "val_loss": 0.3034,
+        "peak_vram_mb": 324.46,
+        "throughput_tok_s": 92104.62,
+        "latency_ms": 8240.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "a5f1004c6c5db85f",
+      "module_name": "cur_moe",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:04:22.246339",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/cur_moe/rank_64/checkpoints/cur_moe/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "f1": 0.9093,
+        "val_loss": 0.5275,
+        "peak_vram_mb": 303.69,
+        "throughput_tok_s": 43206.8,
+        "latency_ms": 10690.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "ecd7997ddcb715bb",
       "module_name": "cur_moe",
       "category": "attention",
@@ -70,7 +740,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 67.43,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 81.3
+      },
       "notes": "Master Aggregated Results"
     }
   ]

@@ -2,7 +2,7 @@
   "module_name": "squeezing_heads_distill",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,45 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 90.37,
+      "roberta_acc": 51.49,
+      "gpt2_acc": 51.61,
+      "latency_ms": 74.1
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "763f0b979dfcf139",
+      "module_name": "squeezing_heads_distill",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:21:33.403632",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/squeezing_heads_distill/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.0,
+        "f1": 0.9332,
+        "val_loss": 0.311,
+        "peak_vram_mb": 629.11,
+        "throughput_tok_s": 8248.33,
+        "latency_ms": 25310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
     {
       "record_id": "1813f87d39215d45",
       "module_name": "squeezing_heads_distill",
@@ -47,12 +82,47 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.37,
+        "roberta_acc": 51.49,
+        "gpt2_acc": 51.61,
+        "latency_ms": 74.1
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "763f0b979dfcf139",
+      "module_name": "squeezing_heads_distill",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:21:33.403632",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/squeezing_heads_distill/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.0,
+        "f1": 0.9332,
+        "val_loss": 0.311,
+        "peak_vram_mb": 629.11,
+        "throughput_tok_s": 8248.33,
+        "latency_ms": 25310.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
       "record_id": "1813f87d39215d45",
       "module_name": "squeezing_heads_distill",
       "category": "attention",
@@ -70,7 +140,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.37,
+        "roberta_acc": 51.49,
+        "gpt2_acc": 51.61,
+        "latency_ms": 74.1
+      },
       "notes": "Master Aggregated Results"
     }
   ]

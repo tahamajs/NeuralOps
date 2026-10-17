@@ -2,7 +2,7 @@
   "module_name": "saes_svd_compressor",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 6,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,165 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 90.83,
+      "roberta_acc": 51.49,
+      "gpt2_acc": 50.92,
+      "latency_ms": 77.3
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "1e3aceabd12f3b23",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:43:29.183193",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9091,
+        "val_loss": 0.3352,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 90617.89,
+        "latency_ms": 12720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4c787e4a1f92d257",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:38:53.703783",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.204,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 30040.62,
+        "latency_ms": 32590.000000000004,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e6614eefe3106f5a",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:27:22.737094",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_r384/saes_svd_compressor/rank_384/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.268368679914224,
+        "peak_vram_mb": 1597.60546875,
+        "throughput_tok_s": 7589.667440379873,
+        "latency_ms": 39010.0,
+        "compression_ratio": 1.0345,
+        "param_reduction_pct": 3.33
+      },
+      "notes": "Status: PASS_LOW_PPL"
+    },
+    {
+      "record_id": "a4261c589de04426",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:49:44.220713",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/saes_svd/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.585826003888267,
+        "peak_vram_mb": 2250.126953125,
+        "throughput_tok_s": 8025.933384818338,
+        "latency_ms": 134650.0,
+        "compression_ratio": 1.166,
+        "param_reduction_pct": 14.23
+      },
+      "notes": "Status: PASS_LOW_PPL"
+    },
+    {
+      "record_id": "61cdab8cc40bacd4",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:46:11.182078",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd_compressor/rank_32/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.6691,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 41186.5,
+        "latency_ms": 8510.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "e4eb50d15565816f",
       "module_name": "saes_svd_compressor",
@@ -47,12 +202,167 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.83,
+        "roberta_acc": 51.49,
+        "gpt2_acc": 50.92,
+        "latency_ms": 77.3
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "1e3aceabd12f3b23",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T16:43:29.183193",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9091,
+        "val_loss": 0.3352,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 90617.89,
+        "latency_ms": 12720.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "4c787e4a1f92d257",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T18:38:53.703783",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/saes_svd_compressor/rank_64/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.204,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 30040.62,
+        "latency_ms": 32590.000000000004,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "e6614eefe3106f5a",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T23:27:22.737094",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_r384/saes_svd_compressor/rank_384/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.268368679914224,
+        "peak_vram_mb": 1597.60546875,
+        "throughput_tok_s": 7589.667440379873,
+        "latency_ms": 39010.0,
+        "compression_ratio": 1.0345,
+        "param_reduction_pct": 3.33
+      },
+      "notes": "Status: PASS_LOW_PPL"
+    },
+    {
+      "record_id": "a4261c589de04426",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "gpt2",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-26T01:49:44.220713",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/04_baselines/c4_baselines/saes_svd/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "c4"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 4.585826003888267,
+        "peak_vram_mb": 2250.126953125,
+        "throughput_tok_s": 8025.933384818338,
+        "latency_ms": 134650.0,
+        "compression_ratio": 1.166,
+        "param_reduction_pct": 14.23
+      },
+      "notes": "Status: PASS_LOW_PPL"
+    },
+    {
+      "record_id": "61cdab8cc40bacd4",
+      "module_name": "saes_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:46:11.182078",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/saes_svd_compressor/rank_32/checkpoints/saes_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9109,
+        "val_loss": 0.6691,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 41186.5,
+        "latency_ms": 8510.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "e4eb50d15565816f",
       "module_name": "saes_svd_compressor",
       "category": "attention",
@@ -70,7 +380,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 90.83,
+        "roberta_acc": 51.49,
+        "gpt2_acc": 50.92,
+        "latency_ms": 77.3
+      },
       "notes": "Master Aggregated Results"
     }
   ]

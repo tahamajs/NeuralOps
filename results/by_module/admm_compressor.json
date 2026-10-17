@@ -2,7 +2,7 @@
   "module_name": "admm_compressor",
   "category": "compressor",
   "family": "matrix-compression",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "25d9fe36fa",
@@ -33,6 +33,36 @@
   },
   "active_records": [
     {
+      "record_id": "c561cad8d0afc1ac",
+      "module_name": "admm_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:56:20.273795",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_admm_compressor/gpt2/checkpoints/admm_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.8,
+        "f1": 0.8228,
+        "val_loss": 0.4892,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 46107.24,
+        "latency_ms": 14970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
       "record_id": "e275a8c75820c042",
       "module_name": "admm_compressor",
       "category": "compressor",
@@ -58,6 +88,36 @@
     }
   ],
   "history": [
+    {
+      "record_id": "c561cad8d0afc1ac",
+      "module_name": "admm_compressor",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-18T18:56:20.273795",
+      "git_commit_sha": "d156d2e8d5",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/agnews_unified_admm_compressor/gpt2/checkpoints/admm_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 82.8,
+        "f1": 0.8228,
+        "val_loss": 0.4892,
+        "peak_vram_mb": 743.2,
+        "throughput_tok_s": 46107.24,
+        "latency_ms": 14970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
     {
       "record_id": "e275a8c75820c042",
       "module_name": "admm_compressor",

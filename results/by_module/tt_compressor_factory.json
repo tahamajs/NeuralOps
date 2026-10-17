@@ -1,0 +1,104 @@
+{
+  "module_name": "tt_compressor_factory",
+  "category": "compressor",
+  "family": "gpt",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-24T20:27:32.043621",
+  "latest_record": {
+    "record_id": "33facf0c2a311c16",
+    "module_name": "tt_compressor_factory",
+    "category": "compressor",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-24T20:27:32.043621",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/tt_compressor_factory/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 7.68821357613923,
+      "peak_vram_mb": 816.22509765625,
+      "throughput_tok_s": 1049.0471943347113,
+      "latency_ms": 272950.0,
+      "compression_ratio": 1.0523,
+      "param_reduction_pct": 4.97
+    },
+    "notes": "Status: FAIL_PPL_DIVERGED"
+  },
+  "active_records": [
+    {
+      "record_id": "33facf0c2a311c16",
+      "module_name": "tt_compressor_factory",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:27:32.043621",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/tt_compressor_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 7.68821357613923,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1049.0471943347113,
+        "latency_ms": 272950.0,
+        "compression_ratio": 1.0523,
+        "param_reduction_pct": 4.97
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "33facf0c2a311c16",
+      "module_name": "tt_compressor_factory",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T20:27:32.043621",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/tt_compressor_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 7.68821357613923,
+        "peak_vram_mb": 816.22509765625,
+        "throughput_tok_s": 1049.0471943347113,
+        "latency_ms": 272950.0,
+        "compression_ratio": 1.0523,
+        "param_reduction_pct": 4.97
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ]
+}

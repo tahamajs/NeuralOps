@@ -2,7 +2,7 @@
   "module_name": "svd_llm_v2",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 2,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,45 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 81.88,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 50.92,
+      "latency_ms": 82.5
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "000e20b18d9d332a",
+      "module_name": "svd_llm_v2",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:12:28.230265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_llm_v2/distilbert/checkpoints/svd_llm_v2/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.3,
+        "f1": 0.2782,
+        "val_loss": 1.1102,
+        "peak_vram_mb": 312.31,
+        "throughput_tok_s": 48612.87,
+        "latency_ms": 7050.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
+    },
     {
       "record_id": "1f3780190122a9a1",
       "module_name": "svd_llm_v2",
@@ -47,12 +82,47 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 81.88,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 82.5
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "000e20b18d9d332a",
+      "module_name": "svd_llm_v2",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-16T03:12:28.230265",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/01_unified_runs/mnli_unified_svd_llm_v2/distilbert/checkpoints/svd_llm_v2/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 37.3,
+        "f1": 0.2782,
+        "val_loss": 1.1102,
+        "peak_vram_mb": 312.31,
+        "throughput_tok_s": 48612.87,
+        "latency_ms": 7050.0,
+        "compression_ratio": 1.201,
+        "param_reduction_pct": 16.74
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
       "record_id": "1f3780190122a9a1",
       "module_name": "svd_llm_v2",
       "category": "attention",
@@ -70,7 +140,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 81.88,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 82.5
+      },
       "notes": "Master Aggregated Results"
     }
   ]

@@ -29,8 +29,7 @@
     "metrics": {
       "latency_triton_ms": 10.09,
       "latency_pytorch_ms": 0.09,
-      "speedup_x": 0.01,
-      "sram_bytes_saved_mb": 0.0
+      "speedup_x": 0.01
     },
     "notes": "Parity: None"
   },
@@ -84,8 +83,7 @@
       "metrics": {
         "latency_triton_ms": 10.09,
         "latency_pytorch_ms": 0.09,
-        "speedup_x": 0.01,
-        "sram_bytes_saved_mb": 0.0
+        "speedup_x": 0.01
       },
       "notes": "Parity: None"
     }
@@ -140,8 +138,7 @@
       "metrics": {
         "latency_triton_ms": 10.09,
         "latency_pytorch_ms": 0.09,
-        "speedup_x": 0.01,
-        "sram_bytes_saved_mb": 0.0
+        "speedup_x": 0.01
       },
       "notes": "Parity: None"
     }

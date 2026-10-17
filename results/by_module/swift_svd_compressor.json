@@ -1,0 +1,284 @@
+{
+  "module_name": "swift_svd_compressor",
+  "category": "compressor",
+  "family": "roberta",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-27T09:07:02.510825",
+  "latest_record": {
+    "record_id": "1a5ddfbc1884cef8",
+    "module_name": "swift_svd_compressor",
+    "category": "compressor",
+    "family": "roberta",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-27T09:07:02.510825",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/swift_svd_compressor/rank_32/checkpoints/swift_svd_compressor/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\roberta_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 93.81,
+      "f1": 0.94,
+      "val_loss": 0.2711,
+      "peak_vram_mb": 292.72,
+      "throughput_tok_s": 24440.96,
+      "latency_ms": 23970.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: PASS_NO_COMPRESSION"
+  },
+  "active_records": [
+    {
+      "record_id": "2bcee12c7fb0cfd9",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:28:55.705236",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_compressor/rank_64/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 101528.85,
+        "latency_ms": 19910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "110922971a62ba45",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T19:11:23.663467",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_compressor/rank_64/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.2054,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 36072.64,
+        "latency_ms": 39260.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "63784165fa21a5c0",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:58:42.150443",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_compressor/rank_32/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 36222.66,
+        "latency_ms": 15020.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1a5ddfbc1884cef8",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:07:02.510825",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/swift_svd_compressor/rank_32/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.81,
+        "f1": 0.94,
+        "val_loss": 0.2711,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 24440.96,
+        "latency_ms": 23970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "2bcee12c7fb0cfd9",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T17:28:55.705236",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_distilbert/swift_svd_compressor/rank_64/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.71,
+        "f1": 0.9101,
+        "val_loss": 0.3492,
+        "peak_vram_mb": 547.18,
+        "throughput_tok_s": 101528.85,
+        "latency_ms": 19910.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "110922971a62ba45",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T19:11:23.663467",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/deep_rank_roberta/swift_svd_compressor/rank_64/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.92,
+        "f1": 0.9413,
+        "val_loss": 0.2054,
+        "peak_vram_mb": 549.76,
+        "throughput_tok_s": 36072.64,
+        "latency_ms": 39260.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "63784165fa21a5c0",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T07:58:42.150443",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/distilbert/deep_rank_distilbert/swift_svd_compressor/rank_32/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased-finetuned-sst-2-english",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 91.06,
+        "f1": 0.9137,
+        "val_loss": 0.5132,
+        "peak_vram_mb": 302.94,
+        "throughput_tok_s": 36222.66,
+        "latency_ms": 15020.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1a5ddfbc1884cef8",
+      "module_name": "swift_svd_compressor",
+      "category": "compressor",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-27T09:07:02.510825",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/04_rank_sweeps/roberta/deep_rank_roberta/swift_svd_compressor/rank_32/checkpoints/swift_svd_compressor/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 93.81,
+        "f1": 0.94,
+        "val_loss": 0.2711,
+        "peak_vram_mb": 292.72,
+        "throughput_tok_s": 24440.96,
+        "latency_ms": 23970.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    }
+  ]
+}

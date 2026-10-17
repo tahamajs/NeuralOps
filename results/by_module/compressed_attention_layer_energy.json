@@ -1,0 +1,344 @@
+{
+  "module_name": "compressed_attention_layer_energy",
+  "category": "attention",
+  "family": "bert",
+  "total_runs": 5,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2f366e4546",
+  "latest_timestamp": "2026-09-20T00:47:24.303687",
+  "latest_record": {
+    "record_id": "615a3bf88d328168",
+    "module_name": "compressed_attention_layer_energy",
+    "category": "attention",
+    "family": "bert",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-20T00:47:24.303687",
+    "git_commit_sha": "2f366e4546",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/compressed_attention_layer_energy/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models\\distilbert_mnli_full",
+      "dataset": "mnli"
+    },
+    "metrics": {
+      "accuracy": 36.4,
+      "f1": 0.2234,
+      "val_loss": 1.1207,
+      "peak_vram_mb": 336.34,
+      "throughput_tok_s": 29752.93,
+      "latency_ms": 15830.0,
+      "compression_ratio": 1.1099,
+      "param_reduction_pct": 9.91
+    },
+    "notes": "Status: PASS_LOW"
+  },
+  "active_records": [
+    {
+      "record_id": "0b104710c1758c4b",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:40:45.189175",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8376,
+        "val_loss": 0.384,
+        "peak_vram_mb": 336.62,
+        "throughput_tok_s": 62974.9,
+        "latency_ms": 9670.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "e32c892a710a55f8",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:52.349527",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7507,
+        "peak_vram_mb": 627.17,
+        "throughput_tok_s": 18145.02,
+        "latency_ms": 27170.0,
+        "compression_ratio": 1.1558,
+        "param_reduction_pct": 13.48
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "f8f366b0d937da95",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:07.941842",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1029,
+        "peak_vram_mb": 289.24,
+        "throughput_tok_s": 24858.8,
+        "latency_ms": 13820.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9c4ee8e3146b4efc",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:42:51.435260",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": 1.4595,
+        "peak_vram_mb": 339.38,
+        "throughput_tok_s": 51842.93,
+        "latency_ms": 21240.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "615a3bf88d328168",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T00:47:24.303687",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2234,
+        "val_loss": 1.1207,
+        "peak_vram_mb": 336.34,
+        "throughput_tok_s": 29752.93,
+        "latency_ms": 15830.0,
+        "compression_ratio": 1.1099,
+        "param_reduction_pct": 9.91
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "0b104710c1758c4b",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T01:40:45.189175",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.8376,
+        "val_loss": 0.384,
+        "peak_vram_mb": 336.62,
+        "throughput_tok_s": 62974.9,
+        "latency_ms": 9670.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "e32c892a710a55f8",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T03:11:52.349527",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/roberta/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\roberta-base",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7507,
+        "peak_vram_mb": 627.17,
+        "throughput_tok_s": 18145.02,
+        "latency_ms": 27170.0,
+        "compression_ratio": 1.1558,
+        "param_reduction_pct": 13.48
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "f8f366b0d937da95",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T05:57:07.941842",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_mnli/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "distilbert-base-uncased",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 34.0,
+        "f1": 0.1692,
+        "val_loss": 1.1029,
+        "peak_vram_mb": 289.24,
+        "throughput_tok_s": 24858.8,
+        "latency_ms": 13820.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "9c4ee8e3146b4efc",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-19T19:42:51.435260",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_sweep/distilbert_agnews_full/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_agnews_full",
+        "dataset": "ag_news"
+      },
+      "metrics": {
+        "accuracy": 26.8,
+        "f1": 0.1057,
+        "val_loss": 1.4595,
+        "peak_vram_mb": 339.38,
+        "throughput_tok_s": 51842.93,
+        "latency_ms": 21240.0,
+        "compression_ratio": 1.2171,
+        "param_reduction_pct": 17.84
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
+      "record_id": "615a3bf88d328168",
+      "module_name": "compressed_attention_layer_energy",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-20T00:47:24.303687",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/02_rank_sweeps/rank_ablation/mnli_rank256/checkpoints/compressed_attention_layer_energy/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_mnli_full",
+        "dataset": "mnli"
+      },
+      "metrics": {
+        "accuracy": 36.4,
+        "f1": 0.2234,
+        "val_loss": 1.1207,
+        "peak_vram_mb": 336.34,
+        "throughput_tok_s": 29752.93,
+        "latency_ms": 15830.0,
+        "compression_ratio": 1.1099,
+        "param_reduction_pct": 9.91
+      },
+      "notes": "Status: PASS_LOW"
+    }
+  ]
+}

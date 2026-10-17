@@ -1,0 +1,266 @@
+{
+  "module_name": "roberta_compression",
+  "category": "ablation",
+  "family": "glue-benchmark",
+  "total_runs": 4,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "09e6fdd645",
+  "latest_timestamp": "2026-10-16T12:45:22+03:30",
+  "latest_record": {
+    "record_id": "a9df7396442333a4",
+    "module_name": "roberta_compression",
+    "category": "ablation",
+    "family": "glue-benchmark",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-16T12:45:22+03:30",
+    "git_commit_sha": "09e6fdd645",
+    "generation_method": {
+      "algorithm": "HNC-SVD (Ours)",
+      "source_artifact": "results/roberta_glue_compression_results.json"
+    },
+    "experimental_setup": {
+      "backbone": "RoBERTa-base",
+      "dataset": "SST-2",
+      "rank": 128,
+      "target_depth": null
+    },
+    "metrics": {
+      "accuracy": 71.67,
+      "cosine_sim": 0.5529,
+      "peak_vram_mb": 1464.0,
+      "param_reduction_pct": 5.99
+    },
+    "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+  },
+  "active_records": [
+    {
+      "record_id": "a11b6037c16e47a4",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 256,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 52.06,
+        "cosine_sim": 0.1474,
+        "peak_vram_mb": 1017.9,
+        "param_reduction_pct": 4.42
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "e4cbdd7e568dce47",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 256,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 73.62,
+        "cosine_sim": 0.6099,
+        "peak_vram_mb": 1475.5,
+        "param_reduction_pct": 4.42
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "57db1cf716f2e86c",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 128,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 47.82,
+        "cosine_sim": -0.0157,
+        "peak_vram_mb": 1010.7,
+        "param_reduction_pct": 5.99
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "a9df7396442333a4",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 128,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 71.67,
+        "cosine_sim": 0.5529,
+        "peak_vram_mb": 1464.0,
+        "param_reduction_pct": 5.99
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "a11b6037c16e47a4",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 256,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 52.06,
+        "cosine_sim": 0.1474,
+        "peak_vram_mb": 1017.9,
+        "param_reduction_pct": 4.42
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "e4cbdd7e568dce47",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 256,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 73.62,
+        "cosine_sim": 0.6099,
+        "peak_vram_mb": 1475.5,
+        "param_reduction_pct": 4.42
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "57db1cf716f2e86c",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "Naive DirectSVD",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 128,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 47.82,
+        "cosine_sim": -0.0157,
+        "peak_vram_mb": 1010.7,
+        "param_reduction_pct": 5.99
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    },
+    {
+      "record_id": "a9df7396442333a4",
+      "module_name": "roberta_compression",
+      "category": "ablation",
+      "family": "glue-benchmark",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-16T12:45:22+03:30",
+      "git_commit_sha": "09e6fdd645",
+      "generation_method": {
+        "algorithm": "HNC-SVD (Ours)",
+        "source_artifact": "results/roberta_glue_compression_results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "rank": 128,
+        "target_depth": null
+      },
+      "metrics": {
+        "accuracy": 71.67,
+        "cosine_sim": 0.5529,
+        "peak_vram_mb": 1464.0,
+        "param_reduction_pct": 5.99
+      },
+      "notes": "RoBERTa Downstream GLUE SST-2 Compression Sweep"
+    }
+  ]
+}

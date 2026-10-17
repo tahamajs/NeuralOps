@@ -1,0 +1,104 @@
+{
+  "module_name": "adaptive_compressor_factory",
+  "category": "compressor",
+  "family": "gpt",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-24T22:05:40.121440",
+  "latest_record": {
+    "record_id": "581863ff8bcaa291",
+    "module_name": "adaptive_compressor_factory",
+    "category": "compressor",
+    "family": "gpt",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-24T22:05:40.121440",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/adaptive_compressor_factory/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/gpt2",
+      "dataset": "wikitext2"
+    },
+    "metrics": {
+      "accuracy": 0.0,
+      "f1": 0.0,
+      "val_loss": 5.160898758563009,
+      "peak_vram_mb": 1093.3076171875,
+      "throughput_tok_s": 1065.5692026491502,
+      "latency_ms": 259370.0,
+      "compression_ratio": 1.0594,
+      "param_reduction_pct": 5.61
+    },
+    "notes": "Status: FAIL_PPL_DIVERGED"
+  },
+  "active_records": [
+    {
+      "record_id": "581863ff8bcaa291",
+      "module_name": "adaptive_compressor_factory",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T22:05:40.121440",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/adaptive_compressor_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 5.160898758563009,
+        "peak_vram_mb": 1093.3076171875,
+        "throughput_tok_s": 1065.5692026491502,
+        "latency_ms": 259370.0,
+        "compression_ratio": 1.0594,
+        "param_reduction_pct": 5.61
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "581863ff8bcaa291",
+      "module_name": "adaptive_compressor_factory",
+      "category": "compressor",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-24T22:05:40.121440",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/adaptive_compressor_factory/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 0.0,
+        "f1": 0.0,
+        "val_loss": 5.160898758563009,
+        "peak_vram_mb": 1093.3076171875,
+        "throughput_tok_s": 1065.5692026491502,
+        "latency_ms": 259370.0,
+        "compression_ratio": 1.0594,
+        "param_reduction_pct": 5.61
+      },
+      "notes": "Status: FAIL_PPL_DIVERGED"
+    }
+  ]
+}

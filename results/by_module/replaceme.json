@@ -25,7 +25,12 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 82.0,
+      "roberta_acc": 80.62,
+      "gpt2_acc": 56.77,
+      "latency_ms": 119.0
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
@@ -47,7 +52,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 82.0,
+        "roberta_acc": 80.62,
+        "gpt2_acc": 56.77,
+        "latency_ms": 119.0
+      },
       "notes": "Master Aggregated Results"
     }
   ],
@@ -70,7 +80,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 82.0,
+        "roberta_acc": 80.62,
+        "gpt2_acc": 56.77,
+        "latency_ms": 119.0
+      },
       "notes": "Master Aggregated Results"
     }
   ]

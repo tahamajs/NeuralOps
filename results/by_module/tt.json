@@ -2,7 +2,7 @@
   "module_name": "tt",
   "category": "attention",
   "family": "general",
-  "total_runs": 1,
+  "total_runs": 3,
   "latest_version": "v1.3.7",
   "latest_revision": 1,
   "latest_git_sha": "b3e2b3ad08",
@@ -25,10 +25,75 @@
       "dataset": "SST-2",
       "backbone": "DistilBERT"
     },
-    "metrics": {},
+    "metrics": {
+      "accuracy": 81.08,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 50.92,
+      "latency_ms": 193.8
+    },
     "notes": "Master Aggregated Results"
   },
   "active_records": [
+    {
+      "record_id": "f7207ecc3bc38703",
+      "module_name": "tt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T06:25:03.178851",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_tt/distilbert/checkpoints/tt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.77,
+        "f1": 0.1673,
+        "val_loss": 0.7081,
+        "peak_vram_mb": 391.17,
+        "throughput_tok_s": 36770.94,
+        "latency_ms": 11620.0,
+        "compression_ratio": 0.9039,
+        "param_reduction_pct": -10.63
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1b728773caa8e4a6",
+      "module_name": "tt",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:48:28.823202",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7115,
+        "peak_vram_mb": 642.71,
+        "throughput_tok_s": 8321.49,
+        "latency_ms": 31800.0,
+        "compression_ratio": 1.0237,
+        "param_reduction_pct": 2.32
+      },
+      "notes": "Status: PASS_LOW"
+    },
     {
       "record_id": "083a14f76d19356b",
       "module_name": "tt",
@@ -47,12 +112,77 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 81.08,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 193.8
+      },
       "notes": "Master Aggregated Results"
     }
   ],
   "history": [
     {
+      "record_id": "f7207ecc3bc38703",
+      "module_name": "tt",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-15T06:25:03.178851",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/archive_unified/unified_tt/distilbert/checkpoints/tt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models\\distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 49.77,
+        "f1": 0.1673,
+        "val_loss": 0.7081,
+        "peak_vram_mb": 391.17,
+        "throughput_tok_s": 36770.94,
+        "latency_ms": 11620.0,
+        "compression_ratio": 0.9039,
+        "param_reduction_pct": -10.63
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "1b728773caa8e4a6",
+      "module_name": "tt",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T03:48:28.823202",
+      "git_commit_sha": "2f366e4546",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/tt/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 50.92,
+        "f1": 0.6748,
+        "val_loss": 0.7115,
+        "peak_vram_mb": 642.71,
+        "throughput_tok_s": 8321.49,
+        "latency_ms": 31800.0,
+        "compression_ratio": 1.0237,
+        "param_reduction_pct": 2.32
+      },
+      "notes": "Status: PASS_LOW"
+    },
+    {
       "record_id": "083a14f76d19356b",
       "module_name": "tt",
       "category": "attention",
@@ -70,7 +200,12 @@
         "dataset": "SST-2",
         "backbone": "DistilBERT"
       },
-      "metrics": {},
+      "metrics": {
+        "accuracy": 81.08,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 50.92,
+        "latency_ms": 193.8
+      },
       "notes": "Master Aggregated Results"
     }
   ]

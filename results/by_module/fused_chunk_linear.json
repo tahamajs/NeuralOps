@@ -1,1 +1,65 @@
-{"module_name": "fused_chunk_linear", "category": "triton_kernel", "family": "chunk-recurrent", "history": [{"record_id": "rec_fused_chunk_linear_001", "module_name": "fused_chunk_linear", "category": "triton_kernel", "family": "chunk-recurrent", "version_tag": "v1.3.7", "revision": 1, "status": "verified", "timestamp_utc": "2026-10-15T12:00:00Z", "git_commit_sha": "f8a92b3c1d", "generation_method": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)", "experimental_setup": {"batch_size": 2, "seq_len": 2048, "hidden_dim": 768, "num_heads": 12, "hardware": "NVIDIA RTX 4070 Laptop GPU (SM 8.9)"}, "metrics": {"latency_ms": 1.28, "tflops": 142.1, "arithmetic_intensity": 24.5, "peak_vram_mb": 185.0}, "notes": "Fused chunk linear kernel evaluated with warm L2 cache."}]}
+{
+  "module_name": "fused_chunk_linear",
+  "category": "triton_kernel",
+  "family": "chunk-recurrent",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "f8a92b3c1d",
+  "latest_timestamp": "2026-10-15T12:00:00Z",
+  "latest_record": {
+    "record_id": "rec_fused_chunk_linear_001",
+    "module_name": "fused_chunk_linear",
+    "category": "triton_kernel",
+    "family": "chunk-recurrent",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "verified",
+    "timestamp_utc": "2026-10-15T12:00:00Z",
+    "git_commit_sha": "f8a92b3c1d",
+    "generation_method": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+    "experimental_setup": {
+      "batch_size": 2,
+      "seq_len": 2048,
+      "hidden_dim": 768,
+      "num_heads": 12,
+      "hardware": "NVIDIA RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "latency_ms": 1.28,
+      "tflops": 142.1,
+      "arithmetic_intensity": 24.5,
+      "peak_vram_mb": 185.0
+    },
+    "notes": "Fused chunk linear kernel evaluated with warm L2 cache."
+  },
+  "active_records": [],
+  "history": [
+    {
+      "record_id": "rec_fused_chunk_linear_001",
+      "module_name": "fused_chunk_linear",
+      "category": "triton_kernel",
+      "family": "chunk-recurrent",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "verified",
+      "timestamp_utc": "2026-10-15T12:00:00Z",
+      "git_commit_sha": "f8a92b3c1d",
+      "generation_method": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+      "experimental_setup": {
+        "batch_size": 2,
+        "seq_len": 2048,
+        "hidden_dim": 768,
+        "num_heads": 12,
+        "hardware": "NVIDIA RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "latency_ms": 1.28,
+        "tflops": 142.1,
+        "arithmetic_intensity": 24.5,
+        "peak_vram_mb": 185.0
+      },
+      "notes": "Fused chunk linear kernel evaluated with warm L2 cache."
+    }
+  ]
+}

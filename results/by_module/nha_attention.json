@@ -1,0 +1,224 @@
+{
+  "module_name": "nha_attention",
+  "category": "attention",
+  "family": "roberta",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "6267bfb8a8",
+  "latest_timestamp": "2026-09-22T02:19:30.090852",
+  "latest_record": {
+    "record_id": "d92f906e9b0d1291",
+    "module_name": "nha_attention",
+    "category": "attention",
+    "family": "roberta",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-09-22T02:19:30.090852",
+    "git_commit_sha": "6267bfb8a8",
+    "generation_method": {
+      "algorithm": "Calibration Sweep Record",
+      "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/nha_attention/summary_record.json"
+    },
+    "experimental_setup": {
+      "backbone": "models/roberta_sst2",
+      "dataset": "sst2"
+    },
+    "metrics": {
+      "accuracy": 94.61,
+      "f1": 0.9473,
+      "val_loss": 0.2767,
+      "peak_vram_mb": 647.74,
+      "throughput_tok_s": 3915.5,
+      "latency_ms": 50830.0,
+      "compression_ratio": 1.0,
+      "param_reduction_pct": 0.0
+    },
+    "notes": "Status: MODERATE_EXPANSION"
+  },
+  "active_records": [
+    {
+      "record_id": "0b39a93d9bc3bbe7",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T06:09:14.253648",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 99.55,
+        "f1": 0.0,
+        "val_loss": 0.0116,
+        "peak_vram_mb": 547.2,
+        "throughput_tok_s": 2587.4,
+        "latency_ms": 153840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "d332661c4116a7b0",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T16:16:39.108134",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9097,
+        "val_loss": 0.3211,
+        "peak_vram_mb": 508.62,
+        "throughput_tok_s": 24563.07,
+        "latency_ms": 80930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "d92f906e9b0d1291",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T02:19:30.090852",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.61,
+        "f1": 0.9473,
+        "val_loss": 0.2767,
+        "peak_vram_mb": 647.74,
+        "throughput_tok_s": 3915.5,
+        "latency_ms": 50830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "0b39a93d9bc3bbe7",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "gpt",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T06:09:14.253648",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/gpt2_wikitext2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/gpt2",
+        "dataset": "wikitext2"
+      },
+      "metrics": {
+        "accuracy": 99.55,
+        "f1": 0.0,
+        "val_loss": 0.0116,
+        "peak_vram_mb": 547.2,
+        "throughput_tok_s": 2587.4,
+        "latency_ms": 153840.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "d332661c4116a7b0",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-21T16:16:39.108134",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/distilbert_sst2_sst2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9097,
+        "val_loss": 0.3211,
+        "peak_vram_mb": 508.62,
+        "throughput_tok_s": 24563.07,
+        "latency_ms": 80930.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    },
+    {
+      "record_id": "d92f906e9b0d1291",
+      "module_name": "nha_attention",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-22T02:19:30.090852",
+      "git_commit_sha": "6267bfb8a8",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/_archive/duplicates_20261008/05_glue_finetuning/roberta_sst2_sst2_sweep/checkpoints/nha_attention/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.61,
+        "f1": 0.9473,
+        "val_loss": 0.2767,
+        "peak_vram_mb": 647.74,
+        "throughput_tok_s": 3915.5,
+        "latency_ms": 50830.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: MODERATE_EXPANSION"
+    }
+  ]
+}
