@@ -14,7 +14,6 @@ from neuralops.core.attention_utils import (
 
 import logging
 import math
-import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,7 +24,6 @@ import torch.nn.functional as F
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,6 @@ and Layer-Sniffing Rank Allocation.
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any

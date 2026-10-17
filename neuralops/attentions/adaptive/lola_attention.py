@@ -25,7 +25,6 @@ Fixes applied:
 
 from __future__ import annotations
 from neuralops.core.utils.config import _cfg_get
-from neuralops.core.utils.masks import _safe_mask_value
 
 import logging
 import math
@@ -39,7 +38,7 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import apply_rotary_pos_emb
+from neuralops.core.utils.rope import apply_rotary_pos_emb
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)

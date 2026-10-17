@@ -10,8 +10,8 @@ from neuralops.core.utils.gqa import repeat_kv
 
 import logging
 import math
-import os
 import threading
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -428,11 +428,7 @@ class CosformerAttention(BaseAttention):
 
             # Causal mode: High-performance Triton cosformer routing on CUDA
             if device.type == "cuda":
-                try:
-                    from neuralops.core.triton_kernels.cosformer_triton_kernel import triton_cosformer_linear_attention
-                    return triton_cosformer_linear_attention(Q_scaled, K_clamped, V, is_causal=self.is_causal).to(dtype)
-                except Exception:
-                    pass
+
                 if N > 64:
                     try:
                         from fla.ops.linear_attn import chunk_linear_attn

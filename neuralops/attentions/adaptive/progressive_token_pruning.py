@@ -39,7 +39,6 @@ from neuralops.core.attention_utils import (
 from neuralops.core.base import BaseAttention
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 

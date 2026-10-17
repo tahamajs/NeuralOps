@@ -455,7 +455,6 @@ logger = logging.getLogger(__name__)
 
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half
 
 
 @ATTENTION_REGISTRY.register(

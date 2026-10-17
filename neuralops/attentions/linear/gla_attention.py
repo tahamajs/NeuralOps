@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
