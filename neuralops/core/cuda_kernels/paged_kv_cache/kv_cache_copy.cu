@@ -2,6 +2,7 @@
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
+#include "_common.cuh"
 
 template<typename scalar_t>
 __launch_bounds__(256)
@@ -67,6 +68,12 @@ void kv_cache_copy_cow_cuda(
     int num_heads,
     int head_dim
 ) {
+    CHECK_INPUT(dst_k);
+    CHECK_INPUT(dst_v);
+    CHECK_INPUT(src_k);
+    CHECK_INPUT(src_v);
+    CHECK_INPUT(block_mapping);
+
     if (num_blocks <= 0) {
         return;
     }

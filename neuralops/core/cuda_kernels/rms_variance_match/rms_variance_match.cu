@@ -38,23 +38,19 @@ __global__ void __launch_bounds__(256) rms_variance_match_kernel(
         sum_v2 += vv * vv;
     }
 
-    __shared__ float s_y;
-    __shared__ float s_v;
+    sum_y2 = block_reduce_sum(sum_y2);
+    sum_v2 = block_reduce_sum(sum_v2);
 
+    __shared__ float s_gain;
     if (tid == 0) {
-        s_y = 0.0f;
-        s_v = 0.0f;
+        const float y_rms = sqrtf(fmaxf(sum_y2 / static_cast<float>(D), 1e-8f));
+        const float v_rms = sqrtf(fmaxf(sum_v2 / static_cast<float>(D), 1e-8f));
+        const float raw_gain = (y_rms > 1e-8f) ? (v_rms / y_rms) : 1.0f;
+        s_gain = fmaxf(c_min, fminf(c_max, raw_gain));
     }
     __syncthreads();
 
-    atomicAdd(&s_y, sum_y2);
-    atomicAdd(&s_v, sum_v2);
-    __syncthreads();
-
-    const float y_rms = sqrtf(fmaxf(s_y / static_cast<float>(D), 1e-8f));
-    const float v_rms = sqrtf(fmaxf(s_v / static_cast<float>(D), 1e-8f));
-    const float raw_gain = (y_rms > 1e-8f) ? (v_rms / y_rms) : 1.0f;
-    const float gain = fmaxf(c_min, fminf(c_max, raw_gain));
+    const float gain = s_gain;
 
     for (int i = tid; i < D; i += blockDim.x) {
         const float res = to_float(y[base_idx + i]) * gain;

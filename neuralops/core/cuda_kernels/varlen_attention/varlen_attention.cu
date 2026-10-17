@@ -9,6 +9,7 @@ namespace cuda {
 
 // Variable-length attention forward kernel
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(128)
 __global__ void varlen_attention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -154,5 +155,6 @@ torch::Tensor varlen_attention_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

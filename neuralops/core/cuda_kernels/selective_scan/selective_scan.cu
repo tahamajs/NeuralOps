@@ -3,6 +3,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 #include <float.h>
+#include "_common.cuh"
 
 template<int D_STATE>
 __launch_bounds__(128)
@@ -285,6 +286,16 @@ void selective_scan_fwd_cuda(
     const torch::Tensor& C,
     const torch::Tensor& D
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(u);
+    CHECK_INPUT(delta);
+    CHECK_INPUT(A);
+    CHECK_INPUT(B);
+    CHECK_INPUT(C);
+    if (last_state.defined()) CHECK_INPUT(last_state);
+    if (states.defined()) CHECK_INPUT(states);
+    if (D.defined() && D.numel() > 0) CHECK_INPUT(D);
+
     const int B_sz = static_cast<int>(u.size(0));
     const int D_sz = static_cast<int>(u.size(1));
     const int L_sz = static_cast<int>(u.size(2));
@@ -356,6 +367,21 @@ void selective_scan_bwd_cuda(
     const torch::Tensor& states,
     const torch::Tensor& dout
 ) {
+    CHECK_INPUT(du);
+    CHECK_INPUT(ddelta);
+    CHECK_INPUT(dA);
+    CHECK_INPUT(dB);
+    CHECK_INPUT(dC);
+    CHECK_INPUT(u);
+    CHECK_INPUT(delta);
+    CHECK_INPUT(A);
+    CHECK_INPUT(B);
+    CHECK_INPUT(C);
+    CHECK_INPUT(states);
+    CHECK_INPUT(dout);
+    if (dD.defined() && dD.numel() > 0) CHECK_INPUT(dD);
+    if (D.defined() && D.numel() > 0) CHECK_INPUT(D);
+
     const int B_sz = static_cast<int>(u.size(0));
     const int D_sz = static_cast<int>(u.size(1));
     const int L_sz = static_cast<int>(u.size(2));
