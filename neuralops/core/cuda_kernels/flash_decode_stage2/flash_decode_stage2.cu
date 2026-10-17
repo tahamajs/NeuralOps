@@ -28,20 +28,25 @@ __global__ void __launch_bounds__(256) flash_decode_stage2_kernel(
     const int tid = threadIdx.x;
     const int lse_offset = pid_bh * num_chunks;
 
-    // Step 1: Compute global max LSE across chunks
-    float local_max = -1e30f;
-    for (int c = tid; c < num_chunks; c += blockDim.x) {
-        local_max = fmaxf(local_max, mid_lse[lse_offset + c]);
-    }
-    const float global_max_lse = block_reduce_max(local_max);
+    __shared__ float s_global_max_lse;
+    __shared__ float s_inv_denom;
 
-    // Step 2: Compute denominator sum(exp(mid_lse - global_max_lse))
-    float local_sum = 0.0f;
-    for (int c = tid; c < num_chunks; c += blockDim.x) {
-        local_sum += expf(mid_lse[lse_offset + c] - global_max_lse);
+    if (tid == 0) {
+        float max_lse = -1e30f;
+        for (int c = 0; c < num_chunks; ++c) {
+            max_lse = fmaxf(max_lse, mid_lse[lse_offset + c]);
+        }
+        float sum_exp = 0.0f;
+        for (int c = 0; c < num_chunks; ++c) {
+            sum_exp += expf(mid_lse[lse_offset + c] - max_lse);
+        }
+        s_global_max_lse = max_lse;
+        s_inv_denom = 1.0f / fmaxf(sum_exp, 1e-12f);
     }
-    const float total_sum = block_reduce_sum(local_sum);
-    const float inv_denom = 1.0f / fmaxf(total_sum, 1e-12f);
+    __syncthreads();
+
+    const float global_max_lse = s_global_max_lse;
+    const float inv_denom = s_inv_denom;
 
     // Step 3: Weighted sum over chunks for each feature dimension d
     const int out_base = pid_bh * D;
