@@ -9,6 +9,7 @@ namespace cuda {
 // Channel Shuffle forward: x: [B, C, L] where C = G * Channels_per_group
 // Transposes [B, G, Cg, L] -> [B, Cg, G, L] -> [B, C, L]
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void channel_shuffle_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -72,5 +73,6 @@ torch::Tensor channel_shuffle_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

@@ -9,6 +9,7 @@ namespace cuda {
 
 // Fused Factorised Matrix State (FMS) Recurrent Scan Kernel
 template <typename scalar_t, int MAX_D>
+__launch_bounds__(32)
 __global__ void fms_scan_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -160,5 +161,6 @@ torch::Tensor fms_scan_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
