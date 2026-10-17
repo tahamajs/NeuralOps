@@ -23,6 +23,18 @@ except ImportError:
 from .niah import NeedleInAHaystackEvaluator, plot_niah_heatmap
 from .lm_eval_adapter import NeuralOpsLMEvalAdapter, evaluate_zero_shot_tasks
 
+from .metrics import (
+    compute_perplexity_from_loss,
+    compute_token_perplexity,
+    compute_top_k_accuracy,
+    compute_linear_cka,
+    compute_representation_similarity,
+    compute_numerical_deviation,
+    measure_peak_vram_mb,
+    measure_latency_and_throughput,
+    EvaluationReport,
+)
+
 __all__ = [
     "metrics",
     "get_task_metrics",
@@ -43,6 +55,15 @@ __all__ = [
     "plot_niah_heatmap",
     "NeuralOpsLMEvalAdapter",
     "evaluate_zero_shot_tasks",
+    "compute_perplexity_from_loss",
+    "compute_token_perplexity",
+    "compute_top_k_accuracy",
+    "compute_linear_cka",
+    "compute_representation_similarity",
+    "compute_numerical_deviation",
+    "measure_peak_vram_mb",
+    "measure_latency_and_throughput",
+    "EvaluationReport",
 ]
 
 # Auto-wired package members
