@@ -208,6 +208,18 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         alpha = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)) * 0.95
         beta = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)) * 0.95
         return [q, k, v, alpha, beta], {{}}
+    elif mod_name == "gla_scan":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        alpha = torch.sigmoid(torch.randn(B, H, N, device=device, dtype=dtype)) * 0.95
+        return [q, k, v, alpha], {{}}
+    elif mod_name == "recurrent_hgrn2_step":
+        x = torch.randn(B, H, D, device=device, dtype=dtype) * 0.1
+        g = torch.sigmoid(torch.randn(B, H, D, device=device, dtype=dtype)) * 0.95
+        alpha = torch.sigmoid(torch.randn(B, H, D, device=device, dtype=dtype)) * 0.95
+        prev_state = torch.randn(B, H, D, device=device, dtype=dtype) * 0.1
+        return [x, g, alpha, prev_state], {{}}
     elif mod_name == "gla_unnormalized_scan":
         q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
         k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
