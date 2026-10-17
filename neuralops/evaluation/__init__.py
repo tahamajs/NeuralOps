@@ -1,7 +1,20 @@
 """Evaluation module for model performance, fairness, robustness, label quality, and A/B testing."""
 
 from neuralops.trainer import metrics
-from neuralops.trainer.metrics import get_task_metrics
+from neuralops.trainer.metrics import (
+    get_task_metrics,
+    compute_accuracy,
+    compute_f1,
+    compute_matthews_corrcoef,
+    compute_pearson_spearman,
+    compute_precision_recall,
+    compute_regression_metrics,
+    compute_perplexity,
+    compute_cosine_similarity,
+    compute_linear_cka,
+    compute_compression_ratio,
+    aggregate_results,
+)
 from .eval_pipeline import probe_optimal_batch_size
 
 from .ab_testing import ABTester, ABTestResult
@@ -26,6 +39,17 @@ from .lm_eval_adapter import NeuralOpsLMEvalAdapter, evaluate_zero_shot_tasks
 __all__ = [
     "metrics",
     "get_task_metrics",
+    "compute_accuracy",
+    "compute_f1",
+    "compute_matthews_corrcoef",
+    "compute_pearson_spearman",
+    "compute_precision_recall",
+    "compute_regression_metrics",
+    "compute_perplexity",
+    "compute_cosine_similarity",
+    "compute_linear_cka",
+    "compute_compression_ratio",
+    "aggregate_results",
     "probe_optimal_batch_size",
     "ABTester",
     "ABTestResult",
