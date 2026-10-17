@@ -35,7 +35,14 @@
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: MODERATE_EXPANSION"
+    "notes": "Status: MODERATE_EXPANSION",
+    "fp8_quantization": {
+      "enabled": true,
+      "format": "E4M3 / E5M2 hybrid",
+      "scale_delayed": true,
+      "gemm_backend": "Triton FP8 / CUTLASS",
+      "numerical_stability_gate": "PASS"
+    }
   },
   "active_records": [
     {
@@ -66,7 +73,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "8ae67739cd9eee12",
@@ -96,7 +110,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "8fc44621c8c1c054",
@@ -126,7 +147,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "c45e4c4f6f4e53d4",
@@ -156,7 +184,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     }
   ],
   "history": [
@@ -280,5 +315,12 @@
       },
       "notes": "Status: MODERATE_EXPANSION"
     }
-  ]
+  ],
+  "fp8_quantization": {
+    "enabled": true,
+    "format": "E4M3 / E5M2 hybrid",
+    "scale_delayed": true,
+    "gemm_backend": "Triton FP8 / CUTLASS",
+    "numerical_stability_gate": "PASS"
+  }
 }

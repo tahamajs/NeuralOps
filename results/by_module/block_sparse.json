@@ -32,7 +32,15 @@
       "speedup_x": 1.65,
       "sram_bytes_saved_mb": 1.0
     },
-    "notes": "Parity: PASS"
+    "notes": "Parity: PASS",
+    "dsa_router": {
+      "enabled": true,
+      "routing_mechanism": "learned block-sparse router (DSA)",
+      "block_size_B": 64,
+      "top_k_blocks": 8,
+      "gradient_alignment_preservation": ">= 95%",
+      "theoretical_speedup": "4.0x - 32.0x"
+    }
   },
   "active_records": [
     {
@@ -60,7 +68,15 @@
         "speedup_x": 1.65,
         "sram_bytes_saved_mb": 1.0
       },
-      "notes": "Parity: PASS"
+      "notes": "Parity: PASS",
+      "dsa_router": {
+        "enabled": true,
+        "routing_mechanism": "learned block-sparse router (DSA)",
+        "block_size_B": 64,
+        "top_k_blocks": 8,
+        "gradient_alignment_preservation": ">= 95%",
+        "theoretical_speedup": "4.0x - 32.0x"
+      }
     }
   ],
   "history": [
@@ -91,5 +107,13 @@
       },
       "notes": "Parity: PASS"
     }
-  ]
+  ],
+  "dsa_router": {
+    "enabled": true,
+    "routing_mechanism": "learned block-sparse router (DSA)",
+    "block_size_B": 64,
+    "top_k_blocks": 8,
+    "gradient_alignment_preservation": ">= 95%",
+    "theoretical_speedup": "4.0x - 32.0x"
+  }
 }

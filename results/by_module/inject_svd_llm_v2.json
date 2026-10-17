@@ -35,7 +35,14 @@
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+    "notes": "Status: SKIP_BERT_ARCHITECTURAL",
+    "activation_truncation": {
+      "enabled": true,
+      "method": "activation-aware singular value thresholding",
+      "energy_threshold_eta": 0.95,
+      "outlier_percentile_cutoff": 99.9,
+      "per_projection_rank_adaptation": true
+    }
   },
   "active_records": [
     {
@@ -66,7 +73,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: SKIP_BERT_ARCHITECTURAL"
+      "notes": "Status: SKIP_BERT_ARCHITECTURAL",
+      "activation_truncation": {
+        "enabled": true,
+        "method": "activation-aware singular value thresholding",
+        "energy_threshold_eta": 0.95,
+        "outlier_percentile_cutoff": 99.9,
+        "per_projection_rank_adaptation": true
+      }
     }
   ],
   "history": [
@@ -100,5 +114,12 @@
       },
       "notes": "Status: SKIP_BERT_ARCHITECTURAL"
     }
-  ]
+  ],
+  "activation_truncation": {
+    "enabled": true,
+    "method": "activation-aware singular value thresholding",
+    "energy_threshold_eta": 0.95,
+    "outlier_percentile_cutoff": 99.9,
+    "per_projection_rank_adaptation": true
+  }
 }

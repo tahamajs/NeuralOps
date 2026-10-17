@@ -134,15 +134,24 @@ def dispatch(
             _DISPATCH_STATS["triton_failures"] += 1
             raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
 
+    import os, sys
+    debug_dispatch = os.environ.get("NEURALOPS_DEBUG_DISPATCH") == "1"
+    if debug_dispatch:
+        print(f"[dispatch] {kernel_name}: cuda={'yes' if cuda_fn else 'no'} triton={'yes' if triton_fn else 'no'} pytorch=yes", file=sys.stderr)
+
     # AUTO: Level 1 -> Level 2 -> Level 3
     if cuda_fn is not None:
         try:
             res = cuda_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["cuda"] += 1
+                if debug_dispatch:
+                    print(f"[dispatch] {kernel_name}: executed branch = CUDA", file=sys.stderr)
                 return res
         except Exception as e:
             _DISPATCH_STATS["cuda_failures"] += 1
+            if debug_dispatch:
+                print(f"[dispatch] {kernel_name}: CUDA failed with {type(e).__name__}: {e}", file=sys.stderr)
             logger.debug(f"[{kernel_name}] CUDA C++ path failed: {e}. Falling back to Triton / PyTorch.")
 
     if triton_fn is not None:
@@ -150,10 +159,17 @@ def dispatch(
             res = triton_fn(*args, **kwargs)
             if res is not None or allow_none:
                 _DISPATCH_STATS["triton"] += 1
+                if debug_dispatch:
+                    print(f"[dispatch] {kernel_name}: executed branch = TRITON", file=sys.stderr)
                 return res
         except Exception as e:
             _DISPATCH_STATS["triton_failures"] += 1
+            if debug_dispatch:
+                print(f"[dispatch] {kernel_name}: TRITON failed with {type(e).__name__}: {e}", file=sys.stderr)
             logger.debug(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
 
     _DISPATCH_STATS["pytorch"] += 1
+    if debug_dispatch:
+        print(f"[dispatch] {kernel_name}: executed branch = PYTORCH_FALLBACK", file=sys.stderr)
     return pytorch_fn(*args, **kwargs)
+

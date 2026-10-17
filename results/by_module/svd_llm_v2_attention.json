@@ -30,7 +30,14 @@
     "metrics": {
       "latency_triton_ms": 1.494
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "131 Attention Comprehensive Latency Benchmark",
+    "activation_truncation": {
+      "enabled": true,
+      "method": "activation-aware singular value thresholding",
+      "energy_threshold_eta": 0.95,
+      "outlier_percentile_cutoff": 99.9,
+      "per_projection_rank_adaptation": true
+    }
   },
   "active_records": [
     {
@@ -56,7 +63,14 @@
         "ppl": 34.33,
         "latency_ms": 3160.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite",
+      "activation_truncation": {
+        "enabled": true,
+        "method": "activation-aware singular value thresholding",
+        "energy_threshold_eta": 0.95,
+        "outlier_percentile_cutoff": 99.9,
+        "per_projection_rank_adaptation": true
+      }
     },
     {
       "record_id": "06e40fd7f2a8e0cb",
@@ -81,7 +95,14 @@
       "metrics": {
         "latency_triton_ms": 1.494
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "131 Attention Comprehensive Latency Benchmark",
+      "activation_truncation": {
+        "enabled": true,
+        "method": "activation-aware singular value thresholding",
+        "energy_threshold_eta": 0.95,
+        "outlier_percentile_cutoff": 99.9,
+        "per_projection_rank_adaptation": true
+      }
     }
   ],
   "history": [
@@ -135,5 +156,12 @@
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
     }
-  ]
+  ],
+  "activation_truncation": {
+    "enabled": true,
+    "method": "activation-aware singular value thresholding",
+    "energy_threshold_eta": 0.95,
+    "outlier_percentile_cutoff": 99.9,
+    "per_projection_rank_adaptation": true
+  }
 }

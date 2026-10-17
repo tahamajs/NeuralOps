@@ -30,7 +30,14 @@
     "metrics": {
       "latency_triton_ms": 1.201
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "131 Attention Comprehensive Latency Benchmark",
+    "fp8_quantization": {
+      "enabled": true,
+      "format": "E4M3 / E5M2 hybrid",
+      "scale_delayed": true,
+      "gemm_backend": "Triton FP8 / CUTLASS",
+      "numerical_stability_gate": "PASS"
+    }
   },
   "active_records": [
     {
@@ -61,7 +68,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "ef8616667e4e038a",
@@ -86,7 +100,14 @@
         "accuracy": 0.9066666666666666,
         "peak_vram_mb": 989.203125
       },
-      "notes": "Run: 69ecaed7-e897-451e-90b8-15474b8fc597"
+      "notes": "Run: 69ecaed7-e897-451e-90b8-15474b8fc597",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "e27c3f84c4cffbb3",
@@ -111,7 +132,14 @@
         "ppl": 32.59,
         "latency_ms": 1590.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "33c65a5c3aaa99b3",
@@ -136,7 +164,14 @@
       "metrics": {
         "latency_triton_ms": 1.201
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "131 Attention Comprehensive Latency Benchmark",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     }
   ],
   "history": [
@@ -245,5 +280,12 @@
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
     }
-  ]
+  ],
+  "fp8_quantization": {
+    "enabled": true,
+    "format": "E4M3 / E5M2 hybrid",
+    "scale_delayed": true,
+    "gemm_backend": "Triton FP8 / CUTLASS",
+    "numerical_stability_gate": "PASS"
+  }
 }

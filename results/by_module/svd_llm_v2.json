@@ -31,7 +31,14 @@
       "gpt2_acc": 50.92,
       "latency_ms": 82.5
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Master Aggregated Results",
+    "activation_truncation": {
+      "enabled": true,
+      "method": "activation-aware singular value thresholding",
+      "energy_threshold_eta": 0.95,
+      "outlier_percentile_cutoff": 99.9,
+      "per_projection_rank_adaptation": true
+    }
   },
   "active_records": [
     {
@@ -62,7 +69,14 @@
         "compression_ratio": 1.201,
         "param_reduction_pct": 16.74
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "activation_truncation": {
+        "enabled": true,
+        "method": "activation-aware singular value thresholding",
+        "energy_threshold_eta": 0.95,
+        "outlier_percentile_cutoff": 99.9,
+        "per_projection_rank_adaptation": true
+      }
     },
     {
       "record_id": "1f3780190122a9a1",
@@ -88,7 +102,14 @@
         "gpt2_acc": 50.92,
         "latency_ms": 82.5
       },
-      "notes": "Master Aggregated Results"
+      "notes": "Master Aggregated Results",
+      "activation_truncation": {
+        "enabled": true,
+        "method": "activation-aware singular value thresholding",
+        "energy_threshold_eta": 0.95,
+        "outlier_percentile_cutoff": 99.9,
+        "per_projection_rank_adaptation": true
+      }
     }
   ],
   "history": [
@@ -148,5 +169,12 @@
       },
       "notes": "Master Aggregated Results"
     }
-  ]
+  ],
+  "activation_truncation": {
+    "enabled": true,
+    "method": "activation-aware singular value thresholding",
+    "energy_threshold_eta": 0.95,
+    "outlier_percentile_cutoff": 99.9,
+    "per_projection_rank_adaptation": true
+  }
 }

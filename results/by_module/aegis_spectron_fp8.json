@@ -30,7 +30,14 @@
     "metrics": {
       "latency_triton_ms": 6.443
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "131 Attention Comprehensive Latency Benchmark",
+    "fp8_quantization": {
+      "enabled": true,
+      "format": "E4M3 / E5M2 hybrid",
+      "scale_delayed": true,
+      "gemm_backend": "Triton FP8 / CUTLASS",
+      "numerical_stability_gate": "PASS"
+    }
   },
   "active_records": [
     {
@@ -61,7 +68,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "06b077fb559a07cf",
@@ -91,7 +105,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "cca516a0bc963689",
@@ -121,7 +142,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "c3cab3fa6a60e81c",
@@ -151,7 +179,14 @@
         "compression_ratio": 1.1333,
         "param_reduction_pct": 11.76
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "4df81c1d79f20c9c",
@@ -181,7 +216,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "4a0fb428015e5d37",
@@ -211,7 +253,14 @@
         "compression_ratio": 1.1939,
         "param_reduction_pct": 16.24
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "1de2a849a808c919",
@@ -241,7 +290,14 @@
         "compression_ratio": 1.1939,
         "param_reduction_pct": 16.24
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "3f334e899ed81409",
@@ -271,7 +327,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "301e84173be1d6ac",
@@ -301,7 +364,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "47c8b9b471ef74e0",
@@ -331,7 +401,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "d01d4f0dbb64b750",
@@ -361,7 +438,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "33ca724c3ef6b555",
@@ -386,7 +470,14 @@
         "accuracy": 0.68,
         "peak_vram_mb": 1004.82373046875
       },
-      "notes": "Run: 5c89ffad-af42-4875-9efd-bcb966c869ec"
+      "notes": "Run: 5c89ffad-af42-4875-9efd-bcb966c869ec",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "80da86a6947b9f8c",
@@ -412,7 +503,14 @@
         "gpt2_acc": 50.92,
         "latency_ms": 212.0
       },
-      "notes": "Master Aggregated Results"
+      "notes": "Master Aggregated Results",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "8852c4e35ed3c71f",
@@ -440,7 +538,14 @@
         "speedup_x": 0.07,
         "latency_ms": 14.023
       },
-      "notes": "Status: SUCCESS"
+      "notes": "Status: SUCCESS",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "c1fa888f846dd703",
@@ -468,7 +573,14 @@
         "speedup_x": 0.07,
         "latency_ms": 14.023
       },
-      "notes": "Status: SUCCESS"
+      "notes": "Status: SUCCESS",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "bff296455186fc84",
@@ -493,7 +605,14 @@
         "ppl": 34.45,
         "latency_ms": 12680.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "31cca5a77dbeb946",
@@ -518,7 +637,14 @@
       "metrics": {
         "latency_triton_ms": 6.443
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "131 Attention Comprehensive Latency Benchmark",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     }
   ],
   "history": [
@@ -1009,5 +1135,12 @@
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
     }
-  ]
+  ],
+  "fp8_quantization": {
+    "enabled": true,
+    "format": "E4M3 / E5M2 hybrid",
+    "scale_delayed": true,
+    "gemm_backend": "Triton FP8 / CUTLASS",
+    "numerical_stability_gate": "PASS"
+  }
 }

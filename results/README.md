@@ -35,7 +35,12 @@ results/
 ├── plots/                             # 📊 Generated Charts & Vector Visualizations
 │   ├── latency_vs_accuracy.svg        # Pure vector SVG Pareto frontiers
 │   ├── compression_ratio_curve.svg    # Parameter compression vs recovery curves
-│   └── throughput_ladder.svg          # Roofline throughput bar charts
+│   ├── throughput_ladder.svg          # Roofline throughput bar charts
+│   ├── svd_llm_v2_vs_naive_svd.svg    # SVD-LLM v2 vs Naive SVD reconstruction error
+│   ├── asvd_kv_cache_memory_scaling.svg # ASVD low-rank KV-cache footprint scaling
+│   ├── dsa_speedup_curve.svg          # DSA learned block-sparse routing speedup
+│   ├── reap_expert_pruning_curve.svg  # REAP MoE distributed unbiased pruning curve
+│   └── compressor_relative_error_leaderboard.svg # SVD & quantization relative error
 │
 └── [00_archive ... 12_paper_runs]/    # Raw experimental run folders & sweep artifacts
 ```

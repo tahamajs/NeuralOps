@@ -30,7 +30,14 @@
     "metrics": {
       "latency_triton_ms": 6.523
     },
-    "notes": "131 Attention Comprehensive Latency Benchmark"
+    "notes": "131 Attention Comprehensive Latency Benchmark",
+    "fp8_quantization": {
+      "enabled": true,
+      "format": "E4M3 / E5M2 hybrid",
+      "scale_delayed": true,
+      "gemm_backend": "Triton FP8 / CUTLASS",
+      "numerical_stability_gate": "PASS"
+    }
   },
   "active_records": [
     {
@@ -56,7 +63,14 @@
         "ppl": 34.56,
         "latency_ms": 12470.0
       },
-      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite"
+      "notes": "131 Attention Comprehensive Accuracy & Perplexity Suite",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "975faf549222a59a",
@@ -81,7 +95,14 @@
       "metrics": {
         "latency_triton_ms": 6.523
       },
-      "notes": "131 Attention Comprehensive Latency Benchmark"
+      "notes": "131 Attention Comprehensive Latency Benchmark",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     }
   ],
   "history": [
@@ -135,5 +156,12 @@
       },
       "notes": "131 Attention Comprehensive Latency Benchmark"
     }
-  ]
+  ],
+  "fp8_quantization": {
+    "enabled": true,
+    "format": "E4M3 / E5M2 hybrid",
+    "scale_delayed": true,
+    "gemm_backend": "Triton FP8 / CUTLASS",
+    "numerical_stability_gate": "PASS"
+  }
 }

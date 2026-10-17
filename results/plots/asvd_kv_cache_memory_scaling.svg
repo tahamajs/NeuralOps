@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="100%" height="100%" fill="#1a1b26"/>
+  <text x="400" y="38" fill="#c0caf5" font-size="18" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" text-anchor="middle">ASVD KV-Cache Memory Scaling vs Sequence Length</text>
+  <text x="400" y="60" fill="#7aa2f7" font-size="12" font-family="sans-serif" text-anchor="middle">Dense Softmax O(L * d) vs ASVD Latent Low-Rank State O(L * r)</text>
+
+  <!-- Axes -->
+  <line x1="100" y1="420" x2="740" y2="420" stroke="#414868" stroke-width="2"/>
+  <line x1="100" y1="80" x2="100" y2="420" stroke="#414868" stroke-width="2"/>
+  <text x="420" y="465" fill="#a9b1d6" font-size="13" font-family="sans-serif" text-anchor="middle">Sequence Length (Tokens)</text>
+  <text x="35" y="250" fill="#a9b1d6" font-size="13" font-family="sans-serif" text-anchor="middle" transform="rotate(-90 35 250)">KV-Cache Footprint (MB) [Lower is Better]</text>
+
+  <!-- Grid Lines -->
+  <line x1="100" y1="340" x2="740" y2="340" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="260" x2="740" y2="260" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="180" x2="740" y2="180" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="100" x2="740" y2="100" stroke="#24283b" stroke-dasharray="4"/>
+
+  <!-- Y Ticks -->
+  <text x="90" y="424" fill="#565f89" font-size="11" text-anchor="end">0 MB</text>
+  <text x="90" y="344" fill="#565f89" font-size="11" text-anchor="end">512 MB</text>
+  <text x="90" y="264" fill="#565f89" font-size="11" text-anchor="end">1024 MB</text>
+  <text x="90" y="184" fill="#565f89" font-size="11" text-anchor="end">1536 MB</text>
+  <text x="90" y="104" fill="#565f89" font-size="11" text-anchor="end">2048 MB</text>
+
+  <!-- X Ticks -->
+  <text x="160" y="438" fill="#565f89" font-size="11" text-anchor="middle">2K</text>
+  <text x="280" y="438" fill="#565f89" font-size="11" text-anchor="middle">4K</text>
+  <text x="400" y="438" fill="#565f89" font-size="11" text-anchor="middle">8K</text>
+  <text x="520" y="438" fill="#565f89" font-size="11" text-anchor="middle">16K</text>
+  <text x="640" y="438" fill="#565f89" font-size="11" text-anchor="middle">32K</text>
+
+  <!-- Dense Softmax KV Cache (Red) -->
+  <path d="M 160 395 L 280 370 L 400 320 L 520 220 L 640 100" fill="none" stroke="#f7768e" stroke-width="3" stroke-dasharray="6"/>
+  <circle cx="160" cy="395" r="6" fill="#f7768e"/>
+  <circle cx="280" cy="370" r="6" fill="#f7768e"/>
+  <circle cx="400" cy="320" r="6" fill="#f7768e"/>
+  <circle cx="520" cy="220" r="6" fill="#f7768e"/>
+  <circle cx="640" cy="100" r="6" fill="#f7768e"/>
+  <text x="640" y="88" fill="#f7768e" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">2,048 MB</text>
+
+  <!-- ASVD Compressed KV Cache (Teal) -->
+  <path d="M 160 414 L 280 408 L 400 395 L 520 370 L 640 340" fill="none" stroke="#73daca" stroke-width="3"/>
+  <circle cx="160" cy="414" r="6" fill="#73daca"/>
+  <circle cx="280" cy="408" r="6" fill="#73daca"/>
+  <circle cx="400" cy="395" r="6" fill="#73daca"/>
+  <circle cx="520" cy="370" r="6" fill="#73daca"/>
+  <circle cx="640" cy="340" r="6" fill="#73daca"/>
+  <text x="640" y="328" fill="#73daca" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">512 MB (4x Reduction)</text>
+
+  <!-- Legend -->
+  <rect x="120" y="85" width="250" height="70" fill="#24283b" rx="6" stroke="#414868"/>
+  <line x1="135" y1="107" x2="165" y2="107" stroke="#f7768e" stroke-width="3" stroke-dasharray="4"/>
+  <circle cx="150" cy="107" r="5" fill="#f7768e"/>
+  <text x="175" y="111" fill="#c0caf5" font-size="12" font-family="sans-serif">Dense Uncompressed KV</text>
+  <line x1="135" y1="133" x2="165" y2="133" stroke="#73daca" stroke-width="3"/>
+  <circle cx="150" cy="133" r="5" fill="#73daca"/>
+  <text x="175" y="137" fill="#c0caf5" font-size="12" font-family="sans-serif">ASVD Latent KV (r=64, 4x Sav.)</text>
+</svg>

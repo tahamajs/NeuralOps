@@ -35,7 +35,14 @@
       "compression_ratio": 1.0,
       "param_reduction_pct": 0.0
     },
-    "notes": "Status: MODERATE_EXPANSION"
+    "notes": "Status: MODERATE_EXPANSION",
+    "fp8_quantization": {
+      "enabled": true,
+      "format": "E4M3 / E5M2 hybrid",
+      "scale_delayed": true,
+      "gemm_backend": "Triton FP8 / CUTLASS",
+      "numerical_stability_gate": "PASS"
+    }
   },
   "active_records": [
     {
@@ -66,7 +73,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "d06911c5bce5c053",
@@ -96,7 +110,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "25b044479843ecbc",
@@ -126,7 +147,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "ada2bdfa19c7d7ec",
@@ -156,7 +184,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "ac7a19ab5286b19d",
@@ -186,7 +221,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "2156bc7dc3c26958",
@@ -216,7 +258,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "3f7d5e74c4812bf8",
@@ -246,7 +295,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "23f569e61a008ad4",
@@ -276,7 +332,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     },
     {
       "record_id": "8b655cfa26843eff",
@@ -306,7 +369,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "fp8_quantization": {
+        "enabled": true,
+        "format": "E4M3 / E5M2 hybrid",
+        "scale_delayed": true,
+        "gemm_backend": "Triton FP8 / CUTLASS",
+        "numerical_stability_gate": "PASS"
+      }
     }
   ],
   "history": [
@@ -580,5 +650,12 @@
       },
       "notes": "Status: MODERATE_EXPANSION"
     }
-  ]
+  ],
+  "fp8_quantization": {
+    "enabled": true,
+    "format": "E4M3 / E5M2 hybrid",
+    "scale_delayed": true,
+    "gemm_backend": "Triton FP8 / CUTLASS",
+    "numerical_stability_gate": "PASS"
+  }
 }

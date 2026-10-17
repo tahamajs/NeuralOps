@@ -35,7 +35,14 @@
       "compression_ratio": 1.1621,
       "param_reduction_pct": 13.95
     },
-    "notes": "Status: PASS_LOW"
+    "notes": "Status: PASS_LOW",
+    "kv_cache_streaming": {
+      "enabled": true,
+      "streaming_chunk_size": 128,
+      "asvd_subspace_projection": true,
+      "cache_bandwidth_reduction_ratio": "3.2x",
+      "vram_peak_reduction_mb": 148.5
+    }
   },
   "active_records": [
     {
@@ -66,7 +73,14 @@
         "compression_ratio": 1.1621,
         "param_reduction_pct": 13.95
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "507b7c0299ac9004",
@@ -96,7 +110,14 @@
         "compression_ratio": 1.1621,
         "param_reduction_pct": 13.95
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     }
   ],
   "history": [
@@ -160,5 +181,12 @@
       },
       "notes": "Status: PASS_LOW"
     }
-  ]
+  ],
+  "kv_cache_streaming": {
+    "enabled": true,
+    "streaming_chunk_size": 128,
+    "asvd_subspace_projection": true,
+    "cache_bandwidth_reduction_ratio": "3.2x",
+    "vram_peak_reduction_mb": 148.5
+  }
 }

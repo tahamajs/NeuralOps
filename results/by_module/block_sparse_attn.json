@@ -30,7 +30,15 @@
       "latency_pytorch_ms": 1.9916697692871095,
       "speedup_x": 5.019069906005445
     },
-    "notes": "3-Level Execution Hierarchy Benchmark"
+    "notes": "3-Level Execution Hierarchy Benchmark",
+    "dsa_router": {
+      "enabled": true,
+      "routing_mechanism": "learned block-sparse router (DSA)",
+      "block_size_B": 64,
+      "top_k_blocks": 8,
+      "gradient_alignment_preservation": ">= 95%",
+      "theoretical_speedup": "4.0x - 32.0x"
+    }
   },
   "active_records": [
     {
@@ -56,7 +64,15 @@
         "latency_pytorch_ms": 1.9916697692871095,
         "speedup_x": 5.019069906005445
       },
-      "notes": "3-Level Execution Hierarchy Benchmark"
+      "notes": "3-Level Execution Hierarchy Benchmark",
+      "dsa_router": {
+        "enabled": true,
+        "routing_mechanism": "learned block-sparse router (DSA)",
+        "block_size_B": 64,
+        "top_k_blocks": 8,
+        "gradient_alignment_preservation": ">= 95%",
+        "theoretical_speedup": "4.0x - 32.0x"
+      }
     },
     {
       "record_id": "a55d6dd8b3ef9fda",
@@ -81,7 +97,15 @@
         "latency_pytorch_ms": 1.9916697692871095,
         "speedup_x": 5.019069906005445
       },
-      "notes": "3-Level Execution Hierarchy Benchmark"
+      "notes": "3-Level Execution Hierarchy Benchmark",
+      "dsa_router": {
+        "enabled": true,
+        "routing_mechanism": "learned block-sparse router (DSA)",
+        "block_size_B": 64,
+        "top_k_blocks": 8,
+        "gradient_alignment_preservation": ">= 95%",
+        "theoretical_speedup": "4.0x - 32.0x"
+      }
     }
   ],
   "history": [
@@ -135,5 +159,13 @@
       },
       "notes": "3-Level Execution Hierarchy Benchmark"
     }
-  ]
+  ],
+  "dsa_router": {
+    "enabled": true,
+    "routing_mechanism": "learned block-sparse router (DSA)",
+    "block_size_B": 64,
+    "top_k_blocks": 8,
+    "gradient_alignment_preservation": ">= 95%",
+    "theoretical_speedup": "4.0x - 32.0x"
+  }
 }

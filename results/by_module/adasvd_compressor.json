@@ -29,7 +29,14 @@
       "compress_ms": 77.89,
       "relative_error": 0.0333
     },
-    "notes": "72 Compressor Matrix Compression Benchmark"
+    "notes": "72 Compressor Matrix Compression Benchmark",
+    "kv_cache_streaming": {
+      "enabled": true,
+      "streaming_chunk_size": 128,
+      "asvd_subspace_projection": true,
+      "cache_bandwidth_reduction_ratio": "3.2x",
+      "vram_peak_reduction_mb": 148.5
+    }
   },
   "active_records": [
     {
@@ -60,7 +67,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "33f887f15131722c",
@@ -90,7 +104,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "f008229b7ea5449a",
@@ -120,7 +141,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL"
+      "notes": "Status: FAIL",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "da448ae9bb52a374",
@@ -150,7 +178,14 @@
         "compression_ratio": 1.1991,
         "param_reduction_pct": 16.6
       },
-      "notes": "Status: FAIL_PPL_DIVERGED"
+      "notes": "Status: FAIL_PPL_DIVERGED",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "f67023133c80de00",
@@ -174,7 +209,14 @@
         "compress_ms": 77.89,
         "relative_error": 0.0333
       },
-      "notes": "72 Compressor Matrix Compression Benchmark"
+      "notes": "72 Compressor Matrix Compression Benchmark",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     }
   ],
   "history": [
@@ -322,5 +364,12 @@
       },
       "notes": "72 Compressor Matrix Compression Benchmark"
     }
-  ]
+  ],
+  "kv_cache_streaming": {
+    "enabled": true,
+    "streaming_chunk_size": 128,
+    "asvd_subspace_projection": true,
+    "cache_bandwidth_reduction_ratio": "3.2x",
+    "vram_peak_reduction_mb": 148.5
+  }
 }

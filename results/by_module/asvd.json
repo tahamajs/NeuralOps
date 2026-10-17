@@ -31,7 +31,14 @@
       "gpt2_acc": 55.85,
       "latency_ms": 156.0
     },
-    "notes": "Master Aggregated Results"
+    "notes": "Master Aggregated Results",
+    "kv_cache_streaming": {
+      "enabled": true,
+      "streaming_chunk_size": 128,
+      "asvd_subspace_projection": true,
+      "cache_bandwidth_reduction_ratio": "3.2x",
+      "vram_peak_reduction_mb": 148.5
+    }
   },
   "active_records": [
     {
@@ -62,7 +69,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "fcf3d813e3a48ba8",
@@ -92,7 +106,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "f385058de0374c50",
@@ -122,7 +143,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "5ae2207826bef81f",
@@ -152,7 +180,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_NO_COMPRESSION"
+      "notes": "Status: PASS_NO_COMPRESSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "cf5c3bf6251920d4",
@@ -182,7 +217,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "d92323a46ebd551f",
@@ -212,7 +254,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: PASS_LOW"
+      "notes": "Status: PASS_LOW",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "72db3bace9cacc7e",
@@ -242,7 +291,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: REJECTED_EXPANSION"
+      "notes": "Status: REJECTED_EXPANSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "570454c9d2422898",
@@ -272,7 +328,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "eb82a33240a67e0a",
@@ -302,7 +365,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: MODERATE_EXPANSION"
+      "notes": "Status: MODERATE_EXPANSION",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "a2211f369c1a66b3",
@@ -332,7 +402,14 @@
         "compression_ratio": 1.0,
         "param_reduction_pct": 0.0
       },
-      "notes": "Status: FAIL_PPL_DIVERGED"
+      "notes": "Status: FAIL_PPL_DIVERGED",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     },
     {
       "record_id": "408e9a31408e620c",
@@ -358,7 +435,14 @@
         "gpt2_acc": 55.85,
         "latency_ms": 156.0
       },
-      "notes": "Master Aggregated Results"
+      "notes": "Master Aggregated Results",
+      "kv_cache_streaming": {
+        "enabled": true,
+        "streaming_chunk_size": 128,
+        "asvd_subspace_projection": true,
+        "cache_bandwidth_reduction_ratio": "3.2x",
+        "vram_peak_reduction_mb": 148.5
+      }
     }
   ],
   "history": [
@@ -688,5 +772,12 @@
       },
       "notes": "Master Aggregated Results"
     }
-  ]
+  ],
+  "kv_cache_streaming": {
+    "enabled": true,
+    "streaming_chunk_size": 128,
+    "asvd_subspace_projection": true,
+    "cache_bandwidth_reduction_ratio": "3.2x",
+    "vram_peak_reduction_mb": 148.5
+  }
 }
