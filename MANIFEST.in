@@ -7,6 +7,11 @@ include neuralops/benchmarks/discovery_overrides.json
 include neuralops/py.typed
 
 recursive-include neuralops *.pyi
+recursive-include neuralops *.cu
+recursive-include neuralops *.cuh
+recursive-include neuralops *.cpp
+recursive-include neuralops *.h
+recursive-include neuralops *.json
 
 recursive-exclude neuralops/data/glue_data *
 recursive-exclude neuralops/tests *
