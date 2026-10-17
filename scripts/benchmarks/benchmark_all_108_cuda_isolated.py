@@ -637,8 +637,16 @@ def run_test(mod_name):
                 for o_elem, r_elem in zip(out, ref_out):
                     if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
                         diffs.append((o_elem.float() - r_elem.float()).abs().max().item())
-                max_diff = max(diffs) if diffs else 0.0
-        except Exception:
+                shape_match = True
+                dtype_match = True
+                if isinstance(out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
+                    shape_match = (out.shape == ref_out.shape)
+                    dtype_match = (out.dtype == ref_out.dtype)
+                if not shape_match or not dtype_match:
+                    print(f"[{mod_name}] Shape/Dtype mismatch: CUDA {getattr(out, 'shape', None)}/{getattr(out, 'dtype', None)} vs Ref {getattr(ref_out, 'shape', None)}/{getattr(ref_out, 'dtype', None)}", file=sys.stderr)
+        except Exception as e:
+            import traceback
+            traceback.print_exc(file=sys.stderr)
             ref_ms = 0.0
             max_diff = 999.0
 
@@ -685,24 +693,27 @@ ALIASES = {
 
 
 def classify_status(cuda_ms, ref_ms, max_diff):
-    """Return (status, reason) tuple for each kernel."""
+    """Return (status, reason) tuple for each kernel strictly adhering to NeuralOps criteria."""
     import math
 
     # Category 1: NaN (broken)
     if max_diff is None or str(max_diff).lower() == "nan" or (isinstance(max_diff, float) and math.isnan(max_diff)):
         return ("FAIL_NAN", "max_diff is NaN — kernel produces NaN output")
 
-    # Category 2: Missing baseline
-    if ref_ms < 1e-5:
-        return ("NO_BASELINE", "ref_ms < 0.01ms — no real baseline to compare")
+    # Category 2: Reference failure / missing baseline
+    if ref_ms is None or ref_ms < 1e-5 or max_diff == 999.0:
+        return ("REF_FAILED", "ref_ms < 0.01ms or diff=999.0 — reference failed or missing")
 
     # Category 3: Numerical divergence
-    if max_diff > 0.05:
-        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} > 0.05")
+    if max_diff >= 0.05:
+        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} >= 0.05")
+
+    # Category 4: Slower than reference
+    if cuda_ms > ref_ms * 0.95:
+        speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
+        return ("PASS_SLOW", f"speedup={speedup:.2f}x < 1.05x — slower than reference")
 
     speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
-
-    # Genuine PASS
     return ("PASS", f"speedup={speedup:.2f}x, max_diff={max_diff:.4f}")
 
 
@@ -712,7 +723,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 115)
-    print(f"SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES (strict={args.classify_strict})")
+    print("SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES (TRIAGED HARNESS)")
     print("=" * 115)
 
     cuda_dir = repo_root / "neuralops" / "core" / "cuda_kernels"
@@ -752,16 +763,12 @@ def main():
                     speedup = res_data["speedup"]
                     diff = res_data["max_diff"]
 
-                    if args.classify_strict:
-                        cls_status, reason = classify_status(cuda_ms, ref_ms, diff)
-                    else:
-                        cls_status, reason = "PASS", "executed without error"
-
+                    cls_status, reason = classify_status(cuda_ms, ref_ms, diff)
                     stats[cls_status] = stats.get(cls_status, 0) + 1
 
-                    ref_str = f"{ref_ms:.4f}" if ref_ms > 0 else "N/A"
-                    sp_str = f"{speedup:.2f}x" if ref_ms > 0 else "1.00x"
-                    diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and ref_ms > 0) else str(diff)
+                    ref_str = f"{ref_ms:.4f}" if (ref_ms > 0 and diff != 999.0) else "N/A"
+                    sp_str = f"{speedup:.2f}x" if (ref_ms > 0 and diff != 999.0) else "1.00x"
+                    diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and diff != 999.0) else str(diff)
                     print(f"{idx:<4} | {mod_name:<26} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | {cls_status}", flush=True)
                     results.append({"module": mod_name, **res_data, "status": cls_status, "reason": reason})
                 else:
