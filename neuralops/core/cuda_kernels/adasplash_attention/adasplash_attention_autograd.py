@@ -20,10 +20,14 @@ def adasplash_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, t
     scale = 1.0 / (D ** 0.5)
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
     causal_mask = torch.triu(torch.full((N, N), float('-inf'), device=q.device, dtype=q.dtype), diagonal=1)
-    window_mask = torch.tril(torch.full((N, N), float('-inf'), device=q.device, dtype=q.dtype), diagonal=-window_size)
-    scores = scores + causal_mask + window_mask
-    mask = (scores >= threshold) | (torch.eye(N, device=q.device, dtype=torch.bool))
-    scores = scores.masked_fill(~mask, float('-inf'))
+
+    row_idx = torch.arange(N, device=q.device).unsqueeze(1)
+    col_idx = torch.arange(N, device=q.device).unsqueeze(0)
+    in_window = (col_idx <= row_idx) & (col_idx >= row_idx - window_size + 1)
+    is_active = (col_idx <= row_idx) & (in_window | (scores > threshold) | (row_idx == col_idx))
+
+    scores = scores + causal_mask
+    scores = scores.masked_fill(~is_active, float('-inf'))
     probs = F.softmax(scores.float(), dim=-1)
     probs = torch.nan_to_num(probs, nan=0.0).to(v.dtype)
     return torch.matmul(probs, v)
