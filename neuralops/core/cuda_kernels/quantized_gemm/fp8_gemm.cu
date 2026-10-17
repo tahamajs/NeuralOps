@@ -15,11 +15,12 @@ __global__ void fp8_gemm_tiled_kernel(
     const int N,
     const int K
 ) {
-    __shared__ float A_smem[32][32];
-    __shared__ float B_smem[32][32];
+    __shared__ float A_smem[32][33];
+    __shared__ float B_smem[32][33];
 
     const int tx = threadIdx.x;
     const int ty = threadIdx.y;
+
 
     const int row = blockIdx.y * 32 + ty;
     const int col = blockIdx.x * 32 + tx;
