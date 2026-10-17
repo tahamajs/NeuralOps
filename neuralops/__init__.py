@@ -577,6 +577,12 @@ def __getattr__(name: str) -> Any:
         globals()[name] = reg
         return reg
 
+    if name == "ALL_ATTENTION_CLASSES":
+        from neuralops.core.registry import ATTENTION_REGISTRY as reg
+        classes = list(reg.values())
+        globals()[name] = classes
+        return classes
+
     if name in _API_EXPORTS:
         mod_name = _API_EXPORTS[name]
         mod = importlib.import_module(mod_name)
