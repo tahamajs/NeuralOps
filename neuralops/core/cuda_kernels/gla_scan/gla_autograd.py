@@ -1,3 +1,4 @@
+from typing import Any
 """
 Gated Linear Attention (GLA) Scan Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -66,7 +67,7 @@ def _get_triton_impl():
         return None
 
 
-def gla_scan(
+def _gla_scan_dispatch(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
@@ -96,3 +97,41 @@ def gla_scan(
         alpha=alpha,
         kernel_name="gla_scan",
     )
+
+
+class _Gla_scanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, alpha):
+        out = _gla_scan_dispatch(q, k, v, alpha)
+        ctx.save_for_backward(*[t for t in (q, k, v, alpha) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, alpha)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (q, k, v, alpha)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = gla_scan_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def gla_scan(q, k, v, alpha):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, alpha)):
+        return _Gla_scanFunction.apply(q, k, v, alpha)
+    return _gla_scan_dispatch(q, k, v, alpha)

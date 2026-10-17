@@ -1,3 +1,4 @@
+from typing import Any
 """
 Multi-Scale Retention Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -55,7 +56,7 @@ def multi_scale_retention_pytorch_ref(
     return torch.stack(ys, dim=2).to(q.dtype)
 
 
-def multi_scale_retention(
+def _multi_scale_retention_dispatch(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
@@ -90,3 +91,41 @@ def multi_scale_retention(
         gammas,
         kernel_name="multi_scale_retention",
     )
+
+
+class _Multi_scale_retentionFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, gammas):
+        out = _multi_scale_retention_dispatch(q, k, v, gammas)
+        ctx.save_for_backward(*[t for t in (q, k, v, gammas) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, gammas)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (q, k, v, gammas)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = multi_scale_retention_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def multi_scale_retention(q, k, v, gammas):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, gammas)):
+        return _Multi_scale_retentionFunction.apply(q, k, v, gammas)
+    return _multi_scale_retention_dispatch(q, k, v, gammas)

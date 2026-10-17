@@ -1,3 +1,4 @@
+from typing import Any
 """
 Recurrent GLA Step Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -59,7 +60,7 @@ def _get_triton_impl():
         return None
 
 
-def recurrent_gla_step(
+def _recurrent_gla_step_dispatch(
     q_t: torch.Tensor,
     k_t: torch.Tensor,
     v_t: torch.Tensor,
@@ -88,3 +89,41 @@ def recurrent_gla_step(
         alpha_t,
         kernel_name="recurrent_gla_step",
     )
+
+
+class _Recurrent_gla_stepFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, state, alpha):
+        out = _recurrent_gla_step_dispatch(q, k, v, state, alpha)
+        ctx.save_for_backward(*[t for t in (q, k, v, state, alpha) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (q, k, v, state, alpha)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (q, k, v, state, alpha)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = recurrent_gla_step_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def recurrent_gla_step(q, k, v, state, alpha):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, state, alpha)):
+        return _Recurrent_gla_stepFunction.apply(q, k, v, state, alpha)
+    return _recurrent_gla_step_dispatch(q, k, v, state, alpha)
