@@ -1413,7 +1413,7 @@ Table~\ref{tab:layer_recon} reports layer-by-layer Frobenius reconstruction erro
 
 \subsection{Forensics of the 80 Non-Expansion Invariant Violators}
 \label{app:non_expansion_80}
-In empirical model compression, any architecture where $|\theta(M\x27)| > |\theta(M_0)|$ strictly violates the non-expansion invariant. During our systematic evaluation of attention and compression modules across DistilBERT ($d=768$, 66.96M base parameters), 80 published architectures and configuration setups exhibited parameter growth rather than reduction. We partition these 80 violators into three rigorous architectural tiers:
+In empirical model compression, any architecture where $|\theta(M')| > |\theta(M_0)|$ strictly violates the non-expansion invariant. During our systematic evaluation of attention and compression modules across DistilBERT ($d=768$, 66.96M base parameters), 80 published architectures and configuration setups exhibited parameter growth rather than reduction. We partition these 80 violators into three rigorous architectural tiers:
 
 \begin{enumerate}
     \item \textbf{Category A: LoRA-Recovery Adapter Inflation ($\Delta_\theta \le +1.0\%$, 51 Modules)}:
