@@ -484,10 +484,52 @@ ALIASES = {
 }
 
 
+def classify_status(cuda_ms, ref_ms, max_diff):
+    """Return (status, reason) tuple for each kernel."""
+    import math
+
+    # Category E: NaN (worst)
+    if max_diff is None or str(max_diff).lower() == "nan" or (isinstance(max_diff, float) and math.isnan(max_diff)):
+        return ("FAIL_NAN", "max_diff is NaN — kernel produces NaN output")
+
+    # Category A: No baseline
+    if ref_ms < 1e-5:
+        return ("NO_BASELINE", "ref_ms < 0.01ms — no real baseline to compare")
+
+    speedup = ref_ms / cuda_ms if cuda_ms > 0 else 0.0
+
+    # Category B1: Critically slow
+    if speedup < 0.2:
+        return ("FAIL_SLOW_CRITICAL", f"{1/speedup:.0f}x slower than PyTorch")
+
+    # Category B2: Moderately slow
+    if speedup < 1.0:
+        return ("FAIL_SLOW", f"{1/speedup:.1f}x slower than PyTorch")
+
+    # Category D: Numerically broken
+    if max_diff > 0.01:
+        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} > 0.01")
+
+    # Category C: Impossible speedup (suspicious baseline)
+    if speedup > 100:
+        return ("SUSPICIOUS_BASELINE", f"speedup={speedup:.0f}x — check PyTorch ref")
+
+    # Category F: Absolute latency outlier
+    if cuda_ms > 20.0:
+        return ("FAIL_LATENCY", f"cuda_ms={cuda_ms:.1f} > 20ms absolute threshold")
+
+    # Genuine PASS
+    return ("PASS", f"speedup={speedup:.2f}x, max_diff={max_diff:.4f}")
+
+
 def main():
-    print("=" * 105)
-    print("SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES")
-    print("=" * 105)
+    parser = argparse.ArgumentParser(description="Subprocess-Isolated Master Benchmark for CUDA Modules")
+    parser.add_argument("--classify-strict", action="store_true", help="Apply strict PASS/FAIL classification")
+    args = parser.parse_args()
+
+    print("=" * 115)
+    print(f"SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES (strict={args.classify_strict})")
+    print("=" * 115)
 
     cuda_dir = repo_root / "neuralops" / "core" / "cuda_kernels"
     subdirs = sorted([d for d in cuda_dir.iterdir() if d.is_dir() and not d.name.startswith(("_", "."))])
@@ -502,11 +544,10 @@ def main():
         f.write(worker_content)
 
     results = []
-    passed = 0
-    failed = 0
+    stats = {}
 
-    print(f"{'Idx':<4} | {'Module Name':<28} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<9} | {'Diff':<10} | {'Status'}")
-    print("-" * 105)
+    print(f"{'Idx':<4} | {'Module Name':<26} | {'CUDA (ms)':<10} | {'Ref (ms)':<10} | {'Speedup':<9} | {'Diff':<10} | {'Classified Status'}")
+    print("-" * 115)
 
     python_bin = sys.executable
 
@@ -522,38 +563,47 @@ def main():
                 res_str = stdout.split("RESULT_JSON:")[1].strip().split("\n")[0]
                 res_data = json.loads(res_str)
                 if res_data.get("status") == "PASS":
-                    passed += 1
                     cuda_ms = res_data["cuda_ms"]
                     ref_ms = res_data["ref_ms"]
                     speedup = res_data["speedup"]
                     diff = res_data["max_diff"]
+
+                    if args.classify_strict:
+                        cls_status, reason = classify_status(cuda_ms, ref_ms, diff)
+                    else:
+                        cls_status, reason = "PASS", "executed without error"
+
+                    stats[cls_status] = stats.get(cls_status, 0) + 1
+
                     ref_str = f"{ref_ms:.4f}" if ref_ms > 0 else "N/A"
                     sp_str = f"{speedup:.2f}x" if ref_ms > 0 else "1.00x"
-                    diff_str = f"{diff:.2e}" if ref_ms > 0 else "N/A"
-                    print(f"{idx:<4} | {mod_name:<28} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | PASS", flush=True)
-                    results.append({"module": mod_name, "status": "PASS", **res_data})
+                    diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and ref_ms > 0) else str(diff)
+                    print(f"{idx:<4} | {mod_name:<26} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | {cls_status}", flush=True)
+                    results.append({"module": mod_name, "status": cls_status, "reason": reason, **res_data})
                 else:
-                    failed += 1
                     err_msg = res_data.get("status", "FAIL")
-                    print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | FAIL ({err_msg})", flush=True)
+                    stats["FAIL"] = stats.get("FAIL", 0) + 1
+                    print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | FAIL ({err_msg})", flush=True)
                     results.append({"module": mod_name, "status": "FAIL", "error": err_msg})
             else:
-                failed += 1
                 err = (stderr or stdout).strip().split("\n")[-1][:40]
-                print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | CRASH: {err}", flush=True)
+                stats["CRASH"] = stats.get("CRASH", 0) + 1
+                print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | CRASH: {err}", flush=True)
                 results.append({"module": mod_name, "status": "CRASH", "error": err})
         except subprocess.TimeoutExpired:
-            failed += 1
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (30s)", flush=True)
+            stats["TIMEOUT"] = stats.get("TIMEOUT", 0) + 1
+            print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (30s)", flush=True)
             results.append({"module": mod_name, "status": "TIMEOUT"})
         except Exception as e:
-            failed += 1
-            print(f"{idx:<4} | {mod_name:<28} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | SUBPROC ERR: {str(e)[:30]}", flush=True)
+            stats["ERROR"] = stats.get("ERROR", 0) + 1
+            print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | SUBPROC ERR: {str(e)[:30]}", flush=True)
             results.append({"module": mod_name, "status": "ERROR", "error": str(e)})
 
-    print("=" * 105, flush=True)
-    print(f"MASTER ISOLATED BENCHMARK COMPLETED: {passed}/{len(subdirs)} PASSED ({passed/len(subdirs)*100:.1f}%), {failed} FAILED.", flush=True)
-    print("=" * 105, flush=True)
+    print("=" * 115, flush=True)
+    print("MASTER BENCHMARK CLASSIFICATION BREAKDOWN:", flush=True)
+    for k, v in sorted(stats.items()):
+        print(f"  {k}: {v} kernels", flush=True)
+    print("=" * 115, flush=True)
 
     out_file = repo_root / "results" / "master_108_cuda_modules_benchmark.json"
     out_file.parent.mkdir(parents=True, exist_ok=True)
@@ -565,15 +615,16 @@ def main():
     import csv
     with open(csv_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Module", "CUDA (ms)", "Ref (ms)", "Speedup", "Max Abs Diff", "Status"])
+        writer.writerow(["Module", "CUDA (ms)", "Ref (ms)", "Speedup", "Max Abs Diff", "Status", "Reason"])
         for r in results:
             mod = r.get("module", "")
             stat = r.get("status", "")
+            reason = r.get("reason", "")
             c_ms = r.get("cuda_ms", "")
             r_ms = r.get("ref_ms", "")
             sp = f"{r.get('speedup', '')}x" if r.get("speedup") else ""
             diff = r.get("max_diff", "")
-            writer.writerow([mod, c_ms, r_ms, sp, diff, stat])
+            writer.writerow([mod, c_ms, r_ms, sp, diff, stat, reason])
     print(f"Master benchmark CSV saved to: {csv_file}", flush=True)
 
 

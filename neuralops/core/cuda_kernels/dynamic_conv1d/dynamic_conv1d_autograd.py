@@ -27,6 +27,9 @@ def _get_module():
 
 from neuralops.core.triton_kernels.elementwise import fused_dynamic_conv1d_pytorch, fused_dynamic_conv1d_triton
 
+dynamic_conv1d_pytorch_ref = fused_dynamic_conv1d_pytorch
+dynamic_conv1d_ref = fused_dynamic_conv1d_pytorch
+
 def dynamic_conv1d(v: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
