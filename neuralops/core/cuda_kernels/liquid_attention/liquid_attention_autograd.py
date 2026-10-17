@@ -1,3 +1,4 @@
+from typing import Any
 from __future__ import annotations
 from pathlib import Path
 import torch
@@ -41,7 +42,7 @@ def liquid_attention_ref(
     out = torch.stack(ys, dim=1)
     return out, h.to(x.dtype)
 
-def liquid_attention(
+def _liquid_attention_dispatch(
     x: torch.Tensor,
     delta: torch.Tensor,
     A: torch.Tensor,
@@ -67,3 +68,41 @@ def liquid_attention(
         prev_state=prev_state,
         kernel_name="liquid_attention",
     )
+
+
+class _Liquid_attentionFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x, delta, A):
+        out = _liquid_attention_dispatch(x, delta, A)
+        ctx.save_for_backward(*[t for t in (x, delta, A) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, delta, A)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (x, delta, A)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = liquid_attention_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def liquid_attention(x, delta, A):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, delta, A)):
+        return _Liquid_attentionFunction.apply(x, delta, A)
+    return _liquid_attention_dispatch(x, delta, A)

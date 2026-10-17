@@ -1,3 +1,4 @@
+from typing import Any
 from __future__ import annotations
 from pathlib import Path
 import torch
@@ -55,7 +56,7 @@ def mamba2_block_ref(
     out = torch.stack(ys, dim=-1) # [B, D, L]
     return out, h.to(u.dtype)
 
-def mamba2_block(
+def _mamba2_block_dispatch(
     u: torch.Tensor,
     delta: torch.Tensor,
     A: torch.Tensor,
@@ -90,3 +91,41 @@ def mamba2_block(
         prev_state=prev_state,
         kernel_name="mamba2_block",
     )
+
+
+class _Mamba2_blockFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, u, delta, A, B, C, D):
+        out = _mamba2_block_dispatch(u, delta, A, B, C, D)
+        ctx.save_for_backward(*[t for t in (u, delta, A, B, C, D) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (u, delta, A, B, C, D)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (u, delta, A, B, C, D)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = mamba2_block_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def mamba2_block(u, delta, A, B, C, D):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (u, delta, A, B, C, D)):
+        return _Mamba2_blockFunction.apply(u, delta, A, B, C, D)
+    return _mamba2_block_dispatch(u, delta, A, B, C, D)

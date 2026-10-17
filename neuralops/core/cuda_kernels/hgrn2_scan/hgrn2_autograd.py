@@ -51,7 +51,7 @@ def _get_triton_impl():
         return None
 
 
-def hgrn2_fused_bwd_scan(
+def _hgrn2_fused_bwd_scan_dispatch(
     x: torch.Tensor,
     g: torch.Tensor,
 ) -> torch.Tensor:
@@ -70,3 +70,41 @@ def hgrn2_fused_bwd_scan(
         g,
         kernel_name="hgrn2_fused_bwd_scan",
     )
+
+
+class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, x, g):
+        out = _hgrn2_fused_bwd_scan_dispatch(x, g)
+        ctx.save_for_backward(*[t for t in (x, g) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, g)]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in (x, g)]
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = hgrn2_fused_bwd_scan_pytorch_ref(*inputs)
+        tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        grads = torch.autograd.grad(out_p, tensor_inputs, dout, allow_unused=True)
+        grads = list(grads)
+        res = []
+        for is_t in ctx.tensors_mask:
+            if is_t:
+                res.append(grads.pop(0))
+            else:
+                res.append(None)
+        return tuple(res)
+
+def hgrn2_fused_bwd_scan(x, g):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):
+        return _Hgrn2_fused_bwd_scanFunction.apply(x, g)
+    return _hgrn2_fused_bwd_scan_dispatch(x, g)
