@@ -78,8 +78,8 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         M_dim, N_dim, K_dim = 64, 128, 256
         x_gemm = torch.randn(M_dim, K_dim, device=device, dtype=dtype) * 0.05
         w_p = torch.randint(0, 255, (N_dim, K_dim // 2), device=device, dtype=torch.uint8)
-        sc = torch.full((K_dim // 32, N_dim), 0.01, device=device, dtype=dtype)
-        zr = torch.zeros(K_dim // 32, N_dim, device=device, dtype=dtype)
+        sc = torch.full((N_dim, K_dim // 32), 0.01, device=device, dtype=dtype)
+        zr = torch.zeros(N_dim, K_dim // 32, device=device, dtype=dtype)
         return [x_gemm, w_p, sc, zr], {{"group_size": 32}}
     elif mod_name == "ternary_gemm":
         M_dim, N_dim, K_dim = 64, 128, 256
@@ -275,8 +275,8 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         b_map = torch.tensor([[0, 2], [1, 5], [3, 7]], device=device, dtype=torch.int32)
         return [dst_k, dst_v, src_k, src_v, b_map, block_sz, num_h, head_d], {{}}
     elif mod_name == "paged_kv_evict":
-        k_in = torch.randn(64, 8, 64, device=device, dtype=dtype) * 0.1
-        v_in = torch.randn(64, 8, 64, device=device, dtype=dtype) * 0.1
+        k_in = torch.randn(64, D * 8, device=device, dtype=dtype) * 0.1
+        v_in = torch.randn(64, D * 8, device=device, dtype=dtype) * 0.1
         keep = torch.arange(32, device=device, dtype=torch.int64)
         return [k_in, v_in, keep], {{}}
     elif mod_name == "paged_recurrent_step":
@@ -312,7 +312,7 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         x_im = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         w_re = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
         w_im = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
-        tau = torch.tensor(0.01, device=device, dtype=dtype)
+        tau = torch.full((B, N, D), 0.01, device=device, dtype=dtype)
         return [x_re, x_im, w_re, w_im, tau], {{}}
     elif mod_name == "tt_contraction":
         core0 = torch.randn(1, 8, 8, 8, device=device, dtype=dtype) * 0.1
@@ -431,6 +431,31 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         C_mat = torch.randn(B, S_dim, device=device, dtype=dtype) * 0.1
         prev_state = torch.randn(B, D, S_dim, device=device, dtype=dtype) * 0.1
         return [u, delta, A, B_mat, C_mat, prev_state], {{}}
+    elif mod_name == "mamba2_block":
+        S_dim = 16
+        u = torch.randn(B, D, N, device=device, dtype=dtype) * 0.1
+        delta = torch.randn(B, D, N, device=device, dtype=dtype) * 0.1
+        A = torch.randn(D, device=device, dtype=dtype) * 0.1
+        B_mat = torch.randn(B, S_dim, N, device=device, dtype=dtype) * 0.1
+        C_mat = torch.randn(B, S_dim, N, device=device, dtype=dtype) * 0.1
+        return [u, delta, A, B_mat, C_mat], {{}}
+    elif mod_name == "liquid_attention":
+        x = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        delta = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
+        A = torch.randn(D, device=device, dtype=dtype) * 0.1
+        return [x, delta, A], {{}}
+    elif mod_name == "swiglu":
+        x = torch.randn(B * 8, D * 8, device=device, dtype=dtype) * 0.1
+        return [x], {{}}
+    elif mod_name == "sliding_window":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        return [q, k, v], {{"window_size": 128, "num_sinks": 4}}
+    elif mod_name == "split_head_norm":
+        x = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        w = torch.randn(D, device=device, dtype=dtype) * 0.1
+        return [x, w], {{"eps": 1e-5}}
     elif mod_name == "mamba_svd_flash":
         R_rank = 16
         u = torch.randn(B, N, D, device=device, dtype=dtype) * 0.1
@@ -615,17 +640,19 @@ def run_test(mod_name):
 
     if ref_fn:
         try:
+            ref_args = [a.clone() if isinstance(a, torch.Tensor) else a for a in args]
+            ref_kwargs = {{k: (v.clone() if isinstance(v, torch.Tensor) else v) for k, v in kwargs.items()}}
             use_kwargs = True
             try:
-                ref_out = ref_fn(*args, **kwargs)
+                ref_out = ref_fn(*ref_args, **ref_kwargs)
             except (TypeError, Exception):
-                ref_out = ref_fn(*args)
+                ref_out = ref_fn(*ref_args)
                 use_kwargs = False
 
             if use_kwargs:
-                ref_ms = time_callable(lambda: ref_fn(*args, **kwargs), warmup=2, iters=5)
+                ref_ms = time_callable(lambda: ref_fn(*ref_args, **ref_kwargs), warmup=2, iters=5)
             else:
-                ref_ms = time_callable(lambda: ref_fn(*args), warmup=2, iters=5)
+                ref_ms = time_callable(lambda: ref_fn(*ref_args), warmup=2, iters=5)
             speedup = ref_ms / max(cuda_ms, 1e-5)
         except Exception as e:
             import traceback
