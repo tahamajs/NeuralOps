@@ -31,7 +31,9 @@ logger = logging.getLogger(__name__)
 # Persistent cache directory with write-access verification
 _candidate_cache = os.environ.get("NEURALOPS_CUDA_CACHE")
 if not _candidate_cache:
-    if os.path.exists("/mnt/d/cache/torch_extensions"):
+    if os.path.exists("/mnt/d/torch_extensions"):
+        _candidate_cache = "/mnt/d/torch_extensions"
+    elif os.path.exists("/mnt/d/cache/torch_extensions"):
         _candidate_cache = "/mnt/d/cache/torch_extensions"
     else:
         _candidate_cache = os.path.expanduser("~/.cache/torch_extensions")
