@@ -7,9 +7,37 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import argparse
 import platform
 import sys
+from typing import Any
 
+from neuralops import __version__
 from neuralops.benchmarks.discovery import discover_all_modules
+from neuralops.benchmarks.api import Runner
 
+# Rich terminal output support
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    from rich.text import Text
+    HAS_RICH = True
+    console = Console()
+    err_console = Console(stderr=True)
+except ImportError:
+    HAS_RICH = False
+    console = None
+    err_console = None
+
+
+def print_cli_error(msg: str, hint: str | None = None) -> None:
+    """Print nicely formatted CLI error with optional actionable suggestion."""
+    if HAS_RICH and err_console is not None:
+        err_console.print(f"[bold red]✗ Error:[/] {msg}")
+        if hint:
+            err_console.print(f"  [dim cyan]Suggestion:[/] {hint}")
+    else:
+        print(f"✗ Error: {msg}", file=sys.stderr)
+        if hint:
+            print(f"  Suggestion: {hint}", file=sys.stderr)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -17,11 +45,11 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="neuralops",
         description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
     )
-    parser.add_argument("--version", "-v", action="version", version="NeuralOps v1.3.7")
+    parser.add_argument("--version", "-v", action="version", version=f"NeuralOps v{__version__}")
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
-    # 1. run
-    run_p = subparsers.add_parser("run", help="Run benchmark(s)")
+    # 1. run / benchmark
+    run_p = subparsers.add_parser("run", aliases=["benchmark"], help="Run benchmark(s)")
     run_p.add_argument("--module", type=str, default=None, help="Single module name")
     # Module selection shortcuts
     grp_run = run_p.add_argument_group("Module selection shortcuts")
@@ -181,8 +209,8 @@ def _build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     fuse_p.add_argument("--dim", type=int, default=768, help="Hidden dimension")
 
-    # 15. transplant
-    trans_p = subparsers.add_parser("transplant", help="1-line surgical attention replacement + closed-form Ridge calibration + micro-healing")
+    # 15. transplant / surgery
+    trans_p = subparsers.add_parser("transplant", aliases=["surgery"], help="1-line surgical attention replacement + closed-form Ridge calibration + micro-healing")
     trans_p.add_argument("--model", type=str, required=True, help="HuggingFace model identifier or local path")
     trans_p.add_argument("--attention", type=str, required=True, help="Target attention mechanism (e.g. svd_linear_attention, gla_attention)")
     trans_p.add_argument("--rank", type=int, default=64, help="Low-rank bottleneck dimension")
@@ -282,6 +310,30 @@ def _build_parser() -> argparse.ArgumentParser:
     res_p.add_argument("--hard", action="store_true", help="Physically purge records (hard delete)")
     res_p.add_argument("--sync", action="store_true", help="Rebuild SQLite and per-module dossiers from JSONL")
 
+    # 24. train
+    train_p = subparsers.add_parser("train", help="Fine-tune or train a model with custom attention / compression")
+    train_p.add_argument("--config", type=str, default=None, help="Path to YAML training configuration file")
+    train_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model identifier or path")
+    train_p.add_argument("--dataset", type=str, default="sst2", help="Target training dataset")
+    train_p.add_argument("--epochs", type=int, default=3, help="Fine-tuning epochs")
+    train_p.add_argument("--batch-size", type=int, default=32, help="Batch size per device")
+    train_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
+    train_p.add_argument("--output-dir", type=str, default="results/trained", help="Directory to save checkpoints")
+
+    # 25. eval / evaluate
+    eval_p = subparsers.add_parser("eval", aliases=["evaluate"], help="Evaluate model accuracy, latency, and perplexity")
+    eval_p.add_argument("--model", type=str, required=True, help="Model checkpoint path or HF identifier to evaluate")
+    eval_p.add_argument("--dataset", type=str, default="sst2", help="Target evaluation dataset")
+    eval_p.add_argument("--batch-size", type=int, default=32, help="Evaluation batch size")
+    eval_p.add_argument("--seq-len", type=int, default=128, help="Max sequence length")
+    eval_p.add_argument("--device", type=str, default="cuda", help="Hardware device (cuda/mps/cpu)")
+
+    # 26. serve
+    serve_p = subparsers.add_parser("serve", help="Launch NeuralOps REST API server or high-throughput inference engine")
+    serve_p.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
+    serve_p.add_argument("--port", type=int, default=8000, help="Port to listen on")
+    serve_p.add_argument("--model", type=str, default=None, help="Pre-loaded model identifier or path")
+
     return parser
 
 
@@ -294,9 +346,26 @@ def handle_list(args: argparse.Namespace) -> None:
         flag = f"supports_{args.supports}" if args.supports != "cuda" else "requires_cuda"
         modules = [m for m in modules if getattr(m, flag, False)]
 
-    print(f"Discovered {len(modules)} matching modules:")
-    for m in modules:
-        print(f"  [{m.type:10s}] {m.name:36s} (causal={m.supports_causal}, gqa={m.supports_gqa}, rope={m.supports_rope}, cuda={m.requires_cuda})")
+    if HAS_RICH and console is not None:
+        table = Table(title=f"NeuralOps Registry: {len(modules)} Modules", header_style="bold magenta")
+        table.add_column("Type", style="cyan", width=12)
+        table.add_column("Name", style="bold green", min_width=32)
+        table.add_column("Causal", justify="center", width=8)
+        table.add_column("GQA", justify="center", width=8)
+        table.add_column("RoPE", justify="center", width=8)
+        table.add_column("CUDA Req", justify="center", width=10)
+
+        for m in modules:
+            causal_s = "✓" if m.supports_causal else "-"
+            gqa_s = "✓" if m.supports_gqa else "-"
+            rope_s = "✓" if m.supports_rope else "-"
+            cuda_s = "[yellow]Yes[/]" if m.requires_cuda else "[dim]No[/]"
+            table.add_row(m.type, m.name, causal_s, gqa_s, rope_s, cuda_s)
+        console.print(table)
+    else:
+        print(f"Discovered {len(modules)} matching modules:")
+        for m in modules:
+            print(f"  [{m.type:10s}] {m.name:36s} (causal={m.supports_causal}, gqa={m.supports_gqa}, rope={m.supports_rope}, cuda={m.requires_cuda})")
 
 
 def handle_plan(args: argparse.Namespace) -> None:
@@ -326,18 +395,31 @@ def handle_plan(args: argparse.Namespace) -> None:
     est_seconds = total_runs * 180  # Assume ~3 mins per run average on 1 GPU
     est_hours = est_seconds / 3600.0
 
-    print("═════════════════════════════════════════════════════")
-    print(f"Benchmark Plan Summary:")
-    print(f"  Modules:  {mod_count}")
-    print(f"  Models:   {models_count}")
-    print(f"  Datasets: {datasets_count}")
-    print(f"  Ranks:    {ranks_count}")
-    print(f"  Total planned runs: {total_runs}")
-    print(f"  Estimated duration: ~{est_hours:.1f} hours on 1 GPU")
-    print("═════════════════════════════════════════════════════")
-
-    if total_runs > 500 and not args.yes:
-        print("⚠️  Grid size exceeds 500 runs. Use --yes to confirm.")
+    if HAS_RICH and console is not None:
+        table = Table(title="Benchmark Execution Plan", header_style="bold cyan")
+        table.add_column("Dimension", style="bold")
+        table.add_column("Count / Value", style="green", justify="right")
+        table.add_row("Modules Queued", str(mod_count))
+        table.add_row("Target Models", str(models_count))
+        table.add_row("Datasets", str(datasets_count))
+        table.add_row("Ranks", str(ranks_count))
+        table.add_row("Total Planned Runs", f"[bold yellow]{total_runs:,}[/]")
+        table.add_row("Estimated Duration", f"~{est_hours:.1f} hours (1x GPU)")
+        console.print(table)
+        if total_runs > 500 and not args.yes:
+            console.print("[bold yellow]⚠️  Grid size exceeds 500 runs. Use --yes to confirm execution.[/]")
+    else:
+        print("═════════════════════════════════════════════════════")
+        print(f"Benchmark Plan Summary:")
+        print(f"  Modules:  {mod_count}")
+        print(f"  Models:   {models_count}")
+        print(f"  Datasets: {datasets_count}")
+        print(f"  Ranks:    {ranks_count}")
+        print(f"  Total planned runs: {total_runs}")
+        print(f"  Estimated duration: ~{est_hours:.1f} hours on 1 GPU")
+        print("═════════════════════════════════════════════════════")
+        if total_runs > 500 and not args.yes:
+            print("⚠️  Grid size exceeds 500 runs. Use --yes to confirm.")
 
 
 def handle_verify(args: argparse.Namespace) -> None:
@@ -351,19 +433,39 @@ def handle_verify(args: argparse.Namespace) -> None:
     triton_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "core", "triton_kernels")
     kernel_count = len([f for f in os.listdir(triton_dir) if f.endswith(".py") and not f.startswith("__")]) - 1
 
-    print("System Environment Verification:")
-    print(f"  Platform:         {platform.platform()}")
-    print(f"  Python Version:   {platform.python_version()}")
-    print(f"  PyTorch Version:  {torch.__version__}")
-    print(f"  CUDA Available:   {torch.cuda.is_available()}")
-    if torch.cuda.is_available():
-        print(f"  Device Name:      {torch.cuda.get_device_name(0)}")
-        print(f"  Device Count:     {torch.cuda.device_count()}")
-    print(f"  MPS Available:    {torch.backends.mps.is_available()}")
-    print(f"  Triton Available: {HAS_TRITON}")
-    print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
-    print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
-    print(f"  Triton Kernels:   {kernel_count} modules (Canonical: 26)")
+    cuda_avail = torch.cuda.is_available()
+    device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
+    device_count = torch.cuda.device_count() if cuda_avail else 0
+
+    if HAS_RICH and console is not None:
+        table = Table(title="System Environment & Hardware Verification", header_style="bold blue")
+        table.add_column("Component", style="bold")
+        table.add_column("Status / Version", style="green")
+        table.add_row("Platform", platform.platform())
+        table.add_row("Python Version", platform.python_version())
+        table.add_row("PyTorch Version", torch.__version__)
+        table.add_row("CUDA Available", f"[bold {'green' if cuda_avail else 'yellow'}]{cuda_avail}[/] ({device_name})")
+        table.add_row("GPU Devices", str(device_count))
+        table.add_row("MPS Available", str(torch.backends.mps.is_available()))
+        table.add_row("Triton JIT", f"[bold {'green' if HAS_TRITON else 'yellow'}]{HAS_TRITON}[/]")
+        table.add_row("Attention Registry", f"{len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
+        table.add_row("Compressor Registry", f"{len(COMPRESSOR_REGISTRY)} engines (Canonical: 72)")
+        table.add_row("Triton Kernels", f"{kernel_count} modules (Canonical: 26)")
+        console.print(table)
+    else:
+        print("System Environment Verification:")
+        print(f"  Platform:         {platform.platform()}")
+        print(f"  Python Version:   {platform.python_version()}")
+        print(f"  PyTorch Version:  {torch.__version__}")
+        print(f"  CUDA Available:   {cuda_avail}")
+        if cuda_avail:
+            print(f"  Device Name:      {device_name}")
+            print(f"  Device Count:     {device_count}")
+        print(f"  MPS Available:    {torch.backends.mps.is_available()}")
+        print(f"  Triton Available: {HAS_TRITON}")
+        print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
+        print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
+        print(f"  Triton Kernels:   {kernel_count} modules (Canonical: 26)")
 
 
 
@@ -667,6 +769,7 @@ def handle_niah(args: argparse.Namespace) -> int:
 def handle_benchmark_fused(args: argparse.Namespace) -> int:
     """Benchmarks fused @triton.jit kernels against PyTorch eager baselines."""
     import time
+    import torch
     print(f"Benchmarking Fused Triton Kernels (kernel={args.kernel}, B={args.batch_size}, L={args.seq_len}, D={args.dim})...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device != "cuda":
@@ -716,25 +819,25 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = _build_parser()
-    
-    # If no arguments provided or --help, show the huggingface-cli style rich menu
-    raw_args = sys.argv[1:] if argv is None else argv
-    if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
-        try:
-            from neuralops.cli.terminal_ui import print_hf_style_help
-            print_hf_style_help()
-            return 0
-        except Exception:
-            pass
+def handle_train(args: argparse.Namespace) -> int:
+    """Dispatches model training / fine-tuning with custom attention/compression."""
+    from neuralops.cli.train_cmd import cmd_train
+    return cmd_train(args)
 
-    args = parser.parse_args(argv)
 
-    if not args.subcommand:
-        parser.print_help()
-        return 0
+def handle_eval(args: argparse.Namespace) -> int:
+    """Dispatches model evaluation across accuracy, latency, and perplexity."""
+    from neuralops.cli.eval_cmd import cmd_eval
+    return cmd_eval(args)
 
+
+def handle_serve(args: argparse.Namespace) -> int:
+    """Dispatches API inference server for deployed models."""
+    from neuralops.cli.serve_cmd import cmd_serve
+    return cmd_serve(args)
+
+
+def _dispatch(args: argparse.Namespace) -> int:
     if args.subcommand == "ui":
         from neuralops.cli.terminal_ui import run_interactive_ui
         run_interactive_ui(inspect_target=getattr(args, "inspect", None), snapshot=getattr(args, "snapshot", False))
@@ -884,39 +987,18 @@ def main(argv: list[str] | None = None) -> int:
         calibrated = calibrate_surgical_model(model, num_samples=args.samples)
         print("[✓] Layerwise Ridge calibration completed successfully.")
         return 0
-    elif args.subcommand == "inspect":
-        from neuralops.core.inspector import inspect_architecture, render_architecture_card
-        import json
-        spec = inspect_architecture(args.name)
-        if getattr(args, "json", False):
-            print(json.dumps(spec.to_dict(), indent=2))
-        elif getattr(args, "code_only", False):
-            print("── Python Direct Quickstart ───────────────────────────────────────")
-            print(spec.quickstart_code.get("pytorch_direct", ""))
-            print("\n── Surgical Transplant Quickstart ─────────────────────────────────")
-            print(spec.quickstart_code.get("surgical_transplant", ""))
-        else:
-            print(render_architecture_card(spec))
-
-        if getattr(args, "roofline", False):
-            from neuralops.core.roofline import profile_roofline, render_roofline_terminal
-            print("\n[+] Profiling Hardware Roofline for '%s'..." % args.name)
-            report = profile_roofline(args.name)
-            print(render_roofline_terminal(report))
-        return 0
+    elif args.subcommand in ("train",):
+        return handle_train(args)
+    elif args.subcommand in ("eval", "evaluate"):
+        return handle_eval(args)
+    elif args.subcommand in ("serve",):
+        return handle_serve(args)
     elif args.subcommand == "doctor":
         from neuralops.cli.doctor import cmd_doctor
         return cmd_doctor()
     elif args.subcommand == "info":
         from neuralops.cli.info import cmd_info
         return cmd_info()
-    elif args.subcommand == "ui":
-        from neuralops.cli.terminal_ui import run_interactive_ui
-        run_interactive_ui(
-            inspect_target=getattr(args, "inspect", None),
-            snapshot=getattr(args, "snapshot", False),
-        )
-        return 0
     elif args.subcommand == "validate":
         from neuralops.core.extensibility import validate_module_contract
         import json
@@ -1044,6 +1126,60 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def main(argv: list[str] | None = None) -> int:
+    parser = _build_parser()
+
+    # If no arguments provided or --help, show the rich menu
+    raw_args = sys.argv[1:] if argv is None else argv
+    if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
+        try:
+            from neuralops.cli.terminal_ui import print_hf_style_help
+            print_hf_style_help()
+            return 0
+        except Exception:
+            pass
+
+    args = parser.parse_args(argv)
+
+    if not args.subcommand:
+        parser.print_help()
+        return 0
+
+    try:
+        ret = _dispatch(args)
+        return 0 if ret is None else ret
+    except KeyboardInterrupt:
+        if HAS_RICH and console is not None:
+            console.print("\n[yellow]Execution interrupted by user.[/]")
+        else:
+            print("\nExecution interrupted by user.", file=sys.stderr)
+        return 130
+    except FileNotFoundError as e:
+        print_cli_error(
+            f"File or checkpoint not found: {e}",
+            hint="Verify that the model path, checkpoint file, or dataset path exists."
+        )
+        return 1
+    except KeyError as e:
+        print_cli_error(
+            f"Unrecognized module, layer, or key: {e}",
+            hint="Run 'neuralops list' to see all 131 attention mechanisms and 72 compressors."
+        )
+        return 1
+    except Exception as e:
+        # Check for CUDA OOM dynamically without requiring torch upfront
+        err_type = type(e).__name__
+        err_msg = str(e)
+        if "OutOfMemoryError" in err_type or "CUDA out of memory" in err_msg:
+            print_cli_error(
+                "CUDA Out of Memory during execution.",
+                hint="Try reducing --batch-size, enabling --mixed-precision fp16/bf16, or increasing --grad-accum-steps."
+            )
+            return 1
+        print_cli_error(f"Execution failed ({err_type}): {e}")
+        return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
+

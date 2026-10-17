@@ -1,14 +1,30 @@
 """`doctor` command — diagnose installation."""
+from __future__ import annotations
+
 import importlib
+import os
+import platform
+import shutil
+import sys
+from pathlib import Path
+
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    HAS_RICH = True
+    console = Console()
+except ImportError:
+    HAS_RICH = False
+    console = None
 
 
-def cmd_doctor():
+def cmd_doctor() -> int:
     import neuralops
-    ver = getattr(neuralops, "__version__", "1.3.7")
-    print("=" * 60)
-    print(f"NeuralOps Production Environment & Hardware Diagnostics (v{ver})")
-    print("=" * 60)
-    print()
+    ver = getattr(neuralops, "__version__", "1.4.0")
+    
+    rows = []
+    all_ok = True
 
     # 1. PyTorch & CUDA Detection
     try:
@@ -17,51 +33,52 @@ def cmd_doctor():
         device_count = torch.cuda.device_count() if cuda_avail else 0
         device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
         capability = torch.cuda.get_device_capability(0) if cuda_avail else (0, 0)
-        print(f"[OK] PyTorch version: {torch.__version__}")
-        print(f"[OK] CUDA Available: {cuda_avail} (Devices: {device_count})")
+        rows.append(("PyTorch Version", torch.__version__, "pass", "Core runtime"))
         if cuda_avail:
-            print(f"     Device 0: {device_name} (Compute Capability: {capability[0]}.{capability[1]})")
+            rows.append(("CUDA Device", f"{device_name} (CC {capability[0]}.{capability[1]}, {device_count} dev)", "pass", "GPU hardware"))
+        else:
+            rows.append(("CUDA Device", "Not Available (CPU only)", "warn", "GPU hardware"))
     except ImportError:
-        print("[FAIL] torch not installed")
+        rows.append(("PyTorch", "Not installed", "fail", "Core runtime"))
+        all_ok = False
 
     # 2. Triton Detection & Cache Inspection
     try:
         import triton
-        import os
-        from pathlib import Path
         triton_cache = os.environ.get("TRITON_CACHE_DIR", str(Path.home() / ".triton" / "cache"))
-        print(f"[OK] Triton version: {triton.__version__}")
-        print(f"[OK] Triton Cache Directory: {triton_cache}")
+        rows.append(("Triton JIT", f"v{triton.__version__} (Cache: {triton_cache})", "pass", "Kernel compiler"))
     except ImportError:
-        print("[WARN] Triton not installed (Deterministic PyTorch fallbacks active)")
+        rows.append(("Triton JIT", "Not installed (PyTorch fallbacks active)", "warn", "Kernel compiler"))
 
     # 3. Disk & Git Lock Hygiene
     try:
-        import os
-        from pathlib import Path
         repo_root = Path.cwd()
         git_lock = repo_root / ".git" / "index.lock"
         if git_lock.exists():
-            print(f"[WARN] Stale git lock detected at: {git_lock} (Run rm -f to clear)")
+            rows.append(("Git Index Lock", f"Stale lock at {git_lock}", "warn", "Repository state"))
         else:
-            print("[OK] Git index lock: Clean")
+            rows.append(("Git Index Lock", "Clean", "pass", "Repository state"))
 
-        # Check /tmp and ~/.cache space
-        import shutil
-        total, used, free = shutil.disk_usage("/")
-        print(f"[OK] Disk Space Root (/): {free / (1024**3):.1f} GB free of {total / (1024**3):.1f} GB")
+        total, used, free = shutil.disk_usage(repo_root)
+        free_gb = free / (1024**3)
+        total_gb = total / (1024**3)
+        disk_status = "pass" if free_gb > 5.0 else "warn"
+        rows.append(("Disk Space", f"{free_gb:.1f} GB free of {total_gb:.1f} GB", disk_status, "Filesystem"))
     except Exception as e:
-        print(f"[WARN] Disk/Git check: {e}")
+        rows.append(("Disk / Git", f"Check error: {e}", "warn", "Filesystem"))
 
     # 4. Registry Integrity
     try:
+        import neuralops.attentions  # noqa: F401
+        import neuralops.compression_engine  # noqa: F401
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
         num_attn = len(ATTENTION_REGISTRY)
         num_comp = len(COMPRESSOR_REGISTRY)
-        print(f"[OK] Attention Mechanism Registry: {num_attn} modules loaded")
-        print(f"[OK] Compression Engine Registry: {num_comp} engines loaded")
+        rows.append(("Attention Registry", f"{num_attn} modules loaded (Canonical: 131)", "pass", "Registry"))
+        rows.append(("Compressor Registry", f"{num_comp} engines loaded (Canonical: 72)", "pass", "Registry"))
     except Exception as e:
-        print(f"[FAIL] Registry: {e}")
+        rows.append(("Registry Integrity", f"Failed to load: {e}", "fail", "Registry"))
+        all_ok = False
 
     # 5. Subpackage Import Health
     subpackages = [
@@ -76,15 +93,52 @@ def cmd_doctor():
         "data",
         "utils",
     ]
+    failed_sub = []
     for sub in subpackages:
         try:
             importlib.import_module(f"neuralops.{sub}")
-            print(f"[OK] Package neuralops.{sub}: Healthy")
         except Exception as e:
-            print(f"[FAIL] Package neuralops.{sub}: {e}")
+            failed_sub.append(f"{sub} ({e})")
+    
+    if not failed_sub:
+        rows.append(("Subpackage Health", f"All {len(subpackages)} subpackages healthy", "pass", "Package integrity"))
+    else:
+        rows.append(("Subpackage Health", f"Errors in: {', '.join(failed_sub)}", "fail", "Package integrity"))
+        all_ok = False
 
-    print()
-    print("=" * 60)
-    print("Diagnostics complete. Production environment is healthy.")
-    print("=" * 60)
-    return 0
+    # Render output
+    if HAS_RICH and console is not None:
+        table = Table(title=f"NeuralOps Production Diagnostics (v{ver})", header_style="bold cyan")
+        table.add_column("Status", justify="center", width=8)
+        table.add_column("Component", style="bold", width=22)
+        table.add_column("Category", style="dim", width=18)
+        table.add_column("Details", min_width=35)
+
+        for comp, details, status, cat in rows:
+            if status == "pass":
+                stat_str = "[bold green]✓ OK[/]"
+            elif status == "warn":
+                stat_str = "[bold yellow]⚠ WARN[/]"
+            else:
+                stat_str = "[bold red]✗ FAIL[/]"
+            table.add_row(stat_str, comp, cat, details)
+
+        console.print(table)
+        if all_ok:
+            console.print("[bold green]✓ Production environment diagnostics passed.[/]\n")
+        else:
+            console.print("[bold red]✗ One or more diagnostics failed. Please resolve above issues.[/]\n")
+    else:
+        print("=" * 65)
+        print(f"NeuralOps Production Diagnostics (v{ver})")
+        print("=" * 65)
+        for comp, details, status, cat in rows:
+            icon = "✓ OK  " if status == "pass" else ("⚠ WARN" if status == "warn" else "✗ FAIL")
+            print(f"[{icon}] {comp:22s} ({cat:16s}): {details}")
+        print("=" * 65)
+        if all_ok:
+            print("✓ Production environment diagnostics passed.\n")
+        else:
+            print("✗ One or more diagnostics failed.\n")
+
+    return 0 if all_ok else 1
