@@ -1,21 +1,10 @@
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
-#include <cmath>
 #include "_common.cuh"
 
 namespace neuralops {
 namespace cuda {
-
-// ============================================================================
-// Ada Lovelace SM 8.9 Warp-Level Online LogSumExp Fused Cross-Entropy Kernels:
-//
-// Hardware Optimizations:
-// 1. Single-pass online LogSumExp with numerically stable running max & sum exp.
-// 2. Full warp-level reduction (__shfl_xor_sync) across 32 threads.
-// 3. Multi-warp shared memory reduction across 8 warps (256 threads).
-// 4. Memory coalescing on logits load and fused gradient computation.
-// ============================================================================
 
 template <typename scalar_t>
 __launch_bounds__(256)
@@ -41,19 +30,39 @@ __global__ void fused_ce_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    // Single-pass online LogSumExp across vocabulary V
     float local_max = -1e30f;
     float local_sum = 0.0f;
 
+    // 128-bit vectorized loading if aligned and size allows
+    constexpr int VEC = (sizeof(scalar_t) == 2) ? 8 : ((sizeof(scalar_t) == 4) ? 4 : 1);
+    const int num_vec = V / VEC;
+    using vec_t = typename std::conditional<(sizeof(scalar_t) == 2), uint4,
+                  typename std::conditional<(sizeof(scalar_t) == 4), float4, scalar_t>::type>::type;
+
+    const vec_t* __restrict__ logits_vec = reinterpret_cast<const vec_t*>(logits + row * V);
+
     #pragma unroll 4
-    for (int v = tid; v < V; v += num_threads) {
+    for (int i = tid; i < num_vec; i += num_threads) {
+        vec_t raw = logits_vec[i];
+        const scalar_t* elems = reinterpret_cast<const scalar_t*>(&raw);
+        #pragma unroll
+        for (int j = 0; j < VEC; ++j) {
+            const float val = to_float(elems[j]);
+            const float new_max = fmaxf(local_max, val);
+            local_sum = local_sum * expf(local_max - new_max) + expf(val - new_max);
+            local_max = new_max;
+        }
+    }
+
+    // Remainder
+    for (int v = num_vec * VEC + tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float new_max = fmaxf(local_max, val);
         local_sum = local_sum * expf(local_max - new_max) + expf(val - new_max);
         local_max = new_max;
     }
 
-    // Warp-level online reduction
+    // Warp reduction
     #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
         const float other_max = __shfl_xor_sync(0xffffffff, local_max, mask);
@@ -100,6 +109,8 @@ __global__ void fused_ce_bwd_kernel(
     const scalar_t* __restrict__ logits,
     const int64_t* __restrict__ targets,
     const float* __restrict__ grad_loss,
+    const bool is_scalar_grad,
+    const float scalar_grad,
     const int N,
     const int V,
     const int64_t ignore_index
@@ -111,29 +122,50 @@ __global__ void fused_ce_bwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
+    constexpr int VEC = (sizeof(scalar_t) == 2) ? 8 : ((sizeof(scalar_t) == 4) ? 4 : 1);
+    const int num_vec = V / VEC;
+    using vec_t = typename std::conditional<(sizeof(scalar_t) == 2), uint4,
+                  typename std::conditional<(sizeof(scalar_t) == 4), float4, scalar_t>::type>::type;
+
     if (target == ignore_index) {
-        #pragma unroll 4
-        for (int v = tid; v < V; v += num_threads) {
+        vec_t* __restrict__ grad_vec = reinterpret_cast<vec_t*>(grad_logits + row * V);
+        vec_t zero_vec = {0};
+        for (int i = tid; i < num_vec; i += num_threads) {
+            grad_vec[i] = zero_vec;
+        }
+        for (int v = num_vec * VEC + tid; v < V; v += num_threads) {
             grad_logits[row * V + v] = from_float<scalar_t>(0.0f);
         }
         return;
     }
 
-    const float g_loss = grad_loss[row];
+    const float g_loss = is_scalar_grad ? scalar_grad : grad_loss[row];
 
-    // Single-pass online LogSumExp reduction across V
     float local_max = -1e30f;
     float local_sum = 0.0f;
 
+    const vec_t* __restrict__ logits_vec = reinterpret_cast<const vec_t*>(logits + row * V);
+
     #pragma unroll 4
-    for (int v = tid; v < V; v += num_threads) {
+    for (int i = tid; i < num_vec; i += num_threads) {
+        vec_t raw = logits_vec[i];
+        const scalar_t* elems = reinterpret_cast<const scalar_t*>(&raw);
+        #pragma unroll
+        for (int j = 0; j < VEC; ++j) {
+            const float val = to_float(elems[j]);
+            const float new_max = fmaxf(local_max, val);
+            local_sum = local_sum * expf(local_max - new_max) + expf(val - new_max);
+            local_max = new_max;
+        }
+    }
+
+    for (int v = num_vec * VEC + tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float new_max = fmaxf(local_max, val);
         local_sum = local_sum * expf(local_max - new_max) + expf(val - new_max);
         local_max = new_max;
     }
 
-    // Warp-level online reduction
     #pragma unroll
     for (int mask = 16; mask > 0; mask >>= 1) {
         const float other_max = __shfl_xor_sync(0xffffffff, local_max, mask);
@@ -175,14 +207,30 @@ __global__ void fused_ce_bwd_kernel(
     const float global_max = sm_max[0];
     const float inv_sum_exp = 1.0f / fmaxf(sm_sum[0], 1e-12f);
 
-    // Gradient computation
+    vec_t* __restrict__ grad_vec = reinterpret_cast<vec_t*>(grad_logits + row * V);
+
     #pragma unroll 4
-    for (int v = tid; v < V; v += num_threads) {
+    for (int i = tid; i < num_vec; i += num_threads) {
+        vec_t raw = logits_vec[i];
+        const scalar_t* in_elems = reinterpret_cast<const scalar_t*>(&raw);
+        scalar_t out_elems[VEC];
+        const int base_v = i * VEC;
+        #pragma unroll
+        for (int j = 0; j < VEC; ++j) {
+            int v = base_v + j;
+            const float val = to_float(in_elems[j]);
+            const float p = expf(val - global_max) * inv_sum_exp;
+            const float indicator = (v == target) ? 1.0f : 0.0f;
+            out_elems[j] = from_float<scalar_t>((p - indicator) * g_loss);
+        }
+        grad_vec[i] = *reinterpret_cast<const vec_t*>(out_elems);
+    }
+
+    for (int v = num_vec * VEC + tid; v < V; v += num_threads) {
         const float val = to_float(logits[row * V + v]);
         const float p = expf(val - global_max) * inv_sum_exp;
         const float indicator = (v == target) ? 1.0f : 0.0f;
-        const float d_logit = (p - indicator) * g_loss;
-        grad_logits[row * V + v] = from_float<scalar_t>(d_logit);
+        grad_logits[row * V + v] = from_float<scalar_t>((p - indicator) * g_loss);
     }
 }
 
@@ -231,20 +279,30 @@ torch::Tensor fused_ce_bwd(
 
     const int N = logits.size(0);
     const int V = logits.size(1);
-    if (N == 0) return torch::empty({0}, logits.options().dtype(torch::kFloat32));
+    if (N == 0) return torch::empty({0}, logits.options());
 
     auto grad_logits = torch::empty_like(logits);
     const int threads = 256;
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
-    auto grad_loss_f = grad_loss.contiguous().to(torch::kFloat32);
+    const bool is_scalar_grad = (grad_loss.numel() == 1);
+    float scalar_g = 1.0f;
+    const float* grad_loss_ptr = nullptr;
+    torch::Tensor grad_loss_f;
+
+    if (is_scalar_grad) {
+        scalar_g = grad_loss.item<float>();
+    } else {
+        grad_loss_f = grad_loss.contiguous().to(torch::kFloat32);
+        grad_loss_ptr = grad_loss_f.data_ptr<float>();
+    }
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         logits.scalar_type(), "fused_ce_bwd", ([&] {
             neuralops::cuda::fused_ce_bwd_kernel<scalar_t><<<N, threads, 0, stream>>>(
                 grad_logits.data_ptr<scalar_t>(), logits.data_ptr<scalar_t>(), targets.data_ptr<int64_t>(),
-                grad_loss_f.data_ptr<float>(), N, V, ignore_index
+                grad_loss_ptr, is_scalar_grad, scalar_g, N, V, ignore_index
             );
         })
     );

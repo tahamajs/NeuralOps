@@ -1,3 +1,8 @@
+"""
+Spectral Shrinkage Autograd Function and 3-Level Fallback.
+Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
+"""
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional
@@ -28,8 +33,10 @@ def _get_module():
 def spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau):
     x = torch.complex(x_re, x_im)
     w = torch.complex(w_re, w_im)
-    from neuralops.core.triton_kernels.elementwise import fused_spectral_gate_triton
-    return fused_spectral_gate_triton(x, w, tau)
+    z = x * w
+    r = torch.abs(z)
+    scale = torch.clamp(1.0 - tau / (r + 1e-8), min=0.0)
+    return z * scale
 
 def spectral_shrinkage_triton_ref(x_re, x_im, w_re, w_im, tau):
     return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
@@ -45,6 +52,11 @@ def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tenso
             xr.contiguous(), xi.contiguous(), wr_c, wi_c, t_c
         )
         return torch.complex(out[0], out[1])
+
+    # If requires_grad, use autograd tracking with the exact mathematical formulation
+    if torch.is_grad_enabled() and any(t.requires_grad for t in (x_re, x_im, w_re, w_im, tau) if isinstance(t, torch.Tensor)):
+        return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
+
     return dispatch(
         cuda_fn,
         spectral_shrinkage_triton_ref,
