@@ -5,13 +5,7 @@
 
 namespace neuralops { namespace cuda {
 
-// Mamba SVD Flash Kernel:
-// Factorized low-rank projection with state gating.
-// Rather than naive elementwise multiplications, factorizes projection as two sequential steps:
-// Step 1: Projects input u (size D) into latent rank space (size R) via V^T: h_r = \sum_d u_d * vt_{r, d}
-// Step 2: Projects latent vector h back to dimension D via U: rec_d = \sum_r h_r * u_{d, r}
-// Step 3: Fuses decay gate modulation: out_d = rec_d * decay_d
-// Thread mapping: 2D Grid over (ceil(N / 128), B) with 128 threads per block.
+// Highly optimized streaming CUDA kernel for factorized Mamba SVD projection
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -22,40 +16,48 @@ __global__ void __launch_bounds__(128) mamba_svd_flash_fwd_kernel(
     const int B,
     const int N,
     const int D,
-    const int R
+    const int R,
+    const bool decay_has_batch
 ) {
     const int b = blockIdx.y;
-    if (b >= B) return;
+    const int t = blockIdx.x;
+    if (b >= B || t >= N) return;
 
-    const int t = blockIdx.x * blockDim.x + threadIdx.x;
-    if (t >= N) return;
+    const int tid = threadIdx.x;
+    const int base_offset = (b * N + t) * D;
 
-    const int offset = b * N * D + t * D;
+    extern __shared__ float smem[];
+    float* s_u = smem;               // size D
+    float* s_latent = smem + D;       // size R
 
-    // Allocate thread-local buffer for latent coordinates
-    // Rank R is small (e.g., 8, 16, 32, 64)
-    float latent[128];
-    const int max_r = (R < 128) ? R : 128;
+    // Step 1: Collaborative coalesced load of u[b, t, :] into shared memory
+    for (int d = tid; d < D; d += blockDim.x) {
+        s_u[d] = to_float(u[base_offset + d]);
+    }
+    __syncthreads();
 
-    // Stage 1: Projection to latent space: latent[r] = \sum_d u[d] * svd_vt[r, d]
-    for (int r = 0; r < max_r; ++r) {
+    // Step 2: Thread-parallel projection into latent coordinates h_r = \sum_d u_d * vt_{r, d}
+    for (int r = tid; r < R; r += blockDim.x) {
         float sum = 0.0f;
         const int vt_offset = r * D;
+        #pragma unroll 4
         for (int d = 0; d < D; ++d) {
-            sum += to_float(u[offset + d]) * to_float(svd_vt[vt_offset + d]);
+            sum = fmaf(s_u[d], to_float(svd_vt[vt_offset + d]), sum);
         }
-        latent[r] = sum;
+        s_latent[r] = sum;
     }
+    __syncthreads();
 
-    // Stage 2: Back-projection to D-space and decay modulation
-    for (int d = 0; d < D; ++d) {
+    // Step 3: Reconstruction out_d = (\sum_r h_r * u_{d, r}) * decay_d
+    for (int d = tid; d < D; d += blockDim.x) {
         float rec = 0.0f;
-        const int u_offset = d * R;
-        for (int r = 0; r < max_r; ++r) {
-            rec += latent[r] * to_float(svd_u[u_offset + r]);
+        const int u_mat_offset = d * R;
+        #pragma unroll 4
+        for (int r = 0; r < R; ++r) {
+            rec = fmaf(s_latent[r], to_float(svd_u[u_mat_offset + r]), rec);
         }
-        const float lam = to_float(decay[offset + d]);
-        out[offset + d] = from_float<scalar_t>(rec * lam);
+        const float lam = to_float(decay_has_batch ? decay[base_offset + d] : decay[d]);
+        out[base_offset + d] = from_float<scalar_t>(rec * lam);
     }
 }
 
@@ -67,40 +69,43 @@ torch::Tensor mamba_svd_flash_fwd(
     const torch::Tensor& svd_vt,
     const torch::Tensor& decay
 ) {
-    CHECK_INPUT(u);
-    CHECK_INPUT(svd_u);
-    CHECK_INPUT(svd_vt);
-    CHECK_INPUT(decay);
+    TORCH_CHECK(u.is_cuda(), "u must be a CUDA tensor");
+    TORCH_CHECK(svd_u.is_cuda(), "svd_u must be a CUDA tensor");
+    TORCH_CHECK(svd_vt.is_cuda(), "svd_vt must be a CUDA tensor");
+    TORCH_CHECK(decay.is_cuda(), "decay must be a CUDA tensor");
 
-    const int B = u.size(0);
-    const int N = u.size(1);
-    const int D = u.size(2);
-    const int R = svd_u.size(1);
-    TORCH_CHECK(R <= 128, "mamba_svd_flash_fwd: R=", R, " > 128 not supported");
+    auto u_c = u.contiguous();
+    auto svd_u_c = svd_u.contiguous();
+    auto svd_vt_c = svd_vt.contiguous();
+    auto decay_c = decay.contiguous();
 
-    auto out = torch::empty_like(u);
-    if (B == 0 || N == 0 || D == 0) return out;
+    const bool is_2d = (u_c.dim() == 2);
+    const int B = u_c.size(0);
+    const int N = is_2d ? 1 : u_c.size(1);
+    const int D = is_2d ? u_c.size(1) : u_c.size(2);
+    const int R = svd_u_c.size(1);
+    const bool decay_has_batch = (decay_c.numel() == B * N * D);
+
+    auto out = torch::empty_like(u_c);
+    if (B == 0 || N == 0 || D == 0 || R == 0) return out;
 
     constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
-    dim3 grid(blocks_x, B);
+    dim3 grid(N, B);
+    const size_t smem_bytes = (D + R) * sizeof(float);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
-    auto u_c = u.contiguous();
-    auto u_mat = svd_u.contiguous();
-    auto vt_mat = svd_vt.contiguous();
-    auto d_c = decay.contiguous();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        u.scalar_type(), "mamba_svd_flash_fwd", ([&] {
-            neuralops::cuda::mamba_svd_flash_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+        u_c.scalar_type(), "mamba_svd_flash_fwd", ([&] {
+            neuralops::cuda::mamba_svd_flash_fwd_kernel<scalar_t><<<grid, THREADS, smem_bytes, stream>>>(
                 out.data_ptr<scalar_t>(),
                 u_c.data_ptr<scalar_t>(),
-                u_mat.data_ptr<scalar_t>(),
-                vt_mat.data_ptr<scalar_t>(),
-                d_c.data_ptr<scalar_t>(),
-                B, N, D, R
+                svd_u_c.data_ptr<scalar_t>(),
+                svd_vt_c.data_ptr<scalar_t>(),
+                decay_c.data_ptr<scalar_t>(),
+                B, N, D, R,
+                decay_has_batch
             );
         })
     );
