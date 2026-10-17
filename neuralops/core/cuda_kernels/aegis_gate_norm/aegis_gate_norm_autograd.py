@@ -33,10 +33,9 @@ def aegis_gate_norm_triton_ref(b0, b1, weights, eps=1e-5):
     return fused_aegis_multibranch_gate_norm_triton([b0, b1], weights, eps=eps)
 
 def aegis_gate_norm(b0: torch.Tensor, b1: torch.Tensor, weights: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(b0, b1, weights, eps=1e-5):
         mod = _get_module()
-        fn = getattr(mod, "aegis_gate_norm_2branch_fwd")
-        return fn(*args, **kwargs)
+        return mod.aegis_gate_norm_2branch_fwd(b0.contiguous(), b1.contiguous(), weights.contiguous(), float(eps))
     return dispatch(
         cuda_fn,
         aegis_gate_norm_triton_ref,
