@@ -30,4 +30,6 @@ def local_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, window_si
     def cuda_fn(q, k, v, window_size=64):
         mod = _get_module()
         return mod.local_attn_fwd(q.contiguous(), k.contiguous(), v.contiguous(), int(window_size))
+    if q.shape[-1] > 128:
+        cuda_fn = None
     return dispatch(cuda_fn, local_attention_ref, local_attention_ref, q, k, v, window_size=window_size, kernel_name="local_attention")

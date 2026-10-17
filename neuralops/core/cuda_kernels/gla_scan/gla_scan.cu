@@ -87,6 +87,7 @@ torch::Tensor gla_scan_fwd(
     const int H = q.size(1);
     const int L = q.size(2);
     const int D = q.size(3);
+    TORCH_CHECK(D <= 128, "gla_scan_fwd: D=", D, " > 128 not supported");
 
     auto out = torch::empty_like(q);
     const float scale = 1.0f / sqrtf(static_cast<float>(D));

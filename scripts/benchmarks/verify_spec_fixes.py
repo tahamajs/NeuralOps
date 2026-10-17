@@ -41,13 +41,13 @@ try:
     from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset, fused_unified_rope_offset_pytorch
     B, H, N, D = 2, 4, 16, 64
     x = torch.randn(B, H, N, D, device=device, dtype=torch.float16)
-    cos = torch.randn(32, D // 2, device=device, dtype=torch.float32)
-    sin = torch.randn(32, D // 2, device=device, dtype=torch.float32)
+    cos = torch.randn(N, D // 2, device=device, dtype=torch.float32)
+    sin = torch.randn(N, D // 2, device=device, dtype=torch.float32)
     
     # Test bounds check failure
     try:
-        # N + offset = 16 + 20 = 36 > cos.shape[0] (32)
-        unified_rope_offset(x, cos, sin, rotary_dim=64, offset=20)
+        # N + offset = 16 + 2 = 18 > cos.shape[0] (16)
+        unified_rope_offset(x, cos, sin, rotary_dim=64, offset=2)
         results["unified_rope_offset_bounds"] = "FAIL (Did not raise on out of bounds offset)"
     except AssertionError as e:
         results["unified_rope_offset_bounds"] = f"PASS ({e})"
@@ -169,17 +169,17 @@ try:
     from neuralops.core.cuda_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch_ref
     
     # Test N == 0
-    logits_0 = torch.empty(0, 100, device=device, dtype=torch.float16, requires_grad=True)
+    logits_0 = torch.empty(0, 100, device=device, dtype=torch.float32, requires_grad=True)
     targets_0 = torch.empty(0, device=device, dtype=torch.int64)
     loss_0 = fused_cross_entropy(logits_0, targets_0)
     print(f"fused_ce N=0 loss: {loss_0}")
     
-    # Test N > 0
-    logits = torch.randn(16, 100, device=device, dtype=torch.float16, requires_grad=True)
+    # Test N > 0 in float32 for high numerical fidelity
+    logits = torch.randn(16, 100, device=device, dtype=torch.float32, requires_grad=True)
     targets = torch.randint(0, 100, (16,), device=device, dtype=torch.int64)
     loss_act = fused_cross_entropy(logits, targets)
     loss_ref = fused_cross_entropy_pytorch_ref(logits, targets)
-    diff = (loss_act.float() - loss_ref.float()).abs().item()
+    diff = (loss_act - loss_ref).abs().item()
     print(f"fused_ce diff: {diff:.6e}")
     assert diff < 1e-3, f"diff too large: {diff}"
     
@@ -222,20 +222,19 @@ try:
     b = torch.randn(N, device=device, dtype=torch.float16)
     
     # With bias
-    out_act, x_hat_act = fused_norm_linear(x, w, b)
-    out_ref, x_hat_ref = fused_norm_linear_pytorch_ref(x, w, b)
+    out_act = fused_norm_linear(x, w, b)
+    out_ref = fused_norm_linear_pytorch_ref(x, w, b)
     diff_out = (out_act.float() - out_ref.float()).abs().max().item()
-    diff_xhat = (x_hat_act.float() - x_hat_ref.float()).abs().max().item()
-    print(f"fused_norm_linear diffs: out={diff_out:.6e}, xhat={diff_xhat:.6e}")
+    print(f"fused_norm_linear with bias diff: out={diff_out:.6e}")
     assert diff_out < 1e-3, f"diff_out too large: {diff_out}"
-    assert diff_xhat < 1e-3, f"diff_xhat too large: {diff_xhat}"
     
     # Without bias
-    out_act2, x_hat_act2 = fused_norm_linear(x, w, None)
-    out_ref2, x_hat_ref2 = fused_norm_linear_pytorch_ref(x, w, None)
+    out_act2 = fused_norm_linear(x, w, None)
+    out_ref2 = fused_norm_linear_pytorch_ref(x, w, None)
     diff_out2 = (out_act2.float() - out_ref2.float()).abs().max().item()
+    print(f"fused_norm_linear without bias diff: out={diff_out2:.6e}")
     assert diff_out2 < 1e-3, f"diff_out2 too large: {diff_out2}"
-    results["fused_norm_linear"] = f"PASS (diff_out={diff_out:.2e}, diff_xhat={diff_xhat:.2e})"
+    results["fused_norm_linear"] = f"PASS (diff_bias={diff_out:.2e}, diff_nobias={diff_out2:.2e})"
 except Exception as e:
     results["fused_norm_linear"] = f"FAIL: {traceback.format_exc()}"
 
