@@ -224,13 +224,13 @@ Activation-aware algorithms resolve this by reformulating the objective to minim
 \end{equation}
 where $\Sigma_X = \frac{1}{N} X X^\top \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ is the empirical activation covariance matrix computed over a small calibration set \citep{aa_svd_2026}. By factoring the Cholesky decomposition $\Sigma_X = L L^\top$, the whitened weight $\tilde{W} = W L$ is truncated via standard SVD and unwhitened as $\hat{W} = U_r \Sigma_r V_r^\top L^{-1}$. Similarly, Fisher-weighted SVD (\texttt{fwsvd}) weights singular vectors by diagonal Fisher information $F = \mathbb{E}[\nabla_W \mathcal{L} \odot \nabla_W \mathcal{L}]$ to preserve task-critical gradients \citep{fwsvd_2026}.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \caption{\textbf{Empirical Comparison of SVD Compression Regimes on RoBERTa-base SST-2 ($r = 32$).} 
 Naive Direct-SVD suffers catastrophic Logit Variance Collapse ($\sigma(z) = 0.10$) and drops to majority-class baseline ($53.20\%$). Activation-aware (\texttt{adasvd}) and Fisher-weighted (\texttt{fwsvd}) methods recover over $+27.0\%$ accuracy by preserving logit dynamic range and residual stream energy.}
 \label{tab:roberta_svd_collapse}
 \small
-\setlength{\tabcolsep}{6pt}
+\setlength{\tabcolsep}{8pt}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Compression Method} & \textbf{SST-2 Acc (\%)} & \textbf{Logit Std $\sigma(z)$} & \textbf{Layer 12 Sim$_{\cos}$} & \textbf{Res.\ Norm $\|h_{12}\|_2$} & \textbf{Rank ($r$)} \\
@@ -242,7 +242,7 @@ Fisher-Weighted SVD (\texttt{fwsvd}) \citep{fwsvd_2026} & 80.10\% & 2.41 & 0.814
 Adaptive SVD (\texttt{adasvd}) \citep{adasvd_2026} & \textbf{80.40\%} & \textbf{2.48} & \textbf{0.8290} & \textbf{19.12} & 32 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 As shown in Table~\ref{tab:roberta_svd_collapse}, at rank $r = 32$, \texttt{fwsvd} achieves $80.10\%$ and \texttt{adasvd} achieves $80.40\%$, regaining over 27 percentage points over Naive Direct-SVD ($53.20\%$). Both methods prevent logit collapse ($\sigma(z) \ge 2.41$), maintain high directional alignment ($\text{Sim}_{\cos} \ge 0.81$), and preserve residual stream energy ($\|h_{12}\|_2 \ge 18.65$).
 
@@ -275,7 +275,10 @@ Current compression pipelines factorize individual projection matrices greedily 
 \end{equation}
 Defining auxiliary variables $Z_\ell = W_\ell$, the augmented Lagrangian is:
 \begin{equation}
-    \mathcal{L}_{\rho}\left(\{W_\ell\}, \{Z_\ell\}, \{U_\ell\}\right) = \sum_{\ell=1}^L \left( \mathcal{L}_{\text{recon}}\left(f_\ell(h_{\ell-1}; Z_\ell), h_\ell^*\right) + \frac{\rho}{2} \|W_\ell - Z_\ell + U_\ell\|_F^2 \right) + \sum_{\ell=1}^L \mathbb{I}_{\operatorname{rank} \le r}(W_\ell)
+\begin{split}
+    \mathcal{L}_{\rho}\left(\{W_\ell\}, \{Z_\ell\}, \{U_\ell\}\right) &= \sum_{\ell=1}^L \left( \mathcal{L}_{\text{recon}}\left(f_\ell(h_{\ell-1}; Z_\ell), h_\ell^*\right) + \frac{\rho}{2} \|W_\ell - Z_\ell + U_\ell\|_F^2 \right) \\
+    &\quad + \sum_{\ell=1}^L \mathbb{I}_{\operatorname{rank} \le r}(W_\ell)
+\end{split}
 \end{equation}
 The resulting ADMM algorithm alternates between:
 \begin{align}
@@ -414,14 +417,24 @@ Subtracting $S^*$ from both sides with $v_t = S^* k_t$ yields $E_t = E_{t-1} (I 
 \end{proof}
 
 \subsection{Multi-Stage Knowledge Distillation Error Contraction}
+To systematically recover accuracy following aggressive singular value truncation, pruning, and subquadratic kernel replacement, we formulate a unified 6-Pillar Knowledge Distillation Engine. The composite distillation loss $\mathcal{L}_{\text{KD}}(\theta)$ integrates six complementary objectives:
+\begin{enumerate}
+    \item \textbf{Pillar 1: Fused Soft Logit KL Divergence}: With temperature schedule $\tau$, $\mathcal{L}_1 = \tau^2 \operatorname{KL}\left(\operatorname{Softmax}(z_T / \tau) \;\|\; \operatorname{Softmax}(z_S / \tau)\right)$.
+    \item \textbf{Pillar 2: Multi-Layer Hidden State Alignment}: Normalized intermediate representations across layer set $\mathcal{L}$: $\mathcal{L}_2 = \sum_{l \in \mathcal{L}} \|\operatorname{LN}(h_T^{(l)}) - \operatorname{LN}(h_S^{(l)})\|_2^2$.
+    \item \textbf{Pillar 3: Relational Attention Matrix Transfer}: Frobenius transfer across all $H$ heads: $\mathcal{L}_3 = \sum_{l=1}^L \frac{1}{H} \sum_{h=1}^H \|A_T^{(l, h)} - A_S^{(l, h)}\|_F^2$.
+    \item \textbf{Pillar 4: KV-Cache Subspace Projection Matching}: Pre-expansion matching: $\mathcal{L}_4 = \|K_T - K_S W_{\text{proj}}\|_F^2 + \|V_T - V_S W_{\text{proj}}\|_F^2$.
+    \item \textbf{Pillar 5: Householder Orthogonality Regularization}: Penalizing off-diagonal Gram distortion in adapters: $\mathcal{L}_5 = \|B^\top B - I_r\|_F^2 + \|A A^\top - I_r\|_F^2$.
+    \item \textbf{Pillar 6: Annealed Dynamic Temperature Schedule}: Continuous schedule $\tau(t) = \tau_{\text{end}} + (\tau_{\text{start}} - \tau_{\text{end}}) \exp(-5 t / T_{\text{max}})$, guiding convergence.
+\end{enumerate}
+
 \begin{theorem}[6-Pillar Knowledge Distillation Convergence Bound]
-Let the 6-Pillar KD engine optimize $\mathcal{L}_{\text{KD}}(\theta) = \sum_{i=1}^6 \lambda_i \mathcal{L}_i(\theta)$ with $\sum \lambda_i = 1$. If student parameter dimension satisfies capacity condition $r \ge r_{\text{crit}} = \frac{d^2}{2d}$, then the gradient descent operator $G(\theta) = \theta - \gamma \nabla \mathcal{L}_{\text{KD}}(\theta)$ is a $\kappa$-contraction mapping with $\kappa = \sqrt{1 - 2 \gamma \mu + \gamma^2 L^2} < 1$ for step size $\gamma < \frac{2\mu}{L^2}$, ensuring linear convergence to teacher parity:
+Let the 6-Pillar KD engine optimize $\mathcal{L}_{\text{KD}}(\theta) = \sum_{i=1}^6 \lambda_i \mathcal{L}_i(\theta)$ with $\sum \lambda_i = 1$ and $\lambda_i > 0$. If the student parameterization satisfies rank capacity condition $r \ge r_{\text{crit}} = \frac{d}{2}$, then within an $\epsilon$-neighborhood $\mathcal{B}_\rho(\theta^*)$, the gradient descent operator $G(\theta) = \theta - \gamma \nabla \mathcal{L}_{\text{KD}}(\theta)$ is a $\kappa$-contraction mapping with $\kappa = \sqrt{1 - 2 \gamma \mu + \gamma^2 L^2} < 1$ for learning rate $\gamma < \frac{2\mu}{L^2}$, ensuring linear convergence to teacher representation parity:
 \begin{equation}
 \|\theta_t - \theta^*\|_2 \le \kappa^t \|\theta_0 - \theta^*\|_2
 \end{equation}
 \end{theorem}
 \begin{proof}
-Each constituent loss $\mathcal{L}_i$ is $L_i$-smooth and $\mu_i$-strongly convex within local neighborhood $\mathcal{B}_\rho(\theta^*)$. The composite objective has smoothness $L = \sum \lambda_i L_i$ and strong convexity $\mu = \sum \lambda_i \mu_i > 0$. By standard convex analysis, $\|G(\theta_1) - G(\theta_2)\|_2^2 \le (1 - 2\gamma\mu + \gamma^2 L^2) \|\theta_1 - \theta_2\|_2^2$. For optimal step size $\gamma^* = \frac{\mu}{L^2}$, $\kappa^* = \sqrt{1 - \frac{\mu^2}{L^2}} < 1$, establishing linear convergence.
+Each constituent loss $\mathcal{L}_i$ is $L_i$-smooth and $\mu_i$-strongly convex within local neighborhood $\mathcal{B}_\rho(\theta^*)$. The composite objective has smoothness $L = \sum_{i=1}^6 \lambda_i L_i$ and strong convexity $\mu = \sum_{i=1}^6 \lambda_i \mu_i > 0$. By standard convex analysis, $\|G(\theta_1) - G(\theta_2)\|_2^2 \le (1 - 2\gamma\mu + \gamma^2 L^2) \|\theta_1 - \theta_2\|_2^2$. For optimal step size $\gamma^* = \frac{\mu}{L^2}$, the contractivity constant achieves $\kappa^* = \sqrt{1 - \frac{\mu^2}{L^2}} < 1$, establishing linear convergence.
 \end{proof}
 
 \section{Comprehensive Empirical Results}

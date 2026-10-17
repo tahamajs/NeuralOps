@@ -29,4 +29,5 @@ Comparing Pure PyTorch Reference (Level 3), OpenAI Triton JIT (Level 2), and Nat
 18 & \texttt{fused\_norm\_linear} & LayerNorm / RMSNorm + Linear GEMM & 0.014 & 0.020 & 0.139 & $0.10\times$ & $0.15\times$ \\
 \bottomrule
 \end{tabular}
+\par\vspace{2pt}\raggedright\scriptsize \textit{Note:} \texttt{N/A} denotes operators where no native Triton JIT implementation exists, dispatching directly to Level 1 CUDA or Level 3 PyTorch reference.
 \end{table}

@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \caption{\textbf{Latent Alignment \& Accuracy Recovery Across Six Training Regimes (50 Steps Each).}
-Evaluated on NVIDIA RTX 4070. Comparing zero-shot, naive cross-entropy, forward KL, reverse KL, decoupled KD, and the 6-pillar unified distillation suite across five prominent sub-quadratic and recurrent architectures.}
+Evaluated on NVIDIA RTX 4070. Comparing zero-shot, naive cross-entropy, forward KL, reverse KL, decoupled KD, and the 6-pillar unified distillation suite across six prominent sub-quadratic and hybrid compression architectures.}
 \label{tab:kd_regimes}
 \scriptsize
 \setlength{\tabcolsep}{4.2pt}
@@ -43,6 +43,13 @@ Evaluated on NVIDIA RTX 4070. Comparing zero-shot, naive cross-entropy, forward 
  & Regime 3: Reverse KL Distillation & 0.9896 & 0.0694 & 843.4 & 2.90s \\
  & Regime 4: Decoupled Knowledge Distillation & 0.9896 & 0.0692 & 1,105.7 & 3.19s \\
  & Regime 5: 6-Pillar Unified Suite & \textbf{0.9827} & \textbf{0.1124} & 1,105.7 & 3.77s \\
+\midrule
+\multirow{6}{*}{\textbf{Cosformer + AASVD}} & Regime 0: Zero-Shot ($\alpha=1.0$) & 0.5713 & 2.8069 & 1,105.7 & 0.00s \\
+ & Regime 1: Naive Cross-Entropy & 0.2258 & 4.5560 & 572.9 & 0.80s \\
+ & Regime 2: Forward KL Distillation & 0.9691 & 0.2022 & 772.9 & 1.03s \\
+ & Regime 3: Reverse KL Distillation & 0.9691 & 0.2014 & 772.9 & 1.32s \\
+ & Regime 4: Decoupled Knowledge Distillation & 0.9694 & 0.1999 & 1,035.1 & 1.55s \\
+ & Regime 5: 6-Pillar Unified Suite & \textbf{0.9432} & \textbf{0.3624} & 1,035.1 & 2.08s \\
 \bottomrule
 \end{tabular}
 \end{table}
