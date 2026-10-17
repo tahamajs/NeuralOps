@@ -104,5 +104,6 @@ torch::Tensor svd_prefix_scan_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

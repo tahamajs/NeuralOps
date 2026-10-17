@@ -61,7 +61,7 @@ torch::Tensor favor_plus_act_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        proj.scalar_type(), favor_plus_act_fwd, ([&] {
+        proj.scalar_type(), "favor_plus_act_fwd", ([&] {
             neuralops::cuda::favor_plus_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 p_c.data_ptr<scalar_t>(),
@@ -73,5 +73,6 @@ torch::Tensor favor_plus_act_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

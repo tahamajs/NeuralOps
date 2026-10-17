@@ -10,6 +10,7 @@ namespace cuda {
 // X: [M, K], V_r: [R, K], U_r: [N, R], alpha: [R] (optional), bias: [N] (optional)
 // Out: [M, N]
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void fused_lowrank_gated_gemm_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -66,6 +67,7 @@ __global__ void fused_lowrank_gated_gemm_fwd_kernel(
 
 // Backward Kernel: computes dX, dV, dU
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void fused_lowrank_gated_gemm_bwd_kernel(
     scalar_t* __restrict__ dX,
     const scalar_t* __restrict__ dout,

@@ -63,7 +63,7 @@ torch::Tensor adaptive_span_fwd(
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
-        scores.scalar_type(), adaptive_span_fwd, ([&] {
+        scores.scalar_type(), "adaptive_span_fwd", ([&] {
             neuralops::cuda::adaptive_span_kernel<scalar_t><<<grid, threads, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 sc_c.data_ptr<scalar_t>(),
@@ -73,5 +73,6 @@ torch::Tensor adaptive_span_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

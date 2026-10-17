@@ -5,6 +5,7 @@
 #include <float.h>
 
 template<typename scalar_t, int HEAD_DIM, int TILE_Q, int BLOCK_N>
+__launch_bounds__(128)
 __global__ void flash_gqa_kernel(
     scalar_t* __restrict__ out,         // [B, H, N_Q, HEAD_DIM]
     const scalar_t* __restrict__ q,     // [B, H, N_Q, HEAD_DIM]

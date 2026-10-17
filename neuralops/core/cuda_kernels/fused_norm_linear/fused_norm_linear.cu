@@ -9,6 +9,7 @@ namespace cuda {
 // Fused LayerNorm + Linear Forward Kernel
 // x: [M, K], weight: [N, K], bias: [N] (optional) -> out: [M, N]
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void fused_norm_linear_fwd_kernel(
     scalar_t* __restrict__ out,
     scalar_t* __restrict__ x_hat_out,
@@ -79,6 +80,7 @@ __global__ void fused_norm_linear_fwd_kernel(
 
 // Backward Kernel for dX: dX = LayerNormBackward(dout @ weight)
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void fused_norm_linear_bwd_dx_kernel(
     scalar_t* __restrict__ dx,
     const scalar_t* __restrict__ dout,

@@ -104,5 +104,6 @@ torch::Tensor mamba_svd_flash_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

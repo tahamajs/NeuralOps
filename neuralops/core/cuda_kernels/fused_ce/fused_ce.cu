@@ -10,6 +10,7 @@ namespace cuda {
 // Fused Cross-Entropy Forward Kernel
 // logits: [N, V], targets: [N] (long/int64) -> loss: [N]
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void fused_ce_fwd_kernel(
     float* __restrict__ loss,
     const scalar_t* __restrict__ logits,
@@ -66,6 +67,7 @@ __global__ void fused_ce_fwd_kernel(
 // Fused Cross-Entropy Backward Kernel
 // grad_logits: [N, V] = (softmax(logits) - indicator(target)) * grad_loss[row]
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void fused_ce_bwd_kernel(
     scalar_t* __restrict__ grad_logits,
     const scalar_t* __restrict__ logits,

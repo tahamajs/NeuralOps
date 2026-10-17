@@ -83,5 +83,6 @@ torch::Tensor jamba_info_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

@@ -12,6 +12,7 @@ namespace cuda {
 //             z_t = z_{t-1} + k_t       (vector [D_K])
 //             out_t = (q_t @ S_t) / max(q_t @ z_t, 1e-5)
 template <typename scalar_t, int MAX_DK, int MAX_DV>
+__launch_bounds__(64)
 __global__ void linear_attention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,

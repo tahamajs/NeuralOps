@@ -17,6 +17,7 @@ namespace cuda {
 // 3. Strict FP32 intermediate accumulation.
 // 4. Memory latency hiding via register caching.
 template <typename scalar_t, int BLOCK_M = 16, int MAX_M1 = 16, int MAX_M2 = 16, int MAX_N1 = 16, int MAX_N2 = 16>
+__launch_bounds__(128)
 __global__ void kronecker_gemm_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
