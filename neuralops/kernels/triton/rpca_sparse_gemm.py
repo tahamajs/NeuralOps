@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Optional, Tuple, Union
+import warnings
 
 import torch
 import triton
@@ -200,7 +201,9 @@ def triton_fused_lowrank_sparse_gemm(
             col_indices = s.col_indices()
             values = s.values()
         elif isinstance(s, torch.Tensor) and not s.is_sparse:
-            s_csr = s.to_sparse_csr()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning, message=".*Sparse CSR tensor support.*")
+                s_csr = s.to_sparse_csr()
             crow_indices = s_csr.crow_indices()
             col_indices = s_csr.col_indices()
             values = s_csr.values()
