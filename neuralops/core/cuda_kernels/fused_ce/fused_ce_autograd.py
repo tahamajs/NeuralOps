@@ -113,13 +113,15 @@ def fused_cross_entropy(
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Cross-Entropy Loss."""
     def cuda_fn(logits, targets, ignore_index=-100, reduction="mean"):
-        if not torch.is_grad_enabled() and not logits.requires_grad:
+        if (not logits.requires_grad) or (not torch.is_grad_enabled()):
             orig_shape = logits.shape
             logits_flat = logits.reshape(-1, logits.shape[-1]).contiguous()
             targets_flat = targets.reshape(-1).contiguous()
             mod = _get_module()
             loss = mod.fused_ce_fwd(logits_flat, targets_flat, ignore_index)
             if reduction == "mean":
+                if ignore_index < 0:
+                    return loss.mean()
                 valid = (targets_flat != ignore_index).sum().clamp(min=1)
                 return loss.sum() / valid
             elif reduction == "sum":

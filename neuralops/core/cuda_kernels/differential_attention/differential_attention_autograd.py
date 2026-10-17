@@ -16,15 +16,9 @@ def _get_module():
     return _MODULE
 
 def differential_attention_ref(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor, k2: torch.Tensor, v: torch.Tensor, lambda_val: float = 0.8) -> torch.Tensor:
-    B, H, N, D = q1.shape
-    scale = 1.0 / (D ** 0.5)
-    s1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
-    s2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
-    causal = torch.triu(torch.full((N, N), float('-inf'), device=q1.device), diagonal=1)
-    a1 = F.softmax(s1 + causal, dim=-1)
-    a2 = F.softmax(s2 + causal, dim=-1)
-    diff = a1 - lambda_val * a2
-    return torch.matmul(diff, v.float()).to(q1.dtype)
+    out1 = F.scaled_dot_product_attention(q1, k1, v, is_causal=True)
+    out2 = F.scaled_dot_product_attention(q2, k2, v, is_causal=True)
+    return (out1.float() - float(lambda_val) * out2.float()).to(q1.dtype)
 
 def differential_attention(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor, k2: torch.Tensor, v: torch.Tensor, lambda_val: float = 0.8) -> torch.Tensor:
     def cuda_fn(q1, k1, q2, k2, v, lambda_val=0.8):

@@ -7,11 +7,13 @@
 namespace neuralops {
 namespace cuda {
 
-// Block-Diagonal GEMM: X: [M, G, Kg], Weights: [G, Ng, Kg], Bias: [G, Ng] (optional)
+// Production 2D Block-Tiled Block-Diagonal GEMM:
+// X: [M, G, Kg], Weights: [G, Ng, Kg], Bias: [G, Ng] (optional)
 // Out: [M, G, Ng]
+// Fully parallelized across tokens M, groups G, and output channels Ng.
 template <typename scalar_t>
-__launch_bounds__(128)
-__global__ void block_diag_gemm_fwd_kernel(
+__launch_bounds__(256)
+__global__ void block_diag_gemm_2d_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ weights,
@@ -22,24 +24,23 @@ __global__ void block_diag_gemm_fwd_kernel(
     const int Ng,
     const bool has_bias
 ) {
-    const int mg = blockIdx.x * blockDim.x + threadIdx.x;
-    if (mg >= M * G) return;
+    const int n = blockIdx.x * blockDim.x + threadIdx.x;
+    const int mg = blockIdx.y * blockDim.y + threadIdx.y;
+    if (mg >= M * G || n >= Ng) return;
 
     const int m = mg / G;
     const int g = mg % G;
 
     const int x_base = m * (G * Kg) + g * Kg;
-    const int w_base = g * (Ng * Kg);
-    const int b_base = g * Ng;
+    const int w_base = g * (Ng * Kg) + n * Kg;
     const int out_base = m * (G * Ng) + g * Ng;
 
-    for (int n = 0; n < Ng; ++n) {
-        float acc = (has_bias && bias != nullptr) ? to_float(bias[b_base + n]) : 0.0f;
-        for (int k = 0; k < Kg; ++k) {
-            acc += to_float(X[x_base + k]) * to_float(weights[w_base + n * Kg + k]);
-        }
-        out[out_base + n] = from_float<scalar_t>(acc);
+    float acc = (has_bias && bias != nullptr) ? to_float(bias[g * Ng + n]) : 0.0f;
+    #pragma unroll 4
+    for (int k = 0; k < Kg; ++k) {
+        acc += to_float(X[x_base + k]) * to_float(weights[w_base + k]);
     }
+    out[out_base + n] = from_float<scalar_t>(acc);
 }
 
 } // namespace cuda
@@ -58,27 +59,33 @@ torch::Tensor block_diag_gemm_fwd(
     const int Ng = weights.size(1);
     const int Kg = weights.size(2);
 
-    auto x_3d = x.reshape({-1, G, Kg}).contiguous();
-    const int M = x_3d.size(0);
+    const int total_dim = x.size(-1);
+    TORCH_CHECK(total_dim == G * Kg, "x dimension must match G * Kg");
 
-    auto out = torch::empty({M, G, Ng}, x.options());
+    auto x_2d = x.reshape({-1, total_dim}).contiguous();
+    const int M = x_2d.size(0);
+
+    auto out = torch::empty({M, G * Ng}, x.options());
+    if (M == 0 || G == 0 || Ng == 0) return out;
+
     const bool has_bias = bias.has_value() && bias.value().defined();
-
-    const int total = M * G;
-    const int threads = 128;
-    const int blocks = (total + threads - 1) / threads;
-    auto stream = c10::cuda::getCurrentCUDAStream();
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
 
     auto w_c = weights.contiguous();
+
+    dim3 block(16, 16);
+    dim3 grid((Ng + 15) / 16, (M * G + 15) / 16);
+    auto stream = c10::cuda::getCurrentCUDAStream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "block_diag_gemm_fwd", ([&] {
-            neuralops::cuda::block_diag_gemm_fwd_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
+            neuralops::cuda::block_diag_gemm_2d_fwd_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
-                x_3d.data_ptr<scalar_t>(),
+                x_2d.data_ptr<scalar_t>(),
                 w_c.data_ptr<scalar_t>(),
-                has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                 M, G, Kg, Ng, has_bias
             );
         })
@@ -86,10 +93,10 @@ torch::Tensor block_diag_gemm_fwd(
 
     CUDA_KERNEL_LAUNCH_CHECK();
 
-    std::vector<int64_t> out_final_shape;
+    std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {
-        out_final_shape.push_back(orig_shape[i]);
+        final_shape.push_back(orig_shape[i]);
     }
-    out_final_shape.push_back(G * Ng);
-    return out.reshape(out_final_shape);
+    final_shape.push_back(G * Ng);
+    return out.reshape(final_shape);
 }
