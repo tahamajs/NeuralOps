@@ -7,9 +7,9 @@
 namespace neuralops {
 namespace cuda {
 
-// Variable-length attention forward kernel
-template <typename scalar_t, int MAX_D>
-__launch_bounds__(32)
+// Single-Pass Warp-Per-Query FlashAttention with Online Softmax and Warp Shuffle Reduction
+template <typename scalar_t, int MAX_E>
+__launch_bounds__(128)
 __global__ void varlen_attention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -23,9 +23,6 @@ __global__ void varlen_attention_fwd_kernel(
     const float scale,
     const bool is_causal
 ) {
-    if (threadIdx.x != 0) return;
-
-    const int qi_rel = blockIdx.x;
     const int bh = blockIdx.y;
     if (bh >= num_seqs * H) return;
 
@@ -37,58 +34,69 @@ __global__ void varlen_attention_fwd_kernel(
     const int k_start = cu_seqlens_k[b];
     const int k_end = cu_seqlens_k[b + 1];
 
+    const int warp_id = threadIdx.x / 32;
+    const int lane = threadIdx.x % 32;
+    const int qi_rel = blockIdx.x * (blockDim.x / 32) + warp_id;
     const int qi = q_start + qi_rel;
+
     if (qi >= q_end) return;
 
     const int q_offset = qi * (H * D) + h * D;
-    float q_reg[MAX_D];
+    float q_reg[MAX_E];
+
     #pragma unroll
-    for (int d = 0; d < D && d < MAX_D; ++d) {
-        q_reg[d] = to_float(Q[q_offset + d]);
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        q_reg[e] = (d < D) ? to_float(Q[q_offset + d]) : 0.0f;
     }
 
-    float max_s = -1e38f;
+    float m_prev = -1e38f;
     float sum_exp = 0.0f;
-    float acc[MAX_D];
-    #pragma unroll
-    for (int d = 0; d < MAX_D; ++d) {
-        acc[d] = 0.0f;
-    }
+    float acc[MAX_E] = {0.0f};
 
     const int cur_q_idx = qi - q_start;
-    const int k_limit = is_causal ? std::min(k_end, k_start + cur_q_idx + 1) : k_end;
+    const int k_limit = is_causal ? min(k_end, k_start + cur_q_idx + 1) : k_end;
 
     for (int ki = k_start; ki < k_limit; ++ki) {
         const int k_offset = ki * (H * D) + h * D;
-        float score = 0.0f;
-        #pragma unroll
-        for (int d = 0; d < D && d < MAX_D; ++d) {
-            score += q_reg[d] * to_float(K[k_offset + d]);
-        }
-        score *= scale;
+        float dot = 0.0f;
 
-        if (score > max_s) {
-            const float rescale = expf(max_s - score);
-            sum_exp = sum_exp * rescale + 1.0f;
-            #pragma unroll
-            for (int d = 0; d < D && d < MAX_D; ++d) {
-                acc[d] = acc[d] * rescale + to_float(V[k_offset + d]);
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                dot = fmaf(q_reg[e], to_float(K[k_offset + d]), dot);
             }
-            max_s = score;
-        } else {
-            const float w = expf(score - max_s);
-            sum_exp += w;
-            #pragma unroll
-            for (int d = 0; d < D && d < MAX_D; ++d) {
-                acc[d] += w * to_float(V[k_offset + d]);
+        }
+
+        #pragma unroll
+        for (int mask = 16; mask > 0; mask >>= 1) {
+            dot += __shfl_xor_sync(0xffffffff, dot, mask);
+        }
+        dot *= scale;
+
+        const float m_new = fmaxf(m_prev, dot);
+        const float alpha = expf(m_prev - m_new);
+        const float p = expf(dot - m_new);
+        sum_exp = sum_exp * alpha + p;
+        m_prev = m_new;
+
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                acc[e] = fmaf(acc[e], alpha, p * to_float(V[k_offset + d]));
             }
         }
     }
 
-    const float inv_sum = 1.0f / (sum_exp != 0.0f ? sum_exp : 1.0f);
+    const float inv_sum = (sum_exp > 0.0f) ? (1.0f / sum_exp) : 0.0f;
     #pragma unroll
-    for (int d = 0; d < D && d < MAX_D; ++d) {
-        out[q_offset + d] = from_float<scalar_t>(acc[d] * inv_sum);
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            out[q_offset + d] = from_float<scalar_t>(acc[e] * inv_sum);
+        }
     }
 }
 
@@ -116,10 +124,13 @@ torch::Tensor varlen_attention_fwd(
     const int num_seqs = cu_seqlens_q.size(0) - 1;
 
     auto out = torch::empty_like(q);
+    if (total_q == 0 || num_seqs <= 0 || H == 0 || D == 0) return out;
+
     const float scale = 1.0f / sqrtf(static_cast<float>(D));
 
-    const dim3 grid(std::max(1, max_seqlen_q), num_seqs * H);
-    const int threads = 32;
+    constexpr int THREADS = 128; // 4 warps per block
+    constexpr int WARPS = THREADS / 32;
+    const dim3 grid((max_seqlen_q + WARPS - 1) / WARPS, num_seqs * H);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -132,7 +143,7 @@ torch::Tensor varlen_attention_fwd(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "varlen_attention_fwd", ([&] {
             if (D <= 32) {
-                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
+                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 1><<<grid, THREADS, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -142,7 +153,7 @@ torch::Tensor varlen_attention_fwd(
                     num_seqs, H, D, scale, is_causal
                 );
             } else if (D <= 64) {
-                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
+                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 2><<<grid, THREADS, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
@@ -152,7 +163,7 @@ torch::Tensor varlen_attention_fwd(
                     num_seqs, H, D, scale, is_causal
                 );
             } else {
-                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
+                neuralops::cuda::varlen_attention_fwd_kernel<scalar_t, 4><<<grid, THREADS, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
