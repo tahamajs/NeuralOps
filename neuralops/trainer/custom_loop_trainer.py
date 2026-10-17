@@ -168,18 +168,20 @@ class CustomLoopTrainer(BaseTrainer):
                     curr_loss = 0.0
 
                 # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
-                if scaler is not None and scaler.is_enabled():
-                    try:
-                        scaler.unscale_(optimizer)
-                    except RuntimeError:
-                        pass
-                    clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
-                    scaler.step(optimizer)
-                    scaler.update()
-                else:
-                    clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
-                    optimizer.step()
-                optimizer.zero_grad(set_to_none=True)
+                if is_sync_step:
+                    if scaler is not None and scaler.is_enabled():
+                        try:
+                            scaler.unscale_(optimizer)
+                        except RuntimeError:
+                            pass
+                        clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                        scaler.step(optimizer)
+                        scaler.update()
+                    else:
+                        clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                        optimizer.step()
+                    optimizer.zero_grad(set_to_none=True)
+
 
             if pbar is not None and (
                 (step + 1) % max(1, int(self.config.get("logging_steps", 10))) == 0
