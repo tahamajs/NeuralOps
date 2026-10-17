@@ -1,0 +1,147 @@
+[
+  {
+    "name": "svd",
+    "shapes": {
+      "attention_proj_4096": {
+        "shape": "4096x4096",
+        "orig_params": 524288,
+        "compressed_params": 524288,
+        "compression_ratio": 1.0,
+        "frobenius_error": 1.23696,
+        "compression_time_ms": 7626.16,
+        "decomp_latency_ms": 0.1417,
+        "peak_vram_mb": 394.64,
+        "status": "OK"
+      },
+      "mlp_gate_up_11008": {
+        "shape": "4096x11008",
+        "orig_params": 966656,
+        "compressed_params": 966656,
+        "compression_ratio": 1.0,
+        "frobenius_error": 1.25926,
+        "compression_time_ms": 8013.02,
+        "decomp_latency_ms": 0.2236,
+        "peak_vram_mb": 845.06,
+        "status": "OK"
+      }
+    },
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "svd_llm",
+    "shapes": {
+      "attention_proj_4096": {
+        "shape": "4096x4096",
+        "orig_params": 16777216,
+        "compressed_params": 16777216,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.0,
+        "compression_time_ms": 0.54,
+        "decomp_latency_ms": 0.2942,
+        "peak_vram_mb": 72.62,
+        "status": "OK"
+      },
+      "mlp_gate_up_11008": {
+        "shape": "4096x11008",
+        "orig_params": 45088768,
+        "compressed_params": 45088768,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.0,
+        "compression_time_ms": 0.28,
+        "decomp_latency_ms": 0.7885,
+        "peak_vram_mb": 181.05,
+        "status": "OK"
+      }
+    },
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hnc_svd",
+    "shapes": {
+      "attention_proj_4096": {
+        "shape": "4096x4096",
+        "orig_params": 524288,
+        "compressed_params": 524288,
+        "compression_ratio": 1.0,
+        "frobenius_error": 1.23152,
+        "compression_time_ms": 7697.24,
+        "decomp_latency_ms": 0.3133,
+        "peak_vram_mb": 394.64,
+        "status": "OK"
+      },
+      "mlp_gate_up_11008": {
+        "shape": "4096x11008",
+        "orig_params": 966656,
+        "compressed_params": 966656,
+        "compression_ratio": 1.0,
+        "frobenius_error": 1.27046,
+        "compression_time_ms": 7187.75,
+        "decomp_latency_ms": 0.1908,
+        "peak_vram_mb": 845.06,
+        "status": "OK"
+      }
+    },
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "aa_svd",
+    "shapes": {
+      "attention_proj_4096": {
+        "shape": "4096x4096",
+        "orig_params": 16777216,
+        "compressed_params": 16777216,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.0,
+        "compression_time_ms": 0.36,
+        "decomp_latency_ms": 0.2946,
+        "peak_vram_mb": 72.62,
+        "status": "OK"
+      },
+      "mlp_gate_up_11008": {
+        "shape": "4096x11008",
+        "orig_params": 45088768,
+        "compressed_params": 45088768,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.0,
+        "compression_time_ms": 0.32,
+        "decomp_latency_ms": 0.7864,
+        "peak_vram_mb": 181.05,
+        "status": "OK"
+      }
+    },
+    "status": "OK",
+    "error": null
+  },
+  {
+    "name": "hybrid_svd",
+    "shapes": {
+      "attention_proj_4096": {
+        "shape": "4096x4096",
+        "orig_params": 1048576,
+        "compressed_params": 1048576,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.94048,
+        "compression_time_ms": 9117.77,
+        "decomp_latency_ms": 0.1703,
+        "peak_vram_mb": 532.89,
+        "status": "OK"
+      },
+      "mlp_gate_up_11008": {
+        "shape": "4096x11008",
+        "orig_params": 1933312,
+        "compressed_params": 1933312,
+        "compression_ratio": 1.0,
+        "frobenius_error": 0.9604,
+        "compression_time_ms": 7256.04,
+        "decomp_latency_ms": 0.3123,
+        "peak_vram_mb": 868.15,
+        "status": "OK"
+      }
+    },
+    "status": "OK",
+    "error": null
+  }
+]

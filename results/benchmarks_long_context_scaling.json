@@ -1,0 +1,446 @@
+[
+  {
+    "key": "flash_attention3",
+    "actual_key": "flash_attention3",
+    "display_name": "Quadratic FlashAttention (O(N^2))",
+    "is_linear": false,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 0.3008,
+        "latency_median_ms": 0.299,
+        "latency_std_ms": 0.094,
+        "tokens_per_sec": 1701923.99,
+        "peak_vram_mb": 11.96,
+        "tflops_per_sec": 1.338,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 0.2471,
+        "latency_median_ms": 0.2412,
+        "latency_std_ms": 0.1419,
+        "tokens_per_sec": 4144272.48,
+        "peak_vram_mb": 14.19,
+        "tflops_per_sec": 5.432,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 0.3258,
+        "latency_median_ms": 0.3062,
+        "latency_std_ms": 0.1875,
+        "tokens_per_sec": 6286836.95,
+        "peak_vram_mb": 18.69,
+        "tflops_per_sec": 14.833,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 0.818,
+        "latency_median_ms": 0.8182,
+        "latency_std_ms": 0.1307,
+        "tokens_per_sec": 5007506.43,
+        "peak_vram_mb": 27.69,
+        "tflops_per_sec": 22.316,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 2.9447,
+        "latency_median_ms": 2.9978,
+        "latency_std_ms": 0.1517,
+        "tokens_per_sec": 2781973.69,
+        "peak_vram_mb": 45.69,
+        "tflops_per_sec": 24.066,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 9.7783,
+        "latency_median_ms": 9.7285,
+        "latency_std_ms": 0.1543,
+        "tokens_per_sec": 1675546.21,
+        "peak_vram_mb": 81.69,
+        "tflops_per_sec": 28.55,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  },
+  {
+    "key": "gated_delta_net",
+    "actual_key": "gated_delta_net",
+    "display_name": "Gated Delta Net (GDN) Linear (O(N))",
+    "is_linear": false,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 1.2101,
+        "latency_median_ms": 1.2104,
+        "latency_std_ms": 1.0971,
+        "tokens_per_sec": 423101.32,
+        "peak_vram_mb": 14.99,
+        "tflops_per_sec": 0.333,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 2.2275,
+        "latency_median_ms": 2.2272,
+        "latency_std_ms": 0.2503,
+        "tokens_per_sec": 459713.96,
+        "peak_vram_mb": 20.02,
+        "tflops_per_sec": 0.603,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 4.2573,
+        "latency_median_ms": 4.2578,
+        "latency_std_ms": 0.2555,
+        "tokens_per_sec": 481058.33,
+        "peak_vram_mb": 30.09,
+        "tflops_per_sec": 1.135,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 8.3825,
+        "latency_median_ms": 8.3825,
+        "latency_std_ms": 0.1583,
+        "tokens_per_sec": 488639.13,
+        "peak_vram_mb": 50.21,
+        "tflops_per_sec": 2.178,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 17.5358,
+        "latency_median_ms": 17.5268,
+        "latency_std_ms": 0.1205,
+        "tokens_per_sec": 467159.36,
+        "peak_vram_mb": 90.46,
+        "tflops_per_sec": 4.041,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 33.9903,
+        "latency_median_ms": 33.9635,
+        "latency_std_ms": 0.0974,
+        "tokens_per_sec": 482019.94,
+        "peak_vram_mb": 170.96,
+        "tflops_per_sec": 8.213,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  },
+  {
+    "key": "gated_linear_attention",
+    "actual_key": "gated_linear_attention",
+    "display_name": "Gated Linear Attention (GLA) (O(N))",
+    "is_linear": true,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 1.7295,
+        "latency_median_ms": 1.7274,
+        "latency_std_ms": 0.5263,
+        "tokens_per_sec": 296039.32,
+        "peak_vram_mb": 14.21,
+        "tflops_per_sec": 0.078,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 1.7134,
+        "latency_median_ms": 1.708,
+        "latency_std_ms": 0.2758,
+        "tokens_per_sec": 597653.28,
+        "peak_vram_mb": 18.72,
+        "tflops_per_sec": 0.157,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 1.8168,
+        "latency_median_ms": 1.8074,
+        "latency_std_ms": 0.3449,
+        "tokens_per_sec": 1127234.38,
+        "peak_vram_mb": 27.75,
+        "tflops_per_sec": 0.295,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 1.7741,
+        "latency_median_ms": 1.7956,
+        "latency_std_ms": 0.6367,
+        "tokens_per_sec": 2308802.32,
+        "peak_vram_mb": 45.82,
+        "tflops_per_sec": 0.605,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 3.9424,
+        "latency_median_ms": 3.7643,
+        "latency_std_ms": 0.5819,
+        "tokens_per_sec": 2077913.67,
+        "peak_vram_mb": 81.94,
+        "tflops_per_sec": 0.545,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 8.6417,
+        "latency_median_ms": 8.9324,
+        "latency_std_ms": 0.4812,
+        "tokens_per_sec": 1895930.28,
+        "peak_vram_mb": 154.19,
+        "tflops_per_sec": 0.497,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  },
+  {
+    "key": "cosformer",
+    "actual_key": "cosformer",
+    "display_name": "Cosformer Linear Attention (O(N))",
+    "is_linear": false,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 1.3846,
+        "latency_median_ms": 1.3491,
+        "latency_std_ms": 0.3517,
+        "tokens_per_sec": 369778.68,
+        "peak_vram_mb": 22.84,
+        "tflops_per_sec": 0.291,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 1.3884,
+        "latency_median_ms": 1.3793,
+        "latency_std_ms": 0.358,
+        "tokens_per_sec": 737526.86,
+        "peak_vram_mb": 43.86,
+        "tflops_per_sec": 0.967,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 1.0389,
+        "latency_median_ms": 1.0148,
+        "latency_std_ms": 0.3159,
+        "tokens_per_sec": 1971376.5,
+        "peak_vram_mb": 44.86,
+        "tflops_per_sec": 4.651,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 1.8224,
+        "latency_median_ms": 1.7997,
+        "latency_std_ms": 1.6526,
+        "tokens_per_sec": 2247630.0,
+        "peak_vram_mb": 79.9,
+        "tflops_per_sec": 10.016,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 2.9984,
+        "latency_median_ms": 2.9978,
+        "latency_std_ms": 0.2281,
+        "tokens_per_sec": 2732123.85,
+        "peak_vram_mb": 149.96,
+        "tflops_per_sec": 23.635,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 10.9621,
+        "latency_median_ms": 10.9083,
+        "latency_std_ms": 0.6081,
+        "tokens_per_sec": 1494600.87,
+        "peak_vram_mb": 290.1,
+        "tflops_per_sec": 25.467,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  },
+  {
+    "key": "svd_linear_attention",
+    "actual_key": "svd_linear_attention",
+    "display_name": "SVD Low-Rank Linear Attention (O(N))",
+    "is_linear": true,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 0.2623,
+        "latency_median_ms": 0.2576,
+        "latency_std_ms": 0.1366,
+        "tokens_per_sec": 1951844.38,
+        "peak_vram_mb": 12.22,
+        "tflops_per_sec": 0.512,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 0.3672,
+        "latency_median_ms": 0.3779,
+        "latency_std_ms": 0.1877,
+        "tokens_per_sec": 2788853.27,
+        "peak_vram_mb": 14.32,
+        "tflops_per_sec": 0.731,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 0.4101,
+        "latency_median_ms": 0.3267,
+        "latency_std_ms": 0.4311,
+        "tokens_per_sec": 4993757.7,
+        "peak_vram_mb": 18.69,
+        "tflops_per_sec": 1.309,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 1.3242,
+        "latency_median_ms": 0.8315,
+        "latency_std_ms": 1.0181,
+        "tokens_per_sec": 3093197.66,
+        "peak_vram_mb": 27.82,
+        "tflops_per_sec": 0.811,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 6.5893,
+        "latency_median_ms": 6.6053,
+        "latency_std_ms": 1.3097,
+        "tokens_per_sec": 1243225.4,
+        "peak_vram_mb": 45.82,
+        "tflops_per_sec": 0.326,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 12.1404,
+        "latency_median_ms": 12.2492,
+        "latency_std_ms": 0.3945,
+        "tokens_per_sec": 1349547.23,
+        "peak_vram_mb": 79.94,
+        "tflops_per_sec": 0.354,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  },
+  {
+    "key": "selective_ssm",
+    "actual_key": "selective_ssm",
+    "display_name": "Selective SSM (Mamba) (O(N))",
+    "is_linear": false,
+    "data": [
+      {
+        "seq_len": 512,
+        "latency_ms": 1.1137,
+        "latency_median_ms": 1.0947,
+        "latency_std_ms": 0.352,
+        "tokens_per_sec": 459717.28,
+        "peak_vram_mb": 34.46,
+        "tflops_per_sec": 0.362,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 1024,
+        "latency_ms": 2.313,
+        "latency_median_ms": 2.2842,
+        "latency_std_ms": 0.4174,
+        "tokens_per_sec": 442708.95,
+        "peak_vram_mb": 58.57,
+        "tflops_per_sec": 0.58,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 2048,
+        "latency_ms": 5.1388,
+        "latency_median_ms": 5.118,
+        "latency_std_ms": 0.1327,
+        "tokens_per_sec": 398535.38,
+        "peak_vram_mb": 106.79,
+        "tflops_per_sec": 0.94,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 4096,
+        "latency_ms": 11.5264,
+        "latency_median_ms": 11.52,
+        "latency_std_ms": 0.8514,
+        "tokens_per_sec": 355358.14,
+        "peak_vram_mb": 203.23,
+        "tflops_per_sec": 1.584,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 8192,
+        "latency_ms": 19.5894,
+        "latency_median_ms": 19.5881,
+        "latency_std_ms": 1.9039,
+        "tokens_per_sec": 418185.86,
+        "peak_vram_mb": 396.1,
+        "tflops_per_sec": 3.618,
+        "status": "OK",
+        "error": null
+      },
+      {
+        "seq_len": 16384,
+        "latency_ms": 42.0279,
+        "latency_median_ms": 42.0091,
+        "latency_std_ms": 3.5656,
+        "tokens_per_sec": 389836.24,
+        "peak_vram_mb": 782.35,
+        "tflops_per_sec": 6.643,
+        "status": "OK",
+        "error": null
+      }
+    ]
+  }
+]

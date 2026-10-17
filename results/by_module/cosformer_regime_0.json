@@ -1,0 +1,98 @@
+{
+  "module_name": "cosformer_regime_0",
+  "category": "ablation",
+  "family": "kd-6pillar-ablation",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "c8fd39c0b8",
+  "latest_timestamp": "2026-10-14T11:01:06+03:30",
+  "latest_record": {
+    "record_id": "c92fb99670ce66d3",
+    "module_name": "cosformer_regime_0",
+    "category": "ablation",
+    "family": "kd-6pillar-ablation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-14T11:01:06+03:30",
+    "git_commit_sha": "c8fd39c0b8",
+    "generation_method": {
+      "algorithm": "Regime 0: Zero-Shot (alpha=1.0)",
+      "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+    },
+    "experimental_setup": {
+      "architecture": "Cosformer",
+      "regime": "regime_0",
+      "steps": 50,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "cosine_sim": 0.5519,
+      "kl_div": 2.9356,
+      "peak_vram_mb": 488.9,
+      "step_time_s": 0.0
+    },
+    "notes": "6-Pillar KD Ablation: Cosformer under Regime 0: Zero-Shot (alpha=1.0)"
+  },
+  "active_records": [
+    {
+      "record_id": "c92fb99670ce66d3",
+      "module_name": "cosformer_regime_0",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 0: Zero-Shot (alpha=1.0)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "Cosformer",
+        "regime": "regime_0",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.5519,
+        "kl_div": 2.9356,
+        "peak_vram_mb": 488.9,
+        "step_time_s": 0.0
+      },
+      "notes": "6-Pillar KD Ablation: Cosformer under Regime 0: Zero-Shot (alpha=1.0)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "c92fb99670ce66d3",
+      "module_name": "cosformer_regime_0",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 0: Zero-Shot (alpha=1.0)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "Cosformer",
+        "regime": "regime_0",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.5519,
+        "kl_div": 2.9356,
+        "peak_vram_mb": 488.9,
+        "step_time_s": 0.0
+      },
+      "notes": "6-Pillar KD Ablation: Cosformer under Regime 0: Zero-Shot (alpha=1.0)"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "module_name": "mamba_block_regime_1",
+  "category": "ablation",
+  "family": "kd-6pillar-ablation",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "c8fd39c0b8",
+  "latest_timestamp": "2026-10-14T11:01:06+03:30",
+  "latest_record": {
+    "record_id": "d9a6590265b851db",
+    "module_name": "mamba_block_regime_1",
+    "category": "ablation",
+    "family": "kd-6pillar-ablation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-14T11:01:06+03:30",
+    "git_commit_sha": "c8fd39c0b8",
+    "generation_method": {
+      "algorithm": "Regime 1: Naive CE (50 steps)",
+      "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+    },
+    "experimental_setup": {
+      "architecture": "Mamba Block",
+      "regime": "regime_1",
+      "steps": 50,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "cosine_sim": 0.2223,
+      "kl_div": 4.5791,
+      "peak_vram_mb": 643.4,
+      "step_time_s": 2.41
+    },
+    "notes": "6-Pillar KD Ablation: Mamba Block under Regime 1: Naive CE (50 steps)"
+  },
+  "active_records": [
+    {
+      "record_id": "d9a6590265b851db",
+      "module_name": "mamba_block_regime_1",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 1: Naive CE (50 steps)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "Mamba Block",
+        "regime": "regime_1",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.2223,
+        "kl_div": 4.5791,
+        "peak_vram_mb": 643.4,
+        "step_time_s": 2.41
+      },
+      "notes": "6-Pillar KD Ablation: Mamba Block under Regime 1: Naive CE (50 steps)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "d9a6590265b851db",
+      "module_name": "mamba_block_regime_1",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 1: Naive CE (50 steps)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "Mamba Block",
+        "regime": "regime_1",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.2223,
+        "kl_div": 4.5791,
+        "peak_vram_mb": 643.4,
+        "step_time_s": 2.41
+      },
+      "notes": "6-Pillar KD Ablation: Mamba Block under Regime 1: Naive CE (50 steps)"
+    }
+  ]
+}

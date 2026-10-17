@@ -1,0 +1,71 @@
+{
+  "baseline_tok_s": 302.5,
+  "gamma_sweep": [
+    {
+      "gamma": 1,
+      "tokens_generated": 32,
+      "target_forward_passes": 28,
+      "acceptance_rate": 1.1429,
+      "mean_accepted_per_step": 1.14,
+      "latency_ms": 24.67,
+      "tokens_per_sec": 1296.9,
+      "speedup_factor": 4.29,
+      "status": "OK"
+    },
+    {
+      "gamma": 2,
+      "tokens_generated": 32,
+      "target_forward_passes": 24,
+      "acceptance_rate": 0.6809,
+      "mean_accepted_per_step": 1.33,
+      "latency_ms": 16.59,
+      "tokens_per_sec": 1928.6,
+      "speedup_factor": 6.37,
+      "status": "OK"
+    },
+    {
+      "gamma": 3,
+      "tokens_generated": 32,
+      "target_forward_passes": 22,
+      "acceptance_rate": 0.4848,
+      "mean_accepted_per_step": 1.45,
+      "latency_ms": 18.08,
+      "tokens_per_sec": 1769.8,
+      "speedup_factor": 5.85,
+      "status": "OK"
+    },
+    {
+      "gamma": 4,
+      "tokens_generated": 32,
+      "target_forward_passes": 22,
+      "acceptance_rate": 0.3678,
+      "mean_accepted_per_step": 1.45,
+      "latency_ms": 20.53,
+      "tokens_per_sec": 1558.5,
+      "speedup_factor": 5.15,
+      "status": "OK"
+    },
+    {
+      "gamma": 6,
+      "tokens_generated": 32,
+      "target_forward_passes": 22,
+      "acceptance_rate": 0.252,
+      "mean_accepted_per_step": 1.45,
+      "latency_ms": 25.51,
+      "tokens_per_sec": 1254.2,
+      "speedup_factor": 4.15,
+      "status": "OK"
+    },
+    {
+      "gamma": 8,
+      "tokens_generated": 32,
+      "target_forward_passes": 26,
+      "acceptance_rate": 0.1749,
+      "mean_accepted_per_step": 1.23,
+      "latency_ms": 34.15,
+      "tokens_per_sec": 936.9,
+      "speedup_factor": 3.1,
+      "status": "OK"
+    }
+  ]
+}

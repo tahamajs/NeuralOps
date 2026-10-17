@@ -1,0 +1,98 @@
+{
+  "module_name": "pgdn_attention_regime_3",
+  "category": "ablation",
+  "family": "kd-6pillar-ablation",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "c8fd39c0b8",
+  "latest_timestamp": "2026-10-14T11:01:06+03:30",
+  "latest_record": {
+    "record_id": "ae51b04a639b1a6a",
+    "module_name": "pgdn_attention_regime_3",
+    "category": "ablation",
+    "family": "kd-6pillar-ablation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-14T11:01:06+03:30",
+    "git_commit_sha": "c8fd39c0b8",
+    "generation_method": {
+      "algorithm": "Regime 3: Reverse KL (50 steps)",
+      "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+    },
+    "experimental_setup": {
+      "architecture": "PGDN",
+      "regime": "regime_3",
+      "steps": 50,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+    },
+    "metrics": {
+      "cosine_sim": 0.9848,
+      "kl_div": 0.0998,
+      "peak_vram_mb": 881.4,
+      "step_time_s": 5.93
+    },
+    "notes": "6-Pillar KD Ablation: PGDN under Regime 3: Reverse KL (50 steps)"
+  },
+  "active_records": [
+    {
+      "record_id": "ae51b04a639b1a6a",
+      "module_name": "pgdn_attention_regime_3",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 3: Reverse KL (50 steps)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "PGDN",
+        "regime": "regime_3",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.9848,
+        "kl_div": 0.0998,
+        "peak_vram_mb": 881.4,
+        "step_time_s": 5.93
+      },
+      "notes": "6-Pillar KD Ablation: PGDN under Regime 3: Reverse KL (50 steps)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "ae51b04a639b1a6a",
+      "module_name": "pgdn_attention_regime_3",
+      "category": "ablation",
+      "family": "kd-6pillar-ablation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T11:01:06+03:30",
+      "git_commit_sha": "c8fd39c0b8",
+      "generation_method": {
+        "algorithm": "Regime 3: Reverse KL (50 steps)",
+        "source_artifact": "results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.json"
+      },
+      "experimental_setup": {
+        "architecture": "PGDN",
+        "regime": "regime_3",
+        "steps": 50,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)"
+      },
+      "metrics": {
+        "cosine_sim": 0.9848,
+        "kl_div": 0.0998,
+        "peak_vram_mb": 881.4,
+        "step_time_s": 5.93
+      },
+      "notes": "6-Pillar KD Ablation: PGDN under Regime 3: Reverse KL (50 steps)"
+    }
+  ]
+}
