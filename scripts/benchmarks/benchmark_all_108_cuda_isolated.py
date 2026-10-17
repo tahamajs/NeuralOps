@@ -616,7 +616,7 @@ def run_test(mod_name):
     ref_ms = 0.0
     speedup = 1.0
     max_diff = 0.0
-
+    if ref_fn:
         try:
             use_kwargs = True
             try:
