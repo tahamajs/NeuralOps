@@ -88,29 +88,51 @@ from .foundation_pretrainer import InfiniteContextFoundationPretrainer
 
 # Optimizer factories
 from .optimizers import (  # noqa: E402
+    AdaFactor,
+    Lion,
+    Muon,
+    MuonAdamW,
+    SophiaG,
+    create_8bit_optimizer_if_available,
     create_adabelief,
+    create_adafactor,
     create_adam,
     create_adamw,
+    create_adamw_8bit,
     create_lamb,
     create_lars,
+    create_lion,
+    create_lion_8bit,
     create_muon,
     create_muon_adamw_reg,
     create_ranger,
     create_riemannian_stiefel,
     create_sgd,
+    create_sophia,
+    get_optimizer_memory_footprint,
 )
 
 # Scheduler factories
 from .schedulers import (  # noqa: E402
     create_cosine,
+    create_cosine_warmup,
     create_linear,
+    create_linear_warmup,
     create_onecycle,
     create_poly,
     create_rop,
+    create_wsd,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
+    get_lr_scheduler,
+    get_wsd_schedule,
 )
 
 __all__ += [
     # Optimizers
+    "Lion",
+    "SophiaG",
+    "AdaFactor",
     "create_muon",
     "create_muon_adamw_reg",
     "create_riemannian_stiefel",
@@ -121,13 +143,28 @@ __all__ += [
     "create_ranger",
     "create_lamb",
     "create_lars",
+    "create_lion",
+    "create_sophia",
+    "create_adafactor",
+    "create_adamw_8bit",
+    "create_lion_8bit",
+    "get_optimizer_memory_footprint",
+    "create_8bit_optimizer_if_available",
     # Schedulers
     "create_linear",
     "create_cosine",
     "create_rop",
     "create_onecycle",
     "create_poly",
+    "create_cosine_warmup",
+    "create_linear_warmup",
+    "create_wsd",
+    "get_cosine_schedule_with_warmup",
+    "get_linear_schedule_with_warmup",
+    "get_wsd_schedule",
+    "get_lr_scheduler",
 ]
+
 
 # Loss functions
 from .losses import (  # noqa: E402
@@ -156,7 +193,10 @@ from .distillation.multi_level_kd import (
     MiniLMValueRelationKDLoss,
     BlockwiseOperatorCloningLoss,
     LinearCKALoss,
-    SmoothMaxOverLayersCKASteeringLoss,
+    HiddenAngularMSELoss,
+    OrthogonalityPenaltyLoss,
+    LatentEntropyRegularizer,
+    Unified6PillarDistillationLoss,
 )
 from .surgery_schedules.mohawk import (
     AttentionHomotopyScheduler,
@@ -189,6 +229,10 @@ __all__ += [
     "BlockwiseOperatorCloningLoss",
     "LinearCKALoss",
     "SmoothMaxOverLayersCKASteeringLoss",
+    "HiddenAngularMSELoss",
+    "OrthogonalityPenaltyLoss",
+    "LatentEntropyRegularizer",
+    "Unified6PillarDistillationLoss",
     "AttentionHomotopyScheduler",
     "AlphaBlendingAttentionWrapper",
     "MOHAWKTrainer",
@@ -204,6 +248,7 @@ __all__ += [
     "SpectralJacobianRegularizer",
     "TTTLinearAttentionLayer",
 ]
+
 
 # Auto-wired package members
 from neuralops.trainer import methods
