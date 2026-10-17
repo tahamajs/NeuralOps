@@ -27,7 +27,10 @@ __global__ void __launch_bounds__(256) svd_prefix_scan_fwd_kernel(
     if (pid_bh >= B * H) return;
 
     const int tid = threadIdx.x;
-    extern __shared__ float s_matrix[]; // [D, D]
+    extern __shared__ float s_matrix[]; // [D * D + 3 * D]
+    float* s_k = s_matrix + D * D;
+    float* s_v = s_k + D;
+    float* s_q = s_v + D;
 
     for (int i = tid; i < D * D; i += blockDim.x) {
         s_matrix[i] = 0.0f;
@@ -39,22 +42,27 @@ __global__ void __launch_bounds__(256) svd_prefix_scan_fwd_kernel(
     for (int t = 0; t < L; ++t) {
         const int tok_offset = head_offset + t * D;
 
+        for (int i = tid; i < D; i += blockDim.x) {
+            s_k[i] = to_float(k[tok_offset + i]);
+            s_v[i] = to_float(v[tok_offset + i]);
+            s_q[i] = to_float(q[tok_offset + i]);
+        }
+        __syncthreads();
+
         // Cooperative update of the outer-product state matrix: S += k \otimes v
         for (int i = tid; i < D * D; i += blockDim.x) {
             const int d1 = i / D;
             const int d2 = i % D;
-            const float k_val = to_float(k[tok_offset + d1]);
-            const float v_val = to_float(v[tok_offset + d2]);
-            s_matrix[i] += k_val * v_val;
+            s_matrix[i] += s_k[d1] * s_v[d2];
         }
         __syncthreads();
 
         // Query projection: y = q * S
         for (int d2 = tid; d2 < D; d2 += blockDim.x) {
             float num = 0.0f;
+            #pragma unroll 4
             for (int d1 = 0; d1 < D; ++d1) {
-                const float q_val = to_float(q[tok_offset + d1]);
-                num += q_val * s_matrix[d1 * D + d2];
+                num += s_q[d1] * s_matrix[d1 * D + d2];
             }
             out[tok_offset + d2] = from_float<scalar_t>(num);
         }
@@ -85,7 +93,7 @@ torch::Tensor svd_prefix_scan_fwd(
     int threads = std::min(256, ((D * D + 31) / 32) * 32);
     if (threads < 32) threads = 32;
 
-    const size_t shared_mem = D * D * sizeof(float);
+    const size_t shared_mem = (D * D + 3 * D) * sizeof(float);
     TORCH_CHECK(D * D * sizeof(float) <= 96 * 1024,
                 "svd_prefix_scan_fwd: D=", D, " requires ",
                 D * D * sizeof(float), " bytes shared memory (max 96 KB)");
