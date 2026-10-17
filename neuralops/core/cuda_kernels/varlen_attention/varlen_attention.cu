@@ -9,7 +9,7 @@ namespace cuda {
 
 // Variable-length attention forward kernel
 template <typename scalar_t, int MAX_D>
-__launch_bounds__(128)
+__launch_bounds__(32)
 __global__ void varlen_attention_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -23,6 +23,9 @@ __global__ void varlen_attention_fwd_kernel(
     const float scale,
     const bool is_causal
 ) {
+    if (threadIdx.x != 0) return;
+
+    const int qi_rel = blockIdx.x;
     const int bh = blockIdx.y;
     if (bh >= num_seqs * H) return;
 
@@ -34,57 +37,58 @@ __global__ void varlen_attention_fwd_kernel(
     const int k_start = cu_seqlens_k[b];
     const int k_end = cu_seqlens_k[b + 1];
 
-    for (int qi = q_start; qi < q_end; ++qi) {
-        const int q_offset = qi * (H * D) + h * D;
-        float q_reg[MAX_D];
-        #pragma unroll 4
+    const int qi = q_start + qi_rel;
+    if (qi >= q_end) return;
+
+    const int q_offset = qi * (H * D) + h * D;
+    float q_reg[MAX_D];
+    #pragma unroll
+    for (int d = 0; d < D && d < MAX_D; ++d) {
+        q_reg[d] = to_float(Q[q_offset + d]);
+    }
+
+    float max_s = -1e38f;
+    float sum_exp = 0.0f;
+    float acc[MAX_D];
+    #pragma unroll
+    for (int d = 0; d < MAX_D; ++d) {
+        acc[d] = 0.0f;
+    }
+
+    const int cur_q_idx = qi - q_start;
+    const int k_limit = is_causal ? std::min(k_end, k_start + cur_q_idx + 1) : k_end;
+
+    for (int ki = k_start; ki < k_limit; ++ki) {
+        const int k_offset = ki * (H * D) + h * D;
+        float score = 0.0f;
+        #pragma unroll
         for (int d = 0; d < D && d < MAX_D; ++d) {
-            q_reg[d] = to_float(Q[q_offset + d]);
+            score += q_reg[d] * to_float(K[k_offset + d]);
         }
+        score *= scale;
 
-        float max_s = -1e38f;
-        float sum_exp = 0.0f;
-        float acc[MAX_D];
-        #pragma unroll 4
-        for (int d = 0; d < MAX_D; ++d) {
-            acc[d] = 0.0f;
-        }
-
-        const int cur_q_idx = qi - q_start;
-        const int k_limit = is_causal ? std::min(k_end, k_start + cur_q_idx + 1) : k_end;
-
-        for (int ki = k_start; ki < k_limit; ++ki) {
-            const int k_offset = ki * (H * D) + h * D;
-            float score = 0.0f;
-            #pragma unroll 4
+        if (score > max_s) {
+            const float rescale = expf(max_s - score);
+            sum_exp = sum_exp * rescale + 1.0f;
+            #pragma unroll
             for (int d = 0; d < D && d < MAX_D; ++d) {
-                score += q_reg[d] * to_float(K[k_offset + d]);
+                acc[d] = acc[d] * rescale + to_float(V[k_offset + d]);
             }
-            score *= scale;
-
-            if (score > max_s) {
-                const float rescale = expf(max_s - score);
-                sum_exp = sum_exp * rescale + 1.0f;
-                #pragma unroll 4
-                for (int d = 0; d < D && d < MAX_D; ++d) {
-                    acc[d] = acc[d] * rescale + to_float(V[k_offset + d]);
-                }
-                max_s = score;
-            } else {
-                const float w = expf(score - max_s);
-                sum_exp += w;
-                #pragma unroll 4
-                for (int d = 0; d < D && d < MAX_D; ++d) {
-                    acc[d] += w * to_float(V[k_offset + d]);
-                }
+            max_s = score;
+        } else {
+            const float w = expf(score - max_s);
+            sum_exp += w;
+            #pragma unroll
+            for (int d = 0; d < D && d < MAX_D; ++d) {
+                acc[d] += w * to_float(V[k_offset + d]);
             }
         }
+    }
 
-        const float inv_sum = 1.0f / (sum_exp != 0.0f ? sum_exp : 1.0f);
-        #pragma unroll 4
-        for (int d = 0; d < D && d < MAX_D; ++d) {
-            out[q_offset + d] = from_float<scalar_t>(acc[d] * inv_sum);
-        }
+    const float inv_sum = 1.0f / (sum_exp != 0.0f ? sum_exp : 1.0f);
+    #pragma unroll
+    for (int d = 0; d < D && d < MAX_D; ++d) {
+        out[q_offset + d] = from_float<scalar_t>(acc[d] * inv_sum);
     }
 }
 
@@ -113,7 +117,7 @@ torch::Tensor varlen_attention_fwd(
     auto out = torch::empty_like(q);
     const float scale = 1.0f / sqrtf(static_cast<float>(D));
 
-    const dim3 grid(1, num_seqs * H);
+    const dim3 grid(std::max(1, max_seqlen_q), num_seqs * H);
     const int threads = 32;
     auto stream = c10::cuda::getCurrentCUDAStream();
 

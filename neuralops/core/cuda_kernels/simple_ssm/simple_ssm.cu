@@ -59,7 +59,7 @@ torch::Tensor simple_ssm_fwd(
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto x_c = x.contiguous();
     auto d_c = decay.contiguous();
-    auto s_c = scale.contiguous();
+    auto s_c = (scale.numel() == 1) ? scale.reshape({1}).expand({D}).contiguous() : scale.contiguous();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
