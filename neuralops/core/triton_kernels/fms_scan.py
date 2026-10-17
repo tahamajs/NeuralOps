@@ -659,6 +659,43 @@ def fused_goldfinch_hopfield_lookup_pytorch(
     return y.to(target_dtype)
 
 
+from neuralops.core.triton_kernels._types import HAS_TRITON
+
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _goldfinch_hopfield_fused_scan_kernel(
+        g_ptr,
+        v_ptr,
+        out_ptr,
+        total_b,
+        L: tl.constexpr,
+        D: tl.constexpr,
+        stride_gb,
+        stride_gl,
+        stride_gd,
+        stride_vb,
+        stride_vl,
+        stride_vd,
+        stride_ob,
+        stride_ol,
+        stride_od,
+        BLOCK_D: tl.constexpr,
+    ):
+        pid_b = tl.program_id(0)
+        pid_d = tl.program_id(1)
+
+        offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D
+
+        h = tl.zeros((BLOCK_D,), dtype=tl.float32)
+
+        for t in range(0, L):
+            g = tl.load(g_ptr + pid_b * stride_gb + t * stride_gl + offs_d * stride_gd, mask=mask_d, other=0.0).to(tl.float32)
+            v = tl.load(v_ptr + pid_b * stride_vb + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+            h = (1.0 - g) * h + g * v
+            tl.store(out_ptr + pid_b * stride_ob + t * stride_ol + offs_d * stride_od, h.to(out_ptr.dtype.element_ty), mask=mask_d)
+
+
 def fused_goldfinch_hopfield_lookup_triton(
     g: torch.Tensor,
     v: torch.Tensor,
@@ -667,9 +704,23 @@ def fused_goldfinch_hopfield_lookup_triton(
     """Fused Goldfinch recurrent memory scan in GPU SRAM."""
     from neuralops.core.triton_kernels._types import HAS_TRITON
 
-    if HAS_TRITON and g.is_cuda:
+    if HAS_TRITON and g.is_cuda and v.is_cuda:
         try:
-            return fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size)
+            B, L, D = g.shape
+            g_c = g.contiguous()
+            v_c = v.contiguous()
+            out = torch.empty_like(g_c)
+            BLOCK_D = min(128, triton.next_power_of_2(D))
+            grid = (B, triton.cdiv(D, BLOCK_D))
+            _goldfinch_hopfield_fused_scan_kernel[grid](
+                g_c, v_c, out,
+                B, L=L, D=D,
+                stride_gb=g_c.stride(0), stride_gl=g_c.stride(1), stride_gd=g_c.stride(2),
+                stride_vb=v_c.stride(0), stride_vl=v_c.stride(1), stride_vd=v_c.stride(2),
+                stride_ob=out.stride(0), stride_ol=out.stride(1), stride_od=out.stride(2),
+                BLOCK_D=BLOCK_D, num_warps=4,
+            )
+            return out
         except Exception:
             pass
     return fused_goldfinch_hopfield_lookup_pytorch(g, v, chunk_size)

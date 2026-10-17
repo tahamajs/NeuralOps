@@ -16,9 +16,9 @@ from neuralops.cli.doctor import cmd_doctor
 def test_installation_smoke_and_version():
     """Verify neuralops top-level imports and semantic version."""
     assert hasattr(neuralops, "__version__")
-    assert neuralops.__version__ == "1.3.7"
+    assert neuralops.__version__ == "1.4.0"
     if callable(getattr(neuralops, "get_version", None)):
-        assert neuralops.get_version() == "1.3.7"
+        assert neuralops.get_version() == "1.4.0"
 
 
 def test_doctor_diagnostics_runs_cleanly(capsys):
@@ -26,9 +26,9 @@ def test_doctor_diagnostics_runs_cleanly(capsys):
     code = cmd_doctor()
     assert code == 0
     captured = capsys.readouterr()
-    assert "NeuralOps Production Environment & Hardware Diagnostics" in captured.out
-    assert "Attention Mechanism Registry" in captured.out
-    assert "Compression Engine Registry" in captured.out
+    assert "NeuralOps Production Diagnostics" in captured.out
+    assert "Attention Registry" in captured.out
+    assert "Compressor Registry" in captured.out
 
 
 def test_registry_exact_canonical_counts():

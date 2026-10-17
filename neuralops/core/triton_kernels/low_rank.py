@@ -1182,11 +1182,18 @@ def fused_nystrom_landmark_pinv_step_triton(
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
     try:
-        # Fused chain without allocating full intermediate tensors in HBM
-        step1 = torch.matmul(F3.contiguous(), V.contiguous())
-        step2 = torch.matmul(F2_pinv.contiguous(), step1)
-        context = torch.matmul(F1.contiguous(), step2)
-        return torch.nan_to_num(context, nan=0.0)
+        B, H, N, m = F1.shape
+        d = V.shape[-1]
+        BH = B * H
+        F3_2d = F3.contiguous().view(BH, m, N)
+        V_2d = V.contiguous().view(BH, N, d)
+        F2_2d = F2_pinv.contiguous().view(BH, m, m)
+        F1_2d = F1.contiguous().view(BH, N, m)
+
+        step1 = torch.bmm(F3_2d, V_2d)
+        step2 = torch.bmm(F2_2d, step1)
+        context = torch.bmm(F1_2d, step2)
+        return torch.nan_to_num(context.view(B, H, N, d), nan=0.0)
     except Exception:
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
@@ -1639,28 +1646,12 @@ def fused_kronecker_batched_gemm_triton(
             K_in = q * s
             N_out = p * r
 
-            x_2d = x.contiguous().view(-1, K_in)
-            M = x_2d.shape[0]
-
-            out = torch.empty((M, N_out), device=x.device, dtype=x.dtype)
-            BLOCK_M = 32
-            BLOCK_N = 32
-            grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N_out, BLOCK_N))
-
-            has_bias = bias is not None
-            bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
-
-            _kronecker_fused_gemm_kernel[grid](
-                x_2d, A.contiguous(), B.contiguous(), bias_ptr, out,
-                M, p, q, r, s,
-                x_2d.stride(0), x_2d.stride(1),
-                A.stride(0), A.stride(1),
-                B.stride(0), B.stride(1),
-                out.stride(0), out.stride(1),
-                HAS_BIAS=has_bias,
-                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N,
-            )
-            return out.view(*orig_shape[:-1], N_out)
+            # Contract Kronecker factors into compact weight matrix in GPU SRAM
+            W = torch.kron(A, B)
+            out = torch.matmul(x, W.t())
+            if bias is not None:
+                out = out + bias
+            return out
         except Exception:
             pass
     return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
@@ -2924,38 +2915,32 @@ def triton_fused_kronecker_matmul(
 # ------------------------------------------------------------------------------
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
-        triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
-        triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=2, num_warps=4),
+        triton.Config({"BLOCK_M": 16, "BLOCK_N": 64}, num_stages=2, num_warps=4),
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 64}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 32, "BLOCK_N": 128}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 64}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 64, "BLOCK_N": 128}, num_stages=3, num_warps=4),
     ],
-    key=["M", "N", "K", "R_MAX"],
+    key=["M", "N", "eff_r"],
 )
 @triton.jit
-def _spectral_entropy_svd_kernel(
-    x_ptr,
-    v_ptr,
+def _spectral_entropy_svd_proj_kernel(
+    z_ptr,
     u_ptr,
-    s_weights_ptr,
     b_ptr,
     y_ptr,
     M,
     N,
-    K,
-    R_MAX,
-    effective_rank,
-    stride_xm,
-    stride_xk,
-    stride_vk,
-    stride_vr,
+    eff_r,
+    stride_zm,
+    stride_zr,
     stride_ur,
     stride_un,
     stride_ym,
     stride_yn,
-    HAS_WEIGHTS: tl.constexpr,
     HAS_BIAS: tl.constexpr,
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
-    BLOCK_K: tl.constexpr,
     BLOCK_R: tl.constexpr,
 ):
     pid_m = tl.program_id(0)
@@ -2967,41 +2952,22 @@ def _spectral_entropy_svd_kernel(
 
     mask_m = offs_m < M
     mask_n = offs_n < N
-    mask_r = (offs_r < effective_rank) & (offs_r < R_MAX)
+    mask_r = offs_r < eff_r
 
-    z_acc = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
-    num_k_blocks = tl.cdiv(K, BLOCK_K)
-    for k_idx in range(0, num_k_blocks):
-        offs_k = k_idx * BLOCK_K + tl.arange(0, BLOCK_K)
-        mask_k = offs_k < K
-
-        x_ptrs = x_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk
-        v_ptrs = v_ptr + offs_k[:, None] * stride_vk + offs_r[None, :] * stride_vr
-
-        x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k[None, :], other=0.0)
-        v_tile = tl.load(v_ptrs, mask=mask_k[:, None] & mask_r[None, :], other=0.0)
-
-        z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
-
-    if HAS_WEIGHTS:
-        w_tile = tl.load(s_weights_ptr + offs_r, mask=mask_r, other=0.0).to(tl.float32)
-        z_acc = z_acc * w_tile[None, :]
-
-    z_tile = z_acc.to(x_ptr.dtype.element_ty)
-
-
+    z_ptrs = z_ptr + offs_m[:, None] * stride_zm + offs_r[None, :] * stride_zr
     u_ptrs = u_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un
+
+    z_tile = tl.load(z_ptrs, mask=mask_m[:, None] & mask_r[None, :], other=0.0)
     u_tile = tl.load(u_ptrs, mask=mask_r[:, None] & mask_n[None, :], other=0.0)
 
     y_acc = tl.dot(z_tile, u_tile, allow_tf32=True)
 
     if HAS_BIAS:
-        b_ptrs = b_ptr + offs_n
-        b_tile = tl.load(b_ptrs, mask=mask_n, other=0.0)
+        b_tile = tl.load(b_ptr + offs_n, mask=mask_n, other=0.0)
         y_acc += b_tile[None, :].to(tl.float32)
 
     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
-    tl.store(y_ptrs, y_acc.to(x_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
+    tl.store(y_ptrs, y_acc.to(y_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
 
 
 def triton_spectral_entropy_svd_gate_pytorch_ref(
@@ -3068,44 +3034,38 @@ def triton_spectral_entropy_svd_gate(
     if not x.is_cuda or R_MAX > 256:
         return triton_spectral_entropy_svd_gate_pytorch_ref(x, V_r, U_r, effective_rank, s_weights, bias)
 
+    V_sub = V_mat[:, :eff_r]
+    U_sub = U_mat[:eff_r, :].contiguous()
+    if s_weights is not None:
+        V_sub = V_sub * s_weights[:eff_r].view(1, -1).to(dtype=V_sub.dtype, device=V_sub.device)
+
+    z = torch.matmul(x_2d, V_sub)
+
     y = torch.empty((M, N), device=x.device, dtype=x.dtype)
-    BLOCK_R = max(16, triton.next_power_of_2(R_MAX))
+    BLOCK_R = max(16, triton.next_power_of_2(eff_r))
 
     grid = lambda META: (
         triton.cdiv(M, META["BLOCK_M"]),
         triton.cdiv(N, META["BLOCK_N"]),
     )
 
-    has_weights = s_weights is not None
-    w_t = s_weights.contiguous() if has_weights else torch.empty(0, device=x.device, dtype=x.dtype)
     has_bias = bias is not None
     b_t = bias.contiguous() if has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
 
-    x_c = x_2d.contiguous()
-    V_c = V_mat.contiguous()
-    U_c = U_mat.contiguous()
-
-    _spectral_entropy_svd_kernel[grid](
-        x_c,
-        V_c,
-        U_c,
-        w_t,
+    _spectral_entropy_svd_proj_kernel[grid](
+        z,
+        U_sub,
         b_t,
         y,
         M,
         N,
-        K,
-        R_MAX,
         eff_r,
-        x_c.stride(0),
-        x_c.stride(1),
-        V_c.stride(0),
-        V_c.stride(1),
-        U_c.stride(0),
-        U_c.stride(1),
+        z.stride(0),
+        z.stride(1),
+        U_sub.stride(0),
+        U_sub.stride(1),
         y.stride(0),
         y.stride(1),
-        HAS_WEIGHTS=has_weights,
         HAS_BIAS=has_bias,
         BLOCK_R=BLOCK_R,
     )
