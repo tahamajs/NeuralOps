@@ -37,7 +37,7 @@ import torch.nn.functional as F
 
 from neuralops.core.cuda_kernels import force_kernel_backend
 try:
-    from tests.cuda_kernels.conftest import (
+    from .conftest import (
         assert_numerical_parity,
         check_tensor_validity,
         create_non_contiguous,
@@ -46,7 +46,7 @@ except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from tests.cuda_kernels.conftest import (
+    from .conftest import (
         assert_numerical_parity,
         check_tensor_validity,
         create_non_contiguous,
