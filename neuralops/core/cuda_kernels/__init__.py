@@ -455,6 +455,37 @@ from neuralops.core.cuda_kernels.rwkv6 import (
     rwkv6,
     rwkv6_ref,
 )
+from neuralops.core.cuda_kernels.multi_scale_retention import (
+    multi_scale_retention,
+    multi_scale_retention_pytorch_ref,
+)
+retnet_retention = multi_scale_retention
+retnet_retention_pytorch_ref = multi_scale_retention_pytorch_ref
+
+from neuralops.core.cuda_kernels.liquid_attention import (
+    liquid_attention,
+    liquid_attention_ref,
+)
+from neuralops.core.cuda_kernels.mamba2_block import (
+    mamba2_block,
+    mamba2_block_ref,
+)
+
+def hgrn2_gated_deltanet(*args, **kwargs):
+    from neuralops.attentions.gated.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
+    return HGRN2GatedDeltaNet(*args, **kwargs)
+
+def gated_deltanet_block(*args, **kwargs):
+    from neuralops.attentions.gated.gated_deltanet_block import GatedDeltaNetBlock
+    return GatedDeltaNetBlock(*args, **kwargs)
+
+def hgrn2_layer(*args, **kwargs):
+    from neuralops.attentions.gated.hgrn2_gated_layer import HGRN2Layer
+    return HGRN2Layer(*args, **kwargs)
+
+def hgrn2_gated_outer(*args, **kwargs):
+    from neuralops.attentions.gated.hgrn2_gated_outer import HGRN2GatedOuterBlock
+    return HGRN2GatedOuterBlock(*args, **kwargs)
 
 
 
@@ -691,6 +722,18 @@ __all__ = [
     "linformer_attention_ref",
     "rwkv6",
     "rwkv6_ref",
+    "multi_scale_retention",
+    "multi_scale_retention_pytorch_ref",
+    "retnet_retention",
+    "retnet_retention_pytorch_ref",
+    "liquid_attention",
+    "liquid_attention_ref",
+    "mamba2_block",
+    "mamba2_block_ref",
+    "hgrn2_gated_deltanet",
+    "gated_deltanet_block",
+    "hgrn2_layer",
+    "hgrn2_gated_outer",
 ]
 
 
