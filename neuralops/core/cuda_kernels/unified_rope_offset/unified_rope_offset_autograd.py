@@ -30,7 +30,9 @@ from neuralops.core.triton_kernels.fused_rope import fused_unified_rope_offset_p
 unified_rope_offset_pytorch_ref = fused_unified_rope_offset_pytorch
 unified_rope_offset_ref = fused_unified_rope_offset_pytorch
 
-def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int) -> torch.Tensor:
+def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int, offset: int = 0) -> torch.Tensor:
+    assert cos.shape[0] >= x.shape[2] + offset, \
+        f"cos table length {cos.shape[0]} < N + offset = {x.shape[2] + offset}"
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = getattr(mod, "unified_rope_offset_fwd")

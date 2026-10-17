@@ -201,6 +201,19 @@ def generate_args(mod_name, sig, device, dtype, B=4, H=8, N=512, D=64):
         cos = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
         sin = torch.randn(1, 1, N, D // 2, device=device, dtype=dtype)
         return [x, cos, sin], {{}}
+    elif mod_name == "gdn_scan":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        alpha = torch.sigmoid(torch.randn(B, H, N, D, device=device, dtype=dtype)) * 0.95
+        beta = torch.sigmoid(torch.randn(B, H, N, D, device=device, dtype=dtype)) * 0.95
+        return [q, k, v, alpha, beta], {{}}
+    elif mod_name == "gla_unnormalized_scan":
+        q = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        k = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        v = torch.randn(B, H, N, D, device=device, dtype=dtype) * 0.1
+        decay = torch.full((H,), 0.95, device=device, dtype=torch.float32)
+        return [q, k, v, decay], {{}}
     elif mod_name == "recurrent_gla_step":
         q = torch.randn(B, H, D, device=device, dtype=dtype) * 0.1
         k = torch.randn(B, H, D, device=device, dtype=dtype) * 0.1
@@ -754,7 +767,7 @@ def main():
                     sp_str = f"{speedup:.2f}x" if ref_ms > 0 else "1.00x"
                     diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and ref_ms > 0) else str(diff)
                     print(f"{idx:<4} | {mod_name:<26} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | {cls_status}", flush=True)
-                    results.append({"module": mod_name, "status": cls_status, "reason": reason, **res_data})
+                    results.append({"module": mod_name, **res_data, "status": cls_status, "reason": reason})
                 else:
                     err_msg = res_data.get("status", "FAIL")
                     stats["FAIL"] = stats.get("FAIL", 0) + 1

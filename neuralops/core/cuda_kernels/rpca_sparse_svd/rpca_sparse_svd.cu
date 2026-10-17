@@ -116,6 +116,9 @@ torch::Tensor rpca_sparse_svd_fwd(
         }
     }
 
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
+
     const int threads = 128;
     const int blocks = (M + threads - 1) / threads;
     auto stream = c10::cuda::getCurrentCUDAStream();
@@ -130,7 +133,7 @@ torch::Tensor rpca_sparse_svd_fwd(
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
                     has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_sparse, has_bias
                 );
             } else if (R <= 32) {
@@ -140,7 +143,7 @@ torch::Tensor rpca_sparse_svd_fwd(
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
                     has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_sparse, has_bias
                 );
             } else if (R <= 64) {
@@ -150,7 +153,7 @@ torch::Tensor rpca_sparse_svd_fwd(
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
                     has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_sparse, has_bias
                 );
             } else {
@@ -160,7 +163,7 @@ torch::Tensor rpca_sparse_svd_fwd(
                     V.data_ptr<scalar_t>(),
                     U.data_ptr<scalar_t>(),
                     has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, R, N, has_sparse, has_bias
                 );
             }

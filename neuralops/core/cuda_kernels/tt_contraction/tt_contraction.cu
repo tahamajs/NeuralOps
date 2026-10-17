@@ -165,6 +165,8 @@ torch::Tensor tt_linear_fwd(
 
     auto out = torch::empty({M, N}, x.options());
     const bool has_bias = bias.has_value() && bias.value().defined();
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
 
     const int threads = 128;
     const int blocks = (M + threads - 1) / threads;
@@ -179,7 +181,7 @@ torch::Tensor tt_linear_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     c0.data_ptr<scalar_t>(),
                     c1.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, N, R, p0, p1, q0, q1, has_bias
                 );
             } else if (R <= 32) {
@@ -188,7 +190,7 @@ torch::Tensor tt_linear_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     c0.data_ptr<scalar_t>(),
                     c1.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, N, R, p0, p1, q0, q1, has_bias
                 );
             } else {
@@ -197,7 +199,7 @@ torch::Tensor tt_linear_fwd(
                     x_2d.data_ptr<scalar_t>(),
                     c0.data_ptr<scalar_t>(),
                     c1.data_ptr<scalar_t>(),
-                    has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                    has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                     M, K, N, R, p0, p1, q0, q1, has_bias
                 );
             }

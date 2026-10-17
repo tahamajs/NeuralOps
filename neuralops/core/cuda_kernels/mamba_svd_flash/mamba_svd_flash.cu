@@ -76,6 +76,7 @@ torch::Tensor mamba_svd_flash_fwd(
     const int N = u.size(1);
     const int D = u.size(2);
     const int R = svd_u.size(1);
+    TORCH_CHECK(R <= 128, "mamba_svd_flash_fwd: R=", R, " > 128 not supported");
 
     auto out = torch::empty_like(u);
     if (B == 0 || N == 0 || D == 0) return out;

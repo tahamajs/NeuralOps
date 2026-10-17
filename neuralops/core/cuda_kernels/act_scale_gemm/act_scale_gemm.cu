@@ -116,6 +116,9 @@ torch::Tensor act_scale_quant_gemm_fwd(
         CHECK_INPUT(bias.value());
     }
 
+    torch::Tensor bias_c;
+    if (has_bias) bias_c = bias.value().contiguous();
+
     auto s_inv_c = s_inv.contiguous();
     auto w_c = w.contiguous();
 
@@ -135,7 +138,7 @@ torch::Tensor act_scale_quant_gemm_fwd(
                 x_2d.data_ptr<scalar_t>(),
                 s_inv_c.data_ptr<scalar_t>(),
                 w_c.data_ptr<scalar_t>(),
-                has_bias ? bias.value().contiguous().data_ptr<scalar_t>() : nullptr,
+                has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                 M, K, N, has_bias
             );
         })

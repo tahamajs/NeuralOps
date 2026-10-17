@@ -100,18 +100,23 @@ class _SelectiveScanFunction(torch.autograd.Function):
         with torch.enable_grad():
             out, last_state = selective_scan_pytorch_ref(u_p, delta_p, A_p, B_p, C_p, D_p)
 
-        ctx.py_tensors = (u_p, delta_p, A_p, B_p, C_p, D_p, out)
+        ctx.py_tensors = (u_p, delta_p, A_p, B_p, C_p, D_p, out, last_state)
         ctx.is_py = True
         return out.detach(), last_state.detach()
 
     @staticmethod
     def backward(ctx, dout, dlast_state=None):
         if getattr(ctx, "is_py", False):
-            u_p, delta_p, A_p, B_p, C_p, D_p, out = ctx.py_tensors
+            u_p, delta_p, A_p, B_p, C_p, D_p, out, last_state = ctx.py_tensors
             inputs = [u_p, delta_p, A_p, B_p, C_p]
             if D_p is not None:
                 inputs.append(D_p)
-            grads = torch.autograd.grad(out, inputs, dout, allow_unused=True)
+            outputs = [out]
+            grad_outputs = [dout]
+            if last_state is not None and dlast_state is not None:
+                outputs.append(last_state)
+                grad_outputs.append(dlast_state)
+            grads = torch.autograd.grad(outputs, inputs, grad_outputs, allow_unused=True)
             du, ddelta, dA, dB, dC = grads[:5]
             dD = grads[5] if len(grads) > 5 else None
             return du, ddelta, dA, dB, dC, dD

@@ -39,6 +39,7 @@ def fused_dropout_add_pytorch_ref(
     residual: torch.Tensor,
     p: float = 0.0,
     training: bool = False,
+    **kwargs: Any,
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     dropped = F.dropout(x, p=p, training=training)
@@ -58,15 +59,20 @@ def fused_dropout_add(
     residual: torch.Tensor,
     p: float = 0.0,
     training: bool = False,
+    seed: int | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Dropout + Add."""
-    def cuda_fn(x, residual, p=0.0, training=False, **kwargs):
+    if seed is None:
+        seed = int(torch.empty((), dtype=torch.int64).random_(0, 2**31).item())
+
+    def cuda_fn(x, residual, p=0.0, training=False, seed=0, **kwargs):
         mod = _get_module()
         return mod.fused_dropout_add_fwd(
             x.contiguous(),
             residual.contiguous(),
             float(p),
             bool(training),
+            int(seed),
         )
 
     triton_fn = _get_triton_impl()
@@ -79,5 +85,6 @@ def fused_dropout_add(
         residual,
         p=p,
         training=training,
+        seed=seed,
         kernel_name="fused_dropout_add",
     )

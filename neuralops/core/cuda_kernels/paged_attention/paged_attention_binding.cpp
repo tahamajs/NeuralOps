@@ -8,7 +8,6 @@ void paged_attention_v1_cuda(
     const torch::Tensor& block_tables,
     const torch::Tensor& context_lens,
     int block_size,
-    int max_context_len,
     float scale
 );
 
@@ -19,7 +18,6 @@ torch::Tensor paged_attention_v1(
     torch::Tensor block_tables,
     torch::Tensor context_lens,
     int64_t block_size,
-    int64_t max_context_len,
     double scale
 ) {
     TORCH_CHECK(q.is_cuda() && k_cache.is_cuda() && v_cache.is_cuda() &&
@@ -57,7 +55,6 @@ torch::Tensor paged_attention_v1(
         bt_int32,
         ctx_int32,
         static_cast<int>(block_size),
-        static_cast<int>(max_context_len),
         static_cast<float>(scale)
     );
 

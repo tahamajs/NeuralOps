@@ -22,7 +22,10 @@ def mamba_svd_flash_ref(u: torch.Tensor, svd_u: torch.Tensor, svd_vt: torch.Tens
     return decay * proj
 
 def mamba_svd_flash(u: torch.Tensor, svd_u: torch.Tensor, svd_vt: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(u, svd_u, svd_vt, decay):
-        mod = _get_module()
-        return mod.mamba_svd_flash_fwd(u.contiguous(), svd_u.contiguous(), svd_vt.contiguous(), decay.contiguous())
+    cuda_fn = None
+    if svd_u.shape[1] <= 128:
+        def _cuda_fn(u, svd_u, svd_vt, decay):
+            mod = _get_module()
+            return mod.mamba_svd_flash_fwd(u.contiguous(), svd_u.contiguous(), svd_vt.contiguous(), decay.contiguous())
+        cuda_fn = _cuda_fn
     return dispatch(cuda_fn, mamba_svd_flash_ref, mamba_svd_flash_ref, u, svd_u=svd_u, svd_vt=svd_vt, decay=decay, kernel_name="mamba_svd_flash")
