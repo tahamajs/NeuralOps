@@ -1,0 +1,111 @@
+Module,CUDA (ms),Ref (ms),CUDA Bwd (ms),Ref Bwd (ms),Speedup,Max Abs Diff,Status,Reason
+act_scale_gemm,0.015,0.0342,0.267,0.1625,2.28x,7.62939453125e-06,PASS_FAST,"speedup=2.28x, max_diff=7.6294e-06"
+adaptive_span,0.1363,1.6047,3.9076,2.2668,11.77x,1.9073486328125e-06,PASS_FAST,"speedup=11.77x, max_diff=1.9073e-06"
+adasplash_attention,0.9766,2.1463,5.4384,3.2962,2.2x,0.0001220703125,PASS_FAST,"speedup=2.20x, max_diff=1.2207e-04"
+aegis_gate_norm,0.0127,0.1314,0.6757,0.4083,10.38x,0.001953125,PASS_HIGH_DIFF,max_diff=1.9531e-03 >= 1e-3
+alibi_attention,2.4728,1.347,3.6236,2.2562,0.54x,3.0517578125e-05,PASS_SLOW,speedup=0.54x < 1.05x — slower than reference
+bigbird,2.0239,0.5724,1.5523,1.0376,0.28x,3.0517578125e-05,PASS_SLOW,speedup=0.28x < 1.05x — slower than reference
+bitonic_topk,0.016,0.0175,,,1.09x,0.0,PASS_FAST,"speedup=1.09x, max_diff=0.0000e+00"
+block_diag_gemm,0.0142,0.0217,0.5064,0.2703,1.53x,6.103515625e-05,PASS_FAST,"speedup=1.53x, max_diff=6.1035e-05"
+causal_conv1d,0.0103,0.0184,0.3698,0.1824,1.8x,0.0,PASS_FAST,"speedup=1.80x, max_diff=0.0000e+00"
+channel_shuffle,0.0105,0.0098,0.2434,0.1219,0.93x,0.0,PASS_SLOW,speedup=0.93x < 1.05x — slower than reference
+cluster_attention,0.2035,0.0267,0.3451,0.2328,0.13x,6.103515625e-05,PASS_SLOW,speedup=0.13x < 1.05x — slower than reference
+cosformer,0.343,0.4135,1.2022,0.7711,1.21x,1.52587890625e-05,PASS_FAST,"speedup=1.21x, max_diff=1.5259e-05"
+cross_attention,3.3511,0.0799,0.3943,0.279,0.02x,7.62939453125e-06,PASS_SLOW,speedup=0.02x < 1.05x — slower than reference
+decay_linear_attention,0.0322,11.8558,59.2321,42.1626,368.47x,6.103515625e-05,PASS_FAST,"speedup=368.47x, max_diff=6.1035e-05"
+differential_attention,2.7668,0.1612,0.7304,0.5207,0.06x,0.000152587890625,PASS_SLOW,speedup=0.06x < 1.05x — slower than reference
+dynamic_conv1d,0.0095,0.0632,0.6392,0.4632,6.64x,3.0517578125e-05,PASS_FAST,"speedup=6.64x, max_diff=3.0518e-05"
+entmax_bisect,0.0098,0.7099,0.3102,1.0689,72.49x,6.103515625e-05,PASS_FAST,"speedup=72.49x, max_diff=6.1035e-05"
+entropy_gate,0.0358,0.0226,0.4631,0.2221,0.63x,0.0001220703125,PASS_SLOW,speedup=0.63x < 1.05x — slower than reference
+entropy_pruning,0.0097,0.0286,0.4832,0.215,2.95x,0.0,PASS_FAST,"speedup=2.95x, max_diff=0.0000e+00"
+fast_attention,0.0335,15.2893,77.5086,54.7046,455.75x,0.0002593994140625,PASS_FAST,"speedup=455.75x, max_diff=2.5940e-04"
+fast_gelu,0.0096,0.0308,0.3685,0.1864,3.21x,0.000244140625,PASS_FAST,"speedup=3.21x, max_diff=2.4414e-04"
+favor_plus,0.0079,0.0885,0.4909,0.2577,11.28x,0.000244140625,PASS_FAST,"speedup=11.28x, max_diff=2.4414e-04"
+flash_decode_stage2,0.0081,0.0602,0.5108,0.2501,7.42x,1.52587890625e-05,PASS_FAST,"speedup=7.42x, max_diff=1.5259e-05"
+flash_decoding,0.615,0.6486,1.7798,1.1587,1.05x,0.0,DISPATCH_FAILURE,flash_decoding: max_diff=0.0 and cuda dispatch count is 0 — fallback to PyTorch
+flash_gqa,0.4726,1.2757,3.531,3.0403,2.7x,1.52587890625e-05,PASS_FAST,"speedup=2.70x, max_diff=1.5259e-05"
+fms_scan,0.9721,26.3544,141.0684,97.0964,27.11x,3.0517578125e-05,PASS_FAST,"speedup=27.11x, max_diff=3.0518e-05"
+fp4_gemm,0.0416,0.0839,0.5755,0.1651,2.02x,6.103515625e-05,PASS_FAST,"speedup=2.02x, max_diff=6.1035e-05"
+fused_ce,0.0153,0.0077,0.3035,0.1387,0.5x,0.0005922317504882812,PASS_SLOW,speedup=0.50x < 1.05x — slower than reference
+fused_dropout_add,0.015,0.0058,0.063,0.0295,0.39x,0.0,PASS_SLOW,speedup=0.39x < 1.05x — slower than reference
+fused_kd,0.0391,0.0401,0.5506,0.2273,1.03x,0.015625,PASS_SLOW,speedup=1.03x < 1.05x — slower than reference
+fused_norm_linear,0.1491,0.0148,0.3834,0.1696,0.1x,0.0078125,PASS_SLOW,speedup=0.10x < 1.05x — slower than reference
+fused_rope,0.0221,0.0392,0.5261,0.2907,1.77x,0.0009765625,PASS_FAST,"speedup=1.77x, max_diff=9.7656e-04"
+fwht_transform,0.0081,3.0271,12.6219,8.4577,372.06x,3.0517578125e-05,PASS_FAST,"speedup=372.06x, max_diff=3.0518e-05"
+galerkin_attention,0.0484,0.0274,0.3965,0.2287,0.57x,1.9073486328125e-06,PASS_SLOW,speedup=0.57x < 1.05x — slower than reference
+gdn_delta_rule,0.2334,114.4355,679.4089,472.0867,490.35x,3.0517578125e-05,PASS_FAST,"speedup=490.35x, max_diff=3.0518e-05"
+gdn_scan,4.9952,1048.3562,6470.0358,5509.3291,209.87x,3.0517578125e-05,PASS_FAST,"speedup=209.87x, max_diff=3.0518e-05"
+gla_scan,0.5018,26.8721,122.8521,89.0523,53.55x,3.814697265625e-06,PASS_FAST,"speedup=53.55x, max_diff=3.8147e-06"
+gla_unnormalized_scan,0.0609,17.0266,77.248,63.3669,279.69x,7.62939453125e-06,PASS_FAST,"speedup=279.69x, max_diff=7.6294e-06"
+goldfinch_ahn,0.4691,16.384,95.475,75.3713,34.93x,0.000244140625,PASS_FAST,"speedup=34.93x, max_diff=2.4414e-04"
+griffin_ssd,0.0336,13.6745,64.4934,44.6437,407.1x,7.62939453125e-05,PASS_FAST,"speedup=407.10x, max_diff=7.6294e-05"
+hadamard_gemm,0.0288,0.0763,0.3762,0.3404,2.65x,0.0,PASS_FAST,"speedup=2.65x, max_diff=0.0000e+00"
+hgrn2_scan,0.0862,24.6524,121.9832,89.8281,285.86x,0.00048828125,PASS_FAST,"speedup=285.86x, max_diff=4.8828e-04"
+hgrn2_spatial_scan,0.029,11.5029,55.0819,39.5454,395.97x,0.000244140625,PASS_FAST,"speedup=395.97x, max_diff=2.4414e-04"
+hstu_attention,0.0284,28.9695,290.7957,64.3097,1021.33x,0.00014495849609375,PASS_FAST,"speedup=1021.33x, max_diff=1.4496e-04"
+hydra_attention,0.4833,0.4658,0.5264,0.3472,0.96x,2.384185791015625e-07,PASS_SLOW,speedup=0.96x < 1.05x — slower than reference
+hymba_transx,0.0382,0.0518,0.9962,1.0004,1.36x,0.000244140625,PASS_FAST,"speedup=1.36x, max_diff=2.4414e-04"
+jamba,0.0243,0.061,1.7953,1.2005,2.51x,0.000244140625,PASS_FAST,"speedup=2.51x, max_diff=2.4414e-04"
+jamba_info,0.3188,0.0411,0.9938,2.2001,0.13x,0.0001220703125,PASS_SLOW,speedup=0.13x < 1.05x — slower than reference
+kronecker_gemm,0.4507,0.0294,0.6496,0.24,0.07x,3.0517578125e-05,PASS_SLOW,speedup=0.07x < 1.05x — slower than reference
+latent_kv_attn,2.6916,1.1161,3.6295,2.3486,0.41x,7.62939453125e-06,PASS_SLOW,speedup=0.41x < 1.05x — slower than reference
+layernorm,0.3254,0.4792,0.5373,0.2021,1.47x,6.103515625e-05,PASS_FAST,"speedup=1.47x, max_diff=6.1035e-05"
+linear_attention,,,,,,,TIMEOUT,
+linear_rnn_attention,0.4777,10.7486,58.4608,40.2792,22.5x,0.000244140625,PASS_FAST,"speedup=22.50x, max_diff=2.4414e-04"
+linformer_attention,0.2726,0.0462,0.6239,0.5251,0.17x,3.0517578125e-05,PASS_SLOW,speedup=0.17x < 1.05x — slower than reference
+liquid_attention,0.8058,23.225,92.503,64.396,28.82x,7.62939453125e-06,PASS_FAST,"speedup=28.82x, max_diff=7.6294e-06"
+local_attention,2.4114,2.252,4.859,3.4816,0.93x,3.0517578125e-05,PASS_SLOW,speedup=0.93x < 1.05x — slower than reference
+logcumsumexp,0.6581,0.7039,0.7634,0.7614,1.07x,0.001953125,PASS_HIGH_DIFF,max_diff=1.9531e-03 >= 1e-3
+longformer,1.4719,0.9881,2.4843,1.5412,0.67x,3.0517578125e-05,PASS_SLOW,speedup=0.67x < 1.05x — slower than reference
+low_rank_svd,0.045,0.0485,0.3717,0.3037,1.08x,0.0001220703125,PASS_FAST,"speedup=1.08x, max_diff=1.2207e-04"
+lut_gemm,0.0475,0.143,2.5534,2.4445,3.01x,0.0001220703125,PASS_FAST,"speedup=3.01x, max_diff=1.2207e-04"
+mamba2_block,0.7474,31.0823,146.7284,100.1443,41.59x,3.0517578125e-05,PASS_FAST,"speedup=41.59x, max_diff=3.0518e-05"
+mamba_block,0.0105,0.0663,0.5932,0.3054,6.33x,3.814697265625e-06,PASS_FAST,"speedup=6.33x, max_diff=3.8147e-06"
+mamba_svd_flash,0.0462,0.0879,0.4696,0.2946,1.9x,6.103515625e-05,PASS_FAST,"speedup=1.90x, max_diff=6.1035e-05"
+moe_routing,0.0272,0.1936,0.5501,0.4581,7.12x,0.0001220703125,PASS_FAST,"speedup=7.12x, max_diff=1.2207e-04"
+multi_scale_retention,0.4998,21.2915,100.9184,69.9105,42.6x,6.103515625e-05,PASS_FAST,"speedup=42.60x, max_diff=6.1035e-05"
+nasc_attention,0.0327,11.8459,59.2841,42.28,361.98x,6.103515625e-05,PASS_FAST,"speedup=361.98x, max_diff=6.1035e-05"
+nexus,0.0344,9.3452,46.424,33.5313,271.92x,0.00012969970703125,PASS_FAST,"speedup=271.92x, max_diff=1.2970e-04"
+nystrom_attention,0.3155,0.0184,0.469,0.2368,0.06x,0.000244140625,PASS_SLOW,speedup=0.06x < 1.05x — slower than reference
+orion,0.0344,11.4434,52.0779,36.4463,332.53x,0.001953125,PASS_HIGH_DIFF,max_diff=1.9531e-03 >= 1e-3
+paged_attention,0.0259,0.4371,1.3473,1.2333,16.89x,4.76837158203125e-07,PASS_FAST,"speedup=16.89x, max_diff=4.7684e-07"
+paged_kv_cache,0.0072,0.1035,0.3799,,14.46x,0.0,PASS_FAST,"speedup=14.46x, max_diff=0.0000e+00"
+paged_kv_evict,0.0083,0.0099,,0.2716,1.19x,0.0,PASS_FAST,"speedup=1.19x, max_diff=0.0000e+00"
+paged_recurrent_step,0.0194,0.0591,0.5231,0.3654,3.04x,0.0001220703125,PASS_FAST,"speedup=3.04x, max_diff=1.2207e-04"
+phantom,0.0409,0.0568,0.3337,0.2089,1.39x,0.0001220703125,PASS_FAST,"speedup=1.39x, max_diff=1.2207e-04"
+quantized_gemm,0.0302,0.1161,0.1249,0.2092,3.85x,6.103515625e-05,PASS_FAST,"speedup=3.85x, max_diff=6.1035e-05"
+recurrent_gla_step,0.0448,0.0978,0.6378,0.4205,2.18x,1.9073486328125e-06,PASS_FAST,"speedup=2.18x, max_diff=1.9073e-06"
+recurrent_hgrn2_step,0.0318,0.0395,0.3612,0.234,1.24x,0.000244140625,PASS_FAST,"speedup=1.24x, max_diff=2.4414e-04"
+reformer,1.1425,0.487,1.795,1.4269,0.43x,3.0517578125e-05,PASS_SLOW,speedup=0.43x < 1.05x — slower than reference
+rfa_attention,0.0908,19.1427,106.3809,68.6319,210.84x,0.000244140625,PASS_FAST,"speedup=210.84x, max_diff=2.4414e-04"
+rms_variance_match,0.0434,0.0674,0.2672,0.2562,1.55x,0.000244140625,PASS_FAST,"speedup=1.55x, max_diff=2.4414e-04"
+rmsnorm,0.0393,0.0373,0.3062,0.1348,0.95x,0.0,PASS_SLOW,speedup=0.95x < 1.05x — slower than reference
+rotational_svd,0.043,0.0461,0.2688,0.2186,1.07x,0.0,PASS_FAST,"speedup=1.07x, max_diff=0.0000e+00"
+routing_attention,4.532,0.2079,0.7192,0.4604,0.05x,1.52587890625e-05,PASS_SLOW,speedup=0.05x < 1.05x — slower than reference
+rpca_sparse_svd,0.051,0.0381,0.2512,0.1414,0.75x,0.0001220703125,PASS_SLOW,speedup=0.75x < 1.05x — slower than reference
+rwkv6,0.0858,15.3284,76.8923,53.1587,178.63x,0.000244140625,PASS_FAST,"speedup=178.63x, max_diff=2.4414e-04"
+samba_m3,0.0375,0.0505,0.4912,0.2028,1.35x,0.000244140625,PASS_FAST,"speedup=1.35x, max_diff=2.4414e-04"
+samba_moe,0.0417,0.0494,0.3136,0.1632,1.18x,0.000244140625,PASS_FAST,"speedup=1.18x, max_diff=2.4414e-04"
+selective_scan,0.3523,27.9219,2.027,112.1879,79.25x,3.0517578125e-05,PASS_FAST,"speedup=79.25x, max_diff=3.0518e-05"
+selective_ssm,0.0775,29.4467,137.3711,94.5468,379.93x,9.5367431640625e-07,PASS_FAST,"speedup=379.93x, max_diff=9.5367e-07"
+simple_ssm,0.0534,8.3766,44.1646,30.8719,156.85x,0.0029296875,PASS_HIGH_DIFF,max_diff=2.9297e-03 >= 1e-3
+sliding_window,0.9211,0.9334,6.0564,0.8144,1.01x,0.000244140625,PASS_SLOW,speedup=1.01x < 1.05x — slower than reference
+soa_attn,0.0265,0.0831,0.3801,0.2901,3.13x,1.52587890625e-05,PASS_FAST,"speedup=3.13x, max_diff=1.5259e-05"
+softplus,0.0101,0.0047,0.3358,0.1859,0.46x,0.0,PASS_SLOW,speedup=0.46x < 1.05x — slower than reference
+sparse_attention,5.1845,0.2573,6.2282,0.4885,0.05x,1.52587890625e-05,PASS_SLOW,speedup=0.05x < 1.05x — slower than reference
+spectra_v2,0.0287,0.0426,0.3416,0.0729,1.48x,0.0,PASS_FAST,"speedup=1.48x, max_diff=0.0000e+00"
+spectraformer_attention,0.0407,0.044,0.3108,0.2128,1.08x,6.103515625e-05,PASS_FAST,"speedup=1.08x, max_diff=6.1035e-05"
+spectral_mamba,0.0532,0.032,0.9162,0.2927,0.6x,0.0,DISPATCH_FAILURE,spectral_mamba: max_diff=0.0 and cuda dispatch count is 0 — fallback to PyTorch
+spectral_shrinkage,0.036,0.0849,,,2.36x,0.0,PASS_FAST,"speedup=2.36x, max_diff=0.0000e+00"
+speculative_verify,0.0409,0.0579,,,1.42x,0.0,PASS_FAST,"speedup=1.42x, max_diff=0.0000e+00"
+split_head_norm,0.0646,0.1182,0.5471,0.3849,1.83x,0.000244140625,PASS_FAST,"speedup=1.83x, max_diff=2.4414e-04"
+state_update,0.0544,0.1392,0.7073,0.3974,2.56x,0.0,PASS_FAST,"speedup=2.56x, max_diff=0.0000e+00"
+svd_prefix_scan,1.0712,8.4069,36.7295,28.2874,7.85x,0.0,PASS_FAST,"speedup=7.85x, max_diff=0.0000e+00"
+swiglu,0.0097,0.0099,0.188,0.0628,1.02x,3.0517578125e-05,PASS_SLOW,speedup=1.02x < 1.05x — slower than reference
+ternary_gemm,0.0382,0.1972,0.6643,0.2806,5.16x,1.52587890625e-05,PASS_FAST,"speedup=5.16x, max_diff=1.5259e-05"
+tpa_attention,0.068,0.0444,0.3867,0.1537,0.65x,0.0001220703125,PASS_SLOW,speedup=0.65x < 1.05x — slower than reference
+tt_contraction,0.0798,0.0338,0.4855,0.2669,0.42x,0.0,PASS_SLOW,speedup=0.42x < 1.05x — slower than reference
+unified_rope_offset,0.1252,0.1964,0.8732,0.5538,1.57x,0.00046253204345703125,PASS_FAST,"speedup=1.57x, max_diff=4.6253e-04"
+upi_stuffed_mamba,0.0606,0.0428,0.6617,0.2186,0.71x,0.000244140625,PASS_SLOW,speedup=0.71x < 1.05x — slower than reference
+varlen_attention,0.2913,1.7137,2.49,0.6865,5.88x,3.0517578125e-05,PASS_FAST,"speedup=5.88x, max_diff=3.0518e-05"
+vspec,0.1265,19.3373,45.6762,58.8098,152.89x,0.00048828125,PASS_FAST,"speedup=152.89x, max_diff=4.8828e-04"
