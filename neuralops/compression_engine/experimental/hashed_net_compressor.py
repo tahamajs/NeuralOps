@@ -870,6 +870,10 @@ def hashed_net_factory(
     rank: int | float | None = None,
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
+    """Factory function for HashedNet parameter sharing compression.
+
+    Compresses weight matrices into a compact shared parameter bucket table via pseudo-random hash projections.
+    """
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     rank = kwargs.pop("rank", rank)

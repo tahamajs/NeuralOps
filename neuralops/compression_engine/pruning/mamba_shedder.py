@@ -873,6 +873,10 @@ class MambaShedderCompressor(BaseCompressor):
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+    """Factory function for sensitivity-based structured pruning and layer shedding.
+
+    Identifies non-critical linear channels using empirical Fisher info and sheds low-residual layers.
+    """
     sparsity = kwargs.pop(
         "sparsity",
         _cfg_get(
