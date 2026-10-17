@@ -25,13 +25,26 @@ def _get_module():
         )
     return _MODULE
 
-def gla_unnormalized_scan_pytorch_ref(q, k, v, decay):
-    from neuralops.core.triton_kernels.gla_scan import gla_scan_pytorch
-    y, _ = gla_scan_pytorch(q, k, v, decay, use_normalizer=False)
-    return y
-def gla_unnormalized_scan_triton_ref(q, k, v, decay):
-    from neuralops.core.triton_kernels.gla_scan import gla_scan_triton
-    return gla_scan_triton(q, k, v, decay, use_normalizer=False)
+def gla_unnormalized_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+    B, H, N, D = q.shape
+    g = decay.unsqueeze(-1).expand(B, H, N, D) if decay.dim() == 3 else decay
+    s = torch.zeros(B, H, D, device=q.device, dtype=torch.float32)
+    ys = []
+    q_f = q.float()
+    k_f = k.float()
+    v_f = v.float()
+    g_f = g.float()
+    for t in range(N):
+        gate = torch.exp(g_f[:, :, t, :])
+        k_val = k_f[:, :, t, :]
+        v_val = v_f[:, :, t, :]
+        q_val = q_f[:, :, t, :]
+        s = gate * s + k_val * v_val
+        ys.append((q_val * s).to(q.dtype))
+    return torch.stack(ys, dim=2)
+
+def gla_unnormalized_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+    return gla_unnormalized_scan_pytorch_ref(q, k, v, decay)
 
 def gla_unnormalized_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
