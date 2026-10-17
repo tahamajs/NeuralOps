@@ -191,7 +191,7 @@ if HAS_TRITON and tl is not None:
     @triton.jit
     def _unified_rope_offset_kernel(
         X_ptr, COS_ptr, SIN_ptr, OUT_ptr,
-        total_tokens, D: tl.constexpr, ROTARY_DIM: tl.constexpr, HALF_ROTARY: tl.constexpr,
+        total_tokens, L, D: tl.constexpr, ROTARY_DIM: tl.constexpr, HALF_ROTARY: tl.constexpr,
         stride_xn, stride_xd,
         stride_cn, stride_cd,
         stride_sn, stride_sd,
@@ -202,14 +202,17 @@ if HAS_TRITON and tl is not None:
         if pid >= total_tokens:
             return
 
+        # Position along sequence length for rotary frequency embedding
+        pos = pid % L
+
         offs_d1 = tl.arange(0, HALF_ROTARY)
         offs_d2 = HALF_ROTARY + tl.arange(0, HALF_ROTARY)
 
         x1 = tl.load(X_ptr + pid * stride_xn + offs_d1 * stride_xd)
         x2 = tl.load(X_ptr + pid * stride_xn + offs_d2 * stride_xd)
 
-        cos = tl.load(COS_ptr + pid * stride_cn + offs_d1 * stride_cd)
-        sin = tl.load(SIN_ptr + pid * stride_sn + offs_d1 * stride_sd)
+        cos = tl.load(COS_ptr + pos * stride_cn + offs_d1 * stride_cd)
+        sin = tl.load(SIN_ptr + pos * stride_sn + offs_d1 * stride_sd)
 
         rx1 = x1 * cos - x2 * sin
         rx2 = x2 * cos + x1 * sin
@@ -243,6 +246,7 @@ def fused_unified_rope_offset_triton(
         try:
             orig_shape = x.shape
             D = orig_shape[-1]
+            L = orig_shape[-2]
             x_2d = x.contiguous().view(-1, D)
             total_tokens = x_2d.shape[0]
             out_2d = torch.empty_like(x_2d)
@@ -257,7 +261,7 @@ def fused_unified_rope_offset_triton(
             grid = (total_tokens,)
             _unified_rope_offset_kernel[grid](
                 x_2d, cos_2d, sin_2d, out_2d,
-                total_tokens, D=D, ROTARY_DIM=rotary_dim, HALF_ROTARY=half_rotary,
+                total_tokens, L, D=D, ROTARY_DIM=rotary_dim, HALF_ROTARY=half_rotary,
                 stride_xn=x_2d.stride(0), stride_xd=x_2d.stride(1),
                 stride_cn=cos_2d.stride(0), stride_cd=cos_2d.stride(1),
                 stride_sn=sin_2d.stride(0), stride_sd=sin_2d.stride(1),
