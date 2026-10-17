@@ -16,7 +16,7 @@ from .benchmark_datasets import (
     BenchmarkDatasetRegistry,
     load_benchmark_dataset,
 )
-from .dataset_loader import ExperimentConfig, create_tokenized_dataloader, load_dataset
+from .dataset_loader import ExperimentConfig, load_dataset
 from .glue_loader import (
     GLUE_TASK_KEYS,
     get_calibration_dataloader,
@@ -50,7 +50,6 @@ __all__ = [
     # Dataset loading
     "ExperimentConfig",
     "load_dataset",
-    "create_tokenized_dataloader",
     # GLUE
     "GLUE_TASK_KEYS",
     "get_num_labels_and_is_regression",

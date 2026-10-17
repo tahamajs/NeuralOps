@@ -124,40 +124,6 @@ def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwar
     return Lars(params, lr=lr, weight_decay=weight_decay, **kwargs)
 
 
-@OPTIMIZER_REGISTRY.register("lion")
-def create_lion(params: Any, lr: float = 1e-4, weight_decay: float = 0.0, **kwargs: Any) -> Any:
-    """Build and return Lion optimizer."""
-    from neuralops.trainer.optimizers.modern import Lion
-    return Lion(params, lr=lr, weight_decay=weight_decay, **kwargs)
-
-
-@OPTIMIZER_REGISTRY.register("adafactor")
-def create_adafactor(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
-    """Build and return AdaFactor optimizer."""
-    from neuralops.trainer.optimizers.modern import AdaFactor
-    return AdaFactor(params, lr=lr, weight_decay=weight_decay, **kwargs)
-
-
-@OPTIMIZER_REGISTRY.register("sophia")
-@OPTIMIZER_REGISTRY.register("sophiag")
-def create_sophia(params: Any, lr: float = 1e-4, weight_decay: float = 0.1, **kwargs: Any) -> Any:
-    """Build and return Sophia-G optimizer."""
-    from neuralops.trainer.optimizers.modern import SophiaG
-    return SophiaG(params, lr=lr, weight_decay=weight_decay, **kwargs)
-
-
-def create_adamw_8bit(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -> Any:
-    """Build 8-bit AdamW if bitsandbytes is available."""
-    from neuralops.trainer.optimizers.modern import create_8bit_optimizer_if_available
-    return create_8bit_optimizer_if_available(params, optimizer_name="adamw", lr=lr, weight_decay=weight_decay, **kwargs)
-
-
-def create_lion_8bit(params: Any, lr: float = 1e-4, weight_decay: float = 0.0, **kwargs: Any) -> Any:
-    """Build 8-bit Lion if bitsandbytes is available."""
-    from neuralops.trainer.optimizers.modern import create_8bit_optimizer_if_available
-    return create_8bit_optimizer_if_available(params, optimizer_name="lion", lr=lr, weight_decay=weight_decay, **kwargs)
-
-
 __all__ = [
     "OPTIMIZER_REGISTRY",
     "create_muon",
@@ -170,9 +136,4 @@ __all__ = [
     "create_ranger",
     "create_lamb",
     "create_lars",
-    "create_lion",
-    "create_adafactor",
-    "create_sophia",
-    "create_adamw_8bit",
-    "create_lion_8bit",
 ]
