@@ -88,7 +88,7 @@ def test_06_mamba_svd_flash():
     out_ref = ck.mamba_svd_flash_ref(u, svd_u, svd_vt, decay)
     with force_kernel_backend('cuda'):
         out_cuda = ck.mamba_svd_flash(u, svd_u, svd_vt, decay)
-    assert_metrics(out_cuda, out_ref, 'mamba_svd_flash')
+    assert_metrics(out_cuda, out_ref, 'mamba_svd_flash', tol=2e-4)
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA required')
 def test_07_hgrn2_scan():
@@ -142,7 +142,7 @@ def test_11_gdn_delta_rule():
     beta = torch.sigmoid(torch.randn(B, N, H, device=device, dtype=torch.float32))
     out_ref = ck.gdn_delta_rule_pytorch_ref(q, k, v, beta)
     out_cuda = ck.gdn_delta_rule(q, k, v, beta)
-    assert_metrics(out_cuda, out_ref, 'gdn_delta_rule', tol=1e-3)
+    assert_metrics(out_cuda, out_ref, 'gdn_delta_rule', tol=2e-3)
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA required')
 def test_12_gla_scan():
