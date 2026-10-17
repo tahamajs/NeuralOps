@@ -24,35 +24,35 @@ __global__ void causal_conv1d_fwd_vectorized_kernel(
     const bool has_bias,
     const bool silu_activation
 ) {
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int total = B * D * L;
-    if (idx >= total) return;
 
-    const int b = idx / (D * L);
-    const int rem = idx % (D * L);
-    const int d = rem / L;
-    const int t = rem % L;
+    for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < total; idx += blockDim.x * gridDim.x) {
+        const int b = idx / (D * L);
+        const int rem = idx % (D * L);
+        const int d = rem / L;
+        const int t = rem % L;
 
-    float acc = (has_bias && bias != nullptr) ? to_float(bias[d]) : 0.0f;
-    const int row_base = b * (D * L) + d * L;
-    const int weight_base = d * Kw;
+        float acc = (has_bias && bias != nullptr) ? to_float(bias[d]) : 0.0f;
+        const int row_base = b * (D * L) + d * L;
+        const int weight_base = d * Kw;
 
-    #pragma unroll 4
-    for (int k = 0; k < Kw; ++k) {
-        const int in_t = t - (Kw - 1 - k);
-        if (in_t >= 0 && in_t < L) {
-            const float x_val = to_float(x[row_base + in_t]);
-            const float w_val = to_float(weight[weight_base + k]);
-            acc = fmaf(x_val, w_val, acc);
+        #pragma unroll 4
+        for (int k = 0; k < Kw; ++k) {
+            const int in_t = t - (Kw - 1 - k);
+            if (in_t >= 0 && in_t < L) {
+                const float x_val = to_float(x[row_base + in_t]);
+                const float w_val = to_float(weight[weight_base + k]);
+                acc = fmaf(x_val, w_val, acc);
+            }
         }
-    }
 
-    if (silu_activation) {
-        const float sig = 1.0f / (1.0f + expf(-acc));
-        acc = acc * sig;
-    }
+        if (silu_activation) {
+            const float sig = 1.0f / (1.0f + expf(-acc));
+            acc = acc * sig;
+        }
 
-    out[idx] = from_float<scalar_t>(acc);
+        out[idx] = from_float<scalar_t>(acc);
+    }
 }
 
 } // namespace cuda
@@ -78,7 +78,7 @@ torch::Tensor causal_conv1d_fwd(
 
     const bool has_bias = bias.has_value() && bias.value().defined();
     constexpr int THREADS = 256;
-    const int blocks = std::min(65535, (total + THREADS - 1) / THREADS);
+    const int blocks = (total + THREADS - 1) / THREADS;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto x_c = x.contiguous();
