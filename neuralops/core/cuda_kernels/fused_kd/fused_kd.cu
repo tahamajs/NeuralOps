@@ -10,6 +10,7 @@ namespace cuda {
 // Fused Knowledge Distillation Loss Forward:
 // Computes KL(softmax(T/tau) || softmax(S/tau)) * tau^2 per row
 template <typename scalar_t>
+__launch_bounds__(128)
 __global__ void fused_kd_loss_kernel(
     float* __restrict__ loss_per_row,
     const scalar_t* __restrict__ student_logits,
@@ -102,6 +103,8 @@ torch::Tensor fused_kd_loss_fwd(
             );
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     if (reduction == "none") {
         std::vector<int64_t> out_shape;
