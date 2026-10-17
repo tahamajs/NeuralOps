@@ -35,6 +35,8 @@ def dynamic_conv1d(v: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
         mod = _get_module()
         fn = getattr(mod, "dynamic_conv1d_fwd")
         return fn(*args, **kwargs)
+    if weights.shape[-1] > 16 or (v.dim() == 4 and v.shape[-1] > 128):
+        cuda_fn = None
     return dispatch(
         cuda_fn,
         fused_dynamic_conv1d_triton,

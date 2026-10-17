@@ -17,14 +17,18 @@ def _get_module():
 def selective_ssm_ref(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor) -> torch.Tensor:
     B, N, D = x.shape
     out = torch.empty_like(x)
-    h = torch.zeros(B, D, device=x.device, dtype=x.dtype)
+    h = torch.zeros(B, D, device=x.device, dtype=torch.float32)
     a_exp = A.view(1, 1, D)
+    x_f = x.float()
+    B_f = B_vec.float()
+    C_f = C_vec.float()
     for t in range(N):
-        delta = dt[:, t, :].clamp_min(1e-6)
-        dA = torch.exp(delta * a_exp.squeeze(1))
-        dB = delta * B_vec[:, t, :]
-        h = dA * h + dB * x[:, t, :]
-        out[:, t, :] = h * C_vec[:, t, :]
+        delta = dt[:, t, :].float().clamp_min(1e-6)
+        dA = torch.exp(-torch.clamp(delta * torch.abs(a_exp.squeeze(1)), min=0.0))
+        dB = delta * B_f[:, t, :]
+        h = dA * h + dB * x_f[:, t, :]
+        h = torch.clamp(h, -65504.0, 65504.0)
+        out[:, t, :] = (h * C_f[:, t, :]).to(x.dtype)
     return out
 
 def selective_ssm(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor) -> torch.Tensor:

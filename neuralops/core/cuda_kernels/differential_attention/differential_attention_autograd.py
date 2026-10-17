@@ -18,16 +18,18 @@ def _get_module():
 def differential_attention_ref(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor, k2: torch.Tensor, v: torch.Tensor, lambda_val: float = 0.8) -> torch.Tensor:
     B, H, N, D = q1.shape
     scale = 1.0 / (D ** 0.5)
-    s1 = torch.matmul(q1, k1.transpose(-2, -1)) * scale
-    s2 = torch.matmul(q2, k2.transpose(-2, -1)) * scale
+    s1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
+    s2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
     causal = torch.triu(torch.full((N, N), float('-inf'), device=q1.device), diagonal=1)
     a1 = F.softmax(s1 + causal, dim=-1)
     a2 = F.softmax(s2 + causal, dim=-1)
     diff = a1 - lambda_val * a2
-    return torch.matmul(diff, v)
+    return torch.matmul(diff, v.float()).to(q1.dtype)
 
 def differential_attention(q1: torch.Tensor, k1: torch.Tensor, q2: torch.Tensor, k2: torch.Tensor, v: torch.Tensor, lambda_val: float = 0.8) -> torch.Tensor:
     def cuda_fn(q1, k1, q2, k2, v, lambda_val=0.8):
         mod = _get_module()
         return mod.diff_attn_fwd(q1.contiguous(), k1.contiguous(), q2.contiguous(), k2.contiguous(), v.contiguous(), float(lambda_val))
+    if q1.shape[-1] > 128:
+        cuda_fn = None
     return dispatch(cuda_fn, differential_attention_ref, differential_attention_ref, q1, k1=k1, q2=q2, k2=k2, v=v, lambda_val=lambda_val, kernel_name="differential_attention")
