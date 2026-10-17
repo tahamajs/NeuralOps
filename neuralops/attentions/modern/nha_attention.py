@@ -392,33 +392,38 @@ class NativeHybridAttention(BaseAttention):
         dtype = Q.dtype
 
         scale = d**-0.25
-        Qf = torch.matmul(Q * scale, self.rff_proj.to(dtype=dtype, device=device))
-        Kf = torch.matmul(K * scale, self.rff_proj.to(dtype=dtype, device=device))
+        Q_fp32 = Q.float()
+        K_fp32 = K.float()
+        V_fp32 = V.float()
+        rff_w = self.rff_proj.to(device=device, dtype=torch.float32)
+
+        Qf = torch.matmul(Q_fp32 * scale, rff_w)
+        Kf = torch.matmul(K_fp32 * scale, rff_w)
 
         norm = 1.0 / math.sqrt(m)
         phi_Q = (F.elu(Qf) + 1.0) * norm
         phi_K = (F.elu(Kf) + 1.0) * norm
 
         if valid_mask is not None:
-            kv_mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+            kv_mask = valid_mask.unsqueeze(1).unsqueeze(-1).float()
             phi_K = phi_K * kv_mask
-            V_masked = V * kv_mask
+            V_masked = V_fp32 * kv_mask
         else:
-            V_masked = V
+            V_masked = V_fp32
 
         if not is_causal:
             KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
             den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
-            return num / den
+            return (num / den).to(dtype)
 
         # Hardware-accelerated Triton linear chunk scan
         from neuralops.core.triton_kernels._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and past_len == 0 and valid_mask is None and phi_Q.shape[-1] <= 128:
             try:
                 from neuralops.core.triton_kernels.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(phi_Q, phi_K, V_masked, chunk_size=64, eps=_DENOM_EPS).to(dtype)
+                return fused_svd_linear_chunk_scan_triton(phi_Q.to(dtype), phi_K.to(dtype), V_masked.to(dtype), chunk_size=64, eps=_DENOM_EPS).to(dtype)
             except Exception:
                 pass
 
@@ -433,7 +438,7 @@ class NativeHybridAttention(BaseAttention):
         k_idx = torch.arange(N_k, device=device).unsqueeze(0)
         causal_mask = k_idx <= (q_idx + past_len)
         
-        scores_lin = scores_lin.masked_fill_(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+        scores_lin = scores_lin.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
         
         denom = scores_lin.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
         out = torch.matmul(scores_lin, V_masked) / denom
