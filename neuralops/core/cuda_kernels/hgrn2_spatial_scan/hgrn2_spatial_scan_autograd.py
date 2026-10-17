@@ -25,23 +25,59 @@ def _get_module():
         )
     return _MODULE
 
-def hgrn2_spatial_scan_pytorch_ref(q, k, v, g):
-    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_pytorch
-    y, _ = hgrn2_scan_pytorch(q, k, v, g)
-    return y
-def hgrn2_spatial_scan_triton_ref(q, k, v, g):
-    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
-    return hgrn2_scan_triton(q, k, v, g)
+def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
+    if len(args) == 4:
+        q, k, v, g = args
+        x = (k * v)
+        gate = g
+        q_mul = q
+    elif len(args) == 2:
+        x, gate = args
+        q_mul = None
+    else:
+        raise ValueError(f"hgrn2_spatial_scan expected 2 or 4 arguments, got {len(args)}")
 
-def hgrn2_spatial_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    if gate.dim() == 3:
+        gate = gate.unsqueeze(-1).expand_as(x)
+    
+    B, H, N, D = x.shape
+    out = torch.empty_like(x)
+    sig_g = torch.sigmoid(gate)
+    s = torch.zeros(B, H, D, device=x.device, dtype=x.dtype)
+    for t in range(N):
+        gt = sig_g[:, :, t, :]
+        xt = x[:, :, t, :]
+        s = gt * s + (1.0 - gt) * xt
+        out[:, :, t, :] = s
+    if q_mul is not None:
+        out = q_mul * out
+    return out
+
+def hgrn2_spatial_scan(*args, **kwargs) -> torch.Tensor:
+    def cuda_fn(*call_args, **call_kwargs):
         mod = _get_module()
         fn = getattr(mod, "hgrn2_spatial_scan_fwd")
-        return fn(*args, **kwargs)
+        if len(call_args) == 4:
+            q, k, v, g = call_args
+            x = (k * v).contiguous()
+            gate = g
+            if gate.dim() == 3:
+                gate = gate.unsqueeze(-1).expand_as(x).contiguous()
+            res = fn(x, gate.contiguous())
+            return q * res
+        elif len(call_args) == 2:
+            x, gate = call_args
+            if gate.dim() == 3:
+                gate = gate.unsqueeze(-1).expand_as(x).contiguous()
+            return fn(x.contiguous(), gate.contiguous())
+        else:
+            raise ValueError(f"hgrn2_spatial_scan expected 2 or 4 arguments, got {len(call_args)}")
+
     return dispatch(
         cuda_fn,
-        hgrn2_spatial_scan_triton_ref,
         hgrn2_spatial_scan_pytorch_ref,
-        q, k, v, g,
+        hgrn2_spatial_scan_pytorch_ref,
+        *args,
         kernel_name="hgrn2_spatial_scan",
+        **kwargs,
     )
