@@ -7,43 +7,21 @@
 namespace neuralops {
 namespace cuda {
 
-// Production 2D Block-Tiled RPCA Low-Rank + Sparse GEMM Forward:
+// Production Single-Pass SRAM-Fused RPCA Low-Rank + Sparse GEMM:
 // Y = (X @ V.T) @ U.T + (X @ S.T) + bias
-// Stage 1: Z[m, r] = X[m, :] @ V[r, :].T              [M, K] x [R, K]^T -> [M, R]
-// Stage 2: Out[m, n] = Z[m, :] @ U[n, :].T + (X @ S.T) + bias [M, R] x [N, R]^T -> [M, N]
-
+//
+// Hardware-level optimization:
+// 1. Single kernel launch: Latent vector Z[m, :] is stored directly in SRAM shared memory.
+// 2. Eliminates global memory DRAM write & read roundtrips for intermediate Z.
+// 3. 2D grid over (ceil(N / 32), M) with 32 threads per block.
+// 4. Coalesced output stores to out[m, n].
 template <typename scalar_t>
-__launch_bounds__(256)
-__global__ void rpca_stage1_2d_kernel(
-    scalar_t* __restrict__ Z,
+__launch_bounds__(32)
+__global__ void rpca_sparse_svd_fused_smem_kernel(
+    scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ V,
-    const int M,
-    const int K,
-    const int R
-) {
-    const int r = blockIdx.x * blockDim.x + threadIdx.x;
-    const int m = blockIdx.y * blockDim.y + threadIdx.y;
-    if (m >= M || r >= R) return;
-
-    float acc = 0.0f;
-    const int x_base = m * K;
-    const int v_base = r * K;
-
-    #pragma unroll 4
-    for (int k = 0; k < K; ++k) {
-        acc += to_float(X[x_base + k]) * to_float(V[v_base + k]);
-    }
-    Z[m * R + r] = from_float<scalar_t>(acc);
-}
-
-template <typename scalar_t>
-__launch_bounds__(256)
-__global__ void rpca_stage2_2d_kernel(
-    scalar_t* __restrict__ out,
-    const scalar_t* __restrict__ Z,
     const scalar_t* __restrict__ U,
-    const scalar_t* __restrict__ X,
     const scalar_t* __restrict__ S,
     const scalar_t* __restrict__ bias,
     const int M,
@@ -53,34 +31,51 @@ __global__ void rpca_stage2_2d_kernel(
     const bool has_sparse,
     const bool has_bias
 ) {
-    const int n = blockIdx.x * blockDim.x + threadIdx.x;
-    const int m = blockIdx.y * blockDim.y + threadIdx.y;
-    if (m >= M || n >= N) return;
+    const int m = blockIdx.y;
+    if (m >= M) return;
 
-    float acc = (has_bias && bias != nullptr) ? to_float(bias[n]) : 0.0f;
-    const int z_base = m * R;
-    const int u_base = n * R;
+    const int tid = threadIdx.x;
+    __shared__ float s_z[128];
 
-    #pragma unroll 4
-    for (int r = 0; r < R; ++r) {
-        acc += to_float(Z[z_base + r]) * to_float(U[u_base + r]);
-    }
-
-    if (has_sparse && S != nullptr) {
+    // Cooperative SRAM computation of Z[m, r] = X[m, :] @ V[r, :].T
+    for (int r = tid; r < R; r += blockDim.x) {
+        float acc = 0.0f;
         const int x_base = m * K;
-        const int s_base = n * K;
-        float sp_acc = 0.0f;
+        const int v_base = r * K;
         #pragma unroll 4
         for (int k = 0; k < K; ++k) {
-            const float s_val = to_float(S[s_base + k]);
-            if (s_val != 0.0f) {
-                sp_acc += to_float(X[x_base + k]) * s_val;
-            }
+            acc += to_float(X[x_base + k]) * to_float(V[v_base + k]);
         }
-        acc += sp_acc;
+        s_z[r] = acc;
     }
+    __syncthreads();
 
-    out[m * N + n] = from_float<scalar_t>(acc);
+    // Compute Out[m, n] = s_z @ U[n, :].T + (X @ S.T) + bias[n]
+    const int n = blockIdx.x * blockDim.x + tid;
+    if (n < N) {
+        float y = (has_bias && bias != nullptr) ? to_float(bias[n]) : 0.0f;
+        const int u_base = n * R;
+        #pragma unroll 4
+        for (int r = 0; r < R; ++r) {
+            y += s_z[r] * to_float(U[u_base + r]);
+        }
+
+        if (has_sparse && S != nullptr) {
+            const int x_base = m * K;
+            const int s_base = n * K;
+            float sp_acc = 0.0f;
+            #pragma unroll 4
+            for (int k = 0; k < K; ++k) {
+                const float s_val = to_float(S[s_base + k]);
+                if (s_val != 0.0f) {
+                    sp_acc += to_float(X[x_base + k]) * s_val;
+                }
+            }
+            y += sp_acc;
+        }
+
+        out[m * N + n] = from_float<scalar_t>(y);
+    }
 }
 
 } // namespace cuda
@@ -110,6 +105,7 @@ torch::Tensor rpca_sparse_svd_fwd(
         V = V.t().contiguous();
     }
     const int R = V.size(0);
+    TORCH_CHECK(R <= 128, "rpca_sparse_svd_fwd: R=", R, " > 128 not supported");
 
     if (U.size(1) != R && U.size(0) == R) {
         U = U.t().contiguous();
@@ -134,30 +130,18 @@ torch::Tensor rpca_sparse_svd_fwd(
     torch::Tensor bias_c;
     if (has_bias) bias_c = bias.value().contiguous();
 
-    auto Z = torch::empty({M, R}, x.options());
-
-    dim3 block(16, 16);
-    dim3 grid_z((R + 15) / 16, (M + 15) / 16);
-    dim3 grid_y((N + 15) / 16, (M + 15) / 16);
+    dim3 block(32);
+    dim3 grid((N + 31) / 32, M);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "rpca_sparse_svd_fwd", ([&] {
-            // Stage 1
-            neuralops::cuda::rpca_stage1_2d_kernel<scalar_t><<<grid_z, block, 0, stream>>>(
-                Z.data_ptr<scalar_t>(),
+            neuralops::cuda::rpca_sparse_svd_fused_smem_kernel<scalar_t><<<grid, block, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
                 x_2d.data_ptr<scalar_t>(),
                 V.data_ptr<scalar_t>(),
-                M, K, R
-            );
-
-            // Stage 2
-            neuralops::cuda::rpca_stage2_2d_kernel<scalar_t><<<grid_y, block, 0, stream>>>(
-                out.data_ptr<scalar_t>(),
-                Z.data_ptr<scalar_t>(),
                 U.data_ptr<scalar_t>(),
-                x_2d.data_ptr<scalar_t>(),
                 has_sparse ? s_dense.data_ptr<scalar_t>() : nullptr,
                 has_bias ? bias_c.data_ptr<scalar_t>() : nullptr,
                 M, K, R, N, has_sparse, has_bias
