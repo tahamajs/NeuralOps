@@ -745,6 +745,7 @@ def heal_replaced_model(
     steps: int = 30,
     lr: float = 2e-3,
     weight_decay: float = 1e-4,
+    cosine_weight: float = 0.5,
     also_ridge_init: bool = True,
     device: Optional[Union[str, torch.device]] = None,
     log_to_ledger: bool = True,
