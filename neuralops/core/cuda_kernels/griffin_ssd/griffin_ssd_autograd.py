@@ -1,5 +1,5 @@
-from typing import Any
 from __future__ import annotations
+from typing import Any
 from pathlib import Path
 import torch
 from neuralops.core.cuda_kernels._bindings import load_cuda_module

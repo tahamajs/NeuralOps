@@ -1,10 +1,10 @@
+from __future__ import annotations
 from typing import Any
 """
 Recurrent GLA Step Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
-from __future__ import annotations
 
 import math
 from pathlib import Path
