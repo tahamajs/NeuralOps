@@ -55,6 +55,8 @@ class CompressionPipeline:
             else:
                 self.model = compressor
                 stats = {}
+            if hasattr(self.model, "__dict__"):
+                self.model._compression_stats = stats
 
         return self.model
 
