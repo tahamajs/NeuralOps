@@ -51,9 +51,13 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
+exclude_docs: |
+  README.md
+  visualizer/README.md
+
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
+  - Quickstart: QUICKSTART.md
   - API Reference:
       - Attentions: api/attentions.md
       - Compression: api/compression.md
