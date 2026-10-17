@@ -4,58 +4,88 @@
 #include "_common.cuh"
 
 namespace neuralops { namespace cuda {
+
+// Entropy Row Reduction Kernel:
+// Form: p_i = exp(scores_i - max(scores)) / \sum exp(scores_j - max(scores))
+//       H = -\sum p_i \log(p_i)
+//
+// Hardware-level optimization:
+// 1. Thread Mapping: 1 block per row, cooperative warp-level / block-level reductions.
+// 2. Warp Shuffles: Utilizes block_reduce_max and block_reduce_sum without serial atomic collisions.
+// 3. Online Numerical Stability: Subtracts row max before computing exponentials.
+// 4. Output: Single scalar entropy written per row in a single global transaction.
 template <typename scalar_t>
-__global__ void entropy_row_kernel(scalar_t* out, const scalar_t* scores, int rows, int L) {
-    int r = blockIdx.x;
+__global__ void __launch_bounds__(256) entropy_row_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ scores,
+    const int rows,
+    const int L
+) {
+    const int r = blockIdx.x;
     if (r >= rows) return;
-    int tid = threadIdx.x;
-    float m = -1e20f;
-    for (int i = tid; i < L; i += blockDim.x) {
-        float v = to_float(scores[r * L + i]);
-        if (v > m) m = v;
-    }
-    __shared__ float s_max;
-    if (tid == 0) s_max = -1e20f;
-    __syncthreads();
-    atomicMax(reinterpret_cast<int*>(&s_max), __float_as_int(m));
-    __syncthreads();
-    m = s_max;
 
-    float sum_p = 0.0f;
-    for (int i = tid; i < L; i += blockDim.x) {
-        sum_p += expf(to_float(scores[r * L + i]) - m);
-    }
-    __shared__ float s_sum;
-    if (tid == 0) s_sum = 0.0f;
-    __syncthreads();
-    atomicAdd(&s_sum, sum_p);
-    __syncthreads();
-    float denom = (s_sum > 1e-8f) ? s_sum : 1e-8f;
+    const int tid = threadIdx.x;
+    const int row_offset = r * L;
 
-    float ent = 0.0f;
+    // Pass 1: Find Row Maximum
+    float local_max = -1e30f;
     for (int i = tid; i < L; i += blockDim.x) {
-        float p = expf(to_float(scores[r * L + i]) - m) / denom;
-        if (p > 1e-8f) ent -= p * logf(p);
+        const float v = to_float(scores[row_offset + i]);
+        local_max = fmaxf(local_max, v);
     }
-    __shared__ float s_ent;
-    if (tid == 0) s_ent = 0.0f;
-    __syncthreads();
-    atomicAdd(&s_ent, ent);
-    __syncthreads();
-    if (tid == 0) out[r] = from_float<scalar_t>(s_ent);
+    const float m = block_reduce_max(local_max);
+
+    // Pass 2: Compute Softmax Denominator
+    float local_sum = 0.0f;
+    for (int i = tid; i < L; i += blockDim.x) {
+        local_sum += expf(to_float(scores[row_offset + i]) - m);
+    }
+    const float total_sum = block_reduce_sum(local_sum);
+    const float inv_denom = 1.0f / fmaxf(total_sum, 1e-12f);
+
+    // Pass 3: Accumulate Entropy -p * log(p)
+    float local_ent = 0.0f;
+    for (int i = tid; i < L; i += blockDim.x) {
+        const float p = expf(to_float(scores[row_offset + i]) - m) * inv_denom;
+        if (p > 1e-12f) {
+            local_ent = fmaf(-p, logf(p), local_ent);
+        }
+    }
+    const float total_ent = block_reduce_sum(local_ent);
+
+    if (tid == 0) {
+        out[r] = from_float<scalar_t>(total_ent);
+    }
 }
-}}
+
+}} // namespace neuralops::cuda
 
 torch::Tensor entropy_row_reduction_fwd(const torch::Tensor& scores) {
     CHECK_INPUT(scores);
-    int L = scores.size(-1);
-    int rows = scores.numel() / L;
+
+    const int L = scores.size(-1);
+    const int rows = scores.numel() / L;
     auto out = torch::empty({rows}, scores.options());
-    int threads = std::min(512, ((L + 31) / 32) * 32);
+    if (rows == 0 || L == 0) return out;
+
+    int threads = std::min(256, ((L + 31) / 32) * 32);
+    if (threads < 32) threads = 32;
+
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto sc_c = scores.contiguous();
-    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, scores.scalar_type(), "entropy_row_reduction_fwd", ([&] {
-        neuralops::cuda::entropy_row_kernel<scalar_t><<<rows, threads, 0, stream>>>(out.data_ptr<scalar_t>(), sc_c.data_ptr<scalar_t>(), rows, L);
-    }));
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half, at::ScalarType::BFloat16,
+        scores.scalar_type(), "entropy_row_reduction_fwd", ([&] {
+            neuralops::cuda::entropy_row_kernel<scalar_t><<<rows, threads, 0, stream>>>(
+                out.data_ptr<scalar_t>(),
+                sc_c.data_ptr<scalar_t>(),
+                rows,
+                L
+            );
+        })
+    );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
