@@ -92,3 +92,4 @@ def phantom(x: torch.Tensor, gate: torch.Tensor, threshold: float = 0.5) -> torc
         return _PhantomFunction.apply(x, gate, threshold)
 
     return _fwd_dispatch(x, gate, threshold=threshold)
+phantom_pytorch_ref = phantom_ref

@@ -90,13 +90,11 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
         logits_flat, targets_flat, total_valid = ctx.saved_tensors
         ignore_index = ctx.ignore_index
         reduction = ctx.reduction
-        N_tokens = logits_flat.shape[0]
 
         if reduction == "mean":
-            scale = (grad_output / total_valid).to(torch.float32)
-            grad_loss = scale.expand(N_tokens).contiguous()
+            grad_loss = (grad_output / total_valid).to(torch.float32)
         elif reduction == "sum":
-            grad_loss = grad_output.to(torch.float32).expand(N_tokens).contiguous()
+            grad_loss = grad_output.to(torch.float32)
         else:
             grad_loss = grad_output.reshape(-1).to(torch.float32).contiguous()
 
