@@ -92,8 +92,6 @@ def dispatch(
     3. If 'auto':
        Level 1 -> Level 2 -> Level 3.
     """
-    global _DISPATCH_STATS
-
     # CPU fast-path: Pure PyTorch Reference immediately for real kernels when CPU tensor is given
     if kernel_name != "unknown" and _is_first_tensor_cpu(*args, **kwargs):
         _DISPATCH_STATS["pytorch"] += 1

@@ -7,6 +7,7 @@ compact dictionaries or lists of dictionaries.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 __all__ = ["HybridAttentionSpec", "normalize_hybrid_spec", "get_layer_spec"]

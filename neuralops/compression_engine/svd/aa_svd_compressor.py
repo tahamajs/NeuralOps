@@ -698,8 +698,6 @@ class AASVDCompressor(BaseCompressor):
             hooks = []
 
             def make_hook(layer_name: str):
-                nonlocal covariances, update_counts
-
                 def hook(module, inp, outp):
                     if not inp or inp[0] is None:
                         return
@@ -858,7 +856,6 @@ class AASVDCompressor(BaseCompressor):
         # ---- Free memory ----
         covariances.clear()
         cov_factor_cache.clear()
-        del covariances
         del cov_factor_cache
         if torch.cuda.is_available():
             with contextlib.suppress(Exception):
