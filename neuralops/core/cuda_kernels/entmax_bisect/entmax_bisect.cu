@@ -36,7 +36,7 @@ __global__ void __launch_bounds__(256) entmax15_kernel(
     const float m = block_reduce_max(local_max);
 
     // Initial bounds for bisection
-    float low = m - 1.0f;
+    float low = m - 2.0f;
     float high = m;
 
     // Step 2: Warp/Block Coordinated Bisection
