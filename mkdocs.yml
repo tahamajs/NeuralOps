@@ -32,6 +32,13 @@ theme:
 plugins:
   - search
 
+validation:
+  omitted_files: ignore
+  links:
+    anchors: ignore
+    absolute_links: ignore
+    unrecognized_links: ignore
+
 markdown_extensions:
   - admonition
   - codehilite:
