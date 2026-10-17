@@ -211,7 +211,7 @@ python scripts/benchmarks/benchmark_all_131_attentions.py
 python scripts/benchmarks/benchmark_all_72_compressors.py
 
 # 4. Run GPT-2 end-to-end latency and throughput test
-python scripts/benchmarks/run_e2e_gpt2_benchmark.py
+python scripts/benchmarks/benchmark_triton_e2e_gpt2.py
 
 # 5. Verify canonical counts invariant (131/72/26)
 python scripts/utils/verify_readme_counts.py
@@ -268,9 +268,9 @@ The `neuralops` package is verified against strict packaging standards prior to 
 - **Documentation Engine**: MkDocs Material with automated GitHub Actions deployment.
 - **API Reference Coverage**: 100% of public APIs, 131 attention classes, 72 compressors, and 26 Triton kernel modules documented.
 - **Executable Jupyter Notebooks**: Available in `notebooks/`:
-  - `01_quickstart.ipynb`: 60-second in-place model surgery.
-  - `02_model_surgery_and_healing.ipynb`: Closed-form Ridge calibration and micro-healing.
-  - `03_roofline_profiling.ipynb`: Interactive hardware roofline analysis.
+  - `01_quickstart_surgery_and_healing.ipynb`: 60-second in-place model surgery and layerwise micro-healing.
+  - `02_roofline_and_triton_kernels.ipynb`: Interactive hardware roofline and arithmetic intensity analysis.
+  - `03_custom_plugins_and_extensibility.ipynb`: Custom attention & compressor plugin scaffolding and contract verification.
 
 ---
 
@@ -491,7 +491,7 @@ model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
 
 # Compress all linear projections with Fisher-Weighted SVD (r=32, 24x parameter reduction)
 compressor = neuralops.create_compressor("fwsvd", model=model, rank=32)
-compressed_model = compressor.compress()
+compressed_model, stats = compressor.compress()
 
 # Evaluate parameter footprint and verify model integrity
 print(f"Compressed Parameters: {sum(p.numel() for p in compressed_model.parameters()) / 1e6:.1f}M")
@@ -506,8 +506,9 @@ neuralops verify
 # Interactive hardware roofline analysis on available GPU
 neuralops roofline --device cuda --seq-len 4096
 
-# Launch interactive terminal TUI for inspection
+# Launch interactive terminal TUI for inspection (or non-interactive snapshot for CI)
 neuralops ui
+neuralops ui --snapshot
 ```
 
 ---
