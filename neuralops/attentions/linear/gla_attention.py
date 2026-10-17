@@ -230,13 +230,13 @@ class GLAttention(BaseAttention):
                     scale=self.scale,
                     output_final_state=False,
                 )
-                out = out.to(hidden_states.dtype)
+                out = out.float()
             except (RuntimeError, NotImplementedError, ValueError) as e:
                 from neuralops.utils.logging_config import warn_once
                 warn_once("gla_fla_fallback", "FLA failed with %s; switching to PyTorch fallback", e)
-                out = self._pytorch_gla_stable(Q, K, V, g)
+                out = self._pytorch_gla_stable(Q, K, V, g).float()
         else:
-            out = self._pytorch_gla_stable(Q, K, V, g)
+            out = self._pytorch_gla_stable(Q, K, V, g).float()
 
         # Bidirectional scan for bidirectional encoder models (e.g. RoBERTa, BERT)
         if not self.is_decoder:
@@ -244,19 +244,20 @@ class GLAttention(BaseAttention):
             K_r = torch.flip(K, dims=[1])
             V_r = torch.flip(V, dims=[1])
             g_r = torch.flip(g, dims=[1])
-            out_bwd_raw = self._pytorch_gla_stable(Q_r, K_r, V_r, g_r)
+            out_bwd_raw = self._pytorch_gla_stable(Q_r, K_r, V_r, g_r).float()
             out_bwd = torch.flip(out_bwd_raw, dims=[1])
             out = 0.5 * (out + out_bwd)
 
-        # 4. RMSNorm per head (essential for stable magnitude)
-        out = self.o_norm(out)  # (B, N, H, d)
+        # 4. RMSNorm per head (essential for stable magnitude, done in float32 before dtype cast)
+        out = self.o_norm(out.float()).to(hidden_states.dtype)  # (B, N, H, d)
 
-        # 5. Out projection with variance-preserving RMS gain
+        # 5. Out projection with variance-preserving RMS gain (computed in fp32)
         out = out.contiguous().view(B, N, self.all_head_size)
-        v_flat = V.contiguous().view(B, N, self.all_head_size)
+        v_flat = V.contiguous().view(B, N, self.all_head_size).float()
+        out_f = out.float()
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        o_rms = torch.sqrt(torch.mean(out ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        scale = (v_rms / o_rms).clamp(0.25, 4.0)
+        o_rms = torch.sqrt(torch.mean(out_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        scale = (v_rms / o_rms).clamp(0.25, 4.0).to(out.dtype)
         out = out * scale
         return self.out_proj(out), None
 
@@ -306,15 +307,16 @@ class GLAttention(BaseAttention):
 
         # 4. RMSNorm per head + out_proj
         out_h = out_t.unsqueeze(1).view(B, 1, H, d)
-        out_normed = self.o_norm(out_h).contiguous().view(B, 1, self.all_head_size)
+        out_normed = self.o_norm(out_h.float()).to(dtype).contiguous().view(B, 1, self.all_head_size)
 
-        v_flat = V.unsqueeze(1).contiguous().view(B, 1, self.all_head_size)
+        v_flat = V.unsqueeze(1).contiguous().view(B, 1, self.all_head_size).float()
+        out_f = out_normed.float()
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        o_rms = torch.sqrt(torch.mean(out_normed ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        norm_scale = (v_rms / o_rms).clamp(0.25, 4.0)
+        o_rms = torch.sqrt(torch.mean(out_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        norm_scale = (v_rms / o_rms).clamp(0.25, 4.0).to(dtype)
         out_scaled = out_normed * norm_scale
 
-        out = self.out_proj(out_scaled.to(dtype))
+        out = self.out_proj(out_scaled)
         if is_2d:
             out = out.squeeze(1)
 
@@ -452,7 +454,7 @@ class GLAttention(BaseAttention):
             S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
 
         out = torch.cat(out_chunks, dim=1)
-        return out.to(Q.dtype)
+        return out
 
 
 def _chunked_gla_forward(
