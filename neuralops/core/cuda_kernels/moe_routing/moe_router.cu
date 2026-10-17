@@ -3,6 +3,8 @@
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
+#include "_common.cuh"
+
 
 template<typename scalar_t>
 __launch_bounds__(256)
