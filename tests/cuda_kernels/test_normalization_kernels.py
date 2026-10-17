@@ -52,25 +52,25 @@ except ImportError:
         create_non_contiguous,
     )
 
-import neuralops.core.cuda_kernels.aegis_gate_norm as m_aegis
-import neuralops.core.cuda_kernels.channel_shuffle as m_shuffle
-import neuralops.core.cuda_kernels.entmax_bisect as m_entmax
-import neuralops.core.cuda_kernels.entropy_gate as m_ent_gate
-import neuralops.core.cuda_kernels.entropy_pruning as m_ent_prune
-import neuralops.core.cuda_kernels.fast_gelu as m_gelu
-import neuralops.core.cuda_kernels.fused_ce as m_ce
-import neuralops.core.cuda_kernels.fused_dropout_add as m_dropout
-import neuralops.core.cuda_kernels.fused_kd as m_kd
-import neuralops.core.cuda_kernels.fused_norm_linear as m_norm_linear
-import neuralops.core.cuda_kernels.fused_rope as m_rope
-import neuralops.core.cuda_kernels.fwht_transform as m_fwht
-import neuralops.core.cuda_kernels.layernorm as m_ln
-import neuralops.core.cuda_kernels.rms_variance_match as m_vmatch
-import neuralops.core.cuda_kernels.rmsnorm as m_rms
-import neuralops.core.cuda_kernels.softplus as m_softplus
-import neuralops.core.cuda_kernels.split_head_norm as m_split_head
-import neuralops.core.cuda_kernels.swiglu as m_swiglu
-import neuralops.core.cuda_kernels.unified_rope_offset as m_unirope
+from neuralops.core.cuda_kernels.aegis_gate_norm import aegis_gate_norm_autograd as m_aegis
+from neuralops.core.cuda_kernels.channel_shuffle import shuffle_autograd as m_shuffle
+from neuralops.core.cuda_kernels.entmax_bisect import entmax_bisect_autograd as m_entmax
+from neuralops.core.cuda_kernels.entropy_gate import entropy_gate_autograd as m_ent_gate
+from neuralops.core.cuda_kernels.entropy_pruning import entropy_pruning_autograd as m_ent_prune
+from neuralops.core.cuda_kernels.fast_gelu import fast_gelu_autograd as m_gelu
+from neuralops.core.cuda_kernels.fused_ce import fused_ce_autograd as m_ce
+from neuralops.core.cuda_kernels.fused_dropout_add import dropout_add_autograd as m_dropout
+from neuralops.core.cuda_kernels.fused_kd import kd_autograd as m_kd
+from neuralops.core.cuda_kernels.fused_norm_linear import norm_linear_autograd as m_norm_linear
+from neuralops.core.cuda_kernels.fused_rope import rope_autograd as m_rope
+from neuralops.core.cuda_kernels.fwht_transform import fwht_transform_autograd as m_fwht
+from neuralops.core.cuda_kernels.layernorm import layernorm_autograd as m_ln
+from neuralops.core.cuda_kernels.rms_variance_match import rms_variance_match_autograd as m_vmatch
+from neuralops.core.cuda_kernels.rmsnorm import rmsnorm_autograd as m_rms
+from neuralops.core.cuda_kernels.softplus import softplus_autograd as m_softplus
+from neuralops.core.cuda_kernels.split_head_norm import split_head_norm_autograd as m_split_head
+from neuralops.core.cuda_kernels.swiglu import swiglu_autograd as m_swiglu
+from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset_autograd as m_unirope
 
 
 @pytest.fixture(autouse=True)
