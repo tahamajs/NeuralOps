@@ -31,7 +31,7 @@ def _get_module():
             name="cuda_rotational_svd",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["rotational_svd_fwd"],
+            functions=["rotational_svd_fwd", "rotational_svd_bwd"],
         )
     return _MODULE
 
@@ -89,7 +89,7 @@ def _fwd_dispatch(x, r_in, v_r, u_r, bias):
         v_r,
         u_r,
         bias=bias,
-        kernel_name=rotational_svd,
+        kernel_name="rotational_svd",
     )
 
 
@@ -112,60 +112,34 @@ class _RotationalSVDFunction(torch.autograd.Function):
         U = u_r if u_r.shape[1] == R else u_r.t()
         N = U.shape[0]
 
-        out_2d = _fwd_dispatch(x_2d, r_in, V, U, bias)
+        mod = _get_module()
+        x_rot = torch.matmul(x_2d, r_in)
+        z = torch.matmul(x_rot, V.t())
+        out_2d = torch.matmul(z, U.t())
+        if bias is not None:
+            out_2d = out_2d + bias
 
-        ctx.save_for_backward(x_2d, r_in, V, U)
+        ctx.save_for_backward(x_2d, r_in, v_r, u_r, x_rot, z)
         ctx.has_bias = bias is not None
         ctx.orig_shape = orig_shape
         ctx.out_features = N
-        ctx.v_r_transposed = (v_r.shape[0] == K)
-        ctx.u_r_transposed = (u_r.shape[1] != R)
 
         return out_2d.reshape(*orig_shape[:-1], N)
 
     @staticmethod
     def backward(ctx: Any, dout: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
-        x_2d, r_in, V, U = ctx.saved_tensors
-        dout_2d = dout.reshape(-1, ctx.out_features)
+        x_2d, r_in, v_r, u_r, x_rot, z = ctx.saved_tensors
+        dout_2d = dout.reshape(-1, ctx.out_features).contiguous()
 
-        # Adjoint backward:
-        # x_rot = x_2d @ r_in
-        # z = x_rot @ V.T
-        # y = z @ U.T + bias
-        x_rot = torch.matmul(x_2d, r_in)
-        z = torch.matmul(x_rot, V.t())
-
-        # dz = dout_2d @ U  [M, R]
-        dz = torch.matmul(dout_2d, U)
-
-        # dx_rot = dz @ V  [M, K]
-        dx_rot = torch.matmul(dz, V)
-
-        # dx = dx_rot @ r_in.T  [M, K]
-        dx_2d = torch.matmul(dx_rot, r_in.t())
-        dx = dx_2d.reshape(ctx.orig_shape)
-
-        dr_in = None
-        if ctx.needs_input_grad[1]:
-            dr_in = torch.matmul(x_2d.t(), dx_rot)
-
-        dV = None
-        if ctx.needs_input_grad[2]:
-            dV = torch.matmul(dz.t(), x_rot)
-            if ctx.v_r_transposed:
-                dV = dV.t()
-
-        dU = None
-        if ctx.needs_input_grad[3]:
-            dU = torch.matmul(dout_2d.t(), z)
-            if ctx.u_r_transposed:
-                dU = dU.t()
+        mod = _get_module()
+        grads = mod.rotational_svd_bwd(dout_2d, x_2d, r_in, v_r, u_r, x_rot, z)
+        dx, dr_in, dV, dU = grads[0], grads[1], grads[2], grads[3]
 
         dbias = None
-        if ctx.has_bias and ctx.needs_input_grad[4]:
+        if ctx.has_bias:
             dbias = dout_2d.sum(dim=0)
 
-        return dx, dr_in, dV, dU, dbias
+        return dx.reshape(ctx.orig_shape), dr_in, dV, dU, dbias
 
 
 def rotational_svd(
