@@ -610,7 +610,10 @@ def run_test(mod_name):
 
     ref_ms = 0.0
     speedup = 1.0
-    max_diff = 0.0
+    max_diff = float("nan")
+    ref_out = None
+    cuda_out = out
+
     if ref_fn:
         try:
             use_kwargs = True
@@ -625,33 +628,77 @@ def run_test(mod_name):
             else:
                 ref_ms = time_callable(lambda: ref_fn(*args), warmup=2, iters=5)
             speedup = ref_ms / max(cuda_ms, 1e-5)
-
-            if mod_name == "bitonic_topk":
-                val_out = torch.gather(args[0], -1, out.long()).sort(dim=-1).values
-                val_ref = torch.gather(args[0], -1, ref_out.long()).sort(dim=-1).values
-                max_diff = (val_out.float() - val_ref.float()).abs().max().item()
-            elif isinstance(out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
-                max_diff = (out.float() - ref_out.float()).abs().max().item()
-            elif isinstance(out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
-                diffs = []
-                for o_elem, r_elem in zip(out, ref_out):
-                    if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
-                        diffs.append((o_elem.float() - r_elem.float()).abs().max().item())
-                shape_match = True
-                dtype_match = True
-                if isinstance(out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
-                    shape_match = (out.shape == ref_out.shape)
-                    dtype_match = (out.dtype == ref_out.dtype)
-                if not shape_match or not dtype_match:
-                    print(f"[{mod_name}] Shape/Dtype mismatch: CUDA {getattr(out, 'shape', None)}/{getattr(out, 'dtype', None)} vs Ref {getattr(ref_out, 'shape', None)}/{getattr(ref_out, 'dtype', None)}", file=sys.stderr)
         except Exception as e:
             import traceback
             traceback.print_exc(file=sys.stderr)
             ref_ms = 0.0
-            max_diff = 999.0
+            ref_out = None
+
+    ref_ok = (ref_out is not None) and (ref_ms > 0.0)
+    if not ref_ok:
+        max_diff = float("nan")
+        status = "REF_FAILED"
+        reason = "reference did not execute or produced no output"
+    elif cuda_out is None:
+        max_diff = float("nan")
+        status = "CUDA_FAILED"
+        reason = "CUDA path raised or returned None"
+    else:
+        # Bug B — Aliasing check
+        if isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
+            assert cuda_out.data_ptr() != ref_out.data_ptr(), f"{mod_name}: cuda_out and ref_out alias the same storage"
+        elif isinstance(cuda_out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
+            for o_elem, r_elem in zip(cuda_out, ref_out):
+                if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
+                    assert o_elem.data_ptr() != r_elem.data_ptr(), f"{mod_name}: cuda_out and ref_out tuple elements alias the same storage"
+
+        # Compute max_diff
+        if mod_name == "bitonic_topk":
+            val_out = torch.gather(args[0], -1, cuda_out.long()).sort(dim=-1).values
+            val_ref = torch.gather(args[0], -1, ref_out.long()).sort(dim=-1).values
+            max_diff = (val_out.float() - val_ref.float()).abs().max().item()
+        elif isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
+            max_diff = (cuda_out.float() - ref_out.float()).abs().max().item()
+        elif isinstance(cuda_out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
+            diffs = []
+            for o_elem, r_elem in zip(cuda_out, ref_out):
+                if isinstance(o_elem, torch.Tensor) and isinstance(r_elem, torch.Tensor):
+                    diffs.append((o_elem.float() - r_elem.float()).abs().max().item())
+            max_diff = max(diffs) if diffs else 0.0
+
+        # Bug C — Bit-identical check
+        is_bit_identical = False
+        if max_diff == 0.0:
+            if isinstance(cuda_out, torch.Tensor) and isinstance(ref_out, torch.Tensor):
+                if torch.equal(cuda_out, ref_out):
+                    is_bit_identical = True
+            elif isinstance(cuda_out, (tuple, list)) and isinstance(ref_out, (tuple, list)):
+                if all(isinstance(o, torch.Tensor) and isinstance(r, torch.Tensor) and torch.equal(o, r) for o, r in zip(cuda_out, ref_out)):
+                    is_bit_identical = True
+
+        tolerance = 0.05
+        if is_bit_identical:
+            status = "DISPATCH_FAILURE"
+            reason = f"{mod_name}: max_diff=0.0 but tensors are bit-identical — dispatch fallback suspected"
+        elif math.isnan(max_diff):
+            status = "FAIL_NAN"
+            reason = "max_diff is NaN"
+        elif max_diff >= tolerance:
+            status = "FAIL"
+            reason = f"max_diff={max_diff:.4f} >= {tolerance}"
+        elif cuda_ms > ref_ms * 0.95:
+            status = "PASS_SLOW"
+            reason = f"speedup={speedup:.2f}x < 1.05x — slower than reference"
+        elif max_diff >= 1e-3:
+            status = "PASS_HIGH_DIFF"
+            reason = f"max_diff={max_diff:.4e} >= 1e-3"
+        else:
+            status = "PASS_FAST"
+            reason = f"speedup={speedup:.2f}x, max_diff={max_diff:.4e}"
 
     return {{
-        "status": "PASS",
+        "status": status,
+        "reason": reason,
         "cuda_ms": round(cuda_ms, 4),
         "ref_ms": round(ref_ms, 4),
         "speedup": round(speedup, 2),
@@ -692,38 +739,13 @@ ALIASES = {
 }
 
 
-def classify_status(cuda_ms, ref_ms, max_diff):
-    """Return (status, reason) tuple for each kernel strictly adhering to NeuralOps criteria."""
-    import math
-
-    # Category 1: NaN (broken)
-    if max_diff is None or str(max_diff).lower() == "nan" or (isinstance(max_diff, float) and math.isnan(max_diff)):
-        return ("FAIL_NAN", "max_diff is NaN — kernel produces NaN output")
-
-    # Category 2: Reference failure / missing baseline
-    if ref_ms is None or ref_ms < 1e-5 or max_diff == 999.0:
-        return ("REF_FAILED", "ref_ms < 0.01ms or diff=999.0 — reference failed or missing")
-
-    # Category 3: Numerical divergence
-    if max_diff >= 0.05:
-        return ("FAIL_NUMERICS", f"max_diff={max_diff:.4f} >= 0.05")
-
-    # Category 4: Slower than reference
-    if cuda_ms > ref_ms * 0.95:
-        speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
-        return ("PASS_SLOW", f"speedup={speedup:.2f}x < 1.05x — slower than reference")
-
-    speedup = ref_ms / cuda_ms if cuda_ms > 0 else 1.0
-    return ("PASS", f"speedup={speedup:.2f}x, max_diff={max_diff:.4f}")
-
-
 def main():
     parser = argparse.ArgumentParser(description="Subprocess-Isolated Master Benchmark for CUDA Modules")
     parser.add_argument("--classify-strict", action="store_true", help="Apply strict PASS/FAIL classification")
     args = parser.parse_args()
 
     print("=" * 115)
-    print("SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES (TRIAGED HARNESS)")
+    print("SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 108 NATIVE CUDA MODULES (PHASE 0 HARNESS)")
     print("=" * 115)
 
     cuda_dir = repo_root / "neuralops" / "core" / "cuda_kernels"
@@ -757,43 +779,44 @@ def main():
             if "RESULT_JSON:" in stdout:
                 res_str = stdout.split("RESULT_JSON:")[1].strip().split("\n")[0]
                 res_data = json.loads(res_str)
-                if res_data.get("status") == "PASS":
-                    cuda_ms = res_data["cuda_ms"]
-                    ref_ms = res_data["ref_ms"]
-                    speedup = res_data["speedup"]
-                    diff = res_data["max_diff"]
+                cls_status = res_data.get("status", "FAIL")
+                reason = res_data.get("reason", "")
+                cuda_ms = res_data.get("cuda_ms", 0.0)
+                ref_ms = res_data.get("ref_ms", 0.0)
+                speedup = res_data.get("speedup", 1.0)
+                diff = res_data.get("max_diff")
 
-                    cls_status, reason = classify_status(cuda_ms, ref_ms, diff)
-                    stats[cls_status] = stats.get(cls_status, 0) + 1
+                stats[cls_status] = stats.get(cls_status, 0) + 1
 
-                    ref_str = f"{ref_ms:.4f}" if (ref_ms > 0 and diff != 999.0) else "N/A"
-                    sp_str = f"{speedup:.2f}x" if (ref_ms > 0 and diff != 999.0) else "1.00x"
-                    diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and diff != 999.0) else str(diff)
-                    print(f"{idx:<4} | {mod_name:<26} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | {cls_status}", flush=True)
-                    results.append({"module": mod_name, **res_data, "status": cls_status, "reason": reason})
-                else:
-                    err_msg = res_data.get("status", "FAIL")
-                    stats["FAIL"] = stats.get("FAIL", 0) + 1
-                    print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | FAIL ({err_msg})", flush=True)
-                    results.append({"module": mod_name, "status": "FAIL", "error": err_msg})
+                ref_str = f"{ref_ms:.4f}" if (ref_ms > 0 and cls_status != "REF_FAILED") else "N/A"
+                sp_str = f"{speedup:.2f}x" if (ref_ms > 0 and cls_status != "REF_FAILED") else "1.00x"
+                diff_str = f"{diff:.2e}" if (diff is not None and str(diff) != "nan" and diff != 999.0) else "N/A"
+                print(f"{idx:<4} | {mod_name:<26} | {cuda_ms:<10.4f} | {ref_str:<10} | {sp_str:<9} | {diff_str:<10} | {cls_status}", flush=True)
+                results.append({"module": mod_name, **res_data, "status": cls_status, "reason": reason})
             else:
-                err = (stderr or stdout).strip().split("\n")[-1][:40]
+                err = (stderr or stdout).strip().split("\n")[-1][:50]
                 stats["CRASH"] = stats.get("CRASH", 0) + 1
                 print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | CRASH: {err}", flush=True)
                 results.append({"module": mod_name, "status": "CRASH", "error": err})
         except subprocess.TimeoutExpired:
             stats["TIMEOUT"] = stats.get("TIMEOUT", 0) + 1
-            print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (30s)", flush=True)
+            print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | TIMEOUT (120s)", flush=True)
             results.append({"module": mod_name, "status": "TIMEOUT"})
         except Exception as e:
-            stats["ERROR"] = stats.get("ERROR", 0) + 1
+            stats["CRASH"] = stats.get("CRASH", 0) + 1
             print(f"{idx:<4} | {mod_name:<26} | {'-':<10} | {'-':<10} | {'-':<9} | {'-':<10} | SUBPROC ERR: {str(e)[:30]}", flush=True)
-            results.append({"module": mod_name, "status": "ERROR", "error": str(e)})
+            results.append({"module": mod_name, "status": "CRASH", "error": str(e)})
 
     print("=" * 115, flush=True)
-    print("MASTER BENCHMARK CLASSIFICATION BREAKDOWN:", flush=True)
-    for k, v in sorted(stats.items()):
-        print(f"  {k}: {v} kernels", flush=True)
+    print("Totals (108 modules):", flush=True)
+    print(f"  PASS_FAST      (>=1.0x, diff<1e-3) : {stats.get('PASS_FAST', 0)}", flush=True)
+    print(f"  PASS_SLOW      (<1.0x)             : {stats.get('PASS_SLOW', 0)}   <- must be 0 for release", flush=True)
+    print(f"  PASS_HIGH_DIFF (diff>=1e-3)        : {stats.get('PASS_HIGH_DIFF', 0)}   <- must be 0 for release", flush=True)
+    print(f"  FAIL           (diff>=tol)         : {stats.get('FAIL', 0)}", flush=True)
+    print(f"  REF_FAILED     (ref missing)       : {stats.get('REF_FAILED', 0)}   <- must be 0 for release", flush=True)
+    print(f"  CUDA_FAILED    (kernel raised)     : {stats.get('CUDA_FAILED', 0)}", flush=True)
+    print(f"  DISPATCH_FAIL  (bit-identical ref) : {stats.get('DISPATCH_FAILURE', 0)}", flush=True)
+    print(f"  CRASH          (import/exec error) : {stats.get('CRASH', 0)}   <- must be 0 for release", flush=True)
     print("=" * 115, flush=True)
 
     out_file = repo_root / "results" / "master_108_cuda_modules_benchmark.json"
@@ -817,6 +840,7 @@ def main():
             diff = r.get("max_diff", "")
             writer.writerow([mod, c_ms, r_ms, sp, diff, stat, reason])
     print(f"Master benchmark CSV saved to: {csv_file}", flush=True)
+
 
 
 if __name__ == "__main__":
