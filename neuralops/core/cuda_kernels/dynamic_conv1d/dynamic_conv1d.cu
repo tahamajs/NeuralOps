@@ -79,6 +79,34 @@ __global__ void __launch_bounds__(128) dynamic_conv1d_fwd_kernel(
     out[x_row_offset + t] = from_float<scalar_t>(acc);
 }
 
+template <typename scalar_t>
+__global__ void __launch_bounds__(128) dynamic_conv1d_4d_fwd_kernel(
+    scalar_t* __restrict__ out,
+    const scalar_t* __restrict__ v,
+    const scalar_t* __restrict__ w,
+    const int B, const int H, const int N, const int D, const int K,
+    const int stride_vb, const int stride_vh, const int stride_vt, const int stride_vd,
+    const int stride_wb, const int stride_wh, const int stride_wn, const int stride_wk,
+    const int stride_ob, const int stride_oh, const int stride_on, const int stride_od
+) {
+    const int n = blockIdx.x;
+    const int bh = blockIdx.y;
+    if (n >= N || bh >= B * H) return;
+    const int b = bh / H;
+    const int h = bh % H;
+    const int d = threadIdx.x;
+    if (d >= D) return;
+
+    float acc = 0.0f;
+    for (int k = 0; k < K; ++k) {
+        const int w_off = b * stride_wb + h * stride_wh + n * stride_wn + k * stride_wk;
+        const int v_off = b * stride_vb + h * stride_vh + (n + k) * stride_vt + d * stride_vd;
+        acc += to_float(w[w_off]) * to_float(v[v_off]);
+    }
+    const int out_off = b * stride_ob + h * stride_oh + n * stride_on + d * stride_od;
+    out[out_off] = from_float<scalar_t>(acc);
+}
+
 }} // namespace neuralops::cuda
 
 torch::Tensor dynamic_conv1d_fwd(
@@ -89,7 +117,41 @@ torch::Tensor dynamic_conv1d_fwd(
     CHECK_INPUT(x);
     CHECK_INPUT(weight);
 
-    TORCH_CHECK(x.dim() == 3, "x must be 3D [B, D, L]");
+    if (x.dim() == 4) {
+        TORCH_CHECK(weight.dim() == 4, "When x is 4D [B, H, T, D], weight must be 4D [B, H, N, K]");
+        const int B = x.size(0);
+        const int H = x.size(1);
+        const int D = x.size(3);
+        const int N = weight.size(2);
+        const int K = weight.size(3);
+        auto out = torch::empty({B, H, N, D}, x.options());
+        if (B == 0 || H == 0 || N == 0 || D == 0) return out;
+
+        dim3 grid(N, B * H);
+        const int threads = (D <= 32) ? 32 : ((D <= 64) ? 64 : 128);
+        auto stream = c10::cuda::getCurrentCUDAStream();
+        auto x_c = x.contiguous();
+        auto w_c = weight.contiguous();
+
+        AT_DISPATCH_FLOATING_TYPES_AND2(
+            at::ScalarType::Half, at::ScalarType::BFloat16,
+            x.scalar_type(), "dynamic_conv1d_4d_fwd", ([&] {
+                neuralops::cuda::dynamic_conv1d_4d_fwd_kernel<scalar_t><<<grid, threads, 0, stream>>>(
+                    out.data_ptr<scalar_t>(),
+                    x_c.data_ptr<scalar_t>(),
+                    w_c.data_ptr<scalar_t>(),
+                    B, H, N, D, K,
+                    x_c.stride(0), x_c.stride(1), x_c.stride(2), x_c.stride(3),
+                    w_c.stride(0), w_c.stride(1), w_c.stride(2), w_c.stride(3),
+                    out.stride(0), out.stride(1), out.stride(2), out.stride(3)
+                );
+            })
+        );
+        CUDA_KERNEL_LAUNCH_CHECK();
+        return out;
+    }
+
+    TORCH_CHECK(x.dim() == 3, "x must be 3D [B, D, L] or 4D [B, H, T, D]");
     TORCH_CHECK(weight.dim() == 2, "weight must be 2D [D, K]");
     TORCH_CHECK(x.size(1) == weight.size(0), "Hidden dimension D mismatch");
 

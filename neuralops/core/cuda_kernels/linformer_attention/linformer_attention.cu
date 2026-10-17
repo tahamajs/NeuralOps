@@ -35,39 +35,37 @@ __global__ void __launch_bounds__(128) linformer_attn_fwd_kernel(
     // Dynamic / register local buffer for projected key matching
     // For production resilience, we stream over K_proj_len to find max, compute softmax weights,
     // and accumulate into out along D.
-    // Pass 1: compute attention logits and online softmax
     float m_prev = -1e30f;
     float d_prev = 0.0f;
+    float scores[128];
 
-    // Temporary storage in shared memory or registers for the thread
-    for (int k = 0; k < K_proj_len; ++k) {
+    for (int k = 0; k < K_proj_len && k < 128; ++k) {
         float dot = 0.0f;
         const int k_offset = kv_head_offset + k * D;
         for (int d = 0; d < D; ++d) {
             dot += to_float(q[q_offset + d]) * to_float(k_proj[k_offset + d]);
         }
         dot *= scale;
+        scores[k] = dot;
+        m_prev = fmaxf(m_prev, dot);
+    }
 
-        float m_curr = fmaxf(m_prev, dot);
-        float exp_curr = expf(dot - m_curr);
-        d_prev = d_prev * expf(m_prev - m_curr) + exp_curr;
-        m_prev = m_curr;
+    for (int k = 0; k < K_proj_len && k < 128; ++k) {
+        float exp_val = expf(scores[k] - m_prev);
+        scores[k] = exp_val;
+        d_prev += exp_val;
     }
 
     const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
+    for (int k = 0; k < K_proj_len && k < 128; ++k) {
+        scores[k] *= inv_d;
+    }
 
     // Pass 2: accumulate weighted V_proj
     for (int d = 0; d < D; ++d) {
         float val_acc = 0.0f;
-        for (int k = 0; k < K_proj_len; ++k) {
-            float dot = 0.0f;
-            const int k_offset = kv_head_offset + k * D;
-            for (int dd = 0; dd < D; ++dd) {
-                dot += to_float(q[q_offset + dd]) * to_float(k_proj[k_offset + dd]);
-            }
-            dot *= scale;
-            float weight = expf(dot - m_prev) * inv_d;
-            val_acc += weight * to_float(v_proj[kv_head_offset + k * D + d]);
+        for (int k = 0; k < K_proj_len && k < 128; ++k) {
+            val_acc += scores[k] * to_float(v_proj[kv_head_offset + k * D + d]);
         }
         out[q_offset + d] = from_float<scalar_t>(val_acc);
     }

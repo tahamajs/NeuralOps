@@ -9,7 +9,7 @@ namespace cuda {
 
 // Fused Factorised Matrix State (FMS) Recurrent Scan Kernel
 template <typename scalar_t, int MAX_D>
-__launch_bounds__(32)
+__launch_bounds__(128)
 __global__ void fms_scan_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ Q,
@@ -27,69 +27,70 @@ __global__ void fms_scan_fwd_kernel(
 
     const int h = bh % H;
     const float d_val = decay[h];
+    const int j = threadIdx.x;
 
-    // State S: [MAX_D, MAX_D], State Z: [MAX_D]
-    float S[MAX_D][MAX_D];
-    float Z[MAX_D];
-
-    #pragma unroll 4
+    // Each thread j holds column j of state S
+    float S_col[MAX_D];
+    #pragma unroll
     for (int i = 0; i < MAX_D; ++i) {
-        Z[i] = 0.0f;
-        #pragma unroll 4
-        for (int j = 0; j < MAX_D; ++j) {
-            S[i][j] = 0.0f;
+        S_col[i] = 0.0f;
+    }
+
+    __shared__ float s_k[MAX_D];
+    __shared__ float s_q[MAX_D];
+    __shared__ float s_z[MAX_D];
+    __shared__ float s_inv_den;
+
+    if (j == 0) {
+        #pragma unroll
+        for (int i = 0; i < MAX_D; ++i) {
+            s_z[i] = 0.0f;
         }
     }
+    __syncthreads();
 
     const int head_offset = bh * (L * D);
 
     for (int t = 0; t < L; ++t) {
         const int tok_offset = head_offset + t * D;
 
-        // 1. Feature map ELU + 1
-        float q_f[MAX_D];
-        float k_f[MAX_D];
-        float v_f[MAX_D];
-
-        #pragma unroll 4
-        for (int d = 0; d < D && d < MAX_D; ++d) {
-            const float q_val = to_float(Q[tok_offset + d]);
-            const float k_val = to_float(K[tok_offset + d]);
-            q_f[d] = q_val > 0.0f ? (q_val + 1.0f) : expf(q_val);
+        float v_j = 0.0f;
+        if (j < D && j < MAX_D) {
+            const float q_val = to_float(Q[tok_offset + j]);
+            const float k_val = to_float(K[tok_offset + j]);
+            s_q[j] = q_val > 0.0f ? (q_val + 1.0f) : expf(q_val);
             const float k_elu = k_val > 0.0f ? (k_val + 1.0f) : expf(k_val);
-            k_f[d] = k_elu * inv_sqrt_d;
-            v_f[d] = to_float(V[tok_offset + d]);
+            s_k[j] = k_elu * inv_sqrt_d;
+            v_j = to_float(V[tok_offset + j]);
         }
+        __syncthreads();
 
-        // 2. Recurrent update: S_t = decay * S_{t-1} + k_t @ v_t
-        #pragma unroll 4
+        // 1. Recurrent update S_col[i] = d_val * S_col[i] + s_k[i] * v_j
+        // and compute numerator: num = sum_i s_q[i] * S_col[i]
+        float num = 0.0f;
+        #pragma unroll
         for (int i = 0; i < D && i < MAX_D; ++i) {
-            Z[i] = d_val * Z[i] + k_f[i];
-            #pragma unroll 4
-            for (int j = 0; j < D && j < MAX_D; ++j) {
-                S[i][j] = d_val * S[i][j] + k_f[i] * v_f[j];
-            }
+            S_col[i] = d_val * S_col[i] + s_k[i] * v_j;
+            num += s_q[i] * S_col[i];
         }
 
-        // 3. Compute denominator: sum_i q_f[i] * Z[i]
-        float den = 0.0f;
-        #pragma unroll 4
-        for (int i = 0; i < D && i < MAX_D; ++i) {
-            den += q_f[i] * Z[i];
-        }
-        if (den < 1e-5f) den = 1e-5f;
-        const float inv_den = 1.0f / den;
-
-        // 4. Compute numerator and output: num_j = sum_i q_f[i] * S[i, j]
-        #pragma unroll 4
-        for (int j = 0; j < D && j < MAX_D; ++j) {
-            float num = 0.0f;
-            #pragma unroll 4
+        // 2. Thread 0 updates Z and calculates inverse denominator
+        if (j == 0) {
+            float den = 0.0f;
+            #pragma unroll
             for (int i = 0; i < D && i < MAX_D; ++i) {
-                num += q_f[i] * S[i][j];
+                s_z[i] = d_val * s_z[i] + s_k[i];
+                den += s_q[i] * s_z[i];
             }
-            out[tok_offset + j] = from_float<scalar_t>(num * inv_den);
+            if (den < 1e-5f) den = 1e-5f;
+            s_inv_den = 1.0f / den;
         }
+        __syncthreads();
+
+        if (j < D) {
+            out[tok_offset + j] = from_float<scalar_t>(num * s_inv_den);
+        }
+        __syncthreads();
     }
 }
 
@@ -117,7 +118,7 @@ torch::Tensor fms_scan_fwd(
     auto decay_1d = decay.reshape({-1}).contiguous().to(torch::kFloat32);
 
     const dim3 grid(1, B * H);
-    const int threads = 32;
+    const int threads = (D <= 64) ? 64 : 128;
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();
@@ -127,16 +128,7 @@ torch::Tensor fms_scan_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "fms_scan_fwd", ([&] {
-            if (D <= 16) {
-                neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 16><<<grid, threads, 0, stream>>>(
-                    out.data_ptr<scalar_t>(),
-                    q_c.data_ptr<scalar_t>(),
-                    k_c.data_ptr<scalar_t>(),
-                    v_c.data_ptr<scalar_t>(),
-                    decay_1d.data_ptr<float>(),
-                    B, H, L, D, inv_sqrt_d
-                );
-            } else if (D <= 32) {
+            if (D <= 32) {
                 neuralops::cuda::fms_scan_fwd_kernel<scalar_t, 32><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
                     q_c.data_ptr<scalar_t>(),
