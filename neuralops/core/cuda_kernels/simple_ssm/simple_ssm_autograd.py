@@ -39,6 +39,7 @@ class _SimpleSSMFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         x, decay, scale = ctx.saved_tensors
         x_p = x.detach().requires_grad_(x.requires_grad)
         decay_p = decay.detach().requires_grad_(decay.requires_grad)

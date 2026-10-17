@@ -42,6 +42,7 @@ class _MambaSVDFlashFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, *douts):
+        dout = douts[0] if len(douts) == 1 else douts
         u, svd_u, svd_vt, decay = ctx.saved_tensors
         u_p = u.detach().requires_grad_(u.requires_grad)
         svd_u_p = svd_u.detach().requires_grad_(svd_u.requires_grad)
