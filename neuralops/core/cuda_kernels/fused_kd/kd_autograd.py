@@ -40,28 +40,25 @@ def fused_kd_loss_pytorch_ref(
     temperature: float = 2.0,
     reduction: str = "batchmean",
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation with numerically stable log_softmax."""
+    """Pure PyTorch reference implementation using F.kl_div."""
     import torch.nn.functional as F
     orig_shape = student_logits.shape
-    s_flat = student_logits.reshape(-1, orig_shape[-1]).float()
-    t_flat = teacher_logits.reshape(-1, orig_shape[-1]).float()
-    M, V = s_flat.shape
+    s_flat = student_logits.reshape(-1, orig_shape[-1])
+    t_flat = teacher_logits.reshape(-1, orig_shape[-1])
     p_s = F.log_softmax(s_flat / temperature, dim=-1)
-    log_p_t = F.log_softmax(t_flat / temperature, dim=-1)
-    p_t = torch.exp(log_p_t)
-    loss_per_token = (p_t * (log_p_t - p_s)).sum(dim=-1) * (temperature * temperature)
+    p_t = F.softmax(t_flat / temperature, dim=-1)
 
-    if reduction == "none":
-        std_shape = list(orig_shape[:-1])
-        return loss_per_token.view(*std_shape).to(student_logits.dtype)
-    elif reduction == "sum":
-        return loss_per_token.sum().to(student_logits.dtype)
-    elif reduction == "batchmean":
+    if reduction == "batchmean":
         batch_size = orig_shape[0] if orig_shape[0] > 0 else 1
-        return (loss_per_token.sum() / batch_size).to(student_logits.dtype)
+        return F.kl_div(p_s, p_t, reduction="sum") * (temperature * temperature) / batch_size
+    elif reduction == "none":
+        loss = F.kl_div(p_s, p_t, reduction="none").sum(dim=-1) * (temperature * temperature)
+        return loss.view(*orig_shape[:-1])
+    elif reduction == "sum":
+        return F.kl_div(p_s, p_t, reduction="sum") * (temperature * temperature)
     else:
         # "mean"
-        return (loss_per_token.sum() / (M * V)).to(student_logits.dtype)
+        return F.kl_div(p_s, p_t, reduction="mean") * (temperature * temperature)
 
 
 def _get_triton_impl():
