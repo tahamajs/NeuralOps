@@ -28,107 +28,76 @@ class CrossEntropyLoss(nn.Module):
 
 @LOSS_REGISTRY.register("focal")
 class FocalLoss(nn.Module):
-    def __init__(self, alpha: float = 0.25, gamma: float = 2.0, **kwargs: Any) -> None:
+    def __init__(self, alpha=0.25, gamma=2.0, **kwargs) -> None:
         super().__init__()
-        self.alpha = float(alpha)
-        self.gamma = float(gamma)
+        self.alpha = alpha
+        self.gamma = gamma
 
-    def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Forward pass with numerically stable focal weighting."""
+    def forward(self, logits, labels) -> Any:
+        """Forward pass — compute module output from inputs."""
         ce_loss = F.cross_entropy(logits, labels, reduction="none")
-        # Clamp ce_loss to prevent exp overflow/underflow
-        p_t = torch.exp(-ce_loss.clamp(max=50.0))
-        focal_weight = self.alpha * (1.0 - p_t).clamp(min=0.0).pow(self.gamma)
-        return (focal_weight * ce_loss).mean()
+        p_t = torch.exp(-ce_loss)
+        return (self.alpha * (1 - p_t) ** self.gamma * ce_loss).mean()
 
 
 @LOSS_REGISTRY.register("label_smoothing")
 class LabelSmoothingLoss(nn.Module):
-    def __init__(self, smoothing: float = 0.1, **kwargs: Any) -> None:
+    def __init__(self, smoothing=0.1, **kwargs) -> None:
         super().__init__()
-        self.smoothing = float(smoothing)
-        self.confidence = 1.0 - float(smoothing)
+        self.smoothing = smoothing
+        self.confidence = 1.0 - smoothing
 
-    def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Forward pass — compute module output with vectorization."""
-        # Use PyTorch built-in label_smoothing in F.cross_entropy for maximum kernel fusion and efficiency
-        if hasattr(F, "cross_entropy") and self.smoothing > 0.0:
-            return F.cross_entropy(logits, labels, label_smoothing=self.smoothing)
+    def forward(self, logits, labels) -> Any:
+        """Forward pass — compute module output from inputs."""
         log_probs = F.log_softmax(logits, dim=-1)
         labels = labels.to(log_probs.device)
-        nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(-1)).squeeze(-1)
+        nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
         smooth = -log_probs.mean(dim=-1)
         return (self.confidence * nll + self.smoothing * smooth).mean()
 
 
 @LOSS_REGISTRY.register("dice")
 class DiceLoss(nn.Module):
-    def __init__(self, smooth: float = 1.0, eps: float = 1e-7, **kwargs: Any) -> None:
+    def __init__(self, smooth=1.0, **kwargs) -> None:
         super().__init__()
-        self.smooth = float(smooth)
-        self.eps = float(eps)
+        self.smooth = smooth
 
-    def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Forward pass with safe division and stable multi-class reduction."""
+    def forward(self, logits, labels) -> Any:
+        """Forward pass — compute module output from inputs."""
         probs = F.softmax(logits, dim=-1)
-        one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).to(probs.dtype)
-        # Vectorized reduction along token dimensions
+        one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).float()
         intersection = (probs * one_hot).sum(dim=0)
-        cardinality = probs.sum(dim=0) + one_hot.sum(dim=0)
-        dice = (2.0 * intersection + self.smooth) / (cardinality + self.smooth + self.eps)
-        return 1.0 - dice.mean()
+        union = probs.sum(dim=0) + one_hot.sum(dim=0)
+        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
+        return 1 - dice.mean()
 
 
 @LOSS_REGISTRY.register("poly")
 class PolyLoss(nn.Module):
-    def __init__(self, epsilon: float = 1.0, **kwargs: Any) -> None:
+    def __init__(self, epsilon=1.0, **kwargs) -> None:
         super().__init__()
-        self.epsilon = float(epsilon)
+        self.epsilon = epsilon
 
-    def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Forward pass — polynomial expansion loss with exponential clamp."""
+    def forward(self, logits, labels) -> Any:
+        """Forward pass — compute module output from inputs."""
         ce = F.cross_entropy(logits, labels)
-        pt = torch.exp(-ce.clamp(max=50.0))
-        return ce + self.epsilon * (1.0 - pt)
+        pt = torch.exp(-ce)
+        return ce + self.epsilon * (1 - pt)
 
 
 @LOSS_REGISTRY.register("contrastive")
 class ContrastiveLoss(nn.Module):
-    def __init__(self, margin: float = 1.0, eps: float = 1e-7, **kwargs: Any) -> None:
+    def __init__(self, margin=1.0, **kwargs) -> None:
         super().__init__()
-        self.margin = float(margin)
-        self.eps = float(eps)
+        self.margin = margin
 
-    def forward(self, embeddings: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Forward pass — pairwise margin contrastive loss with distance stabilization."""
-        dist = F.pairwise_distance(embeddings[0], embeddings[1], eps=self.eps)
-        loss = (1.0 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(
-            self.margin - dist, min=0.0
+    def forward(self, embeddings, labels) -> Any:
+        """Forward pass — compute module output from inputs."""
+        dist = F.pairwise_distance(embeddings[0], embeddings[1])
+        loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(
+            self.margin - dist, min=0
         ).pow(2)
         return loss.mean()
-
-
-
-from neuralops.trainer.distillation.multi_level_kd import (
-    HiddenAngularMSELoss,
-    LatentEntropyRegularizer,
-    LinearCKALoss,
-    MiniLMValueRelationKDLoss,
-    OrthogonalityPenaltyLoss,
-    Unified6PillarDistillationLoss,
-)
-
-LOSS_REGISTRY.register("cka")(LinearCKALoss)
-LOSS_REGISTRY.register("linear_cka")(LinearCKALoss)
-LOSS_REGISTRY.register("value_relation")(MiniLMValueRelationKDLoss)
-LOSS_REGISTRY.register("minilm_relation")(MiniLMValueRelationKDLoss)
-LOSS_REGISTRY.register("angular_mse")(HiddenAngularMSELoss)
-LOSS_REGISTRY.register("hidden_angular")(HiddenAngularMSELoss)
-LOSS_REGISTRY.register("orthogonality")(OrthogonalityPenaltyLoss)
-LOSS_REGISTRY.register("ortho_penalty")(OrthogonalityPenaltyLoss)
-LOSS_REGISTRY.register("latent_entropy")(LatentEntropyRegularizer)
-LOSS_REGISTRY.register("unified_6pillar")(Unified6PillarDistillationLoss)
-LOSS_REGISTRY.register("six_pillar_distill")(Unified6PillarDistillationLoss)
 
 
 def get_loss_function(name: str, **kwargs) -> nn.Module:
@@ -137,5 +106,4 @@ def get_loss_function(name: str, **kwargs) -> nn.Module:
     if cls is None:
         raise KeyError(f"Loss function '{name}' not found in LOSS_REGISTRY. Available: {list(LOSS_REGISTRY.keys())}")
     return cls(**kwargs)
-
 
