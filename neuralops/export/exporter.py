@@ -169,30 +169,35 @@ def export_model(
             "logits": {0: "batch_size"},
         }
 
+        import warnings
         try:
-            try:
-                # Automatically trace using deterministic fallback path
-                torch.onnx.export(
-                    wrapped_model,
-                    sample_input,
-                    str(onnx_file),
-                    opset_version=opset_version,
-                    input_names=input_names,
-                    output_names=output_names,
-                    dynamic_axes=dynamic_axes,
-                )
-            except Exception:
-                # Deterministic fallback to TorchScript-based graph tracing (dynamo=False)
-                torch.onnx.export(
-                    wrapped_model,
-                    sample_input,
-                    str(onnx_file),
-                    opset_version=opset_version,
-                    input_names=input_names,
-                    output_names=output_names,
-                    dynamic_axes=dynamic_axes,
-                    dynamo=False,
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                warnings.filterwarnings("ignore", category=UserWarning)
+                warnings.filterwarnings("ignore", category=FutureWarning)
+                try:
+                    # Automatically trace using deterministic fallback path
+                    torch.onnx.export(
+                        wrapped_model,
+                        sample_input,
+                        str(onnx_file),
+                        opset_version=opset_version,
+                        input_names=input_names,
+                        output_names=output_names,
+                        dynamic_axes=dynamic_axes,
+                    )
+                except Exception:
+                    # Deterministic fallback to TorchScript-based graph tracing (dynamo=False)
+                    torch.onnx.export(
+                        wrapped_model,
+                        sample_input,
+                        str(onnx_file),
+                        opset_version=opset_version,
+                        input_names=input_names,
+                        output_names=output_names,
+                        dynamic_axes=dynamic_axes,
+                        dynamo=False,
+                    )
         except (Exception, BaseException) as e:
             logger.warning("ONNX conversion not supported for custom ops: %s. Writing metadata and marker stub.", e)
             with open(onnx_file, "w") as f:
