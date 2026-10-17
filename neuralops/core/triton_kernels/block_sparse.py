@@ -412,6 +412,153 @@ def triton_block_sparse_streaming_attn(
     return out
 
 
+def fused_dsa_sparse_attn_pytorch_ref(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    block_mask: torch.Tensor,
+    block_size: int = 64,
+    sm_scale: Optional[float] = None,
+) -> torch.Tensor:
+    """Clean PyTorch reference for DSA block-sparse attention.
+
+    Loads only selected K/V blocks into attention computation.
+
+    Args:
+        q: Query tensor of shape [B, L, D] or [B, H, L, d]
+        k: Key tensor of shape [B, L, D] or [B, H, L, d]
+        v: Value tensor of shape [B, L, D] or [B, H, L, d]
+        block_mask: Boolean tensor of shape [B, num_blocks] or indices [B, top_k]
+        block_size: Block size B (default 64)
+        sm_scale: Optional softmax scale factor (default 1 / sqrt(d))
+
+    Returns:
+        Output tensor matching q shape
+    """
+    orig_shape = q.shape
+    is_3d = (q.ndim == 3)
+    if is_3d:
+        B, L, D = q.shape
+        H = 8
+        d = D // H
+        q_4d = q.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        k_4d = k.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        v_4d = v.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+    else:
+        B, H, L, d = q.shape
+        D = H * d
+        q_4d = q.contiguous()
+        k_4d = k.contiguous()
+        v_4d = v.contiguous()
+
+    if sm_scale is None:
+        sm_scale = 1.0 / math.sqrt(d)
+
+    num_blocks = (L + block_size - 1) // block_size
+
+    # Normalize block_mask to active_block_indices [B, H, num_blocks, top_k]
+    if block_mask.dtype == torch.bool:
+        # block_mask: [B, num_blocks]
+        # extract selected block indices per batch
+        B_size = block_mask.shape[0]
+        active_list = []
+        for b in range(B_size):
+            nonzero = torch.nonzero(block_mask[b], as_tuple=False).squeeze(-1)
+            active_list.append(nonzero)
+        max_k = max(len(idx) for idx in active_list)
+        active_indices = torch.full((B_size, max_k), -1, dtype=torch.long, device=block_mask.device)
+        for b in range(B_size):
+            active_indices[b, :len(active_list[b])] = active_list[b]
+    else:
+        active_indices = block_mask
+
+    top_k = active_indices.shape[-1]
+    active_block_indices = active_indices.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks, top_k).contiguous()
+
+    out_4d = triton_block_sparse_streaming_attn_pytorch_ref(
+        q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+    )
+
+    if is_3d:
+        return out_4d.permute(0, 2, 1, 3).contiguous().view(B, L, D)
+    return out_4d
+
+
+def fused_dsa_sparse_attn_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    block_mask: torch.Tensor,
+    block_size: int = 64,
+    sm_scale: Optional[float] = None,
+) -> torch.Tensor:
+    """Fused DSA block-sparse attention using Triton SRAM streaming.
+
+    For each query block, loads only selected K/V blocks into SRAM.
+
+    Args:
+        q: Query tensor of shape [B, L, D] or [B, H, L, d]
+        k: Key tensor of shape [B, L, D] or [B, H, L, d]
+        v: Value tensor of shape [B, L, D] or [B, H, L, d]
+        block_mask: Boolean tensor of shape [B, num_blocks] or indices [B, top_k]
+        block_size: Block size B (default 64)
+        sm_scale: Optional softmax scale factor (default 1 / sqrt(d))
+
+    Returns:
+        Output tensor matching q shape
+    """
+    orig_shape = q.shape
+    is_3d = (q.ndim == 3)
+    if is_3d:
+        B, L, D = q.shape
+        H = 8
+        d = D // H
+        q_4d = q.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        k_4d = k.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        v_4d = v.view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+    else:
+        B, H, L, d = q.shape
+        D = H * d
+        q_4d = q.contiguous()
+        k_4d = k.contiguous()
+        v_4d = v.contiguous()
+
+    if sm_scale is None:
+        sm_scale = 1.0 / math.sqrt(d)
+
+    if not HAS_TRITON or not q.is_cuda:
+        return fused_dsa_sparse_attn_pytorch_ref(
+            q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale
+        )
+
+    num_blocks = (L + block_size - 1) // block_size
+
+    # Convert block_mask to active_block_indices [B, H, num_blocks, top_k]
+    if block_mask.dtype == torch.bool:
+        B_size = block_mask.shape[0]
+        active_list = []
+        for b in range(B_size):
+            nonzero = torch.nonzero(block_mask[b], as_tuple=False).squeeze(-1)
+            active_list.append(nonzero)
+        max_k = max(len(idx) for idx in active_list)
+        active_indices = torch.full((B_size, max_k), -1, dtype=torch.long, device=block_mask.device)
+        for b in range(B_size):
+            active_indices[b, :len(active_list[b])] = active_list[b]
+    else:
+        active_indices = block_mask
+
+    top_k = active_indices.shape[-1]
+    active_block_indices = active_indices.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks, top_k).contiguous()
+
+    out_4d = triton_block_sparse_streaming_attn(
+        q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+    )
+
+    if is_3d:
+        return out_4d.permute(0, 2, 1, 3).contiguous().view(B, L, D)
+    return out_4d
+
+
 __all__ = [
     "butterfly_mask",
     "block_sparse_attention",
@@ -419,5 +566,7 @@ __all__ = [
     "fused_moba_block_router_combine_pytorch",
     "triton_block_sparse_streaming_attn",
     "triton_block_sparse_streaming_attn_pytorch_ref",
+    "fused_dsa_sparse_attn_triton",
+    "fused_dsa_sparse_attn_pytorch_ref",
 ]
 
