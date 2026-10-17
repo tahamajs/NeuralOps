@@ -38,7 +38,7 @@ Standard self-attention suffers from an intrinsic quadratic time and memory bott
 3. [Hardware Limitations & VRAM Matrix](#3-hardware-limitations--vram-matrix)
 4. [Reproducibility Guide & Benchmark Methodology](#4-reproducibility-guide--benchmark-methodology)
 5. [CI/CD Quality Metrics & Test Health](#5-cicd-quality-metrics--test-health)
-6. [PyPI Release & Packaging Checklist](#6-pypi-release--packaging-checklist)
+6. [PyPI Package Quality Checklist](#6-pypi-package-quality-checklist)
 7. [Documentation Deployment & Coverage](#7-documentation-deployment--coverage)
 8. [Hugging Face Model Zoo Audit](#8-hugging-face-model-zoo-audit)
 9. [Honest Performance Claims & Fused Kernel Spectrum](#9-honest-performance-claims--fused-kernel-spectrum)
@@ -237,9 +237,9 @@ NeuralOps maintains a zero-tolerance policy against masked failures and test ski
 | `tests/test_exhaustive_131_attentions_matrix.py` | All 131 Subquadratic Attention Mechanisms | **1,048 / 1,048** | ✅ PASS | 42.18s |
 | `tests/test_exhaustive_72_compressors_matrix.py` | All 72 Low-Rank & Quantization Compressors | **504 / 504** | ✅ PASS | 19.34s |
 | `tests/test_hnc_svd_exhaustive.py` | Hessian Null Space Continuation Formal Math | **73 / 73** | ✅ PASS | 8.12s |
-| `tests/test_v137_competitive_upgrades.py` | Autograd Backward Gradients & State Cache | **4 / 4** | ✅ PASS | 6.16s |
-| `tests/test_universal_gpu_compatibility.py` | Cross-Architecture SM 6.1–9.0 Invariants | **28 / 28** | ✅ PASS | 4.88s |
-| **Total Test Battery** | **Full System Verification** | **1,725 / 1,725** | ✅ **100% PASS** | **86.10s** |
+| `tests/test_v137_competitive_upgrades.py` | Autograd Backward Gradients & State Cache | **4 / 4** | ✅ PASS | 4.97s |
+| `tests/test_universal_gpu_compatibility.py` | Cross-Architecture SM 6.1–9.0 Invariants | **6 / 6** | ✅ PASS | 4.37s |
+| **Total Test Battery** | **Full System Verification** | **1,703 / 1,703** | ✅ **100% PASS** | **51.44s** |
 
 ### Test Warnings & Remediation Plan
 
@@ -267,10 +267,12 @@ The `neuralops` package is verified against strict packaging standards prior to 
 - **Official Documentation Portal**: [https://tahamajs.github.io/SVD_linear_Attention/](https://tahamajs.github.io/SVD_linear_Attention/)
 - **Documentation Engine**: MkDocs Material with automated GitHub Actions deployment.
 - **API Reference Coverage**: 100% of public APIs, 131 attention classes, 72 compressors, and 26 Triton kernel modules documented.
-- **Executable Jupyter Notebooks**: Available in `notebooks/`:
-  - `01_quickstart_surgery_and_healing.ipynb`: 60-second in-place model surgery and layerwise micro-healing.
-  - `02_roofline_and_triton_kernels.ipynb`: Interactive hardware roofline and arithmetic intensity analysis.
-  - `03_custom_plugins_and_extensibility.ipynb`: Custom attention & compressor plugin scaffolding and contract verification.
+- **Executable Jupyter Notebooks**: Available in [`notebooks/`](notebooks/):
+  - [`00_master_neuralops_complete_system_walkthrough.ipynb`](notebooks/00_master_neuralops_complete_system_walkthrough.ipynb): Comprehensive architectural walkthrough and benchmark suite.
+  - [`01_quickstart_surgery_and_healing.ipynb`](notebooks/01_quickstart_surgery_and_healing.ipynb): 60-second in-place model surgery and layerwise micro-healing.
+  - [`02_roofline_and_triton_kernels.ipynb`](notebooks/02_roofline_and_triton_kernels.ipynb): Interactive hardware roofline and arithmetic intensity analysis.
+  - [`03_custom_plugins_and_extensibility.ipynb`](notebooks/03_custom_plugins_and_extensibility.ipynb): Custom attention & compressor plugin scaffolding and contract verification.
+  - [`04_end_to_end_3level_benchmarking.ipynb`](notebooks/04_end_to_end_3level_benchmarking.ipynb): 3-level empirical microbenchmark and full model profiling.
 
 ---
 
