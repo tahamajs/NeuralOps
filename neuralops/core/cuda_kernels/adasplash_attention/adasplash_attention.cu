@@ -103,6 +103,7 @@ torch::Tensor adasplash_fwd(
     const int H = q.size(1);
     const int N = q.size(2);
     const int D = q.size(3);
+    TORCH_CHECK(D <= 64, "adasplash_fwd: D=", D, " > 64 not supported");
 
     auto out = torch::empty_like(q);
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;

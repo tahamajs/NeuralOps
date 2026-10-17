@@ -110,6 +110,8 @@ torch::Tensor chunked_delta_gate_scan_fwd(
     const int L = q.size(2);
     const int D_K = q.size(3);
     const int D_V = v.size(3);
+    TORCH_CHECK(D_K <= 64, "chunked_delta_gate_scan_fwd: D_K=", D_K, " exceeds kernel max of 64");
+    TORCH_CHECK(D_V <= 64, "chunked_delta_gate_scan_fwd: D_V=", D_V, " exceeds kernel max of 64");
 
     auto out = torch::empty_like(v);
     const dim3 grid(B, H);
