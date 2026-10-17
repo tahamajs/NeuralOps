@@ -5,37 +5,30 @@
 
 namespace neuralops { namespace cuda {
 
-// Samba MoE Expert Combination Kernel:
+// Production Samba MoE Expert Combination Kernel:
 // Fuses weighted routing of two expert representations across tokens and feature dimensions.
-// Thread mapping: 2D Grid over (ceil(N / 128), B) with 128 threads per block.
-// Eliminates sequential scalar processing and handles arbitrary sequence length N.
+// Fully coalesced 1D grid with 256 threads per block:
+// Adjacent threads access consecutive memory addresses with stride 1.
+// Supports arbitrary rank tensors [..., D].
 template <typename scalar_t>
-__global__ void __launch_bounds__(128) samba_moe_combine_fwd_kernel(
+__global__ void __launch_bounds__(256) samba_moe_combine_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ e1,
     const scalar_t* __restrict__ e2,
     const scalar_t* __restrict__ weights,
-    const int B,
-    const int N,
+    const int total,
     const int D
 ) {
-    const int b = blockIdx.y;
-    if (b >= B) return;
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
 
-    const int t = blockIdx.x * blockDim.x + threadIdx.x;
-    if (t >= N) return;
+    const int token = idx / D;
+    const float w1 = to_float(weights[token * 2 + 0]);
+    const float w2 = to_float(weights[token * 2 + 1]);
 
-    const int w_idx = b * N * 2 + t * 2;
-    const float w1 = to_float(weights[w_idx + 0]);
-    const float w2 = to_float(weights[w_idx + 1]);
-
-    const int base_idx = b * N * D + t * D;
-    for (int d = 0; d < D; ++d) {
-        const int idx = base_idx + d;
-        const float v1 = to_float(e1[idx]);
-        const float v2 = to_float(e2[idx]);
-        out[idx] = from_float<scalar_t>(w1 * v1 + w2 * v2);
-    }
+    const float v1 = to_float(e1[idx]);
+    const float v2 = to_float(e2[idx]);
+    out[idx] = from_float<scalar_t>(w1 * v1 + w2 * v2);
 }
 
 }} // namespace neuralops::cuda
@@ -49,16 +42,14 @@ torch::Tensor samba_moe_combine_fwd(
     CHECK_INPUT(expert_out2);
     CHECK_INPUT(routing_weights);
 
-    const int B = expert_out1.size(0);
-    const int N = expert_out1.size(1);
-    const int D = expert_out1.size(2);
+    const int D = expert_out1.size(-1);
+    const int total = expert_out1.numel();
 
     auto out = torch::empty_like(expert_out1);
-    if (B == 0 || N == 0 || D == 0) return out;
+    if (total == 0 || D == 0) return out;
 
-    constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
-    dim3 grid(blocks_x, B);
+    constexpr int THREADS = 256;
+    const int blocks = (total + THREADS - 1) / THREADS;
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto e1_c = expert_out1.contiguous();
@@ -68,12 +59,13 @@ torch::Tensor samba_moe_combine_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         expert_out1.scalar_type(), "samba_moe_combine_fwd", ([&] {
-            neuralops::cuda::samba_moe_combine_fwd_kernel<scalar_t><<<grid, THREADS, 0, stream>>>(
+            neuralops::cuda::samba_moe_combine_fwd_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 e1_c.data_ptr<scalar_t>(),
                 e2_c.data_ptr<scalar_t>(),
                 w_c.data_ptr<scalar_t>(),
-                B, N, D
+                total,
+                D
             );
         })
     );

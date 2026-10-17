@@ -40,11 +40,8 @@ def cross_attention_pytorch_ref(
     k: torch.Tensor,
     v: torch.Tensor,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
-    scale = 1.0 / math.sqrt(q.shape[-1])
-    scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
-    weights = F.softmax(scores, dim=-1)
-    return torch.matmul(weights, v.float()).to(q.dtype)
+    """Pure PyTorch reference implementation using SDPA."""
+    return F.scaled_dot_product_attention(q, k, v)
 
 
 def _get_triton_impl():
