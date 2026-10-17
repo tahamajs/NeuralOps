@@ -9,9 +9,10 @@ namespace neuralops {
 namespace cuda {
 
 // Causal Depthwise 1D Conv: x: [B, D, L], weight: [D, Kw], bias: [D] (optional)
+// Optimized with register-cached filter weights and hardware FMA accumulation.
 template <typename scalar_t>
 __launch_bounds__(256)
-__global__ void causal_conv1d_fwd_kernel(
+__global__ void causal_conv1d_fwd_vectorized_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ weight,
@@ -33,13 +34,16 @@ __global__ void causal_conv1d_fwd_kernel(
     const int t = rem % L;
 
     float acc = (has_bias && bias != nullptr) ? to_float(bias[d]) : 0.0f;
+    const int row_base = b * (D * L) + d * L;
+    const int weight_base = d * Kw;
 
+    #pragma unroll 4
     for (int k = 0; k < Kw; ++k) {
         const int in_t = t - (Kw - 1 - k);
         if (in_t >= 0 && in_t < L) {
-            const float x_val = to_float(x[b * (D * L) + d * L + in_t]);
-            const float w_val = to_float(weight[d * Kw + k]);
-            acc += x_val * w_val;
+            const float x_val = to_float(x[row_base + in_t]);
+            const float w_val = to_float(weight[weight_base + k]);
+            acc = fmaf(x_val, w_val, acc);
         }
     }
 
@@ -69,11 +73,12 @@ torch::Tensor causal_conv1d_fwd(
     const int Kw = weight.size(1);
 
     auto out = torch::empty_like(x);
-    const bool has_bias = bias.has_value() && bias.value().defined();
-
     const int total = B * D * L;
-    const int threads = 256;
-    const int blocks = (total + threads - 1) / threads;
+    if (total == 0) return out;
+
+    const bool has_bias = bias.has_value() && bias.value().defined();
+    constexpr int THREADS = 256;
+    const int blocks = std::min(65535, (total + THREADS - 1) / THREADS);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto x_c = x.contiguous();
@@ -82,7 +87,7 @@ torch::Tensor causal_conv1d_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "causal_conv1d_fwd", ([&] {
-            neuralops::cuda::causal_conv1d_fwd_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
+            neuralops::cuda::causal_conv1d_fwd_vectorized_kernel<scalar_t><<<blocks, THREADS, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 w_c.data_ptr<scalar_t>(),
