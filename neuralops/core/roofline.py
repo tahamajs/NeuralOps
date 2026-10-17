@@ -250,6 +250,7 @@ def profile_roofline(
     num_heads: int = 12,
     dtype: str = "float16",
     warmup: int = 10,
+    rep: int = 10,
     device: Optional[Union[str, torch.device]] = None,
     module_name: Optional[str] = None,
     log_to_ledger: bool = True,
