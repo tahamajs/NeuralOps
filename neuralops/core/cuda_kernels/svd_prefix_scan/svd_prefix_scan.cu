@@ -12,7 +12,7 @@ namespace neuralops { namespace cuda {
 // Uses shared memory matrix tiling for fast intermediate accumulation.
 // Thread mapping: 1 block per (batch * head) batch sequence, cooperative tiling over D x D.
 template <typename scalar_t>
-__global__ void __launch_bounds__(256) svd_prefix_scan_kernel(
+__global__ void __launch_bounds__(256) svd_prefix_scan_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ q,
     const scalar_t* __restrict__ k,
@@ -86,6 +86,9 @@ torch::Tensor svd_prefix_scan_fwd(
     if (threads < 32) threads = 32;
 
     const size_t shared_mem = D * D * sizeof(float);
+    TORCH_CHECK(D * D * sizeof(float) <= 96 * 1024,
+                "svd_prefix_scan_fwd: D=", D, " requires ",
+                D * D * sizeof(float), " bytes shared memory (max 96 KB)");
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto q_c = q.contiguous();
     auto k_c = k.contiguous();
@@ -94,7 +97,14 @@ torch::Tensor svd_prefix_scan_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         q.scalar_type(), "svd_prefix_scan_fwd", ([&] {
-            neuralops::cuda::svd_prefix_scan_kernel<scalar_t><<<B * H, threads, shared_mem, stream>>>(
+            if (shared_mem > 48 * 1024) {
+                cudaFuncSetAttribute(
+                    reinterpret_cast<const void*>(
+                        neuralops::cuda::svd_prefix_scan_fwd_kernel<scalar_t>),
+                    cudaFuncAttributeMaxDynamicSharedMemorySize,
+                    static_cast<int>(shared_mem));
+            }
+            neuralops::cuda::svd_prefix_scan_fwd_kernel<scalar_t><<<B * H, threads, shared_mem, stream>>>(
                 out.data_ptr<scalar_t>(),
                 q_c.data_ptr<scalar_t>(),
                 k_c.data_ptr<scalar_t>(),

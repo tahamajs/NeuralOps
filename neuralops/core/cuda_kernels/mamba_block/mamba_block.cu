@@ -1,4 +1,5 @@
 #include <torch/extension.h>
+#include <vector>
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
 #include "_common.cuh"
@@ -32,18 +33,22 @@ __global__ void __launch_bounds__(128) mamba_step_fwd_kernel(
 
     const float dt = expf(to_float(delta[b * D + d]));
     const float u_val = to_float(u[b * D + d]);
+    const float dt_u = dt * u_val;
     float y = 0.0f;
 
+    const int state_base = (b * D + d) * S;
+    const int a_base = d * S;
+    const int bc_base = b * S;
+
     for (int s = 0; s < S; ++s) {
-        const float a_val = to_float(A[d * S + s]);
-        const float b_val = to_float(B_mat[b * S + s]);
-        const float c_val = to_float(C_mat[b * S + s]);
-        const int state_idx = b * D * S + d * S + s;
+        const float a_val = to_float(A[a_base + s]);
+        const float b_val = to_float(B_mat[bc_base + s]);
+        const float c_val = to_float(C_mat[bc_base + s]);
+        const int state_idx = state_base + s;
         const float h_prev = to_float(prev_state[state_idx]);
 
         const float dA = expf(dt * a_val);
-        const float dB = dt * b_val;
-        const float h_next = dA * h_prev + dB * u_val;
+        const float h_next = dA * h_prev + dt_u * b_val;
 
         next_state[state_idx] = from_float<scalar_t>(h_next);
         y += h_next * c_val;
@@ -54,7 +59,7 @@ __global__ void __launch_bounds__(128) mamba_step_fwd_kernel(
 
 }} // namespace neuralops::cuda
 
-torch::Tensor mamba_step_fwd(
+std::vector<torch::Tensor> mamba_step_fwd(
     const torch::Tensor& u,
     const torch::Tensor& delta,
     const torch::Tensor& A,
@@ -75,7 +80,7 @@ torch::Tensor mamba_step_fwd(
 
     auto out = torch::empty_like(u);
     auto next_state = torch::empty_like(prev_state);
-    if (B == 0 || D == 0 || S == 0) return out;
+    if (B == 0 || D == 0 || S == 0) return {out, next_state};
 
     constexpr int THREADS = 128;
     const int blocks_x = (D + THREADS - 1) / THREADS;
@@ -107,5 +112,5 @@ torch::Tensor mamba_step_fwd(
     );
 
     CUDA_KERNEL_LAUNCH_CHECK();
-    return out;
+    return {out, next_state};
 }

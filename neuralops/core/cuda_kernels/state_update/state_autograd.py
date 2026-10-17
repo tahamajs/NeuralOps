@@ -79,6 +79,8 @@ def recurrent_linear_step(
         return res[0], res[1], res[2]
 
     triton_fn = _get_triton_impl()
+    if q_t.shape[-1] > 128:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

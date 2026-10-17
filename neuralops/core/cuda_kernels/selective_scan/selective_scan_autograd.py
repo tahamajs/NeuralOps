@@ -81,7 +81,7 @@ class _SelectiveScanFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, u, delta, A, B, C, D=None):
         mod = _get_module()
-        if mod is not None and u.is_cuda:
+        if mod is not None and u.is_cuda and A.shape[1] <= 128:
             d_tensor = D if D is not None and D.numel() > 0 else torch.empty(0, device=u.device, dtype=u.dtype)
             out, last_state, states = mod.selective_scan_fwd(u, delta, A, B, C, d_tensor, True)
             ctx.save_for_backward(u, delta, A, B, C, d_tensor, states)
@@ -156,7 +156,7 @@ def _selective_scan_forward_dispatch(
         pass
 
     return dispatch(
-        cuda_fn if mod is not None else None,
+        cuda_fn if (mod is not None and A.shape[1] <= 128) else None,
         triton_fn,
         selective_scan_pytorch_ref,
         u,

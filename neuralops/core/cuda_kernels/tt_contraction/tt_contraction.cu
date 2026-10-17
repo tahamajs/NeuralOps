@@ -161,6 +161,7 @@ torch::Tensor tt_linear_fwd(
     auto c0 = core0.squeeze(0).contiguous();
     auto c1 = core1.squeeze(-1).contiguous();
     const int R = c0.size(-1);
+    TORCH_CHECK(R <= 64, "tt_linear_fwd: R=", R, " > 64 not supported");
     const int N = q0 * q1;
 
     auto out = torch::empty({M, N}, x.options());

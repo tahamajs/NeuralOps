@@ -101,6 +101,7 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
     const int H = q_t.size(1);
     const int Dk = q_t.size(2);
     const int Dv = v_t.size(2);
+    TORCH_CHECK(Dk <= 128, "state_update_fwd: Dk=", Dk, " > 128 not supported");
 
     auto out = torch::empty({B, H, Dv}, q_t.options());
 

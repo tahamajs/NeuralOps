@@ -74,6 +74,9 @@ def rpca_sparse_svd_gemm(
         )
 
     triton_fn = _get_triton_impl()
+    R = v_r.shape[1] if v_r.shape[0] == x.shape[-1] else v_r.shape[0]
+    if R > 128:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,

@@ -26,4 +26,6 @@ def cluster_attention(q: torch.Tensor, cluster_centroids: torch.Tensor, v: torch
     def cuda_fn(q, cluster_centroids, v, cluster_indices):
         mod = _get_module()
         return mod.cluster_attn_fwd(q.contiguous(), cluster_centroids.contiguous(), v.contiguous(), cluster_indices.contiguous().int())
+    if q.shape[-1] > 128:
+        cuda_fn = None
     return dispatch(cuda_fn, cluster_attention_ref, cluster_attention_ref, q, cluster_centroids=cluster_centroids, v=v, cluster_indices=cluster_indices, kernel_name="cluster_attention")

@@ -96,6 +96,7 @@ torch::Tensor rpca_sparse_svd_fwd(
         V = V.t().contiguous();
     }
     const int R = V.size(0);
+    TORCH_CHECK(R <= 128, "rpca_sparse_svd_fwd: R=", R, " > 128 not supported");
 
     if (U.size(1) != R && U.size(0) == R) {
         U = U.t().contiguous();

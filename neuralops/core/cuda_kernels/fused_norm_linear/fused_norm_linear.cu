@@ -55,21 +55,23 @@ __global__ void fused_norm_linear_fwd_kernel(
     __syncthreads();
     const float rstd = s_rstd;
 
-    // Step 3: Compute x_hat and store in shared memory or global memory if needed
+    extern __shared__ float s_x_hat[];
+
+    // Step 3: Compute x_hat and store in shared memory (and global memory if requested)
     for (int k = tid; k < K; k += num_threads) {
         float x_norm = (to_float(x[m * K + k]) - mean) * rstd;
+        s_x_hat[k] = x_norm;
         if (x_hat_out != nullptr) {
             x_hat_out[m * K + k] = from_float<scalar_t>(x_norm);
         }
     }
     __syncthreads();
 
-    // Step 4: Compute out[m, n] = x_hat @ weight.T + bias
+    // Step 4: Compute out[m, n] = x_hat @ weight.T + bias using cached shared memory
     for (int n = tid; n < N; n += num_threads) {
         float y = 0.0f;
         for (int k = 0; k < K; ++k) {
-            float x_norm = (to_float(x[m * K + k]) - mean) * rstd;
-            y += x_norm * to_float(weight[n * K + k]);
+            y += s_x_hat[k] * to_float(weight[n * K + k]);
         }
         if (has_bias && bias != nullptr) {
             y += to_float(bias[n]);
@@ -178,14 +180,16 @@ std::vector<torch::Tensor> fused_norm_linear_fwd(
 
     auto out = torch::empty({M, N}, x.options());
     auto x_hat = torch::empty_like(x);
+    if (M == 0 || K == 0 || N == 0) return {out, x_hat};
 
     const int threads = 128;
+    const size_t shmem_size = K * sizeof(float);
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "fused_norm_linear_fwd", ([&] {
-            neuralops::cuda::fused_norm_linear_fwd_kernel<scalar_t><<<M, threads, 0, stream>>>(
+            neuralops::cuda::fused_norm_linear_fwd_kernel<scalar_t><<<M, threads, shmem_size, stream>>>(
                 out.data_ptr<scalar_t>(), x_hat.data_ptr<scalar_t>(), x.data_ptr<scalar_t>(),
                 weight.data_ptr<scalar_t>(), has_bias ? bias.data_ptr<scalar_t>() : nullptr,
                 M, K, N, eps, has_bias
