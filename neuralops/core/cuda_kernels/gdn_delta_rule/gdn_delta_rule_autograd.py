@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import torch
 import torch.nn.functional as F
 
@@ -26,7 +26,6 @@ def _get_module():
     return _MODULE
 
 def gdn_delta_rule_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
-    """Pure PyTorch reference implementation for GDN Delta Rule."""
     B, H, L, D = q.shape
     out = torch.empty_like(q)
     for b in range(B):
@@ -43,10 +42,10 @@ def gdn_delta_rule_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
                 out[b, h, t] = torch.matmul(q_t, S).to(q.dtype)
     return out
 
-def gdn_delta_rule_triton_ref(q, k, v, beta):
+def gdn_delta_rule_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     return gdn_delta_rule_pytorch_ref(q, k, v, beta)
 
-def gdn_delta_rule(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
+def _gdn_delta_rule_fwd_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, k, v, beta, **kwargs):
         mod = _get_module()
         return mod.gdn_delta_rule_fwd(q.contiguous(), k.contiguous(), v.contiguous(), beta.contiguous())
@@ -57,3 +56,29 @@ def gdn_delta_rule(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torc
         q, k, v, beta,
         kernel_name="gdn_delta_rule",
     )
+
+class _GDNDeltaRuleFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, q, k, v, beta):
+        out = _gdn_delta_rule_fwd_dispatch(q, k, v, beta)
+        ctx.save_for_backward(q, k, v, beta)
+        return out
+
+    @staticmethod
+    def backward(ctx: Any, dout):
+        q, k, v, beta = ctx.saved_tensors
+        q_p = q.detach().requires_grad_(q.requires_grad)
+        k_p = k.detach().requires_grad_(k.requires_grad)
+        v_p = v.detach().requires_grad_(v.requires_grad)
+        beta_p = beta.detach().requires_grad_(beta.requires_grad)
+
+        with torch.enable_grad():
+            out_p = gdn_delta_rule_pytorch_ref(q_p, k_p, v_p, beta_p)
+
+        grads = torch.autograd.grad(out_p, [q_p, k_p, v_p, beta_p], dout, allow_unused=True)
+        return grads[0], grads[1], grads[2], grads[3]
+
+def gdn_delta_rule(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
+    if any(t.requires_grad for t in (q, k, v, beta) if isinstance(t, torch.Tensor)):
+        return _GDNDeltaRuleFunction.apply(q, k, v, beta)
+    return _gdn_delta_rule_fwd_dispatch(q, k, v, beta)

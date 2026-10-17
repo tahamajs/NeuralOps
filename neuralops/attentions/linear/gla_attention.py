@@ -32,7 +32,7 @@ try:
 except Exception:
     chunk_gla = None
     FLA_AVAILABLE = False
-    logger.warning("chunk_gla unavailable — using PyTorch fallback")
+    logger.debug("chunk_gla unavailable — using PyTorch fallback")
 
 
 @ATTENTION_REGISTRY.register(

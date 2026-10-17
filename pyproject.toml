@@ -161,6 +161,7 @@ all = [
 
 [project.scripts]
 neuralops = "neuralops.benchmarks.cli:main"
+neuralops-cli = "neuralops.benchmarks.cli:main"
 nops = "neuralops.benchmarks.cli:main"
 nops-cli = "neuralops.benchmarks.cli:main"
 

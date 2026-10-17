@@ -20,7 +20,7 @@ class TrainerRegistry:
             if not issubclass(klass, BaseTrainer):
                 raise TypeError(f"{klass.__name__} must inherit from BaseTrainer")
             cls._registry[name] = klass
-            logger.info(f"Registered trainer: {name} -> {klass.__name__}")
+            logger.debug(f"Registered trainer: {name} -> {klass.__name__}")
             return klass
 
         return decorator
