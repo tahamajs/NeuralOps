@@ -205,8 +205,8 @@ def test_block_diag_gemm(blocks):
 def test_spectral_shrinkage(dim):
     xr = torch.randn(4, dim, device="cuda", dtype=torch.float32)
     xi = torch.randn(4, dim, device="cuda", dtype=torch.float32)
-    wr = torch.randn(dim, dim, device="cuda", dtype=torch.float32)
-    wi = torch.randn(dim, dim, device="cuda", dtype=torch.float32)
+    wr = torch.randn(4, dim, device="cuda", dtype=torch.float32)
+    wi = torch.randn(4, dim, device="cuda", dtype=torch.float32)
     tau = torch.tensor(0.5, device="cuda", dtype=torch.float32)
 
     ref_out = m_spectral_shrinkage.spectral_shrinkage_pytorch_ref(xr, xi, wr, wi, tau)
