@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 import torch
+import torch.nn.functional as F
 
 from neuralops.core.triton_kernels._types import (
     HAS_TRITON,
