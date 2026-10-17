@@ -30,14 +30,17 @@ def spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau):
     w = torch.complex(w_re, w_im)
     from neuralops.core.triton_kernels.elementwise import fused_spectral_gate_triton
     return fused_spectral_gate_triton(x, w, tau)
+
 def spectral_shrinkage_triton_ref(x_re, x_im, w_re, w_im, tau):
     return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
 
-def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tensor, w_im: torch.Tensor, tau: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tensor, w_im: torch.Tensor, tau: torch.Tensor):
+    def cuda_fn(xr, xi, wr, wi, t, **kwargs):
         mod = _get_module()
-        fn = getattr(mod, "spectral_shrinkage_fwd")
-        return fn(*args, **kwargs)
+        out = mod.spectral_shrinkage_fwd(
+            xr.contiguous(), xi.contiguous(), wr.contiguous(), wi.contiguous(), t.contiguous()
+        )
+        return torch.complex(out[0], out[1])
     return dispatch(
         cuda_fn,
         spectral_shrinkage_triton_ref,
