@@ -1,0 +1,650 @@
+{
+  "act_scale_gemm": {
+    "main_fn": "act_scale_quant_gemm",
+    "ref_fn": "act_scale_quant_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', s_inv: 'torch.Tensor', w: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "act_scale_autograd.py"
+  },
+  "adaptive_span": {
+    "main_fn": "adaptive_span",
+    "ref_fn": "fused_adaptive_span_penalty_pytorch",
+    "sig": "(spans: 'torch.Tensor', q_pos: 'torch.Tensor', k_pos: 'torch.Tensor', ramp_size: 'float', is_causal: 'bool' = True) -> 'torch.Tensor'",
+    "file": "adaptive_span_autograd.py"
+  },
+  "adasplash_attention": {
+    "main_fn": "adasplash_attention",
+    "ref_fn": "adasplash_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', threshold: 'float' = 0.1, window_size: 'int' = 64) -> 'torch.Tensor'",
+    "file": "adasplash_attention_autograd.py"
+  },
+  "aegis_gate_norm": {
+    "main_fn": "aegis_gate_norm",
+    "ref_fn": "aegis_gate_norm_pytorch_ref",
+    "sig": "(b0: 'torch.Tensor', b1: 'torch.Tensor', weights: 'torch.Tensor', eps: 'float' = 1e-05) -> 'torch.Tensor'",
+    "file": "aegis_gate_norm_autograd.py"
+  },
+  "alibi_attention": {
+    "main_fn": "alibi_attention",
+    "ref_fn": "alibi_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', slopes: 'torch.Tensor', is_causal: 'bool' = False) -> 'torch.Tensor'",
+    "file": "alibi_autograd.py"
+  },
+  "bigbird": {
+    "main_fn": "bigbird",
+    "ref_fn": "bigbird_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', window_size: 'int' = 64, num_global_tokens: 'int' = 4, num_random_blocks: 'int' = 2) -> 'torch.Tensor'",
+    "file": "bigbird_autograd.py"
+  },
+  "bitonic_topk": {
+    "main_fn": "bitonic_topk",
+    "ref_fn": "bitonic_topk_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', K: 'int') -> 'torch.Tensor'",
+    "file": "bitonic_topk_autograd.py"
+  },
+  "block_diag_gemm": {
+    "main_fn": "block_diag_matmul",
+    "ref_fn": "block_diag_matmul_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weights: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "block_diag_autograd.py"
+  },
+  "causal_conv1d": {
+    "main_fn": "causal_conv1d",
+    "ref_fn": "causal_conv1d_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weight: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None, silu_activation: 'bool' = False) -> 'torch.Tensor'",
+    "file": "conv1d_autograd.py"
+  },
+  "channel_shuffle": {
+    "main_fn": "channel_shuffle",
+    "ref_fn": "channel_shuffle_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', groups: 'int' = 2) -> 'torch.Tensor'",
+    "file": "shuffle_autograd.py"
+  },
+  "cluster_attention": {
+    "main_fn": "cluster_attention",
+    "ref_fn": "cluster_attention_ref",
+    "sig": "(q: 'torch.Tensor', cluster_centroids: 'torch.Tensor', v: 'torch.Tensor', cluster_indices: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "cluster_attention_autograd.py"
+  },
+  "cosformer": {
+    "main_fn": "cosformer_linear_attention",
+    "ref_fn": "cosformer_linear_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', is_causal: 'bool' = False) -> 'torch.Tensor'",
+    "file": "cosformer_autograd.py"
+  },
+  "cross_attention": {
+    "main_fn": "cross_attention",
+    "ref_fn": "cross_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "cross_attn_autograd.py"
+  },
+  "decay_linear_attention": {
+    "main_fn": "decay_linear_attention",
+    "ref_fn": "decay_linear_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', gamma: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "decay_linear_attention_autograd.py"
+  },
+  "differential_attention": {
+    "main_fn": "differential_attention",
+    "ref_fn": "differential_attention_ref",
+    "sig": "(q1: 'torch.Tensor', k1: 'torch.Tensor', q2: 'torch.Tensor', k2: 'torch.Tensor', v: 'torch.Tensor', lambda_val: 'float' = 0.8) -> 'torch.Tensor'",
+    "file": "differential_attention_autograd.py"
+  },
+  "dynamic_conv1d": {
+    "main_fn": "dynamic_conv1d",
+    "ref_fn": "fused_dynamic_conv1d_pytorch",
+    "sig": "(v: 'torch.Tensor', weights: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "dynamic_conv1d_autograd.py"
+  },
+  "entmax_bisect": {
+    "main_fn": "entmax_bisect",
+    "ref_fn": "fused_entmax_bisect_pytorch",
+    "sig": "(scores: 'torch.Tensor', n_iter: 'int' = 15) -> 'torch.Tensor'",
+    "file": "entmax_bisect_autograd.py"
+  },
+  "entropy_gate": {
+    "main_fn": "spectral_entropy_svd_gate",
+    "ref_fn": "spectral_entropy_svd_gate_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', V_r: 'torch.Tensor', U_r: 'torch.Tensor', effective_rank: 'int', s_weights: 'Optional[torch.Tensor]' = None, bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "entropy_gate_autograd.py"
+  },
+  "entropy_pruning": {
+    "main_fn": "entropy_pruning",
+    "ref_fn": "entropy_pruning_pytorch_ref",
+    "sig": "(scores: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "entropy_pruning_autograd.py"
+  },
+  "fast_attention": {
+    "main_fn": "fast_attention",
+    "ref_fn": "fast_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "fast_attention_autograd.py"
+  },
+  "fast_gelu": {
+    "main_fn": "fast_gelu",
+    "ref_fn": "fast_gelu_pytorch_ref",
+    "sig": "(x: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "fast_gelu_autograd.py"
+  },
+  "favor_plus": {
+    "main_fn": "favor_plus",
+    "ref_fn": "favor_plus_pytorch_ref",
+    "sig": "(proj: 'torch.Tensor', diag_sq: 'torch.Tensor', norm_factor: 'float') -> 'torch.Tensor'",
+    "file": "favor_plus_autograd.py"
+  },
+  "flash_decode_stage2": {
+    "main_fn": "flash_decode_stage2",
+    "ref_fn": "flash_decode_stage2_pytorch_ref",
+    "sig": "(mid_out: 'torch.Tensor', mid_lse: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "flash_decode_stage2_autograd.py"
+  },
+  "flash_decoding": {
+    "main_fn": "flash_decoding_attention",
+    "ref_fn": "flash_decoding_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', chunk_size: 'int' = 128) -> 'torch.Tensor'",
+    "file": "flash_dec_autograd.py"
+  },
+  "flash_gqa": {
+    "main_fn": "flash_gqa",
+    "ref_fn": "flash_gqa_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', is_causal: 'bool' = False, scale: 'float | None' = None) -> 'torch.Tensor'",
+    "file": "flash_gqa_autograd.py"
+  },
+  "fms_scan": {
+    "main_fn": "fms_scan",
+    "ref_fn": "fms_scan_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', decay: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "fms_autograd.py"
+  },
+  "fp4_gemm": {
+    "main_fn": "fp4_gemm",
+    "ref_fn": "fp4_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', w_packed: 'torch.Tensor', scales: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "fp4_autograd.py"
+  },
+  "fused_ce": {
+    "main_fn": "fused_cross_entropy",
+    "ref_fn": "fused_cross_entropy_pytorch_ref",
+    "sig": "(logits: 'torch.Tensor', targets: 'torch.Tensor', ignore_index: 'int' = -100, reduction: 'str' = 'mean') -> 'torch.Tensor'",
+    "file": "fused_ce_autograd.py"
+  },
+  "fused_dropout_add": {
+    "main_fn": "fused_dropout_add",
+    "ref_fn": "fused_dropout_add_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', residual: 'torch.Tensor', p: 'float' = 0.0, training: 'bool' = False, seed: 'int | None' = None) -> 'torch.Tensor'",
+    "file": "dropout_add_autograd.py"
+  },
+  "fused_kd": {
+    "main_fn": "fused_kd_loss",
+    "ref_fn": "fused_kd_loss_pytorch_ref",
+    "sig": "(student_logits: 'torch.Tensor', teacher_logits: 'torch.Tensor', temperature: 'float' = 2.0, reduction: 'str' = 'batchmean') -> 'torch.Tensor'",
+    "file": "kd_autograd.py"
+  },
+  "fused_norm_linear": {
+    "main_fn": "fused_norm_linear",
+    "ref_fn": "fused_norm_linear_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weight: 'torch.Tensor', bias: 'torch.Tensor | None' = None, eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "norm_linear_autograd.py"
+  },
+  "fused_rope": {
+    "main_fn": "fused_rotary_emb",
+    "ref_fn": "fused_rotary_emb_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', cos: 'torch.Tensor', sin: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "rope_autograd.py"
+  },
+  "fwht_transform": {
+    "main_fn": "fwht_transform",
+    "ref_fn": "fwht_transform_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', B_dim: 'int' = 128) -> 'torch.Tensor'",
+    "file": "fwht_transform_autograd.py"
+  },
+  "galerkin_attention": {
+    "main_fn": "galerkin_attention",
+    "ref_fn": "galerkin_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', h_step: 'float' = 0.01) -> 'torch.Tensor'",
+    "file": "galerkin_attention_autograd.py"
+  },
+  "gdn_delta_rule": {
+    "main_fn": "gdn_delta_rule",
+    "ref_fn": "gdn_delta_rule_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', beta: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "gdn_delta_rule_autograd.py"
+  },
+  "gdn_scan": {
+    "main_fn": "chunked_delta_gate_scan",
+    "ref_fn": "chunked_delta_gate_scan_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', alpha: 'torch.Tensor', beta: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "gdn_autograd.py"
+  },
+  "gla_scan": {
+    "main_fn": "gla_scan",
+    "ref_fn": "gla_scan_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', alpha: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "gla_autograd.py"
+  },
+  "gla_unnormalized_scan": {
+    "main_fn": "gla_unnormalized_scan",
+    "ref_fn": "gla_unnormalized_scan_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', decay: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "gla_unnormalized_scan_autograd.py"
+  },
+  "goldfinch_ahn": {
+    "main_fn": "goldfinch_ahn",
+    "ref_fn": "goldfinch_ahn_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', beta: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "goldfinch_ahn_autograd.py"
+  },
+  "griffin_ssd": {
+    "main_fn": "griffin_ssd",
+    "ref_fn": "griffin_ssd_ref",
+    "sig": "(x: 'torch.Tensor', r: 'torch.Tensor', decay: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "griffin_ssd_autograd.py"
+  },
+  "hadamard_gemm": {
+    "main_fn": "hadamard_w4a16_gemm",
+    "ref_fn": "hadamard_w4a16_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', w_packed: 'torch.Tensor', scales: 'torch.Tensor', zeros: 'torch.Tensor', group_size: 'int' = 32, bias: 'Optional[torch.Tensor]' = None, apply_hadamard: 'bool' = False) -> 'torch.Tensor'",
+    "file": "hadamard_autograd.py"
+  },
+  "hgrn2_scan": {
+    "main_fn": "hgrn2_fused_bwd_scan",
+    "ref_fn": "hgrn2_fused_bwd_scan_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', g: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "hgrn2_autograd.py"
+  },
+  "hgrn2_spatial_scan": {
+    "main_fn": "hgrn2_spatial_scan",
+    "ref_fn": "hgrn2_spatial_scan_pytorch_ref",
+    "sig": "(*args, **kwargs) -> 'torch.Tensor'",
+    "file": "hgrn2_spatial_scan_autograd.py"
+  },
+  "hstu_attention": {
+    "main_fn": "hstu_attention",
+    "ref_fn": "hstu_attention_ref",
+    "sig": "(u: 'torch.Tensor', v: 'torch.Tensor', decay: 'torch.Tensor', eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "hstu_attention_autograd.py"
+  },
+  "hydra_attention": {
+    "main_fn": "hydra_attention",
+    "ref_fn": "hydra_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "hydra_attention_autograd.py"
+  },
+  "hymba_transx": {
+    "main_fn": "hymba_transx",
+    "ref_fn": "hymba_transx_ref",
+    "sig": "(x: 'torch.Tensor', meta_tokens: 'torch.Tensor', cross_gate: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "hymba_transx_autograd.py"
+  },
+  "jamba": {
+    "main_fn": "jamba",
+    "ref_fn": "jamba_ref",
+    "sig": "(mamba_out: 'torch.Tensor', attn_out: 'torch.Tensor', gate: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "jamba_autograd.py"
+  },
+  "jamba_info": {
+    "main_fn": "jamba_info",
+    "ref_fn": "jamba_info_ref",
+    "sig": "(x: 'torch.Tensor', bottleneck_weights: 'torch.Tensor', eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "jamba_info_autograd.py"
+  },
+  "kronecker_gemm": {
+    "main_fn": "kronecker_matmul",
+    "ref_fn": "kronecker_matmul_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', A: 'torch.Tensor', B: 'torch.Tensor', bias: 'torch.Tensor | None' = None) -> 'torch.Tensor'",
+    "file": "kronecker_autograd.py"
+  },
+  "latent_kv_attn": {
+    "main_fn": "latent_kv_cache_attention",
+    "ref_fn": "latent_kv_cache_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', c_kv: 'torch.Tensor', u_k: 'torch.Tensor', u_v: 'torch.Tensor', sm_scale: 'Optional[float]' = None) -> 'torch.Tensor'",
+    "file": "latent_kv_autograd.py"
+  },
+  "layernorm": {
+    "main_fn": "layernorm",
+    "ref_fn": "layernorm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weight: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None, residual: 'Optional[torch.Tensor]' = None, eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "layernorm_autograd.py"
+  },
+  "linear_attention": {
+    "main_fn": "linear_attention",
+    "ref_fn": "linear_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "linear_attn_autograd.py"
+  },
+  "linear_rnn_attention": {
+    "main_fn": "linear_rnn_attention",
+    "ref_fn": "linear_rnn_attention_ref",
+    "sig": "(x: 'torch.Tensor', a: 'torch.Tensor', b: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "linear_rnn_attention_autograd.py"
+  },
+  "linformer_attention": {
+    "main_fn": "linformer_attention",
+    "ref_fn": "linformer_attention_ref",
+    "sig": "(q: 'torch.Tensor', k_proj: 'torch.Tensor', v_proj: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "linformer_attention_autograd.py"
+  },
+  "local_attention": {
+    "main_fn": "local_attention",
+    "ref_fn": "local_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', window_size: 'int' = 64) -> 'torch.Tensor'",
+    "file": "local_attention_autograd.py"
+  },
+  "logcumsumexp": {
+    "main_fn": "logcumsumexp",
+    "ref_fn": "logcumsumexp_pytorch_ref",
+    "sig": "(x: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "logcumsumexp_autograd.py"
+  },
+  "longformer": {
+    "main_fn": "longformer",
+    "ref_fn": "longformer_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', window_size: 'int' = 64, num_global_tokens: 'int' = 4) -> 'torch.Tensor'",
+    "file": "longformer_autograd.py"
+  },
+  "low_rank_svd": {
+    "main_fn": "fused_lowrank_gated_gemm",
+    "ref_fn": "fused_lowrank_gated_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', V: 'torch.Tensor', U: 'torch.Tensor', alpha: 'torch.Tensor | None' = None, bias: 'torch.Tensor | None' = None) -> 'torch.Tensor'",
+    "file": "lowrank_autograd.py"
+  },
+  "lut_gemm": {
+    "main_fn": "lut_codebook_dequant_gemm",
+    "ref_fn": "lut_codebook_dequant_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', indices_packed: 'torch.Tensor', codebook: 'torch.Tensor', group_size: 'int' = 64, bias: 'torch.Tensor | None' = None) -> 'torch.Tensor'",
+    "file": "lut_autograd.py"
+  },
+  "mamba_block": {
+    "main_fn": "mamba_block",
+    "ref_fn": "mamba_block_ref",
+    "sig": "(u: 'torch.Tensor', delta: 'torch.Tensor', A: 'torch.Tensor', B_mat: 'torch.Tensor', C_mat: 'torch.Tensor', prev_state: 'torch.Tensor') -> 'tuple[torch.Tensor, torch.Tensor]'",
+    "file": "mamba_block_autograd.py"
+  },
+  "mamba_svd_flash": {
+    "main_fn": "mamba_svd_flash",
+    "ref_fn": "mamba_svd_flash_ref",
+    "sig": "(u: 'torch.Tensor', svd_u: 'torch.Tensor', svd_vt: 'torch.Tensor', decay: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "mamba_svd_flash_autograd.py"
+  },
+  "moe_routing": {
+    "main_fn": "moe_dispatch_gather",
+    "ref_fn": "moe_route_pytorch_ref",
+    "sig": "(tokens: 'torch.Tensor', gate_logits: 'torch.Tensor', expert_fn: 'Any', top_k: 'int' = 2) -> 'torch.Tensor'",
+    "file": "moe_autograd.py"
+  },
+  "multi_scale_retention": {
+    "main_fn": "multi_scale_retention",
+    "ref_fn": "multi_scale_retention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', gammas: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "retention_autograd.py"
+  },
+  "nasc_attention": {
+    "main_fn": "nasc_attention",
+    "ref_fn": "nasc_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', decay: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "nasc_attention_autograd.py"
+  },
+  "nexus": {
+    "main_fn": "nexus",
+    "ref_fn": "nexus_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', tau: 'float' = 1.0) -> 'torch.Tensor'",
+    "file": "nexus_autograd.py"
+  },
+  "nystrom_attention": {
+    "main_fn": "nystrom_attention",
+    "ref_fn": "nystrom_attention_ref",
+    "sig": "(q_landmarks: 'torch.Tensor', k_landmarks: 'torch.Tensor', v_landmarks: 'torch.Tensor', pinv_landmarks: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "nystrom_attention_autograd.py"
+  },
+  "orion": {
+    "main_fn": "orion",
+    "ref_fn": "orion_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', temperature: 'float' = 1.0) -> 'torch.Tensor'",
+    "file": "orion_autograd.py"
+  },
+  "paged_attention": {
+    "main_fn": "paged_attention",
+    "ref_fn": "paged_attention_pytorch_reference",
+    "sig": "(q: 'torch.Tensor', k_cache: 'torch.Tensor', v_cache: 'torch.Tensor', block_tables: 'torch.Tensor', context_lens: 'torch.Tensor', block_size: 'int' = 16, max_context_len: 'int | None' = None, scale: 'float | None' = None) -> 'torch.Tensor'",
+    "file": "paged_attention_autograd.py"
+  },
+  "paged_kv_cache": {
+    "main_fn": "copy_blocks_cow",
+    "ref_fn": "copy_blocks_cow_pytorch_ref",
+    "sig": "(dst_k: 'torch.Tensor', dst_v: 'torch.Tensor', src_k: 'torch.Tensor', src_v: 'torch.Tensor', block_mapping: 'torch.Tensor', block_size: 'int' = 16, num_heads: 'int' = 8, head_dim: 'int' = 64) -> 'tuple[torch.Tensor, torch.Tensor] | None'",
+    "file": "kv_cache_autograd.py"
+  },
+  "paged_kv_evict": {
+    "main_fn": "paged_kv_evict",
+    "ref_fn": "paged_kv_compact_pytorch_ref",
+    "sig": "(k_in: 'torch.Tensor', v_in: 'torch.Tensor', keep_indices: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "paged_kv_evict_autograd.py"
+  },
+  "paged_recurrent_step": {
+    "main_fn": "paged_recurrent_step",
+    "ref_fn": "paged_recurrent_state_step_pytorch",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', page_pool: 'torch.Tensor', block_tables: 'torch.Tensor', decay: 'float' = 1.0) -> 'torch.Tensor'",
+    "file": "paged_recurrent_step_autograd.py"
+  },
+  "phantom": {
+    "main_fn": "phantom",
+    "ref_fn": "phantom_ref",
+    "sig": "(x: 'torch.Tensor', gate: 'torch.Tensor', threshold: 'float' = 0.5) -> 'torch.Tensor'",
+    "file": "phantom_autograd.py"
+  },
+  "quantized_gemm": {
+    "main_fn": "fp8_gemm",
+    "ref_fn": "fp8_gemm_pytorch_ref",
+    "sig": "(A: 'torch.Tensor', B: 'torch.Tensor', scale_a: 'torch.Tensor', scale_b: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "quant_autograd.py"
+  },
+  "recurrent_gla_step": {
+    "main_fn": "recurrent_gla_step",
+    "ref_fn": "recurrent_gla_step_pytorch_ref",
+    "sig": "(q_t: 'torch.Tensor', k_t: 'torch.Tensor', v_t: 'torch.Tensor', s_state: 'torch.Tensor', alpha_t: 'torch.Tensor') -> 'Tuple[torch.Tensor, torch.Tensor]'",
+    "file": "gla_step_autograd.py"
+  },
+  "recurrent_hgrn2_step": {
+    "main_fn": "recurrent_hgrn2_step",
+    "ref_fn": "recurrent_hgrn2_step_pytorch_ref",
+    "sig": "(x_t: 'torch.Tensor', g_t: 'torch.Tensor', alpha_t: 'torch.Tensor', h_prev: 'torch.Tensor') -> 'Tuple[torch.Tensor, torch.Tensor]'",
+    "file": "hgrn2_step_autograd.py"
+  },
+  "reformer": {
+    "main_fn": "reformer",
+    "ref_fn": "reformer_ref",
+    "sig": "(qk: 'torch.Tensor', v: 'torch.Tensor', hash_buckets: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "reformer_autograd.py"
+  },
+  "rfa_attention": {
+    "main_fn": "rfa_attention",
+    "ref_fn": "rfa_attention_ref",
+    "sig": "(phi_q: 'torch.Tensor', phi_k: 'torch.Tensor', v: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "rfa_attention_autograd.py"
+  },
+  "rms_variance_match": {
+    "main_fn": "rms_variance_match",
+    "ref_fn": "fused_rms_variance_match_triton",
+    "sig": "(y: 'torch.Tensor', v_ref: 'torch.Tensor', clamp_min: 'float' = 0.25, clamp_max: 'float' = 4.0) -> 'torch.Tensor'",
+    "file": "rms_variance_match_autograd.py"
+  },
+  "rmsnorm": {
+    "main_fn": "rmsnorm",
+    "ref_fn": "rmsnorm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weight: 'torch.Tensor', residual: 'Optional[torch.Tensor]' = None, eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "rmsnorm_autograd.py"
+  },
+  "rotational_svd": {
+    "main_fn": "rotational_svd",
+    "ref_fn": "rotational_svd_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', r_in: 'torch.Tensor', v_r: 'torch.Tensor', u_r: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "rotational_svd_autograd.py"
+  },
+  "routing_attention": {
+    "main_fn": "routing_attention",
+    "ref_fn": "routing_attention_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', route_weights: 'torch.Tensor', top_k: 'int' = 32) -> 'torch.Tensor'",
+    "file": "routing_attention_autograd.py"
+  },
+  "rpca_sparse_svd": {
+    "main_fn": "rpca_sparse_svd_gemm",
+    "ref_fn": "rpca_sparse_svd_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', v_r: 'torch.Tensor', u_r: 'torch.Tensor', s: 'Optional[Any]' = None, bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "rpca_sparse_svd_autograd.py"
+  },
+  "rwkv6": {
+    "main_fn": "rwkv6",
+    "ref_fn": "rwkv6_ref",
+    "sig": "(r: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', w: 'torch.Tensor', u: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "rwkv6_autograd.py"
+  },
+  "samba_m3": {
+    "main_fn": "samba_m3",
+    "ref_fn": "samba_m3_ref",
+    "sig": "(mamba1: 'torch.Tensor', mamba2: 'torch.Tensor', linear_attn: 'torch.Tensor', gate3: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "samba_m3_autograd.py"
+  },
+  "samba_moe": {
+    "main_fn": "samba_moe",
+    "ref_fn": "samba_moe_ref",
+    "sig": "(expert_out1: 'torch.Tensor', expert_out2: 'torch.Tensor', routing_weights: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "samba_moe_autograd.py"
+  },
+  "selective_scan": {
+    "main_fn": "selective_scan",
+    "ref_fn": "selective_scan_pytorch_ref",
+    "sig": "(u: 'torch.Tensor', delta: 'torch.Tensor', A: 'torch.Tensor', B: 'torch.Tensor', C: 'torch.Tensor', D: 'torch.Tensor | None' = None) -> 'tuple[torch.Tensor, torch.Tensor]'",
+    "file": "selective_scan_autograd.py"
+  },
+  "selective_ssm": {
+    "main_fn": "selective_ssm",
+    "ref_fn": "selective_ssm_ref",
+    "sig": "(x: 'torch.Tensor', dt: 'torch.Tensor', A: 'torch.Tensor', B_vec: 'torch.Tensor', C_vec: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "selective_ssm_autograd.py"
+  },
+  "simple_ssm": {
+    "main_fn": "simple_ssm",
+    "ref_fn": "simple_ssm_ref",
+    "sig": "(x: 'torch.Tensor', decay: 'torch.Tensor', scale: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "simple_ssm_autograd.py"
+  },
+  "sliding_window": {
+    "main_fn": "sliding_window_attn",
+    "ref_fn": "sliding_window_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', window_size: 'int' = 128, num_sinks: 'int' = 4, scale: 'float | None' = None) -> 'torch.Tensor'",
+    "file": "sliding_autograd.py"
+  },
+  "soa_attn": {
+    "main_fn": "soa_attn",
+    "ref_fn": "soa_attn_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', alpha: 'float' = 0.5) -> 'torch.Tensor'",
+    "file": "soa_attn_autograd.py"
+  },
+  "softplus": {
+    "main_fn": "fused_softplus",
+    "ref_fn": "fused_softplus_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', beta: 'float' = 1.0, threshold: 'float' = 20.0) -> 'torch.Tensor'",
+    "file": "softplus_autograd.py"
+  },
+  "sparse_attention": {
+    "main_fn": "block_sparse_attn",
+    "ref_fn": "block_sparse_attn_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', block_mask: 'torch.Tensor', block_size: 'int' = 16, scale: 'float | None' = None) -> 'torch.Tensor'",
+    "file": "sparse_autograd.py"
+  },
+  "spectra_v2": {
+    "main_fn": "spectra_v2",
+    "ref_fn": "spectra_v2_ref",
+    "sig": "(x: 'torch.Tensor', freq_bands: 'torch.Tensor', threshold: 'float' = 0.05) -> 'torch.Tensor'",
+    "file": "spectra_v2_autograd.py"
+  },
+  "spectraformer_attention": {
+    "main_fn": "spectraformer",
+    "ref_fn": "spectraformer_ref",
+    "sig": "(x: 'torch.Tensor', cos_basis: 'torch.Tensor', sin_basis: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "spectraformer_attention_autograd.py"
+  },
+  "spectral_mamba": {
+    "main_fn": "spectral_mamba",
+    "ref_fn": "spectral_mamba_ref",
+    "sig": "(x: 'torch.Tensor', freq_coeffs: 'torch.Tensor', threshold: 'float' = 0.01) -> 'torch.Tensor'",
+    "file": "spectral_mamba_autograd.py"
+  },
+  "spectral_shrinkage": {
+    "main_fn": "spectral_shrinkage",
+    "ref_fn": "spectral_shrinkage_pytorch_ref",
+    "sig": "(x_re: 'torch.Tensor', x_im: 'torch.Tensor', w_re: 'torch.Tensor', w_im: 'torch.Tensor', tau: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "spectral_shrinkage_autograd.py"
+  },
+  "speculative_verify": {
+    "main_fn": "speculative_verify",
+    "ref_fn": "speculative_verify_pytorch_ref",
+    "sig": "(draft_tokens: 'torch.Tensor', target_tokens: 'torch.Tensor') -> 'Tuple[torch.Tensor, torch.Tensor]'",
+    "file": "spec_autograd.py"
+  },
+  "split_head_norm": {
+    "main_fn": "split_head_norm",
+    "ref_fn": "split_head_norm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', weight: 'Optional[torch.Tensor]' = None, eps: 'float' = 1e-05) -> 'torch.Tensor'",
+    "file": "split_head_norm_autograd.py"
+  },
+  "state_update": {
+    "main_fn": "recurrent_linear_step",
+    "ref_fn": "recurrent_linear_step_pytorch_ref",
+    "sig": "(q_t: 'torch.Tensor', k_t: 'torch.Tensor', v_t: 'torch.Tensor', kv_state: 'torch.Tensor', z_state: 'torch.Tensor', eps: 'float' = 1e-06) -> 'Tuple[torch.Tensor, torch.Tensor, torch.Tensor]'",
+    "file": "state_autograd.py"
+  },
+  "svd_prefix_scan": {
+    "main_fn": "svd_prefix_scan",
+    "ref_fn": "svd_prefix_scan_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', eps: 'float' = 0.0001) -> 'torch.Tensor'",
+    "file": "svd_prefix_scan_autograd.py"
+  },
+  "swiglu": {
+    "main_fn": "swiglu",
+    "ref_fn": "swiglu_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', gate: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "swiglu_autograd.py"
+  },
+  "ternary_gemm": {
+    "main_fn": "ternary_gemm",
+    "ref_fn": "ternary_gemm_pytorch_ref",
+    "sig": "(x: 'torch.Tensor', w_packed: 'torch.Tensor', scales: 'torch.Tensor', bias: 'Optional[torch.Tensor]' = None) -> 'torch.Tensor'",
+    "file": "ternary_autograd.py"
+  },
+  "tpa_attention": {
+    "main_fn": "tpa_attention",
+    "ref_fn": "tpa_attention_ref",
+    "sig": "(h_states: 'torch.Tensor', weights: 'torch.Tensor') -> 'torch.Tensor'",
+    "file": "tpa_attention_autograd.py"
+  },
+  "tt_contraction": {
+    "main_fn": "tt_contraction",
+    "ref_fn": "tt_contraction_pytorch_ref",
+    "sig": "(core0: 'torch.Tensor', core1: 'torch.Tensor', p_dims: 'Tuple[int, int]', q_dims: 'Tuple[int, int]') -> 'torch.Tensor'",
+    "file": "tt_autograd.py"
+  },
+  "unified_rope_offset": {
+    "main_fn": "unified_rope_offset",
+    "ref_fn": "fused_unified_rope_offset_pytorch",
+    "sig": "(x: 'torch.Tensor', cos: 'torch.Tensor', sin: 'torch.Tensor', rotary_dim: 'int', offset: 'int' = 0) -> 'torch.Tensor'",
+    "file": "unified_rope_offset_autograd.py"
+  },
+  "upi_stuffed_mamba": {
+    "main_fn": "upi_stuffed_mamba",
+    "ref_fn": "upi_stuffed_mamba_ref",
+    "sig": "(x: 'torch.Tensor', upi_tokens: 'torch.Tensor', blend_weight: 'float' = 0.2) -> 'torch.Tensor'",
+    "file": "upi_stuffed_mamba_autograd.py"
+  },
+  "varlen_attention": {
+    "main_fn": "varlen_attention",
+    "ref_fn": "varlen_attention_pytorch_ref",
+    "sig": "(q: 'torch.Tensor', k: 'torch.Tensor', v: 'torch.Tensor', cu_seqlens_q: 'torch.Tensor', cu_seqlens_k: 'torch.Tensor', max_seqlen_q: 'int', max_seqlen_k: 'int', is_causal: 'bool' = False) -> 'torch.Tensor'",
+    "file": "varlen_autograd.py"
+  },
+  "vspec": {
+    "main_fn": "vspec",
+    "ref_fn": "vspec_ref",
+    "sig": "(x: 'torch.Tensor', spec_gate: 'torch.Tensor', decay: 'torch.Tensor', eps: 'float' = 1e-06) -> 'torch.Tensor'",
+    "file": "vspec_autograd.py"
+  }
+}

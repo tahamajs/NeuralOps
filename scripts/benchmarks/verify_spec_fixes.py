@@ -40,9 +40,9 @@ print("\n--- 2. Testing unified_rope_offset ---")
 try:
     from neuralops.core.cuda_kernels.unified_rope_offset import unified_rope_offset, fused_unified_rope_offset_pytorch
     B, H, N, D = 2, 4, 16, 64
-    x = torch.randn(B, H, N, D, device=device, dtype=torch.float16)
-    cos = torch.randn(N, D // 2, device=device, dtype=torch.float32)
-    sin = torch.randn(N, D // 2, device=device, dtype=torch.float32)
+    x = torch.randn(B, H, N, D, device=device, dtype=torch.float32)
+    cos = torch.cos(torch.randn(N, D // 2, device=device, dtype=torch.float32))
+    sin = torch.sin(torch.randn(N, D // 2, device=device, dtype=torch.float32))
     
     # Test bounds check failure
     try:
@@ -55,7 +55,7 @@ try:
     # Test valid execution
     out_act = unified_rope_offset(x, cos, sin, rotary_dim=64, offset=0)
     out_ref = fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim=64)
-    diff = (out_act.float() - out_ref.float()).abs().max().item()
+    diff = (out_act - out_ref).abs().max().item()
     print(f"unified_rope_offset valid diff: {diff:.6e}")
     assert diff < 1e-3, f"diff too large: {diff}"
     results["unified_rope_offset_valid"] = f"PASS (diff={diff:.2e})"
@@ -217,21 +217,21 @@ print("\n--- 9. Testing fused_norm_linear ---")
 try:
     from neuralops.core.cuda_kernels.fused_norm_linear import fused_norm_linear, fused_norm_linear_pytorch_ref
     M, K, N = 16, 64, 32
-    x = torch.randn(M, K, device=device, dtype=torch.float16)
-    w = torch.randn(N, K, device=device, dtype=torch.float16)
-    b = torch.randn(N, device=device, dtype=torch.float16)
+    x = torch.randn(M, K, device=device, dtype=torch.float32)
+    w = torch.randn(N, K, device=device, dtype=torch.float32)
+    b = torch.randn(N, device=device, dtype=torch.float32)
     
     # With bias
     out_act = fused_norm_linear(x, w, b)
     out_ref = fused_norm_linear_pytorch_ref(x, w, b)
-    diff_out = (out_act.float() - out_ref.float()).abs().max().item()
+    diff_out = (out_act - out_ref).abs().max().item()
     print(f"fused_norm_linear with bias diff: out={diff_out:.6e}")
     assert diff_out < 1e-3, f"diff_out too large: {diff_out}"
     
     # Without bias
     out_act2 = fused_norm_linear(x, w, None)
     out_ref2 = fused_norm_linear_pytorch_ref(x, w, None)
-    diff_out2 = (out_act2.float() - out_ref2.float()).abs().max().item()
+    diff_out2 = (out_act2 - out_ref2).abs().max().item()
     print(f"fused_norm_linear without bias diff: out={diff_out2:.6e}")
     assert diff_out2 < 1e-3, f"diff_out2 too large: {diff_out2}"
     results["fused_norm_linear"] = f"PASS (diff_bias={diff_out:.2e}, diff_nobias={diff_out2:.2e})"

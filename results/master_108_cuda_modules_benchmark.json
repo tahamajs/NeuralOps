@@ -1,866 +1,939 @@
 [
   {
     "module": "act_scale_gemm",
-    "status": "PASS",
-    "cuda_ms": 0.0335,
-    "ref_ms": 0.0295,
-    "speedup": 0.88,
-    "max_diff": 0.0625
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0178,
+    "ref_ms": 0.0,
+    "speedup": 1.0,
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "adaptive_span",
-    "status": "PASS",
-    "cuda_ms": 2.4958,
+    "status": "NO_BASELINE",
+    "cuda_ms": 2.5996,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "adasplash_attention",
     "status": "PASS",
-    "cuda_ms": 326.7335,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.9772,
+    "ref_ms": 1.7754,
+    "speedup": 1.82,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=1.82x, max_diff=0.0001"
   },
   {
     "module": "aegis_gate_norm",
-    "status": "PASS",
-    "cuda_ms": 5.9491,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "CRASH",
+    "error": "TypeError: aegis_gate_norm() missing 1 r"
   },
   {
     "module": "alibi_attention",
     "status": "PASS",
-    "cuda_ms": 4.8804,
-    "ref_ms": 1.3313,
-    "speedup": 0.27,
-    "max_diff": 0.0009765625
+    "cuda_ms": 4.1634,
+    "ref_ms": 1.3312,
+    "speedup": 0.32,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=0.32x, max_diff=0.0001"
   },
   {
     "module": "bigbird",
     "status": "PASS",
-    "cuda_ms": 2.0251,
-    "ref_ms": 0.5115,
+    "cuda_ms": 2.0322,
+    "ref_ms": 0.5151,
     "speedup": 0.25,
-    "max_diff": 0.001953125
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=0.25x, max_diff=0.0000"
   },
   {
     "module": "bitonic_topk",
     "status": "PASS",
-    "cuda_ms": 0.0268,
+    "cuda_ms": 0.0259,
     "ref_ms": 0.0175,
-    "speedup": 0.65,
-    "max_diff": 778.0
+    "speedup": 0.67,
+    "max_diff": 0.0,
+    "reason": "speedup=0.68x, max_diff=0.0000"
   },
   {
     "module": "block_diag_gemm",
     "status": "PASS",
-    "cuda_ms": 0.0185,
-    "ref_ms": 0.0236,
-    "speedup": 1.27,
-    "max_diff": 0.0078125
+    "cuda_ms": 0.0191,
+    "ref_ms": 0.0241,
+    "speedup": 1.26,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=1.26x, max_diff=0.0001"
   },
   {
     "module": "causal_conv1d",
-    "status": "PASS",
-    "cuda_ms": 0.0068,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0071,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "channel_shuffle",
     "status": "PASS",
-    "cuda_ms": 0.0095,
+    "cuda_ms": 0.0083,
     "ref_ms": 0.0094,
-    "speedup": 0.98,
-    "max_diff": 0.0
+    "speedup": 1.13,
+    "max_diff": 0.0,
+    "reason": "speedup=1.13x, max_diff=0.0000"
   },
   {
     "module": "cluster_attention",
     "status": "PASS",
-    "cuda_ms": 0.2028,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.1648,
+    "ref_ms": 0.028,
+    "speedup": 0.17,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=0.17x, max_diff=0.0001"
   },
   {
     "module": "cosformer",
     "status": "PASS",
-    "cuda_ms": 8.3855,
-    "ref_ms": 1.4652,
-    "speedup": 0.17,
-    "max_diff": 0.0001220703125
+    "cuda_ms": 11.2257,
+    "ref_ms": 1.432,
+    "speedup": 0.13,
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=0.13x, max_diff=0.0000"
   },
   {
     "module": "cross_attention",
     "status": "PASS",
-    "cuda_ms": 4.2521,
-    "ref_ms": 0.982,
+    "cuda_ms": 4.2378,
+    "ref_ms": 0.9837,
     "speedup": 0.23,
-    "max_diff": 0.000244140625
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=0.23x, max_diff=0.0000"
   },
   {
     "module": "decay_linear_attention",
     "status": "PASS",
-    "cuda_ms": 0.0317,
-    "ref_ms": 11.629,
-    "speedup": 366.66,
-    "max_diff": 0.3125
+    "cuda_ms": 0.0319,
+    "ref_ms": 11.6094,
+    "speedup": 363.58,
+    "max_diff": 7.62939453125e-05,
+    "reason": "speedup=363.93x, max_diff=0.0001"
   },
   {
     "module": "differential_attention",
-    "status": "PASS",
-    "cuda_ms": 2.7716,
+    "status": "NO_BASELINE",
+    "cuda_ms": 2.7723,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "dynamic_conv1d",
     "status": "PASS",
-    "cuda_ms": 24.2119,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 24.1903,
+    "ref_ms": 0.0634,
+    "speedup": 0.0,
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=0.00x, max_diff=0.0000"
   },
   {
     "module": "entmax_bisect",
     "status": "PASS",
-    "cuda_ms": 2.7052,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 2.7823,
+    "ref_ms": 0.7102,
+    "speedup": 0.26,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=0.26x, max_diff=0.0001"
   },
   {
     "module": "entropy_gate",
-    "status": "PASS",
-    "cuda_ms": 0.2119,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "CRASH",
+    "error": "TypeError: spectral_entropy_svd_gate() m"
   },
   {
     "module": "entropy_pruning",
-    "status": "PASS",
-    "cuda_ms": 0.0084,
-    "ref_ms": 0.0311,
-    "speedup": 3.71,
-    "max_diff": 0.0
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0082,
+    "ref_ms": 0.0,
+    "speedup": 3.68,
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "fast_attention",
     "status": "PASS",
     "cuda_ms": 0.0329,
-    "ref_ms": 15.4691,
-    "speedup": 470.44,
-    "max_diff": 0.0078125
+    "ref_ms": 15.337,
+    "speedup": 465.83,
+    "max_diff": 0.000274658203125,
+    "reason": "speedup=466.17x, max_diff=0.0003"
   },
   {
     "module": "fast_gelu",
     "status": "PASS",
-    "cuda_ms": 0.0082,
-    "ref_ms": 0.0282,
-    "speedup": 3.43,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.0077,
+    "ref_ms": 0.0286,
+    "speedup": 3.71,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=3.71x, max_diff=0.0001"
   },
   {
     "module": "favor_plus",
-    "status": "PASS",
-    "cuda_ms": 0.0102,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "CRASH",
+    "error": "RuntimeError: The size of tensor a (512)"
   },
   {
     "module": "flash_decode_stage2",
     "status": "PASS",
-    "cuda_ms": 0.0061,
-    "ref_ms": 0.0467,
-    "speedup": 7.67,
-    "max_diff": NaN
+    "cuda_ms": 0.0081,
+    "ref_ms": 0.0476,
+    "speedup": 5.91,
+    "max_diff": 0.0,
+    "reason": "speedup=5.88x, max_diff=0.0000"
   },
   {
     "module": "flash_decoding",
     "status": "PASS",
-    "cuda_ms": 4.2425,
-    "ref_ms": 0.621,
-    "speedup": 0.15,
-    "max_diff": 0.001708984375
+    "cuda_ms": 4.4048,
+    "ref_ms": 0.7013,
+    "speedup": 0.16,
+    "max_diff": 9.1552734375e-05,
+    "reason": "speedup=0.16x, max_diff=0.0001"
   },
   {
     "module": "flash_gqa",
     "status": "PASS",
-    "cuda_ms": 0.4708,
-    "ref_ms": 1.2731,
+    "cuda_ms": 0.4719,
+    "ref_ms": 1.2765,
     "speedup": 2.7,
-    "max_diff": 0.000244140625
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=2.71x, max_diff=0.0000"
   },
   {
     "module": "fms_scan",
     "status": "PASS",
-    "cuda_ms": 142.3113,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 1.2081,
+    "ref_ms": 29.0881,
+    "speedup": 24.08,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=24.08x, max_diff=0.0000"
   },
   {
     "module": "fp4_gemm",
     "status": "PASS",
-    "cuda_ms": 0.1218,
-    "ref_ms": 0.0817,
-    "speedup": 0.67,
-    "max_diff": 0.25
+    "cuda_ms": 0.0643,
+    "ref_ms": 0.1078,
+    "speedup": 1.68,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=1.68x, max_diff=0.0001"
   },
   {
     "module": "fused_ce",
     "status": "PASS",
-    "cuda_ms": 5.8149,
-    "ref_ms": 0.0569,
+    "cuda_ms": 5.8027,
+    "ref_ms": 0.0576,
     "speedup": 0.01,
-    "max_diff": 0.0
+    "max_diff": 0.0,
+    "reason": "speedup=0.01x, max_diff=0.0000"
   },
   {
     "module": "fused_dropout_add",
     "status": "PASS",
-    "cuda_ms": 0.0083,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.011,
+    "ref_ms": 0.0082,
+    "speedup": 0.74,
+    "max_diff": 0.0,
+    "reason": "speedup=0.75x, max_diff=0.0000"
   },
   {
     "module": "fused_kd",
     "status": "PASS",
-    "cuda_ms": 0.037,
-    "ref_ms": 0.0389,
-    "speedup": 1.05,
-    "max_diff": 0.0
+    "cuda_ms": 0.0385,
+    "ref_ms": 0.0429,
+    "speedup": 1.11,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=1.11x, max_diff=0.0000"
   },
   {
     "module": "fused_norm_linear",
-    "status": "PASS",
-    "cuda_ms": 0.1536,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.1555,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "fused_rope",
     "status": "PASS",
-    "cuda_ms": 0.022,
-    "ref_ms": 0.0395,
-    "speedup": 1.8,
-    "max_diff": 0.0078125
+    "cuda_ms": 0.0221,
+    "ref_ms": 0.0397,
+    "speedup": 1.79,
+    "max_diff": 0.0009765625,
+    "reason": "speedup=1.80x, max_diff=0.0010"
   },
   {
     "module": "fwht_transform",
     "status": "PASS",
-    "cuda_ms": 0.0077,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.0555,
+    "ref_ms": 3.072,
+    "speedup": 55.34,
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=55.35x, max_diff=0.0000"
   },
   {
     "module": "galerkin_attention",
     "status": "PASS",
-    "cuda_ms": 0.0476,
-    "ref_ms": 0.0274,
+    "cuda_ms": 0.0478,
+    "ref_ms": 0.0278,
     "speedup": 0.58,
-    "max_diff": 0.001953125
+    "max_diff": 1.9073486328125e-06,
+    "reason": "speedup=0.58x, max_diff=0.0000"
   },
   {
     "module": "gdn_delta_rule",
-    "status": "PASS",
-    "cuda_ms": 1.8696,
+    "status": "NO_BASELINE",
+    "cuda_ms": 1.8707,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "gdn_scan",
     "status": "PASS",
-    "cuda_ms": 4.7002,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 4.7045,
+    "ref_ms": 1089.0243,
+    "speedup": 231.49,
+    "max_diff": 0.0342559814453125,
+    "reason": "speedup=231.49x, max_diff=0.0343"
   },
   {
     "module": "gla_scan",
     "status": "PASS",
-    "cuda_ms": 144.5527,
-    "ref_ms": 22.6602,
-    "speedup": 0.16,
-    "max_diff": 0.03125
+    "cuda_ms": 0.5007,
+    "ref_ms": 23.1086,
+    "speedup": 46.15,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=46.15x, max_diff=0.0000"
   },
   {
     "module": "gla_unnormalized_scan",
-    "status": "PASS",
-    "cuda_ms": 0.0333,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "CRASH",
+    "error": "IndexError: too many indices for tensor "
   },
   {
     "module": "goldfinch_ahn",
     "status": "PASS",
-    "cuda_ms": 0.0328,
-    "ref_ms": 15.8995,
-    "speedup": 484.99,
-    "max_diff": 0.5
+    "cuda_ms": 0.0327,
+    "ref_ms": 15.8567,
+    "speedup": 484.54,
+    "max_diff": 0.0001983642578125,
+    "reason": "speedup=484.91x, max_diff=0.0002"
   },
   {
     "module": "griffin_ssd",
     "status": "PASS",
-    "cuda_ms": 0.0326,
-    "ref_ms": 12.967,
-    "speedup": 397.95,
-    "max_diff": 0.0029296875
+    "cuda_ms": 0.0328,
+    "ref_ms": 13.1778,
+    "speedup": 402.06,
+    "max_diff": 7.62939453125e-05,
+    "reason": "speedup=401.76x, max_diff=0.0001"
   },
   {
     "module": "hadamard_gemm",
-    "status": "PASS",
-    "cuda_ms": 6.1501,
+    "status": "NO_BASELINE",
+    "cuda_ms": 2.2346,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "hgrn2_scan",
     "status": "PASS",
-    "cuda_ms": 0.0849,
-    "ref_ms": 22.8187,
-    "speedup": 268.62,
-    "max_diff": 0.25
+    "cuda_ms": 0.0847,
+    "ref_ms": 23.0827,
+    "speedup": 272.39,
+    "max_diff": 0.00048828125,
+    "reason": "speedup=272.52x, max_diff=0.0005"
   },
   {
     "module": "hgrn2_spatial_scan",
     "status": "PASS",
-    "cuda_ms": 0.033,
-    "ref_ms": 10.7125,
-    "speedup": 324.58,
-    "max_diff": 0.00390625
+    "cuda_ms": 0.0335,
+    "ref_ms": 10.5526,
+    "speedup": 314.95,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=315.00x, max_diff=0.0002"
   },
   {
     "module": "hstu_attention",
-    "status": "PASS",
-    "cuda_ms": 0.0321,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0066,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "hydra_attention",
     "status": "PASS",
     "cuda_ms": 0.0478,
-    "ref_ms": 0.0259,
+    "ref_ms": 0.0257,
     "speedup": 0.54,
-    "max_diff": 0.00048828125
+    "max_diff": 4.76837158203125e-07,
+    "reason": "speedup=0.54x, max_diff=0.0000"
   },
   {
     "module": "hymba_transx",
     "status": "PASS",
-    "cuda_ms": 0.0337,
-    "ref_ms": 0.0152,
-    "speedup": 0.45,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.0335,
+    "ref_ms": 0.0149,
+    "speedup": 0.44,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=0.44x, max_diff=0.0002"
   },
   {
     "module": "jamba",
     "status": "PASS",
-    "cuda_ms": 0.0064,
-    "ref_ms": 0.0179,
-    "speedup": 2.81,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.0072,
+    "ref_ms": 0.0186,
+    "speedup": 2.59,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=2.58x, max_diff=0.0002"
   },
   {
     "module": "jamba_info",
     "status": "PASS",
-    "cuda_ms": 0.3113,
-    "ref_ms": 0.0114,
+    "cuda_ms": 0.3093,
+    "ref_ms": 0.0124,
     "speedup": 0.04,
-    "max_diff": 0.0078125
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=0.04x, max_diff=0.0001"
   },
   {
     "module": "kronecker_gemm",
     "status": "PASS",
     "cuda_ms": 0.0109,
-    "ref_ms": 0.0273,
-    "speedup": 2.5,
-    "max_diff": 0.0625
+    "ref_ms": 0.0284,
+    "speedup": 2.61,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=2.61x, max_diff=0.0001"
   },
   {
     "module": "latent_kv_attn",
     "status": "PASS",
-    "cuda_ms": 4.3786,
-    "ref_ms": 1.0348,
-    "speedup": 0.24,
-    "max_diff": 0.0625
+    "cuda_ms": 4.3818,
+    "ref_ms": 1.2436,
+    "speedup": 0.28,
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=0.28x, max_diff=0.0000"
   },
   {
     "module": "layernorm",
     "status": "PASS",
-    "cuda_ms": 0.0093,
-    "ref_ms": 0.0558,
-    "speedup": 6.02,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.0091,
+    "ref_ms": 0.056,
+    "speedup": 6.14,
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=6.15x, max_diff=0.0000"
   },
   {
     "module": "linear_attention",
     "status": "PASS",
-    "cuda_ms": 3.1336,
-    "ref_ms": 887.2009,
-    "speedup": 283.12,
-    "max_diff": NaN
+    "cuda_ms": 3.1319,
+    "ref_ms": 903.255,
+    "speedup": 288.41,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=288.40x, max_diff=0.0001"
   },
   {
     "module": "linear_rnn_attention",
     "status": "PASS",
-    "cuda_ms": 0.0315,
-    "ref_ms": 9.1643,
-    "speedup": 290.89,
-    "max_diff": 1.0
+    "cuda_ms": 0.0318,
+    "ref_ms": 9.1956,
+    "speedup": 289.18,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=289.17x, max_diff=0.0002"
   },
   {
     "module": "linformer_attention",
     "status": "PASS",
-    "cuda_ms": 59.3174,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 1.4232,
+    "ref_ms": 0.0409,
+    "speedup": 0.03,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=0.03x, max_diff=0.0000"
   },
   {
     "module": "local_attention",
     "status": "PASS",
-    "cuda_ms": 0.7634,
-    "ref_ms": 0.4695,
-    "speedup": 0.61,
-    "max_diff": 0.00146484375
+    "cuda_ms": 0.7648,
+    "ref_ms": 0.4748,
+    "speedup": 0.62,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=0.62x, max_diff=0.0000"
   },
   {
     "module": "logcumsumexp",
     "status": "PASS",
-    "cuda_ms": 0.8199,
-    "ref_ms": 0.0156,
+    "cuda_ms": 0.8786,
+    "ref_ms": 0.0158,
     "speedup": 0.02,
-    "max_diff": 0.0
+    "max_diff": 0.0,
+    "reason": "speedup=0.02x, max_diff=0.0000"
   },
   {
     "module": "longformer",
     "status": "PASS",
-    "cuda_ms": 1.0369,
-    "ref_ms": 0.4868,
+    "cuda_ms": 1.0318,
+    "ref_ms": 0.4879,
     "speedup": 0.47,
-    "max_diff": 0.00146484375
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=0.47x, max_diff=0.0000"
   },
   {
     "module": "low_rank_svd",
-    "status": "PASS",
-    "cuda_ms": 0.0205,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0221,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "lut_gemm",
     "status": "PASS",
-    "cuda_ms": 0.024,
-    "ref_ms": 0.1007,
-    "speedup": 4.2,
-    "max_diff": 53.0234375
+    "cuda_ms": 0.0251,
+    "ref_ms": 0.0974,
+    "speedup": 3.88,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=3.88x, max_diff=0.0001"
   },
   {
     "module": "mamba_block",
     "status": "PASS",
-    "cuda_ms": 0.1596,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.06,
+    "ref_ms": 0.0357,
+    "speedup": 0.6,
+    "max_diff": 0.0,
+    "reason": "speedup=0.60x, max_diff=0.0000"
   },
   {
     "module": "mamba_svd_flash",
     "status": "PASS",
-    "cuda_ms": 0.8673,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.1209,
+    "ref_ms": 0.0165,
+    "speedup": 0.14,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=0.14x, max_diff=0.0001"
   },
   {
     "module": "moe_routing",
-    "status": "PASS",
-    "cuda_ms": 0.0268,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.026,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "multi_scale_retention",
     "status": "PASS",
-    "cuda_ms": 146.529,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.4985,
+    "ref_ms": 23.1162,
+    "speedup": 46.38,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=46.37x, max_diff=0.0001"
   },
   {
     "module": "nasc_attention",
     "status": "PASS",
-    "cuda_ms": 0.0329,
-    "ref_ms": 11.8186,
-    "speedup": 358.85,
-    "max_diff": 2.5
+    "cuda_ms": 0.0323,
+    "ref_ms": 11.9962,
+    "speedup": 371.14,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=371.40x, max_diff=0.0001"
   },
   {
     "module": "nexus",
     "status": "PASS",
-    "cuda_ms": 0.034,
-    "ref_ms": 9.5726,
-    "speedup": 281.27,
-    "max_diff": 0.28125
+    "cuda_ms": 0.0339,
+    "ref_ms": 9.4187,
+    "speedup": 277.98,
+    "max_diff": 0.0002288818359375,
+    "reason": "speedup=277.84x, max_diff=0.0002"
   },
   {
     "module": "nystrom_attention",
     "status": "PASS",
-    "cuda_ms": 0.3152,
+    "cuda_ms": 0.315,
     "ref_ms": 0.0152,
     "speedup": 0.05,
-    "max_diff": 0.125
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=0.05x, max_diff=0.0001"
   },
   {
     "module": "orion",
     "status": "PASS",
-    "cuda_ms": 0.0337,
-    "ref_ms": 9.5252,
-    "speedup": 282.77,
-    "max_diff": 0.34375
+    "cuda_ms": 0.0338,
+    "ref_ms": 9.3297,
+    "speedup": 276.07,
+    "max_diff": 0.0234375,
+    "reason": "speedup=276.03x, max_diff=0.0234"
   },
   {
     "module": "paged_attention",
     "status": "PASS",
-    "cuda_ms": 0.0394,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 0.0411,
+    "ref_ms": 0.4326,
+    "speedup": 10.53,
+    "max_diff": 4.76837158203125e-07,
+    "reason": "speedup=10.53x, max_diff=0.0000"
   },
   {
     "module": "paged_kv_cache",
     "status": "PASS",
     "cuda_ms": 0.0053,
-    "ref_ms": 0.0707,
-    "speedup": 13.33,
-    "max_diff": 0.0
+    "ref_ms": 0.0736,
+    "speedup": 13.76,
+    "max_diff": 0.0,
+    "reason": "speedup=13.89x, max_diff=0.0000"
   },
   {
     "module": "paged_kv_evict",
-    "status": "PASS",
-    "cuda_ms": 0.007,
-    "ref_ms": 0.0098,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0069,
+    "ref_ms": 0.0,
     "speedup": 1.41,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "paged_recurrent_step",
-    "status": "PASS",
-    "cuda_ms": 30.6269,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "FAIL_NUMERICS",
+    "cuda_ms": 30.3456,
+    "ref_ms": 0.0367,
+    "speedup": 0.0,
+    "max_diff": 0.2846221923828125,
+    "reason": "max_diff=0.2846 > 0.05"
   },
   {
     "module": "phantom",
-    "status": "PASS",
-    "cuda_ms": 0.0068,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "FAIL_NUMERICS",
+    "cuda_ms": 0.0065,
+    "ref_ms": 0.019,
+    "speedup": 2.91,
+    "max_diff": 0.15234375,
+    "reason": "max_diff=0.1523 > 0.05"
   },
   {
     "module": "quantized_gemm",
-    "status": "PASS",
-    "cuda_ms": 0.097,
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.035,
     "ref_ms": 0.0,
     "speedup": 1.0,
-    "max_diff": 0.0
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "recurrent_gla_step",
     "status": "PASS",
-    "cuda_ms": 0.0165,
-    "ref_ms": 0.0629,
-    "speedup": 3.81,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.0161,
+    "ref_ms": 0.0641,
+    "speedup": 3.98,
+    "max_diff": 0.0,
+    "reason": "speedup=3.98x, max_diff=0.0000"
   },
   {
     "module": "recurrent_hgrn2_step",
     "status": "PASS",
-    "cuda_ms": 0.0107,
-    "ref_ms": 0.0177,
-    "speedup": 1.66,
-    "max_diff": 0.015625
+    "cuda_ms": 0.0109,
+    "ref_ms": 0.0185,
+    "speedup": 1.7,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=1.70x, max_diff=0.0002"
   },
   {
     "module": "reformer",
     "status": "PASS",
     "cuda_ms": 0.7538,
-    "ref_ms": 0.5373,
+    "ref_ms": 0.5374,
     "speedup": 0.71,
-    "max_diff": 0.00390625
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=0.71x, max_diff=0.0000"
   },
   {
     "module": "rfa_attention",
-    "status": "PASS",
-    "cuda_ms": 0.0322,
-    "ref_ms": 15.4039,
-    "speedup": 477.73,
-    "max_diff": NaN
+    "status": "FAIL_NAN",
+    "cuda_ms": 0.0324,
+    "ref_ms": 15.3974,
+    "speedup": 475.95,
+    "max_diff": NaN,
+    "reason": "max_diff is NaN \u2014 kernel produces NaN output"
   },
   {
     "module": "rms_variance_match",
     "status": "PASS",
-    "cuda_ms": 5.3562,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "cuda_ms": 5.43,
+    "ref_ms": 0.0535,
+    "speedup": 0.01,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=0.01x, max_diff=0.0002"
   },
   {
     "module": "rmsnorm",
     "status": "PASS",
-    "cuda_ms": 0.0092,
-    "ref_ms": 0.0377,
-    "speedup": 4.12,
-    "max_diff": 0.000244140625
+    "cuda_ms": 0.0103,
+    "ref_ms": 0.0395,
+    "speedup": 3.82,
+    "max_diff": 0.0,
+    "reason": "speedup=3.83x, max_diff=0.0000"
   },
   {
     "module": "rotational_svd",
-    "status": "PASS",
-    "cuda_ms": 1.107,
-    "ref_ms": 0.0231,
-    "speedup": 0.02,
-    "max_diff": 2.0
+    "status": "TIMEOUT"
   },
   {
     "module": "routing_attention",
     "status": "PASS",
-    "cuda_ms": 3.3865,
-    "ref_ms": 0.5645,
-    "speedup": 0.17,
-    "max_diff": 0.000732421875
+    "cuda_ms": 3.3849,
+    "ref_ms": 0.4965,
+    "speedup": 0.15,
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=0.15x, max_diff=0.0000"
   },
   {
     "module": "rpca_sparse_svd",
-    "status": "PASS",
-    "cuda_ms": 0.2994,
-    "ref_ms": 0.0157,
-    "speedup": 0.05,
-    "max_diff": 0.125
+    "status": "TIMEOUT"
   },
   {
     "module": "rwkv6",
     "status": "PASS",
-    "cuda_ms": 0.039,
-    "ref_ms": 15.7578,
-    "speedup": 403.73,
-    "max_diff": 0.125
+    "cuda_ms": 0.0394,
+    "ref_ms": 15.6561,
+    "speedup": 397.76,
+    "max_diff": 0.00048828125,
+    "reason": "speedup=397.36x, max_diff=0.0005"
   },
   {
     "module": "samba_m3",
     "status": "PASS",
-    "cuda_ms": 0.0105,
-    "ref_ms": 0.0239,
-    "speedup": 2.27,
-    "max_diff": 0.7321853637695312
+    "cuda_ms": 0.0104,
+    "ref_ms": 0.0261,
+    "speedup": 2.5,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=2.51x, max_diff=0.0002"
   },
   {
     "module": "samba_moe",
     "status": "PASS",
-    "cuda_ms": 0.0225,
-    "ref_ms": 0.014,
-    "speedup": 0.62,
-    "max_diff": 19.3125
+    "cuda_ms": 0.0226,
+    "ref_ms": 0.0148,
+    "speedup": 0.65,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=0.65x, max_diff=0.0002"
   },
   {
     "module": "selective_scan",
     "status": "PASS",
-    "cuda_ms": 0.3558,
-    "ref_ms": 27.6389,
-    "speedup": 77.69,
-    "max_diff": NaN
+    "cuda_ms": 0.3559,
+    "ref_ms": 27.4981,
+    "speedup": 77.26,
+    "max_diff": 6.103515625e-05,
+    "reason": "speedup=77.26x, max_diff=0.0001"
   },
   {
     "module": "selective_ssm",
-    "status": "PASS",
-    "cuda_ms": 0.0368,
-    "ref_ms": 18.9747,
-    "speedup": 516.2,
-    "max_diff": NaN
+    "status": "FAIL_NAN",
+    "cuda_ms": 0.0363,
+    "ref_ms": 18.672,
+    "speedup": 514.24,
+    "max_diff": NaN,
+    "reason": "max_diff is NaN \u2014 kernel produces NaN output"
   },
   {
     "module": "simple_ssm",
     "status": "PASS",
-    "cuda_ms": 0.0295,
-    "ref_ms": 8.5663,
-    "speedup": 290.44,
-    "max_diff": 493.5
+    "cuda_ms": 0.0296,
+    "ref_ms": 8.4605,
+    "speedup": 285.55,
+    "max_diff": 0.0029296875,
+    "reason": "speedup=285.83x, max_diff=0.0029"
   },
   {
     "module": "sliding_window",
     "status": "PASS",
-    "cuda_ms": 0.6016,
-    "ref_ms": 1.8778,
-    "speedup": 3.12,
-    "max_diff": 0.00048828125
+    "cuda_ms": 0.6049,
+    "ref_ms": 1.8663,
+    "speedup": 3.09,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=3.09x, max_diff=0.0000"
   },
   {
     "module": "soa_attn",
     "status": "PASS",
-    "cuda_ms": 0.011,
-    "ref_ms": 0.0349,
-    "speedup": 3.17,
-    "max_diff": 0.0625
+    "cuda_ms": 0.0111,
+    "ref_ms": 0.0346,
+    "speedup": 3.12,
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=3.12x, max_diff=0.0000"
   },
   {
     "module": "softplus",
     "status": "PASS",
-    "cuda_ms": 0.008,
-    "ref_ms": 0.005,
-    "speedup": 0.62,
-    "max_diff": 0.0
+    "cuda_ms": 0.0079,
+    "ref_ms": 0.0049,
+    "speedup": 0.61,
+    "max_diff": 0.0,
+    "reason": "speedup=0.62x, max_diff=0.0000"
   },
   {
     "module": "sparse_attention",
     "status": "PASS",
-    "cuda_ms": 3.3353,
-    "ref_ms": 0.5702,
+    "cuda_ms": 3.339,
+    "ref_ms": 0.5697,
     "speedup": 0.17,
-    "max_diff": 0.0009765625
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=0.17x, max_diff=0.0000"
   },
   {
     "module": "spectra_v2",
-    "status": "PASS",
-    "cuda_ms": 0.0064,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "FAIL_NUMERICS",
+    "cuda_ms": 0.0071,
+    "ref_ms": 0.0164,
+    "speedup": 2.33,
+    "max_diff": 0.405029296875,
+    "reason": "max_diff=0.4050 > 0.05"
   },
   {
     "module": "spectraformer_attention",
     "status": "PASS",
-    "cuda_ms": 0.0068,
-    "ref_ms": 0.0105,
-    "speedup": 1.54,
-    "max_diff": 0.0078125
+    "cuda_ms": 0.0069,
+    "ref_ms": 0.011,
+    "speedup": 1.59,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=1.59x, max_diff=0.0001"
   },
   {
     "module": "spectral_mamba",
     "status": "PASS",
-    "cuda_ms": 0.0358,
-    "ref_ms": 0.0183,
-    "speedup": 0.51,
-    "max_diff": 0.0
+    "cuda_ms": 0.0369,
+    "ref_ms": 0.019,
+    "speedup": 0.52,
+    "max_diff": 0.0,
+    "reason": "speedup=0.51x, max_diff=0.0000"
   },
   {
     "module": "spectral_shrinkage",
     "status": "PASS",
-    "cuda_ms": 0.2636,
-    "ref_ms": 0.2068,
-    "speedup": 0.78,
-    "max_diff": 0.0
+    "cuda_ms": 0.091,
+    "ref_ms": 0.0621,
+    "speedup": 0.68,
+    "max_diff": 0.0,
+    "reason": "speedup=0.68x, max_diff=0.0000"
   },
   {
     "module": "speculative_verify",
-    "status": "PASS",
-    "cuda_ms": 0.0335,
-    "ref_ms": 0.0269,
-    "speedup": 0.8,
-    "max_diff": 0.0
+    "status": "NO_BASELINE",
+    "cuda_ms": 0.0518,
+    "ref_ms": 0.0,
+    "speedup": 0.53,
+    "max_diff": 999.0,
+    "reason": "ref_ms < 0.01ms \u2014 no real baseline to compare"
   },
   {
     "module": "split_head_norm",
     "status": "PASS",
-    "cuda_ms": 1.6739,
-    "ref_ms": 0.0283,
-    "speedup": 0.02,
-    "max_diff": 0.0
+    "cuda_ms": 0.0094,
+    "ref_ms": 0.0272,
+    "speedup": 2.88,
+    "max_diff": 0.0001220703125,
+    "reason": "speedup=2.89x, max_diff=0.0001"
   },
   {
     "module": "state_update",
-    "status": "PASS",
-    "cuda_ms": 0.0185,
-    "ref_ms": 0.0898,
-    "speedup": 4.86,
-    "max_diff": 0.03125
+    "status": "FAIL_NUMERICS",
+    "cuda_ms": 0.0186,
+    "ref_ms": 0.0864,
+    "speedup": 4.64,
+    "max_diff": 0.15625,
+    "reason": "max_diff=0.1562 > 0.05"
   },
   {
     "module": "svd_prefix_scan",
     "status": "PASS",
-    "cuda_ms": 49.5671,
-    "ref_ms": 5.4709,
+    "cuda_ms": 50.3402,
+    "ref_ms": 5.4701,
     "speedup": 0.11,
-    "max_diff": 0.0
+    "max_diff": 0.0,
+    "reason": "speedup=0.11x, max_diff=0.0000"
   },
   {
     "module": "swiglu",
     "status": "PASS",
     "cuda_ms": 0.0081,
-    "ref_ms": 0.0102,
-    "speedup": 1.26,
-    "max_diff": 0.00390625
+    "ref_ms": 0.0106,
+    "speedup": 1.3,
+    "max_diff": 3.0517578125e-05,
+    "reason": "speedup=1.31x, max_diff=0.0000"
   },
   {
     "module": "ternary_gemm",
     "status": "PASS",
-    "cuda_ms": 0.0142,
-    "ref_ms": 0.175,
-    "speedup": 12.31,
-    "max_diff": 0.00390625
+    "cuda_ms": 0.0145,
+    "ref_ms": 0.181,
+    "speedup": 12.47,
+    "max_diff": 7.62939453125e-06,
+    "reason": "speedup=12.48x, max_diff=0.0000"
   },
   {
     "module": "tpa_attention",
     "status": "PASS",
-    "cuda_ms": 0.0252,
-    "ref_ms": 0.0089,
-    "speedup": 0.35,
-    "max_diff": 0.03125
+    "cuda_ms": 0.0255,
+    "ref_ms": 0.0088,
+    "speedup": 0.34,
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=0.35x, max_diff=0.0000"
   },
   {
     "module": "tt_contraction",
-    "status": "PASS",
-    "cuda_ms": 0.0074,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "TIMEOUT"
   },
   {
     "module": "unified_rope_offset",
-    "status": "PASS",
-    "cuda_ms": 6.0858,
-    "ref_ms": 0.0,
-    "speedup": 1.0,
-    "max_diff": 0.0
+    "status": "CRASH",
+    "error": "AssertionError: cos table length 1 < N +"
   },
   {
     "module": "upi_stuffed_mamba",
     "status": "PASS",
-    "cuda_ms": 0.0268,
-    "ref_ms": 0.014,
-    "speedup": 0.52,
-    "max_diff": 0.001953125
+    "cuda_ms": 0.027,
+    "ref_ms": 0.0131,
+    "speedup": 0.48,
+    "max_diff": 0.000244140625,
+    "reason": "speedup=0.49x, max_diff=0.0002"
   },
   {
     "module": "varlen_attention",
     "status": "PASS",
-    "cuda_ms": 24.475,
-    "ref_ms": 0.3285,
-    "speedup": 0.01,
-    "max_diff": 0.000244140625
+    "cuda_ms": 5.1391,
+    "ref_ms": 0.3586,
+    "speedup": 0.07,
+    "max_diff": 1.52587890625e-05,
+    "reason": "speedup=0.07x, max_diff=0.0000"
   },
   {
     "module": "vspec",
-    "status": "PASS",
-    "cuda_ms": 0.036,
-    "ref_ms": 15.6062,
-    "speedup": 434.09,
-    "max_diff": 1.203125
+    "status": "FAIL_NUMERICS",
+    "cuda_ms": 0.0364,
+    "ref_ms": 16.4175,
+    "speedup": 450.64,
+    "max_diff": 0.4278564453125,
+    "reason": "max_diff=0.4279 > 0.05"
   }
 ]

@@ -4,21 +4,21 @@
 
 | Kernel Operator | PyTorch Ref (ms) | Triton JIT (ms) | CUDA C++ (ms) | Speedup (CUDA vs. Py) | Speedup (CUDA vs. Triton) |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| `selective_scan` | 27.227 | 13.810 | 0.296 | **92.08x** | 46.71x |
-| `sliding_window_attn` | 2.000 | 0.276 | 0.277 | **7.22x** | 1.00x |
-| `block_sparse_attn` | 1.992 | 1.660 | 0.397 | **5.02x** | 4.18x |
-| `w4a16_gemm` | 0.114 | N/A | 0.212 | **0.54x** | 1.00x |
-| `fp8_gemm` | 0.215 | 0.074 | 0.372 | **0.58x** | 0.20x |
-| `flash_gqa` | 0.208 | 0.034 | 0.084 | **2.49x** | 0.40x |
-| `paged_attention` | 1.654 | N/A | 0.162 | **10.18x** | 1.00x |
-| `moe_routing` | 361.454 | N/A | 0.013 | **28466.32x** | 1.00x |
-| `fused_lowrank_gated_gemm` | 0.027 | 0.041 | 0.870 | **0.03x** | 0.05x |
-| `chunked_delta_gate_scan` | 43.208 | 0.123 | 0.592 | **72.98x** | 0.21x |
-| `hgrn2_fused_bwd_scan` | 5.686 | 0.026 | 0.013 | **422.60x** | 1.93x |
-| `cosformer_linear_attention` | 0.111 | 0.025 | 0.059 | **1.88x** | 0.42x |
-| `fused_norm_linear` | 0.014 | 0.021 | 0.117 | **0.12x** | 0.18x |
-| `fused_rotary_emb` | 0.029 | N/A | 0.020 | **1.47x** | 1.00x |
-| `kronecker_matmul` | 0.031 | 0.026 | 0.309 | **0.10x** | 0.08x |
-| `lut_codebook_dequant_gemm` | 0.096 | 0.027 | 0.021 | **4.50x** | 1.26x |
-| `linear_attention` | 40.532 | 0.262 | 0.242 | **167.81x** | 1.09x |
-| `fused_cross_entropy` | 0.013 | 0.064 | 0.045 | **0.30x** | 1.43x |
+| `selective_scan` | 29.936 | 14.339 | 0.274 | **109.34x** | 52.37x |
+| `sliding_window_attn` | 1.826 | 0.252 | 0.252 | **7.24x** | 1.00x |
+| `block_sparse_attn` | 1.819 | 1.529 | 0.365 | **4.98x** | 4.19x |
+| `w4a16_gemm` | 0.105 | N/A | 0.267 | **0.39x** | 1.00x |
+| `fp8_gemm` | 0.078 | 0.068 | 0.509 | **0.15x** | 0.13x |
+| `flash_gqa` | 0.192 | 0.054 | 0.098 | **1.96x** | 0.56x |
+| `paged_attention` | 1.096 | N/A | 0.024 | **45.89x** | 1.00x |
+| `moe_routing` | 29.505 | N/A | 0.022 | **1336.96x** | 1.00x |
+| `fused_lowrank_gated_gemm` | 0.026 | 0.040 | 0.038 | **0.67x** | 1.04x |
+| `chunked_delta_gate_scan` | 47.587 | 0.126 | 0.578 | **82.40x** | 0.22x |
+| `hgrn2_fused_bwd_scan` | 6.209 | 0.027 | 0.014 | **436.29x** | 1.87x |
+| `cosformer_linear_attention` | 0.120 | 0.064 | 0.085 | **1.41x** | 0.76x |
+| `fused_norm_linear` | 0.014 | 0.020 | 0.139 | **0.10x** | 0.15x |
+| `fused_rotary_emb` | 0.029 | N/A | 0.010 | **2.87x** | 1.00x |
+| `kronecker_matmul` | 0.030 | 0.025 | 0.017 | **1.78x** | 1.49x |
+| `lut_codebook_dequant_gemm` | 0.096 | 0.026 | 0.019 | **5.00x** | 1.35x |
+| `linear_attention` | 40.823 | 0.257 | 0.167 | **243.98x** | 1.53x |
+| `fused_cross_entropy` | 0.014 | 0.063 | 0.040 | **0.35x** | 1.60x |
