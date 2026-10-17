@@ -334,7 +334,7 @@ def run_all_benchmarks():
     ))
 
     # 5. CUR Linear Decomposition
-    M, K, r, N = 128, 256, 32, 256
+    M, K, r, N = 1024, 2048, 64, 2048
     x = torch.randn(M, K, device=DEVICE, dtype=DTYPE)
     R = torch.randn(r, K, device=DEVICE, dtype=DTYPE)
     U = torch.randn(r, r, device=DEVICE, dtype=DTYPE)
