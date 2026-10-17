@@ -3,6 +3,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
 #include <float.h>
+#include "_common.cuh"
 
 template<int HEAD_DIM, int BLOCK_SIZE>
 __launch_bounds__(128)
@@ -158,6 +159,12 @@ void block_sparse_attn_fwd_cuda(
     int block_size,
     float scale
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(q);
+    CHECK_INPUT(k);
+    CHECK_INPUT(v);
+    CHECK_INPUT(block_mask);
+
     const int B = static_cast<int>(q.size(0));
     const int H = static_cast<int>(q.size(1));
     const int N = static_cast<int>(q.size(2));

@@ -8,6 +8,7 @@ namespace neuralops {
 namespace cuda {
 
 template <typename scalar_t>
+__launch_bounds__(256)
 __global__ void softplus_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
@@ -64,5 +65,6 @@ torch::Tensor softplus_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }

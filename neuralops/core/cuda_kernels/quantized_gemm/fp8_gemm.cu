@@ -2,6 +2,7 @@
 #include <torch/extension.h>
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAException.h>
+#include "_common.cuh"
 
 __launch_bounds__(1024)
 __global__ void fp8_gemm_tiled_kernel(
@@ -175,6 +176,12 @@ void fp8_gemm_cuda(
     const torch::Tensor& scale_a,
     const torch::Tensor& scale_b
 ) {
+    CHECK_INPUT(out);
+    CHECK_INPUT(A);
+    CHECK_INPUT(B);
+    if (scale_a.defined() && scale_a.numel() > 0) CHECK_INPUT(scale_a);
+    if (scale_b.defined() && scale_b.numel() > 0) CHECK_INPUT(scale_b);
+
     const int M = static_cast<int>(A.size(0));
     const int K = static_cast<int>(A.size(1));
     const int N = static_cast<int>(B.size(1));
@@ -209,6 +216,14 @@ void fp8_gemm_bwd_cuda(
     const torch::Tensor& scale_a,
     const torch::Tensor& scale_b
 ) {
+    if (dA.defined()) CHECK_INPUT(dA);
+    if (dB.defined()) CHECK_INPUT(dB);
+    CHECK_INPUT(dout);
+    CHECK_INPUT(A);
+    CHECK_INPUT(B);
+    if (scale_a.defined() && scale_a.numel() > 0) CHECK_INPUT(scale_a);
+    if (scale_b.defined() && scale_b.numel() > 0) CHECK_INPUT(scale_b);
+
     const int M = static_cast<int>(A.size(0));
     const int K = static_cast<int>(A.size(1));
     const int N = static_cast<int>(B.size(1));

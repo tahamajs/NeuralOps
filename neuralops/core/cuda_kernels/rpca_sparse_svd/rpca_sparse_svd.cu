@@ -10,6 +10,7 @@ namespace cuda {
 // Fused RPCA Low-Rank + Sparse GEMM Forward: Y = (X @ V.T) @ U.T + (X @ S.T) + bias
 // X: [M, K], V: [R, K], U: [N, R], S: [N, K] (optional), bias: [N] (optional)
 template <typename scalar_t, int MAX_R>
+__launch_bounds__(128)
 __global__ void rpca_sparse_svd_fwd_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ X,
@@ -165,6 +166,8 @@ torch::Tensor rpca_sparse_svd_fwd(
             }
         })
     );
+
+    CUDA_KERNEL_LAUNCH_CHECK();
 
     std::vector<int64_t> final_shape;
     for (size_t i = 0; i < orig_shape.size() - 1; ++i) {

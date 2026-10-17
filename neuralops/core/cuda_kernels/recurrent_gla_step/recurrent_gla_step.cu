@@ -10,6 +10,7 @@ namespace cuda {
 
 // Recurrent GLA single step: updates s_state: [B, H, Dk, Dv] and computes out: [B, H, Dv]
 template <typename scalar_t, int MAX_DK>
+__launch_bounds__(128)
 __global__ void recurrent_gla_step_kernel(
     scalar_t* __restrict__ out,
     scalar_t* __restrict__ s_state,
@@ -116,5 +117,6 @@ std::vector<torch::Tensor> recurrent_gla_step_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return {out, s_state};
 }

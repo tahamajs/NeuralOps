@@ -9,6 +9,7 @@ namespace cuda {
 
 // Recurrent linear step kernel: updates kv_state, z_state, and computes out
 template <typename scalar_t, int MAX_DK>
+__launch_bounds__(128)
 __global__ void recurrent_linear_step_kernel(
     scalar_t* __restrict__ out,
     scalar_t* __restrict__ kv_state,
@@ -136,5 +137,6 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
         })
     );
 
+    CUDA_KERNEL_LAUNCH_CHECK();
     return {out, kv_state, z_state};
 }
