@@ -20,7 +20,8 @@ def mamba_svd_flash_ref(u: torch.Tensor, svd_u: torch.Tensor, svd_vt: torch.Tens
     svd_u_f = svd_u.float()
     svd_vt_f = svd_vt.float()
     decay_f = decay.float()
-    u_proj = torch.matmul(torch.matmul(u_f, svd_u_f), svd_vt_f)
+    latent = torch.matmul(u_f, svd_vt_f.transpose(-1, -2))
+    u_proj = torch.matmul(latent, svd_u_f.transpose(-1, -2))
     if decay.numel() == u.numel():
         out = u_proj * decay_f
     else:
