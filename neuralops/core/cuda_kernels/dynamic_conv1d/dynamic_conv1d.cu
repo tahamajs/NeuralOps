@@ -124,6 +124,7 @@ torch::Tensor dynamic_conv1d_fwd(
         const int D = x.size(3);
         const int N = weight.size(2);
         const int K = weight.size(3);
+        TORCH_CHECK(D <= 128, "dynamic_conv1d_4d_fwd: D=", D, " > 128 not supported");
         auto out = torch::empty({B, H, N, D}, x.options());
         if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
@@ -159,6 +160,7 @@ torch::Tensor dynamic_conv1d_fwd(
     const int D = x.size(1);
     const int L = x.size(2);
     const int K = weight.size(1);
+    TORCH_CHECK(K <= 16, "dynamic_conv1d_fwd: K=", K, " > 16 not supported");
 
     auto out = torch::empty_like(x);
     if (B == 0 || D == 0 || L == 0) return out;

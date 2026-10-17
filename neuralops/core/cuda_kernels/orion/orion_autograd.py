@@ -15,14 +15,15 @@ def _get_module():
     return _MODULE
 
 def orion_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
-    phi_q = torch.exp(-0.5 * q.pow(2) * temperature)
-    phi_k = torch.exp(-0.5 * k.pow(2) * temperature)
+    phi_q = torch.exp(-0.5 * q.float().pow(2) * temperature)
+    phi_k = torch.exp(-0.5 * k.float().pow(2) * temperature)
     B, H, N, D = q.shape
     out = torch.empty_like(q)
-    s = torch.zeros(B, H, D, device=q.device, dtype=q.dtype)
+    s = torch.zeros(B, H, D, device=q.device, dtype=torch.float32)
+    v_f = v.float()
     for t in range(N):
-        s = s + phi_k[:, :, t, :] * v[:, :, t, :]
-        out[:, :, t, :] = phi_q[:, :, t, :] * s
+        s = s + phi_k[:, :, t, :] * v_f[:, :, t, :]
+        out[:, :, t, :] = (phi_q[:, :, t, :] * s).to(q.dtype)
     return out
 
 def orion(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:

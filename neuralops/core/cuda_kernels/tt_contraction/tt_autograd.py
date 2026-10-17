@@ -125,6 +125,8 @@ def tt_linear(
         )
 
     triton_fn = _get_triton_linear_impl()
+    if core0.shape[-1] > 64:
+        cuda_fn = None
 
     return dispatch(
         cuda_fn,
