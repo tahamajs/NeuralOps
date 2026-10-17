@@ -125,6 +125,7 @@ torch::Tensor latent_kv_cache_attention_fwd(
     const int L_KV = c_kv.size(1);
     const int R = c_kv.size(2);
     const int D_V = u_v.size(1);
+    TORCH_CHECK(R <= 128, "latent_kv_attn_fwd: R=", R, " > 128 not supported");
 
     auto out = torch::empty({B, H, L_Q, D_V}, q.options());
 
