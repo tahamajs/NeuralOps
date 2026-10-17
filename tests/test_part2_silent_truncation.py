@@ -264,11 +264,11 @@ def test_rpca_sparse_svd_silent_truncation():
         rpca_sparse_svd_gemm_pytorch_ref,
     )
     mod = _get_module()
-    M, K, N = 4, 64, 64
+    M, K, N = 4, 128, 64
     x = torch.randn(M, K, device="cuda", dtype=torch.float32) * 0.1
 
     # Valid R <= 128
-    R_valid = 64
+    R_valid = 32
     v_r = torch.randn(K, R_valid, device="cuda", dtype=torch.float32) * 0.1
     u_r = torch.randn(R_valid, N, device="cuda", dtype=torch.float32) * 0.1
 
