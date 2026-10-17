@@ -9,9 +9,10 @@ namespace neuralops { namespace cuda {
 // Form: Attends to global tokens, sliding local window tokens, and pseudo-random tokens.
 //
 // Hardware-level optimization:
-// 1. True Vector Dot-Products across D using Online Softmax.
-// 2. Exact sparse mask condition: is_global || is_local || is_random.
-// 3. Strict FP32 intermediate accumulation to avoid precision overflow.
+// 1. Warp-Per-Query (32 threads/query token): 100% coalesced vector loads across lane and zero register spilling.
+// 2. Intra-warp shuffle reduction (__shfl_xor_sync) for dot-product.
+// 3. Single-pass online softmax with dynamic value rescaling (FlashAttention style).
+// 4. Strict FP32 intermediate accumulation to avoid precision overflow.
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -29,7 +30,9 @@ __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const int warp_id = threadIdx.x / 32;
+    const int lane = threadIdx.x % 32;
+    const int i = blockIdx.x * (blockDim.x / 32) + warp_id;
     if (i >= N) return;
 
     const int base_offset = bh * (N * D);
@@ -37,9 +40,22 @@ __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
     const float scale = rsqrtf(static_cast<float>(D));
     const int rand_mod = max(1, N / max(1, num_random_blocks));
 
-    // Pass 1: Online Softmax across sparse pattern
+    constexpr int MAX_E = 4;
+    float q_reg[MAX_E];
+
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            q_reg[e] = to_float(q[qi_offset + d]) * scale;
+        } else {
+            q_reg[e] = 0.0f;
+        }
+    }
+
     float m_prev = -1e30f;
     float d_prev = 0.0f;
+    float acc[MAX_E] = {0.0f};
 
     for (int j = 0; j < N; ++j) {
         const bool is_global = (j < num_global_tokens) || (i < num_global_tokens);
@@ -48,39 +64,44 @@ __global__ void __launch_bounds__(128) bigbird_fwd_kernel(
         if (!is_global && !is_local && !is_random) continue;
 
         const int kj_offset = base_offset + j * D;
-        float dot = 0.0f;
-        for (int d = 0; d < D; ++d) {
-            dot += to_float(q[qi_offset + d]) * to_float(k[kj_offset + d]);
-        }
-        dot *= scale;
+        float dot_local = 0.0f;
 
-        const float m_curr = fmaxf(m_prev, dot);
-        d_prev = d_prev * expf(m_prev - m_curr) + expf(dot - m_curr);
-        m_prev = m_curr;
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                dot_local = fmaf(q_reg[e], to_float(k[kj_offset + d]), dot_local);
+            }
+        }
+
+        #pragma unroll
+        for (int offset = 16; offset > 0; offset /= 2) {
+            dot_local += __shfl_xor_sync(0xffffffff, dot_local, offset);
+        }
+
+        const float m_new = fmaxf(m_prev, dot_local);
+        const float alpha = expf(m_prev - m_new);
+        const float p = expf(dot_local - m_new);
+        d_prev = d_prev * alpha + p;
+        m_prev = m_new;
+
+        #pragma unroll
+        for (int e = 0; e < MAX_E; ++e) {
+            const int d = lane + e * 32;
+            if (d < D) {
+                const float v_val = to_float(v[kj_offset + d]);
+                acc[e] = acc[e] * alpha + p * v_val;
+            }
+        }
     }
 
     const float inv_d = (d_prev > 1e-6f) ? (1.0f / d_prev) : 0.0f;
-
-    // Pass 2: Accumulate weighted values
-    for (int d = 0; d < D; ++d) {
-        float val_acc = 0.0f;
-        for (int j = 0; j < N; ++j) {
-            const bool is_global = (j < num_global_tokens) || (i < num_global_tokens);
-            const bool is_local = abs(i - j) <= window_size;
-            const bool is_random = ((i * 37 + j * 17) % rand_mod) == 0;
-            if (!is_global && !is_local && !is_random) continue;
-
-            const int kj_offset = base_offset + j * D;
-            float dot = 0.0f;
-            for (int dd = 0; dd < D; ++dd) {
-                dot += to_float(q[qi_offset + dd]) * to_float(k[kj_offset + dd]);
-            }
-            dot *= scale;
-
-            const float weight = expf(dot - m_prev) * inv_d;
-            val_acc += weight * to_float(v[kj_offset + d]);
+    #pragma unroll
+    for (int e = 0; e < MAX_E; ++e) {
+        const int d = lane + e * 32;
+        if (d < D) {
+            out[qi_offset + d] = from_float<scalar_t>(acc[e] * inv_d);
         }
-        out[qi_offset + d] = from_float<scalar_t>(val_acc);
     }
 }
 
@@ -111,7 +132,8 @@ torch::Tensor bigbird_fwd(
     if (B == 0 || H == 0 || N == 0 || D == 0) return out;
 
     constexpr int THREADS = 128;
-    const int blocks_x = (N + THREADS - 1) / THREADS;
+    constexpr int WARPS_PER_BLOCK = THREADS / 32;
+    const int blocks_x = (N + WARPS_PER_BLOCK - 1) / WARPS_PER_BLOCK;
     dim3 grid(blocks_x, B * H);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
