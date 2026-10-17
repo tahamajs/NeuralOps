@@ -1080,14 +1080,14 @@ def fused_linformer_seq_proj_triton(
     if not (HAS_TRITON and proj_mat.is_cuda and seq_tensor.is_cuda):
         return fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
 
-    # Use low_rank gemm dispatcher or fast batched projection
     try:
         B, H, L, d = seq_tensor.shape
         k_eff = proj_mat.shape[0]
-        # Reshape to 2D for optimized GEMM: (B*H, L, d) -> transpose to (B*H, d, L)
-        proj_exec = proj_mat.to(seq_tensor.dtype).contiguous()
-        out = torch.matmul(proj_exec, seq_tensor)
-        return out
+        BH = B * H
+        seq_2d = seq_tensor.contiguous().view(BH, L, d)
+        proj_expand = proj_mat.to(seq_tensor.dtype).unsqueeze(0).expand(BH, -1, -1)
+        out = torch.bmm(proj_expand, seq_2d)
+        return out.view(B, H, k_eff, d)
     except Exception:
         return fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
 
@@ -1182,18 +1182,10 @@ def fused_nystrom_landmark_pinv_step_triton(
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
     try:
-        B, H, N, m = F1.shape
-        d = V.shape[-1]
-        BH = B * H
-        F3_2d = F3.contiguous().view(BH, m, N)
-        V_2d = V.contiguous().view(BH, N, d)
-        F2_2d = F2_pinv.contiguous().view(BH, m, m)
-        F1_2d = F1.contiguous().view(BH, N, m)
-
-        step1 = torch.bmm(F3_2d, V_2d)
-        step2 = torch.bmm(F2_2d, step1)
-        context = torch.bmm(F1_2d, step2)
-        return torch.nan_to_num(context.view(B, H, N, d), nan=0.0)
+        step1 = torch.matmul(F3, V)
+        step2 = torch.matmul(F2_pinv, step1)
+        context = torch.matmul(F1, step2)
+        return torch.nan_to_num(context, nan=0.0)
     except Exception:
         return fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
 
