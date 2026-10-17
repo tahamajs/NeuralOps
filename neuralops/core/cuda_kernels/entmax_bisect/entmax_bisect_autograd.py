@@ -31,10 +31,9 @@ entmax_bisect_pytorch_ref = fused_entmax_bisect_pytorch
 entmax_bisect_ref = fused_entmax_bisect_pytorch
 
 def entmax_bisect(scores: torch.Tensor, n_iter: int = 15) -> torch.Tensor:
-    def cuda_fn(*args, **kwargs):
+    def cuda_fn(scores, n_iter=15):
         mod = _get_module()
-        fn = getattr(mod, "entmax15_fwd")
-        return fn(*args, **kwargs)
+        return mod.entmax15_fwd(scores.contiguous(), int(n_iter))
     return dispatch(
         cuda_fn,
         fused_entmax_bisect_triton,
