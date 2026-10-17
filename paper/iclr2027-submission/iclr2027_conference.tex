@@ -676,8 +676,11 @@ python scripts/benchmarks/master_paper_benchmark_suite.py \
 python scripts/benchmarks/benchmark_layer_recon_error.py
 python scripts/benchmarks/benchmark_6pillar_kd_suite.py
 
-# 4. Master Results Ledger Verification (2,432 Empirical Runs)
-python -c "import sqlite3; conn = sqlite3.connect('results/registry/master_ledger.sqlite'); print('Verified ledger runs:', conn.cursor().execute('SELECT COUNT(*) FROM results').fetchone()[0])"
+# 4. Master Results Ledger Verification (2,432 Runs)
+python -c "import sqlite3; \
+con = sqlite3.connect('results/registry/master_ledger.sqlite'); \
+n = con.execute('SELECT COUNT(*) FROM results').fetchone()[0]; \
+print('Verified runs:', n)"
 \end{verbatim}
 
 \end{document}

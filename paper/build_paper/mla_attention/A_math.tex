@@ -1,3 +1,14 @@
-\section{A Math}
-
-Draft content for mla\_attention.
+\section{Appendix A. Mathematical Derivations}
+\subsection{A.1 Multi-Head Latent Attention Formulation}
+Multi-Head Latent Attention introduces low-rank latent compression to alleviate the memory bandwidth bottlenecks of the key-value (KV) cache in autoregressive generation.
+\begin{equation}
+\mathbf{c}_{KV} = X W_{DKV}
+\end{equation}
+Reconstruction follows via up-projection:
+\begin{equation}
+K = \mathbf{c}_{KV} W_{UK}, \quad V = \mathbf{c}_{KV} W_{UV}
+\end{equation}
+During generation decoding, matrix associative properties permit absorbing up-projection directly into query tensors:
+\begin{equation}
+S_{h, ij} = \frac{(Q_{h, i} W_{UK, h}^\top) \, \mathbf{c}_{KV, j}^\top}{\sqrt{d_h}}
+\end{equation}

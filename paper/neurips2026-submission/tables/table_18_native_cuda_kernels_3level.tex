@@ -1,0 +1,33 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{Empirical Acceleration and Execution Latencies across the 3-Level Fallback Hierarchy on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM).}
+Comparing Pure PyTorch Reference (Level 3), OpenAI Triton JIT (Level 2), and Native CUDA C++ (Level 1). All measurements recorded over 100 timed iterations following 25 hardware warmups using CUDA events.}
+\label{tab:18_native_cuda_kernels_3level}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{rllrrrrr}
+\toprule
+\textbf{\#} & \textbf{Operator} & \textbf{Target Architecture / Module} & \textbf{PyTorch (ms)} & \textbf{Triton (ms)} & \textbf{CUDA C++ (ms)} & \textbf{Speedup vs. Py} & \textbf{Speedup vs. Tri} \\
+\midrule
+1 & \texttt{moe\_routing} & MoE Dispatch + Gather Routing & 29.505 & N/A & 0.022 & $\mathbf{1336.96\times}$ & N/A \\
+2 & \texttt{hgrn2\_fused\_bwd\_scan} & Bidirectional Recurrent Scan (HGRN2) & 6.209 & 0.027 & 0.014 & $\mathbf{436.29\times}$ & $\mathbf{1.87\times}$ \\
+3 & \texttt{linear\_attention} & Parallel Prefix Linear Attention & 40.823 & 0.257 & 0.167 & $\mathbf{243.98\times}$ & $\mathbf{1.53\times}$ \\
+4 & \texttt{selective\_scan} & Mamba State-Space Model (SSM) & 29.936 & 14.339 & 0.274 & $\mathbf{109.34\times}$ & $\mathbf{52.37\times}$ \\
+5 & \texttt{chunked\_delta\_gate\_scan} & Gated DeltaNet State Recurrence & 47.587 & 0.126 & 0.578 & $\mathbf{82.40\times}$ & $0.22\times$ \\
+6 & \texttt{paged\_attention} & vLLM-Compatible Paged KV-Cache & 1.096 & N/A & 0.024 & $\mathbf{45.89\times}$ & N/A \\
+7 & \texttt{sliding\_window\_attn} & Mistral / Longformer Streaming Window & 1.826 & 0.252 & 0.252 & $\mathbf{7.24\times}$ & $1.00\times$ \\
+8 & \texttt{lut\_codebook\_dequant\_gemm} & In-Register Codebook Dequant (CoopQ) & 0.096 & 0.026 & 0.019 & $\mathbf{5.00\times}$ & $\mathbf{1.35\times}$ \\
+9 & \texttt{block\_sparse\_attn} & NSA / MoBA Block-Sparse Attention & 1.819 & 1.529 & 0.365 & $\mathbf{4.98\times}$ & $\mathbf{4.19\times}$ \\
+10 & \texttt{fused\_rotary\_emb} & Rotary Position Embeddings (RoPE) & 0.029 & N/A & 0.010 & $\mathbf{2.87\times}$ & N/A \\
+11 & \texttt{flash\_gqa} & Grouped-Query Attention (LLaMA-3) & 0.192 & 0.054 & 0.098 & $\mathbf{1.96\times}$ & $0.56\times$ \\
+12 & \texttt{kronecker\_matmul} & Two-Stage Kronecker Product Matmul & 0.030 & 0.025 & 0.017 & $\mathbf{1.78\times}$ & $\mathbf{1.49\times}$ \\
+13 & \texttt{cosformer\_linear\_attention} & Cosine Reweighting Linear Attention & 0.120 & 0.064 & 0.085 & $\mathbf{1.41\times}$ & $0.76\times$ \\
+14 & \texttt{fused\_lowrank\_gated\_gemm} & Low-Rank SVD Gated GEMM & 0.026 & 0.040 & 0.038 & $0.67\times$ & $\mathbf{1.04\times}$ \\
+15 & \texttt{w4a16\_gemm} & Packed INT4 Bit-Shift Dequant GEMM & 0.105 & N/A & 0.267 & $0.39\times$ & N/A \\
+16 & \texttt{fused\_cross\_entropy} & Online Softmax Fused Cross-Entropy & 0.014 & 0.063 & 0.040 & $0.35\times$ & $\mathbf{1.60\times}$ \\
+17 & \texttt{fp8\_gemm} & Scaled E4M3 FP8 Matrix Multiply & 0.078 & 0.068 & 0.509 & $0.15\times$ & $0.13\times$ \\
+18 & \texttt{fused\_norm\_linear} & LayerNorm / RMSNorm + Linear GEMM & 0.014 & 0.020 & 0.139 & $0.10\times$ & $0.15\times$ \\
+\bottomrule
+\end{tabular}
+\par\vspace{2pt}\raggedright\scriptsize \textit{Note:} \texttt{N/A} denotes operators where no native Triton JIT implementation exists, dispatching directly to Level 1 CUDA or Level 3 PyTorch reference.
+\end{table}

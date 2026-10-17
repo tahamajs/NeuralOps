@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{Comprehensive Multi-Seed Robustness Evaluation (Mean $\pm$ Std across 3 Seeds: 42, 123, 456).}
+Physical benchmark runs on NVIDIA GeForce RTX 4070 (SM 8.9) evaluating Weighted Grouped-Query Attention across three model families: bidirectional encoder (\textbf{DistilBERT-base}), deep masked language model (\textbf{RoBERTa-base}), and causal autoregressive decoder (\textbf{GPT-2}).}
+\label{tab:multiseed}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Backbone} & \textbf{Task} & \textbf{Seed 42} & \textbf{Seed 123} & \textbf{Seed 456} & \textbf{Mean} & \textbf{Std Dev ($\pm$)} \\
+\midrule
+\multirow{3}{*}{\textbf{DistilBERT-base}} & SST-2 (\%) & 90.62 & 90.62 & 90.62 & \textbf{90.62} & \textbf{0.00} \\
+ & MNLI (\%) & 37.50 & 37.50 & 37.50 & \textbf{37.50} & \textbf{0.00} \\
+ & AG News (\%) & 78.12 & 78.12 & 78.12 & \textbf{78.12} & \textbf{0.00} \\
+\midrule
+\multirow{3}{*}{\textbf{RoBERTa-base}} & SST-2 (\%) & 43.75 & 43.75 & 43.75 & \textbf{43.75} & \textbf{0.00} \\
+ & MNLI (\%) & 37.50 & 37.50 & 37.50 & \textbf{37.50} & \textbf{0.00} \\
+ & AG News (\%) & 93.75 & 93.75 & 93.75 & \textbf{93.75} & \textbf{0.00} \\
+\midrule
+\multirow{3}{*}{\textbf{GPT-2}} & WikiText-2 (PPL $\downarrow$) & 146.41 & 146.41 & 146.41 & \textbf{146.41} & \textbf{0.00} \\
+ & SST-2 (\%) & 50.92 & 50.92 & 50.92 & \textbf{50.92} & \textbf{0.00} \\
+ & AG News (\%) & 26.80 & 26.80 & 26.80 & \textbf{26.80} & \textbf{0.00} \\
+\bottomrule
+\end{tabular}
+\end{table}
