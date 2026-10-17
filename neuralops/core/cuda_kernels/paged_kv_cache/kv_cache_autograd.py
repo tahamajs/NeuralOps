@@ -59,6 +59,9 @@ def copy_blocks_cow_pytorch_ref(
 
     return dst_k, dst_v
 
+copy_blocks_cow_ref = copy_blocks_cow_pytorch_ref
+paged_kv_cache_pytorch_ref = copy_blocks_cow_pytorch_ref
+
 
 def _copy_blocks_cow_dispatch(
     dst_k: torch.Tensor,

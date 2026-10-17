@@ -56,6 +56,10 @@ def _get_triton_impl():
         return None
 
 
+lut_gemm_ref = lut_codebook_dequant_gemm_pytorch_ref
+lut_gemm_pytorch_ref = lut_codebook_dequant_gemm_pytorch_ref
+
+
 def lut_codebook_dequant_gemm(
     x: torch.Tensor,
     indices_packed: torch.Tensor,
@@ -68,8 +72,13 @@ def lut_codebook_dequant_gemm(
         mod = _get_module()
         dummy_bias = torch.empty(0, device=x.device, dtype=x.dtype)
         b_arg = bias.contiguous() if bias is not None else dummy_bias
+        cb = codebook
+        if cb.dim() == 1:
+            K = indices_packed.shape[1] * 2
+            num_groups = max(1, K // group_size)
+            cb = cb.unsqueeze(0).expand(num_groups, 16).contiguous()
         return mod.lut_codebook_dequant_gemm_fwd(
-            x.contiguous(), indices_packed.contiguous(), codebook.contiguous(), group_size, b_arg
+            x.contiguous(), indices_packed.contiguous(), cb.contiguous(), group_size, b_arg
         )
 
     triton_fn = _get_triton_impl()

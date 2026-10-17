@@ -30,6 +30,9 @@ def paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices):
 def paged_kv_compact_triton_ref(k_in, v_in, keep_indices):
     return paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices)
 
+paged_kv_evict_pytorch_ref = paged_kv_compact_pytorch_ref
+paged_kv_evict_ref = paged_kv_compact_pytorch_ref
+
 def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
